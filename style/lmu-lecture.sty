@@ -1,0 +1,223 @@
+\RequirePackage{graphicx}
+\RequirePackage{amsmath,amssymb}
+\RequirePackage{array}
+\DeclareSymbolFont{mysymbols}{OMS}{cmsy}{m}{n}
+\SetSymbolFont{mysymbols}{bold}{OMS}{cmsy}{b}{n}
+\DeclareMathSymbol{\myRightarrow}{\mathrel}{symbols}{"29}
+\let\Rightarrow\myRightarrow
+
+% ------------------------------------------------------------------------
+% R (sweave) related stuff
+
+\RequirePackage{ifthen}
+\newboolean{Sweave@gin}
+\setboolean{Sweave@gin}{true}
+
+\DeclareOption{nogin}{\setboolean{Sweave@gin}{false}}
+\ProcessOptions
+
+\ifthenelse{\boolean{Sweave@gin}}{\setkeys{Gin}{width=0.8\textwidth}}{}%
+
+\RequirePackage{fancyvrb}
+\renewcommand{\ttdefault}{laett}
+\DefineVerbatimEnvironment{Sinput}{Verbatim}{}
+\DefineVerbatimEnvironment{Scode}{Verbatim}{}
+\DefineVerbatimEnvironment{Soutput}{Verbatim}{}
+\newenvironment{Schunk}{}{}
+
+% ------------------------------------------------------------------------
+% special numbering for lectures
+
+\AtBeginLecture{%
+  \usebackgroundtemplate{\includegraphics[width=\paperwidth,height=\paperheight]{../style/LMU-hintergrund1.png}}
+  \begin{frame}[plain]
+    \global\advance\c@lecture by -1
+    \vspace*{\stretch{8}}
+    \LARGE\bfseries\inserttitle
+    \vspace*{\stretch{2}}
+
+    \ifx\lecturesection\@empty\relax\else%
+    {\Large Chapter \thelecture{}: \lecturesection}%
+    \fi%
+
+    \vspace*{\stretch{1}}
+    \normalsize
+    \insertshortauthor
+    \vspace*{\stretch{0.3}}
+    \insertshortsubtitle
+    \vspace*{\stretch{1}} \\
+    \normalfont
+    \insertshortinstitute
+    \vspace*{\stretch{0.3}}
+    \insertshortdate
+    \vspace*{\stretch{1}}
+  \end{frame}
+  \immediate\write\@auxout {\string \newlabel{lect:@@\thelecture}{{\insertframenumber}}}%
+  \typeout{[LECTURE]=[\thelecture][\insertlecture][\thepage][\theframenumber]}%
+  \usebackgroundtemplate{}
+}
+
+\def\endlecture{%
+  \setcounter{lectureframenumber}{\insertframenumber}%
+  \expandafter\addjustlectureframenumber\csname r@lect:@@\thelecture\endcsname%
+  \immediate\write\@auxout {\string \newlabel{endlect:@@\thelecture}{{\thelectureframenumber}}}%
+}
+
+% ------------------------------------------------------------------------
+
+\newcommand{\lecturechapter}[2]{%
+  \setcounter{lecture}{#1}
+  \gdef\lecturesection{#2}
+}
+
+\lecturechapter{0}{}
+% ------------------------------------------------------------------------
+% Make section titles
+
+% we start with section 0 (instead of default 1)
+\setcounter{section}{0}
+
+\AtBeginSection[]{%
+  \begin{frame}
+    \begin{center}
+      \usebeamercolor[fg]{structure}
+
+      \vspace*{\stretch{1}}
+
+      {\fontsize{16}{20}\bfseries\selectfont\insertsection}\\[0.1cm]
+
+      \vspace*{\stretch{2}}
+
+    \end{center}
+  \end{frame}
+}
+
+% hyperref settings
+\hypersetup{%
+  colorlinks = {false},
+  pdfauthor = {\insertshortauthor},
+  pdfsubject = {\insertshorttitle},
+}
+
+
+%\usefonttheme{lmu-lecture}
+% ------------------------------------------------------------------------
+% Use bold font for Titles etc.
+\usefonttheme{structurebold}
+
+% ------------------------------------------------------------------------
+% footline
+\setbeamerfont{footline}{size=\tiny,parent=normal text}
+
+% ------------------------------------------------------------------------
+% Fonts
+\RequirePackage[T1]{fontenc}
+\RequirePackage[scaled=0.92]{helvet}   %% Helvetica for sans serif
+
+
+%\usecolortheme{lmu-lecture}
+\setbeamercolor*{structure}{fg=black,bg=white}
+\setbeamercolor*{alerted text}{parent=structure}
+\setbeamercolor*{titlelike}{parent=structure}
+
+\setbeamercolor*{author in head/foot}{parent=normal text}
+\setbeamercolor*{title in head/foot}{parent=normal text}
+\setbeamercolor*{section in head/foot}{parent=normal text}
+\setbeamercolor*{framenumber in head/foot}{parent=normal text}
+
+%\useinnertheme{lmu-lecture}
+% ------------------------------------------------------------------------
+% \mode<presentation>
+% ------------------------------------------------------------------------
+% Lists
+\setbeamertemplate{items}[ball]
+\setbeamerfont{itemize/enumerate subbody}{size=\normalsize}
+\setbeamerfont{itemize/enumerate subsubbody}{size=\normalsize}
+  
+% ------------------------------------------------------------------------
+% Frame title: lecture
+
+\defbeamertemplate*{frametitle}{lecture}[1][left]
+{
+  \ifbeamercolorempty[bg]{frametitle}{}{\nointerlineskip}%
+  \@tempdima=\textwidth%
+  \advance\@tempdima by\beamer@leftmargin%
+  \advance\@tempdima by\beamer@rightmargin%
+  \begin{beamercolorbox}[sep=0.2cm,#1,wd=\the\@tempdima]{frametitle}
+    \if@tempswa\else\csname beamer@fte#1\endcsname\fi%
+    {\usebeamerfont{frametitle}\rule[-0.5ex]{0pt}{2.3ex}\insertframetitle\par}%
+    \if@tempswa\else\vskip-.2cm\fi% set inside beamercolorbox... evil here...
+  \end{beamercolorbox}%
+}
+
+\def\beamer@fteright{\vskip0.35cm\advance\leftskip by 1.7cm\advance\rightskip by1.7cm}
+
+\setbeamertemplate{frametitle continuation}[from second][{\small/~\insertcontinuationcount}]
+
+
+%\useoutertheme{lmu-lecture}
+% ------------------------------------------------------------------------
+% Geometry
+\setbeamersize{text margin left=0.8cm,text margin right=0.8cm}
+
+% ------------------------------------------------------------------------
+% foot line
+
+\pgfdeclarehorizontalshading{footlineshade}{4mm}{%
+  color(0pt)=(black);%
+  color(1.0\paperwidth)=(structure!50!black)}
+
+% redefine \ref (it has been redefined somewhere by the beamerclass)
+\def\lectureref#1{\expandafter\@setref\csname r@#1\endcsname\@firstoftwo{#1}}
+
+% counter for framenumber for current lecture
+\newcounter{lectureframenumber}
+
+% adjust framenumbers for lecture (check whether reference is already defined)
+\def\addjustlectureframenumber#1{\ifx#1\relax\else%
+  \addtocounter{lectureframenumber}{-\lectureref{lect:@@\thelecture}}\fi}
+
+\defbeamertemplate*{footline}{lecture theme}
+{
+  \usebeamerfont{footline} %author in head/foot}
+  \setcounter{lectureframenumber}{\insertframenumber}%
+  \ifnum\c@lecture<0\else \expandafter\addjustlectureframenumber\csname r@lect:@@\thelecture\endcsname\fi%
+  \leavevmode%
+  \hbox{%
+    \setbox\beamer@linebox=\hbox to\paperwidth{%
+      \hskip 1em%
+      {\usebeamercolor[fg]{author in head/foot}%
+      \insertshortauthor~~\copyright~~\insertshortdate}\hfill%
+      {\usebeamercolor[fg]{title in head/foot}%
+      \inserttitle~~--~~}%
+      \ifnum\c@lecture>0%
+        {\usebeamercolor[fg]{section in head/foot}%
+          \arabic{lecture}~~--~~}%
+      \fi%
+      {\usebeamercolor[fg]{framenumber in head/foot}%
+        \thelectureframenumber~/~%
+        \ifnum\c@lecture<0 \inserttotalframenumber\else\lectureref{endlect:@@\thelecture}\fi%
+      }%
+      \hskip 1em}%
+    \ht\beamer@linebox=2.5mm%
+    \dp\beamer@linebox=0pt%
+    \setbox\beamer@linebox=\vbox{\box\beamer@linebox\vskip1.125ex}%
+    \rule[4.5mm]{\paperwidth}{0.5pt}%
+    %%
+    \hskip-\paperwidth%
+    \hbox{\box\beamer@linebox\hfill}}
+}
+
+% ------------------------------------------------------------------------
+% Navigation symbols
+\setbeamertemplate{navigation symbols}{}
+
+% ------------------------------------------------------------------------
+% No head lines
+\defbeamertemplate*{headline}{lecture theme}{}
+
+
+
+% ------------------------------------------------------------------------
+\endinput
+% ------------------------------------------------------------------------
