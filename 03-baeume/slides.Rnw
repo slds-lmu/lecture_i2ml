@@ -1,0 +1,734 @@
+%This file is a child of preamble.Rnw in the style folder
+%if you want to add stuff to the preamble go there to make
+%your changes available to all childs
+
+<<setup-child, include = FALSE, results='hide'>>=
+library(knitr)
+set_parent("../style/preamble.Rnw")
+library(smoof)
+library(ggplot2)
+library(rpart)
+library(rpart.plot)
+library(mlr)
+library(rattle)
+library(gridExtra)
+@
+\newcommand{\pikN}{\hat{\pi}^\Np}
+
+\lecturechapter{3}{Trees}
+\lecture{Fortgeschrittene Computerintensive Methoden}
+
+\sloppy
+
+\begin{vbframe}{Trees - Introduction}
+
+Can be used for classification, regression (and much more!)
+
+\begin{blocki}{Zoo of tree methodologies}
+\item AID (Sonquist and Morgan, 1964)
+\item CHAID (Kass, 1980)
+\item CART (Breiman et al., 1984)
+\item C4.5 (Quinlan, 1993)
+\item Unbiased Recursive Partitioning (Hothorn et al., 2006)
+\end{blocki}
+
+\end{vbframe}
+
+\begin{vbframe}{CART}
+  \begin{itemize}
+    \item Classification and Regression Trees, introduced by Breiman
+    \item Binary splits are constructed top-down
+    \item Only constant prediction in each leaf
+    \begin{figure}
+    \centering
+      \includegraphics[width= 8cm, height = 5.5cm]{figure_man/labelling_of_tree.png}
+    \end{figure}
+    \item In the greedy top-down construction, features and split points are selected by exhaustive search.
+    \item For each node, one iterates over all features, and for each feature over all split points.
+    \item The best feature and split point, which make both created child nodes most pure, measured by a split criterion, are selected.
+    \item The procedure then is applied to the child nodes in a recursive manner.
+    \end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{CART}
+\begin{itemize}
+\item Trees divide the feature space $\Xspace$ into rectangles and fit simple models (e.g: ~constant) in these:
+  \begin{align*}
+    \fx = \sum_{m=1}^M c_m \I(x \in R_m),
+  \end{align*}
+  where $M$ rectangles $R_m$ are used. $c_m$ is a predicted numerical response, a class label or a class
+  distribution.
+\end{itemize}
+
+\pagebreak
+\textbf{Example for Classification:} Iris-Data
+\centering
+<<results='hide', fig.height=2.4>>=
+# Trees on Iris Data
+data("iris")
+pers_theme =   theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_line(colour = "grey80"),
+        panel.grid.minor = element_line(colour = "grey80"),
+        panel.border = element_blank(),
+        panel.background = element_blank())
+
+iristask = makeClassifTask(data = iris[,-(1:2)], target = "Species")
+rpart = makeLearner("classif.rpart")
+rpart = setHyperPars(rpart, cp = 0, minbucket = 4, maxdepth = 1) #Illustration
+model = train(rpart, iristask)
+# Plot
+plotLearnerPrediction(rpart, iristask, gridsize = 300, cv = 0) +
+  pers_theme +
+  ggtitle("Iris Data")
+@
+
+<<results='hide', fig.height=3>>=
+fancyRpartPlot(model$learner.model, sub = "")
+@
+
+\pagebreak
+\textbf{Example for Classification:} Iris-Data
+<<results='hide', fig.height=2.4>>=
+rpart = setHyperPars(rpart, cp = 0, minbucket = 4, maxdepth = 2) #2
+model = train(rpart, iristask)
+# Plot
+plotLearnerPrediction(rpart, iristask, gridsize = 300, cv = 0) +
+  pers_theme +
+  ggtitle("Iris Data")
+@
+
+<<results='hide', fig.height=3>>=
+fancyRpartPlot(model$learner.model, sub = "")
+@
+
+\pagebreak
+\textbf{Example for Classification:} Iris-Data
+<<results='hide', fig.height=2.4>>=
+rpart = setHyperPars(rpart, cp = 0, minbucket = 4, maxdepth = 3) #3
+model = train(rpart, iristask)
+# Plot
+plotLearnerPrediction(rpart, iristask, gridsize = 300, cv = 0) +
+  pers_theme +
+  ggtitle("Iris Data")
+@
+
+<<results='hide', fig.height=3>>=
+fancyRpartPlot(model$learner.model, sub = "")
+@
+
+\pagebreak
+\textbf{Example for Regression:}
+\vspace{0.5cm}
+\begin{columns}[T,onlytextwidth]
+\column{0.2\textwidth}
+<<out.width='\\textwidth'>>=
+modForrester = makeSingleObjectiveFunction(
+  name = "Modification Forrester et. all function",
+  fn = function(x) (sin(4*x - 4)) * ((2*x - 2)^2) * (sin(20*x - 4)),
+  par.set = makeNumericParamSet(lower = 0, upper = 1, len = 1L),
+  noisy = TRUE
+)
+set.seed(9)
+design = generateDesign(7L, getParamSet(modForrester), fun = lhs::maximinLHS)
+design$y = modForrester(design)
+ordered.design = design[order(design$x),]
+rownames(ordered.design) = NULL
+kable(ordered.design, digits = 3)
+@
+
+\hspace{0.5cm}
+\column{0.7\textwidth}
+\includegraphics[height = 0.55\textheight]{figure_man/regression_tree}
+\end{columns}
+\vspace{0.5cm}
+Data points (red) were generated from the underlying function (black):
+
+$ sin(4x - 4) * (2x - 2)^2 * sin(20x -4) $
+
+\pagebreak
+\textbf{Example for Regression:}
+<<fig.height=5>>=
+regr.task = makeRegrTask(data = design, target = "y")
+regr.rpart = makeLearner("regr.rpart", par.vals = list(minsplit=1, minbucket = 1))
+regr.model = train(regr.rpart, regr.task)
+fancyRpartPlot(regr.model$learner.model, sub="")
+@
+\end{vbframe}
+
+
+%there were commented frames here in the original file
+
+\begin{vbframe}{CART: Split criteria}
+
+  Let $\Np \subseteq \D$ be a parent node with two child nodes $\Nl$ and $\Nr$.
+
+  Dividing all of the data with respect to the split variable $\xj$ at split point $t$, leads to the following half-spaces:
+
+  \begin{align*}
+    \Nl(j,t) &= \{ (x,y) \in \Np: \xj \leq t \} \text{ and } \Nr(j,t) = \{ (x,y) \in \Np: \xj > t \}.
+  \end{align*}
+
+  Assume we can measure the impurity of the data in node $\Np$ (usually the label distribution) with function $I(\Np)$.
+  This function should return an \enquote{average quantity per observation}.
+
+  Potential splits created in a node $\Np$ are then evaluated via impurity reduction:
+
+    $$  I(\Np) - \frac{|\Nl|}{|\Np|} I(\Nl) - \frac{|\Nr|}{|\Np|} I(\Nr) $$
+
+  $|\Np|$ means number of data points contained in (parent) node $\Np$.
+
+  \framebreak
+
+  \begin{itemize}
+  \item {\bf Continuous targets:} mean-squared error / variance
+
+  $$I(\Np) = \frac{1}{|\Np|} \sum\limits_{(x,y) \in \Np} (y - \bar{y}_\Np)^2$$
+  with $\bar{y}_\Np = \frac{1}{|\Np|} \sum\limits_{(x,y) \in \Np} y$.
+
+  \vspace{0.3cm}
+
+  Hence, the best prediction in a potential leaf $\Np$ is the mean of the contained y-values, i.e. impurity here is variance of y-values.
+
+  \vspace{0.3cm}
+
+  We can also obtain this by considering:
+  \begin{align*}
+    \min_{j,t} \left(\min_{c_1} \sum_{(x,y) \in \Nl} (y -
+        c_1)^2 + \min_{c_2} \sum_{(x,y) \in \Nr} (y - c_2)^2
+    \right).
+  \end{align*}
+  The inner minimization is solved through:
+  $\hat{c}_1 = \bar{y}_1$ and $\hat{c}_2 = \bar{y}_2$
+
+  \framebreak
+
+  \item {\bf Categorical targets ($\mathbf{K}$ categories):} \enquote{Impurity Measures}
+    \begin{itemize}
+    \item Gini index:
+      $$I(\Np) = \sum_{k\neq k'} \pikN_k \pikN_{k'} = \sum_{k=1}^g \pikN_k(1-\pikN_k)$$
+    \item misclassification error:
+      $$I(\Np) = 1 - \max_k \pikN_k$$
+    \item Shannon entropy:
+      $$I(\Np) = -\sum_{k=1}^g \pikN_k \log \pikN_k \ ,$$
+    \end{itemize}
+    where $\pikN_k$ corresponds to the relative frequency of category $k$ of the response.
+  \end{itemize}
+
+\framebreak
+
+<<results='hide', fig.height=5>>=
+Colors = colorspace::rainbow_hcl(3)
+par(mar = c(5.1, 4.1, 0.1, 0.1))
+p = seq(0, 1, length.out = 200)
+entropy = function(p) (p * log(p) + (1 - p) * log(1 - p))/(2 * log(0.5))
+gini = function(p) 2 * p * (1-p)
+missclassification = function(p) (1 - max(p, 1 - p))
+plot(p, entropy(p), type = "l", col = Colors[2], ylab = "", ylim = c(0, 0.6))
+lines(p, gini(p), col = Colors[1])
+lines(p, sapply(p, missclassification), col = Colors[3])
+legend("topright", c("Gini Index", "Entropy", "Missclassification Error"),
+       col = Colors[1:3], lty = 1)
+@
+
+\end{vbframe}
+
+
+\begin{vbframe}{Impurity Measures}
+\begin{itemize}
+\item In general the three proposed splitting criteria are quite similar.
+\item Entropy and Gini index are more sensitive to changes in the node probabilities.
+\item \textbf{Example:} two-class problem with 400 obs in each class and two possible splits:
+\end{itemize}
+\begin{columns}[T,onlytextwidth]
+\column{0.5\textwidth}
+\begin{center}
+\textbf{Split 1:} \\
+\vspace{0.25cm}
+<<>>=
+class = as.factor(c(rep(0,400), rep(1,400)))
+x1 = as.factor(c(rep(0,300), rep(1,400), rep(0,100)))
+x2 = as.factor(c(rep(0,600), rep(1,200)))
+tab = table(x1, class)
+tab2 = table(x2, class)
+rownames(tab) = c("Left node", "Right node")
+rownames(tab2) = c("Left node", "Right node")
+kable(tab, row.names = TRUE, col.names = c("class A", "class B"))
+@
+\end{center}
+\column{0.5\textwidth}
+\begin{center}
+\textbf{Split 2:} \\
+\vspace{0.25cm}
+<<>>=
+kable(tab2, row.names = TRUE, col.names = c("class A", "class B"))
+@
+\end{center}
+\end{columns}
+
+\framebreak
+\begin{columns}[T,onlytextwidth]
+\column{0.5\textwidth}
+\begin{center}
+\textbf{Split 1:} \\
+\vspace{0.25cm}
+<<>>=
+kable(tab, row.names = TRUE, col.names = c("class A", "class B"))
+@
+\end{center}
+\column{0.5\textwidth}
+\begin{center}
+\textbf{Split 2:} \\
+\vspace{0.25cm}
+<<>>=
+kable(tab2, row.names = TRUE, col.names = c("class A", "class B"))
+@
+\end{center}
+\end{columns}
+
+\begin{itemize}
+\item Both splits produce a misclassification rate of $\frac{200}{800}=0.25$
+\item Split 2 produces a pure node and is probably preferable.
+\item The average node impurity after a split based on $x_1$ is $0.375$ (Gini) or $0.406$ (Entropy) and $\frac{1}{3}$ (Gini) or $0.344$ (Entropy) after a split based on $x_2$.
+% Gini: 6/8 * 2 * 1/3 * 2/3
+% entropy: 6/8 * ((1/3 * log(1/3) + 2/3 * log(2/3)) / (2 * log(0.5)))
+\item Both criteria prefer split 2 and \textit{choose} the result with a pure node.
+\end{itemize}
+\framebreak
+\begin{itemize}
+\item For metric features the exact split points can be ambiguous.
+\item If the classes of the response (for classification trees) are completely separated regarding the value range of the feature, a split can be done anywhere between the extreme values of the feature in the classes and the impurity measures stay the same.
+\item Look again at the Iris data and the classes \textit{setosa} and \textit{versicolor}:
+\end{itemize}
+<<results='hide', fig.height=3>>=
+# Trees on Iris Data
+iristask = makeClassifTask(data = iris[,-(1:2)], target = "Species")
+
+rpart = makeLearner("classif.rpart")
+rpart = setHyperPars(rpart, cp = 0, minbucket=4, maxdepth=1) #Illustration
+model = train(rpart, iristask)
+# Plot
+plotLearnerPrediction(rpart, iristask, gridsize = 300, cv = 0) +
+  pers_theme +
+  ggtitle("Iris Data")
+@
+\end{vbframe}
+
+\begin{vbframe}{Monotone feature transformations}
+
+Monotone transformations of one or several features will not change the value of the impurity measure, neither the structure of the tree (just the numerical value of the split point).
+\vspace{0.5cm}
+\begin{columns}[T]
+\column{0.49\textwidth}
+Original data
+<<>>=
+x = c(1,2,7,10,20)
+y = c(1,1,0.5,10,11)
+data = t(data.frame(x = x, y = y))
+kable(data)
+@
+
+\column{0.49\textwidth}
+Data with log-transformed $x$
+<<fig.align='right'>>=
+log.x = log(x)
+data = t(data.frame(log.x, y))
+rownames(data) = c("log(x)", "y")
+kable(data,digits = 1)
+@
+\end{columns}
+\vspace{0.5cm}
+\centering
+\includegraphics[width = \textwidth]{figure_man/monotone_trafo.png}
+\end{vbframe}
+
+\begin{vbframe}{CART: Stopping-Criteria}
+  \begin{itemize}
+    \item Minimal number of observations per node, for a split to be tried
+    \item Minimal number of observations that must be contained in a leaf
+    \item Minimal increase in goodness of fit that must be reached for a split to be
+      tried
+    \item Maximum number of levels for your tree
+  \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{CART: Overfitting}
+  \begin{itemize}
+  \item The CART-Algorithm could just continue until there is a single observation in each node
+
+  \item [$\Rightarrow$] Complexity (and hence the danger of overfitting)
+  increases with the number of splits / levels / leafs
+  \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{CART: Minimal cost complexity pruning}
+  \begin{itemize}
+  \item Method to optimize the trade-off between goodness-of-fit and complexity
+  \item Criteria: cost function
+    \begin{align*}
+      R_{\alpha} &= R(T) + \alpha \cdot \# \text{leafs},
+    \end{align*}
+    where $R(T)$ represents the error of tree $T$ on the training set
+    $\rightarrow$ $R_{\alpha}$ = Training error + Complexity term.
+  \item For every $\alpha$ there is a distinctly defined smallest sub-tree of the original tree,
+  which minimizes the cost function.
+  \item $\hat{\alpha}$ can be assessed with cross-validation.
+  \item Final tree is fitted on the whole data, where $\hat{\alpha}$ is used to
+  to find the optimal size of the tree
+  \end{itemize}
+
+\pagebreak
+
+<<size='footnotesize'>>=
+lrn = makeLearner("regr.rpart")
+mod = train(lrn, bh.task)
+mod = mod$learner.model
+@
+
+\pagebreak
+
+<<results='hide'>>=
+# Pruning with every cp taken from the cptable
+cps = rev(mod$cptable[, "CP"])
+lapply(cps, function(x) {
+    p = rpart::prune(mod, cp = x)
+    sub_title = sprintf("Pruning with complexity parameter = %.4f.", x)
+    rattle::fancyRpartPlot(p, sub = sub_title)})
+@
+\end{vbframe}
+
+\begin{vbframe}{CART: Categorical Predictors}
+  \begin{itemize}
+  \item For a nominal scaled feature with $Q$ categories,
+  there are $2^{Q-1}-1$ possible partitions of the $Q$ values into two groups:
+    \begin{itemize}
+    \item There are $2^Q$ ways to assign $Q$ distinct values to the left or right node.
+    \item Two of these configurations lead to an empty node, while the other one contains all observations.
+    Discarding these configurations leads to $2^Q -2$ possible partitions.
+    \item Symmetry halves the number of possible partitions: $\frac{1}{2}(2^Q - 2) = 2^{Q-1} - 1$
+    \end{itemize}
+    $\Rightarrow$ computations become prohibitive for large values of $Q$
+  \item But for regression with squared loss and binary classification shortcuts exist.
+  \end{itemize}
+
+  \pagebreak
+
+For $0-1$ responses, in each node:
+  \begin{enumerate}
+  \item Calculate the proportion of 1-outcomes for each category of the feature.
+  \item Sort the categories according to these proportions.
+  \item The feature can then be treated as if it were an ordered categorical feature ($Q-1$ possible splits).
+  \end{enumerate}
+
+  \vspace{0.3cm}
+
+<<fig.height=3.4>>=
+set.seed(1234)
+# generate data (one categorcal variable with 4 categories, 0-1 response)
+data = data.frame(category = sample(c("A", "B", "C", "D"), size = 150,
+  replace = TRUE, prob = c(0.2, 0.1, 0.4, 0.3)),
+  y = sample(c(0,1), size = 150, replace = TRUE, prob = c(0.3, 0.7)))
+
+# calculates proportion of 1-outcomes and plot
+subset.data = subset(data, y == 1)
+plot.data = data.frame(prop.table(table(subset.data$category)))
+colnames(plot.data) = c("Category", "Frequency")
+p1 = ggplot(data = plot.data, aes(x = Category, y = Frequency, fill = Category)) +
+  geom_bar(stat = "identity")  + theme(legend.position = "none") +
+  ggtitle("1)") + ylab("Frequency of class 1") + xlab("Category of feature")
+
+# sort by proportions
+p2.pre = ggplot(data = plot.data, aes(x = reorder(Category, Frequency), y = Frequency, fill = Category)) +
+  geom_bar(stat = "identity")  + theme(legend.position = "none") +
+  ylab("Frequency of class 1") + xlab("Category of feature")
+p2 = p2.pre + ggtitle("2)")
+
+
+# decision tree to draw a vertical line where the spit is being made
+mod = rpart::rpart(y ~., data = data)
+lvls = levels(reorder(plot.data$Category, plot.data$Frequency))
+vline.level = 'C'
+p3 = p2.pre +  geom_vline(xintercept = which(lvls == vline.level) - 0.5, col = 'red', lwd = 1, linetype = "dashed") +
+  ggtitle("3)")
+grid.arrange(p1, p2, p3, ncol = 3)
+@
+
+\pagebreak
+
+  \begin{itemize}
+  \item This procedure obtains the optimal split for entropy and Gini index.
+  \item This result also holds for regression trees (with squared error loss) -- the categories are ordered by increasing mean of the outcome (see next slide).
+  \item The proofs are not trivial and can be found here:
+    \begin{itemize}
+    \item for 0-1 responses:
+      \begin{itemize}
+      \item Breiman, 1984, Classification and Regression Trees.
+      \item Ripley, 1996, Pattern Recognition and Neural Networks.
+      \end{itemize}
+    \item for continuous responses:
+      \begin{itemize}
+      \item Fisher, 1958, On grouping for maximum homogeneity.
+      \end{itemize}
+    \end{itemize}
+  \item Such simplifications are not known for multiclass problems.
+  %\item The Algorithm prefers categorical variables with a large value
+  %of categories $Q$
+  \end{itemize}
+
+\pagebreak
+
+For continuous responses, in each node:
+  \begin{enumerate}
+  \item Calculate the mean of the outcome in each category.
+  \item Sort the categories by increasing mean of the outcome.
+  \item The feature can then be treated as if it were an ordered categorical feature ($Q-1$ possible splits).
+  \end{enumerate}
+
+\vspace{0.3cm}
+
+<<fig.height=3.5>>=
+set.seed(1234)
+# generate data (one categorcal variable with 4 categories, 0-1 response)
+data = rbind(data.frame(category = "A", y = runif(30, 5, 7.5)),
+  data.frame(category = "B", y = runif(15, 6, 12)),
+  data.frame(category = "C", y = runif(60, 5, 20)),
+  data.frame(category = "D", y = runif(45, 1, 6)))
+
+# calculate the mean of the outcome in each category
+plot.data = aggregate(y ~ category, data = data, FUN = mean)
+colnames(plot.data) = c("Category", "Mean")
+
+# plot the categories wrt the mean of the outcome in each category
+p1 = ggplot(data = plot.data, aes(x = Category, y = Mean, fill = Category)) +
+  geom_bar(stat = "identity")  + theme(legend.position = "none") +
+  ggtitle("1)") + ylab("Mean of outcome") + xlab("Category of feature")
+
+# sort by increasing mean of the outcome
+p2.pre = ggplot(data = plot.data, aes(x = reorder(Category, Mean), y = Mean, fill = Category)) +
+  geom_bar(stat = "identity")  + theme(legend.position = "none") +
+  ylab("Mean of outcome") + xlab("Category of feature")
+p2 = p2.pre + ggtitle("2)")
+
+# decision tree to draw a vertical line where the spit is being made
+mod = rpart::rpart(y ~., data = data)
+lvls = levels(reorder(plot.data$Category, plot.data$Mean))
+vline.level = 'B'
+p3 = p2.pre +  geom_vline(xintercept = which(lvls == vline.level) - 0.5, col = 'red', lwd = 1, linetype = "dashed") +
+  ggtitle("3)")
+grid.arrange(p1, p2, p3, ncol = 3)
+@
+\end{vbframe}
+
+
+\begin{vbframe}{CART: Missing predictor values}
+  Two approaches:
+  \begin{enumerate}
+  \item Missing values of a categorical variable are treated as an own category
+  \item When considering a predictor for a split,
+  only use the observations for which the predictor is not missing.
+
+  To pass observations with missing values down the tree (during fitting or predicting),
+    we have to find surrogate variables, that produce similar splits.
+  \end{enumerate}
+\end{vbframe}
+
+\begin{vbframe}{Advantages}
+  \begin{itemize}
+    \item Model is easy to comprehend, graphical representation
+    \item Categorical features can easily be handled
+    \item Missing values can be handled
+    \item No problems with outliers in features
+    \item Monotone transformations of features change nothing
+    \item Interaction effects between features are easily possible
+    \item Works for (some) non-linear functions
+    \item Inherent feature selection
+    \item Quite fast, scales well with larger data
+    \item Trees are flexible by creating a custom split criterion and leaf-node prediction rule
+      (clustering trees, semi-supervised trees, density estimation, etc.)
+  \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Disadvantages}
+  \begin{itemize}
+  \item High instability (variance) of the trees: Small changes in the data could lead to completely different splits, thus, to completely different trees $\rightarrow$ Decisions on the upper level influence decisions on lower levels (\enquote{mistakes} in upper levels proceed to the lower ones.)
+  \item Prediction function isn't smooth because a step function is fitted.
+  \item Linear dependencies must be modeled over several splits
+    $\rightarrow$ Simple linear correlations must be translated into a complex tree structure
+    (see the following example)
+  \item Really not the best predictor: Combine with bagging (forest) or boosting!
+  (This will also be illustrated in a small benchmark at the end of the random forest chapter.)
+  \end{itemize}
+
+\pagebreak
+
+High instability of trees will be demonstrated using the Wisconsin Breast Cancer data set.
+It has 699 observations on 9 features and one target class with values \enquote{benign} and \enquote{malignant}.
+
+\begin{table}
+\begin{tabular}{ll}
+Feature name & Explanation\\
+\hline
+\code{Cl.thickness} & Clump Thickness\\
+\code{Cell.size} & Uniformity of Cell Size\\
+\code{Cell.shape} & Uniformity of Cell Shape\\
+\code{Marg.adhesion} & Marginal Adhesion\\
+\code{Epith.c.size} & Single Epithelial Cell Size\\
+\code{Bare.nuclei} & Bare Nuclei\\
+\code{Bl.cromatin} & Bland Chromatin\\
+\code{Normal.nucleoli} & Normal Nucleoli\\
+\code{Mitoses} & Mitoses\\
+\end{tabular}
+\end{table}
+
+\pagebreak
+
+Tree fitted on complete Wisconsin Breast Cancer data
+<<results='hide', fig.height=5>>=
+# Create learner and train learner on the Wisconsin Breast Cancer data
+lrn = makeLearner("classif.rpart")
+model = train(lrn, bc.task)
+
+# Remove one observation from the data and train learner on modified dataset
+bc.data = getTaskData(bc.task)
+bc.data.mod = bc.data[-13, ]
+bc.task.mod = makeClassifTask("bc.task modified",
+  data = bc.data.mod, target = getTaskTargetNames(bc.task))
+model.mod = train(lrn, bc.task.mod)
+
+# Display tree on full data set
+fancyRpartPlot(model$learner.model, sub = "")
+@
+\pagebreak
+
+Tree fitted on Wisconsin Breast Cancer data without observation 13
+<<results='hide', fig.height=5>>=
+# Leaving out just one obs leads to a totally differnt tree
+fancyRpartPlot(model.mod$learner.model, sub = "")
+@
+
+\pagebreak
+\setkeys{Gin}{width=0.95\textwidth}
+\begin{center}
+<<results='hide', fig.height=5>>=
+set.seed(123)
+n = 100
+data = data.frame(x1 = runif(n), x2 = runif(n))
+data$y = as.factor(with(data, as.integer(x1 > x2)))
+
+ggplot(data, aes(x = x1, y = x2, shape = y, col = y)) +
+  geom_point(size = 3) +
+  pers_theme +
+  ggtitle("") +
+  geom_abline(slope = 1, linetype = 2)
+@
+\end{center}
+Linear dependencies must be modeled over several splits.
+\pagebreak
+\begin{center}
+<<results='hide', fig.height=5>>=
+problemtask = makeClassifTask(data = data, target = "y")
+
+rpart = setHyperPars(rpart, cp = 0, minbucket = 2, maxdepth = 1)
+model = train(rpart, problemtask)
+# Plot
+plotLearnerPrediction(rpart, problemtask, gridsize = 300, cv = 0) +
+  pers_theme +
+  ggtitle("") +
+  geom_abline(slope = 1, linetype = 2)
+@
+\end{center}
+Linear dependencies must be modeled over several splits.
+\pagebreak
+\begin{center}
+<<results='hide', fig.height=5>>=
+rpart = setHyperPars(rpart, cp = 0, minbucket = 2, maxdepth = 2)
+model = train(rpart, problemtask)
+# Plot
+plotLearnerPrediction(rpart, problemtask, gridsize = 300, cv = 0) +
+  pers_theme +
+  ggtitle("") +
+  geom_abline(slope = 1, linetype = 2)
+@
+\end{center}
+Linear dependencies must be modeled over several splits.
+\pagebreak
+\begin{center}
+<<results='hide', fig.height=5>>=
+rpart = setHyperPars(rpart, cp = 0, minbucket = 2, maxdepth = 3)
+model = train(rpart, problemtask)
+# Plot
+plotLearnerPrediction(rpart, problemtask, gridsize = 300, cv = 0) +
+  pers_theme +
+  ggtitle("") +
+  geom_abline(slope = 1, linetype = 2)
+@
+\end{center}
+Linear dependencies must be modeled over several splits.
+\pagebreak
+\begin{center}
+<<results='hide', fig.height=5>>=
+rpart = setHyperPars(rpart, cp = 0, minbucket = 2, maxdepth = 4)
+model = train(rpart, problemtask)
+# Plot
+plotLearnerPrediction(rpart, problemtask, gridsize = 300, cv = 0) +
+  pers_theme +
+  ggtitle("") +
+  geom_abline(slope = 1, linetype = 2)
+@
+\end{center}
+Linear dependencies must be modeled over several splits.
+
+\pagebreak
+\begin{center}
+<<results='hide', fig.height=5>>=
+modForrester = makeSingleObjectiveFunction(
+  name = "Modification Forrester et. all function",
+  fn = function(x) (sin(4*x - 4)) * ((2*x - 2)^2) * (sin(20*x - 4)),
+  par.set = makeNumericParamSet(lower = 0, upper = 1, len = 1L),
+  noisy = TRUE
+)
+set.seed(9)
+design = generateDesign(7L, getParamSet(modForrester), fun = lhs::maximinLHS)
+design$y = modForrester(design)
+design
+regr.task = makeRegrTask(data = design, target = "y")
+fn = function(x) (sin(4*x - 4)) * ((2*x - 2)^2) * (sin(20*x - 4))
+regr.rpart = makeLearner("regr.rpart", par.vals = list(minbucket = 1, minsplit = 1))
+pp = plotLearnerPrediction(regr.rpart, regr.task, cv = 0)
+x = seq(0.07547466, 1, length.out = 500)
+pp + geom_line(data = data.frame(x = x, y = fn(x)), aes(x, y, color = "True function"), color = "red")
+@
+\end{center}
+Prediction function isn't smooth because a step function is fitted.
+\end{vbframe}
+
+\begin{vbframe}{Tree building algorithms and their implementation in R}
+  \begin{itemize}
+  \item CART (Breiman et al., 1984):
+
+  Package \pkg{rpart} with fitting function \code{rpart()}.
+  \begin{itemize}
+    \item No nice plotting functionalities.
+    \item But \pkg{rattle} is able to create fancy visualizations.
+  \end{itemize}
+
+  \item Unbiased Recursive Partitioning (Hothorn et al., 2006):
+
+  \pkg{partykit} (old: \pkg{party}) provides the function \code{ctree()} for recursive partitioning in a conditional inference framework.
+  \begin{itemize}
+    \item Supports continuous, censored, ordered, nominal and multivariate response variables.
+    \item \code{ctree()} uses unbiased split selection.
+    \item Nice plotting functionality.
+  \end{itemize}
+
+  \item C4.5 (Quinlan, 1993):
+
+  Implemented in the R-package \pkg{RWeka} with function \code{J48()}.
+  %\item \pkg{evtree} (function \code{evtree()}):
+
+  %Uses evolutionary algorithms, which is a global optimization method to search over the parameter space of trees instead of performing a forward stepwise search like in CART.
+  \end{itemize}
+\end{vbframe}
+
+
+\endlecture
