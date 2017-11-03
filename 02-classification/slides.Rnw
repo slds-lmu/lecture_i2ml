@@ -1,0 +1,1146 @@
+
+%Blank Lecture
+%This file is a child of preamble.Rnw in the style folder
+%if you want to add stuff to the preamble go there to make
+%your changes available to all childs
+
+<<setup-child, include = FALSE>>=
+library(knitr)
+library(mlr)
+library(mlbench)
+library(ggplot2)
+set_parent("../style/preamble.Rnw")
+n = 30
+set.seed(1234L)
+tar = factor(c(rep(1L, times = n), rep(2L, times = n)))
+feat1 = c(rnorm(n, sd = 1.5), rnorm(n, mean = 2, sd = 1.5))
+feat2 = c(rnorm(n, sd = 1.5), rnorm(n, mean = 2, sd = 1.5))
+bin.data = data.frame(feat1, feat2, tar)
+bin.tsk = makeClassifTask(data = bin.data, target = "tar")
+@
+
+
+\lecturechapter{2}{Classification}
+\lecture{Fortgeschrittene Computerintensive Methoden}
+
+\framebreak
+\begin{vbframe}{Classification losses}
+
+
+% For classification problems, i. e. output variable $y \in \{-1, 1\}$ the risk can be written as
+
+
+% For categorical output variable $y\in \gset$ we can use the \emph{0-1-loss}
+
+% $$
+% L(y, h(x)) =\I_{y \ne h(x)} =
+   % \footnotesize \begin{cases} 1 \quad \text{ if } y \ne h(x) \\ 0 \quad    \text{ if } y = h(x)  \end{cases}
+% $$
+
+% by applying \emph{Bayes theorem}
+
+% \begin{eqnarray*}
+% p(x, y) = p(y|x)p(x).
+% \end{eqnarray*}
+
+% \framebreak
+
+% This can be simplified to
+
+% $$
+% \risk(f) = \int_X [L(1, f(x)) \pix + L(-1, f(x)) (1 - \pix) p(x)] dx.
+% $$
+
+% For given $x$, one can minimize the risk pointwise for any convex loss function by differentiating the last equality with respect to $f$. Thus, minimizers for all of the loss functions are easily obtained as functions of only $f(x)$ and $\pi(x)$.
+
+% \framebreak
+
+We will now introduce some loss functions, mainly for binary output.
+
+Notice that $f(x)$ outputs a score and $\sign(\fx)$ will be the corresponding label.
+
+\lz
+
+Most following loss functions will depend on the so-called \emph{margin}
+$$
+y\fx =  \begin{cases} > 0  \quad &\text{ if } y = \sign(\fx) \text{ (correct classification)} \\
+                      < 0 \quad &\text{ if } y \ne \sign(\fx) \text{ (misclassification)} \end{cases}
+$$
+
+
+% \begin{eqnarray*}
+% \risk(f) &=& \E_{xy}[\Lxy] = \int_X \int_Y \Lxy p(x, y) dy~dx \\
+% &=& \int_X \int_Y \Lxy p(y|x)p(x) dy~dx
+% \end{eqnarray*}
+
+\framebreak
+
+
+\end{vbframe}
+
+
+\begin{vbframe}{Bin. classif. losses - 0-1 loss}
+\begin{itemize}
+\item $\Lxy = [y \neq f(x)] = [\yf < 0]$
+\item Intuitive, often what we are interested in
+\item Not even continuous, even for linear $f$ the optimization problem is NP-hard and
+  close to intractable
+\end{itemize}
+
+<<echo=FALSE, results='hide', fig.height=3, fig.align='center'>>=
+x = seq(-2, 2, by = 0.01); y = as.numeric(x < 0)
+qplot(x, y, geom = "line", xlab = expression(yf(x)), ylab = expression(L(yf(x))))
+@
+\end{vbframe}
+
+\begin{vbframe}{Multiclass 0-1 loss and Bayes classifier}
+
+Assume $h \in \Yspace$ with $|\Yspace| = g$. We can define the 0-1-loss for multiclass:
+$$L(y, \hx) = [y \neq \hx]$$.
+We can in general rewrite the loss again as:
+\begin{eqnarray*}
+  \risk(h) & = & \E_{xy}[L(y, h)] = E_x [ E_{y|x} [ L(y, \hx) ] ] =  \\
+           & = & E_x \sum_{k \in \Yspace} L(k, \hx) P(y = k| x = x) \\
+           & = & E_x \sum_{k \in \Yspace} L(k, \hx) \pikx
+\end{eqnarray*}
+
+NB: This works, too, (of course) for $\Yspace = \{-1, 1\}$ and a score function $f$:
+$$
+\risk(f) = \mathbb{E}_x [L(1, f(x)) \pix + L(-1, f(x)) (1 - \pix)].
+$$
+
+\framebreak
+We can again minimize pointwise, and for a general cost-sensitive loss $L(y, h)$ this is:
+
+\begin{eqnarray*}
+  \hxh &=& \argmin_{l \in \Yspace} \sum_{k \in \Yspace} L(k, l) \pikx \\
+\end{eqnarray*}
+
+For the 0-1 loss this becomes:
+
+$$
+\hxh = \argmin_{k \in \Yspace} (1 - \pikx) = \argmax_{k \in \Yspace} \pikx
+$$
+
+If we know $\Pxy$ perfectly (and hence $\pikx$), we have basically constructed the loss-optimal
+classifier and we call it the \emph{Bayes classifier} and its expected loss the \emph{Bayes loss} or
+\emph{Bayes error rate} for 0-1-loss.
+
+
+% and get the risk function
+
+
+% The minimizer of $\risk(f)$ for the 0-1-loss is
+
+% \begin{eqnarray*}
+% \fh(x) &=&    \footnotesize \begin{cases} 1 \quad \text{ if } \pix > 1/2 \\ -1 \quad \pix < 1/2  \end{cases}
+% \end{eqnarray*}
+
+\lz
+
+
+\end{vbframe}
+
+
+% \framebreak
+
+% \textbf{Square-loss:}
+
+
+% If we use instead the \emph{square-loss}
+
+% $$
+% \Lxy = (1-y\fx)^2,
+% $$
+
+% we get the risk function
+
+% \begin{eqnarray*}
+% \risk(f) &=& \mathbb{E}_x [(1-\fx)^2 \pix + (1+\fx)^2 (1-\pix)] \\
+% &=& \mathbb{E}_x [1 + 2\fx + \fx^2-4\fx\pix].
+% \end{eqnarray*}
+
+% By differentiating w. r. t. $f(x)$ we get the minimizer of $\risk(f)$ for the square loss function
+
+% \begin{eqnarray*}
+% \fh(x) &=& 2\pix -1.
+% \end{eqnarray*}
+
+% \framebreak
+
+% \vspace*{0.2cm}
+
+% The square loss function tends to penalize outliers excessively. Functions which yield high values of $(x)$ will perform poorly with the square loss function, since high values of $yf(x)$ will be penalized severely, regardless of whether the signs of $y$ and $f(x)$ match.
+
+% <<echo=FALSE, results='hide', fig.height= 1.8, fig.asp = 0.4>>=
+% x = seq(-2, 5, by = 0.01)
+% plot(x, (1-x)^2, type = "l", xlab = expression(yf(x)), ylab = expression(paste((1-yf(x))^2)), main = "Square loss")
+% box()
+% @
+
+% \lz
+
+% \end{vbframe}
+
+\begin{vbframe}{Bin. classif. losses - Hinge loss}
+\begin{itemize}
+\item $\Lxy = \max\{0, 1 - \yf\}$, used in SVMs
+\item Convex
+\item No derivatives for $\yf = 1$, optimization becomes harder
+\item More robust, outliers in $y$ are less problematic
+\end{itemize}
+
+<<echo=FALSE, results='hide', fig.height=3, fig.align='center'>>=
+x = seq(-2, 2, by = 0.01); y = pmax(0, 1 - x)
+qplot(x, y, geom = "line", xlab = expression(yf(x)), ylab = expression(L(yf(x))))
+@
+
+% \framebreak
+
+% we get the risk function
+
+% \begin{eqnarray*}
+% \risk(f) &=& \mathbb{E}_x [\max\{0, 1 - \fx\} \pix + \max\{0, 1 + y\fx\} (1-\pix)].
+% \end{eqnarray*}
+
+% The minimizer of $\risk(f)$ for the hinge loss function is
+
+% \begin{eqnarray*}
+  % $fh(x) =  \footnotesize \begin{cases} 1 \quad \text{ if } \pix > 1/2 \\ -1 \quad \pix < 1/2  \end{cases}$
+% \end{eqnarray*}
+
+\end{vbframe}
+
+\begin{vbframe}{Bin. classif. losses - Logistic loss}
+\begin{itemize}
+  \item $\Lxy = \ln(1+\exp(-y\fx))$, used in logistic regression
+  \item Also called Bernoulli loss
+\item Convex, differentiable, not robust
+\end{itemize}
+
+<<fig.height=3>>=
+x = seq(-2, 2, by = 0.01); y = log(1 + exp(-x))
+qplot(x, y, geom = "line", xlab = expression(yf(x)), ylab = expression(L(yf(x))))
+@
+% the minimizer of $\risk(f)$ for the logistic loss function is
+
+% \begin{eqnarray*}
+% \fh(x) &=&  \ln \biggl(\frac{\pix}{1-\pix}\biggr)
+% \end{eqnarray*}
+
+% The function is undefined when $\pix = 1$ or $\pix = 0$, but predicts a smooth curve which grows when $\pix$ increases and equals $0$ when $\pix = 0.5$
+
+
+\end{vbframe}
+
+\begin{vbframe}{Bin. classif. losses - Cross-entropy loss}
+\begin{itemize}
+  \item Using the alternative label convention $y\in \{0, 1\}$
+  \item $\Lxy = -y\ln(\pix)-(1-y)\ln(1-\pix)$
+  \item Basically the same as the logistic loss when we act on $\pix \in [0,1]$ instead of $\fx \in \R$
+  \item  The cross entropy loss is closely related to the Kullback-Leibler divergence, which will be introduced later in the chapter.
+  \item Very often used in neural networks with binary output nodes for classification.
+\end{itemize}
+
+
+\end{vbframe}
+
+
+\begin{vbframe}{Bin. classif. losses - Exponential loss}
+\begin{itemize}
+  \item $\Lxy = \exp(-y\fx)$, used in AdaBoost
+\item Convex, differentiable, not robust
+\item Quite similar to logistic loss
+\end{itemize}
+
+<<fig.height=3>>=
+x = seq(-2, 2, by = 0.01); y = exp(-x)
+qplot(x, y, geom = "line", xlab = expression(yf(x)), ylab = expression(L(yf(x))))
+@
+
+% we get the risk function
+
+% \vspace*{-.5cm}
+
+% \begin{eqnarray*}
+% \risk(f) &=& \mathbb{E}_x [\exp(-\fx) \pix + \exp(f(x)) (1-\pix)]
+% \end{eqnarray*}
+
+\end{vbframe}
+%
+% \begin{vbframe}{Risk minimizing functions}
+%
+% Overview of binary classification losses and the corresponding risk minimizing functions:
+%
+% \lz
+%
+% \begin{tabular}{p{2.5cm}|p{3.5cm}|p{4.5cm}}
+%   loss name & loss formula  & minimizing function \\
+%   \hline
+%   0-1 & $[y \neq \hx]$ & $\hxh = \footnotesize \begin{cases} 1 \quad \text{ if } \pix > 1/2 \\ -1 \quad \pix < 1/2  \end{cases}$ \\
+%   Hinge & $\max\{0, 1 - \yf\}$ & $\fh(x) =  \footnotesize \begin{cases} 1 \quad \text{ if } \pix > 1/2 \\ -1 \quad \pix < 1/2  \end{cases}$ \\
+%   Logistic & $\ln(1+\exp(-y\fx))$ & $\fh(x) =  \ln \biggl(\frac{\pix}{1-\pix}\biggr)$ \\
+%   Cross entropy & $-y\ln(\pix) \newline -(1-y)\ln(1-\pix)$ & \\
+%   & & \\
+%   Exponential & $\exp(-y\fx)$ &
+%
+% \end{tabular}
+%
+% \end{vbframe}
+
+% \section{Selected methods for regression and classification}
+
+\begin{vbframe}{Classification}
+
+Assume we are given a \emph{classification problem}:
+\begin{eqnarray*}
+& x \in \Xspace \quad & \text{feature vector}\\
+& y \in \Yspace = \gset \quad & \text{\emph{categorical} output variable (label)}\\
+&\D = \Dset & \text{observations of $x$ and $y$}
+\end{eqnarray*}
+
+
+Classification usually means to construct $g$ discriminant functions $f_1(x), \ldots f_g(x)$,
+so that we choose our class as
+$$h(x) = \argmax_k f_k(x)$$
+
+\lz
+
+This divides the feature space into $g$ \emph{decision regions} $\{x \in \Xspace | h(x) = k\}$.
+These regions are separated by the \emph{decision boundaries} where ties occur between these
+regions.
+
+\lz
+
+If these functions $f_k(x)$ can be specified as linear functions (possibly through a rank-preserving,
+monotone transformation), we will call the classifier a \emph{linear classifier}. We can then write a
+decision boundary as $x^T\theta = 0$, which is a hyperplane separating two classes.
+
+\lz
+Note that all linear classifiers can represent non-linear decision boundaries in our original input space,
+if we opt to manually construct derived features like higher order interactions or polynomial features.
+
+\lz
+
+If only 2 classes exist, we could also construct a single discriminant function $f(x) = f_1(x) - f_2(x)$
+(note that it would be more natural here to label the classes with \{+1, -1\} or \{0, 1\}).
+
+\lz
+
+Two fundamental approaches exist to construct classifiers:
+The \emph{generative approach} and the \emph{discriminant approach}.
+
+\framebreak
+
+The \emph{generative approach} employs the Bayes theorem:
+$$\pikx = \postk = \frac{\P(x | y = k) \P(y = k)}{\P(x)} \propto \pdfxyk \pik $$
+and models $\pdfxyk$ (usually by assuming something about the structure of this distribution)
+to allow the computation of $\pikx$.
+
+\lz
+
+Discriminant function are now $\pikx$ or $\lpdfxyk + \lpik$
+
+\lz
+The \emph{discriminant approach} tries to model the discriminant score function directly, often by loss
+minimization.
+
+\lz
+% \framebreak
+
+Examples:
+\begin{itemize}
+\item Linear discriminant analysis (generative, linear)
+\item Quadratic discriminant analysis (generative, not linear)
+\item Logistic regression (discriminant, linear)
+\end{itemize}
+
+
+\end{vbframe}
+
+\begin{vbframe}{Linear discriminant analysis (LDA)}
+
+% Linear discriminant follows a similar idea. As before, we want to classify a categorical target $y \in \Yspace = \gset$ on basis of $x$.
+
+% \lz
+
+LDA follows a generative approach, each class density is modeled as a \emph{multivariate Gaussian}
+with equal covariance, i. e. $\Sigma_k = \Sigma \quad \forall k$. \\
+$$
+\pdfxyk = \frac{1}{(2\pi)^{\frac{p}{2}}|\Sigma_k|^{\frac{1}{2}}} \exp(-\frac{1}{2}(x - \mu_k)^T \Sigma_k^{-1} (x - \mu_k))
+$$
+
+\lz
+% \framebreak
+
+Parameters $\theta$ are estimated in a straight-forward manner by estimating
+\begin{eqnarray*}
+\hat{\pi}_k &=& n_k / n,\text{ where $n_k$ is the number of class $k$ observations} \\
+\hat{\mu}_k &=& \sum_{i: y_i = k} \frac{x_i}{n_k} \\
+\hat{\Sigma} &=& \frac{1}{n - g} \sum_{k=1}^g \sum_{i: y_i = k} (x_i - \hat{\mu}_k) (x_i - \hat{\mu}_k) ^T
+\end{eqnarray*}
+
+
+\framebreak
+
+For the posterior probability of class $k$ it follows:
+\begin{eqnarray*}
+\pikx &\propto& \pi_k \cdot \pdfxyk \\
+&=& \pi_k \exp(- \frac{1}{2} x^T\Sigma^{-1}x - \frac{1}{2} \mu_k^T \Sigma^{-1} \mu_k + x^T \Sigma^{-1} \mu_k ) \\
+&=& \exp(- \frac{1}{2} x^T\Sigma^{-1}x) \exp(\log \pi_k  - \frac{1}{2} \mu_k^T \Sigma^{-1} \mu_k + x^T \Sigma^{-1} \mu_k ) \\
+&=& \exp(- \frac{1}{2} x^T\Sigma^{-1}x) \exp(\theta_{0k} + x^T \theta_k)
+\end{eqnarray*}
+
+by defining
+$\theta_{0k} := \log \pi_k  - \frac{1}{2} \mu_k^T \Sigma^{-1} \mu_k$ and $\theta_k := \Sigma^{-1} \mu_k$.
+
+\framebreak
+
+Finally, the posterior probability becomes
+
+$$
+\pikx = \frac{\pi_k \cdot \pdfxyk }{\pdfx} = \frac{\exp(\theta_{0k} + x^T \theta_k)}{\sum_j \exp(\theta_{0j} + x^T \theta_j)}
+$$
+
+(the term $\exp(- \frac{1}{2} x^T\Sigma^{-1}x)$ will cancel out in numerator and denominator).
+
+\lz
+
+And (simplified) discriminant functions can be defined as
+$$ f_k(x) =  \theta_{0k} + x^T \theta_k $$
+Hence, LDA provides a Linear classifier with linear decision boundaries.
+
+% \lz
+
+% \framebreak
+
+% If we compare the likelihood of two classes $k, l \in \gset$ via the log-odds, we end up in a linear function of x
+
+% \small
+% \begin{eqnarray*}
+% \log \frac{\pikx}{\pi_l(x)}&=& \log\exp(\theta_{0k} + x^T \theta_k)-\log\exp(\theta_{0l} + x^T \theta_l) \\
+% &=& (\theta_{0k} - \theta_{0l}) + x^T(\theta_k-\theta_l)
+% \end{eqnarray*}
+
+% \normalsize
+% This equation is linear in $x$, so the decision boundary between the classes can
+% only be linear. Linear discriminant analysis provides a linear classifier.
+
+
+
+% Finally we will predict the most probable category given $x$
+
+% $$
+% \yh = h(x) = \argmax_{k \in \gset} \pikx.
+% $$
+
+\framebreak
+
+<<echo = FALSE, warning=FALSE, message=FALSE>>=
+plotLearnerPrediction("classif.lda", bin.tsk)
+@
+
+\end{vbframe}
+
+
+\begin{vbframe}{Quadratic discriminant analysis (QDA)}
+
+QDA is a direct generalization of LDA, where the class densities are now Gaussians with unequal covariances $\Sigma_k$.
+$$
+\pdfxyk = \frac{1}{(2\pi)^{\frac{p}{2}}|\Sigma_k|^{\frac{1}{2}}} \exp(-\frac{1}{2}(x - \mu_k)^T \Sigma_k^{-1} (x - \mu_k))
+$$
+
+\lz
+
+Parameters are estimated in a straight-forward manner by:\\
+\begin{eqnarray*}
+\hat{\pi}_j &=& \frac{n_j}{n},\text{ where $n_j$ is the number of class $j$ observations} \\
+\hat{\mu}_j &=& \sum_{i: y_i = j} \frac{x_i}{n_j} \\
+\hat{\Sigma_j} &=& \frac{1}{n_j - 1} \sum_{i: y_i = j} (x_i - \hat{\mu}_j) (x_i - \hat{\mu}_j)^T \\
+\end{eqnarray*}
+
+\framebreak
+
+\begin{eqnarray*}
+\pikx &\propto& \pi_k \cdot \pdfxyk \\
+&=& \pi_k |\Sigma_k|^{-\frac{1}{2}}\exp(- \frac{1}{2} x^T\Sigma_k^{-1}x - \frac{1}{2} \mu_k^T \Sigma_k^{-1} \mu_k + x^T \Sigma_k^{-1} \mu_k )
+\end{eqnarray*}
+
+Taking the log of the above, we can define a discriminant function that is quadratic in $x$.
+
+$$
+\log \pi_k - \frac{1}{2} \log |\Sigma_k| - \frac{1}{2} x^T\Sigma_k^{-1}x - \frac{1}{2} \mu_k^T \Sigma_k^{-1} \mu_k + x^T \Sigma_k^{-1} \mu_k
+$$
+
+
+% Let's look at the log-odds now. \\
+
+% \begin{eqnarray*}
+% \log \frac{\pikx}{\pi_g(x)}&=& \log \frac{\pi_k}{\pi_g}
+% - \frac{1}{2} \log \frac{|\Sigma_k|}{|\Sigma_g|}
+% + x^T(\Sigma_k^{-1}\mu_k - \Sigma_g^{-1}\mu_g) \\
+% &-& \frac{1}{2} x^T (\Sigma_k^{-1} - \Sigma_g^{-1})x
+% - \frac{1}{2} x^T (\mu_k^T\Sigma_k^{-1}\mu_k - \mu_g^T\Sigma_g^{-1}\mu_g)
+% \end{eqnarray*}
+
+% We see that this function is quadratic in $x$, hence we obtain a quadratic decision boundary.
+
+% \framebreak
+
+
+% Finally we will predict again the most probable category given $x$
+
+% $$
+% \yh = h(x) = \argmax_{k \in \gset} \pikx.
+% $$
+
+\framebreak
+
+<<fig.height=5>>=
+plotLearnerPrediction("classif.qda", bin.tsk)
+@
+
+\framebreak
+
+<<fig.height=5>>=
+n = 30
+set.seed(1234L)
+tar = factor(c(rep(1L, times = n), rep(2L, times = n)))
+x1 = c(rnorm(n, sd = 2), rnorm(n))
+x2 = c(rnorm(n, mean = 1,  sd = 2), rnorm(n))
+qda.data = data.frame(x1, x2, tar)
+tsk = makeClassifTask(data = qda.data, target = "tar")
+plotLearnerPrediction("classif.qda", tsk)
+@
+
+\end{vbframe}
+
+\begin{vbframe}{Naive Bayes classifier}
+
+Another generative technique for categorical response $y \in \gset$ is called \emph{Naive Bayes classifier}.
+Here, we make the \enquote{naive} \emph{conditional independence assumption}, that the features given the category $y$ are conditionally independent of each other, i. e.,
+
+% The technique is based on \emph{Bayes theorem}
+% $$
+% \pikx = \postk = \frac{\pdfxyk \cdot \pi_k}{\pdfx} = \frac{\text{likelihood } \cdot \text{ prior}}{ \text{evidence}},
+% $$
+$$
+\pdfxyk = p((x_1, x_2, ..., x_p)|y = k)=\prod_{j=1}^p p(x_j|y = k).
+$$
+
+\lz
+
+Putting this together we get
+$$
+\pikx  \propto \pik \cdot \prod_{j=1}^p p(x_j|y = k)
+$$
+
+% The Naive Bayes classifier is then obtained by maximizing the above equation
+% $$
+% \yh = h(x) = \argmax_{k\in \gset}\pi_k\prod_{i=1}^p p(x_i | y = k).
+% $$
+
+\framebreak
+
+Parameters estimation now has become simple, as we only have to estimate $\pdf(x_j | y = k)$, which is univariate (given the class k).
+
+\lz
+
+For numerical $x_j$, often a univariate Gaussian is assumed, and we estimate $(\mu_j, \sigma^2_j)$ in the standard manner. Note, that we now have constructed a QDA model with strictly diagonal covariance structures for each class, hence this leads to quadratic discriminant functions.
+
+\lz
+
+For categorical features $x_j$, we simply use a Bernoulli / categorical distribution model for $p(x_j | y = k)$ and estimate the probabilities for $(j,k)$ by simply counting of relative frequencies in the standard manner.
+The resulting classifier is linear in these frequencies.
+
+\lz
+Furthermore, one can show that the Naive Bayes is a linear classifier in a particular feature space if the features are from exponential families (e. g. binomial, multinomial, normal distribution).
+
+\framebreak
+
+<<>>=
+learner = makeLearner("classif.naiveBayes")
+plotLearnerPrediction(learner, iris.task)
+@
+
+
+% In the general categorical case the modeled likelihood for $x_j$ with parameters $p_{kj}$ is:
+% % with $x = (x_1, \ldots \x_p)$
+%
+% $$
+% p(x_j | y = k) = \frac{(\sum x_i)!}{\prod_i x_i!} \prod_j p_{kj}^{[x_j = j]}
+% $$
+%
+% and for the completely observed data this becomes a multinomial distribution
+%
+% $$
+% \frac{(\sum_i x_i)!}{\prod_i x_i!} \prod_j p_{kj}^{v_{kj}},
+% $$
+%
+% with ${v_{kj}} = \sum_{i = 1}^n [x_j^{(i)} = 1]$ the number of times $(j, k)$ occurs.
+
+
+% \framebreak
+%
+%
+% We can now prove that the decision boundaries between klasses k and l are linear:
+%
+% $$
+% \log \frac{\pi_k(x)}{\pi_l(x)} \propto \log\frac{\pi_k}{\pi_l} + \sum_j v_{kj} \ln p_{kj} - \sum_j v_{lj} \ln p_{lj}
+% $$
+%
+% This is a linear function in the parameter vector $v = (v_{11}, \ldots, v_{1p}, \ldots, v_{g1} \ldots v_{gp})$.
+%
+% \framebreak
+%
+% Laplace smoothing: If a given class and feature value never occur together in the training data, then the frequency-based probability estimate will be zero.
+%
+% \lz
+%
+% This is problematic because it will wipe out all information in the other probabilities when they are multiplied.
+%
+% \lz
+%
+% A simple numerical correction, especially needed for smaller sample size, is to set $p_{kj} = \epsilon > 0$ instead of $p_{kj} = 0$.
+
+
+\end{vbframe}
+
+% \begin{vbframe}{Naive Bayes as a linear classifier}
+
+% In general, the \emph{Naive Bayes classifier} is \textbf{not} a \emph{linear} classifier.
+
+% \lz
+
+% However, it can be shown that the \emph{Naive Bayes classifier} is a linear classifier in a particular feature space if the features are from exponential families (e. g. binomial, multinomial, normal distribution) .
+
+% \end{vbframe}
+
+
+
+\begin{vbframe}{Logistic regression}
+
+A \emph{discriminant} approach for directly modeling the posterior probabilities of the classes is \emph{Logistic regression}. For now, we will only look at the binary case $y \in \{0, 1\}$.
+Note that we will supress the intercept in notation.
+
+$$
+\pix = \post = \frac{\exp(\theta^Tx)}{1+\exp(\theta^Tx)} = s(\theta^T x)
+$$
+
+We can either directly assume the above form, or arrive at it by requiring that the log-odds
+are linear in $\theta$:
+
+$$
+\log \frac{\pix}{1-\pix} = \log\frac{\post}{\P(y = 0 | x)} = \theta^Tx.
+$$\
+
+\lz
+
+The logistic function $s(t) = \frac{\exp(t)}{1 + \exp(t)}$
+transforms the scores / log-odds $\theta^Tx$ into a probability.
+
+
+
+\framebreak
+
+Logistic regression is usually fitted by maximum likelihood.
+\begin{eqnarray*}
+\LLt &=& \prod_{i=1}^n \P(y = y^{(i)} | x^{(i)}, \theta) \\
+% &=& \prod_{i=1}^n (\P(y = 1 | x^{(i)}, \theta)^{y^{(i)}}[1 - \P(y = 1 | x^{(i)}, \theta)]^{1 - y^{(i)}} \\
+&=& \prod_{i=1}^n \pi(x^{(i)}, \theta)^{y^{(i)}} [1 - \pi(x^{(i)}, \theta)]^{1 - y^{(i)}}.
+\end{eqnarray*}
+
+% \framebreak
+
+% Consequently, the log-likelihood is derived by
+
+\small
+\begin{eqnarray*}
+\llt
+&=& \sum_{i=1}^n \yi \log[\pi(\xi, \theta)] + (1-\yi) \log [1 - \pi(\xi, \theta)]\\
+&=& \sum_{i=1}^n \yi \log [\exp(\theta^T \xi)] - \yi \log[1 + \exp(\theta^T \xi)] \\
+&\quad& + \quad (1 - \yi) \log \biggl[1 - \frac{\exp(\theta^T \xi)}{1 + \exp(\theta^T \xi)}\biggr]\\
+&=& \sum_{i=1}^n \yi \theta^T \xi - \log[1 + \exp(\theta^T \xi)]
+\end{eqnarray*}
+
+\framebreak
+
+\normalsize
+We can minimize our loss, by maximizing $\llt$.
+% Therefore, we need to differentiate w.r.t. $\theta$, which gives us the score function:\\
+% $$
+% s(\theta) = \fp{\llt}{\theta} = \sum_{i=1}^n \xi \cdot \left( \yi - \frac{\exp(\theta^T \xi)}{1 + \exp(\theta^T \xi)}\right) = 0
+% $$
+
+% \lz
+
+This now cannot be solved analytically, but is at least concave, so we have to refer to
+numerical optimization, e.g., BFGS.
+
+\lz
+
+In order to minimize the loss (misclassification), we should predict $y=1$, if
+
+$$
+\pi(x, \thetah) = \P(y = 1 | x, \thetah) = \frac{\exp(\thetah^T x)}{1+\exp(\thetah^Tx)} \ge 0.5,
+$$
+
+which is equal to
+$$
+\hat \theta^T x \ge 0.
+$$
+
+So logistic regression gives us a \emph{linear classifier}:
+$$
+\yh = h(\thetah^T x) =
+\begin{cases}
+1 & \text{ for } x^T\thetah \ge 0 \\
+0 & \text{ otherwise}
+\end{cases}
+$$
+
+
+\framebreak
+
+<<echo=FALSE>>=
+plotLearnerPrediction("classif.logreg", bin.tsk)
+@
+
+\end{vbframe}
+
+
+\begin{vbframe}{Error distributions and losses}
+
+Let us generalize what we have observed from the comparison between the maximum-likelihood
+and the risk-based approach linear regression.
+
+The maximum-likelihood principle is to maximize
+$$ \LLt = \prod_{i=1}^n \pdfyigxit $$
+or to minimize the neg. log-likelihood:
+$$ -\llt = -\sumin \lpdfyigxit $$
+Now let us define a new loss as:
+$$ \Lxyt = - \lpdfygxt $$
+And consider the empirical risk
+$$\risket = \sumin \Lxyt$$
+
+Then the maximum-likelihood estimator $\thetah$, which we obtain by optimizing $\LLt$ is identical
+to the loss-minimal $\thetah$ we obtain by minimizing $\risket$.
+This implies that we can identify for every error distribution and its pdf $\pdfygxt$ an
+equivalent loss function which leads to the same point estimator for the parameter vector $\theta$.
+We can even disregard multiplicative or additive constants in the loss,
+as they do not change the minimizer.
+
+The other way around does not always work: We cannot identify for every loss function and associated
+pdf for the distribution - the hinge loss is a prominent example.
+
+\framebreak
+
+Let us reconsider the logistic regression maximum likelihood fit. The neg. log-likelihood for the pdf is:
+
+$$
+-\lpdfygxt = - y \log[\pix] - (1-y) \log [1 - \pix]
+$$
+
+This is the cross-entropy loss. Logistic regression minimizes this, and we could use this loss
+for any other model with directly models $\pix$.
+
+\lz
+
+Now lets assume we have a score function $\fx$ instead of $\pix$. We can transform the score to a probability
+via the logistic transformation:
+
+\begin{eqnarray*}
+\pix     &=& \frac{\exp(\fx)}{1 + \exp(\fx)}   =  \frac{1}{1 + \exp(-\fx)}\\
+1- \pix  &=& \frac{\exp(-\fx)}{1 + \exp(-\fx)} =  \frac{1}{1 + \exp(\fx)}\\
+\end{eqnarray*}
+
+\framebreak
+
+The loss now becomes
+\begin{eqnarray*}
+-\lpdfygxt &=& -y \log[\pix] - (1-y) \log [1 - \pix] \\
+           &=& y \log[1 + \exp(-\fx)] + (1-y) \log[1 + \exp(\fx] \\
+\end{eqnarray*}
+For y=0 and y=1 this is:
+\begin{eqnarray*}
+y=0 &:& \log[1 + \exp(\fx] \\
+y=1 &:& \log[1 + \exp(-\fx)]
+\end{eqnarray*}
+If we would encode now with $\Yspace = \{-1,+1\}$, we can unify this like this:
+$$\Lxy = \log[1 + \exp(-\yf] $$
+So we have recovered the Bernoulli loss. LR minimizes this, and we could use this loss
+for any other model with directly models $\fx$.
+
+\end{vbframe}
+
+
+% We ended up maximizing
+
+% $$ \sumin \yi \theta^T \xi - \log[1 + \exp(\theta^T \xi)] $$
+
+% \framebreak
+
+% Regression
+
+% \lz
+
+% \begin{tabular}{ l  l | l l }
+%   loss name & loss formula  & pdf name   & pdf formula \\
+%   \hline
+%   squared   & $(y - f)^2$      & Gaussian & $exp()$       \\
+%   absolute  & $|y - f|$        & Laplace  & $...$         \\
+% \end{tabular}
+
+% \lz
+
+% Classification
+
+% \lz
+
+% \begin{tabular}{ l  l | l l }
+%   loss name & loss formula  & pdf name   & pdf formula \\
+%   \hline
+%   Bernoulli / cross entropy   & $(y - f)^2$      & Gaussian & $exp()$       \\
+% \end{tabular}
+
+
+
+\begin{vbframe}{Entropy}
+
+In some situations we might be interested in alternative definitions of uncertainty of a random variable $x$,
+as in traditional statistics. \emph{Information theory} establishes the so-called \emph{entropy}.
+
+\small
+\textbf{Thought experiment:}
+
+Level of uncertainty of rolling a die should be influenced by three factors:
+  \begin{enumerate}
+  \item The more sides, the harder to predict the outcome.
+
+  $\rightarrow$ Uncertainty grows \textit{monotonically} with number of potential outcomes.
+  \item The relative likelihood of each outcome determines the uncertainty.
+  The result of an \enquote{unfair} die is easier to predict than the result of a fair one.
+
+  $\rightarrow$ The uncertainty depends on the outcome probabilities $\{p_x(1),\ldots,p_x(K)\}$
+  \item The weighted uncertainty of independent events must sum.
+
+  The total uncertainty of rolling two independent dices must equal the sum of the uncertainties for each die alone.
+  For a composite event, its uncertainty should equal the sum of the single uncertainties weighted by the probabilities of their occurrence.
+  \end{enumerate}
+
+\framebreak
+
+\normalsize
+Those postulates lead to a unique mathematical expression for the entropy $H(x)$ for a RV $x$ with outcome probabilities $p_x(k):=\P(x=k)$ for $k \in \Xspace$.
+
+$$
+H(x)=-\sum_{k \in \Xspace} p_x(k) \log_2(p_x(k)) \quad \text{(in bits)}
+$$
+(Actually the base of the log is not uniquely determined)
+
+\lz
+
+More intuitively, the entropy describes how much information is received when we observe a specific value for a random variable $x$.
+
+\lz
+
+The term $-\log_2(p_x(k))$ is called the \emph{information} $I$ an observation of $x=k$ gives us about $x$.
+
+\lz
+
+Base $2$ means the information is measured in bits, but you can use any number $>1$ as base of the logarithm.
+
+\framebreak
+
+\textbf{Example 1:} flipping an (un-)fair coin
+
+\lz
+
+Let $p_x(1) = p$ and $p_x(0) = 1 - p$ .
+
+\lz
+
+The entropy is then given by
+$$
+H(x)= -p \cdot \log_2(p)-(1-p)\cdot \log_2(1-p).
+$$
+
+The entropy (uncertainty) is maximal for fair coin ($p=1/2$).
+
+<<echo=FALSE>>=
+x <- seq(0.1, 0.9, by = 0.01)
+y = - x * log2(x) - (1 - x) * log2(1 - x)
+plot(x, y, type = 'l', xlab = "p", ylab = "H(x)")
+box()
+@
+
+\framebreak
+
+\begin{columns}[T,onlytextwidth]
+\column{0.3\textwidth}
+\textbf{Example 2:} \\
+\lz
+\begin{center}
+<<echo=FALSE, size = "footnotesize">>=
+ex1 <- cbind(class=c("+","+","-","+","-","-", "-"), attr_1 = c(T,T,T,F,F,F,F), attr_2 = c(T,T,F,F,T,T,T))
+kable(ex1)
+@
+\end{center}
+\column{0.65\textwidth}
+\begin{itemize}
+\item How big is the uncertainty/entropy in \textit{class} (in bits)?
+\small
+\begin{eqnarray*}
+H(\text{class}) &=& - \sum_{k=+,\, -} P(k) log_2(P(k)) \\
+&=& - \frac{3}{7} log_2\left(\frac{3}{7}\right)  - \frac{4}{7} log_2\left(\frac{4}{7}\right) \\
+&=& 0.985
+\end{eqnarray*}
+\normalsize
+\item How much can it be reduced by knowing the other attributes?
+\end{itemize}
+\end{columns}
+
+\end{vbframe}
+
+\begin{vbframe}{Conditional entropy}
+
+The \emph{conditional entropy} $H(y|x)$ quantifies the uncertainty of $y$ that remains if the outcome of $x$ is given
+$$
+H(y|x) = \sum_{x \in \Xspace} p_x(x) H(y|x=x) \overset{(*)}{=}H(y|x) = H(y, x) - H(x).
+$$
+
+\textbf{Remark:}
+\begin{itemize}
+\item $H(y|x) = 0$ if (and only if) $y$ is completely determined by $x$
+\item $H(y|x) = H(y)$ if (and only if) $x$ and $y$ are independent
+\end{itemize}
+
+\framebreak
+
+\quad
+
+\vspace{.5cm}
+
+$\quad ^{(*)}$ Proof: \\
+\footnotesize
+\begin{eqnarray*}
+H(y|x) &=& \sum_{x \in \Xspace} p_x(x) H(y|x=x) = -\sum_{x \in \Xspace} p_x(x) \sum_{y \in \Yspace}p(y|x)\log_2 p(y|x) \\
+&=& - \sum_{x \in \Xspace}  \sum_{y \in \Yspace} p_x(x) \frac{p_{xy}(x, y)}{p_x(x)}\log_2 \frac{p_{xy}(x, y)}{p_x(x)}\\
+&=& - \sum_{x \in \Xspace, y \in \Yspace} p_{xy}(x, y)\log_2 \frac{p_{xy}(x, y)}{p_x(x)}\\
+&=& - \sum_{x \in \Xspace, y \in \Yspace} p_{xy}(x, y)\log_2 p_{xy}(x, y)+\sum_{x \in \Xspace, y \in \Yspace} p_{xy}(x, y)\log_2 p_x(x)\\
+&=& H(x, y) + \sum_{x\in \Xspace}p_x(x)\log_2 p_x(x) = H(x, y) - H(x)
+\end{eqnarray*}
+
+\framebreak
+\begin{columns}[T,onlytextwidth]
+\column{0.3\textwidth}
+\textbf{Example:} \\
+\lz
+\begin{center}
+<<echo=FALSE, size = "footnotesize">>=
+kable(ex1)
+@
+\end{center}
+\column{0.65\textwidth}
+\scriptsize
+
+\vspace*{1.5cm}
+
+$H(\text{class}|\text{attr}_1 = T) = - \frac{2}{3} log_2(\frac{2}{3}) - \frac{1}{3} log_2(\frac{1}{3}) = 0.92$ \\
+$H(\text{class}|\text{attr}_1 = F) = - \frac{1}{4} log_2(\frac{1}{4}) - \frac{3}{4} log_2(\frac{3}{4}) = 0.81$ \\
+$H(\text{class}|\text{attr}_2 = T) = - \frac{2}{5} log_2(\frac{2}{5}) - \frac{3}{5} log_2(\frac{3}{5}) = 0.97$ \\
+$H(\text{class}|\text{attr}_2 = F) = - \frac{1}{2} log_2(\frac{1}{2}) - \frac{1}{2} log_2(\frac{1}{2}) = 1$ \\
+\lz
+$H(\text{class}|\text{attr}_1) = \frac{3}{7} 0.92 + \frac{4}{7} 0.81 = 0.86$ \\
+$H(\text{class}|\text{attr}_2) = \frac{5}{7} 0.97 + \frac{2}{7} 1 = 0.98$
+
+\normalsize
+
+\end{columns}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Mutual information}
+
+The reduction of entropy after \textit{learning} $x$ is called \emph{mutual information}
+
+$$
+I(y;x) := H(y) - H(y|x) = H(y) + H(x) - H(x, y).
+$$
+
+\textbf{Remark:}
+\begin{itemize}
+\item The mutual information is symmetric, i. e. $I(y;x) = I(x;y)$.
+\item It describes the amount of information about one RV obtained through the other one (\emph{information gain}).
+\end{itemize}
+
+\begin{figure}
+ \includegraphics{mutualinformation.pdf}
+\end{figure}
+
+\framebreak
+
+\begin{columns}[T,onlytextwidth]
+\column{0.3\textwidth}
+\begin{center}
+<<echo=FALSE, size = "footnotesize">>=
+kable(ex1)
+@
+\end{center}
+\column{0.65\textwidth}
+\begin{itemize}
+\item For our example we can compute the information gains:
+\footnotesize
+\begin{eqnarray*}
+I(\text{class}; \text{attr}_1) &=& H(\text{class}) - H(\text{class}|\text{attr}_1) \\
+&=& 0.985 - 0.86 = 0.125
+\end{eqnarray*}
+
+\begin{eqnarray*}
+I(\text{class}; \text{attr}_2) &=& H(\text{class}) - H(\text{class}|\text{attr}_2) \\
+&=& 0.985 - 0.98 = 0.005
+\end{eqnarray*}
+\normalsize
+\lz
+\item $\text{attr}_1$ tells us more about $\text{class}$.
+\end{itemize}
+
+\end{columns}
+
+\end{vbframe}
+
+\begin{vbframe}{Kullback-Leibler-Divergence}
+
+Suppose that data is being generated from an unknown distribution $p(x)$. Suppose we modeled $p(x)$ using an approximating distribution $q(x)$. A "good" approximation $q(x)$ should minimize the difference to $p(x)$.
+
+\lz
+
+A measure for the difference between $p$ and $q$ is the \emph{Kullback-Leibler-Divergence}
+\begin{eqnarray*}
+D_{KL}(p||q) := & \int_{-\infty}^{\infty} p(z) \cdot \log \frac{p(z)}{q(z)} dz &\quad \text{continuous case} \\
+D_{KL}(p||q) := & \sum_{k} p(k) \cdot \log \frac{p(k)}{q(k)} &\quad \text{discrete case}
+\end{eqnarray*}
+
+\textbf{Remark:}
+\begin{itemize}
+\item In general: $D_{KL}(p||q) \ne D_{KL}(p||q)$ (no symmetry)
+\item $D_{KL}$ is often called the \emph{information gain} achieved if $q$ is used instead of $p$.
+\end{itemize}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Mutual information \& Kullback-Leibler-Divergence}
+
+$I(x;y)$ is the \emph{information gain} achieved if the product of marginal distributions $p_x(x) p_y(y)$ is used instead of the joint distribution $p_{xy}(x,y)$:
+
+\begin{eqnarray*}
+I(x;y) &=& D_{KL}(p_{xy}||p_x p_y) = \sum_{x \in \Xspace} \sum_{y \in \Yspace} p_{xy}(x, y) \cdot \log \biggl(\frac{p_{xy}(x, y)}{p_x(x)p_y(y)}\biggr)
+\end{eqnarray*}
+
+\framebreak
+
+\footnotesize
+Proof:
+
+\begin{eqnarray*}
+I(x;y) &=& H(y) + H(x) - H(x, y)\\
+&=& -\sum_{y \in \Yspace} p_y(y) \log_2(p_y(y)) -\sum_{x \in \Xspace} p_x(x) \log_2(p_x(x)) \\
+&& -\sum_{x \in \Xspace, y \in \Yspace} p_{xy}(x, y) \log_2(p_{xy}(x, y))\\
+&=& -\sum_{x \in \Xspace, y \in \Yspace}p_{xy}(x, y) \log_2(p_y(y)) -\sum_{x \in \Xspace, y \in \Yspace} p_{xy}(x, y) \log_2(p_x(x)) \\
+&& \quad+ \sum_{x \in \Xspace, y \in \Yspace} p_{xy}(x, y) \log_2(p_{xy}(x, y)) \\
+&=& \sum_{x \in \Xspace} \sum_{y \in \Yspace} p_{xy}(x, y) \cdot \log \biggl(\frac{p_{xy}(x, y)}{p_x(x)p_y(y)}\biggr) = D_{KL}(p_{xy}||p_x p_y)
+\end{eqnarray*}
+
+
+\end{vbframe}
+
+% \begin{vbframe}{Cross-Entropy}
+
+% A related measure to compare two probability measures $p$ and $q$ is the \emph{cross entropy} (deviance):
+% $$
+% H(p, q) = - \sum_{x} p(x) \log q(x)
+% $$
+
+% The cross entropy defines a loss function.
+
+% Remember the log-Likelihood function derived in the example of logistic regression with binary response $y\in \{0, 1\}$.
+
+% \small
+% \begin{eqnarray*}
+% -\llt &=&   -\sum_{i=1}^n y^{(i)} \log[\P(y = 1 | x^{(i)} , \theta)] + (1-y^{(i)}) \log [1 - \P(y = 1 | x^{(i)} , \theta)]\\
+% &=& \sum_{i=1}^n H(p_i, q_i)
+% \end{eqnarray*}
+
+% \normalsize
+% with $p_i := y^{(i)}$ are our true labels and $q_i:=\P(y = 1 | x^{(i)} , \theta)$ the posterior probabilites.
+
+% \end{vbframe}
+
+% old slides about entropy and mutual information
+
+%\begin{vbframe}{Entropy}
+% Entnommen aus A Light Discussion and Derivation of Entropy, Jonathon Shlens, Google Research 09.04.14 in Appendix auch Beweis enthalten
+%\begin{itemize}
+%\item The uncertainty $H$ of a discrete random %variable $X$ is the entropy.
+
+%(\textit{A Light Discussion and Derivation of Entropy}, Jonathon Shlens, Google Research, \url{http://arxiv.org/pdf/1404.1998.pdf})
+%\item Thought experiment: The level of uncertainty of rolling a die should intuitively be influenced by three factors:
+%  \begin{enumerate}
+%  \item The more sides a die has, the harder to predict the outcome, the greater the uncertainty.
+
+%  $\rightarrow$ Uncertainty/entropy grows \textit{monotonically} with the numbers of potential outcomes.
+%  \item The relative likelihood of each outcome determines the uncertainty.
+%  The result of an \enquote{unfair} die is easier to predict than the result of a fair one.
+
+%  $\rightarrow$ $H$ can be written as a function of the outcome probabilities $\{P_1,\ldots,P_K\}$
+%  \item The weighted uncertainty of independent events must sum.
+
+%  The total uncertainty of rolling two independent dice must equal the sum of the uncertainties for each die alone.
+%  For a composite event, its uncertainty should equal the sum of the single uncertainties weighted by the probabilities of their occurrence.
+%  \end{enumerate}
+% \item The first postulate gives us that $\frac{\partial H}{\partial K} > 0$, since the uncertainty grows monotonically with the number of outcomes.
+% To be positive, the derivative must exist, thus $H$ is assumed to be \textit{continuous}.
+% \item Those postulates lead to a unique mathematical expression for the entropy $H$ of a discrete random variable $X$ with prob. mass distr. $P(X)$:
+% $$
+% H(X)=-\sum_{k=1}^g P_k log_2(P_k)
+% $$
+% (Shannon and Weaver, The mathematical theory of communication, 1949)
+
+% \item The term $-log_2(P_k)$ is called \textit{information} $I$ and is the information that an observation of $x=k$ gives us about $X$.
+% \item Observations of rare events give more information (sometimes also called \textit{surprise}) about the random variable $X$.
+% \item In general the base of the logarithm can be any fixed real number greater than 1, for binary logarithm the unit of the information is \textit{bit}.
+% \item The entropy $H(X)=-\sum_{k=1}^g P_k log_2(P_k)$ equals the average (or expected) amount of information obtained by observing $x$ (in bits) $\E(I(X))$.
+% \end{itemize}
+
+% \framebreak
+
+
+% \begin{vbframe}{Conditional entropy}
+% \begin{itemize}
+% \item $H(Y|X)$ is the remaining entropy of $Y$ given $X$ or the expected entropy of $P(Y|X)$
+% $$ H(Y|X) = -\sum_x P(X = x) H(Y|X=x) $$
+
+% \item $H(Y|X=x)$ is the entropy of $Y$ for all observations with a specific value of (rule regarding) feature $X$
+% \end{itemize}
+
+% \end{vbframe}
+
+% \begin{vbframe}{Mutual Information}
+% \begin{itemize}
+% \item Entropy of a discrete RV $H(Y)$: a measure of uncertainty about $Y$
+% \item Conditional entropy $H(Y|X)$: remaining entropy of $Y$ knowing $X$
+% \item After \textit{learning} $X$ it is easy to define the reduction of entropy.
+% \item The \textit{mutual information} between $Y$ and $X$ is
+% $$
+% I(Y;X) = H(Y) - H(Y|X) \; (= H(X) - H(X|Y))
+% $$
+% \item Describes the amount of information obtained about one random variable, through the other.
+% \item Can also be derived as the Kullback-Leibler divergence of the product of the two marginal distributions from their joint distribution.
+% \item In tree learning $I(Y;X)$ is also called \textit{information gain}.
+% \end{itemize}
+% \framebreak
+
+% \end{vbframe}
+\endlecture
