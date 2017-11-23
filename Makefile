@@ -7,22 +7,14 @@ DAY2=02-classification
 DAY3=03-performance
 DAY4=04-trees
 
-day1: $(DAY1)/slides.pdf
-
-01-intro/slides.pdf: $(DAY1)/slides.Rnw
+day1:
 	cd $(DAY1); make
 
-day2: $(DAY2)/slides.pdf
-
-$(DAY2)/slides.pdf: $(DAY2)/slides.Rnw
+day2:
 	cd $(DAY2); make
 
-day3: $(DAY3)/slides.pdf
-
-$(DAY3)/slides.pdf: $(DAY3)/slides.Rnw
+day3:
 	cd $(DAY3); make
 
-day4: $(DAY4)/slides.pdf
-
-$(DAY4)/slides.pdf: $(DAY4)/slides.Rnw
+day4:
 	cd $(DAY4); make
