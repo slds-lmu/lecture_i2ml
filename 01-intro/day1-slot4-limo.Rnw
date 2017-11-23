@@ -1,0 +1,162 @@
+% Introduction to Machine Learning
+% Day 1
+
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../style/preamble.Rnw")
+@
+% Load all R packages and set up knitr
+<<setup-r, child="../style/setup.Rnw", include = FALSE>>=
+@
+
+\lecturechapter{1}{Linear regression models}
+\lecture{Introduction to Machine Learning}
+
+\begin{vbframe}{Normal linear regression}
+
+For $i \in \nset$ (simple case and with basis functions):
+\begin{eqnarray*}
+\yi & = & \fxi + \epsi = \theta_0 + \theta^T \xi + \epsi\\
+\yi & = & \fxi + \epsi = \theta_0 + \theta^T \phi(\xi) + \epsi
+\end{eqnarray*}
+
+\begin{itemize}
+\item basis functions $\phi(x)=(\phi_1(x), \ldots, \phi_m(x))^T$
+\item assumption: $\epsi \iid N(0, \sigma^2)$
+\end{itemize}
+
+\lz
+
+Given observed data $\D$  we want to address the questions
+\begin{itemize}
+\item  Given basis functions, how to find $\theta$? ({\bf Parameter estimation})
+\item  How to select basis functions for my problem? ({\bf Model selection} )
+\end{itemize}
+
+\framebreak
+
+We don't want do address the model selection problem here, but leave it at:
+In ML we \enquote{dislike} doing this \enquote{manually}.
+
+\lz
+
+A typical ML way to estimate the parameters is to not require the assumption
+$\epsi \iid N(0, \sigma^2)$, but instead assume the that prediction error is measured
+by \emph{squared error} as our \emph{loss function} in \emph{risk minimization}:
+
+$$
+\riske(\theta) = SSE(\theta) = \sumin \Lxyit = \sumin (\yi - \theta^T \xi)^2
+$$
+
+NB: We assume here and from now on that $\theta_0$ is included in $\theta$.
+
+Using matrix notation the empirical risk can be written as
+$$
+SSE(\theta) = (\ydat - X\theta)^T(\ydat - X\theta).
+$$
+
+
+Differentiating w.r.t $\theta$ yields the so-called \emph{normal equations}:
+$$
+X^T(\ydat - X\theta) = 0
+$$
+The optimal $\theta$ is
+$$
+\thetah = (X^T X)^{-1} X^T\ydat
+$$
+
+In statistics, we would start from a maximum-likelihood perspective
+$$
+\yi = \fxi + \epsi \sim N(\fxi, \sigma^2)
+$$
+$$
+\LLt = \prod_{i=1}^n \pdf(\yi | \fxit, \sigma^2) \propto \exp(-\frac{\sumin (\fxit - \yi)^2}{2\sigma^2})
+$$
+If we minimize the neg. log-likelihood, we see that this is equivalent to our
+loss minimization approach!
+$$
+\llt \propto \sumin (\fxit - \yi)^2  = min!
+$$
+
+
+\framebreak
+
+<<>>=
+data(mtcars)
+regr.task = makeRegrTask(data = mtcars, target = "mpg")
+plotLearnerPrediction("regr.lm", regr.task, features = "disp")
+@
+\end{vbframe}
+
+\begin{vbframe}{Example: Linear Regr. with L1 vs L2 loss}
+
+<<>>=
+set.seed(123)
+
+# prediction with f, based on vec x and param vec beta
+f = function(x, beta) {
+  crossprod(x, beta)
+}
+
+# L1 and L2 loss, based on design mat X, vec, param vec beta, computed with f
+loss1 = function(X, y, beta) {
+  yhat = apply(X, 1, f, beta = beta)
+  sum((y - yhat)^2)
+}
+loss2 = function(X, y, beta) {
+  yhat = apply(X, 1, f, beta = beta)
+  sum(abs(y - yhat))
+}
+
+# optimize loss (1 or 2) with optim
+# yes, neldermead not really the best, who cares it is 1d
+optLoss = function(X, y, loss) {
+  start = rep(0, ncol(X))
+  res = optim(start, loss, method = "Nelder-Mead", X = X, y = y)
+  res$par
+}
+
+# plot data and a couple of linear models
+plotIt = function(X, y, models = list()) {
+  gd = as.data.frame(cbind(X[-1, 2, drop = FALSE],  y = y[-1]))
+  pl = ggplot(data = gd, aes(x = x1, y = y))
+  pl = pl + geom_point()
+  for (i in seq_along(models)) {
+    m = models[[i]]
+    pl = pl + geom_abline(intercept = m$beta[1], slope = m$beta[2], col = m$col, lty = m$lty)
+  }
+  return(pl)
+}
+
+
+# generate some data, sample from line with gaussian errors
+# make the leftmost obs an outlier
+n = 10
+x = sort(runif(n = n, min = 0, max = 10))
+y = 3 * x + 1 + rnorm(n, sd = 5)
+X = cbind(x0 = 1, x1 = x)
+y[1] = 100
+@
+
+We study the claim that L1 loss is less sensitive to outliers than L2 loss.
+To the displayed data we add a point at (\Sexpr{c(X[1,2],y[1])}). Red = L2, blue = L1 loss.
+Solid = fit with, dashed = fit without outlier.
+
+<<fig.height=4.5>>=
+
+# fit l1/2 models on data without then with outlier data
+b1 = optLoss(X[-1,], y[-1], loss = loss1)
+b2 = optLoss(X[-1,], y[-1], loss = loss2)
+b3 = optLoss(X, y, loss = loss1)
+b4 = optLoss(X, y, loss = loss2)
+
+# plot all 4 models
+pl = plotIt(X, y, models = list(
+  list(beta = b1, col = "red", lty = "solid"),
+  list(beta = b2, col = "blue", lty = "solid"),
+  list(beta = b3, col = "red", lty = "dashed"),
+  list(beta = b4, col = "blue", lty = "dashed")
+))
+print(pl)
+@
+\end{vbframe}

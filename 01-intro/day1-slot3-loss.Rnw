@@ -1,0 +1,423 @@
+% Introduction to Machine Learning
+% Day 1
+
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../style/preamble.Rnw")
+@
+% Load all R packages and set up knitr
+<<setup-r, child="../style/setup.Rnw", include = FALSE>>=
+@
+
+\lecturechapter{1}{Loss minimization}
+\lecture{Introduction to Machine Learning}
+
+
+\begin{vbframe}{Loss minimization}
+
+The goodness of the prediction $y=\fx$ is measured by a \emph{loss function} $\Lxy $
+  and its expectation, the so-called \emph{risk},
+  $$ \riskf = \E [\Lxy] = \int \Lxy d\Pxy. $$
+
+  Obvious aim: Minimize $\riskf$ over $f$. But this is not (in general) practical:
+
+\begin{itemize}
+\item $\Pxy$ is unknown.
+\item We could estimate $\Pxy$ in non-parametric fashion from the data $D$, e.g., by kernel density
+  estimation, but this really does not scale to higher dimensions (see curse of dimensionality).
+\item We can efficiently estimate $\Pxy$, if we place rigorous assumptions on its distributional form,
+  and methods like discriminant analysis work exactly this way. ML usually studies more flexible models.
+\end{itemize}
+
+
+\framebreak
+
+An alternative (without directly assuming something about $\P_{xy}$) is to approximate $\riskf$ based on
+the data $\D$, by means of the \emph{empirical risk}
+
+$$
+\riske(f) = \frac{1}{n} \sumin \Lxyi
+$$
+
+Learning then amounts to \emph{empirical risk minimization}
+$$
+\fh = \argmin_{f \in \Hspace} \riske(f).
+$$
+
+\framebreak
+
+When $f$ is parameterized by $\theta$, this becomes:
+
+\begin{eqnarray*}
+\riske(\theta) & = & \frac{1}{n} \sumin \Lxyit \cr
+\hat{\theta} & = & \argmin_{\theta \in \Theta} \riske(\theta)
+\end{eqnarray*}
+
+Thus learning (often) means solving the above \emph{optimization problem}.
+Which implies a tight connection between ML and optimization.
+
+Note that (with a slight abuse of notation), if it is more convenient, and as there is no difference w.r.t.
+the minimizer, we might also define the $\riske$ in its non-average-but-instead-summed version as:
+
+$$
+\risket = \sumin \Lxyit
+$$
+
+\framebreak
+
+\begin{itemize}
+\item For regression, the loss usually only depends on residual $\Lxy = L(y - \fx) = L(\eps)$,
+  this is a \emph{translation invariant} loss
+\item Choice of loss decides statistical properties of $f$: Robustness, error distribution (see later)
+\item Choice of loss decides computational / optimization properties of minimization of $\risket$:
+  Smoothness of objective, can gradient methods be applied, uni- or multimodality. \\
+  If $\Lxy$ is convex in its second arguments, and $\fxt$ is linear in $\theta$, then $\risket$ is convex.
+  Hence every local minimum of $\risket$ is a global one. If $\Lxy$ not convex,
+  R might have multiple local minima (bad!).
+\end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{Regression losses - L2 squared loss}
+\begin{itemize}
+\item $\Lxy = (y-\fx)^2$ or $\Lxy = 0.5 (y-\fx)^2$
+\item Convex
+\item Differentiable, gradient no problem in loss minimization
+\item For latter: $\pd{0.5 (y-\fx)^2}{\fx} = y - \fx = \eps$, derivative is residual
+\item Tries to reduce large residuals (if residual is twice as large, loss is 4 times as large), hence
+  outliers in $y$ can become problematic
+\item Connection to Gaussian distribution (see later)
+\end{itemize}
+
+<<echo=FALSE, results='hide', fig.height=3>>=
+x = seq(-2, 2, by = 0.01); y = x^2
+qplot(x, y, geom = "line", xlab = expression(y-f(x)), ylab = expression(L(y-f(x))))
+@
+
+\framebreak
+
+According to the law of total expectation
+\begin{displaymath}
+  \E_{xy} [\Lxy] = \E_x
+  \left[\E_{y|x}[(y-\fx)^2|x=x]\right]
+\end{displaymath}
+For the optimal prediction of $f$ holds
+$$
+  \fh(x) = \mbox{argmin}_c \E_{y|x}[(y-c)^2|x=x]=\E (y | x=x)
+$$
+
+So for squared loss the best prediction in every point is the conditional expectation of $y$ given $x$.
+
+\lz
+
+The last step follows from:
+$$
+E[(y - c)^2] = Var[y - c] + (E[y - c])^2 = Var[y] + (E[y] - c)^2
+$$
+This is obviously minimal for $c = E[y]$.
+\end{vbframe}
+
+
+
+\begin{vframe}{Regression losses - L1 absolute loss}
+\begin{itemize}
+\item $\Lxy = |y-f(x)|$
+\item Convex
+\item No derivatives for $r = 0$, $y = f(x)$, optimization becomes harder
+\item More robust, outliers in $y$ are less problematic
+\item $\fh(x) = \text{median of } y | x$
+\item Connection to Laplace distribution (see later)
+\end{itemize}
+
+<<echo=FALSE, results='hide', fig.height=3, fig.align='center'>>=
+x = seq(-2, 2, by = 0.01); y = abs(x)
+qplot(x, y, geom = "line", xlab = expression(y-f(x)), ylab = expression(L(y-f(x))))
+@
+\end{vframe}
+
+\begin{vframe}{Regression losses - Huber loss}
+\begin{itemize}
+\item Huber loss $L_\delta(y, f(x)) =
+  \begin{cases}
+  \frac{1}{2}(y-f(x))^2  & \text{ if } |y-f(x)| \le \delta \\
+  \delta |y-f(x)|-\frac{1}{2}\delta^2 \quad & \text{ otherwise }
+  \end{cases}$
+\item Piecewise combination of of L1 and L2 loss
+\item Convex
+\item Combines advantages of L1 and L2 loss: differentiable, robust
+\end{itemize}
+
+<<echo=FALSE, results='hide', fig.height=3, fig.align='center'>>=
+x = seq(-2, 2, by = 0.01); y = ifelse(abs(x) <= 1, 1 / 2 * x^2, abs(x) - 1 / 2)
+qplot(x, y, geom = "line", xlab = expression(y-f(x)), ylab = expression(L(y-f(x))))
+@
+\end{vframe}
+
+\begin{vbframe}{Classification losses}
+
+
+% For classification problems, i. e. output variable $y \in \{-1, 1\}$ the risk can be written as
+
+
+% For categorical output variable $y\in \gset$ we can use the \emph{0-1-loss}
+
+% $$
+% L(y, h(x)) =\I_{y \ne h(x)} =
+   % \footnotesize \begin{cases} 1 \quad \text{ if } y \ne h(x) \\ 0 \quad    \text{ if } y = h(x)  \end{cases}
+% $$
+
+% by applying \emph{Bayes theorem}
+
+% \begin{eqnarray*}
+% p(x, y) = p(y|x)p(x).
+% \end{eqnarray*}
+
+% \framebreak
+
+% This can be simplified to
+
+% $$
+% \risk(f) = \int_X [L(1, f(x)) \pix + L(-1, f(x)) (1 - \pix) p(x)] dx.
+% $$
+
+% For given $x$, one can minimize the risk pointwise for any convex loss function by differentiating the last equality with respect to $f$. Thus, minimizers for all of the loss functions are easily obtained as functions of only $f(x)$ and $\pi(x)$.
+
+% \framebreak
+
+We will now introduce some loss functions, mainly for binary output.
+
+Notice that $f(x)$ outputs a score and $\sign(\fx)$ will be the corresponding label.
+
+\lz
+
+Most following loss functions will depend on the so-called \emph{margin}
+$$
+y\fx =  \begin{cases} > 0  \quad &\text{ if } y = \sign(\fx) \text{ (correct classification)} \\
+                      < 0 \quad &\text{ if } y \ne \sign(\fx) \text{ (misclassification)} \end{cases}
+$$
+
+
+% \begin{eqnarray*}
+% \risk(f) &=& \E_{xy}[\Lxy] = \int_X \int_Y \Lxy p(x, y) dy~dx \\
+% &=& \int_X \int_Y \Lxy p(y|x)p(x) dy~dx
+% \end{eqnarray*}
+
+\framebreak
+
+
+\end{vbframe}
+
+
+\begin{vbframe}{Bin. classif. losses - 0-1 loss}
+\begin{itemize}
+\item $\Lxy = [y \neq f(x)] = [\yf < 0]$
+\item Intuitive, often what we are interested in
+\item Not even continuous, even for linear $f$ the optimization problem is NP-hard and
+  close to intractable
+\end{itemize}
+
+<<echo=FALSE, results='hide', fig.height=3, fig.align='center'>>=
+x = seq(-2, 2, by = 0.01); y = as.numeric(x < 0)
+qplot(x, y, geom = "line", xlab = expression(yf(x)), ylab = expression(L(yf(x))))
+@
+\end{vbframe}
+
+\begin{vbframe}{Multiclass 0-1 loss and Bayes classifier}
+
+Assume $h \in \Yspace$ with $|\Yspace| = g$. We can define the 0-1-loss for multiclass:
+$$L(y, \hx) = [y \neq \hx]$$.
+We can in general rewrite the loss again as:
+\begin{eqnarray*}
+  \risk(h) & = & \E_{xy}[L(y, h)] = E_x [ E_{y|x} [ L(y, \hx) ] ] =  \\
+           & = & E_x \sum_{k \in \Yspace} L(k, \hx) P(y = k| x = x) \\
+           & = & E_x \sum_{k \in \Yspace} L(k, \hx) \pikx
+\end{eqnarray*}
+
+NB: This works, too, (of course) for $\Yspace = \{-1, 1\}$ and a score function $f$:
+$$
+\risk(f) = \mathbb{E}_x [L(1, f(x)) \pix + L(-1, f(x)) (1 - \pix)].
+$$
+
+\framebreak
+We can again minimize pointwise, and for a general cost-sensitive loss $L(y, h)$ this is:
+
+\begin{eqnarray*}
+  \hxh &=& \argmin_{l \in \Yspace} \sum_{k \in \Yspace} L(k, l) \pikx \\
+\end{eqnarray*}
+
+For the 0-1 loss this becomes:
+
+$$
+\hxh = \argmin_{k \in \Yspace} (1 - \pikx) = \argmax_{k \in \Yspace} \pikx
+$$
+
+If we know $\Pxy$ perfectly (and hence $\pikx$), we have basically constructed the loss-optimal
+classifier and we call it the \emph{Bayes classifier} and its expected loss the \emph{Bayes loss} or
+\emph{Bayes error rate} for 0-1-loss.
+
+
+% and get the risk function
+
+
+% The minimizer of $\risk(f)$ for the 0-1-loss is
+
+% \begin{eqnarray*}
+% \fh(x) &=&    \footnotesize \begin{cases} 1 \quad \text{ if } \pix > 1/2 \\ -1 \quad \pix < 1/2  \end{cases}
+% \end{eqnarray*}
+
+\lz
+
+
+\end{vbframe}
+
+
+% \framebreak
+
+% \textbf{Square-loss:}
+
+
+% If we use instead the \emph{square-loss}
+
+% $$
+% \Lxy = (1-y\fx)^2,
+% $$
+
+% we get the risk function
+
+% \begin{eqnarray*}
+% \risk(f) &=& \mathbb{E}_x [(1-\fx)^2 \pix + (1+\fx)^2 (1-\pix)] \\
+% &=& \mathbb{E}_x [1 + 2\fx + \fx^2-4\fx\pix].
+% \end{eqnarray*}
+
+% By differentiating w. r. t. $f(x)$ we get the minimizer of $\risk(f)$ for the square loss function
+
+% \begin{eqnarray*}
+% \fh(x) &=& 2\pix -1.
+% \end{eqnarray*}
+
+% \framebreak
+
+% \vspace*{0.2cm}
+
+% The square loss function tends to penalize outliers excessively. Functions which yield high values of $(x)$ will perform poorly with the square loss function, since high values of $yf(x)$ will be penalized severely, regardless of whether the signs of $y$ and $f(x)$ match.
+
+% <<echo=FALSE, results='hide', fig.height= 1.8, fig.asp = 0.4>>=
+% x = seq(-2, 5, by = 0.01)
+% plot(x, (1-x)^2, type = "l", xlab = expression(yf(x)), ylab = expression(paste((1-yf(x))^2)), main = "Square loss")
+% box()
+% @
+
+% \lz
+
+% \end{vbframe}
+
+\begin{vbframe}{Bin. classif. losses - Hinge loss}
+\begin{itemize}
+\item $\Lxy = \max\{0, 1 - \yf\}$, used in SVMs
+\item Convex
+\item No derivatives for $\yf = 1$, optimization becomes harder
+\item More robust, outliers in $y$ are less problematic
+\end{itemize}
+
+<<echo=FALSE, results='hide', fig.height=3, fig.align='center'>>=
+x = seq(-2, 2, by = 0.01); y = pmax(0, 1 - x)
+qplot(x, y, geom = "line", xlab = expression(yf(x)), ylab = expression(L(yf(x))))
+@
+
+% \framebreak
+
+% we get the risk function
+
+% \begin{eqnarray*}
+% \risk(f) &=& \mathbb{E}_x [\max\{0, 1 - \fx\} \pix + \max\{0, 1 + y\fx\} (1-\pix)].
+% \end{eqnarray*}
+
+% The minimizer of $\risk(f)$ for the hinge loss function is
+
+% \begin{eqnarray*}
+  % $fh(x) =  \footnotesize \begin{cases} 1 \quad \text{ if } \pix > 1/2 \\ -1 \quad \pix < 1/2  \end{cases}$
+% \end{eqnarray*}
+
+
+\
+\end{vbframe}
+
+
+\begin{vbframe}{Bin. classif. losses - Logistic loss}
+\begin{itemize}
+  \item $\Lxy = \ln(1+\exp(-y\fx))$, used in logistic regression
+  \item Also called Bernoulli loss
+\item Convex, differentiable, not robust
+\end{itemize}
+
+<<fig.height=3>>=
+x = seq(-2, 2, by = 0.01); y = log(1 + exp(-x))
+qplot(x, y, geom = "line", xlab = expression(yf(x)), ylab = expression(L(yf(x))))
+@
+% the minimizer of $\risk(f)$ for the logistic loss function is
+
+% \begin{eqnarray*}
+% \fh(x) &=&  \ln \biggl(\frac{\pix}{1-\pix}\biggr)
+% \end{eqnarray*}
+
+% The function is undefined when $\pix = 1$ or $\pix = 0$, but predicts a smooth curve which grows when $\pix$ increases and equals $0$ when $\pix = 0.5$
+
+
+\end{vbframe}
+
+\begin{vbframe}{Bin. classif. losses - Cross-entropy loss}
+\begin{itemize}
+  \item Using the alternative label convention $y\in \{0, 1\}$
+  \item $\Lxy = -y\ln(\pix)-(1-y)\ln(1-\pix)$
+  \item Basically the same as the logistic loss when we act on $\pix \in [0,1]$ instead of $\fx \in \R$
+  \item  The cross entropy loss is closely related to the Kullback-Leibler divergence, which will be introduced later in the chapter.
+  \item Very often used in neural networks with binary output nodes for classification.
+\end{itemize}
+
+
+\end{vbframe}
+
+
+\begin{vbframe}{Bin. classif. losses - Exponential loss}
+\begin{itemize}
+  \item $\Lxy = \exp(-y\fx)$, used in AdaBoost
+\item Convex, differentiable, not robust
+\item Quite similar to logistic loss
+\end{itemize}
+
+<<fig.height=3>>=
+x = seq(-2, 2, by = 0.01); y = exp(-x)
+qplot(x, y, geom = "line", xlab = expression(yf(x)), ylab = expression(L(yf(x))))
+@
+
+% we get the risk function
+
+% \vspace*{-.5cm}
+
+% \begin{eqnarray*}
+% \risk(f) &=& \mathbb{E}_x [\exp(-\fx) \pix + \exp(f(x)) (1-\pix)]
+% \end{eqnarray*}
+
+\end{vbframe}
+%
+% \begin{vbframe}{Risk minimizing functions}
+%
+% Overview of binary classification losses and the corresponding risk minimizing functions:
+%
+% \lz
+%
+% \begin{tabular}{p{2.5cm}|p{3.5cm}|p{4.5cm}}
+%   loss name & loss formula  & minimizing function \\
+%   \hline
+%   0-1 & $[y \neq \hx]$ & $\hxh = \footnotesize \begin{cases} 1 \quad \text{ if } \pix > 1/2 \\ -1 \quad \pix < 1/2  \end{cases}$ \\
+%   Hinge & $\max\{0, 1 - \yf\}$ & $\fh(x) =  \footnotesize \begin{cases} 1 \quad \text{ if } \pix > 1/2 \\ -1 \quad \pix < 1/2  \end{cases}$ \\
+%   Logistic & $\ln(1+\exp(-y\fx))$ & $\fh(x) =  \ln \biggl(\frac{\pix}{1-\pix}\biggr)$ \\
+%   Cross entropy & $-y\ln(\pix) \newline -(1-y)\ln(1-\pix)$ & \\
+%   & & \\
+%   Exponential & $\exp(-y\fx)$ &
+%
+% \end{tabular}
+%
+% \end{vbframe}
+
+% \section{Selected methods for regression and classification}

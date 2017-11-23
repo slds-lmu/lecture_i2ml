@@ -1,0 +1,115 @@
+% Introduction to Machine Learning
+% Day 1
+
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../style/preamble.Rnw")
+@
+% Load all R packages and set up knitr
+<<setup-r, child="../style/setup.Rnw", include = FALSE>>=
+@
+
+\lecturechapter{1}{k-nearest neighbours}
+\lecture{Introduction to Machine Learning}
+
+
+
+
+<<setup-child2, include = FALSE>>=
+library('kknn')
+n = 30
+set.seed(1234L)
+tar = factor(c(rep(1L, times = n), rep(2L, times = n)))
+feat1 = c(rnorm(n, sd = 1.5), rnorm(n, mean = 2, sd = 1.5))
+feat2 = c(rnorm(n, sd = 1.5), rnorm(n, mean = 2, sd = 1.5))
+bin.data = data.frame(feat1, feat2, tar)
+bin.tsk = makeClassifTask(data = bin.data, target = "tar")
+@
+
+
+\begin{vbframe}{k-Nearest-Neighbors}
+
+\begin{itemize}
+\item k-NN is a non-parametric method for regression and classification
+\item Models predictions $\yh$ for $x$ by looking at $\xyi$ closest to $x$
+\item Closeness implies distance measure (usually euclidean)
+\item $N_k(x)$ is called the \emph{neighborhood} of $x$, if it consists of the $k$-closest points $\xi$ to $x$
+  in the training sample.
+\end{itemize}
+
+
+<<echo=FALSE, fig.height=3>>=
+circleFun = function(center = c(0,0), diameter = 1, npoints = 100){
+    r = diameter / 2
+    tt = seq(0,2*pi,length.out = npoints)
+    xx = center[1L] + r * cos(tt)
+    yy = center[2L] + r * sin(tt)
+    return(data.frame(x1 = xx, x2 = yy, class = NA))
+}
+set.seed(1234L)
+n = 30L
+x1 = rnorm(n)
+x2 = rnorm(n)
+mat = as.data.frame(cbind(x1, x2))
+mat = rbind(mat, c(0, 0))
+dists = sort(as.matrix(dist(mat))[n + 1L, ])
+neighbs = as.numeric(names(dists[1:10L]))
+mat$class = ifelse(1:(n+1) %in% neighbs, 1L, 0L)
+mat[n + 1L, "class"] = 2L
+mat$class = as.factor(mat$class)
+circle.dat = circleFun(c(0, 0), 2.2, npoints = 100)
+q = ggplot(mat, aes(x = x1, y = x2, color = class)) + geom_point(size = 3)
+q = q + geom_polygon(data = circle.dat, alpha = 0.2, fill = "#619CFF")
+q = q + theme(legend.position="none")
+q
+@
+
+\framebreak
+
+Predictions:
+\begin{itemize}
+\item For regression: \\
+$$
+\yh = \frac{1}{k} \sum_{\xi \in N_k(x)} \yi
+$$
+\item For classification a majority vote is used: \\
+$$
+\yh = \argmax_l \sum_{\xi \in N_k(x)} \I(\yi = l)
+$$
+And posterior probabilities can be estimated with:
+$$
+\hat{\pi}_l(x)= \frac{1}{k} \sum_{\xi \in N_k(x)} \I(\yi = l)
+$$
+\end{itemize}
+
+\framebreak
+
+<<echo=FALSE, warning=FALSE, message=FALSE>>=
+lrn1 = makeLearner("classif.kknn", par.vals = list(k = 3L))
+lrn2 = makeLearner("classif.kknn", par.vals = list(k = 15L))
+lrn3 = makeLearner("classif.kknn", par.vals = list(k = 30L))
+lrn4 = makeLearner("classif.kknn", par.vals = list(k = 50L))
+plotLearnerPrediction(lrn1, iris.task)
+plotLearnerPrediction(lrn2, iris.task)
+plotLearnerPrediction(lrn3, iris.task)
+plotLearnerPrediction(lrn4, iris.task)
+@
+
+\framebreak
+
+\begin{itemize}
+\item k-NN has many more parameters to estimate than the simpler LM.
+\item k-NN has no training-step and is a very local model.
+\item We cannot simply use least-squares loss on the training data for picking $k$,
+  because we would always pick $k=1$.
+\item k-NN makes no assumptions about the underlying data distribution.
+\item The smaller k, the less stable, less smooth and more \enquote{wiggly} the decision
+  boundary becomes.
+\item Accuracy of k-NN can be severely degraded by the presence of noisy or irrelevant features,
+  or if the feature scales are not consistent with their importance.
+\item In binary classification, we might choose an odd k to avoid ties.
+\item For $\yh$, we might inversely weigh neighbors with their distance to $x$, e.g., $w_i = 1/d(\xi, x)$
+\item As the size of training data set approaches infinity, the 1-NN classifier guarantees
+  an error rate of no worse than twice the Bayes error rate.
+\end{itemize}
+\end{vbframe}
