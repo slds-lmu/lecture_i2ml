@@ -1,0 +1,288 @@
+% Introduction to Machine Learning
+% Day 1
+
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../style/preamble.Rnw")
+@
+% Load all R packages and set up knitr
+<<setup-r, child="../style/setup.Rnw", include = FALSE>>=
+@
+
+<<bin-task>>=
+n = 30
+set.seed(1234L)
+tar = factor(c(rep(1L, times = n), rep(2L, times = n)))
+feat1 = c(rnorm(n, sd = 1.5), rnorm(n, mean = 2, sd = 1.5))
+feat2 = c(rnorm(n, sd = 1.5), rnorm(n, mean = 2, sd = 1.5))
+bin.data = data.frame(feat1, feat2, tar)
+bin.tsk = makeClassifTask(data = bin.data, target = "tar")
+@
+
+
+\lecturechapter{1}{Approaches to Classification}
+\lecture{Introduction to Machine Learning}
+
+
+\begin{vbframe}{Linear discriminant analysis (LDA)}
+
+% Linear discriminant follows a similar idea. As before, we want to classify a categorical target $y \in \Yspace = \gset$ on basis of $x$.
+
+% \lz
+
+LDA follows a generative approach, each class density is modeled as a \emph{multivariate Gaussian}
+with equal covariance, i. e. $\Sigma_k = \Sigma \quad \forall k$. \\
+$$
+\pdfxyk = \frac{1}{(2\pi)^{\frac{p}{2}}|\Sigma_k|^{\frac{1}{2}}} \exp(-\frac{1}{2}(x - \mu_k)^T \Sigma_k^{-1} (x - \mu_k))
+$$
+
+\lz
+% \framebreak
+
+Parameters $\theta$ are estimated in a straight-forward manner by estimating
+\begin{eqnarray*}
+\hat{\pi}_k &=& n_k / n,\text{ where $n_k$ is the number of class $k$ observations} \\
+\hat{\mu}_k &=& \sum_{i: y_i = k} \frac{x_i}{n_k} \\
+\hat{\Sigma} &=& \frac{1}{n - g} \sum_{k=1}^g \sum_{i: y_i = k} (x_i - \hat{\mu}_k) (x_i - \hat{\mu}_k) ^T
+\end{eqnarray*}
+
+
+\framebreak
+
+For the posterior probability of class $k$ it follows:
+\begin{eqnarray*}
+\pikx &\propto& \pi_k \cdot \pdfxyk \\
+&=& \pi_k \exp(- \frac{1}{2} x^T\Sigma^{-1}x - \frac{1}{2} \mu_k^T \Sigma^{-1} \mu_k + x^T \Sigma^{-1} \mu_k ) \\
+&=& \exp(- \frac{1}{2} x^T\Sigma^{-1}x) \exp(\log \pi_k  - \frac{1}{2} \mu_k^T \Sigma^{-1} \mu_k + x^T \Sigma^{-1} \mu_k ) \\
+&=& \exp(- \frac{1}{2} x^T\Sigma^{-1}x) \exp(\theta_{0k} + x^T \theta_k)
+\end{eqnarray*}
+
+by defining
+$\theta_{0k} := \log \pi_k  - \frac{1}{2} \mu_k^T \Sigma^{-1} \mu_k$ and $\theta_k := \Sigma^{-1} \mu_k$.
+
+\framebreak
+
+Finally, the posterior probability becomes
+
+$$
+\pikx = \frac{\pi_k \cdot \pdfxyk }{\pdfx} = \frac{\exp(\theta_{0k} + x^T \theta_k)}{\sum_j \exp(\theta_{0j} + x^T \theta_j)}
+$$
+
+(the term $\exp(- \frac{1}{2} x^T\Sigma^{-1}x)$ will cancel out in numerator and denominator).
+
+\lz
+
+And (simplified) discriminant functions can be defined as
+$$ f_k(x) =  \theta_{0k} + x^T \theta_k $$
+Hence, LDA provides a Linear classifier with linear decision boundaries.
+
+% \lz
+
+% \framebreak
+
+% If we compare the likelihood of two classes $k, l \in \gset$ via the log-odds, we end up in a linear function of x
+
+% \small
+% \begin{eqnarray*}
+% \log \frac{\pikx}{\pi_l(x)}&=& \log\exp(\theta_{0k} + x^T \theta_k)-\log\exp(\theta_{0l} + x^T \theta_l) \\
+% &=& (\theta_{0k} - \theta_{0l}) + x^T(\theta_k-\theta_l)
+% \end{eqnarray*}
+
+% \normalsize
+% This equation is linear in $x$, so the decision boundary between the classes can
+% only be linear. Linear discriminant analysis provides a linear classifier.
+
+
+
+% Finally we will predict the most probable category given $x$
+
+% $$
+% \yh = h(x) = \argmax_{k \in \gset} \pikx.
+% $$
+
+\framebreak
+
+<<echo = FALSE, warning=FALSE, message=FALSE>>=
+plotLearnerPrediction("classif.lda", bin.tsk)
+@
+
+\end{vbframe}
+
+
+\begin{vbframe}{Quadratic discriminant analysis (QDA)}
+
+QDA is a direct generalization of LDA, where the class densities are now Gaussians with unequal covariances $\Sigma_k$.
+$$
+\pdfxyk = \frac{1}{(2\pi)^{\frac{p}{2}}|\Sigma_k|^{\frac{1}{2}}} \exp(-\frac{1}{2}(x - \mu_k)^T \Sigma_k^{-1} (x - \mu_k))
+$$
+
+\lz
+
+Parameters are estimated in a straight-forward manner by:\\
+\begin{eqnarray*}
+\hat{\pi}_j &=& \frac{n_j}{n},\text{ where $n_j$ is the number of class $j$ observations} \\
+\hat{\mu}_j &=& \sum_{i: y_i = j} \frac{x_i}{n_j} \\
+\hat{\Sigma_j} &=& \frac{1}{n_j - 1} \sum_{i: y_i = j} (x_i - \hat{\mu}_j) (x_i - \hat{\mu}_j)^T \\
+\end{eqnarray*}
+
+\framebreak
+
+\begin{eqnarray*}
+\pikx &\propto& \pi_k \cdot \pdfxyk \\
+&=& \pi_k |\Sigma_k|^{-\frac{1}{2}}\exp(- \frac{1}{2} x^T\Sigma_k^{-1}x - \frac{1}{2} \mu_k^T \Sigma_k^{-1} \mu_k + x^T \Sigma_k^{-1} \mu_k )
+\end{eqnarray*}
+
+Taking the log of the above, we can define a discriminant function that is quadratic in $x$.
+
+$$
+\log \pi_k - \frac{1}{2} \log |\Sigma_k| - \frac{1}{2} x^T\Sigma_k^{-1}x - \frac{1}{2} \mu_k^T \Sigma_k^{-1} \mu_k + x^T \Sigma_k^{-1} \mu_k
+$$
+
+
+% Let's look at the log-odds now. \\
+
+% \begin{eqnarray*}
+% \log \frac{\pikx}{\pi_g(x)}&=& \log \frac{\pi_k}{\pi_g}
+% - \frac{1}{2} \log \frac{|\Sigma_k|}{|\Sigma_g|}
+% + x^T(\Sigma_k^{-1}\mu_k - \Sigma_g^{-1}\mu_g) \\
+% &-& \frac{1}{2} x^T (\Sigma_k^{-1} - \Sigma_g^{-1})x
+% - \frac{1}{2} x^T (\mu_k^T\Sigma_k^{-1}\mu_k - \mu_g^T\Sigma_g^{-1}\mu_g)
+% \end{eqnarray*}
+
+% We see that this function is quadratic in $x$, hence we obtain a quadratic decision boundary.
+
+% \framebreak
+
+
+% Finally we will predict again the most probable category given $x$
+
+% $$
+% \yh = h(x) = \argmax_{k \in \gset} \pikx.
+% $$
+
+\framebreak
+
+<<fig.height=5>>=
+plotLearnerPrediction("classif.qda", bin.tsk)
+@
+
+\framebreak
+
+<<fig.height=5>>=
+n = 30
+set.seed(1234L)
+tar = factor(c(rep(1L, times = n), rep(2L, times = n)))
+x1 = c(rnorm(n, sd = 2), rnorm(n))
+x2 = c(rnorm(n, mean = 1,  sd = 2), rnorm(n))
+qda.data = data.frame(x1, x2, tar)
+tsk = makeClassifTask(data = qda.data, target = "tar")
+plotLearnerPrediction("classif.qda", tsk)
+@
+
+\end{vbframe}
+
+\begin{vbframe}{Naive Bayes classifier}
+
+Another generative technique for categorical response $y \in \gset$ is called \emph{Naive Bayes classifier}.
+Here, we make the \enquote{naive} \emph{conditional independence assumption}, that the features given the category $y$ are conditionally independent of each other, i. e.,
+
+% The technique is based on \emph{Bayes theorem}
+% $$
+% \pikx = \postk = \frac{\pdfxyk \cdot \pi_k}{\pdfx} = \frac{\text{likelihood } \cdot \text{ prior}}{ \text{evidence}},
+% $$
+$$
+\pdfxyk = p((x_1, x_2, ..., x_p)|y = k)=\prod_{j=1}^p p(x_j|y = k).
+$$
+
+\lz
+
+Putting this together we get
+$$
+\pikx  \propto \pik \cdot \prod_{j=1}^p p(x_j|y = k)
+$$
+
+% The Naive Bayes classifier is then obtained by maximizing the above equation
+% $$
+% \yh = h(x) = \argmax_{k\in \gset}\pi_k\prod_{i=1}^p p(x_i | y = k).
+% $$
+
+\framebreak
+
+Parameters estimation now has become simple, as we only have to estimate $\pdf(x_j | y = k)$, which is univariate (given the class k).
+
+\lz
+
+For numerical $x_j$, often a univariate Gaussian is assumed, and we estimate $(\mu_j, \sigma^2_j)$ in the standard manner. Note, that we now have constructed a QDA model with strictly diagonal covariance structures for each class, hence this leads to quadratic discriminant functions.
+
+\lz
+
+For categorical features $x_j$, we simply use a Bernoulli / categorical distribution model for $p(x_j | y = k)$ and estimate the probabilities for $(j,k)$ by simply counting of relative frequencies in the standard manner.
+The resulting classifier is linear in these frequencies.
+
+\lz
+Furthermore, one can show that the Naive Bayes is a linear classifier in a particular feature space if the features are from exponential families (e. g. binomial, multinomial, normal distribution).
+
+\framebreak
+
+<<>>=
+learner = makeLearner("classif.naiveBayes")
+plotLearnerPrediction(learner, iris.task)
+@
+
+
+
+
+% In the general categorical case the modeled likelihood for $x_j$ with parameters $p_{kj}$ is:
+% % with $x = (x_1, \ldots \x_p)$
+%
+% $$
+% p(x_j | y = k) = \frac{(\sum x_i)!}{\prod_i x_i!} \prod_j p_{kj}^{[x_j = j]}
+% $$
+%
+% and for the completely observed data this becomes a multinomial distribution
+%
+% $$
+% \frac{(\sum_i x_i)!}{\prod_i x_i!} \prod_j p_{kj}^{v_{kj}},
+% $$
+%
+% with ${v_{kj}} = \sum_{i = 1}^n [x_j^{(i)} = 1]$ the number of times $(j, k)$ occurs.
+
+
+% \framebreak
+%
+%
+% We can now prove that the decision boundaries between klasses k and l are linear:
+%
+% $$
+% \log \frac{\pi_k(x)}{\pi_l(x)} \propto \log\frac{\pi_k}{\pi_l} + \sum_j v_{kj} \ln p_{kj} - \sum_j v_{lj} \ln p_{lj}
+% $$
+%
+% This is a linear function in the parameter vector $v = (v_{11}, \ldots, v_{1p}, \ldots, v_{g1} \ldots v_{gp})$.
+%
+% \framebreak
+%
+% Laplace smoothing: If a given class and feature value never occur together in the training data, then the frequency-based probability estimate will be zero.
+%
+% \lz
+%
+% This is problematic because it will wipe out all information in the other probabilities when they are multiplied.
+%
+% \lz
+%
+% A simple numerical correction, especially needed for smaller sample size, is to set $p_{kj} = \epsilon > 0$ instead of $p_{kj} = 0$.
+
+
+\end{vbframe}
+
+% \begin{vbframe}{Naive Bayes as a linear classifier}
+
+% In general, the \emph{Naive Bayes classifier} is \textbf{not} a \emph{linear} classifier.
+
+% \lz
+
+% However, it can be shown that the \emph{Naive Bayes classifier} is a linear classifier in a particular feature space if the features are from exponential families (e. g. binomial, multinomial, normal distribution) .
+
+% \end{vbframe}
+
+
+\endlecture

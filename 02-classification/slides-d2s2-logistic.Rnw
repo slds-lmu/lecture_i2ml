@@ -1,0 +1,551 @@
+
+% Introduction to Machine Learning
+% Day 1
+
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../style/preamble.Rnw")
+@
+% Load all R packages and set up knitr
+<<setup-r, child="../style/setup.Rnw", include = FALSE>>=
+@
+
+<<bin-task>>=
+n = 30
+set.seed(1234L)
+tar = factor(c(rep(1L, times = n), rep(2L, times = n)))
+feat1 = c(rnorm(n, sd = 1.5), rnorm(n, mean = 2, sd = 1.5))
+feat2 = c(rnorm(n, sd = 1.5), rnorm(n, mean = 2, sd = 1.5))
+bin.data = data.frame(feat1, feat2, tar)
+bin.tsk = makeClassifTask(data = bin.data, target = "tar")
+@
+
+\lecturechapter{1}{Logistic Regression}
+\lecture{Introduction to Machine Learning}
+
+\begin{vbframe}{Logistic regression}
+
+A \emph{discriminant} approach for directly modeling the posterior probabilities of the classes is \emph{Logistic regression}. For now, we will only look at the binary case $y \in \{0, 1\}$.
+Note that we will supress the intercept in notation.
+
+$$
+\pix = \post = \frac{\exp(\theta^Tx)}{1+\exp(\theta^Tx)} = s(\theta^T x)
+$$
+
+We can either directly assume the above form, or arrive at it by requiring that the log-odds
+are linear in $\theta$:
+
+$$
+\log \frac{\pix}{1-\pix} = \log\frac{\post}{\P(y = 0 | x)} = \theta^Tx.
+$$\
+
+\lz
+
+The logistic function $s(t) = \frac{\exp(t)}{1 + \exp(t)}$
+transforms the scores / log-odds $\theta^Tx$ into a probability.
+
+
+
+\framebreak
+
+Logistic regression is usually fitted by maximum likelihood.
+\begin{eqnarray*}
+\LLt &=& \prod_{i=1}^n \P(y = y^{(i)} | x^{(i)}, \theta) \\
+% &=& \prod_{i=1}^n (\P(y = 1 | x^{(i)}, \theta)^{y^{(i)}}[1 - \P(y = 1 | x^{(i)}, \theta)]^{1 - y^{(i)}} \\
+&=& \prod_{i=1}^n \pi(x^{(i)}, \theta)^{y^{(i)}} [1 - \pi(x^{(i)}, \theta)]^{1 - y^{(i)}}.
+\end{eqnarray*}
+
+% \framebreak
+
+% Consequently, the log-likelihood is derived by
+
+\small
+\begin{eqnarray*}
+\llt
+&=& \sum_{i=1}^n \yi \log[\pi(\xi, \theta)] + (1-\yi) \log [1 - \pi(\xi, \theta)]\\
+&=& \sum_{i=1}^n \yi \log [\exp(\theta^T \xi)] - \yi \log[1 + \exp(\theta^T \xi)] \\
+&\quad& + \quad (1 - \yi) \log \biggl[1 - \frac{\exp(\theta^T \xi)}{1 + \exp(\theta^T \xi)}\biggr]\\
+&=& \sum_{i=1}^n \yi \theta^T \xi - \log[1 + \exp(\theta^T \xi)]
+\end{eqnarray*}
+
+\framebreak
+
+\normalsize
+We can minimize our loss, by maximizing $\llt$.
+% Therefore, we need to differentiate w.r.t. $\theta$, which gives us the score function:\\
+% $$
+% s(\theta) = \fp{\llt}{\theta} = \sum_{i=1}^n \xi \cdot \left( \yi - \frac{\exp(\theta^T \xi)}{1 + \exp(\theta^T \xi)}\right) = 0
+% $$
+
+% \lz
+
+This now cannot be solved analytically, but is at least concave, so we have to refer to
+numerical optimization, e.g., BFGS.
+
+\lz
+
+In order to minimize the loss (misclassification), we should predict $y=1$, if
+
+$$
+\pi(x, \thetah) = \P(y = 1 | x, \thetah) = \frac{\exp(\thetah^T x)}{1+\exp(\thetah^Tx)} \ge 0.5,
+$$
+
+which is equal to
+$$
+\hat \theta^T x \ge 0.
+$$
+
+So logistic regression gives us a \emph{linear classifier}:
+$$
+\yh = h(\thetah^T x) =
+\begin{cases}
+1 & \text{ for } x^T\thetah \ge 0 \\
+0 & \text{ otherwise}
+\end{cases}
+$$
+
+
+\framebreak
+
+<<echo=FALSE>>=
+plotLearnerPrediction("classif.logreg", bin.tsk)
+@
+
+\end{vbframe}
+
+
+\begin{vbframe}{Error distributions and losses}
+
+Let us generalize what we have observed from the comparison between the maximum-likelihood
+and the risk-based approach linear regression.
+
+The maximum-likelihood principle is to maximize
+$$ \LLt = \prod_{i=1}^n \pdfyigxit $$
+or to minimize the neg. log-likelihood:
+$$ -\llt = -\sumin \lpdfyigxit $$
+Now let us define a new loss as:
+$$ \Lxyt = - \lpdfygxt $$
+And consider the empirical risk
+$$\risket = \sumin \Lxyt$$
+
+Then the maximum-likelihood estimator $\thetah$, which we obtain by optimizing $\LLt$ is identical
+to the loss-minimal $\thetah$ we obtain by minimizing $\risket$.
+This implies that we can identify for every error distribution and its pdf $\pdfygxt$ an
+equivalent loss function which leads to the same point estimator for the parameter vector $\theta$.
+We can even disregard multiplicative or additive constants in the loss,
+as they do not change the minimizer.
+
+The other way around does not always work: We cannot identify for every loss function and associated
+pdf for the distribution - the hinge loss is a prominent example.
+
+\framebreak
+
+Let us reconsider the logistic regression maximum likelihood fit. The neg. log-likelihood for the pdf is:
+
+$$
+-\lpdfygxt = - y \log[\pix] - (1-y) \log [1 - \pix]
+$$
+
+This is the cross-entropy loss. Logistic regression minimizes this, and we could use this loss
+for any other model with directly models $\pix$.
+
+\lz
+
+Now lets assume we have a score function $\fx$ instead of $\pix$. We can transform the score to a probability
+via the logistic transformation:
+
+\begin{eqnarray*}
+\pix     &=& \frac{\exp(\fx)}{1 + \exp(\fx)}   =  \frac{1}{1 + \exp(-\fx)}\\
+1- \pix  &=& \frac{\exp(-\fx)}{1 + \exp(-\fx)} =  \frac{1}{1 + \exp(\fx)}\\
+\end{eqnarray*}
+
+\framebreak
+
+The loss now becomes
+\begin{eqnarray*}
+-\lpdfygxt &=& -y \log[\pix] - (1-y) \log [1 - \pix] \\
+           &=& y \log[1 + \exp(-\fx)] + (1-y) \log[1 + \exp(\fx] \\
+\end{eqnarray*}
+For y=0 and y=1 this is:
+\begin{eqnarray*}
+y=0 &:& \log[1 + \exp(\fx] \\
+y=1 &:& \log[1 + \exp(-\fx)]
+\end{eqnarray*}
+If we would encode now with $\Yspace = \{-1,+1\}$, we can unify this like this:
+$$\Lxy = \log[1 + \exp(-\yf] $$
+So we have recovered the Bernoulli loss. LR minimizes this, and we could use this loss
+for any other model with directly models $\fx$.
+
+\end{vbframe}
+
+
+% We ended up maximizing
+
+% $$ \sumin \yi \theta^T \xi - \log[1 + \exp(\theta^T \xi)] $$
+
+% \framebreak
+
+% Regression
+
+% \lz
+
+% \begin{tabular}{ l  l | l l }
+%   loss name & loss formula  & pdf name   & pdf formula \\
+%   \hline
+%   squared   & $(y - f)^2$      & Gaussian & $exp()$       \\
+%   absolute  & $|y - f|$        & Laplace  & $...$         \\
+% \end{tabular}
+
+% \lz
+
+% Classification
+
+% \lz
+
+% \begin{tabular}{ l  l | l l }
+%   loss name & loss formula  & pdf name   & pdf formula \\
+%   \hline
+%   Bernoulli / cross entropy   & $(y - f)^2$      & Gaussian & $exp()$       \\
+% \end{tabular}
+
+
+
+\begin{vbframe}{Entropy}
+
+In some situations we might be interested in alternative definitions of uncertainty of a random variable $x$,
+as in traditional statistics. \emph{Information theory} establishes the so-called \emph{entropy}.
+
+\small
+\textbf{Thought experiment:}
+
+Level of uncertainty of rolling a die should be influenced by three factors:
+  \begin{enumerate}
+  \item The more sides, the harder to predict the outcome.
+
+  $\rightarrow$ Uncertainty grows \textit{monotonically} with number of potential outcomes.
+  \item The relative likelihood of each outcome determines the uncertainty.
+  The result of an \enquote{unfair} die is easier to predict than the result of a fair one.
+
+  $\rightarrow$ The uncertainty depends on the outcome probabilities $\{p_x(1),\ldots,p_x(K)\}$
+  \item The weighted uncertainty of independent events must sum.
+
+  The total uncertainty of rolling two independent dices must equal the sum of the uncertainties for each die alone.
+  For a composite event, its uncertainty should equal the sum of the single uncertainties weighted by the probabilities of their occurrence.
+  \end{enumerate}
+
+\framebreak
+
+\normalsize
+Those postulates lead to a unique mathematical expression for the entropy $H(x)$ for a RV $x$ with outcome probabilities $p_x(k):=\P(x=k)$ for $k \in \Xspace$.
+
+$$
+H(x)=-\sum_{k \in \Xspace} p_x(k) \log_2(p_x(k)) \quad \text{(in bits)}
+$$
+(Actually the base of the log is not uniquely determined)
+
+\lz
+
+More intuitively, the entropy describes how much information is received when we observe a specific value for a random variable $x$.
+
+\lz
+
+The term $-\log_2(p_x(k))$ is called the \emph{information} $I$ an observation of $x=k$ gives us about $x$.
+
+\lz
+
+Base $2$ means the information is measured in bits, but you can use any number $>1$ as base of the logarithm.
+
+\framebreak
+
+\textbf{Example 1:} flipping an (un-)fair coin
+
+\lz
+
+Let $p_x(1) = p$ and $p_x(0) = 1 - p$ .
+
+\lz
+
+The entropy is then given by
+$$
+H(x)= -p \cdot \log_2(p)-(1-p)\cdot \log_2(1-p).
+$$
+
+The entropy (uncertainty) is maximal for fair coin ($p=1/2$).
+
+<<echo=FALSE>>=
+x <- seq(0.1, 0.9, by = 0.01)
+y = - x * log2(x) - (1 - x) * log2(1 - x)
+plot(x, y, type = 'l', xlab = "p", ylab = "H(x)")
+box()
+@
+
+\framebreak
+
+\begin{columns}[T,onlytextwidth]
+\column{0.3\textwidth}
+\textbf{Example 2:} \\
+\lz
+\begin{center}
+<<echo=FALSE, size = "footnotesize">>=
+ex1 <- cbind(class=c("+","+","-","+","-","-", "-"), attr_1 = c(T,T,T,F,F,F,F), attr_2 = c(T,T,F,F,T,T,T))
+kable(ex1)
+@
+\end{center}
+\column{0.65\textwidth}
+\begin{itemize}
+\item How big is the uncertainty/entropy in \textit{class} (in bits)?
+\small
+\begin{eqnarray*}
+H(\text{class}) &=& - \sum_{k=+,\, -} P(k) log_2(P(k)) \\
+&=& - \frac{3}{7} log_2\left(\frac{3}{7}\right)  - \frac{4}{7} log_2\left(\frac{4}{7}\right) \\
+&=& 0.985
+\end{eqnarray*}
+\normalsize
+\item How much can it be reduced by knowing the other attributes?
+\end{itemize}
+\end{columns}
+
+\end{vbframe}
+
+\begin{vbframe}{Conditional entropy}
+
+The \emph{conditional entropy} $H(y|x)$ quantifies the uncertainty of $y$ that remains if the outcome of $x$ is given
+$$
+H(y|x) = \sum_{x \in \Xspace} p_x(x) H(y|x=x) \overset{(*)}{=}H(y|x) = H(y, x) - H(x).
+$$
+
+\textbf{Remark:}
+\begin{itemize}
+\item $H(y|x) = 0$ if (and only if) $y$ is completely determined by $x$
+\item $H(y|x) = H(y)$ if (and only if) $x$ and $y$ are independent
+\end{itemize}
+
+\framebreak
+
+\quad
+
+\vspace{.5cm}
+
+$\quad ^{(*)}$ Proof: \\
+\footnotesize
+\begin{eqnarray*}
+H(y|x) &=& \sum_{x \in \Xspace} p_x(x) H(y|x=x) = -\sum_{x \in \Xspace} p_x(x) \sum_{y \in \Yspace}p(y|x)\log_2 p(y|x) \\
+&=& - \sum_{x \in \Xspace}  \sum_{y \in \Yspace} p_x(x) \frac{p_{xy}(x, y)}{p_x(x)}\log_2 \frac{p_{xy}(x, y)}{p_x(x)}\\
+&=& - \sum_{x \in \Xspace, y \in \Yspace} p_{xy}(x, y)\log_2 \frac{p_{xy}(x, y)}{p_x(x)}\\
+&=& - \sum_{x \in \Xspace, y \in \Yspace} p_{xy}(x, y)\log_2 p_{xy}(x, y)+\sum_{x \in \Xspace, y \in \Yspace} p_{xy}(x, y)\log_2 p_x(x)\\
+&=& H(x, y) + \sum_{x\in \Xspace}p_x(x)\log_2 p_x(x) = H(x, y) - H(x)
+\end{eqnarray*}
+
+\framebreak
+\begin{columns}[T,onlytextwidth]
+\column{0.3\textwidth}
+\textbf{Example:} \\
+\lz
+\begin{center}
+<<echo=FALSE, size = "footnotesize">>=
+kable(ex1)
+@
+\end{center}
+\column{0.65\textwidth}
+\scriptsize
+
+\vspace*{1.5cm}
+
+$H(\text{class}|\text{attr}_1 = T) = - \frac{2}{3} log_2(\frac{2}{3}) - \frac{1}{3} log_2(\frac{1}{3}) = 0.92$ \\
+$H(\text{class}|\text{attr}_1 = F) = - \frac{1}{4} log_2(\frac{1}{4}) - \frac{3}{4} log_2(\frac{3}{4}) = 0.81$ \\
+$H(\text{class}|\text{attr}_2 = T) = - \frac{2}{5} log_2(\frac{2}{5}) - \frac{3}{5} log_2(\frac{3}{5}) = 0.97$ \\
+$H(\text{class}|\text{attr}_2 = F) = - \frac{1}{2} log_2(\frac{1}{2}) - \frac{1}{2} log_2(\frac{1}{2}) = 1$ \\
+\lz
+$H(\text{class}|\text{attr}_1) = \frac{3}{7} 0.92 + \frac{4}{7} 0.81 = 0.86$ \\
+$H(\text{class}|\text{attr}_2) = \frac{5}{7} 0.97 + \frac{2}{7} 1 = 0.98$
+
+\normalsize
+
+\end{columns}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Mutual information}
+
+The reduction of entropy after \textit{learning} $x$ is called \emph{mutual information}
+
+$$
+I(y;x) := H(y) - H(y|x) = H(y) + H(x) - H(x, y).
+$$
+
+\textbf{Remark:}
+\begin{itemize}
+\item The mutual information is symmetric, i. e. $I(y;x) = I(x;y)$.
+\item It describes the amount of information about one RV obtained through the other one (\emph{information gain}).
+\end{itemize}
+
+\begin{figure}
+ \includegraphics{figure_man/mutualinformation.pdf}
+\end{figure}
+
+\framebreak
+
+\begin{columns}[T,onlytextwidth]
+\column{0.3\textwidth}
+\begin{center}
+<<echo=FALSE, size = "footnotesize">>=
+kable(ex1)
+@
+\end{center}
+\column{0.65\textwidth}
+\begin{itemize}
+\item For our example we can compute the information gains:
+\footnotesize
+\begin{eqnarray*}
+I(\text{class}; \text{attr}_1) &=& H(\text{class}) - H(\text{class}|\text{attr}_1) \\
+&=& 0.985 - 0.86 = 0.125
+\end{eqnarray*}
+
+\begin{eqnarray*}
+I(\text{class}; \text{attr}_2) &=& H(\text{class}) - H(\text{class}|\text{attr}_2) \\
+&=& 0.985 - 0.98 = 0.005
+\end{eqnarray*}
+\normalsize
+\lz
+\item $\text{attr}_1$ tells us more about $\text{class}$.
+\end{itemize}
+
+\end{columns}
+
+\end{vbframe}
+
+\begin{vbframe}{Kullback-Leibler-Divergence}
+
+Suppose that data is being generated from an unknown distribution $p(x)$. Suppose we modeled $p(x)$ using an approximating distribution $q(x)$. A "good" approximation $q(x)$ should minimize the difference to $p(x)$.
+
+\lz
+
+A measure for the difference between $p$ and $q$ is the \emph{Kullback-Leibler-Divergence}
+\begin{eqnarray*}
+D_{KL}(p||q) := & \int_{-\infty}^{\infty} p(z) \cdot \log \frac{p(z)}{q(z)} dz &\quad \text{continuous case} \\
+D_{KL}(p||q) := & \sum_{k} p(k) \cdot \log \frac{p(k)}{q(k)} &\quad \text{discrete case}
+\end{eqnarray*}
+
+\textbf{Remark:}
+\begin{itemize}
+\item In general: $D_{KL}(p||q) \ne D_{KL}(p||q)$ (no symmetry)
+\item $D_{KL}$ is often called the \emph{information gain} achieved if $q$ is used instead of $p$.
+\end{itemize}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Mutual information \& Kullback-Leibler-Divergence}
+
+$I(x;y)$ is the \emph{information gain} achieved if the product of marginal distributions $p_x(x) p_y(y)$ is used instead of the joint distribution $p_{xy}(x,y)$:
+
+\begin{eqnarray*}
+I(x;y) &=& D_{KL}(p_{xy}||p_x p_y) = \sum_{x \in \Xspace} \sum_{y \in \Yspace} p_{xy}(x, y) \cdot \log \biggl(\frac{p_{xy}(x, y)}{p_x(x)p_y(y)}\biggr)
+\end{eqnarray*}
+
+\framebreak
+
+\footnotesize
+Proof:
+
+\begin{eqnarray*}
+I(x;y) &=& H(y) + H(x) - H(x, y)\\
+&=& -\sum_{y \in \Yspace} p_y(y) \log_2(p_y(y)) -\sum_{x \in \Xspace} p_x(x) \log_2(p_x(x)) \\
+&& -\sum_{x \in \Xspace, y \in \Yspace} p_{xy}(x, y) \log_2(p_{xy}(x, y))\\
+&=& -\sum_{x \in \Xspace, y \in \Yspace}p_{xy}(x, y) \log_2(p_y(y)) -\sum_{x \in \Xspace, y \in \Yspace} p_{xy}(x, y) \log_2(p_x(x)) \\
+&& \quad+ \sum_{x \in \Xspace, y \in \Yspace} p_{xy}(x, y) \log_2(p_{xy}(x, y)) \\
+&=& \sum_{x \in \Xspace} \sum_{y \in \Yspace} p_{xy}(x, y) \cdot \log \biggl(\frac{p_{xy}(x, y)}{p_x(x)p_y(y)}\biggr) = D_{KL}(p_{xy}||p_x p_y)
+\end{eqnarray*}
+
+
+\end{vbframe}
+
+% \begin{vbframe}{Cross-Entropy}
+
+% A related measure to compare two probability measures $p$ and $q$ is the \emph{cross entropy} (deviance):
+% $$
+% H(p, q) = - \sum_{x} p(x) \log q(x)
+% $$
+
+% The cross entropy defines a loss function.
+
+% Remember the log-Likelihood function derived in the example of logistic regression with binary response $y\in \{0, 1\}$.
+
+% \small
+% \begin{eqnarray*}
+% -\llt &=&   -\sum_{i=1}^n y^{(i)} \log[\P(y = 1 | x^{(i)} , \theta)] + (1-y^{(i)}) \log [1 - \P(y = 1 | x^{(i)} , \theta)]\\
+% &=& \sum_{i=1}^n H(p_i, q_i)
+% \end{eqnarray*}
+
+% \normalsize
+% with $p_i := y^{(i)}$ are our true labels and $q_i:=\P(y = 1 | x^{(i)} , \theta)$ the posterior probabilites.
+
+% \end{vbframe}
+
+% old slides about entropy and mutual information
+
+%\begin{vbframe}{Entropy}
+% Entnommen aus A Light Discussion and Derivation of Entropy, Jonathon Shlens, Google Research 09.04.14 in Appendix auch Beweis enthalten
+%\begin{itemize}
+%\item The uncertainty $H$ of a discrete random %variable $X$ is the entropy.
+
+%(\textit{A Light Discussion and Derivation of Entropy}, Jonathon Shlens, Google Research, \url{http://arxiv.org/pdf/1404.1998.pdf})
+%\item Thought experiment: The level of uncertainty of rolling a die should intuitively be influenced by three factors:
+%  \begin{enumerate}
+%  \item The more sides a die has, the harder to predict the outcome, the greater the uncertainty.
+
+%  $\rightarrow$ Uncertainty/entropy grows \textit{monotonically} with the numbers of potential outcomes.
+%  \item The relative likelihood of each outcome determines the uncertainty.
+%  The result of an \enquote{unfair} die is easier to predict than the result of a fair one.
+
+%  $\rightarrow$ $H$ can be written as a function of the outcome probabilities $\{P_1,\ldots,P_K\}$
+%  \item The weighted uncertainty of independent events must sum.
+
+%  The total uncertainty of rolling two independent dice must equal the sum of the uncertainties for each die alone.
+%  For a composite event, its uncertainty should equal the sum of the single uncertainties weighted by the probabilities of their occurrence.
+%  \end{enumerate}
+% \item The first postulate gives us that $\frac{\partial H}{\partial K} > 0$, since the uncertainty grows monotonically with the number of outcomes.
+% To be positive, the derivative must exist, thus $H$ is assumed to be \textit{continuous}.
+% \item Those postulates lead to a unique mathematical expression for the entropy $H$ of a discrete random variable $X$ with prob. mass distr. $P(X)$:
+% $$
+% H(X)=-\sum_{k=1}^g P_k log_2(P_k)
+% $$
+% (Shannon and Weaver, The mathematical theory of communication, 1949)
+
+% \item The term $-log_2(P_k)$ is called \textit{information} $I$ and is the information that an observation of $x=k$ gives us about $X$.
+% \item Observations of rare events give more information (sometimes also called \textit{surprise}) about the random variable $X$.
+% \item In general the base of the logarithm can be any fixed real number greater than 1, for binary logarithm the unit of the information is \textit{bit}.
+% \item The entropy $H(X)=-\sum_{k=1}^g P_k log_2(P_k)$ equals the average (or expected) amount of information obtained by observing $x$ (in bits) $\E(I(X))$.
+% \end{itemize}
+
+% \framebreak
+
+
+% \begin{vbframe}{Conditional entropy}
+% \begin{itemize}
+% \item $H(Y|X)$ is the remaining entropy of $Y$ given $X$ or the expected entropy of $P(Y|X)$
+% $$ H(Y|X) = -\sum_x P(X = x) H(Y|X=x) $$
+
+% \item $H(Y|X=x)$ is the entropy of $Y$ for all observations with a specific value of (rule regarding) feature $X$
+% \end{itemize}
+
+% \end{vbframe}
+
+% \begin{vbframe}{Mutual Information}
+% \begin{itemize}
+% \item Entropy of a discrete RV $H(Y)$: a measure of uncertainty about $Y$
+% \item Conditional entropy $H(Y|X)$: remaining entropy of $Y$ knowing $X$
+% \item After \textit{learning} $X$ it is easy to define the reduction of entropy.
+% \item The \textit{mutual information} between $Y$ and $X$ is
+% $$
+% I(Y;X) = H(Y) - H(Y|X) \; (= H(X) - H(X|Y))
+% $$
+% \item Describes the amount of information obtained about one random variable, through the other.
+% \item Can also be derived as the Kullback-Leibler divergence of the product of the two marginal distributions from their joint distribution.
+% \item In tree learning $I(Y;X)$ is also called \textit{information gain}.
+% \end{itemize}
+% \framebreak
+
+% \end{vbframe}
+\endlecture
