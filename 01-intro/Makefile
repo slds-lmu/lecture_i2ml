@@ -1,16 +1,23 @@
-all: day1-slot1-intro.pdf day1-slot2-knn.pdf 	day1-slot3-loss.pdf day1-slot4-limo.pdf day1-notation.pdf
 
-day1-slot1-intro.pdf: day1-slot1-intro.Rnw
-	Rscript --vanilla -e 'knitr::knit2pdf("day1-slot1-intro.Rnw")'
+SLOT1=slides-d1s1-intro
+SLOT2=slides-d1s2-knn
+SLOT3=slides-d1s3-loss
+SLOT4=slides-d1s4-limo
 
-day1-slot2-knn.pdf: day1-slot2-knn.Rnw
-	Rscript --vanilla -e 'knitr::knit2pdf("day1-slot2-knn.Rnw")'
 
-day1-slot3-loss.pdf: day1-slot3-loss.Rnw
-	Rscript --vanilla -e 'knitr::knit2pdf("day1-slot3-loss.Rnw")'
+all: $(SLOT1).pdf $(SLOT2).pdf 	$(SLOT3).pdf $(SLOT4).pdf slides-notation.pdf
 
-day1-slot4-limo.pdf: day1-slot4-limo.Rnw
-	Rscript --vanilla -e 'knitr::knit2pdf("day1-slot4-limo.Rnw")'
+$(SLOT1).pdf: $(SLOT1).Rnw
+	Rscript --vanilla -e 'knitr::knit2pdf("$(SLOT1).Rnw")'
 
-day1-notation.pdf: day1-notation.Rnw
-	Rscript --vanilla -e 'knitr::knit2pdf("day1-notation.Rnw")'
+$(SLOT2).pdf: $(SLOT2).Rnw
+	Rscript --vanilla -e 'knitr::knit2pdf("$(SLOT2).Rnw")'
+
+$(SLOT3).pdf: $(SLOT3).Rnw
+	Rscript --vanilla -e 'knitr::knit2pdf("$(SLOT3).Rnw")'
+
+$(SLOT4).pdf: $(SLOT4).Rnw
+	Rscript --vanilla -e 'knitr::knit2pdf("$(SLOT4).Rnw")'
+
+slides-notation.pdf: slides-notation.Rnw
+	Rscript --vanilla -e 'knitr::knit2pdf("slides-notation.Rnw")'
