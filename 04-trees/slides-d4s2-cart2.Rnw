@@ -1,0 +1,268 @@
+% Introduction to Machine Learning
+% Day 4
+
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../style/preamble.Rnw")
+@
+
+% Load all R packages and set up knitr
+<<setup, child="../style/setup.Rnw", include = FALSE>>=
+@
+
+
+\lecturechapter{3}{Trees}
+\lecture{Introduction to Machine Learning}
+
+\sloppy
+
+
+\begin{vbframe}{CART: Minimal cost complexity pruning}
+  \begin{itemize}
+  \item Method to optimize the trade-off between goodness-of-fit and complexity
+  \item Criteria: cost function
+    \begin{align*}
+      R_{\alpha} &= R(T) + \alpha \cdot \# \text{leafs},
+    \end{align*}
+    where $R(T)$ represents the error of tree $T$ on the training set
+    $\rightarrow$ $R_{\alpha}$ = Training error + Complexity term.
+  \item For every $\alpha$ there is a distinctly defined smallest sub-tree of the original tree,
+  which minimizes the cost function.
+  \item $\hat{\alpha}$ can be assessed with cross-validation.
+  \item Final tree is fitted on the whole data, where $\hat{\alpha}$ is used to
+  to find the optimal size of the tree
+  \end{itemize}
+
+\pagebreak
+
+<<size='footnotesize'>>=
+lrn = makeLearner("regr.rpart")
+mod = train(lrn, bh.task)
+mod = mod$learner.model
+@
+
+\pagebreak
+
+<<results='hide'>>=
+# Pruning with every cp taken from the cptable
+cps = rev(mod$cptable[, "CP"])
+lapply(cps, function(x) {
+    p = rpart::prune(mod, cp = x)
+    sub_title = sprintf("Pruning with complexity parameter = %.4f.", x)
+    rattle::fancyRpartPlot(p, sub = sub_title)})
+@
+\end{vbframe}
+
+
+\begin{vbframe}{CART: Missing predictor values}
+  Two approaches:
+  \begin{enumerate}
+  \item Missing values of a categorical variable are treated as an own category
+  \item When considering a predictor for a split,
+  only use the observations for which the predictor is not missing.
+
+  To pass observations with missing values down the tree (during fitting or predicting),
+    we have to find surrogate variables, that produce similar splits.
+  \end{enumerate}
+\end{vbframe}
+
+\begin{vbframe}{Advantages}
+  \begin{itemize}
+    \item Model is easy to comprehend, graphical representation
+    \item Categorical features can easily be handled
+    \item Missing values can be handled
+    \item No problems with outliers in features
+    \item Monotone transformations of features change nothing
+    \item Interaction effects between features are easily possible
+    \item Works for (some) non-linear functions
+    \item Inherent feature selection
+    \item Quite fast, scales well with larger data
+    \item Trees are flexible by creating a custom split criterion and leaf-node prediction rule
+      (clustering trees, semi-supervised trees, density estimation, etc.)
+  \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Disadvantages}
+  \begin{itemize}
+  \item High instability (variance) of the trees: Small changes in the data could lead to completely different splits, thus, to completely different trees $\rightarrow$ Decisions on the upper level influence decisions on lower levels (\enquote{mistakes} in upper levels proceed to the lower ones.)
+  \item Prediction function isn't smooth because a step function is fitted.
+  \item Linear dependencies must be modeled over several splits
+    $\rightarrow$ Simple linear correlations must be translated into a complex tree structure
+    (see the following example)
+  \item Really not the best predictor: Combine with bagging (forest) or boosting!
+  (This will also be illustrated in a small benchmark at the end of the random forest chapter.)
+  \end{itemize}
+
+\pagebreak
+
+High instability of trees will be demonstrated using the Wisconsin Breast Cancer data set.
+It has 699 observations on 9 features and one target class with values \enquote{benign} and \enquote{malignant}.
+
+\begin{table}
+\begin{tabular}{ll}
+Feature name & Explanation\\
+\hline
+\code{Cl.thickness} & Clump Thickness\\
+\code{Cell.size} & Uniformity of Cell Size\\
+\code{Cell.shape} & Uniformity of Cell Shape\\
+\code{Marg.adhesion} & Marginal Adhesion\\
+\code{Epith.c.size} & Single Epithelial Cell Size\\
+\code{Bare.nuclei} & Bare Nuclei\\
+\code{Bl.cromatin} & Bland Chromatin\\
+\code{Normal.nucleoli} & Normal Nucleoli\\
+\code{Mitoses} & Mitoses\\
+\end{tabular}
+\end{table}
+
+\pagebreak
+
+Tree fitted on complete Wisconsin Breast Cancer data
+<<results='hide', fig.height=5>>=
+# Create learner and train learner on the Wisconsin Breast Cancer data
+lrn = makeLearner("classif.rpart")
+model = train(lrn, bc.task)
+
+# Remove one observation from the data and train learner on modified dataset
+bc.data = getTaskData(bc.task)
+bc.data.mod = bc.data[-13, ]
+bc.task.mod = makeClassifTask("bc.task modified",
+  data = bc.data.mod, target = getTaskTargetNames(bc.task))
+model.mod = train(lrn, bc.task.mod)
+
+# Display tree on full data set
+fancyRpartPlot(model$learner.model, sub = "")
+@
+\pagebreak
+
+Tree fitted on Wisconsin Breast Cancer data without observation 13
+<<results='hide', fig.height=5>>=
+# Leaving out just one obs leads to a totally differnt tree
+fancyRpartPlot(model.mod$learner.model, sub = "")
+@
+
+\pagebreak
+\setkeys{Gin}{width=0.95\textwidth}
+\begin{center}
+<<results='hide', fig.height=5>>=
+set.seed(123)
+n = 100
+data = data.frame(x1 = runif(n), x2 = runif(n))
+data$y = as.factor(with(data, as.integer(x1 > x2)))
+
+ggplot(data, aes(x = x1, y = x2, shape = y, col = y)) +
+  geom_point(size = 3) +
+  pers_theme +
+  ggtitle("") +
+  geom_abline(slope = 1, linetype = 2)
+@
+\end{center}
+Linear dependencies must be modeled over several splits.
+\pagebreak
+\begin{center}
+<<results='hide', fig.height=5>>=
+problemtask = makeClassifTask(data = data, target = "y")
+rpart = makeLearner("classif.rpart")
+rpart = setHyperPars(rpart, cp = 0, minbucket = 2, maxdepth = 1)
+model = train(rpart, problemtask)
+# Plot
+plotLearnerPrediction(rpart, problemtask, gridsize = 300, cv = 0) +
+  pers_theme +
+  ggtitle("") +
+  geom_abline(slope = 1, linetype = 2)
+@
+\end{center}
+Linear dependencies must be modeled over several splits.
+\pagebreak
+\begin{center}
+<<results='hide', fig.height=5>>=
+rpart = setHyperPars(rpart, cp = 0, minbucket = 2, maxdepth = 2)
+model = train(rpart, problemtask)
+# Plot
+plotLearnerPrediction(rpart, problemtask, gridsize = 300, cv = 0) +
+  pers_theme +
+  ggtitle("") +
+  geom_abline(slope = 1, linetype = 2)
+@
+\end{center}
+Linear dependencies must be modeled over several splits.
+\pagebreak
+\begin{center}
+<<results='hide', fig.height=5>>=
+rpart = setHyperPars(rpart, cp = 0, minbucket = 2, maxdepth = 3)
+model = train(rpart, problemtask)
+# Plot
+plotLearnerPrediction(rpart, problemtask, gridsize = 300, cv = 0) +
+  pers_theme +
+  ggtitle("") +
+  geom_abline(slope = 1, linetype = 2)
+@
+\end{center}
+Linear dependencies must be modeled over several splits.
+\pagebreak
+\begin{center}
+<<results='hide', fig.height=5>>=
+rpart = setHyperPars(rpart, cp = 0, minbucket = 2, maxdepth = 4)
+model = train(rpart, problemtask)
+# Plot
+plotLearnerPrediction(rpart, problemtask, gridsize = 300, cv = 0) +
+  pers_theme +
+  ggtitle("") +
+  geom_abline(slope = 1, linetype = 2)
+@
+\end{center}
+Linear dependencies must be modeled over several splits.
+
+\pagebreak
+\begin{center}
+<<results='hide', fig.height=5>>=
+modForrester = makeSingleObjectiveFunction(
+  name = "Modification Forrester et. all function",
+  fn = function(x) (sin(4*x - 4)) * ((2*x - 2)^2) * (sin(20*x - 4)),
+  par.set = makeNumericParamSet(lower = 0, upper = 1, len = 1L),
+  noisy = TRUE
+)
+set.seed(9)
+design = generateDesign(7L, getParamSet(modForrester), fun = lhs::maximinLHS)
+design$y = modForrester(design)
+design
+regr.task = makeRegrTask(data = design, target = "y")
+fn = function(x) (sin(4*x - 4)) * ((2*x - 2)^2) * (sin(20*x - 4))
+regr.rpart = makeLearner("regr.rpart", par.vals = list(minbucket = 1, minsplit = 1))
+pp = plotLearnerPrediction(regr.rpart, regr.task, cv = 0)
+x = seq(0.07547466, 1, length.out = 500)
+pp + geom_line(data = data.frame(x = x, y = fn(x)), aes(x, y, color = "True function"), color = "red")
+@
+\end{center}
+Prediction function isn't smooth because a step function is fitted.
+\end{vbframe}
+
+\begin{vbframe}{Tree building algorithms and their implementation in R}
+  \begin{itemize}
+  \item CART (Breiman et al., 1984):
+
+  Package \pkg{rpart} with fitting function \code{rpart()}.
+  \begin{itemize}
+    \item No nice plotting functionalities.
+    \item But \pkg{rattle} is able to create fancy visualizations.
+  \end{itemize}
+
+  \item Unbiased Recursive Partitioning (Hothorn et al., 2006):
+
+  \pkg{partykit} (old: \pkg{party}) provides the function \code{ctree()} for recursive partitioning in a conditional inference framework.
+  \begin{itemize}
+    \item Supports continuous, censored, ordered, nominal and multivariate response variables.
+    \item \code{ctree()} uses unbiased split selection.
+    \item Nice plotting functionality.
+  \end{itemize}
+
+  \item C4.5 (Quinlan, 1993):
+
+  Implemented in the R-package \pkg{RWeka} with function \code{J48()}.
+  %\item \pkg{evtree} (function \code{evtree()}):
+
+  %Uses evolutionary algorithms, which is a global optimization method to search over the parameter space of trees instead of performing a forward stepwise search like in CART.
+  \end{itemize}
+\end{vbframe}
+
+
+\endlecture
