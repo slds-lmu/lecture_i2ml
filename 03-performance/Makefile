@@ -1,4 +1,19 @@
-all: slides.pdf
 
-slides.pdf: slides.Rnw
-	Rscript --vanilla -e 'knitr::knit2pdf("slides.Rnw")'
+SLOT1=slides-d3s1-intro-performance
+SLOT2=slides-d3s2-resampling
+SLOT3=slides-d3s3-nested-resampling
+SLOT4=slides-d3s4-roc-confusion
+
+all: $(SLOT1).pdf $(SLOT2).pdf 	$(SLOT3).pdf $(SLOT4).pdf
+
+$(SLOT1).pdf: $(SLOT1).Rnw
+	Rscript --vanilla -e 'knitr::knit2pdf("$(SLOT1).Rnw")'
+
+$(SLOT2).pdf: $(SLOT2).Rnw
+	Rscript --vanilla -e 'knitr::knit2pdf("$(SLOT2).Rnw")'
+
+$(SLOT3).pdf: $(SLOT3).Rnw
+	Rscript --vanilla -e 'knitr::knit2pdf("$(SLOT3).Rnw")'
+
+$(SLOT4).pdf: $(SLOT4).Rnw
+	Rscript --vanilla -e 'knitr::knit2pdf("$(SLOT4).Rnw")'

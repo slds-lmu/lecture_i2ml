@@ -1,0 +1,1151 @@
+% Introduction to Machine Learning
+% Day 3
+
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../style/preamble.Rnw")
+@
+
+% Load all R packages and set up knitr
+<<setup, child="../style/setup.Rnw", include = FALSE>>=
+@
+
+\lecturechapter{6}{ROC and confusion matrix}
+\lecture{Fortgeschrittene Computerintensive Methoden}
+
+\begin{vbframe}{Notation}
+The following notation will be used in this chapter:
+
+\begin{itemize}
+  \item $\Xspace$ $p$-dim. input space%, usually we assume $\Xspace = \R^p$, but categorical features can occur, too
+\item $\Yspace$ target space. In this chapter binary $\Yspace = \lbrace 0, 1 \rbrace$ or multi class $\Yspace = \gset$.
+\item $x = \xvec \in \Xspace$ observation.
+\item A binary classifier is a function $C: \Xspace \longrightarrow \Yspace = \lbrace 0,1\rbrace$.
+\item A binary scoring classifier (or ranker) is a function $f$, which outputs a score (e.g. probability) for the positive class.
+\item   $n$ is the total number of observations.
+\item   $\text{NEG}$ and $\text{POS}$ are the number of negative and positive observations.
+\item   $\text{neg}$ and $\text{pos}$ are the fraction of negative and positive observations, respectively.
+\end{itemize}
+\end{vbframe}
+
+
+
+\begin{vbframe}{Evaluation of Binary Classifiers}
+
+\begin{itemize}
+
+\item  Consider a binary classifier $C(x)$, e.g. for cancer prediction (with true label $y$).
+    \begin{itemize}
+      \item   for $C(x) = 1 = \hat{y}$, we predict cancer
+      \item   for $C(x) = 0 = \hat{y}$, we predict no cancer
+    \end{itemize}
+\item  One possible evaluation measure is the \textit{misclassification error} or \textit{error rate} (i.e. the proportion of patients for which $\hat{y} \neq y$).
+\item  Example: If 10 out of 1000 patients are misclassified, the \textit{error rate} would be 1\%.
+\item  In general, lower \textit{error rates} are better.
+
+\end{itemize}
+
+\framebreak
+
+\begin{itemize}
+\item   Using the \textit{error rate} for imbalanced true labels is not suggested.
+\item   Example: Assume that only 0.5\% of 1000 patients have cancer.
+  \begin{itemize}
+    \item   Always returning $C(x) = 0 = \hat{y}$ gives an \textit{error rate} of 0.5\%, which sounds good.
+    \item   However, we would never predict cancer, which is bad.
+  \end{itemize}
+\end{itemize}
+
+$\Rightarrow$ We also need different evaluation metrics and should not only trust the \textit{error rate}.
+
+\end{vbframe}
+
+
+\begin{vbframe}{Confusion Matrix}
+
+The confusion matrix is a $2 \times 2$ contingency table of predictions $\hat{y}$ and true labels $y$.
+Several evaluation metrics can be derived from a confusion matrix:
+
+\begin{center}
+\includegraphics[width=0.9\textwidth]{figure_man/roc-confusion_matrix.png}
+\end{center}
+%
+% \framebreak
+%
+% Terminology:
+%
+% \begin{itemize}
+%
+% \item   \textbf{True positive (TP):} \newline
+%     We predicted "1" and the true class is "1".
+%
+% \item  \textbf{True negative (TN):} \newline
+%     We predicted "0" and the true class is "0".
+%
+% \item  \textbf{False positive (FP):} \newline
+%     We predicted "1" and the true class is "0" (type I error).
+%
+% \item  \textbf{False negative (FN):} \newline
+%     We predicted "0" and the true class is "1" (type II error).
+%
+% \item  \textbf{Positive (pos):} \newline
+%     Fraction of true class labels with "1". %<!-- \text{POS} = \sum_i I(y_i = 1)$ and $\text{NEG} = \sum_i I(y_i = 0)$-->
+%
+% \item   \textbf{Negative (neg):} \newline
+%     Fraction of true class labels with "0".
+%
+% \end{itemize}
+% %<!-- (see also [Statistical Tests of Significance \& Type I and Type II Errors](http://0agr.ru/wiki/index.php/Statistical_Tests_of_Significance#Type_I_and_Type_II_Errors "wikilink2")) -->
+%
+%
+% \framebreak
+%
+%
+% The following measures can be obtained from the confusion matrix:
+%
+% \begin{itemize}
+% \item   True positive rate (also known as sensitivity or recall)
+%   \begin{itemize}
+%     \item   Fraction of positive observations correctly classified
+%     \item   $\text{tpr} = \cfrac{\text{\#TP}}{\text{\#TP} + \text{\#FN}}$
+%   \end{itemize}
+% \item   False positive rate (also known as fall-out)
+%   \begin{itemize}
+%     \item   Fraction of negative observations incorrectly classified
+%     \item   $\text{fpr} = \cfrac{\text{\#FP}}{\text{\#FP} + \text{\#TN}} = \text{1 - Specificity}$
+%   \end{itemize}
+% \item   Accuracy
+% \item   Misclassification error (or error rate)
+% \item   Positive predictive value (or precision) %<!--, $P = \cfrac{\text{TP}}{\text{TP} + \text{FP}}$ -->
+% \item   Negative predictive value
+% \item   ...
+% \end{itemize}
+% %<!-- -   Support - fraction of positively classified observations
+% %    -   $\text{sup} = \cfrac{\text{TP} + \text{FP}}{N} =
+% %        \cfrac{\text{predicted pos}}{\text{total}}$ -->
+%
+%
+
+% \end{vbframe}
+%
+% \begin{vbframe}{Accuracy and Misclassification Error}
+%
+% In practice, these are the most widely used metrics
+% \begin{itemize}
+%   \item   Accuracy: $\text{acc} = \cfrac{\text{\#TP} + \text{\#TN}}{N}$
+%
+%   \begin{itemize}
+%     \item fraction of correctly classified observations
+%   \end{itemize}
+%
+%   \item   Error rate: $\text{error} = \cfrac{\text{\#FN} + \text{\#FP}}{N} = 1 - \text{acc}$
+%
+%   \begin{itemize}
+%     \item Fraction of misclassified observations
+%   \end{itemize}
+%
+% \end{itemize}
+% \end{vbframe}
+
+
+%
+%
+% \begin{vbframe}{Precision (P) or Positive Predictive Value (PPV)}
+%   $$P = \cfrac{\text{\#TP}}{\text{\# predicted positives}} = \cfrac{\text{\#TP}}{\text{\#TP} + \text{\#FP}}$$
+%
+% \begin{center}
+%   or
+% \end{center}
+% \vspace{-0.75cm}
+%
+%   $$P = \cfrac{pos \cdot tpr}{pos \cdot tpr + neg \cdot fpr} = \cfrac{tpr}{tpr + \tfrac{neg}{pos} \cdot fpr}$$
+%
+% \begin{itemize}
+% \item   Interpretation: For all observations that we predicted $\hat{y} = 1$, what fraction actually has $y = 1$?
+% \item   Higher \textit{precision} is better.
+% \end{itemize}
+% \end{vbframe}
+%
+%
+% \begin{vbframe}{Recall (R)}
+%
+% $$R = \cfrac{\text{\#TP}}{\text{\# actual positives}} = \cfrac{\text{\#TP}}{\text{\#TP + \#FN}} = \text{tpr}$$
+%
+% \begin{itemize}
+% \item   Interpretation: For all observations that actually have $y = 1$, what fraction did we correctly detect as $\hat{y} = 1$?
+% \item   Higher \textit{recall} is better.
+% \item   For a classifier that always returns zero (i.e. $\hat{y} = 0$), the \textit{recall} would be zero.
+% \end{itemize}
+%
+\end{vbframe}
+
+
+%<!--
+%-   Out of all the people that do actually have %cancer, how much had been identified?
+%-   We don't fail to spot many people that actually %have cancer.
+% -->
+
+%<!-- The [F Measure](http://0agr.ru/wiki/index.php%/F_Measure#F_Measure "wikilink3") is a combination %of [Precision and
+%Recall](http://0agr.ru/wiki/index.php/Precision_and_%Recall "wikilink4") -->
+
+\begin{vbframe}{F-Measure}
+%<!--
+%$P$ and $R$ don't make sense in the isolation from each other
+
+%-   higher level of $\rho$ may be obtained by lowering $\pi$ and
+%    vice versa
+
+%Suppose we have a ranking classifier that produces some score (e.g. a probability) for $\mathbf{x}$:
+
+%-   we decide whether to classify it $\hat{y} = 1$ or $\hat{y} = 0$ based on some threshold parameter $\tau$.
+%-   varying $\tau$, will lead to different values for precision and recall.
+%-   improving recall yields a worse precision and vice versa.
+%-   combine $P$ and $R$ into one measure (also see [ROC Analysis])
+
+%$F_{\beta} = \cfrac{(\beta^2 + 1) P \, R}{\beta^2 \, %P + R}$
+
+%-   $\beta$ is the tradeoff between $P$ and $R$
+%-   if $\beta$ is close to 0, then we give more %importance to $P$
+%    -   $F_0 = P$
+%-   if $\beta$ is closer to $+ \infty$, we give more %importance to
+%    $R$
+
+%When $\beta = 1$ we have $F_1$ score: -->
+
+It is difficult to achieve a high \textit{precision} and high \textit{recall} simultaneously.
+A trade-off offers the $F_1$-measure, which is the harmonic mean of precision $P$ and recall $R$:
+
+$$F_1 = 2 \cfrac{P \cdot R}{P + R} = \cfrac{2\text{tpr}}{\text{tpr} + \tfrac{neg}{pos} \cdot \text{fpr} + 1 } $$
+
+\end{vbframe}
+
+% \begin{vbframe}{Example}
+%
+% \begin{center}
+% \includegraphics[width=0.7\textwidth]{figure_man/roc-confusion_matrix_example.png}
+% \end{center}
+%
+%
+% \end{vbframe}
+
+\begin{vbframe}{Multiclass Confusion Matrix}
+  \begin{itemize}
+    \item The performance of a multiclass classifier can also be summarized in a confusion matrix.
+    \item E.g., in a 3-class classification problem with labels A, B and C:
+    \item[] \includegraphics[width=0.9\textwidth]{figure_man/roc-multiclass_confmatrix.png}
+    \item The overall accuracy is calculated similarly to the binary confusion matrix.
+    \item Example:
+          $acc = \cfrac{\# \text{TP}_A + \# \text{TP}_B + \# \text{TP}_C}{n} = \cfrac{30+60+80}{300} \approx 56\%$
+  \end{itemize}
+
+  \framebreak
+
+  \begin{itemize}
+    \item[]   \includegraphics[width=0.9\textwidth]{figure_man/roc-multiclass_confmatrix.png}
+    \item Other measures, e.g. tpr, need to be calculated in a one-vs-all manner.
+    \item Example (true positive rate for label A):
+    $$\text{tpr}_A = \cfrac{\# \text{TP}_A}{\# \text{TP}_A + \# \text{FN}_A} = \cfrac{30}{30+50+20} = 0.3$$
+    \item Example (precision for label A):
+    $$\text{P}_A = \cfrac{\# \text{TP}_A}{\# \text{TP}_A + \# \text{FP}_A} = \cfrac{30}{30+20+10} = 0.5$$
+  \end{itemize}
+
+\end{vbframe}
+%
+%    <<echo = FALSE, message = FALSE, warning = FALSE>>=
+%   library(mlr)
+%   set.seed(1)
+%   lrn = makeLearner("classif.rpart")
+%   iris2 = rbind(iris, iris)
+%   iris2$Species = c(rep("A", 100), rep("B", 100), rep("C", 100))
+%   iris2.task = makeClassifTask(data = iris2, target = "Species")
+%   mod = train(lrn, iris2.task)
+%   pred = predict(mod, newdata = iris2)
+%   pred$data$response = c(rep("A", 30), rep("B", 50), rep("C", 20),
+%                          rep("A", 20), rep("B", 60), rep("C", 20),
+%                          rep("A", 10), rep("B", 10), rep("C", 80))
+%   cm = calculateConfusionMatrix(pred)
+%   t(cm$result)
+%   @
+
+
+%<!--
+%# Visual Analysis
+
+%Visual ways of evaluating the performance of a classifier
+
+%-   [ROC Analysis](http://0agr.ru/wiki/index.php/ROC_Analysis "wikilink5") - True Positive Rate vs
+    %False Positive Rate
+%-   [Cumulative Gain Charts](http://0agr.ru/wiki/index.php/Cumulative_Gain_Chart "wikilink6") - True
+  %  Positive Rate vs Predicted Positive Rate
+
+
+%# Not Binary Classifiers
+
+%When we have multi-class classifiers we can use:
+
+%-   Contingency Table
+%    -   just show misclassified observations side-by-side
+%-   [Cost Matrix](http://0agr.ru/wiki/index.php/Cost_Matrix "wikilink8")
+%    -   we define the cost for each misclassification
+%    -   and calculate the total cost
+%-   some measures can be extended to multiclass classifiers:
+%    -   see Evaluation of Multiclass Classifiers
+%-->
+
+\begin{vbframe}{Binary Cost-sensitive Classification}
+\begin{itemize}
+  \item Regular classification:
+  \begin{itemize}
+    \item All misclassification errors equally severe.
+    \item Aim: minimize the misclassification rate.
+  \end{itemize}
+  \item Cost-sensitive classification:
+    \begin{itemize}
+    \item Costs caused by different kinds of errors are not assumed to be equal.
+    \item Aim: minimize expected costs.
+  \end{itemize}
+\end{itemize}
+
+\framebreak
+
+Cost matrix:
+\begin{table}[]
+\centering
+\begin{tabular}{|l|c|c|}
+\hline
+                   & Actual positive & Actual negative \\ \hline
+Predicted positive & $c_{11}$              & $c_{10}$              \\
+Predicted negative & $c_{01}$              & $c_{00}$              \\ \hline
+\end{tabular}
+\end{table}
+\begin{itemize}
+\item \textit{Reasonableness} conditions:
+     $$c_{01} > c_{11} \hspace{5pt} \text{ and } \hspace{5pt} c_{10} > c_{00}$$
+\item Given the cost matrix, an example should be classified into the class that has the minimum
+expected cost.
+ \item Let $\pix  := \P(y = 1|x)$ and $1 - \pix  = \P(y = 0|x)$.
+ \item $\P(y|x)$ is the probability estimation classifying an instance $x$ into class $y$.
+% \item There are classification methods that can accomodate misclassification costs directly (e.g. \href{http://www.rdocumentation.org/UKljZ/packages/rpart/functions/rpart.html}{rpart}).
+% \item Alternatively, choose thresholds to turn posterior probabilities into class labels, such that the costs are minimized.
+\end{itemize}
+
+\framebreak
+Choose thresholds to turn posterior probabilities into class labels, such that the costs are minimized:
+\begin{itemize}
+  \item Optimal prediction for class 1
+  \item[]$\Leftrightarrow$  Expected cost of predicting 1 $\leq$ expected cost of predicting 0
+  \item[]$\Leftrightarrow$  $(1-\pix )c_{10} + \pix c_{11} \leq (1-\pix ) c_{00} + \pix c_{01}$
+  \item If this inequality is an equality, then predicting either class is optimal
+  \item[] $\Rightarrow$ Choose optimal threshold $\pix ^*$ such that
+  $$\pix ^* = \cfrac{c_{10} - c_{00}}{c_{10}- c_{00} + c_{01} - c_{11}}$$
+  \item The \textit{Reasonableness} conditions ensure, that $\pix ^*$ is well defined.
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{ROC Analysis}
+%<!-- (from Signal Detection Theory) -->
+%<!--
+%\vspace{-0.25cm}
+%-   initially - for distinguishing noise from not %noise
+%-   so it's a way of showing the performance of %Binary Classifiers
+%    -   only two classes - noise vs not noise  -->
+The \textbf{R}eceiver \textbf{O}perating \textbf{C}haracteristic (ROC) curve is created by plotting the \textit{tpr} vs. \textit{fpr}, i.e. the
+
+\begin{itemize}
+  \item   True positive rate, $\text{tpr} = \cfrac{\text{\#TP}}{\text{\#TP} + \text{\#FN}}$
+  \item   False positive rate $\text{fpr} = 1-\text{specificity} = \cfrac{\text{\#FP}}{\text{\#FP} + \text{\#TN}}$
+\end{itemize}
+
+Properties:
+\begin{itemize}
+\item   ROC curves are insensitive to class distribution.
+\item   If the proportion of positive to negative instances changes, the ROC curve will not change.
+%\item   ROC space is 2 dimensional, i.e. $X: \text{fpr}, Y: \text{tpr}$.
+\item To see why, consider a binary confusion matrix:
+\end{itemize}
+%<!--%
+%# ROC Space
+
+%When evaluating a binary classifier, we often use a %confusion matrix.
+
+%-   Here, we need only *tpr* and *fpr*
+%-   $\text{tpr} = \cfrac{\text{TP}}{\text{TP} + %\text{FN}}$
+%-   $\text{fpr} = \cfrac{\text{FP}}{\text{FP} + %\text{TN}}$
+%-   ROC space is 2 dimensional:
+%    -   $X: \text{fpr}, Y: \text{tpr}$
+%-->
+
+\framebreak
+Example:
+\begin{table}[]
+\centering
+\begin{tabular}{|l|c|c|}
+                \hline
+               & True Positive & True Negative \\ \hline
+Pred. Positive & 40            & 25            \\ \hline
+Pred. Negative & 10            & 25           \\ \hline
+\end{tabular}
+\end{table}
+
+Here we have we have a proportion $\text{pos}/\text{neg} = 1$.
+Now we change the proportion to $\text{pos}/\text{neg} = 2$.
+\begin{table}[]
+\centering
+\begin{tabular}{|l|c|c|}
+                \hline
+               & True Positive & True Negative \\ \hline
+Pred. Positive & 80            & 25            \\ \hline
+Pred. Negative & 20            & 25           \\ \hline
+\end{tabular}
+\end{table}
+
+The true positive rate and ($\text{tpr} = 0.8$) and the false positive rate ($\text{fpr} = 0.5$) does not change.
+
+
+% \begin{itemize}
+%   \item Note that the class distribution is
+% the relationship of the left column to the right column.
+%   \item Any performance metric that uses values from both
+% columns will be inherently sensitive to class skews (such as accuracy, precision, F measure)
+%   \item ROC curves are based upon tpr and fpr.
+%   \item Each measure uses only values in their respective columns.
+%   \item Changing the class distribution will therefore not change the ROC curve.
+% \end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{ROC Space Baseline}
+
+%<!-- We put a random classifier that predicts 1 with some probability, e.g. 3 random classifiers on the baseline: -->
+\begin{itemize}
+
+\item   The best classifier lies on the top-left corner.
+\item   Example: 3 classifiers that lie on the baseline, i.e. a classifier that
+  \begin{itemize}
+    \item   always predicts 0 (0\% chance to predict 1),
+    \item   predicts 1 in 80\% cases and
+    \item   always predict 1 (in 100\% cases).
+  \end{itemize}
+\end{itemize}
+
+\begin{center}
+\includegraphics[width=0.45\textwidth]{figure_man/roc_space.png}
+\end{center}
+
+\end{vbframe}
+
+
+\begin{vbframe}{ROC Space Baseline}
+
+In practice, we can never obtain a classifier below this line. Example:
+
+\begin{itemize}
+  \item   A classifier $C_1$ below the line with $\text{fpr} = 80\%$, and $\text{tpr} = 30\%$
+  \item   We can make it better than random by inverting its prediction:
+    $C_2(x)$: if $C_1(x) = 1$, return 0; if $C_1(x) = 0$, return 1
+  \item   Position of $C_2$ is then $(1 - \text{fpr}, 1 - \text{tpr}) = (20\%, 70\%)$
+\end{itemize}
+
+\begin{center}
+\includegraphics[width=0.45\textwidth]{figure_man/roc-inv.png}
+\end{center}
+
+\end{vbframe}
+
+
+\begin{vbframe}{ROC Convex Hull}
+
+Suppose we have 5 classifiers $C_1, C_2, ..., C_5$
+
+\begin{itemize}
+\item   We calculate $\text{fpr}$ and $\text{tpr}$ for each and plot them on one plot.
+\item   Each classifier is a single point in the ROC space.
+\end{itemize}
+
+\begin{center}
+\includegraphics[width=0.5\textwidth]{figure_man/roc-plot-classifiers.png}
+\end{center}
+
+\end{vbframe}
+
+
+\begin{vbframe}{ROC Convex Hull}
+We can then try to find classifiers that achieve the best
+$\text{fpr}$ and $\text{tpr}$.
+
+\begin{itemize}
+  \item  By the \href{http://0agr.ru/wiki/index.php/Dominance}{dominance} principle, we have the following Pareto frontier (the "ROC convex hull").
+  \item   Classifiers below this hull are always suboptimal, e.g. $C_3$.
+\end{itemize}
+
+\begin{center}
+\includegraphics[width=0.45\textwidth]{figure_man/roc-convex-hull.png}
+\end{center}
+\end{vbframe}
+
+
+\begin{vbframe}{ISO Accuracy Lines}
+There is a simple relationship between accuracy and $\text{fpr}$, $\text{tpr}$.
+
+\begin{itemize}
+  \item   Let $n$ be the number of observations,
+  \item   $\text{NEG}$ and $\text{POS}$ the number of negative and positive observations,
+  \item   $\text{neg}$ and $\text{pos}$ the fraction of negative and positive observations, respectively.
+\end{itemize}
+
+  $$\text{acc} = \text{tpr} \cdot \text{pos} + \text{neg} - \text{neg} \cdot \text{fpr}$$
+
+\begin{itemize}
+  \item   $\text{acc} = \cfrac{\text{\#TP} + \text{\#TN}}{n} =
+    \cfrac{\text{\#TP}}{n} + \cfrac{\text{\#TN}}{n} =
+    \cfrac{\text{\#TP}}{\text{POS}} \cdot \cfrac{\text{POS}}{n} +
+    \cfrac{\text{NEG} - \text{\#FP}}{n} =
+    \cfrac{\text{\#TP}}{\text{POS}} \cdot \cfrac{\text{POS}}{n} +
+    \cfrac{\text{NEG}}{n} - \cfrac{\text{\#FP}}{\text{NEG}} \cdot
+    \cfrac{\text{NEG}}{n} = \text{tpr} \cdot \text{pos} +
+    \text{neg} - \text{fpr} \cdot \text{neg}$
+\end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{ISO Accuracy Lines}
+We can rewrite this and get
+$$\text{tpr} =  \cfrac{\text{neg}}{\text{pos}}
+\cdot \text{fpr} + \cfrac{\text{acc} -
+\text{neg}}{\text{pos}} \; \Leftrightarrow  \; y = ax + b$$
+
+$$\text{with } y = \text{tpr},  \; x = \text{fpr},  \; a =
+\cfrac{\text{neg}}{\text{pos}},  \; x =
+\cfrac{\text{neg}}{\text{pos}},  \; b = \cfrac{\text{acc} -
+\text{neg}}{\text{pos}}$$
+
+Properties:
+\begin{itemize}
+  \item   The ratio $a = \cfrac{\text{neg}}{\text{pos}}$ is the slope of the line (changing this ratio yields many different slopes).
+  \item   Changing the accuracy yields many parallel lines with the same slope because $acc$ is included in the intercept $b$.
+  \item   "Higher" lines are better w.r.t. $acc$.
+\end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{ISO Accuracy Lines}
+To calculate the corresponding accuracy, we have to find the intersection point of the accuracy line (red) the descending diagonal (blue).
+
+\begin{center}
+\includegraphics[width=\textwidth]{figure_man/iso_lines.png}
+\end{center}
+\end{vbframe}
+
+\begin{vbframe}{ISO Accuracy Lines}
+Explanation:
+\begin{itemize}
+ \item descending diagonal: $\text{tpr} = 1-\text{fpr} \; \Leftrightarrow \text{fpr} = 1-\text{tpr}$
+ \item ISO accuracy line: $\text{tpr} =  \tfrac{\text{neg}}{\text{pos}}
+\cdot \text{fpr} + \tfrac{\text{acc} -
+\text{neg}}{\text{pos}}$
+\end{itemize}
+At the intersection between these lines we have:
+\begin{align*}
+ \text{tpr} &= \tfrac{\text{neg}}{\text{pos}} \cdot (1-\text{tpr}) + \tfrac{\text{acc} -
+ \text{neg}}{\text{pos}}
+ = \tfrac{\text{neg}}{\text{pos}} - \tfrac{\text{neg}}{\text{pos}} \cdot \text{tpr} + \tfrac{\text{acc} -
+ \text{neg}}{\text{pos}} \\
+ &= \tfrac{\text{acc}}{\text{pos}} - \tfrac{\text{neg} \cdot \text{tpr}}{\text{pos}}
+ = \tfrac{\text{acc} -\text{neg} \cdot \text{tpr}}{\text{pos}}
+ \end{align*}
+  With $\text{pos} + \text{neg} = 1$ this is equivalent to:
+\begin{align*}
+ \text{pos} \cdot \text{tpr} + \text{neg} \cdot \text{tpr} &= \text{acc} \\
+ \Leftrightarrow \hspace{2cm} \text{tpr} &= \text{acc}
+ \end{align*}
+
+$\Rightarrow$ At the intersection between the descending diagonal and the ISO accuracy line, the achieved accuracy is equal to the true positive rate.
+\end{vbframe}
+
+\begin{vbframe}{ISO Accuracy Lines vs Convex Hull}
+Recall the convex hull of the ROC plot:
+
+\begin{center}
+\includegraphics[width=0.65\textwidth]{figure_man/roc-convex-hull.png}
+\end{center}
+\end{vbframe}
+
+\begin{vbframe}{ISO Accuracy Lines vs Convex Hull}
+Each line segment of the ROC convex hull is an ISO accuracy line
+for a particular class distribution (slope) and accuracy.
+All classifiers on such a line achieve the same accuracy for this distribution:
+
+\begin{itemize}
+  \item   $\text{neg} / \text{pos} > 1$
+
+  \begin{itemize}
+    \item   Distribution with more negative observations.
+    \item   The slope is steep.
+    \item   Classifier on the left is better.
+  \end{itemize}
+
+  \item   $\text{neg} / \text{pos} < 1$
+
+  \begin{itemize}
+    \item   Distribution with more positive observations.
+    \item   The slope is flatter.
+    \item   Classifier on the right is better.
+  \end{itemize}
+
+\end{itemize}
+Each classifier on the convex hull is optimal w.r.t. accuracy and for a specific distribution.
+\end{vbframe}
+
+\begin{vbframe}{Selecting the Optimal Classifier}
+\begin{enumerate}
+  \item  Compute the ratio (slope) $\text{neg} / \text{pos}$.
+  \item  Find the classifier that achieves the highest accuracy for this ratio.
+  \item  Fix the ratio and keep increasing the accuracy until the end of the hull.
+\end{enumerate}
+\end{vbframe}
+
+\begin{vbframe}{Selecting the Optimal Classifier - Example}
+\begin{center}
+\includegraphics[width=0.55\textwidth]{figure_man/roc-convex-hull-best-acc-1.png}
+\end{center}
+
+\begin{itemize}
+  \item Distribution: $neg/pos = 1/1$, best classifier: $C_2$, accuracy $\approx 81 \%$
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Selecting the Optimal Classifier - Example}
+\begin{center}
+\includegraphics[width=0.55\textwidth]{figure_man/roc-convex-hull-best-acc-2.png}
+\end{center}
+
+\begin{itemize}
+  \item Distribution: $neg/pos = 1/4$, best classifier: $C_4$, accuracy $\approx 83 \%$
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Selecting the Optimal Classifier - Example}
+\begin{center}
+\includegraphics[width=0.55\textwidth]{figure_man/roc-convex-hull-best-acc-3.png}
+\end{center}
+
+\begin{itemize}
+  \item Distribution: $neg/pos = 4/1$, best classifier: $C_2$, accuracy $\approx 81 \%$
+
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Scoring Classifiers}
+A scoring classifier (or ranker) is an algorithm that outputs the scores (e.g. a probabilities) for each class instead of one single
+label.
+
+Do binary classification with a ranker $f$:
+\begin{itemize}
+  \item $f$ outputs a single number
+  \item Set some threshold $\theta$ to transform the ranker into a classifier,
+    e.g. as in \href{http://0agr.ru/wiki/index.php/Logistic_Regression}{logistic regression}
+  \begin{itemize}
+      \item Predict $\hat{y} = 1$ (positive class) if $f(x) > \theta$ else predict $\hat{y} = 0$
+  \end{itemize}
+  \item How to set a threshold $\theta$?
+  \begin{itemize}
+    \item Use \href{http://0agr.ru/wiki/index.php/Cross-Validation}{crossvalidation} for finding
+        the best value for $\theta$.
+    \item Draw ROC curves, producing a point in the ROC space for \textbf{each possible threshold}.
+  \end{itemize}
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{ROC for Scoring Classifiers}
+\textbf{Naive Method}:
+
+Given a ranker $f$ and a dataset with $n$ training observations:
+\begin{itemize}
+  \item Consider all possible thresholds ($n-1$ for $n$ observations).
+  \item For each threshold: Calculate $\text{fpr}$ and $\text{tpr}$, and draw this point on the ROC space.
+  \item Select the best threshold using the ROC analysis (for the ratio $\text{neg} / \text{pos}$).
+\end{itemize}
+\textbf{Practical Method}:
+\begin{itemize}
+  \item Rank test observations on decreasing score.
+  \item Start in $(0, 0)$, for each observation $x$ (in the decreasing order).
+  \begin{itemize}
+    \item If $x$ is positive, move $1/\text{pos}$ up
+    \item If $x$ is negative, move $1/\text{neg}$ right
+  \end{itemize}
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Example Naive Method}
+\centering
+\includegraphics[width=0.7\textwidth]{figure_man/roc-naive-method.png}
+
+See \url{https://quayau.shinyapps.io/roc_shiny/} for a live demo.
+\end{vbframe}
+
+\begin{vbframe}{Example Practical Method}
+Given:
+\begin{itemize}
+  \item 20 observations
+\end{itemize}
+
+\tiny
+\begin{tabular}{l|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.2cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}}
+
+  \hspace{-8pt} \#&  1& 2&  3&  4&  5&  6&  7&  8&  9& 10& 11& 12& 13& 14& 15& 16& 17& 18& 19& 20 \\ \hline
+  \hspace{-8pt} C & P& P & N & P & P & P & N & N & P & N & P & N & P & N & N & N & P & N & P & N \\ \hline
+  \hspace{-8pt} Score & .9 & .8 &  .7 & .6 & .55 & .54 & .53 & .52 & .51 & .505 & .4 & .39 & .38 & .37 & .36 & .35 & .34 & .33 & .3 &.1
+\end{tabular}
+\normalsize
+
+%<!--(https://www.dropbox.com/s/65rdiv42ixe2eac/roc-lift.xlsx) -->
+\begin{itemize}
+  \item $C$ is the actual class of the training observations.
+  \item $\text{neg} / \text{pos} = 1$, i.e. $1/\text{pos} = 1/\text{neg} = 0.1$
+%<!--   [Click here for GIF](https://hsto.org/files/267/36b/ff1/26736bff158a4d82893ff85b2022cc5b.gif "giflink") (Result on next slide) -->
+\end{itemize}
+
+\begin{itemize}
+  \item Rank test observations on decreasing score.
+  \item Start in $(0, 0)$, for each observation $x$ (in the decreasing order).
+  \begin{itemize}
+    \item If $x$ is positive, move $1/\text{pos} = 0.1$ up
+    \item If $x$ is negative, move $1/\text{neg} = 0.1$ right
+  \end{itemize}
+\end{itemize}
+
+\framebreak
+
+\begin{center}
+\includegraphics[page=1]{figure_man/gif.pdf}
+
+ $x$ is positive, move $1/\text{pos} = 0.1$ up.
+\end{center}
+
+\framebreak
+
+\begin{center}
+\includegraphics[page=2]{figure_man/gif.pdf}
+
+ $x$ is positive, move $1/\text{pos} = 0.1$ up.
+\end{center}
+
+\framebreak
+
+\begin{center}
+\includegraphics[page=3]{figure_man/gif.pdf}
+
+ $x$ is negative, move $1/\text{neg} = 0.1$ right.
+\end{center}
+
+\framebreak
+
+\begin{center}
+\includegraphics[page=4]{figure_man/gif.pdf}
+
+ $x$ is positive, move $1/\text{pos} = 0.1$ up.
+\end{center}
+
+\framebreak
+
+\begin{center}
+\includegraphics[page=5]{figure_man/gif.pdf}
+
+ $x$ is positive, move $1/\text{pos} = 0.1$ up.
+\end{center}
+
+\framebreak
+
+\begin{center}
+\includegraphics[page=6]{figure_man/gif.pdf}
+
+ $x$ is positive, move $1/\text{pos} = 0.1$ up.
+\end{center}
+
+\framebreak
+
+\begin{center}
+\includegraphics[page=7]{figure_man/gif.pdf}
+
+ $x$ is negative, move $1/\text{neg} = 0.1$ right.
+\end{center}
+
+\framebreak
+
+\begin{center}
+\includegraphics[page=20]{figure_man/gif.pdf}
+\end{center}
+
+\framebreak
+
+\begin{center}
+\includegraphics[width=0.5\textwidth]{figure_man/roc-curve-ex1.png}
+\end{center}
+
+\begin{itemize}
+  \item Score of the best (6th) classifier is used as the threshold $\theta$.
+  \item Predict positive class for $\theta \geqslant 0.54$ ($\Rightarrow$ accuracy = 0.7).
+\end{itemize}
+\end{vbframe}
+
+%
+% \begin{vbframe}{Example Practical Method}
+% Given: 20 training observations, 12 negative and 8 positive
+%
+% \vspace{20pt}
+%
+% \tiny
+% \begin{tabular}{l|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}}
+%
+%   \hspace{-8pt} \#&  1& 2&  3&  4&  5&  6&  7&  8&  9& 10& 11& 12& 13& 14& 15& 16& 17& 18& 19& 20 \\ \hline
+%   \hspace{-8pt} C & N & N & N & N & N & N & N & N & N & N & N & N & P & P & P & P & P & P & P & P \\ \hline
+%   \hspace{-8pt} Score & .18 & .24 &  .32 & .33 & .4 & .53 & .58 & .59 & .6 & .7 & .75 & .85 & .52 & .72 & .73 & .79 & .82 & .88 & .9 &.92
+% \end{tabular}
+% \normalsize
+%
+% \vspace{20pt}
+% $\Rightarrow$ sort by score and draw the curves:
+% \vspace{20pt}
+%
+% \tiny
+% \begin{tabular}{l|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}|p{0.1cm}}
+%
+%   \hspace{-8pt} \#&  20& 19&  18&  12&  17&  16&  11&  15&  14& 10& 9& 8& 7& 6& 13& 5& 4& 3& 2& 1 \\ \hline
+%   \hspace{-8pt} C & P & P & P & N & P & P & N & P & P & N & N & N & N & N & P & N & N & N & N & N \\ \hline
+%   \hspace{-8pt} Score & .92 & .9 &  .88 & .85 & .82 & .79 & .75 & .73 & .72 & .7 & .6 & .59 & .58 & .53 & .52 & .4 & .33 & .32 & .24 &.18
+% \end{tabular}
+% \normalsize
+% \end{vbframe}
+%
+%
+% \begin{vbframe}{Example Practical Method}
+% \begin{center}
+% \includegraphics[width=0.75\textwidth]{figure_man/roc-curve-ex2.png}
+% \end{center}
+% \begin{itemize}
+%   \item Best accuracy achieved with observation \# 18.
+%   \item Setting $\theta = 0.88 \Rightarrow$ accuracy of $15/20 \; \hat{=} \; 75 \%$.
+% \end{itemize}
+% \end{vbframe}
+
+\begin{vbframe}{Other ROC Curve Examples}
+%<!-- (http://www.cs.bris.ac.uk/~flach/ICML04tutorial/ROCtutorialPartI.pdf) -->
+\begin{center}
+\includegraphics[width=0.6\textwidth]{figure_man/roc-curves.png}
+\end{center}
+\end{vbframe}
+
+\begin{vbframe}{AUC: Area Under ROC Curve}
+The area under the ROC curve (AUC $\in [0, 1]$) is
+\begin{itemize}
+  \item A measure for evaluating the performance of a classifier:
+  \begin{itemize}
+    \item AUC =   1: Perfect classifier, for which all positives are ranked higher than all negatives
+    \item AUC = 0.5: Randomly ordered
+    \item AUC =   0: All negatives are ranked higher than all positives
+    \item Interpretation of AUC: Probability that a classifier $C$ ranks a randomly drawn
+    positive observation "$+$" higher than a randomly drawn negative observation "$-$".
+  \end{itemize}
+
+%<!-- https://www.quora.com/How-is-statistical-significance-determined-for-ROC-curves-and-AUC-values -->
+
+  \item Related to the Mann-Whitney-U test, which
+  \begin{itemize}
+    \item Estimates the probability that randomly chosen positives
+      are ranked higher than randomly chosen negatives.
+    \item Relation: $AUC = \cfrac{U}{POS \cdot NEG}$.
+  \end{itemize}
+  % \item related to the Gini coefficient $= 2 \cdot AUC - 1$ (area above diag.)
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{AUC: Area Under ROC Curve}
+%<!--
+%-   Measure for evaluating the performance of a classifier
+%-   it's the area under the ROC Curve, total area is 100%
+%-->
+
+\begin{center}
+\includegraphics[width=0.75\textwidth]{figure_man/roc-auc-ex1.png}
+\end{center}
+\end{vbframe}
+
+\begin{vbframe}{Explanation Mann-Whitney-U Test}
+\begin{itemize}
+\item First we plot the ranks of all the scores as a stack of horizontal bars, and color them by the labels.
+\item Stack the green bars on top of one another, and slide them horizontally as needed to get a nice even stairstep on the right edge (See: practical method example for ROC curves):
+\end{itemize}
+\begin{center}
+\includegraphics[width=0.8\textwidth]{figure_man/roc-mannwhitney3.png}
+\end{center}
+
+
+\framebreak
+
+
+\begin{center}
+\includegraphics[width=0.5\textwidth]{figure_man/roc-mannwhitney2.png}
+\end{center}
+
+\begin{itemize}
+ \item Definition of the U statistic: $U = R_1 - \cfrac{n_1(n_1 + 1)}{2}$
+ \begin{itemize}
+  \item $R_1$ is the sum of ranks of positive cases (the area of the green bars)
+  \item $n_1$ is the number of positive cases
+ \end{itemize}
+  \item The area of the green bars on the right side is equal to $\cfrac{n_1(n_1 + 1)}{2}$.
+\end{itemize}
+
+\framebreak
+\begin{center}
+\includegraphics[width=0.5\textwidth]{figure_man/roc-mannwhitney2.png}
+\end{center}
+
+\begin{itemize}
+ \item $U =$ area of the green bars on left side
+ \item area of dashed rectangle = $n_1 \cdot n_2$
+ \item $AUC$ is $U$ normalized to the unit square,
+\end{itemize}
+$$\Longrightarrow AUC = \cfrac{U}{n_1\cdot n_2}$$
+with $n_1 = \text{POS}$ and $n_2 = \text{NEG}$.
+\end{vbframe}
+
+
+\begin{vbframe}{Partial AUC}
+\begin{itemize}
+  \item Sometimes it can be useful to look at a \href{http://journals.sagepub.com/doi/pdf/10.1177/0272989X8900900307}{specific region under the ROC curve}  $\Rightarrow$ partial AUC (pAUC).
+  \item Let $0 \leq c_1 < c_2 \leq 1$ define a region.
+  \item For example, one could focus on a region with low fpr ($c_1 = 0, c_2 = 0.2$) or a region with high tpr ($c_1 = 0.8, c_2 = 1$):
+\end{itemize}
+
+<<echo = FALSE, message = FALSE, warning = FALSE, fig.width = 14, fig.height = 7, out.width="0.7\\textwidth">>=
+#library(pROC)
+set.seed(1)
+D.ex <- rbinom(200, size = 1, prob = .5)
+M1 <- rnorm(200, mean = D.ex, sd = .65)
+M2 <- rnorm(200, mean = D.ex, sd = 1.5)
+
+test <- data.frame(D = D.ex, D.str = c("Healthy", "Ill")[D.ex + 1],
+                   M1 = M1, M2 = M2, stringsAsFactors = FALSE)
+
+rocobj <- pROC::roc(test$D, test$M1)
+par(mfrow = c(1, 2))
+pROC::plot.roc(rocobj, print.auc=TRUE, auc.polygon=TRUE, partial.auc=c(1, 0.8), partial.auc.focus="sp", reuse.auc=FALSE, legacy.axes = TRUE, xlab = "fpr", ylab = "tpr", xlim = c(1, 0), ylim = c(0, 1),  auc.polygon.col="red", auc.polygon.density = 20, auc.polygon.angle = 135, partial.auc.correct = FALSE
+)
+pROC::plot.roc(rocobj, print.auc=TRUE, auc.polygon=TRUE, partial.auc=c(1, 0.8), partial.auc.focus="se", reuse.auc=FALSE, legacy.axes = TRUE, xlab = "fpr", ylab = "tpr", xlim = c(1, 0), ylim = c(0, 1),  auc.polygon.col="red", auc.polygon.density = 20, auc.polygon.angle = 135)
+@
+
+\framebreak
+
+\begin{itemize}
+  \item $\text{pAUC} \in [0, c_2 - c_1]$.
+  \item The partial AUC can be corrected (see \href{http://journals.sagepub.com/doi/pdf/10.1177/0272989X8900900307}{McClish}), to have values between $0$ and $1$, where $0.5$ is non discriminant and $1$ is maximal: $$\text{pAUC}_\text{corrected} = \cfrac{1+\cfrac{\text{pAUC} - \text{min}}{\text{max} - \text{min}}}{2} $$
+  \item $\text{min}$ is the
+value of the non-discriminant AUC in the region
+  \item $\text{max}$ is the maximum possible AUC in the region
+\end{itemize}
+\end{vbframe}
+
+
+
+\begin{vbframe}{Multiclass AUC}
+\begin{itemize}
+  \item Consider multiclass classification, where a classifier predicts the probability $p_k$ of belonging to class $k$ for each class.
+  \item Hand and Till (2001) proposed to average the AUC of pairwise comparisons (1 vs. 1) of a multiclass classifier.
+  \begin{itemize}
+    \item estimate $AUC(i,j)$ for each pair of class $i$ and $j$
+    \item $AUC(i,j)$ is the probability that a randomly drawn member of class $i$ has a lower probability of belonging to class $j$
+      than a randomly drawn member of class $j$.
+    \item for $K$ classes, we have ${{K}\choose{2}} = \tfrac{K (K-1)}{2}$ values of $AUC(i,j)$ that are then averaged to compute the Multiclass AUC.
+  \end{itemize}
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Calibration and Discrimination}
+We consider data with a binary outcome $y$.
+\begin{itemize}
+  \item \textbf{Calibration:} When the predicted probabilities closely agree
+    with the observed outcome (for any reasonable grouping).
+  \begin{itemize}
+    \item \textbf{Calibration in the large} is a property of the \textit{full sample}.
+    It compares the observed probability in the full sample  (e.g. proportion of observations for which $y=1$)
+   % <!-- (e.g., 10% if 10 of 100 individuals have the outcome being predicted, e.g. $y=1$) -->
+    with the average predicted probability in the full sample.
+    \item \textbf{Calibration in the small} is a property of \textit{subsets} of the sample.
+    It compares the observed probability in each subset with the average
+    predicted probability in that subset.
+  \end{itemize}
+  \item \textbf{Discrimination:} Ability to perfectly separate the population into $y=0$ and $y=1$.
+    Measures of discrimination are, for example, AUC, sensitivity, specificity.
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Calibration and Discrimination}
+%<!-- http://www.uphs.upenn.edu/dgimhsr/documents/predictionrules.sp12.pdf -->
+A well calibrated  classifier can be poorly discriminating, e.g.
+
+\begin{table}[]
+\centering
+\begin{tabular}{rrrr}
+\hline
+Obs. Nr. & truth & Pred Rule 1 & Pred Rule 2 \\
+\hline
+1        & 1     & 1           & 0           \\
+2        & 1     & 1           & 0           \\
+3        & 0     & 0           & 1           \\
+4        & 0     & 0           & 1           \\ \hline
+Avg Prob & 50\%  & 50\%        & 50\%        \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{itemize}
+  \item Both prediction rules have identical calibration in the large (50\%), however, rule 1 is better than rule 2.
+\end{itemize}
+
+<<eval = FALSE, echo = FALSE>>=
+truth = c(1,1,0,0,0,0)
+pred.rule.1 = c(1,1,0,0,0,0)
+pred.rule.2 = c(0,0,0,0,1,1)
+kable(data.frame(truth = truth, "pred rule 1" = pred.rule.1, "pred rule 2" = pred.rule.2))
+@
+\end{vbframe}
+
+\begin{vbframe}{Calibration and Discrimination}
+A well discriminating classifier can have a bad calibration, e.g.
+
+\begin{table}[]
+\centering
+\begin{tabular}{rrrr}
+\hline
+Obs. Nr. & truth & Pred Rule 1 & Pred Rule 2 \\
+\hline
+1        & 1     & 0.9           & 0.9         \\
+2        & 1     & 0.9           & 0.9           \\
+3        & 0     & 0.1          & 0.7           \\
+4        & 0     & 0.1         & 0.7           \\ \hline
+Avg Prob & 50\%  & 50\%        & 80\%        \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{itemize}
+  \item Both prediction rules are well discriminating (e.g., setting thresholds $\theta_1 = 0.5$, $\theta_2 = 0.8$)
+  \item Prediction rule 2 is rather poorly calibrated. The proportion of observations for which $y=1$ would be estimated with $80\%$.
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{ROC Analysis in R}
+\begin{itemize}
+  \item \texttt{generateThreshVsPerfData} calculates one or several performance measures for a sequence of decision thresholds from 0 to 1.
+  \item It provides S3 methods for objects of class \texttt{Prediction}, \texttt{ResampleResult}
+and \texttt{BenchmarkResult} (resulting from  \texttt{predict.WrappedModel}, \texttt{resample}
+or \texttt{benchmark}).
+  \item \texttt{plotROCCurves} plots the result of \texttt{generateThreshVsPerfData} using \texttt{ggplot2}.
+  \item More infos \url{http://mlr-org.github.io/mlr-tutorial/release/html/roc_analysis/index.html}
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Example 1: Single predictions}
+\scriptsize
+<<echo=TRUE, message = FALSE>>=
+set.seed(1)
+# get train and test indices
+n = getTaskSize(sonar.task)
+train.set = sample(n, size = round(2/3 * n))
+test.set = setdiff(seq_len(n), train.set)
+
+# fit and predict
+lrn = makeLearner("classif.lda", predict.type = "prob")
+mod = train(lrn, sonar.task, subset = train.set)
+pred = predict(mod, task = sonar.task, subset = test.set)
+@
+\normalsize
+\end{vbframe}
+
+\begin{vbframe}{Example 1: Single predictions}
+We calculate fpr, tpr and compute error rates:
+
+\scriptsize
+<<echo = TRUE>>=
+df = generateThreshVsPerfData(pred, measures = list(fpr, tpr, mmce))
+@
+\normalsize
+\begin{itemize}
+  \item \texttt{generateThreshVsPerfData} returns an object of class \texttt{ThreshVsPerfData},
+which contains the performance values in the \texttt{\$data} slot.
+  \item By default, \texttt{plotROCCurves} plots the performance values of the first two measures passed
+to \texttt{generateThreshVsPerfData}.
+  \item The first is shown on the x-axis, the second on the y-axis.
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Example 1: Single predictions}
+\scriptsize
+<<echo = TRUE, fig.align="center", fig.width = 5, fig.height = 5, out.width="0.55\\textwidth">>=
+df = generateThreshVsPerfData(pred, measures = list(fpr, tpr, mmce))
+plotROCCurves(df)
+@
+\normalsize
+
+\framebreak
+
+The corresponding area under curve auc can be calculated by
+
+\scriptsize
+<<echo = TRUE>>=
+performance(pred, auc)
+@
+
+\normalsize
+\texttt{plotROCCurves} always requires a pair of performance measures that are plotted against
+each other.
+
+\framebreak
+
+If you want to plot individual measures vs. the decision threshold, use
+
+\scriptsize
+<<echo = TRUE, fig.align="center", fig.height = 4, fig.width = 8, out.width="0.9\\textwidth">>=
+plotThreshVsPerf(df)
+@
+\normalsize
+\end{vbframe}
+
+
+\begin{vbframe}{Example 2: Benchmark Experiment}
+\scriptsize
+<<>>=
+options(width = 200)
+@
+<<echo = TRUE>>=
+lrn1 = makeLearner("classif.randomForest", predict.type = "prob")
+lrn2 = makeLearner("classif.rpart", predict.type = "prob")
+
+cv5 = makeResampleDesc("CV", iters = 5)
+
+bmr = benchmark(learners = list(lrn1, lrn2), tasks = sonar.task,
+  resampling = cv5, measures = list(auc, mmce), show.info = FALSE)
+bmr
+@
+\normalsize
+
+Calling \texttt{generateThreshVsPerfData} and \texttt{plotROCCurves} on the \texttt{BenchmarkResult}
+produces a plot with ROC curves for all learners in the experiment.
+
+\framebreak
+
+\scriptsize
+<<echo = TRUE, fig.align="center", fig.height = 4, fig.width = 8, out.width="\\textwidth">>=
+df = generateThreshVsPerfData(bmr, measures = list(fpr, tpr, mmce))
+plotROCCurves(df)
+@
+\framebreak
+
+\scriptsize
+<<echo = TRUE, fig.align="center", fig.height = 4, fig.width = 8, out.width="\\textwidth">>=
+plotThreshVsPerf(df)
+@
+\end{vbframe}
+\endlecture

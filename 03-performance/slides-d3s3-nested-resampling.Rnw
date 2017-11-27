@@ -1,0 +1,150 @@
+% Introduction to Machine Learning
+% Day 3
+
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../style/preamble.Rnw")
+@
+
+% Load all R packages and set up knitr
+<<setup, child="../style/setup.Rnw", include = FALSE>>=
+@
+
+\lecturechapter{6}{Performance Estimation and Resampling}
+\lecture{Fortgeschrittene Computerintensive Methoden}
+
+
+\begin{vbframe}{Nested resampling}
+In model selection, we are interested in selecting the best model from a set of potential candidate models (e.g., different model classes, different hyperparameter settings, different feature sets).
+
+
+\begin{blocki}{Problem}
+    \item We cannot evaluate our finally selected inducer on the same resampling splits that we have used to
+      perform model selection for it, e.g., to tune its hyperparameters.
+    \item By repeatedly evaluating the inducer on the same test set, or the same CV splits, information
+      about the test can enter the algorithm.
+    \item Danger of overfitting to the resampling splits / overtuning!
+    \item The final performance estimate will be optimistically biased.
+    \item One could also see this as a problem similar to multiple testing.
+
+\end{blocki}
+
+\framebreak
+
+\begin{blocki}{Instructive and problematic example}
+    \item Assume a binary classif. problem with equal apriori class sizes.
+    \item Assume an inducer $a(\D, \lambda)$, with hyperparameter $\lambda$.
+    \item $a$ shall be a (non-sensical) feature-independent classifier, where $\lambda$ has no effect.
+      $a$ predicts random labels with equal probability.
+    \item Of course, a's generalization error is 50\%.
+    \item A cross-validation of $a$ (with any fixed $\lambda$) will easily show this
+      (given that the partitioned data set for CV is not too small).
+    \item Now lets \enquote{tune} $a$, by trying out 100 different $\lambda$ values.
+    \item We repeat the experiment 50 times and average results.
+\end{blocki}
+
+<<fig.height=3.5, echo = FALSE>>=
+ggd = load2("rsrc/overtuning-example.RData", "res2.mean")
+ggd = melt(ggd, measure.vars = colnames(res2), value.name = "tuneperf");
+colnames(ggd)[1:2] = c("data.size", "iter")
+ggd = sortByCol(ggd, c("data.size", "iter"))
+ggd$data.size = as.factor(ggd$data.size)
+
+
+pl = ggplot(ggd, aes(x = iter, y = tuneperf, col = data.size))
+pl =  pl + geom_line()
+print(pl)
+@
+
+\begin{itemize}
+  \item Plotted is the best \enquote{tuning error} after $k$ tuning iterations
+    \item We have performed the experiment for different sizes of learning data
+      that where cross-validated.
+    \item Experiment was simulated with mlr's \enquote{classif.featureless} learner.
+    \item Quiz: How to mathematically calculate the shape of the curves?
+\end{itemize}
+
+\begin{blocki}{Simple solution}
+\item Again, simply simulate what happens in model application.
+\item All parts of the model building (including model selection, preprocessing) should be embedded
+  in the resampling, i.e., repeated for every pair of training/test data.
+\item For steps that themselves require resampling (e.g. hyperparameter tuning) this results
+  in two nested resampling loops, i.e. a resampling strategy for both tuning and outer evaluation.
+\item Simplest form is a 3-way split into a training, optimization and test set.
+  Inducers are trained on the training set, evaluated on the optimization set.
+  After the final model is selected, we fit on joint training+optimization set and evaluate
+  a final time on the test set. Note that we touch the test set only once, and have no way of \enquote{cheating}.
+\end{blocki}
+
+  \framebreak
+
+Example: Outer loop with 3-fold CV and inner loop with 4-fold CV
+
+\begin{center}
+  \includegraphics[width=9.5cm]{figure_man/Nested_Resampling.png}
+\end{center}
+
+  \framebreak
+
+  \begin{itemize}
+    \item Regression task \pkg{mlbench.friedman1}.
+    \item We jointly tune over a random forest and a neural net, with parameters \enquote{mtry}
+      and \enquote{size} (with mlr's ModelMultiplexer).
+    \item Random train and validation set with 100 + 100 observations.
+    \item 50 iterations of random search tuning with holdout-splitting where we
+      train on the training set and test on the validation set.
+    \item After we are done, we store the best obtained configuration, and the obtained performance estimator
+      on the validation set (biased).
+    \item We sample another, small independent test set, with 100 observations, and a large one with 50K.
+      We train the optimal model on the train set and test on both new test sets
+      (that's the nested performance estimator and also the \enquote{real} performance estimator, which we usually do not have).
+    \item This procedure was repeated 100 times.
+  \end{itemize}
+
+  \framebreak
+
+<<fig.height=3, echo = FALSE>>=
+ggd = load2("rsrc/nested-resample-example.RData")
+pl = ggplot(ggd, aes(y = value, x = type)) + geom_boxplot()
+pl = pl + scale_x_discrete(labels = c("wrong, biased resampling", "nested resampling", "'real' test error"))
+pl = pl + ylab("MSE") + xlab("") + ylim(c(0,30))
+pl = pl + theme(axis.text.x = element_text(angle = 0))
+print(pl)
+@
+\begin{itemize}
+  \item In reality we would train on the joint 100+100 train-valid-set observations.
+    We don't do this here for a fair comparison with the naive strategy.
+  \item Note the downward bias of \enquote{naive} tuning where model selected was not embedded in an
+    outer resampling loop. Nested resampling get's it right.
+\end{itemize}
+
+\end{vbframe}
+
+% \begin{vbframe}{Nested resampling with mlr}
+
+% <<size="footnotesize">>=
+% ## Tuning in inner resampling loop
+% ps = makeParamSet(
+%   makeDiscreteParam("C", values = 2^(-2:2)),
+%   makeDiscreteParam("sigma", values = 2^(-2:2))
+% )
+% ctrl = makeTuneControlGrid()
+% inner = makeResampleDesc("Subsample", iters = 2L)
+% lrn = makeTuneWrapper("classif.ksvm", resampling = inner,
+%   par.set = ps, control = ctrl, show.info = FALSE)
+% ## Outer resampling loop
+% outer = makeResampleDesc("CV", iters = 3L)
+% @
+
+%   \framebreak
+
+% <<size="footnotesize">>=
+% r = resample(lrn, iris.task, resampling = outer,
+%   extract = getTuneResult, show.info = FALSE); print(r)
+
+% print(r$extract[[1L]])
+% @
+% \end{vbframe}
+
+
+\endlecture

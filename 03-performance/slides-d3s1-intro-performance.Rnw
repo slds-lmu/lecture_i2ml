@@ -1,0 +1,512 @@
+% Introduction to Machine Learning
+% Day 3
+
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../style/preamble.Rnw")
+@
+
+% Load all R packages and set up knitr
+<<setup, child="../style/setup.Rnw", include = FALSE>>=
+@
+
+\lecturechapter{6}{Performance Estimation}
+\lecture{Fortgeschrittene Computerintensive Methoden}
+
+
+\begin{vbframe}{Introduction}
+In predictive modeling, performance estimation can have different goals:
+
+\begin{itemize}
+  \item \textbf{Performance estimation of a model:}
+    Estimate \emph{generalization} error of a model on new (unseen) data, drawn from the same data generating process.
+  \item \textbf{Performance estimation of an algorithm:}
+    Estimate \emph{generalization} error of a learning algorithm, trained on a data set
+    of a certain size, on new (unseen) data, all drawn from the same data generating process.
+  \item \textbf{Model selection:}
+    Select the best model from a set of potential candidate models (e.g., different model classes, different
+    hyperparameter settings, different feature sets)
+  \item \textbf{Learning curves}
+    How does the generalization error scale when an algorithm is trained on training sets of different sizes?
+\end{itemize}
+
+Obviously, all goals are quite related, i.e., reliably estimate the performance is the foundation for all of them.
+
+\end{vbframe}
+
+% \begin{vbframe}{Performance measures}
+% There is a great variety of performance measures available for all types of learning problems.
+% Some of the most important ones are:
+% \begin{table}
+% \footnotesize
+% \begin{tabular}{p{4cm}p{7cm}}
+% \hline
+% Name & Defintion \\
+% \hline
+% \multicolumn{2}{l}{\textbf{Classifcation}}\\
+% Mean classification error & $mean(response != truth)$\\
+% Accuracy & $mean(response == truth)$\\
+% Aread under the curve & Integral that results from compution false positive and false negative rate for many different thresholds\\
+% \hline
+% \multicolumn{2}{l}{\textbf{Regression}}\\
+% Mean of squared errors & $mean((response - truth)^2)$\\
+% Mean of absolute errors & $mean(abs(response - truth))$\\
+% \hline
+% \multicolumn{2}{l}{\textbf{Clustering}}\\
+% Dunn index & Ratio of the smallest distance between observations not in the same cluster to the largest intra-cluster distance \\
+% \hline
+% \multicolumn{2}{l}{\textbf{Survival}}\\
+% Concordance index & Probability of concordance between predicted and observed outcomes\\
+% \hline
+% \end{tabular}
+% \end{table}
+% \end{vbframe}
+
+\begin{vbframe}{Generalization Error}
+The \emph{generalization error} is defined as the error of fixed model $\fhD$:
+
+$$\GED = \E( L(y, \fhD(x)) | \D),$$
+
+where
+
+\begin{itemize}
+\item $\fhD$ is a given, fixed model, fitted on a specific data set $\D$
+\item $\D$ is a data set (of size n), drawn i.i.d. from the joint $\Pxy$
+\item $L$ is an \emph{outer} loss, depending on the application, that measures the performance of $\fhD$
+\item $\GED$ is basically the risk $\risk(\fhD)$ of $\fhD$
+\item $\GED$ is conditional on the \emph{model} $\fhD$ and hence also on $\D$
+\end{itemize}
+
+
+\end{vbframe}
+
+
+\begin{vbframe}{Inner vs. Outer Loss}
+
+We distinguish between
+
+%\lz
+\begin{itemize}
+\item the inner loss which is optimized during model fitting to obtain $\fh$.
+\item the outer loss which will be used to assess the model afterwards.
+\end{itemize}
+
+%\lz
+Usually, it is desired that inner and outer loss match, however, this is not always possible,
+as the outer loss is often numerically hard(er) to handle during optimization and we might
+opt to approximate it.
+
+\lz Examples:
+In logistic regression we minimize the binomial loss, and in SVMs the hinge loss.
+But when evaluating the models we might be more interested in classification error,  or AUC, or partial AUC as more appropriate
+outer loss functions.
+
+\lz
+The outer loss is also known as \emph{performance measure}.
+\end{vbframe}
+
+\begin{vbframe}{Training Error}
+
+The \emph{training error} (also called {\it apparent error} or {\it resubstitution error}) is estimated by the average loss over the training set $\Dtrain$:
+  $$\GEh{\Dtrain}(\fhDtrain) = \frac{1}{|\Dtrain|} \sum_{\xy \in \Dtrain} L(y, \fhDtrain(x))$$
+
+
+\begin{itemize}
+\item The training error is usually a very unreliable and overly optimistic estimator of future performance.
+\item Goodness-of-fit measures like $R^2$, likelihood, AIC, BIC, deviance are all based on the training error.
+
+
+\framebreak
+
+Example 1: Recall our polynomial regression: The training error provided no help
+if figuring out the optimal model complexity $d$.
+
+<<echo=FALSE, out.width="0.9\\textwidth", fig.height=2.7>>=
+.h = function(x) 0.5 + 0.4 * sin(2 * pi * x)
+h = function(x) .h(x) + rnorm(length(x), mean = 0, sd = 0.05)
+
+set.seed(1234)
+x.all = seq(0, 1, length = 21L)
+ind = seq(1, length(x.all), by = 2)
+
+x = x.all[ind]
+y = h(x)
+x.test = x.all[-ind]
+y.test = h(x.all[-ind])
+
+line.palette = c("#E69F00AA", "#56B4E9AA", "#CC79A7AA")
+baseplot = function() {
+  par(mar = c(2, 2, 1, 1))
+  plot(.h, lty = 2L, xlim = c(0, 1), ylim = c(-0.1, 1), ylab = "", xlab = "")
+  points(x, y, pch = 19L)
+  points(x.test, y.test)
+  legend(x = "bottomleft", legend = c("true relationship f(x)", "training set", "test set"),
+    col = "black", lty = c(2L, NA, NA), pch = c(NA, 19L, 21L))
+}
+
+p1 = lm(y ~ poly(x, 1, raw = TRUE))
+p5 = lm(y ~ poly(x, 5, raw = TRUE))
+p9 = lm(y ~ poly(x, 9, raw = TRUE))
+mods = list(p1, p5, p9)
+x.plot = seq(0, 1, length = 500L)
+baseplot()
+for (i in seq_along(mods)) {
+  lines(x.plot, predict(mods[[i]], newdata = data.frame(x = x.plot)),
+    col = line.palette[i], lwd = 2L)
+}
+legend("topright", paste(sprintf("d = %s", c(1, 5, 9)), c("(underfit)", "(good)", "(overfit)")),
+  col = line.palette, lwd = 2L)
+@
+
+<<echo=FALSE, out.width="0.9\\textwidth", fig.height=2.7>>=
+d = lapply(1:10, function(i) {
+  mod = lm(y ~ poly(x, degree = i, raw = TRUE))
+  list(
+    train = mean((y - predict(mod, data.frame(x = x)))^2),
+    test = mean((y.test - predict(mod, data.frame(x = x.test)))^2)
+  )
+})
+par(mar = c(4, 4, 1, 1))
+#par(mar = c(4, 4, 0, 0) + 0.1)
+plot(1, type = "n", xlim = c(1, 10), ylim = c(0, 0.05),
+  ylab = "MSE", xlab = "degree of polynomial")
+lines(1:10, sapply(d, function(x) x$train), type = "b")
+lines(1:10, sapply(d, function(x) x$test), type = "b", col = "gray")
+
+legend("topright", c("training error", "test error"), lty = 1L, col = c("black", "gray"))
+text(3.75, 0.02, "High Bias,\nLow Variance", bg = "white")
+arrows(4.75, 0.02, 2.75, 0.02, code = 2L, lty = 2L, length = 0.1)
+
+text(8, 0.02, "Low Bias,\nHigh Variance", bg = "white")
+arrows(9, 0.02, 7, 0.02, code = 1, lty = 2, length = 0.1)
+@
+
+\framebreak
+
+\item Example 2: Assume any ML model, now extend the training algorithm in the following way:
+  On top of normal fitting, we also store $\Dtrain$.
+  During prediction, we first check whether $x$ is already stored in this set. If so, we replicate its label.
+  The training error of such an (unreasonable) procedure will always be zero.
+\item Example 3: The training error of 1nn is always zero.
+\item Example 4: The training error of an interpolating spline in regression is always zero.
+
+\item For models of severely restricted capacity, and given enough data, the training error might provide
+  reliable information. E.g. consider a linear model in 5d, with 10.000 training points.
+  But: What happens if we have less data? And $p$ becomes larger? Can you precisely define
+  where the training error becomes unreliable?
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Test error and hold-out splitting}
+To reliably assess a model, we need to define
+
+\begin{itemize}
+\item how to simulate the scenario of "new unseen data" and
+\item how to estimate the generalization error.
+\end{itemize}
+
+\begin{blocki}{Hold-out splitting and evaluation}
+  \item The fundamental idea behind test error estimation (and everything that will follow)
+    is quite simple: To measure performance, let's simulate how our model will be applied on new, unseen data
+  \item So, to evaluate a given model do exactly that, predict only on data not used during training and measure performance there.
+  \item That implies that for a given set $\D$, we have to preserve
+    some data for testing that we cannot use for training, hence we need to define a training set $\Dtrain$ and a
+    and a test set $\Dtest$, usually by randomly partitioning the original $\D$, with a given split rate.
+\end{blocki}
+
+
+\framebreak
+
+The \emph{test error} (also called \emph{generalization error}) is %the expected prediction error on unseen data for a given training set $\Dtrain$ and can be
+  estimated by the average loss over the independent test set $\Dtest$:
+  $$\GEh{\Dtest}(\fhDtrain) = \frac{1}{|\Dtest|} \sum_{\xy \in \Dtest} L(y, \fhDtrain(x))$$
+
+ \lz
+
+  If we fix a training set $\Dtrain$ and a model $\fhDtrain$, we can estimate $\GEh{\Dtest}(\fhDtrain)$ through
+ test sets of various sizes. As all $(x,y)$ of the test set will be i.i.d. (from $\Pxy$),
+ and as $|\Dtest| = n_{test}$ will usually not be too small, we can apply the central limit theorem to
+ approximate its distribution, calculate approximate confidence intervals, and perform
+ sample size considerations.
+
+
+\end{vbframe}
+
+\begin{vbframe}{Training vs. test error}
+  \vspace{-0.25cm}
+  \begin{blocki}{The training error}
+  \vspace{-0.25cm}
+    \item is an over-optimistic (biased) estimator as the performance is measured on the same data the learned prediction function $\fhDtrain(x)$ was trained for.
+    \item decreases with smaller training set size as it is easier for the model to learn the underlying structure in the training set perfectly.
+    \item decreases with increasing model complexity as the model is able to learn more complex structures.
+  \end{blocki}
+  \vspace{-0.25cm}
+  \begin{blocki}{The test error}
+  \vspace{-0.25cm}
+  \item will typically decrease when the training set increases as the model generalizes better with more data (more data to learn).
+  \item will have higher variance with decreasing test set size.
+  \item will have higher variance with increasing model complexity.
+  \end{blocki}
+\end{vbframe}
+
+\begin{vbframe}{Bias-Variance of holdout}
+
+  \begin{itemize}
+    \item If the size of our initial, complete data set $\D$ is limited,
+      single train-test splits can be problematic.
+    \item The smaller our single test set is, the higher the variance
+      of our estimated performance error (e.g., if we test on one observation, in the extreme case).
+      But note that by just making the test set smaller, we do not introduce any bias,
+      as we simply average losses on i.i.d. observations from $\Pxy$.
+    \item The smaller training set becomes, the more pessimistic bias we introduce into the model.
+      Note that if $|D| = n$, our aim is to estimate the performance of a model fitted
+      on n observations (as this is what we will do in the end). If we fit on less data during
+      evaluation, our model will learn less, and perform worse. Very small training sets will also
+      increase variance a bit.
+  \end{itemize}
+
+  \framebreak
+
+  Experiment:
+  \begin{itemize}
+    \item Data: simulate spiral data (sd = 0.1) from the \texttt{mlbench} package.
+    \item Learner: CART (\texttt{classif.rpart} from \texttt{mlr}).
+    \item Goal: estimate real performance of a model with $|\Dtrain| = 500$.
+    \item Get the "true" estimator by repeatedly sampling 500 observations from the simulator,
+      fit the learner, then evaluate on a really large number of observation.
+    \item Analyse different types of holdout and subsampling (= repeated holdout), with different split rates:
+    \begin{itemize}
+    \item Sample $\D$ with $|\D| = 500$ and use split-rate $s \in \{0.05, 0.1, ..., 0.95\}$ for training with $|\Dtrain| = s \cdot 500$.
+    \item Estimate performance on $\Dtest$ with $|\Dtest| = 500 \cdot (1 - s)$.
+    \item Repeat the samping of $\D$ 50 times and the splitting with $s$ 50 times ($\Rightarrow$ 2500 experiments for each split-rate).
+    \end{itemize}
+  \end{itemize}
+
+\framebreak
+
+Visualize the perfomance estimator - and the MSE of the estimator - in relation to the true error rate.
+
+<<>>=
+load("rsrc/holdout-biasvar.RData")
+@
+
+<<echo = FALSE, fig.height = 5>>=
+ggd1 = melt(res)
+colnames(ggd1) = c("split", "rep", "ssiter", "mmce")
+ggd1$split = as.factor(ggd1$split)
+ggd1$mse = (ggd1$mmce -  realperf)^2
+ggd1$type = "holdout"
+ggd1$ssiter = NULL
+mse1 = ddply(ggd1, "split", summarize, mse = mean(mse))
+mse1$type = "holdout"
+
+ggd2 = ddply(ggd1, c("split", "rep"), summarize, mmce = mean(mmce))
+ggd2$mse = (ggd2$mmce -  realperf)^2
+ggd2$type = "subsampling"
+mse2 = ddply(ggd2, "split", summarize, mse = mean(mse))
+mse2$type = "subsampling"
+
+ggd = rbind(ggd1, ggd2)
+gmse = rbind(mse1, mse2)
+
+ggd$type = as.factor(ggd$type)
+pl1 = ggplot(ggd, aes(x = split, y = mmce, col = type))
+pl1 = pl1 + geom_boxplot()
+pl1 = pl1 + geom_hline(yintercept = realperf)
+#pl1 = pl1 + theme(axis.text.x = element_text(angle = 45))
+
+gmse$split = as.numeric(as.character(gmse$split))
+gmse$type = as.factor(gmse$type)
+
+pl2 = ggplot(gmse, aes(x = split, y = mse, col = type))
+pl2 = pl2 + geom_line()
+pl2 = pl2 + scale_y_log10()
+pl2 = pl2 + scale_x_continuous(breaks = gmse$split)
+
+grid.arrange(pl1 + theme_minimal(), pl2 + theme_minimal(), layout_matrix = rbind(1,1,2))
+@
+
+
+% \framebreak
+%
+%   \begin{itemize}
+%     \item The training error decreases with smaller training set size as it is easier for the model to learn the underlying structure in smaller training sets perfectly.
+%     \item The test error (its bias) decreases with increasing training set size as the model generalizes better with more data, however, the variance increases as the test set size decreases at the same time.
+%     \item The variance of the test error should decrease if we repeat the hold-out more often. %(here 10 vs. 100 repetitions):
+%
+% <<echo = FALSE, cache = TRUE, eval = FALSE, out.width="0.85\\textwidth", fig.height=3>>=
+% res = rbind(cbind(res.rpart, repetitions = 100), cbind(res.rpart.small, repetitions = 20))
+% res$repetitions = as.factor(res$repetitions)
+%
+% p1 = ggplot(data = subset(res, measure == "1"), aes(x = percentage, y = mmce)) +
+%   geom_errorbar(aes(ymin = mmce - sd, ymax = mmce + sd, colour = repetitions), width = 0.025, position = position_dodge(width = 0.01)) +
+%   geom_line(aes(colour = repetitions), position = position_dodge(width = 0.01)) +
+%   geom_point(aes(colour = repetitions), position = position_dodge(width = 0.01)) +
+%   ylab("Test error") +
+%   xlab("Training set percentage") +
+%   theme_minimal()
+% p1
+% @
+%
+% \end{itemize}
+\framebreak
+
+
+\end{vbframe}
+%
+% \begin{vbframe}{Bias vs. Variance}
+% Both, training error and test error are estimators and suffer, as all statistical estimators, from the bias-variance issue:
+%
+% % \begin{figure}
+% %     \centering
+% %     \includegraphics[width=6cm]{bias_variance_target}
+% % \end{figure}
+%
+% <<fig.height=5, fig.width=5, out.width="0.5\\textwidth">>=
+% n = 10
+% set.seed(14)
+% na_np = data.frame(x1 = rnorm(10, mean = -2, sd = 1),
+%   x2 = rnorm(10, mean = 2, sd = 1),
+%   Acc = "Not Accurate",
+%   Pre = "Not Precise")
+% set.seed(2)
+% a_np = data.frame(x1 = rnorm(10, mean = 0, sd = 1),
+%   x2 = rnorm(10, mean = 0, sd = 1),
+%   Acc = "Accurate",
+%   Pre = "Not Precise")
+% set.seed(3)
+% a_p = data.frame(x1 = rnorm(10, mean = 0, sd = .35),
+%   x2 = rnorm(10, mean = 0, sd = .35),
+%   Acc = "Accurate",
+%   Pre = "Precise")
+% set.seed(12)
+% na_p = data.frame(x1 = rnorm(10, mean = 2, sd = .35),
+%   x2 = rnorm(10, mean = 2, sd = .35),
+%   Acc = "Not Accurate",
+%   Pre = "Precise")
+%
+% plot_dat = rbind(na_np, a_p, a_np, na_p)
+%
+% ggplot(plot_dat, aes(x = x1, y = x2)) +
+%   facet_grid(Acc ~ Pre) +
+%   xlim(c(-5, 5)) + ylim(c(-5, 5)) +
+%   xlab("") + ylab("") +
+%   theme_bw() +
+%   theme(axis.ticks = element_blank(),
+%     axis.text.y = element_blank(),
+%     axis.text.x = element_blank(),
+%     panel.grid.major = element_blank(),
+%     panel.grid.minor = element_blank(),
+%     #panel.border = theme_blank(),
+%     panel.background = element_blank())  +
+%   annotate("path",
+%     x = .25*cos(seq(0,2*pi,length.out = 100)),
+%     y = .25*sin(seq(0,2*pi,length.out = 100)),
+%     col = rgb(.2, .2, .2, .5)) +
+%   annotate("path",
+%     x = 1*cos(seq(0,2*pi,length.out = 100)),
+%     y = 1*sin(seq(0,2*pi,length.out = 100)),
+%     col = rgb(.2, .2, .2, .5)) +
+%   annotate("path",
+%     x = 2*cos(seq(0,2*pi,length.out = 100)),
+%     y = 2*sin(seq(0,2*pi,length.out = 100)),
+%     col = rgb(.2, .2, .2, .5)) +
+%   annotate("path",
+%     x = 3*cos(seq(0,2*pi,length.out = 100)),
+%     y = 3*sin(seq(0,2*pi,length.out = 100)),
+%     col = rgb(.2, .2, .2, .5)) +
+%   annotate("path",
+%     x = 4*cos(seq(0,2*pi,length.out = 100)),
+%     y = 4*sin(seq(0,2*pi,length.out = 100)),
+%     col = rgb(.2, .2, .2, .5)) +
+%   geom_point()
+% @
+%
+% \end{vbframe}
+
+% \begin{vbframe}{Example: Polynomial Regression}
+% Assume that $y$ can be approximated by a $d^{th}$-order polynomial
+% $$
+% y = f(x) = \beta_0 + \beta_1 x + \ldots + \beta_d x^d = \sum_{j = 0}^{d} \beta_j
+% x^j\text{.}
+% $$
+
+% \begin{itemize}
+%   \item $\beta_j$ are the coefficients and $d$ is called the degree (or order).
+%   \item For fixed $d$, the form of the function $\fx$ is determined
+%   by the values of the coefficients $\beta_j$.
+%   \item  Therefore, the model function has the form $f(x)$,
+%   and the task is to find the $\beta$ that best fits the data.
+% \end{itemize}
+
+% \framebreak
+
+% Consider the following true relationship $f(x)$ with the corresponding training and test set:
+
+
+% \framebreak
+
+% Models of different {\it complexity}, i.e., of different polynomial order $d$ are fitted to the training set:
+% %How should we choose the polynomial order $d$?
+
+% <<echo=FALSE, out.width="0.9\\textwidth", fig.height=5>>=
+% @
+
+% \framebreak
+
+% The performance of the models on the training data $\Dtrain$ can be measured by calculating the \emph{training error} according to the mean squared error (MSE):
+% $$MSE = \frac{1}{n} \sum_{i = 1}^{n}(\yi - \fh_{\Dtrain}(\xi))^2\text{.}$$
+%
+% <<echo=FALSE>>=
+% mse = function(y, p) {
+%   if (class(p) == "lm")
+%     p = predict(p)
+%   loss = (y - p)^2
+%   sprintf("%.3f", mean(loss))
+% }
+%
+% p1.tr.mse = mse(y, p1)
+% p5.tr.mse = mse(y, p5)
+% p9.tr.mse = mse(y, p9)
+% @
+%
+% \lz
+%
+% \begin{center}
+% Our three models produce the following training errors: \\
+% d = 1: \Sexpr{p1.tr.mse}, \qquad d = 5: \Sexpr{p5.tr.mse}, \qquad d = 9: \Sexpr{p9.tr.mse}
+% \end{center}
+%
+% \lz
+%
+% Apparantly this does not work to select the correct model $\Rightarrow$ use
+% {\em independent} test data to evaluate the prediction error
+% (\enquote{test error})
+%
+% \framebreak
+
+% Choosing model complexity is always a trade-off between bias and variance with respect to model performance and in general depends on the application itself (e.g, data, choice of loss-function).
+
+% \lz
+
+% \begin{itemize}
+%   \item The polynomial of order $d = 9$ was almost optimal on $\Dtrain$ but lacked in performing good on new data points $\Dtest$ (leads to overfitting as the model is too complex / flexible).
+%   \item The linear model with $d = 1$ was not able to capture the non-linear relationship, even on $\Dtrain$ (leads to underfitting as the model is not complex enough).
+% \end{itemize}
+
+% \lz
+% %We can see that the training error should not be used to evaluate model performance.
+
+% To illustrate the bias-variance trade-off here, we model polynomials from degree 1 to 9 and look at the training and test error.
+
+% \framebreak
+
+% \begin{itemize}
+% \item A learner that can learn more complex concepts (higher order polynomial) has, in general, a lower bias (but higher variance).
+% \item The training error consistently decreases with model complexity.%, typically dropping to zero if we increase the model complexity.
+% \item A model with zero training error is \emph{overfitting} to the training data and will typically generalize poorly.
+% \end{itemize}
+
+% \end{vbframe}
+\endlecture
