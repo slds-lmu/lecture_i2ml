@@ -253,149 +253,159 @@ plot(tree)
   \begin{column}{0.6\textwidth}
 <<iris-plot, fig.height=12, fig.width=11>>=
 iris = getTaskData(iris.task)
-ggpairs(iris, aes(colour=Species))
+ggpairs(iris, aes(colour = Species))
 @
   \end{column}
 \end{columns}
 
 \framebreak
-
-\textbf{Multilabel Classification Task}
 \lz
-\begin{columns}[T]
-  \begin{column}{0.5\textwidth}
-    \structure{Goal}: Predict multiple classes (or membership probabilities) for a single observation
-    \begin{itemize}
-      \item $Y$ is a matrix containing one dummy coded vector for each categorical label
-      \item Example of $Y$:
-    \end{itemize}
-  \end{column}
-  \begin{column}{0.5\textwidth}
-<<multilabel-task-plot, echo=FALSE,fig.height=6>>=
-set.seed(1)
-df3 = data.frame(x = c(rnorm(10, mean = 2, sd = 1), rnorm(10, mean = 4, sd = 1), rnorm(10, mean = 6, sd = 1)),
-  y = runif(10), class = c(rep("a", 20), rep("b", 10)), fill = c(rep("a", 10), rep("b", 20)))
-ggplot(df3, aes(x = x, y = y)) + geom_point(aes(colour = class),size = 6) + geom_point(aes(colour = fill), size = 3) +
-  geom_vline(xintercept = 3, linetype = "longdash") + geom_vline(xintercept = 5, linetype = "longdash") +
-  theme(legend.position = "none")
-@
-  \end{column}
-\end{columns}
-\begin{table}
-  \begin{tabular}{r|r|r|l}
-  $label\ 1$ & $label\ 2$ & $label\ 3$ & label set \\
-  \hline
-  $1$ & $0$ & 0 & $\{label\ 1\}$ \\
-  $0$ & $1$ & 1 & $\{label\ 2, label\ 3\}$ \\
-  $1$ & $1$ & 1 & $\{label\ 1, label\ 2, label\ 3\}$ \\
-  $1$ & $0$ & 1 & $\{label\ 1, label\ 3\}$ \\
-  \hline
-  \end{tabular}
-\end{table}
-
-\framebreak
-
-\textbf{Cost-sensitive Classification Task}
-\lz
-\begin{columns}[T]
-  \begin{column}{0.5\textwidth}
-    \structure{Goal}: Minimize cost of predicting the correct class label $y$
-    \begin{itemize}
-      \item A more general setting of regular classification
-      \item Costs caused by different kinds of errors are not assumed to be equal
-    \end{itemize}
-  \end{column}
-  \begin{column}{0.5\textwidth}
-<<costsens-task-plot, fig.height=5.5>>=
-data(GermanCredit, package = "caret")
-credit.task = makeClassifTask(data = GermanCredit, target = "Class")
-credit.task = removeConstantFeatures(credit.task)
-costs = matrix(c(0, 1, 5, 0), 2)
-colnames(costs) = rownames(costs) = getTaskClassLevels(credit.task)
-lrn = makeLearner("classif.multinom", predict.type = "prob", trace = FALSE)
-mod = train(lrn, credit.task)
-pred = predict(mod, task = credit.task)
-th = costs[2,1]/(costs[2,1] + costs[1,2])
-pred.th = setThreshold(pred, th)
-credit.costs = makeCostMeasure(id = "credit.costs", name = "Credit costs", costs = costs,
-  best = 0, worst = 5)
-rin = makeResampleInstance("CV", iters = 3, task = credit.task)
-lrn = makeLearner("classif.multinom", predict.type = "prob", predict.threshold = th, trace = FALSE)
-r = resample(lrn, credit.task, resampling = rin, measures = list(credit.costs, mmce), show.info = FALSE)
-d = generateThreshVsPerfData(r, measures = list(credit.costs, mmce))
-plotThreshVsPerf(d, mark.th = th, facet.wrap.ncol = 1L)
-@
-  \end{column}
-\end{columns}
-\textbf{Example}
+\textbf{Other supervised learning tasks}
 \begin{itemize}
-  \item \textbf{Loan Applications}\\
-  \begin{itemize}
-    \item rejecting an applicant who will not pay back $\rightarrow$ minimal costs
-    \item accepting an applicant who will pay back $\rightarrow$ gain
-    \item accepting an applicant who will not pay back $\rightarrow$ big loss
-    \item rejecting an applicant who would pay back $\rightarrow$ loss
-  \end{itemize}
+  \item Multilabel classification
+  \item Forecasting
+  \item Survival prediction
+  \item Cost-sensitive classification
 \end{itemize}
-
-\framebreak
-
-\textbf{Forecasting Task}
-\lz
-\begin{columns}[T]
-  \begin{column}{0.5\textwidth}
-    \structure{Goal}: Predict future values of a time series
-    \begin{itemize}
-      \item $y$ is metric variable depending on time $t$
-      \item $t$ could be e.g. hours, days, years, \ldots
-    \end{itemize}
-  \end{column}
-  \begin{column}{0.5\textwidth}
-<<forecasting-task-plot, fig.height=8>>=
-data(AirPassengers)
-data = AirPassengers
-model = auto.arima(data, start.P = 2, start.Q = 2, max.D = 2, max.P = 5, max.Q = 5)
-plot(forecast(model, h = 10, level = 95), main = "")
-@
-
-  \end{column}
-\end{columns}
-
-\framebreak
-
-% \begin{itemize}
-% \item \Sexpr{nrow(spambase)} Emails were classified as \enquote{Spam} or \enquote{No Spam}.
-% \item Inputs: including percentages of \Sexpr{ncol(spambase)-1} frequent words and symbols within the email
-% \end{itemize}
-% <<echo=FALSE>>=
-% round(colMeans(spambase[,c(paste("capital_run_length", c("total", "longest", "average"), sep = "_"),
-%                     paste("word_freq", c("you", "your", "george", "hp", "will", "all"), sep = "_"),
-%                     "char_freq_exclamation")]), digits = 2)
-% @
-% \newpage
-
-\textbf{Survival Task}
-\lz
-\begin{columns}[T]
-  \begin{column}{0.5\textwidth}
-    \structure{Goal}: Predict a survival function $\hat{S}(t)$, i.e.\ the probability to survive to time point $t$
-    \begin{itemize}
-      \item $y$ is survival function $S(t)$ of time $t$
-      \item Values for survival $S(t)$ are between $0$ and $1$
-    \end{itemize}
-  \end{column}
-  \begin{column}{0.5\textwidth}
-<<survial-task-plot, fig.height=8>>=
-set.seed(1)
-data("rats", package = "survival")
-sf = survfit(Surv(time, status) ~ rx, data = rats)
-survMisc:::autoplot.survfit(sf, title = "", xLab = "Time", yLab = "S(t)",
-  yScale = "frac", survLineSize = 1.5)$plot
-@
-  \end{column}
-\end{columns}
 \end{vbframe}
 
+
+% \textbf{Multilabel Classification Task}
+% \lz
+% \begin{columns}[T]
+%   \begin{column}{0.5\textwidth}
+%     \structure{Goal}: Predict multiple classes (or membership probabilities) for a single observation
+%     \begin{itemize}
+%       \item $Y$ is a matrix containing one dummy coded vector for each categorical label
+%       \item Example of $Y$:
+%     \end{itemize}
+%   \end{column}
+%   \begin{column}{0.5\textwidth}
+% <<multilabel-task-plot, echo=FALSE,fig.height=6>>=
+% set.seed(1)
+% df3 = data.frame(x = c(rnorm(10, mean = 2, sd = 1), rnorm(10, mean = 4, sd = 1), rnorm(10, mean = 6, sd = 1)),
+%   y = runif(10), class = c(rep("a", 20), rep("b", 10)), fill = c(rep("a", 10), rep("b", 20)))
+% ggplot(df3, aes(x = x, y = y)) + geom_point(aes(colour = class),size = 6) + geom_point(aes(colour = fill), size = 3) +
+%   geom_vline(xintercept = 3, linetype = "longdash") + geom_vline(xintercept = 5, linetype = "longdash") +
+%   theme(legend.position = "none")
+% @
+%   \end{column}
+% \end{columns}
+% \begin{table}
+%   \begin{tabular}{r|r|r|l}
+%   $label\ 1$ & $label\ 2$ & $label\ 3$ & label set \\
+%   \hline
+%   $1$ & $0$ & 0 & $\{label\ 1\}$ \\
+%   $0$ & $1$ & 1 & $\{label\ 2, label\ 3\}$ \\
+%   $1$ & $1$ & 1 & $\{label\ 1, label\ 2, label\ 3\}$ \\
+%   $1$ & $0$ & 1 & $\{label\ 1, label\ 3\}$ \\
+%   \hline
+%   \end{tabular}
+% \end{table}
+%
+% \framebreak
+%
+% \textbf{Cost-sensitive Classification Task}
+% \lz
+% \begin{columns}[T]
+%   \begin{column}{0.5\textwidth}
+%     \structure{Goal}: Minimize cost of predicting the correct class label $y$
+%     \begin{itemize}
+%       \item A more general setting of regular classification
+%       \item Costs caused by different kinds of errors are not assumed to be equal
+%     \end{itemize}
+%   \end{column}
+%   \begin{column}{0.5\textwidth}
+% <<costsens-task-plot, fig.height=5.5>>=
+% data(GermanCredit, package = "caret")
+% credit.task = makeClassifTask(data = GermanCredit, target = "Class")
+% credit.task = removeConstantFeatures(credit.task)
+% costs = matrix(c(0, 1, 5, 0), 2)
+% colnames(costs) = rownames(costs) = getTaskClassLevels(credit.task)
+% lrn = makeLearner("classif.multinom", predict.type = "prob", trace = FALSE)
+% mod = train(lrn, credit.task)
+% pred = predict(mod, task = credit.task)
+% th = costs[2,1]/(costs[2,1] + costs[1,2])
+% pred.th = setThreshold(pred, th)
+% credit.costs = makeCostMeasure(id = "credit.costs", name = "Credit costs", costs = costs,
+%   best = 0, worst = 5)
+% rin = makeResampleInstance("CV", iters = 3, task = credit.task)
+% lrn = makeLearner("classif.multinom", predict.type = "prob", predict.threshold = th, trace = FALSE)
+% r = resample(lrn, credit.task, resampling = rin, measures = list(credit.costs, mmce), show.info = FALSE)
+% d = generateThreshVsPerfData(r, measures = list(credit.costs, mmce))
+% plotThreshVsPerf(d, mark.th = th, facet.wrap.ncol = 1L)
+% @
+%   \end{column}
+% \end{columns}
+% \textbf{Example}
+% \begin{itemize}
+%   \item \textbf{Loan Applications}\\
+%   \begin{itemize}
+%     \item rejecting an applicant who will not pay back $\rightarrow$ minimal costs
+%     \item accepting an applicant who will pay back $\rightarrow$ gain
+%     \item accepting an applicant who will not pay back $\rightarrow$ big loss
+%     \item rejecting an applicant who would pay back $\rightarrow$ loss
+%   \end{itemize}
+% \end{itemize}
+%
+% \framebreak
+%
+% \textbf{Forecasting Task}
+% \lz
+% \begin{columns}[T]
+%   \begin{column}{0.5\textwidth}
+%     \structure{Goal}: Predict future values of a time series
+%     \begin{itemize}
+%       \item $y$ is metric variable depending on time $t$
+%       \item $t$ could be e.g. hours, days, years, \ldots
+%     \end{itemize}
+%   \end{column}
+%   \begin{column}{0.5\textwidth}
+% <<forecasting-task-plot, fig.height=8>>=
+% data(AirPassengers)
+% data = AirPassengers
+% model = auto.arima(data, start.P = 2, start.Q = 2, max.D = 2, max.P = 5, max.Q = 5)
+% plot(forecast(model, h = 10, level = 95), main = "")
+% @
+%
+%   \end{column}
+% \end{columns}
+%
+% \framebreak
+%
+% % \begin{itemize}
+% % \item \Sexpr{nrow(spambase)} Emails were classified as \enquote{Spam} or \enquote{No Spam}.
+% % \item Inputs: including percentages of \Sexpr{ncol(spambase)-1} frequent words and symbols within the email
+% % \end{itemize}
+% % <<echo=FALSE>>=
+% % round(colMeans(spambase[,c(paste("capital_run_length", c("total", "longest", "average"), sep = "_"),
+% %                     paste("word_freq", c("you", "your", "george", "hp", "will", "all"), sep = "_"),
+% %                     "char_freq_exclamation")]), digits = 2)
+% % @
+% % \newpage
+%
+% \textbf{Survival Task}
+% \lz
+% \begin{columns}[T]
+%   \begin{column}{0.5\textwidth}
+%     \structure{Goal}: Predict a survival function $\hat{S}(t)$, i.e.\ the probability to survive to time point $t$
+%     \begin{itemize}
+%       \item $y$ is survival function $S(t)$ of time $t$
+%       \item Values for survival $S(t)$ are between $0$ and $1$
+%     \end{itemize}
+%   \end{column}
+%   \begin{column}{0.5\textwidth}
+% <<survial-task-plot, fig.height=8>>=
+% set.seed(1)
+% data("rats", package = "survival")
+% sf = survfit(Surv(time, status) ~ rx, data = rats)
+% survMisc:::autoplot.survfit(sf, title = "", xLab = "Time", yLab = "S(t)",
+%   yScale = "frac", survLineSize = 1.5)$plot
+% @
+%   \end{column}
+% \end{columns}
+% \end{vbframe}
+%
 
 
 
@@ -428,272 +438,301 @@ survMisc:::autoplot.survfit(sf, title = "", xLab = "Time", yLab = "S(t)",
 %   $\to$ Neural Networks, Generalised Additive Models, Projection Pursuit, \ldots
 % \end{itemize}
 
-\begin{vbframe}{Unsupervised Learning}
+% Jann's summary slide for all other learning tasks
+\begin{vbframe}{Additional Learning Tasks}
 \lz
-\begin{itemize}
-  \item There exist no outputs $y$
-  \item Search for patterns within the inputs $x$
-  \item Focus of this lecture lies on supervised learning
-\end{itemize}
-
-\framebreak
-
-\textbf{Clustering Task}
-\lz
-\begin{columns}[T]
-  \begin{column}{0.5\textwidth}
-    \structure{Goal}: Group data into similar clusters (or estimate fuzzy membership probabilities)\\
-    \lz
-<<cluster-task-plot2, fig.height=8>>=
-df4 = getTaskData(iris.task)
-idx = sample(1:dim(df4)[1], 40)
-irisSample = df4[idx,]
-irisSample$Species = NULL
-hc = hclust(dist(irisSample), method = "ave")
-plot(hc, hang = -1, labels = df4$Species[idx], sub = "", xlab = "")
-@
-  \end{column}
-  \begin{column}{0.5\textwidth}
-<<cluster-task-plot1, fig.height=8>>=
-# df = iris
-m = as.matrix(cbind(df4$Petal.Length, df4$Petal.Width), ncol = 2)
-cl = (kmeans(m,3))
-df4$cluster = factor(cl$cluster)
-centers = as.data.frame(cl$centers)
-ggplot(data = df4, aes(x = Petal.Length, y = Petal.Width, color = cluster )) +
- geom_point(size = 4) +
- geom_point(data = centers, aes(x = V1, y = V2, color = 'Center')) +
- geom_point(data = centers, aes(x = V1,y = V2, color = 'Center'), size = 90, alpha = .3) +
- theme(legend.position = "none")
-@
-  \end{column}
-\end{columns}
-
-\framebreak
-
-\textbf{Dimensionality reduction Task}
-\lz
-\begin{columns}[T]
-  \begin{column}{0.5\textwidth}
-    \structure{Goal}: describe data in fewer features
-    \begin{blocki}{Common methods:}
-      \item Principle Component Analysis (PCA)
-      \item Linear Discriminant Analysis (LDA)
-      \item Filter Methods
-    \end{blocki}
-  \end{column}
-  \begin{column}{0.5\textwidth}
-<<dim-red-task-plot-pca, fig.height=9>>=
-pca = prcomp(BBmisc::dropNamed(iris, "Species"), scale. = TRUE)
-ggbiplot(pca, obs.scale = 1, var.scale = 1,
-  groups = iris$Species, ellipse = TRUE, circle = TRUE) +
-  scale_color_discrete(name = '') +
-  theme(legend.direction = 'horizontal', legend.position = 'top')
-@
-  \end{column}
-\end{columns}
-
-\framebreak
-
-\textbf{Outlier detection Task}
-\lz
-\begin{columns}[T]
-  \begin{column}{0.5\textwidth}
-    \structure{Goal}: identify observations which do not conform to an expected pattern
+  \textbf{Unsupervised learning}
     \begin{itemize}
-      \item outlier detection is also referred to anomaly detection and one class classification
-      \item Several methods exist based on:
+      \item Data without labels $y$
+      \item Search for patterns within the inputs $x$
+      \item The algorithm has no specific goal, is therefore \textit{unsupervised}
+      \item Possible applications:
       \begin{itemize}
-        \item density or correlation
-        \item cluster analysis
-        \item neural networks
-        \item ensemble techniques
+        \item Dimensionality reduction (PCA, Autoencoders ...)
+        \item Clustering
+        \item Outlier detection
+        \item Association rules
       \end{itemize}
     \end{itemize}
-  \end{column}
-  \begin{column}{0.5\textwidth}
-<<doutlier-task-plot, fig.height=9>>=
-# Inject outliers into data.
-cars1 = cars[1:30, ]  # original data
-cars.outliers = data.frame(speed = c(19, 19, 20, 20, 20), dist = c(190, 186, 210, 220, 218))  # introduce outliers.
-cars2 = rbind(cars1, cars.outliers)  # data with outliers.
-
-# Plot of data with outliers.
-par(mfrow = c(2, 1))
-plot(cars2$speed, cars2$dist, xlim = c(0, 28), ylim = c(0, 230), main = "With Outliers",
-  xlab = "speed", ylab = "dist", pch = "*", col = "red", cex = 2)
-abline(lm(dist ~ speed, data = cars2), col = "blue", lwd = 3, lty = 2)
-
-# Plot of original data without outliers. Note the change in slope (angle) of best fit line.
-plot(cars1$speed, cars1$dist, xlim = c(0, 28), ylim = c(0, 230), main = "Outliers removed \n A much better fit!",
-  xlab = "speed", ylab = "dist", pch = "*", col = "red", cex = 2)
-abline(lm(dist ~ speed, data = cars1), col = "blue", lwd = 3, lty = 2)
-@
-  \end{column}
-\end{columns}
-
 \framebreak
-
-\textbf{Association rules Task}
 \lz
-\begin{columns}[T]
-  \begin{column}{0.5\textwidth}
-    \structure{Goal}: Discover relations between features
+  \textbf{Semi-Supervised learning}
+  \begin{itemize}
+    \item Massive amount of expensive labeled data to train reliable model
+    \item Learn from (expensive) labeled \textbf{and} (cheap) unlabeled data
+    \item Unlabeled data in conjunction with a small amount of labeled data improves learning accuracy
+  \end{itemize}
+  \vspace{0.5cm}
+  \textbf{Reinforcement learning}
+  \begin{itemize}
+    \item Select actions in subsequent  states within a certain environment to maximize lagged future reward
+    \item Example: train neural net to play mario kart (environment)
     \begin{itemize}
-      \item Rule-based machine learning method
-      \item For two features $x_1$ and $x_2$, a \textbf{rule} is defined as an implication of the form $x_1 \Rightarrow x_2 $
-      \item \textbf{Support} is an indication of how frequently the feature appears in the data
-      \item \textbf{Confidence} is an indication of how often the rule has been found to be true
+      \item Accelerate/ steer/ break (actions) at each time point (states) during playing
+      \item Reward: ranking after finish, should be maximized
     \end{itemize}
-  \end{column}
-  \begin{column}{0.5\textwidth}
-<<association-task-plot, fig.height=9>>=
-titanic.raw = read.csv("titanic.raw")
-rules = apriori(titanic.raw,
-  parameter = list(minlen = 2, supp = 0.005, conf = 0.8),
-  appearance = list(rhs = c("Survived=No", "Survived=Yes"),
-  default = "lhs"),
-  control = list(verbose = FALSE))
-plot(rules, method="graph", control=list(type="items"))
-@
-  \end{column}
-\end{columns}
+  \end{itemize}
 \end{vbframe}
 
 
-\begin{vbframe}{Semi-Supervised Learning}
-\lz
-\begin{itemize}
-  \item Learning a reliable model usually requires plenty of labeled data
-  \item Labeled data: can be expensive
-  \item Unlabeled data: abundant and free/cheap
-  \item General idea: learning from both labeled and unlabeled data
-  \item There exist few labeled training data $\Dtrain^L=\{ (x_1, y_1), \ldots, (x_l,  y_l)\}$ and many unlabeled observations $\Dtrain^U=\{ (x_{l+1}, y_{l+1}), \ldots, (x_{l+u},  y_{l+u})\}$ for training (usually $u\gg l$).
- \item Semi-Supervised learning falls between supervised (completely labeled training data) and unsupervised (without any labeled training data) learning
- \item Unlabeled data in conjunction with a small amount of labeled data improves learning accuracy.
- % \begin{itemize}
- %   \item \textbf{Semi-supervised regression/classification:} uses unlabeled data to get a better model than with the labeled data alone.
- %   \item \textbf{Semi-supervised clustering:} uses labeled data must-/cannot-links.
-   % \item \textbf{inductive learning:} infer mapping from \enquote{input} $x$ to \enquote{output} $y$.
-   % \item \textbf{Active learning:} special case in which a learning algorithm is able to interactively query the user to obtain the desired outputs at new data points.
- %  \end{itemize}
-\end{itemize}
 
-\framebreak
+% \framebreak
+%
+% \textbf{Clustering Task}
+% \lz
+% \begin{columns}[T]
+%   \begin{column}{0.5\textwidth}
+%     \structure{Goal}: Group data into similar clusters (or estimate fuzzy membership probabilities)\\
+%     \lz
+% <<cluster-task-plot2, fig.height=8>>=
+% df4 = getTaskData(iris.task)
+% idx = sample(1:dim(df4)[1], 40)
+% irisSample = df4[idx,]
+% irisSample$Species = NULL
+% hc = hclust(dist(irisSample), method = "ave")
+% plot(hc, hang = -1, labels = df4$Species[idx], sub = "", xlab = "")
+% @
+%   \end{column}
+%   \begin{column}{0.5\textwidth}
+% <<cluster-task-plot1, fig.height=8>>=
+% # df = iris
+% m = as.matrix(cbind(df4$Petal.Length, df4$Petal.Width), ncol = 2)
+% cl = (kmeans(m,3))
+% df4$cluster = factor(cl$cluster)
+% centers = as.data.frame(cl$centers)
+% ggplot(data = df4, aes(x = Petal.Length, y = Petal.Width, color = cluster )) +
+%  geom_point(size = 4) +
+%  geom_point(data = centers, aes(x = V1, y = V2, color = 'Center')) +
+%  geom_point(data = centers, aes(x = V1,y = V2, color = 'Center'), size = 90, alpha = .3) +
+%  theme(legend.position = "none")
+% @
+%   \end{column}
+% \end{columns}
+%
+% \framebreak
+%
+% \textbf{Dimensionality reduction Task}
+% \lz
+% \begin{columns}[T]
+%   \begin{column}{0.5\textwidth}
+%     \structure{Goal}: describe data in fewer features
+%     \begin{blocki}{Common methods:}
+%       \item Principle Component Analysis (PCA)
+%       \item Linear Discriminant Analysis (LDA)
+%       \item Filter Methods
+%     \end{blocki}
+%   \end{column}
+%   \begin{column}{0.5\textwidth}
+% <<dim-red-task-plot-pca, fig.height=9>>=
+% pca = prcomp(BBmisc::dropNamed(iris, "Species"), scale. = TRUE)
+% ggbiplot(pca, obs.scale = 1, var.scale = 1,
+%   groups = iris$Species, ellipse = TRUE, circle = TRUE) +
+%   scale_color_discrete(name = '') +
+%   theme(legend.direction = 'horizontal', legend.position = 'top')
+% @
+%   \end{column}
+% \end{columns}
+%
+% \framebreak
+%
+% \textbf{Outlier detection Task}
+% \lz
+% \begin{columns}[T]
+%   \begin{column}{0.5\textwidth}
+%     \structure{Goal}: identify observations which do not conform to an expected pattern
+%     \begin{itemize}
+%       \item outlier detection is also referred to anomaly detection and one class classification
+%       \item Several methods exist based on:
+%       \begin{itemize}
+%         \item density or correlation
+%         \item cluster analysis
+%         \item neural networks
+%         \item ensemble techniques
+%       \end{itemize}
+%     \end{itemize}
+%   \end{column}
+%   \begin{column}{0.5\textwidth}
+% <<doutlier-task-plot, fig.height=9>>=
+% # Inject outliers into data.
+% cars1 = cars[1:30, ]  # original data
+% cars.outliers = data.frame(speed = c(19, 19, 20, 20, 20), dist = c(190, 186, 210, 220, 218))  # introduce outliers.
+% cars2 = rbind(cars1, cars.outliers)  # data with outliers.
+%
+% # Plot of data with outliers.
+% par(mfrow = c(2, 1))
+% plot(cars2$speed, cars2$dist, xlim = c(0, 28), ylim = c(0, 230), main = "With Outliers",
+%   xlab = "speed", ylab = "dist", pch = "*", col = "red", cex = 2)
+% abline(lm(dist ~ speed, data = cars2), col = "blue", lwd = 3, lty = 2)
+%
+% # Plot of original data without outliers. Note the change in slope (angle) of best fit line.
+% plot(cars1$speed, cars1$dist, xlim = c(0, 28), ylim = c(0, 230), main = "Outliers removed \n A much better fit!",
+%   xlab = "speed", ylab = "dist", pch = "*", col = "red", cex = 2)
+% abline(lm(dist ~ speed, data = cars1), col = "blue", lwd = 3, lty = 2)
+% @
+%   \end{column}
+% \end{columns}
+%
+% \framebreak
+%
+% \textbf{Association rules Task}
+% \lz
+% \begin{columns}[T]
+%   \begin{column}{0.5\textwidth}
+%     \structure{Goal}: Discover relations between features
+%     \begin{itemize}
+%       \item Rule-based machine learning method
+%       \item For two features $x_1$ and $x_2$, a \textbf{rule} is defined as an implication of the form $x_1 \Rightarrow x_2 $
+%       \item \textbf{Support} is an indication of how frequently the feature appears in the data
+%       \item \textbf{Confidence} is an indication of how often the rule has been found to be true
+%     \end{itemize}
+%   \end{column}
+%   \begin{column}{0.5\textwidth}
+% <<association-task-plot, fig.height=9>>=
+% titanic.raw = read.csv("titanic.raw")
+% rules = apriori(titanic.raw,
+%   parameter = list(minlen = 2, supp = 0.005, conf = 0.8),
+%   appearance = list(rhs = c("Survived=No", "Survived=Yes"),
+%   default = "lhs"),
+%   control = list(verbose = FALSE))
+% plot(rules, method="graph", control=list(type="items"))
+% @
+%   \end{column}
+% \end{columns}
+% \end{vbframe}
 
-\textbf{Semi-Supervised classification task}
-\lz
-\begin{columns}[T]
-  \begin{column}{0.5\textwidth}
-    \structure{Goal}: Learning a classifier $f$ better than using labeled data alone.
-    \begin{itemize}
-      \item Assumption: Examples from the same class follow a coherent distribution
-      \item Unlabeled data can give a better sense of the class separation boundary
-    \end{itemize}
-  \end{column}
-  \begin{column}{0.5\textwidth}
-  \centering
-    \includegraphics[width=.5\textwidth]{figure_man/semi1.png}\\
-    \includegraphics[width=.5\textwidth]{figure_man/semi3.png}\\
-    \lz
-    \includegraphics[width=.5\textwidth]{figure_man/semi7.png}
-  \end{column}
-\end{columns}
-
-\framebreak
-
-\textbf{Semi-Supervised Clustering task}
-\lz
-\begin{columns}[T]
-  \begin{column}{0.5\textwidth}
-    \structure{Goal}: Use labeled data to group unlabeled data.
-      \begin{itemize}
-        \item Having labeled observations means to have information about if two observations have to be in the same or different clusters
-        \item This can be expressed by constraints among observations:\\
-        \textit{must links} and \textit{cannot links}
-        \item Look only for models which maintain these constraints
-      \end{itemize}
-  \end{column}
-  \begin{column}{0.5\textwidth}
-    \centering
-      \includegraphics[width=1\textwidth]{figure_man/semi-clustering.png}
-  \end{column}
-\end{columns}
-
-\framebreak
-
-\textbf{Active Learning task}
-\lz
-\begin{columns}[T]
-  \begin{column}{0.5\textwidth}
-    \structure{Goal}: Label extra-data in a smart way to improve model most efficiently
-      \begin{itemize}
-        \item Extra labels can be requested, but expensive
-        \item We iterate:
-        \begin{itemize}
-          \item learn on labeled data
-          \item request labels for some unlabeled instances
-        \end{itemize}
-        \item Only most useful observations for learning need to be labeled
-      \end{itemize}
-  \end{column}
-  \begin{column}{0.25\textwidth}
-    1.\\
-    \includegraphics[width=.8\textwidth]{figure_man/active1.png}\\
-    \lz
-    3.\\
-    \includegraphics[width=.8\textwidth]{figure_man/active3.png}\\
-    \lz
-    5.\\
-    \includegraphics[width=.8\textwidth]{figure_man/active5.png}
-  \end{column}
-    \begin{column}{0.25\textwidth}
-    2.\\
-    \includegraphics[width=.8\textwidth]{figure_man/active2.png}\\
-    \lz
-    4.\\
-    \includegraphics[width=.8\textwidth]{figure_man/active4.png}\\
-    \lz
-    6.\\
-    \includegraphics[width=.8\textwidth]{figure_man/active6.png}\\
-  \end{column}
-\end{columns}
-\end{vbframe}
-
-
-\begin{vbframe}{Reinforcement Learning}
-\lz
-\begin{itemize}
-  \item Inputs are observations and feedback (rewards or punishments) from interacting with an environment
-  \item Output: achieve some goal
-  \item Goal: Select actions to maximize future reward $\triangleq$ return
-\end{itemize}
-
-\framebreak
-
-\textbf{The RL Setting}
-\lz
-\begin{columns}[T]
-  \begin{column}{0.5\textwidth}
-  RL is a \textbf{general-purpose framework} for AI\\
-  \lz
-  At each time step $t$ an \textbf{agent} interacts with an \textbf{environment} $\mathcal{E}$ and
-		\begin{itemize}
-			\item observes \textbf{state} $s_t \in \R^d$
-			\item receives \textbf{reward} $r_t \in \R$
-			\item executes \textbf{action} $a_t \in A$
-		\end{itemize}
-		Reward signals may be sparse, noisy and delayed.\\
-		\lz
-		$\rightarrow$ \textbf{Agent-environment-loop}
-  \end{column}
-  \begin{column}{0.5\textwidth}
-  \centering
-    \includegraphics[width=1\textwidth]{figure_man/state_action_reward_diagram.png}
-  \end{column}
-\end{columns}
-
-\end{vbframe}
+% \begin{vbframe}{Semi-Supervised Learning}
+% \lz
+% \begin{itemize}
+%   \item Learning a reliable model usually requires plenty of labeled data
+%   \item Labeled data: can be expensive
+%   \item Unlabeled data: abundant and free/cheap
+%   \item General idea: learning from both labeled and unlabeled data
+%   \item There exist few labeled training data $\Dtrain^L=\{ (x_1, y_1), \ldots, (x_l,  y_l)\}$ and many unlabeled observations $\Dtrain^U=\{ (x_{l+1}, y_{l+1}), \ldots, (x_{l+u},  y_{l+u})\}$ for training (usually $u\gg l$).
+%  \item Semi-Supervised learning falls between supervised (completely labeled training data) and unsupervised (without any labeled training data) learning
+%  \item Unlabeled data in conjunction with a small amount of labeled data improves learning accuracy.
+%  % \begin{itemize}
+%  %   \item \textbf{Semi-supervised regression/classification:} uses unlabeled data to get a better model than with the labeled data alone.
+%  %   \item \textbf{Semi-supervised clustering:} uses labeled data must-/cannot-links.
+%    % \item \textbf{inductive learning:} infer mapping from \enquote{input} $x$ to \enquote{output} $y$.
+%    % \item \textbf{Active learning:} special case in which a learning algorithm is able to interactively query the user to obtain the desired outputs at new data points.
+%  %  \end{itemize}
+% \end{itemize}
+%
+% \framebreak
+%
+% \textbf{Semi-Supervised classification task}
+% \lz
+% \begin{columns}[T]
+%   \begin{column}{0.5\textwidth}
+%     \structure{Goal}: Learning a classifier $f$ better than using labeled data alone.
+%     \begin{itemize}
+%       \item Assumption: Examples from the same class follow a coherent distribution
+%       \item Unlabeled data can give a better sense of the class separation boundary
+%     \end{itemize}
+%   \end{column}
+%   \begin{column}{0.5\textwidth}
+%   \centering
+%     \includegraphics[width=.5\textwidth]{figure_man/semi1.png}\\
+%     \includegraphics[width=.5\textwidth]{figure_man/semi3.png}\\
+%     \lz
+%     \includegraphics[width=.5\textwidth]{figure_man/semi7.png}
+%   \end{column}
+% \end{columns}
+%
+% \framebreak
+%
+% \textbf{Semi-Supervised Clustering task}
+% \lz
+% \begin{columns}[T]
+%   \begin{column}{0.5\textwidth}
+%     \structure{Goal}: Use labeled data to group unlabeled data.
+%       \begin{itemize}
+%         \item Having labeled observations means to have information about if two observations have to be in the same or different clusters
+%         \item This can be expressed by constraints among observations:\\
+%         \textit{must links} and \textit{cannot links}
+%         \item Look only for models which maintain these constraints
+%       \end{itemize}
+%   \end{column}
+%   \begin{column}{0.5\textwidth}
+%     \centering
+%       \includegraphics[width=1\textwidth]{figure_man/semi-clustering.png}
+%   \end{column}
+% \end{columns}
+%
+% \framebreak
+%
+% \textbf{Active Learning task}
+% \lz
+% \begin{columns}[T]
+%   \begin{column}{0.5\textwidth}
+%     \structure{Goal}: Label extra-data in a smart way to improve model most efficiently
+%       \begin{itemize}
+%         \item Extra labels can be requested, but expensive
+%         \item We iterate:
+%         \begin{itemize}
+%           \item learn on labeled data
+%           \item request labels for some unlabeled instances
+%         \end{itemize}
+%         \item Only most useful observations for learning need to be labeled
+%       \end{itemize}
+%   \end{column}
+%   \begin{column}{0.25\textwidth}
+%     1.\\
+%     \includegraphics[width=.8\textwidth]{figure_man/active1.png}\\
+%     \lz
+%     3.\\
+%     \includegraphics[width=.8\textwidth]{figure_man/active3.png}\\
+%     \lz
+%     5.\\
+%     \includegraphics[width=.8\textwidth]{figure_man/active5.png}
+%   \end{column}
+%     \begin{column}{0.25\textwidth}
+%     2.\\
+%     \includegraphics[width=.8\textwidth]{figure_man/active2.png}\\
+%     \lz
+%     4.\\
+%     \includegraphics[width=.8\textwidth]{figure_man/active4.png}\\
+%     \lz
+%     6.\\
+%     \includegraphics[width=.8\textwidth]{figure_man/active6.png}\\
+%   \end{column}
+% \end{columns}
+% \end{vbframe}
+%
+%
+% \begin{vbframe}{Reinforcement Learning}
+% \lz
+% \begin{itemize}
+%   \item Inputs are observations and feedback (rewards or punishments) from interacting with an environment
+%   \item Output: achieve some goal
+%   \item Goal: Select actions to maximize future reward $\triangleq$ return
+% \end{itemize}
+%
+% \framebreak
+%
+% % \textbf{The RL Setting}
+% % \lz
+% % \begin{columns}[T]
+% %   \begin{column}{0.5\textwidth}
+% %   RL is a \textbf{general-purpose framework} for AI\\
+% %   \lz
+% %   At each time step $t$ an \textbf{agent} interacts with an \textbf{environment} $\mathcal{E}$ and
+% % 		\begin{itemize}
+% % 			\item observes \textbf{state} $s_t \in \R^d$
+% % 			\item receives \textbf{reward} $r_t \in \R$
+% % 			\item executes \textbf{action} $a_t \in A$
+% % 		\end{itemize}
+% % 		Reward signals may be sparse, noisy and delayed.\\
+% % 		\lz
+% % 		$\rightarrow$ \textbf{Agent-environment-loop}
+% %   \end{column}
+% %   \begin{column}{0.5\textwidth}
+% %   \centering
+% %     \includegraphics[width=1\textwidth]{figure_man/state_action_reward_diagram.png}
+% %   \end{column}
+% % \end{columns}
+% %
+% % \end{vbframe}
 
 
 % \begin{vbframe}{Topics of the lecture}
@@ -732,8 +771,8 @@ plot(rules, method="graph", control=list(type="items"))
 % \end{itemize}
 % \end{vbframe}
 
-\begin{frame}{To date or not to date?}
-
+\begin{vbframe}{To date or not to date?}
+% first slide
  \begin{table}
  \small
     \begin{tabular}{cccccc}
@@ -749,7 +788,6 @@ plot(rules, method="graph", control=list(type="items"))
     \end{tabular}
   \end{table}
 
- \lz
  \textbf{Some terminology}
  \begin{itemize}
     \item Rows: \textit{Instances, Examples} (labelled/unlabeled)
@@ -759,8 +797,28 @@ plot(rules, method="graph", control=list(type="items"))
     \item Other columns: Predictive features
   \end{itemize}
 
+\framebreak
+\lz
+% second slide
+  \begin{table}
+  \small
+    \begin{tabular}{cccccc}
+      \hline
+      Nr & Day of Week & Type of Date & Weather & TV Tonight & Date?\\
+      \hline
+      1 & Weekday & Dinner & Warm & Bad & Yes \\
+      2 & Weekend & Club & Warm & Good & No \\
+      3 & Weekend & Club & Warm & Bad & No \\
+      4 & Weekend & Club & Cold & Bad & Yes \\
+      Now & Weekend & Club & Cold & Good & ? \\
+      \hline
+    \end{tabular}
+  \end{table}
+
+ \lz
+ \textbf{Draw conclusions}
   \begin{itemize}
-    \item there one factor that perfectly predicts the answer?
+    \item Is there one factor that perfectly predicts the answer?
     \item What about a \textit{conjunction of factors}?
     \begin{itemize}
      \item Warm \& Weekend $\rightarrow$ No date today :(
@@ -770,8 +828,8 @@ plot(rules, method="graph", control=list(type="items"))
     \end{itemize}
     \item There's no way to know!
   \end{itemize}
-
 \end{frame}
+
 
 \begin{vbframe}{How can we learn?}
 \textbf{Hume's problem of induction (David Hume, 1748)} \\
@@ -927,169 +985,6 @@ Rival schools of thought in machine learning, each with core beliefs, and with d
 \normalsize
 \end{vbframe}
 
-\begin{vbframe}{Symbolic Learning}
-\begin{itemize}
- \item All intelligence can be reduced to manipulating symbols
- \item Can incorporate preexisting knowledge (e.g. as rules)
- \item Can combine knowledge, data, to fill in gaps (like scientists)
-\end{itemize}
-
- \begin{table}
- \small
-    \begin{tabular}{l|l}
-      \hline
-      Representation & Rules, trees, first order logic rules\\
-      \hline
-      Evaluation & Accuracy, information gain\\
-      \hline
-      Optimization & Top-down induction, inverse deduction\\
-      \hline
-      Algorithms & Decision trees, Logic programs\\
-      \hline
-    \end{tabular}
-  \end{table}
-
-<<results='hide', include=FALSE>>=
-data("iris")
-tree_iris <- ctree(Species ~ ., data = iris)
-@
-
-\begin{center}
-<<results='hide'>>=
-plot(tree_iris)
-@
-\end{center}
-\end{vbframe}
-
-% \begin{vbframe}{Symbolic Learning}
-% \begin{center}
-%   Socrates is human + humans are mortal = ? \\
-% \lz
-%   Socrates is human + ? = Socrates is mortal
-% \end{center}
-% \lz
-
-% \begin{itemize}
-% \item Background knowledge (e.g. gene interactions, metabolic pathways) can be expressed in first-order knowledge
-% \item Inverse deduction can infer new hypotheses
-% \item Robot scientist: learns hypotheses, then designs and runs experiments to test hypotheses
-% \end{itemize}
-% \end{vbframe}
-
-\begin{vbframe}{Neural Networks}
-\begin{itemize}
- \item Learning is what the brain does: reverse-engineer it
- \item Adjust strengths of connection between neurons
- \item Can handle raw, high-dimensional data, constructs it own features
-\end{itemize}
-
- \begin{table}
- \small
-    \begin{tabular}{l|l}
-      \hline
-      Representation & Neural network\\
-      \hline
-      Evaluation & Squared error\\
-      \hline
-      Optimization & Gradient descent\\
-      \hline
-      Algorithms & Backpropagation\\
-      \hline
-    \end{tabular}
-  \end{table}
-\end{vbframe}
-
-\begin{vbframe}{Neural Networks}
-\begin{itemize}
- \item Hebbian learning: Neurons that fire together, wire together
- \item Backpropagation: assigns 'blame' for errors to neurons earlier in the network
- \item Many applications (deep learning).
-\end{itemize}
-  \center
-  \includegraphics[width=.6\textwidth]{figure_man/backprop.png}
-
-\end{vbframe}
-
-\begin{vbframe}{Evolution}
-\begin{itemize}
- \item Natural selection is the mother of all learning
- \item Simulate evolution on a computer
- \item Can learn \emph{structure}, e.g. the shape of a brain
-\end{itemize}
-
- \begin{table}
- \small
-    \begin{tabular}{l|l}
-      \hline
-      Representation & Genetic programs (often trees) \\
-      \hline
-      Evaluation & Fitness function\\
-      \hline
-      Optimization & Genetic search\\
-      \hline
-      Algorithms & Genetic programming (crossover, mutation)\\
-      \hline
-    \end{tabular}
-  \end{table}
-\end{vbframe}
-
-\begin{vbframe}{Probabilistic (Bayesian) Learning}
-\begin{itemize}
- \item Learning is a form of uncertain inference
- \item Uses Bayes' theorem to incorporate new evidence into our beliefs
- \item Can deal with noisy, incomplete, contradictory data
-\end{itemize}
-
- \begin{table}
- \small
-    \begin{tabular}{l|l}
-      \hline
-      Representation & Graphical models, Markov networks \\
-      \hline
-      Evaluation & Posterior probability\\
-      \hline
-      Optimization & Probabilistic inference\\
-      \hline
-      Algorithms & MCMC\\
-      \hline
-    \end{tabular}
-  \end{table}
-\end{vbframe}
-
-\begin{vbframe}{Bayesian Learning}
-\begin{itemize}
- \item Choose hypothesis space + \textbf{prior} for each hypothesis
- \item As evidence comes in, update probability of each hypothesis
- \item \textbf{Posterior}: how likely is hypotheses after seeing the data
-\end{itemize}
-\begin{center}
-  \includegraphics[width=0.8\textwidth]{figure_man/bayes.png}
-\end{center}
-\end{vbframe}
-
-
-\begin{vbframe}{Learning by Analogy}
-\begin{itemize}
- \item Learning is recognizing similarities between situations and inferring other similarities
- \item Generalizes from similarity
- \item Transfer solution from previous situations to new situations
-\end{itemize}
-
- \begin{table}
- \small
-    \begin{tabular}{l|l}
-      \hline
-      Representation & Memory, support vectors \\
-      \hline
-      Evaluation & Margin\\
-      \hline
-      Optimization & Kernel machines\\
-      \hline
-      Algorithms & Nearest Neighbor, Support Vector Machines\\
-      \hline
-    \end{tabular}
-  \end{table}
-\end{vbframe}
 
 \begin{vbframe}{Nearest neighbors}
 \begin{itemize}
