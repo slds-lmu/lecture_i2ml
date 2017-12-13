@@ -11,40 +11,139 @@ knitr::set_parent("../style/preamble.Rnw")
 
 \lecturechapter{6}{Introduction to Classification}
 \lecture{Introduction to Machine Learning}
-
-
 \framebreak
+
+<<include=FALSE>>=
+  library(datasets)
+df <- as.data.frame(Titanic)
+titanic.raw <- NULL
+for (i in 1:4)
+{
+  titanic.raw <- cbind(titanic.raw,
+                       rep(as.character(df[,i]),df$Freq))
+}
+titanic.raw <- as.data.frame(titanic.raw)
+names(titanic.raw) <- names(df)[1:4]
+@
+
+\begin{vbframe}{Binary Classification: Example}
+
+We want to classify the passengers of the Titanic into Survived $\in$ $\{Yes, No\}$ given information about the class they travelled in, the sex and the age.
+
+
+ % \column{0.5\textwidth}
+\begin{center}
+\textbf{Titanic Passengers} \\
+\vspace{0.25cm}
+<<>>=
+  kable(unique(titanic.raw)[c(1:8,12:15),], row.names = FALSE)
+@
+  \end{center}
+
+\end{vbframe}
+
+
+
+  \begin{vbframe}{Classification}
+
+  Assume we are given a \emph{classification problem}:
+  \begin{eqnarray*}
+  & x \in \Xspace \quad & \text{feature vector}\\
+  & y \in \Yspace = \gset \quad & \text{\emph{categorical} output variable (label)}\\
+  &\D = \Dset & \text{observations of $x$ and $y$}
+  \end{eqnarray*}
+
+
+  Classification usually means to construct $g$ discriminant functions $f_1(x), \ldots f_g(x)$,
+  so that we choose our class as
+  $$h(x) = \argmax_k f_k(x)$$
+
+  \lz
+
+  This divides the feature space into $g$ \emph{decision regions} $\{x \in \Xspace | h(x) = k\}$.
+  These regions are separated by the \emph{decision boundaries} where ties occur between these
+  regions.
+
+  \lz
+
+  If these functions $f_k(x)$ can be specified as linear functions (possibly through a rank-preserving,
+  monotone transformation), we will call the classifier a \emph{linear classifier}. We can then write a
+  decision boundary as $x^T\theta = 0$, which is a hyperplane separating two classes.
+
+  \lz
+  Note that all linear classifiers can represent non-linear decision boundaries in our original input space,
+  if we opt to manually construct derived features like higher order interactions or polynomial features.
+
+  \lz
+
+  If only 2 classes exist, we could also construct a single discriminant function $f(x) = f_1(x) - f_2(x)$
+  (note that it would be more natural here to label the classes with \{+1, -1\} or \{0, 1\}).
+
+  \lz
+
+  Two fundamental approaches exist to construct classifiers:
+  The \emph{generative approach} and the \emph{discriminant approach}.
+
+\end{vbframe}
+\begin{vbframe}{Classification Approaches}
+
+  The \emph{generative approach} employs the Bayes theorem:
+  $$\pikx = \postk = \frac{\P(x | y = k) \P(y = k)}{\P(x)} \propto \pdfxyk \pik $$
+  and models $\pdfxyk$ (usually by assuming something about the structure of this distribution)
+  to allow the computation of $\pikx$.
+
+  \lz
+
+  Discriminant function are now $\pikx$ or $\lpdfxyk + \lpik$
+
+  \lz
+  The \emph{discriminant approach} tries to model the discriminant score function directly, often by loss
+  minimization.
+
+  \lz
+  % \framebreak
+
+  Examples:
+  \begin{itemize}
+  \item Linear discriminant analysis (generative, linear)
+  \item Quadratic discriminant analysis (generative, not linear)
+  \item Logistic regression (discriminant, linear)
+  \end{itemize}
+
+
+  \end{vbframe}
+
 \begin{vbframe}{Classification losses}
 
 
 
-  % For classification problems, i. e. output variable $y \in \{-1, 1\}$ the risk can be written as
+   For classification problems, i. e. output variable $y \in \{-1, 1\}$ the risk can be written as
 
 
-  % For categorical output variable $y\in \gset$ we can use the \emph{0-1-loss}
+   For categorical output variable $y\in \gset$ we can use the \emph{0-1-loss}
 
-  % $$
-  % L(y, h(x)) =\I_{y \ne h(x)} =
-     % \footnotesize \begin{cases} 1 \quad \text{ if } y \ne h(x) \\ 0 \quad    \text{ if } y = h(x)  \end{cases}
-  % $$
+   $$
+   L(y, h(x)) =\I_{y \ne h(x)} =
+      \footnotesize \begin{cases} 1 \quad \text{ if } y \ne h(x) \\ 0 \quad    \text{ if } y = h(x)  \end{cases}
+   $$
 
-  % by applying \emph{Bayes theorem}
+   by applying \emph{Bayes theorem}
 
-  % \begin{eqnarray*}
-  % p(x, y) = p(y|x)p(x).
-  % \end{eqnarray*}
+   \begin{eqnarray*}
+   p(x, y) = p(y|x)p(x).
+   \end{eqnarray*}
 
-  % \framebreak
+   \framebreak
 
-  % This can be simplified to
+   This can be simplified to
 
-  % $$
-  % \risk(f) = \int_X [L(1, f(x)) \pix + L(-1, f(x)) (1 - \pix) p(x)] dx.
-  % $$
+   $$
+   \risk(f) = \int_X [L(1, f(x)) \pix + L(-1, f(x)) (1 - \pix) p(x)] dx.
+   $$
 
-  % For given $x$, one can minimize the risk pointwise for any convex loss function by differentiating the last equality with respect to $f$. Thus, minimizers for all of the loss functions are easily obtained as functions of only $f(x)$ and $\pi(x)$.
+   For given $x$, one can minimize the risk pointwise for any convex loss function by differentiating the last equality with respect to $f$. Thus, minimizers for all of the loss functions are easily obtained as functions of only $f(x)$ and $\pi(x)$.
 
-  % \framebreak
+   \framebreak
 
   We will now introduce some loss functions, mainly for binary output.
 
@@ -83,39 +182,39 @@ knitr::set_parent("../style/preamble.Rnw")
   qplot(x, y, geom = "line", xlab = expression(yf(x)), ylab = expression(L(yf(x))))
   @
   \end{vbframe}
-
-  \begin{vbframe}{Multiclass 0-1 loss and Bayes classifier}
-
-  Assume $h \in \Yspace$ with $|\Yspace| = g$. We can define the 0-1-loss for multiclass:
-  $$L(y, \hx) = [y \neq \hx]$$.
-  We can in general rewrite the loss again as:
-  \begin{eqnarray*}
-    \risk(h) & = & \E_{xy}[L(y, h)] = E_x [ E_{y|x} [ L(y, \hx) ] ] =  \\
-             & = & E_x \sum_{k \in \Yspace} L(k, \hx) P(y = k| x = x) \\
-             & = & E_x \sum_{k \in \Yspace} L(k, \hx) \pikx
-  \end{eqnarray*}
-
-  NB: This works, too, (of course) for $\Yspace = \{-1, 1\}$ and a score function $f$:
-  $$
-  \risk(f) = \mathbb{E}_x [L(1, f(x)) \pix + L(-1, f(x)) (1 - \pix)].
-  $$
-
-  \framebreak
-  We can again minimize pointwise, and for a general cost-sensitive loss $L(y, h)$ this is:
-
-  \begin{eqnarray*}
-    \hxh &=& \argmin_{l \in \Yspace} \sum_{k \in \Yspace} L(k, l) \pikx \\
-  \end{eqnarray*}
-
-  For the 0-1 loss this becomes:
-
-  $$
-  \hxh = \argmin_{k \in \Yspace} (1 - \pikx) = \argmax_{k \in \Yspace} \pikx
-  $$
-
-  If we know $\Pxy$ perfectly (and hence $\pikx$), we have basically constructed the loss-optimal
-  classifier and we call it the \emph{Bayes classifier} and its expected loss the \emph{Bayes loss} or
-  \emph{Bayes error rate} for 0-1-loss.
+  %
+  % \begin{vbframe}{Multiclass 0-1 loss and Bayes classifier}
+  %
+  % Assume $h \in \Yspace$ with $|\Yspace| = g$. We can define the 0-1-loss for multiclass:
+  % $$L(y, \hx) = [y \neq \hx]$$.
+  % We can in general rewrite the loss again as:
+  % \begin{eqnarray*}
+  %   \risk(h) & = & \E_{xy}[L(y, h)] = E_x [ E_{y|x} [ L(y, \hx) ] ] =  \\
+  %            & = & E_x \sum_{k \in \Yspace} L(k, \hx) P(y = k| x = x) \\
+  %            & = & E_x \sum_{k \in \Yspace} L(k, \hx) \pikx
+  % \end{eqnarray*}
+  %
+  % NB: This works, too, (of course) for $\Yspace = \{-1, 1\}$ and a score function $f$:
+  % $$
+  % \risk(f) = \mathbb{E}_x [L(1, f(x)) \pix + L(-1, f(x)) (1 - \pix)].
+  % $$
+  %
+  % \framebreak
+  % We can again minimize pointwise, and for a general cost-sensitive loss $L(y, h)$ this is:
+  %
+  % \begin{eqnarray*}
+  %   \hxh &=& \argmin_{l \in \Yspace} \sum_{k \in \Yspace} L(k, l) \pikx \\
+  % \end{eqnarray*}
+  %
+  % For the 0-1 loss this becomes:
+  %
+  % $$
+  % \hxh = \argmin_{k \in \Yspace} (1 - \pikx) = \argmax_{k \in \Yspace} \pikx
+  % $$
+  %
+  % If we know $\Pxy$ perfectly (and hence $\pikx$), we have basically constructed the loss-optimal
+  % classifier and we call it the \emph{Bayes classifier} and its expected loss the \emph{Bayes loss} or
+  % \emph{Bayes error rate} for 0-1-loss.
 
 
   % and get the risk function
@@ -127,10 +226,10 @@ knitr::set_parent("../style/preamble.Rnw")
   % \fh(x) &=&    \footnotesize \begin{cases} 1 \quad \text{ if } \pix > 1/2 \\ -1 \quad \pix < 1/2  \end{cases}
   % \end{eqnarray*}
 
-  \lz
+ % \lz
 
 
-  \end{vbframe}
+  %\end{vbframe}
 
 
   % \framebreak
@@ -173,34 +272,34 @@ knitr::set_parent("../style/preamble.Rnw")
 
   % \end{vbframe}
 
-  \begin{vbframe}{Bin. classif. losses - Hinge loss}
-  \begin{itemize}
-  \item $\Lxy = \max\{0, 1 - \yf\}$, used in SVMs
-  \item Convex
-  \item No derivatives for $\yf = 1$, optimization becomes harder
-  \item More robust, outliers in $y$ are less problematic
-  \end{itemize}
-
-  <<echo=FALSE, results='hide', fig.height=3, fig.align='center'>>=
-  x = seq(-2, 2, by = 0.01); y = pmax(0, 1 - x)
-  qplot(x, y, geom = "line", xlab = expression(yf(x)), ylab = expression(L(yf(x))))
-  @
-
-  % \framebreak
-
-  % we get the risk function
-
-  % \begin{eqnarray*}
-  % \risk(f) &=& \mathbb{E}_x [\max\{0, 1 - \fx\} \pix + \max\{0, 1 + y\fx\} (1-\pix)].
-  % \end{eqnarray*}
-
-  % The minimizer of $\risk(f)$ for the hinge loss function is
-
-  % \begin{eqnarray*}
-    % $fh(x) =  \footnotesize \begin{cases} 1 \quad \text{ if } \pix > 1/2 \\ -1 \quad \pix < 1/2  \end{cases}$
-  % \end{eqnarray*}
-
-  \end{vbframe}
+  % \begin{vbframe}{Bin. classif. losses - Hinge loss}
+  % \begin{itemize}
+  % \item $\Lxy = \max\{0, 1 - \yf\}$, used in SVMs
+  % \item Convex
+  % \item No derivatives for $\yf = 1$, optimization becomes harder
+  % \item More robust, outliers in $y$ are less problematic
+  % \end{itemize}
+  %
+  % <<echo=FALSE, results='hide', fig.height=3, fig.align='center'>>=
+  % x = seq(-2, 2, by = 0.01); y = pmax(0, 1 - x)
+  % qplot(x, y, geom = "line", xlab = expression(yf(x)), ylab = expression(L(yf(x))))
+  % @
+  %
+  % % \framebreak
+  %
+  % % we get the risk function
+  %
+  % % \begin{eqnarray*}
+  % % \risk(f) &=& \mathbb{E}_x [\max\{0, 1 - \fx\} \pix + \max\{0, 1 + y\fx\} (1-\pix)].
+  % % \end{eqnarray*}
+  %
+  % % The minimizer of $\risk(f)$ for the hinge loss function is
+  %
+  % % \begin{eqnarray*}
+  %   % $fh(x) =  \footnotesize \begin{cases} 1 \quad \text{ if } \pix > 1/2 \\ -1 \quad \pix < 1/2  \end{cases}$
+  % % \end{eqnarray*}
+  %
+  % \end{vbframe}
 
   \begin{vbframe}{Bin. classif. losses - Logistic loss}
   \begin{itemize}
@@ -224,40 +323,40 @@ knitr::set_parent("../style/preamble.Rnw")
 
   \end{vbframe}
 
-  \begin{vbframe}{Bin. classif. losses - Cross-entropy loss}
-  \begin{itemize}
-    \item Using the alternative label convention $y\in \{0, 1\}$
-    \item $\Lxy = -y\ln(\pix)-(1-y)\ln(1-\pix)$
-    \item Basically the same as the logistic loss when we act on $\pix \in [0,1]$ instead of $\fx \in \R$
-    \item  The cross entropy loss is closely related to the Kullback-Leibler divergence, which will be introduced later in the chapter.
-    \item Very often used in neural networks with binary output nodes for classification.
-  \end{itemize}
-
-
-  \end{vbframe}
-
-
-  \begin{vbframe}{Bin. classif. losses - Exponential loss}
-  \begin{itemize}
-    \item $\Lxy = \exp(-y\fx)$, used in AdaBoost
-  \item Convex, differentiable, not robust
-  \item Quite similar to logistic loss
-  \end{itemize}
-
-  <<fig.height=3>>=
-  x = seq(-2, 2, by = 0.01); y = exp(-x)
-  qplot(x, y, geom = "line", xlab = expression(yf(x)), ylab = expression(L(yf(x))))
-  @
-
-  % we get the risk function
-
-  % \vspace*{-.5cm}
-
-  % \begin{eqnarray*}
-  % \risk(f) &=& \mathbb{E}_x [\exp(-\fx) \pix + \exp(f(x)) (1-\pix)]
-  % \end{eqnarray*}
-
-  \end{vbframe}
+  % \begin{vbframe}{Bin. classif. losses - Cross-entropy loss}
+  % \begin{itemize}
+  %   \item Using the alternative label convention $y\in \{0, 1\}$
+  %   \item $\Lxy = -y\ln(\pix)-(1-y)\ln(1-\pix)$
+  %   \item Basically the same as the logistic loss when we act on $\pix \in [0,1]$ instead of $\fx \in \R$
+  %   \item  The cross entropy loss is closely related to the Kullback-Leibler divergence, which will be introduced later in the chapter.
+  %   \item Very often used in neural networks with binary output nodes for classification.
+  % \end{itemize}
+  %
+  %
+  % \end{vbframe}
+  %
+  %
+  % \begin{vbframe}{Bin. classif. losses - Exponential loss}
+  % \begin{itemize}
+  %   \item $\Lxy = \exp(-y\fx)$, used in AdaBoost
+  % \item Convex, differentiable, not robust
+  % \item Quite similar to logistic loss
+  % \end{itemize}
+  %
+  % <<fig.height=3>>=
+  % x = seq(-2, 2, by = 0.01); y = exp(-x)
+  % qplot(x, y, geom = "line", xlab = expression(yf(x)), ylab = expression(L(yf(x))))
+  % @
+  %
+  % % we get the risk function
+  %
+  % % \vspace*{-.5cm}
+  %
+  % % \begin{eqnarray*}
+  % % \risk(f) &=& \mathbb{E}_x [\exp(-\fx) \pix + \exp(f(x)) (1-\pix)]
+  % % \end{eqnarray*}
+  %
+  % \end{vbframe}
   %
   % \begin{vbframe}{Risk minimizing functions}
   %
@@ -281,73 +380,6 @@ knitr::set_parent("../style/preamble.Rnw")
 
   % \section{Selected methods for regression and classification}
 
-  \begin{vbframe}{Classification}
-
-  Assume we are given a \emph{classification problem}:
-  \begin{eqnarray*}
-  & x \in \Xspace \quad & \text{feature vector}\\
-  & y \in \Yspace = \gset \quad & \text{\emph{categorical} output variable (label)}\\
-  &\D = \Dset & \text{observations of $x$ and $y$}
-  \end{eqnarray*}
-
-
-  Classification usually means to construct $g$ discriminant functions $f_1(x), \ldots f_g(x)$,
-  so that we choose our class as
-  $$h(x) = \argmax_k f_k(x)$$
-
-  \lz
-
-  This divides the feature space into $g$ \emph{decision regions} $\{x \in \Xspace | h(x) = k\}$.
-  These regions are separated by the \emph{decision boundaries} where ties occur between these
-  regions.
-
-  \lz
-
-  If these functions $f_k(x)$ can be specified as linear functions (possibly through a rank-preserving,
-  monotone transformation), we will call the classifier a \emph{linear classifier}. We can then write a
-  decision boundary as $x^T\theta = 0$, which is a hyperplane separating two classes.
-
-  \lz
-  Note that all linear classifiers can represent non-linear decision boundaries in our original input space,
-  if we opt to manually construct derived features like higher order interactions or polynomial features.
-
-  \lz
-
-  If only 2 classes exist, we could also construct a single discriminant function $f(x) = f_1(x) - f_2(x)$
-  (note that it would be more natural here to label the classes with \{+1, -1\} or \{0, 1\}).
-
-  \lz
-
-  Two fundamental approaches exist to construct classifiers:
-  The \emph{generative approach} and the \emph{discriminant approach}.
-
-  \framebreak
-
-  The \emph{generative approach} employs the Bayes theorem:
-  $$\pikx = \postk = \frac{\P(x | y = k) \P(y = k)}{\P(x)} \propto \pdfxyk \pik $$
-  and models $\pdfxyk$ (usually by assuming something about the structure of this distribution)
-  to allow the computation of $\pikx$.
-
-  \lz
-
-  Discriminant function are now $\pikx$ or $\lpdfxyk + \lpik$
-
-  \lz
-  The \emph{discriminant approach} tries to model the discriminant score function directly, often by loss
-  minimization.
-
-  \lz
-  % \framebreak
-
-  Examples:
-  \begin{itemize}
-  \item Linear discriminant analysis (generative, linear)
-  \item Quadratic discriminant analysis (generative, not linear)
-  \item Logistic regression (discriminant, linear)
-  \end{itemize}
-
-
-  \end{vbframe}
 
 
   \endlecture
