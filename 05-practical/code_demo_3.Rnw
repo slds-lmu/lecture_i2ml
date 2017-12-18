@@ -1,0 +1,103 @@
+% Introduction to Machine Learning
+% Day 3
+
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../style/preamble.Rnw")
+@
+
+% Load all R packages and set up knitr
+<<setup, child="../style/setup.Rnw", include = FALSE>>=
+@
+
+\lecturechapter{999}{Code for Chapter 3}
+\lecture{intro to ML}
+
+\begin{vbframe}{Bias-Variance of holdout}
+
+  Experiment:
+  \begin{itemize}
+    \item Data: simulate spiral data (sd = 0.1) from the \texttt{mlbench} package.
+    \item Learner: CART (\texttt{classif.rpart} from \texttt{mlr}).
+    \item Goal: estimate real performance of a model with $|\Dtrain| = 500$.
+    \item Get the "true" estimator by repeatedly sampling 500 observations from the simulator,
+      fit the learner, then evaluate on a really large number of observation.
+    \item Analyse different types of holdout and subsampling (= repeated holdout), with different split rates:
+    \begin{itemize}
+    \item Sample $\D$ with $|\D| = 500$ and use split-rate $s \in \{0.05, 0.1, ..., 0.95\}$ for training with $|\Dtrain| = s \cdot 500$.
+    \item Estimate performance on $\Dtest$ with $|\Dtest| = 500 \cdot (1 - s)$.
+    \item Repeat the samping of $\D$ 50 times and the splitting with $s$ 50 times ($\Rightarrow$ 2500 experiments for each split-rate).
+    \end{itemize}
+  \end{itemize}
+
+\framebreak
+
+Visualize the perfomance estimator - and the MSE of the estimator - in relation to the true error rate.
+
+<<>>=
+load("rsrc/holdout-biasvar.RData")
+@
+
+<<echo = FALSE, fig.height = 5>>=
+ggd1 = melt(res)
+colnames(ggd1) = c("split", "rep", "ssiter", "mmce")
+ggd1$split = as.factor(ggd1$split)
+ggd1$mse = (ggd1$mmce -  realperf)^2
+ggd1$type = "holdout"
+ggd1$ssiter = NULL
+mse1 = ddply(ggd1, "split", summarize, mse = mean(mse))
+mse1$type = "holdout"
+
+ggd2 = ddply(ggd1, c("split", "rep"), summarize, mmce = mean(mmce))
+ggd2$mse = (ggd2$mmce -  realperf)^2
+ggd2$type = "subsampling"
+mse2 = ddply(ggd2, "split", summarize, mse = mean(mse))
+mse2$type = "subsampling"
+
+ggd = rbind(ggd1, ggd2)
+gmse = rbind(mse1, mse2)
+
+ggd$type = as.factor(ggd$type)
+pl1 = ggplot(ggd, aes(x = split, y = mmce, col = type))
+pl1 = pl1 + geom_boxplot()
+pl1 = pl1 + geom_hline(yintercept = realperf)
+#pl1 = pl1 + theme(axis.text.x = element_text(angle = 45))
+
+gmse$split = as.numeric(as.character(gmse$split))
+gmse$type = as.factor(gmse$type)
+
+pl2 = ggplot(gmse, aes(x = split, y = mse, col = type))
+pl2 = pl2 + geom_line()
+pl2 = pl2 + scale_y_log10()
+pl2 = pl2 + scale_x_continuous(breaks = gmse$split)
+
+grid.arrange(pl1 + theme_minimal(), pl2 + theme_minimal(), layout_matrix = rbind(1,1,2))
+@
+
+
+% \framebreak
+%
+%   \begin{itemize}
+%     \item The training error decreases with smaller training set size as it is easier for the model to learn the underlying structure in smaller training sets perfectly.
+%     \item The test error (its bias) decreases with increasing training set size as the model generalizes better with more data, however, the variance increases as the test set size decreases at the same time.
+%     \item The variance of the test error should decrease if we repeat the hold-out more often. %(here 10 vs. 100 repetitions):
+%
+% <<echo = FALSE, cache = TRUE, eval = FALSE, out.width="0.85\\textwidth", fig.height=3>>=
+% res = rbind(cbind(res.rpart, repetitions = 100), cbind(res.rpart.small, repetitions = 20))
+% res$repetitions = as.factor(res$repetitions)
+%
+% p1 = ggplot(data = subset(res, measure == "1"), aes(x = percentage, y = mmce)) +
+%   geom_errorbar(aes(ymin = mmce - sd, ymax = mmce + sd, colour = repetitions), width = 0.025, position = position_dodge(width = 0.01)) +
+%   geom_line(aes(colour = repetitions), position = position_dodge(width = 0.01)) +
+%   geom_point(aes(colour = repetitions), position = position_dodge(width = 0.01)) +
+%   ylab("Test error") +
+%   xlab("Training set percentage") +
+%   theme_minimal()
+% p1
+% @
+%
+% \end{itemize}
+
+\end{vbframe}
+
+\endlecture
