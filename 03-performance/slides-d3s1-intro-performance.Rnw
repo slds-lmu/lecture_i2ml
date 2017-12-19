@@ -81,6 +81,42 @@ where
 \end{vbframe}
 
 
+\begin{vbframe}{Bias-Variance Tradeoff}
+
+We can decompose the generalization error as follows:
+\begin{eqnarray*}
+  \GED &=& \E( L(y, \fhD(x)) | \D) \\
+  &=& \E((y-\hat{f}(x))^2)\\
+  &=& Var(y) + \E(y^2) - \E(\hat{f}(x))^2 + \E(\hat{f}(x) - y)^2 \\
+  &=& \sigma^2 + Var(\hat{f}(x)) + Bias(\hat{f}(x))^2
+\end{eqnarray*}
+
+where
+
+\begin{itemize}
+  \item $\sigma^2$: intrinsic variability of the data, cannot be avoided
+  \item $Var(\hat f(x))$: Variance of the model, the learners's tendency to learn random things irrespective of the signal (\textit{overfitting})
+  \item $Bias(\hat f(x))^2$: Systematic bias of the model (\textit{underfitting})
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Bias-Variance Tradeoff}
+
+  \begin{itemize}
+    \item We can reduce the model's variance on the cost of its bias and vice versa by controlling the model complexity.
+    \item We search for the perfect Bias-Variance-Tradeoff that minimizes our expected prediction error.
+\end{itemize}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=7cm]{figure_man/bias_variance.png}
+\end{figure}
+
+\end{vbframe}
+
+
+
 \begin{vbframe}{Inner vs. Outer Loss}
 
 We distinguish between
@@ -97,9 +133,8 @@ as the outer loss is often numerically hard(er) to handle during optimization an
 opt to approximate it.
 
 \lz Examples:
-In logistic regression we minimize the binomial loss, and in SVMs the hinge loss.
-But when evaluating the models we might be more interested in classification error,  or AUC, or partial AUC as more appropriate
-outer loss functions.
+In logistic regression we minimize the binomial loss and in k-NN there is no
+explicit loss minimization. But when evaluating the models we might be more interested in classification error, AUC, or partial AUC as more appropriate outer loss functions.
 
 \lz
 The outer loss is also known as \emph{performance measure}.
@@ -114,25 +149,122 @@ The \emph{training error} (also called {\it apparent error} or {\it resubstituti
 \begin{itemize}
 \item The training error is usually a very unreliable and overly optimistic estimator of future performance.
 \item Goodness-of-fit measures like $R^2$, likelihood, AIC, BIC, deviance are all based on the training error.
+\end{itemize}
 
+\end{vbframe}
 
-\framebreak
+% Jann: I hate this framebreaks, therefore made three frames for each of the plots
+\begin{vbframe}{Training Error}
 
-Example 1: Recall our polynomial regression: The training error provided no help
-if figuring out the optimal model complexity $d$.
+Example 1: we want to train a model to fit the true generating process of this data:
 
-<<echo=FALSE, out.width="0.9\\textwidth", fig.height=2.7>>=
+<<echo=FALSE, out.width="0.9\\textwidth", fig.height=3.5>>=
 .h = function(x) 0.5 + 0.4 * sin(2 * pi * x)
 h = function(x) .h(x) + rnorm(length(x), mean = 0, sd = 0.05)
 
 set.seed(1234)
 x.all = seq(0, 1, length = 21L)
-ind = seq(1, length(x.all), by = 2)
+ind = seq(1, length(x.all), by = 3)
 
-x = x.all[ind]
+x = x.all[-ind]
 y = h(x)
-x.test = x.all[-ind]
-y.test = h(x.all[-ind])
+x.test = x.all[ind]
+y.test = h(x.all[ind])
+
+line.palette = c("#E69F00AA", "#56B4E9AA", "#CC79A7AA")
+baseplot = function() {
+  par(mar = c(2, 2, 1, 1))
+  plot(.h, lty = 2L, xlim = c(0, 1), ylim = c(-0.1, 1), ylab = "", xlab = "")
+  points(x, y, pch = 19L)
+  points(x.test, y.test, pch = 19L)
+  legend(x = "bottomleft", legend = c("true relationship f(x)", "whole data set"),
+    col = "black", lty = c(2L, NA), pch = c(NA, 19L))
+}
+baseplot()
+@
+
+\end{vbframe}
+
+\begin{vbframe}{Training Error}
+
+We randomly split the whole dataset into $\frac{2}{3}$ train data ...
+
+<<echo=FALSE, out.width="0.9\\textwidth", fig.height=3.5>>=
+.h = function(x) 0.5 + 0.4 * sin(2 * pi * x)
+h = function(x) .h(x) + rnorm(length(x), mean = 0, sd = 0.05)
+
+set.seed(1234)
+x.all = seq(0, 1, length = 21L)
+ind = seq(1, length(x.all), by = 3)
+
+x = x.all[-ind]
+y = h(x)
+x.test = x.all[ind]
+y.test = h(x.all[ind])
+
+line.palette = c("#E69F00AA", "#56B4E9AA", "#CC79A7AA")
+baseplot = function() {
+  par(mar = c(2, 2, 1, 1))
+  plot(.h, lty = 2L, xlim = c(0, 1), ylim = c(-0.1, 1), ylab = "", xlab = "")
+  points(x, y, pch = 19L)
+  #points(x.test, y.test)
+  legend(x = "bottomleft", legend = c("true relationship f(x)", "training set"),
+    col = "black", lty = c(2L, NA), pch = c(NA, 19L))
+}
+baseplot()
+@
+
+\end{vbframe}
+
+\begin{vbframe}{Training Error}
+
+... and $\frac{1}{3}$  test data:
+
+<<echo=FALSE, out.width="0.9\\textwidth", fig.height=3.5>>=
+.h = function(x) 0.5 + 0.4 * sin(2 * pi * x)
+h = function(x) .h(x) + rnorm(length(x), mean = 0, sd = 0.05)
+
+set.seed(1234)
+x.all = seq(0, 1, length = 21L)
+ind = seq(1, length(x.all), by = 3)
+
+x = x.all[-ind]
+y = h(x)
+x.test = x.all[ind]
+y.test = h(x.all[ind])
+
+line.palette = c("#E69F00AA", "#56B4E9AA", "#CC79A7AA")
+baseplot = function() {
+  par(mar = c(2, 2, 1, 1))
+  plot(.h, lty = 2L, xlim = c(0, 1), ylim = c(-0.1, 1), ylab = "", xlab = "")
+  # points(x, y, pch = 19L)
+  points(x.test, y.test)
+  legend(x = "bottomleft", legend = c("true relationship f(x)", "test set"),
+    col = "black", lty = c(2L, NA), pch = c(NA, 21L))
+}
+baseplot()
+@
+
+\end{vbframe}
+
+
+\begin{vbframe}{Training Error}
+
+Now recall our polynomial regression: The training error provided no help
+in figuring out the optimal model complexity $d$.
+
+<<echo=FALSE, out.width="0.9\\textwidth", fig.height=2.5>>=
+.h = function(x) 0.5 + 0.4 * sin(2 * pi * x)
+h = function(x) .h(x) + rnorm(length(x), mean = 0, sd = 0.05)
+
+set.seed(1234)
+x.all = seq(0, 1, length = 21L)
+ind = seq(1, length(x.all), by = 3)
+
+x = x.all[-ind]
+y = h(x)
+x.test = x.all[ind]
+y.test = h(x.all[ind])
 
 line.palette = c("#E69F00AA", "#56B4E9AA", "#CC79A7AA")
 baseplot = function() {
@@ -158,7 +290,7 @@ legend("topright", paste(sprintf("d = %s", c(1, 5, 9)), c("(underfit)", "(good)"
   col = line.palette, lwd = 2L)
 @
 
-<<echo=FALSE, out.width="0.9\\textwidth", fig.height=2.7>>=
+<<echo=FALSE, out.width="0.9\\textwidth", fig.height=2.5>>=
 d = lapply(1:10, function(i) {
   mod = lm(y ~ poly(x, degree = i, raw = TRUE))
   list(
@@ -183,6 +315,7 @@ arrows(9, 0.02, 7, 0.02, code = 1, lty = 2, length = 0.1)
 
 \framebreak
 
+\begin{itemize}
 \item Example 2: Assume any ML model, now extend the training algorithm in the following way:
   On top of normal fitting, we also store $\Dtrain$.
   During prediction, we first check whether $x$ is already stored in this set. If so, we replicate its label.
@@ -250,6 +383,13 @@ The \emph{test error} (also called \emph{generalization error}) is %the expected
   \end{blocki}
 \end{vbframe}
 
+
+
+
+
+
+
+
 \begin{vbframe}{Bias-Variance of holdout}
 
   \begin{itemize}
@@ -265,33 +405,35 @@ The \emph{test error} (also called \emph{generalization error}) is %the expected
       evaluation, our model will learn less, and perform worse. Very small training sets will also
       increase variance a bit.
   \end{itemize}
+\end{vbframe}
 
-  \framebreak
 
-  Experiment:
-  \begin{itemize}
-    \item Data: simulate spiral data (sd = 0.1) from the \texttt{mlbench} package.
-    \item Learner: CART (\texttt{classif.rpart} from \texttt{mlr}).
-    \item Goal: estimate real performance of a model with $|\Dtrain| = 500$.
-    \item Get the "true" estimator by repeatedly sampling 500 observations from the simulator,
-      fit the learner, then evaluate on a really large number of observation.
-    \item Analyse different types of holdout and subsampling (= repeated holdout), with different split rates:
-    \begin{itemize}
-    \item Sample $\D$ with $|\D| = 500$ and use split-rate $s \in \{0.05, 0.1, ..., 0.95\}$ for training with $|\Dtrain| = s \cdot 500$.
-    \item Estimate performance on $\Dtest$ with $|\Dtest| = 500 \cdot (1 - s)$.
-    \item Repeat the samping of $\D$ 50 times and the splitting with $s$ 50 times ($\Rightarrow$ 2500 experiments for each split-rate).
-    \end{itemize}
-  \end{itemize}
+% \begin{vbframe}{Bias-Variance of holdout}
+%
+%   Experiment:
+%   \begin{itemize}
+%     \item Data: simulate spiral data (sd = 0.1) from the \texttt{mlbench} package.
+%     \item Learner: CART (\texttt{classif.rpart} from \texttt{mlr}).
+%     \item Goal: estimate real performance of a model with $|\Dtrain| = 500$.
+%     \item Get the "true" estimator by repeatedly sampling 500 observations from the simulator,
+%       fit the learner, then evaluate on a really large number of observation.
+%     \item Analyse different types of holdout and subsampling (= repeated holdout), with different split rates:
+%     \begin{itemize}
+%     \item Sample $\D$ with $|\D| = 500$ and use split-rate $s \in \{0.05, 0.1, ..., 0.95\}$ for training with $|\Dtrain| = s \cdot 500$.
+%     \item Estimate performance on $\Dtest$ with $|\Dtest| = 500 \cdot (1 - s)$.
+%     \item Repeat the samping of $\D$ 50 times and the splitting with $s$ 50 times ($\Rightarrow$ 2500 experiments for each split-rate).
+%     \end{itemize}
+%   \end{itemize}
+%
+% \framebreak
+%
+% Visualize the perfomance estimator - and the MSE of the estimator - in relation to the true error rate.
 
-\framebreak
-
-Visualize the perfomance estimator - and the MSE of the estimator - in relation to the true error rate.
-
-<<>>=
+<<eval = FALSE>>=
 load("rsrc/holdout-biasvar.RData")
 @
 
-<<echo = FALSE, fig.height = 5>>=
+<<eval = FALSE, echo = FALSE, fig.height = 5>>=
 ggd1 = melt(res)
 colnames(ggd1) = c("split", "rep", "ssiter", "mmce")
 ggd1$split = as.factor(ggd1$split)
@@ -350,10 +492,10 @@ grid.arrange(pl1 + theme_minimal(), pl2 + theme_minimal(), layout_matrix = rbind
 % @
 %
 % \end{itemize}
-\framebreak
+%\framebreak
 
 
-\end{vbframe}
+%\end{vbframe}
 %
 % \begin{vbframe}{Bias vs. Variance}
 % Both, training error and test error are estimators and suffer, as all statistical estimators, from the bias-variance issue:
@@ -509,4 +651,7 @@ grid.arrange(pl1 + theme_minimal(), pl2 + theme_minimal(), layout_matrix = rbind
 % \end{itemize}
 
 % \end{vbframe}
+
+
+
 \endlecture

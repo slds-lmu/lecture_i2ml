@@ -17,13 +17,11 @@ knitr::set_parent("../style/preamble.Rnw")
 \begin{vbframe}{Resampling}
 
 \begin{itemize}
-  \item We therefore need to construct a better performance estimator through \emph{resampling},
-    that uses the data more efficiently.
-  \item All resampling variants operate similar: The data set is split repeatedly into
+  \item The smaller the training set, the more pessimistic bias we
+introduce. Thus, we need to construct a better performance estimator through \emph{resampling}, that uses the data more efficiently.
+  \item Resampling: the data set is split repeatedly into
     training and tests sets, and we later aggregate (e.g. average) the results.
-  \item The usual trick is to make training sets quite larger (to keep the pessimistic bias small),
-    and to handle the variance introduced by smaller test sets through many repetitions and averaging
-    of results.
+  \item The usual trick is to make training sets quite larger (to keep the pessimistic bias small), and to handle the variance introduced by smaller test sets through many repetitions and averaging of results.
 \end{itemize}
 
 \begin{figure}
@@ -426,85 +424,85 @@ Subsampling is basically a repeated holdout and is also is very similar to boots
 %
 % \end{vbframe}
 
-\begin{vbframe}{Benchmarking in \texttt{mlr}}
-
-\begin{itemize}
-\item In a benchmark experiment different learning methods are applied to one or several data sets with the aim to compare and rank the algorithms with respect to one or more performance measures.
-\item It is important that the train and test sets are synchronized, i.e. all learning methods see the same data splits so that they are better comparable.
-\end{itemize}
-
-We will first create a list of tasks and a list of learners:
-
-<<echo = TRUE>>=
-data("BostonHousing", "mtcars", "swiss", package = c("mlbench", "datasets"))
-tasks = list(
-  makeRegrTask(data = BostonHousing, target = "medv"),
-  makeRegrTask(data = swiss, target = "Fertility"),
-  makeRegrTask(data = mtcars, target = "mpg")
-)
-learners = list(
-  makeLearner("regr.rpart"),
-  makeLearner("regr.randomForest"),
-  makeLearner("regr.lm")
-)
-@
-
-
-\framebreak
-
-The \texttt{benchmark} function from \texttt{mlr} allows you to compare all tasks and learners w.r.t. one or more measures based on the resampling method specified in the \texttt{resamplings} argument:
-
-<<echo = -1, cache = TRUE>>=
-set.seed(1)
-(bmr = benchmark(learners, tasks, resamplings = cv10, measures = mlr::mse))
-@
-
-\end{vbframe}
-
-\begin{vbframe}{Benchmarking in \texttt{mlr}: Access Data}
-
-<<echo = TRUE, cache = TRUE>>=
-head(getBMRAggrPerformances(bmr, as.df = TRUE), 3)
-head(getBMRPerformances(bmr, as.df = TRUE), 3)
-head(getBMRPredictions(bmr, as.df = TRUE), 3)
-@
-
-\end{vbframe}
-
-\begin{vbframe}{Visualizing Performances}
-
-Inspect the distribution of the performance measures using box plots:
-
-<<echo = TRUE, cache = TRUE, out.width="0.8\\textwidth", fig.height=5>>=
-plotBMRBoxplots(bmr, measure = mlr::mse)
-@
-
-\framebreak
-
-The plot is a \texttt{ggplot2} object that can be changed (names, colors, etc.):
-
-<<echo = TRUE, cache = TRUE, out.width="0.8\\textwidth", fig.height=5>>=
-plotBMRBoxplots(bmr, measure = mlr::mse, style = "violin") +
-  aes(color = learner.id)
-@
-
-\framebreak
-
-Visualize the aggregated performance values as dot plot:
-
-<<echo = TRUE, cache = TRUE, out.width="0.8\\textwidth", fig.height=5>>=
-plotBMRSummary(bmr)
-@
-
-\framebreak
-
-Plot the rankings of the aggregated performance values:
-
-<<echo = TRUE, cache = TRUE, out.width="0.8\\textwidth", fig.height=5>>=
-plotBMRSummary(bmr, trafo = "rank")
-@
-
-\end{vbframe}
+% \begin{vbframe}{Benchmarking in \texttt{mlr}}
+%
+% \begin{itemize}
+% \item In a benchmark experiment different learning methods are applied to one or several data sets with the aim to compare and rank the algorithms with respect to one or more performance measures.
+% \item It is important that the train and test sets are synchronized, i.e. all learning methods see the same data splits so that they are better comparable.
+% \end{itemize}
+%
+% We will first create a list of tasks and a list of learners:
+%
+% <<echo = TRUE>>=
+% data("BostonHousing", "mtcars", "swiss", package = c("mlbench", "datasets"))
+% tasks = list(
+%   makeRegrTask(data = BostonHousing, target = "medv"),
+%   makeRegrTask(data = swiss, target = "Fertility"),
+%   makeRegrTask(data = mtcars, target = "mpg")
+% )
+% learners = list(
+%   makeLearner("regr.rpart"),
+%   makeLearner("regr.randomForest"),
+%   makeLearner("regr.lm")
+% )
+% @
+%
+%
+% \framebreak
+%
+% The \texttt{benchmark} function from \texttt{mlr} allows you to compare all tasks and learners w.r.t. one or more measures based on the resampling method specified in the \texttt{resamplings} argument:
+%
+% <<echo = -1, cache = TRUE>>=
+% set.seed(1)
+% (bmr = benchmark(learners, tasks, resamplings = cv10, measures = mlr::mse))
+% @
+%
+% \end{vbframe}
+%
+% \begin{vbframe}{Benchmarking in \texttt{mlr}: Access Data}
+%
+% <<echo = TRUE, cache = TRUE>>=
+% head(getBMRAggrPerformances(bmr, as.df = TRUE), 3)
+% head(getBMRPerformances(bmr, as.df = TRUE), 3)
+% head(getBMRPredictions(bmr, as.df = TRUE), 3)
+% @
+%
+% \end{vbframe}
+%
+% \begin{vbframe}{Visualizing Performances}
+%
+% Inspect the distribution of the performance measures using box plots:
+%
+% <<echo = TRUE, cache = TRUE, out.width="0.8\\textwidth", fig.height=5>>=
+% plotBMRBoxplots(bmr, measure = mlr::mse)
+% @
+%
+% \framebreak
+%
+% The plot is a \texttt{ggplot2} object that can be changed (names, colors, etc.):
+%
+% <<echo = TRUE, cache = TRUE, out.width="0.8\\textwidth", fig.height=5>>=
+% plotBMRBoxplots(bmr, measure = mlr::mse, style = "violin") +
+%   aes(color = learner.id)
+% @
+%
+% \framebreak
+%
+% Visualize the aggregated performance values as dot plot:
+%
+% <<echo = TRUE, cache = TRUE, out.width="0.8\\textwidth", fig.height=5>>=
+% plotBMRSummary(bmr)
+% @
+%
+% \framebreak
+%
+% Plot the rankings of the aggregated performance values:
+%
+% <<echo = TRUE, cache = TRUE, out.width="0.8\\textwidth", fig.height=5>>=
+% plotBMRSummary(bmr, trafo = "rank")
+% @
+%
+% \end{vbframe}
 
 
 \begin{vbframe}{Learning Curves}
