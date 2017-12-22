@@ -12,74 +12,108 @@ knitr::set_parent("../style/preamble.Rnw")
 \lecturechapter{4}{Linear regression models}
 \lecture{Introduction to Machine Learning}
 
+
 \begin{vbframe}{Normal linear regression}
 
-For $i \in \nset$ (simple case and with basis functions):
-\begin{eqnarray*}
-\yi & = & \fxi + \epsi = \theta_0 + \theta^T \xi + \epsi\\
-\yi & = & \fxi + \epsi = \theta_0 + \theta^T \phi(\xi) + \epsi
-\end{eqnarray*}
+\begin{itemize}
+  \item Machine Learning tries to approximate the true data generating function via loss minimization
+  \item Classic statistics maximizes a likelihood to reach the same goal
+  \item Following example with the linear regression model:
+  \begin{equation*}
+    \begin{split}
+      y^{i} & = \hat f(x^{i}) + \epsilon^{i} = \theta_0 + \theta x^{i} + \epsilon^{i} \\
+      & \text{with } \epsilon, y|x \iid N(\mu,\sigma^2)
+    \end{split}
+  \end{equation*}
+  \item Alternative distributions are applied in generalized linear models.
+  \item Basis functions $\phi(x)=(\phi_1(x), \ldots, \phi_m(x))^T$ can also be included as an extension of linear predictors.
+
+\end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{Way 1: loss minimization}
 
 \begin{itemize}
-\item basis functions $\phi(x)=(\phi_1(x), \ldots, \phi_m(x))^T$
-\item assumption: $\epsi \iid N(0, \sigma^2)$
+
+  \item A typical machine learning way to estimate the parameters is to not require
+  a distribution assumption for the error term but to define a loss function for the
+prediction.
+  \item In this case we decide to measure the prediction error with a \emph{squared loss}
+as \emph{loss function} for the \emph{risk minimization}:
+
+    $$
+    \riske(\theta) = SSE(\theta) = \sumin \Lxyit = \sumin (\yi - \theta^T \xi)^2
+    $$
+
+  \item NB: We assume here and from now on that $\theta_0$ is included in $\theta$.
+
+  \item Using matrix notation the empirical risk can be written as
+    $$
+    SSE(\theta) = (\ydat - X\theta)^T(\ydat - X\theta)
+    $$
+
 \end{itemize}
+\end{vbframe}
 
-\lz
 
-Given observed data $\D$  we want to address the questions
+\begin{vbframe}{Way 1: loss minimization}
+  \begin{itemize}
+    \item We transform this to the minimization problem:
+    $$
+    \hat \theta = \arg \min_\theta (\ydat - X\theta)^T(\ydat - X\theta)
+    $$
+    \item Differentiating w.r.t. $\theta$ yields the so-called \emph{normal equations}:
+    $$
+    X^T(\ydat - X\theta) = 0
+    $$
+    \item The optimal $\theta^*$ therefore is
+    $$
+    \thetah = (X^T X)^{-1} X^T\ydat
+    $$
+    \item If we face loss functions that we can not solve for $\theta$ analytically,
+    we approximate the solution using optimizers such as \emph{Gradient Descent}.
+  \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Way 2: maximum likelihood}
 \begin{itemize}
-\item  Given basis functions, how to find $\theta$? ({\bf Parameter estimation})
-\item  How to select basis functions for my problem? ({\bf Model selection} )
+  \item In statistics, we would start from a maximum-likelihood perspective
+  $$
+  \yi = \fxi + \epsi \sim N(\fxi, \sigma^2)
+  $$
+  $$
+  \LLt = \prod_{i=1}^n \pdf(\yi | \fxit, \sigma^2) \propto \exp(-\frac{\sumin (\fxit - \yi)^2}{2\sigma^2})
+  $$
+  \item With the log-likelihood that we want to maximize:
+  $$
+  \llt \propto - \sumin (\fxit - \yi)^2
+  $$
+  \item and the optimal parameter
+  $$
+  \theta ^* = \arg \max_{\theta} \llt
+  $$
 \end{itemize}
 
-\framebreak
+\end{vbframe}
+\begin{vbframe}{Way 2: maximum likelihood}
+\begin{itemize}
+  \item This is equivalent to minimizing:
+  $$
+  - \llt \propto \sumin (\fxit - \yi)^2
+  $$
+  \item Which is equivalent to our loss minimization approach from the machine learning perspective!
+  \item We can show this relation holds not only for a Gaussian distribution and L2 loss but also for other loss-distribution-combinations (Laplacian - L1 loss, Binomial - logistic loss, ...)
+\end{itemize}
 
-We don't want do address the model selection problem here, but leave it at:
-In ML we \enquote{dislike} doing this \enquote{manually}.
-
-\lz
-
-A typical ML way to estimate the parameters is to not require the assumption
-$\epsi \iid N(0, \sigma^2)$, but instead assume the that prediction error is measured
-by \emph{squared error} as our \emph{loss function} in \emph{risk minimization}:
-
-$$
-\riske(\theta) = SSE(\theta) = \sumin \Lxyit = \sumin (\yi - \theta^T \xi)^2
-$$
-
-NB: We assume here and from now on that $\theta_0$ is included in $\theta$.
-
-Using matrix notation the empirical risk can be written as
-$$
-SSE(\theta) = (\ydat - X\theta)^T(\ydat - X\theta).
-$$
+\end{vbframe}
 
 
-Differentiating w.r.t $\theta$ yields the so-called \emph{normal equations}:
-$$
-X^T(\ydat - X\theta) = 0
-$$
-The optimal $\theta$ is
-$$
-\thetah = (X^T X)^{-1} X^T\ydat
-$$
-
-In statistics, we would start from a maximum-likelihood perspective
-$$
-\yi = \fxi + \epsi \sim N(\fxi, \sigma^2)
-$$
-$$
-\LLt = \prod_{i=1}^n \pdf(\yi | \fxit, \sigma^2) \propto \exp(-\frac{\sumin (\fxit - \yi)^2}{2\sigma^2})
-$$
-If we minimize the neg. log-likelihood, we see that this is equivalent to our
-loss minimization approach!
-$$
-\llt \propto \sumin (\fxit - \yi)^2  = min!
-$$
 
 
-\framebreak
+
+
+\begin{vbframe}{Normal linear regression}
 
 <<>>=
 data(mtcars)
