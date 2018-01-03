@@ -26,6 +26,7 @@ bin.tsk = makeClassifTask(data = bin.data, target = "tar")
   \begin{vbframe}{Bin. classif. losses - Logistic loss}
   \begin{itemize}
     \item $\Lxy = \ln(1+\exp(-y\fx))$, used in logistic regression
+    \item $y \in \{-1, 1\}$
     \item Also called Bernoulli loss
   \item Convex, differentiable, not robust
   \end{itemize}
@@ -65,6 +66,45 @@ $$\
 
 The logistic function $s(t) = \frac{\exp(t)}{1 + \exp(t)}$
 transforms the scores / log-odds $\theta^Tx$ into a probability.
+
+
+\framebreak
+The logistic function $s(t) = \frac{exp(t)}{1 + exp(t)}$ which we use to model the probability
+$\post = s(\theta^T x)  = \frac{\exp(\theta^Tx)}{1+\exp(\theta^Tx)} $
+<<logistic-function, echo=FALSE, out.height="0.65\\paperheight">>=
+n = 100
+df = data.frame(x = seq(from = -10, to  = 10, length.out = n))
+df$y = exp(df$x) / (1 + exp(df$x))
+ggplot(df) + geom_line(aes(x = x, y = y)) + scale_x_continuous('t')  + scale_y_continuous('s(t)')
+@
+
+\framebreak
+Changing the intercept shifts the logistic curve in x-axis direction.
+We assume an intercept only model for simplicity: $\post =  \frac{\exp(\theta_0)}{1+\exp(\theta_0)} $
+
+<<logistic-function-par, echo=FALSE, out.height="0.65\\paperheight">>=
+n = 100
+df = data.frame(x = rep(seq(from = -10, to  = 10, length.out = n ), times = 3),
+                        intercept = rep(c(-3,0,3), each = n))
+df$y = exp(df$intercept + df$x) / (1 + exp(df$intercept + df$x))
+
+ggplot(df) + geom_line(aes(x = x, y = y, group = intercept, color=factor(intercept))) +
+scale_x_continuous('t')  + scale_y_continuous('s(t)') + scale_color_discrete(expression(theta*"0"))
+@
+
+\framebreak
+Assuming a single feature and no intercept: $\post =  \frac{\exp(\theta_1 x_1)}{1+\exp(\theta_1 x_1)}$:
+Parameter $\theta_1$ controls slope and direction of the logistic curve.
+
+<<logistic-function-par2, echo=FALSE, out.height="0.65\\paperheight">>=
+n = 100
+df = data.frame(x = rep(seq(from = -10, to  = 10, length.out = n ), times = 4),
+                        theta1 = rep(c(-2,-0.3, 1, 6), each = n))
+df$y = exp(df$x * df$theta1) / (1 + exp(df$theta1 * df$x))
+
+ggplot(df) + geom_line(aes(x = x, y = y, group = theta1, color=factor(theta1))) +
+scale_x_continuous('t')  + scale_y_continuous('s(t)') + scale_color_discrete(expression(theta*"1"))
+@
 
 
 \framebreak
@@ -199,7 +239,88 @@ for any other model with directly models $\fx$.
 
 \end{vbframe}
 
+\begin{vbframe}{Estimating Probabilities - Multinomial Regression and Softmax}
 
+<<multi-classification-task-plot, fig.height=4, fig.width=6>>=
+  plotLearnerPrediction(makeLearner("classif.svm"), iris.task, c("Petal.Length", "Petal.Width")) +
+    ggtitle("")
+@
+
+
+\framebreak
+For a categorical response variable $y \in \gset$ with $g>2$ the model extends to
+
+$$
+\pikx = \P(y = k | x) = \frac{\exp(\theta_k^Tx)}{\sum_{j=1}^g\exp(\theta_j^Tx)}.
+$$
+
+The latter function is called the \emph{softmax}, and defined on a numerical vector $z$:
+$$
+s(z)_k = \frac{\exp(z_k)}{\sum_{j}\exp(z_j)}
+$$
+
+It is a generalization of the logistic function (check for g=2). It \enquote{squashes} a g-dim. real-valued vector $z$ to a vector of the same dimension,
+with every entry in the range [0, 1] and all entries adding up to 1.
+
+\framebreak
+
+By comparing the posterior probabilities of two categories $k$ and $l$ we end up in a linear function (in $x$),
+
+$$
+\log\frac{\pi_k(x)}{\pi_l(x)} = (\theta_k-\theta_l)^Tx.
+$$
+
+\textbf{Remark:}
+\begin{itemize}
+\item $\theta_j$ are vectors here.
+\item Well-definedness: $\pi_k(x) \in [0, 1]$ and $\sum_k \pi_k(x) = 1$
+
+\end{itemize}
+
+\framebreak
+
+This approach can be extended in exactly the same fashion for other score based models.
+For each class $k$ we define a binary score model $f_k(x)$ with parameter vector $\theta_k$.
+We then combine these models through the softmax function
+
+$$
+\postk = \pikx = s_k(f_1(x), \ldots f_g(x))
+$$
+
+and optimize all parameter vectors of the $f_k$ jointly. Maximum likelihood:
+
+$$
+\LLt = \prodin \prodkg \pikxt^{[y = k]}
+$$
+
+Negative log-likelihood turns this into empirical risk minimization:
+
+$$
+\risket = \sumin \sumkg 1_{[y = k]} \log s_k(f_1(x | \theta_k), \ldots f_g(x | \theta_g))
+$$
+
+\framebreak
+
+Further comments:
+
+\begin{itemize}
+
+\item We can now, e.g., calculate gradients and optimize this with standard numerical optimization software.
+
+\item For linear $\fxt = \theta^T x$ this is also called \emph{softmax regression}.
+
+\item Has an unusual property that it has a \enquote{redundant} set of parameters. If we substract a fixed vector
+  from all $\theta_k$, the predictions do not change at all.
+  I.e.,  our model is \enquote{overparameterized}, and for any hypothesis we might fit,
+  there are multiple parameter vectors that give rise to exactly the same hypothesis function.
+  This also implies that the minimizer of $\risket$ above is not unique (but $\risket$ is convex)!
+  Hence, a numerical trick is to set $\theta_g = 0$ and only optimize the other $\theta_k$.
+
+\item A similar approach is used in many ML models: multiclass LDA, naive Bayes, neural networks and boosting.
+
+\end{itemize}
+
+\end{vbframe}
 % We ended up maximizing
 
 % $$ \sumin \yi \theta^T \xi - \log[1 + \exp(\theta^T \xi)] $$
