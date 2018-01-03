@@ -1038,117 +1038,118 @@ Avg Prob & 50\%  & 50\%        & 80\%        \\
   \item Prediction rule 2 is rather poorly calibrated. The proportion of observations for which $y=1$ would be estimated with $80\%$.
 \end{itemize}
 \end{vbframe}
+%
+% \begin{vbframe}{ROC Analysis in R}
+% \begin{itemize}
+%   \item \texttt{generateThreshVsPerfData} calculates one or several performance measures for a sequence of decision thresholds from 0 to 1.
+%   \item It provides S3 methods for objects of class \texttt{Prediction}, \texttt{ResampleResult}
+% and \texttt{BenchmarkResult} (resulting from  \texttt{predict.WrappedModel}, \texttt{resample}
+% or \texttt{benchmark}).
+%   \item \texttt{plotROCCurves} plots the result of \texttt{generateThreshVsPerfData} using \texttt{ggplot2}.
+%   \item More infos \url{http://mlr-org.github.io/mlr-tutorial/release/html/roc_analysis/index.html}
+% \end{itemize}
+% \end{vbframe}
+%
+% \begin{vbframe}{Example 1: Single predictions}
+% \scriptsize
+% <<echo=TRUE, message = FALSE>>=
+% set.seed(1)
+% # get train and test indices
+% n = getTaskSize(sonar.task)
+% train.set = sample(n, size = round(2/3 * n))
+% test.set = setdiff(seq_len(n), train.set)
+%
+% # fit and predict
+% lrn = makeLearner("classif.lda", predict.type = "prob")
+% mod = train(lrn, sonar.task, subset = train.set)
+% pred = predict(mod, task = sonar.task, subset = test.set)
+% @
+% \normalsize
+% \end{vbframe}
+%
+% \begin{vbframe}{Example 1: Single predictions}
+% We calculate fpr, tpr and compute error rates:
+%
+% \scriptsize
+% <<echo = TRUE>>=
+% df = generateThreshVsPerfData(pred, measures = list(fpr, tpr, mmce))
+% @
+% \normalsize
+% \begin{itemize}
+%   \item \texttt{generateThreshVsPerfData} returns an object of class \texttt{ThreshVsPerfData},
+% which contains the performance values in the \texttt{\$data} slot.
+%   \item By default, \texttt{plotROCCurves} plots the performance values of the first two measures passed
+% to \texttt{generateThreshVsPerfData}.
+%   \item The first is shown on the x-axis, the second on the y-axis.
+% \end{itemize}
+% \end{vbframe}
+%
+% \begin{vbframe}{Example 1: Single predictions}
+% \scriptsize
+% <<echo = TRUE, fig.align="center", fig.width = 5, fig.height = 5, out.width="0.55\\textwidth">>=
+% df = generateThreshVsPerfData(pred, measures = list(fpr, tpr, mmce))
+% plotROCCurves(df)
+% @
+% \normalsize
+%
+% \framebreak
+%
+% The corresponding area under curve auc can be calculated by
+%
+% \scriptsize
+% <<echo = TRUE>>=
+% performance(pred, auc)
+% @
+%
+% \normalsize
+% \texttt{plotROCCurves} always requires a pair of performance measures that are plotted against
+% each other.
+%
+% \framebreak
+%
+% If you want to plot individual measures vs. the decision threshold, use
+%
+% \scriptsize
+% <<echo = TRUE, fig.align="center", fig.height = 4, fig.width = 8, out.width="0.9\\textwidth">>=
+% plotThreshVsPerf(df)
+% @
+% \normalsize
+% \end{vbframe}
+%
+%
+% \begin{vbframe}{Example 2: Benchmark Experiment}
+% \scriptsize
+% <<>>=
+% options(width = 200)
+% @
+% <<echo = TRUE>>=
+% lrn1 = makeLearner("classif.randomForest", predict.type = "prob")
+% lrn2 = makeLearner("classif.rpart", predict.type = "prob")
+%
+% cv5 = makeResampleDesc("CV", iters = 5)
+%
+% bmr = benchmark(learners = list(lrn1, lrn2), tasks = sonar.task,
+%   resampling = cv5, measures = list(auc, mmce), show.info = FALSE)
+% bmr
+% @
+% \normalsize
+%
+% Calling \texttt{generateThreshVsPerfData} and \texttt{plotROCCurves} on the \texttt{BenchmarkResult}
+% produces a plot with ROC curves for all learners in the experiment.
+%
+% \framebreak
+%
 
-\begin{vbframe}{ROC Analysis in R}
-\begin{itemize}
-  \item \texttt{generateThreshVsPerfData} calculates one or several performance measures for a sequence of decision thresholds from 0 to 1.
-  \item It provides S3 methods for objects of class \texttt{Prediction}, \texttt{ResampleResult}
-and \texttt{BenchmarkResult} (resulting from  \texttt{predict.WrappedModel}, \texttt{resample}
-or \texttt{benchmark}).
-  \item \texttt{plotROCCurves} plots the result of \texttt{generateThreshVsPerfData} using \texttt{ggplot2}.
-  \item More infos \url{http://mlr-org.github.io/mlr-tutorial/release/html/roc_analysis/index.html}
-\end{itemize}
-\end{vbframe}
-
-\begin{vbframe}{Example 1: Single predictions}
-\scriptsize
-<<echo=TRUE, message = FALSE>>=
-set.seed(1)
-# get train and test indices
-n = getTaskSize(sonar.task)
-train.set = sample(n, size = round(2/3 * n))
-test.set = setdiff(seq_len(n), train.set)
-
-# fit and predict
-lrn = makeLearner("classif.lda", predict.type = "prob")
-mod = train(lrn, sonar.task, subset = train.set)
-pred = predict(mod, task = sonar.task, subset = test.set)
-@
-\normalsize
-\end{vbframe}
-
-\begin{vbframe}{Example 1: Single predictions}
-We calculate fpr, tpr and compute error rates:
-
-\scriptsize
-<<echo = TRUE>>=
-df = generateThreshVsPerfData(pred, measures = list(fpr, tpr, mmce))
-@
-\normalsize
-\begin{itemize}
-  \item \texttt{generateThreshVsPerfData} returns an object of class \texttt{ThreshVsPerfData},
-which contains the performance values in the \texttt{\$data} slot.
-  \item By default, \texttt{plotROCCurves} plots the performance values of the first two measures passed
-to \texttt{generateThreshVsPerfData}.
-  \item The first is shown on the x-axis, the second on the y-axis.
-\end{itemize}
-\end{vbframe}
-
-\begin{vbframe}{Example 1: Single predictions}
-\scriptsize
-<<echo = TRUE, fig.align="center", fig.width = 5, fig.height = 5, out.width="0.55\\textwidth">>=
-df = generateThreshVsPerfData(pred, measures = list(fpr, tpr, mmce))
-plotROCCurves(df)
-@
-\normalsize
-
-\framebreak
-
-The corresponding area under curve auc can be calculated by
-
-\scriptsize
-<<echo = TRUE>>=
-performance(pred, auc)
-@
-
-\normalsize
-\texttt{plotROCCurves} always requires a pair of performance measures that are plotted against
-each other.
-
-\framebreak
-
-If you want to plot individual measures vs. the decision threshold, use
-
-\scriptsize
-<<echo = TRUE, fig.align="center", fig.height = 4, fig.width = 8, out.width="0.9\\textwidth">>=
-plotThreshVsPerf(df)
-@
-\normalsize
-\end{vbframe}
-
-
-\begin{vbframe}{Example 2: Benchmark Experiment}
-\scriptsize
-<<>>=
-options(width = 200)
-@
-<<echo = TRUE>>=
-lrn1 = makeLearner("classif.randomForest", predict.type = "prob")
-lrn2 = makeLearner("classif.rpart", predict.type = "prob")
-
-cv5 = makeResampleDesc("CV", iters = 5)
-
-bmr = benchmark(learners = list(lrn1, lrn2), tasks = sonar.task,
-  resampling = cv5, measures = list(auc, mmce), show.info = FALSE)
-bmr
-@
-\normalsize
-
-Calling \texttt{generateThreshVsPerfData} and \texttt{plotROCCurves} on the \texttt{BenchmarkResult}
-produces a plot with ROC curves for all learners in the experiment.
-
-\framebreak
-
-\scriptsize
-<<echo = TRUE, fig.align="center", fig.height = 4, fig.width = 8, out.width="\\textwidth">>=
-df = generateThreshVsPerfData(bmr, measures = list(fpr, tpr, mmce))
-plotROCCurves(df)
-@
-\framebreak
-
-\scriptsize
-<<echo = TRUE, fig.align="center", fig.height = 4, fig.width = 8, out.width="\\textwidth">>=
-plotThreshVsPerf(df)
-@
-\end{vbframe}
+% \scriptsize
+% <<echo = TRUE, fig.align="center", fig.height = 4, fig.width = 8, out.width="\\textwidth">>=
+% df = generateThreshVsPerfData(bmr, measures = list(fpr, tpr, mmce))
+% plotROCCurves(df)
+% @
+% \framebreak
+%
+% \scriptsize
+% <<echo = TRUE, fig.align="center", fig.height = 4, fig.width = 8, out.width="\\textwidth">>=
+% plotThreshVsPerf(df)
+% @
+% \end{vbframe}
 \endlecture
