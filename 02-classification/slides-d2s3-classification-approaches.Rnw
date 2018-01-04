@@ -73,6 +73,64 @@ Parameters $\theta$ are estimated in a straight-forward manner by estimating
 \hat{\Sigma} &=& \frac{1}{n - g} \sum_{k=1}^g \sum_{i: y_i = k} (x_i - \hat{\mu}_k) (x_i - \hat{\mu}_k) ^T
 \end{eqnarray*}
 
+\framebreak
+
+\begin{itemize}
+  \item Same covariance for both classes
+  \item Restrictive model assumption.
+\end{itemize}
+
+<<echo = FALSE, warning=FALSE, message=FALSE, fig.height=4.5>>=
+library(ggplot2)
+library(MASS)
+library(car)
+
+# fake data
+n = 300
+classa = data.frame(mvrnorm(n = n, mu = c(2,2), Sigma = matrix(c(2, 0, 0, 2), ncol = 2, byrow = TRUE)))
+classb = data.frame(mvrnorm(n = n, mu = c(10,7), Sigma = matrix(c(8, -6, -6, 8), ncol = 2, byrow = TRUE)))
+
+# Target data frame
+df = cbind(classa, rep("a", ncol(classa)))
+colnames(df) = c("x1", "x2", "y")
+foo = cbind(classb, rep("b", ncol(classb)))
+colnames(foo) = c("x1", "x2", "y")
+df = rbind(df, foo)
+
+####### LDA
+## all from scratch:
+mu_a = c(mean(df[which(df$y == "a"), 1]), mean(df[which(df$y == "a"), 2]))
+mu_b = c(mean(df[which(df$y == "b"), 1]), mean(df[which(df$y == "b"), 2]))
+
+foo = matrix(c(0, 0, 0, 0), ncol = 2)
+for (i in 1:nrow(df)) {
+  if (df[i, "y"] == "a") {
+    # i = 1
+    foo = foo +  as.matrix(t(df[i, c(1, 2)] - mu_a)) %*% as.matrix(df[i, c(1, 2)] - mu_a)
+  }
+  else {
+    foo = foo +  as.matrix(t(df[i, c(1, 2)] - mu_b)) %*% as.matrix(df[i, c(1, 2)] - mu_b)
+  }
+}
+var_lda = 1 / (nrow(df) - 2) * foo
+
+# create ellipsoids
+a_ell = as.data.frame(ellipse(center = mu_a, shape = var_lda, radius = 2, draw = FALSE))
+colnames(a_ell) = c("x1", "x2")
+b_ell = as.data.frame(ellipse(center = mu_b, shape = var_lda, radius = 2, draw = FALSE))
+colnames(b_ell) = c("x1", "x2")
+
+## ggplot
+plot1 = ggplot(data = classa, aes(x = X1, y = X2, alpha = 0.2)) +
+  geom_point(col = "blue", show.legend = FALSE) +
+  geom_point(data = classb, aes(x = X1, y = X2, alpha = 0.2), col = "red", show.legend = FALSE) +
+  geom_path(data = a_ell, aes(x = x1, y = x2), colour = "blue", show.legend = FALSE, size = 2) +
+  geom_path(data = b_ell, aes(x = x1, y = x2), colour = "red", show.legend = FALSE, size = 2) +
+  coord_fixed()
+plot1
+
+@
+
 
 \framebreak
 
@@ -154,6 +212,47 @@ Parameters are estimated in a straight-forward manner by:\\
 
 \framebreak
 
+\begin{itemize}
+  \item Covariance matrices can differ over classes.
+  \item Yields better data fit but also requires estimation of more parameters.
+\end{itemize}
+
+<<echo = FALSE, warning=FALSE, message=FALSE, fig.height = 4.5>>=
+########### QDA
+mu_a = c(mean(df[which(df$y == "a"), 1]), mean(df[which(df$y == "a"), 2]))
+mu_b = c(mean(df[which(df$y == "b"), 1]), mean(df[which(df$y == "b"), 2]))
+
+foo_a = matrix(c(0, 0, 0, 0), ncol = 2)
+for (i in 1:nrow(df[which(df$y == "a"), ])) {
+    foo_a = foo_a +  as.matrix(t(df[which(df$y == "a"), ][i, c(1, 2)] - mu_a)) %*% as.matrix(df[which(df$y == "a"), ][i, c(1, 2)] - mu_a)
+}
+var_qda_a = 1 / (nrow(classa) - 1) * foo_a
+
+foo_b = matrix(c(0, 0, 0, 0), ncol = 2)
+for (i in 1:nrow(df[which(df$y == "b"), ])) {
+  foo_b = foo_b +  as.matrix(t(df[which(df$y == "b"), ][i, c(1, 2)] - mu_b)) %*% as.matrix(df[which(df$y == "b"), ][i, c(1, 2)] - mu_b)
+}
+var_qda_b = (1 / (nrow(classb) - 1) ) * foo_b
+
+# create ellipsoids
+a_ell = as.data.frame(ellipse(center = mu_a, shape = var_qda_a, radius = 2, draw = FALSE))
+colnames(a_ell) = c("x1", "x2")
+b_ell = as.data.frame(ellipse(center = mu_b, shape = var_qda_b, radius = 2, draw = FALSE))
+colnames(b_ell) = c("x1", "x2")
+
+plot1 = ggplot(data = classa, aes(x = X1, y = X2, alpha = 0.2)) +
+  geom_point(col = "blue", show.legend = FALSE) +
+  geom_point(data = classb, aes(x = X1, y = X2, alpha = 0.2), col = "red", show.legend = FALSE) +
+  geom_path(data = a_ell, aes(x = x1, y = x2), colour = "blue", show.legend = FALSE, size = 2) +
+  geom_path(data = b_ell, aes(x = x1, y = x2), colour = "red", show.legend = FALSE, size = 2) +
+  coord_fixed()
+plot1
+@
+
+\framebreak
+
+
+
 \begin{eqnarray*}
 \pikx &\propto& \pi_k \cdot \pdfxyk \\
 &=& \pi_k |\Sigma_k|^{-\frac{1}{2}}\exp(- \frac{1}{2} x^T\Sigma_k^{-1}x - \frac{1}{2} \mu_k^T \Sigma_k^{-1} \mu_k + x^T \Sigma_k^{-1} \mu_k )
@@ -228,6 +327,36 @@ $$
 \pikx  \propto \pik \cdot \prod_{j=1}^p p(x_j|y = k)
 $$
 
+\framebreak
+
+
+
+\begin{itemize}
+  \item Covariance matrices can differ over both classes but have to be diagonal.
+  \item Assumption of uncorrelated features
+  \item Good performance despite this strong assumption
+\end{itemize}
+
+<<echo = FALSE, warning=FALSE, message=FALSE, fig.height=4>>=
+var_nb_a = matrix(c(2, 0, 0, 2), ncol = 2)
+var_nb_b = matrix(c(4, 0, 0, 4), ncol = 2)
+
+a_ell = as.data.frame(ellipse(center = mu_a, shape = var_nb_a, radius = 2, draw = FALSE))
+colnames(a_ell) = c("x1", "x2")
+b_ell = as.data.frame(ellipse(center = mu_b, shape = var_nb_b, radius = 2, draw = FALSE))
+colnames(b_ell) = c("x1", "x2")
+
+plot1 = ggplot(data = classa, aes(x = X1, y = X2, alpha = 0.2)) +
+  geom_point(col = "blue", show.legend = FALSE) +
+  geom_point(data = classb, aes(x = X1, y = X2, alpha = 0.2), col = "red", show.legend = FALSE) +
+  geom_path(data = a_ell, aes(x = x1, y = x2), colour = "blue", show.legend = FALSE, size = 2) +
+  geom_path(data = b_ell, aes(x = x1, y = x2), colour = "red", show.legend = FALSE, size = 2) +
+  coord_fixed()
+plot1
+@
+
+
+
 % The Naive Bayes classifier is then obtained by maximizing the above equation
 % $$
 % \yh = h(x) = \argmax_{k\in \gset}\pi_k\prod_{i=1}^p p(x_i | y = k).
@@ -254,7 +383,9 @@ Furthermore, one can show that the Naive Bayes is a linear classifier in a parti
 <<>>=
 learner = makeLearner("classif.naiveBayes")
 plotLearnerPrediction(learner, iris.task)
+
 @
+
 
 
 
@@ -310,6 +441,16 @@ plotLearnerPrediction(learner, iris.task)
 % However, it can be shown that the \emph{Naive Bayes classifier} is a linear classifier in a particular feature space if the features are from exponential families (e. g. binomial, multinomial, normal distribution) .
 
 % \end{vbframe}
+
+
+\begin{vbframe}{Naive bayes: application as spam filter}
+\begin{itemize}
+  \item In the late 90s, Naive Bayes became popular for email spam-filter programs
+  \item Word counts were used as features to detect spam mails (e.g. "Viagra" often occurs in spam mail)
+  \item Independence assumption: occurence of two words in mail is not correlated
+  \item Seems naive ("Viagra" more likely to occur in context with "Buy now" than "flower"), but leads to less required parameters and therefore better generalization.
+\end{itemize}
+\end{vbframe}
 
 
 \endlecture
