@@ -114,42 +114,6 @@ Example: Outer loop with 3-fold CV and inner loop with 4-fold CV
   \end{itemize}
   \item The error estimates on the outer samples (lightgreen) are unbiased because this data was strictly excluded from the validation process
 \end{itemize}
-
-
-  \framebreak
-
-  \begin{itemize}
-    \item Regression task \pkg{mlbench.friedman1}.
-    \item We jointly tune over a random forest and a neural net, with parameters \enquote{mtry}
-      and \enquote{size} (with mlr's ModelMultiplexer).
-    \item Random train and validation set with 100 + 100 observations.
-    \item 50 iterations of random search tuning with holdout-splitting where we
-      train on the training set and test on the validation set.
-    \item After we are done, we store the best obtained configuration, and the obtained performance estimator
-      on the validation set (biased).
-    \item We sample another, small independent test set, with 100 observations, and a large one with 50K.
-      We train the optimal model on the train set and test on both new test sets
-      (that's the nested performance estimator and also the \enquote{real} performance estimator, which we usually do not have).
-    \item This procedure was repeated 100 times.
-  \end{itemize}
-
-  \framebreak
-
-<<fig.height=3, echo = FALSE>>=
-ggd = load2("rsrc/nested-resample-example.RData")
-pl = ggplot(ggd, aes(y = value, x = type)) + geom_boxplot()
-pl = pl + scale_x_discrete(labels = c("wrong, biased resampling", "nested resampling", "'real' test error"))
-pl = pl + ylab("MSE") + xlab("") + ylim(c(0,30))
-pl = pl + theme(axis.text.x = element_text(angle = 0))
-print(pl)
-@
-\begin{itemize}
-  \item In reality we would train on the joint 100+100 train-valid-set observations.
-    We don't do this here for a fair comparison with the naive strategy.
-  \item Note the downward bias of \enquote{naive} tuning where model selected was not embedded in an
-    outer resampling loop. Nested resampling get's it right.
-\end{itemize}
-
 \end{vbframe}
 
 % \begin{vbframe}{Nested resampling with mlr}
