@@ -1,6 +1,6 @@
 #!/bin/bash
 
-all: day1 day2 day3 day4
+all: day1 day2 day3 day4 exercise
 
 DAY1=01-intro
 DAY2=02-classification
@@ -18,3 +18,7 @@ day3:
 
 day4:
 	cd $(DAY4); make
+
+exercise:
+	cd exercises; make
+

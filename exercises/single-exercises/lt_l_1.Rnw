@@ -1,0 +1,62 @@
+\begin{enumerate}
+
+  \item What is the relationship between softmax $\pi_i(x)=\frac{e^{\theta_i^T x}}{\sum_k e^{\theta_k^T x}}$ and logistic function $\pi(x)=\frac{1}{1+e^{\theta^{T} x}}$ ? 
+
+solution:
+
+$\pi_1(x)=\frac{e^{\theta_1^T x}}{e^{\theta_1^T x} + e^{\theta_2^T x}}$
+
+$\pi_2(x)=\frac{e^{\theta_2^T x}}{e^{\theta_1^T x} + e^{\theta_2^T x}}$
+
+$\pi_1(x)=\frac{1}{ (e^{\theta_1^T x} + e^{\theta_2^T x} )/ e^{\theta_1^T x}} = \frac{1}{1+e^{\theta^{T} x}}$ where $\theta =\theta_2 - \theta_1 $ and $\pi_2(x) = 1 - \pi_1(x)$
+
+\item Derive the negative log likelihood of softmax regression. Suppose there are $n$ instances and $p$ features and $g$ classes.
+
+%$log \frac{e^{-\theta_i^T x}}{\sum_k e^{-\theta_k^T x}}= -z_i-log{\sum_k e^{-z_k}}$
+solution:
+
+likelihood for one instance
+$l = \prod_k \pi_k^{I_k}$
+
+where $\pi_k = \frac{e^{\theta_k^T x}}{\sum_j e^{\theta_j^T x}}$
+, $\sum_{k=1}^g \pi_k = 1$, and $I_k = [y = k]$
+, $\sum_{k=1}^g I_k = 1$
+
+negative log likelihood for one instance: 
+$-logL_i = - \sum_{k=1}^g {I_k} log \pi_k$
+
+negative log likelihood: $-log\mathcal{L} = \sum_{i=1}^n -logL_i$
+  
+\item Derive the derivative of the negative likelihood as a loss function for softmax regression. $\triangledown_{\theta_k}\mathcal{L}= \sum_{i=1}^n {-x ([y[i]=k] - \pi_k)}$ (suppose there are n instances)
+  
+solution:
+
+$\frac{\partial (-logL)}{\partial \theta_i} = - \sum_k I_k \frac{1}{\pi_k} \frac{\partial \pi_k}{\partial \theta_i}$
+
+since 
+
+$ \frac{\partial \pi_i}{\partial \theta_i} = \triangledown_{\theta_i} \frac{e^{\theta_i^T x}}{\sum_k e^{\theta_k^T x}}= \frac{e^{z_i}(\sum_k e^{z_k})-(e^{z_i})^2}{(\sum_k e^{z_k})^2}x = \frac{e^{z_i}(\sum_{k \neq i} e^{z_k})}{(\sum_k e^{z_k})^2}x= \pi_i(1 - \pi_i)x$,
+
+$ \frac{\partial \pi_i}{\partial \theta_j} = \triangledown_{\theta_j} \frac{e^{\theta_i^T x}}{\sum_k e^{\theta_k^T x}}= \frac{-e^{z_i}e^{z_j}}{(\sum_k e^{z_k})^2}x= - \pi_i\pi_j x$, ($i \neq j$)
+
+we conclude 
+
+$\frac{- \partial logL}{\partial \theta_i} = - \sum_k I_k \frac{1}{\pi_k} \frac{\partial \pi_k}{\partial \theta_i} = -(1-\pi_i)x$ ($i = y$)
+and 
+
+$\frac{- \partial logL}{\partial \theta_j} = - \sum_k I_k \frac{1}{\pi_k} \frac{\partial \pi_k}{\partial \theta_j} = \pi_j x$
+($j \neq y$)
+
+To write the two case in one formula, we have 
+
+$\frac{- \partial logL}{\partial \theta_k} = -(I_k -\pi_k )x$ where $I_k = [y = k]$
+
+summing over all the instances, we have
+
+$\triangledown_{\theta_k}\mathcal{L} = \sum_{i=1}^n-([y_i = k] -\pi_k )x$ 
+
+\item Implement the gradient descent algorithm for softmax. Compare your implementation on the iris datasets with the mlr classif.multinomial learner. 
+
+solution: see R code
+\end{enumerate}
+

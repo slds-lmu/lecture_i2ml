@@ -1,0 +1,92 @@
+Read the tutorial of the \texttt{mlr} package at http://mlr-org.github.io/mlr-tutorial.
+Make sure that you start from the quick start example in "Home" then go through each chapter in "Basics".
+\begin{enumerate}
+\item Try out the demo codes in the tutorial and try to understand what the concept of Task and Learner is, and how to use the functions \texttt{train}, \texttt{predict} and \texttt{performance}.
+
+<<message=FALSE>>=
+library(mlr)
+# Example from ?predict:
+training.set = seq(1, nrow(iris), by = 2)
+test.set = seq(2, nrow(iris), by = 2)
+
+task = makeClassifTask(data = iris, target = "Species")
+lrn = makeLearner("classif.lda")
+mod = train(lrn, task, subset = training.set)
+pred = predict(mod, newdata = iris[test.set, ])
+performance(pred, measures = mmce)
+@
+
+\item How many performance measures you already know? Try to explain some of them. How can you see which measures are available in \texttt{mlr}?
+
+Each loss function we have learned sofar to fit the model (inner loss) can also be used as performance measure (outer loss).
+
+For classification:
+
+\begin{itemize}
+\item 0-1 loss (= mean misclassification error),
+\item Hinge loss,
+\item Logistic loss (bernulli loss) ...
+\end{itemize}
+
+For regression:
+
+\begin{itemize}
+\item $L_2$-loss (= mean squared error),
+\item $L_1$-loss (= mean absolute error),
+\item huber loss ...
+\end{itemize}
+
+\item Use the \texttt{bh.task} regression task from \texttt{mlr} and split the data into $50\%$ training data and $50\%$ test data while training and predicting (i.e., use the \texttt{subset} argument of the \texttt{train} and \texttt{predict} function).
+Fit a prediction model (e.g. CART) to the training set and make predictions for the test set.
+
+<<message=FALSE>>=
+# look at the task
+bh.task
+n = getTaskSize(bh.task)
+
+# select index vectors to subset the data randomly
+set.seed(123)
+train.ind = sort(sample(seq_len(n), 0.5*n))
+test.ind = setdiff(seq_len(n), train.ind)
+
+# specify learner
+lrn = makeLearner("regr.rpart")
+
+# train model to the training set
+mod = train(lrn, bh.task, subset = train.ind)
+
+# predict on the test set
+pred = predict(mod, bh.task, subset = test.ind)
+pred
+@
+
+\item Now use different observations (but still $50\%$ of them) for the training set. What effects does this have?
+
+<<message=FALSE>>=
+# select different index vectors to subset the data randomly
+set.seed(321)
+train.ind = sort(sample(seq_len(n), 0.5*n))
+test.ind = setdiff(seq_len(n), train.ind)
+
+# specify learner
+lrn = makeLearner("regr.rpart")
+
+# train model to the training set
+mod = train(lrn, bh.task, subset = train.ind)
+
+# predict on the test set
+pred = predict(mod, bh.task, subset = test.ind)
+pred
+@
+
+Effect: We will predict different observations since the test set is different. The same observations get a slightly different prediction (e.g. observation with id 2).
+
+\item What do you have to do in \texttt{mlr} if you want the prediction output to be probabilities (and not classes)?
+
+You have to specify the \texttt{predict.type} in the learner, e.g.:
+
+<<>>=
+makeLearner("classif.rpart", predict.type = "prob")
+@
+
+\end{enumerate}

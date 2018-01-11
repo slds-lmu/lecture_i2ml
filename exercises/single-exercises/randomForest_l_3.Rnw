@@ -1,0 +1,32 @@
+Try to find or simulate (at least) one 2 dimensional classification dataset as an example in which random forests can seperate both classes well but CART is problematic. Hint: Have a look at the \texttt{mlbench} package.
+
+<<fig.height=5, fig.width=10, cache = TRUE>>=
+library(mlr)
+library(mlbench)
+library(gridExtra)
+# help(package = "mlbench")
+set.seed(123)
+
+# create learner
+rp = makeLearner("classif.rpart")
+rf = makeLearner("classif.randomForest")
+
+# create two example data and corresponding tasks for mlr
+data.spirals = mlbench.spirals(n = 1000, cycles = 3, sd = 0.05)
+task.spirals = convertMLBenchObjToTask("mlbench.spirals", n = 1000, cycles = 3, sd = 0.05)
+data.circle = mlbench.circle(1000, d = 2)
+task.circle = convertMLBenchObjToTask("mlbench.circle", n = 1000, d = 2)
+par(mfrow = c(1, 2))
+plot(data.spirals, main = "Spirals")
+plot(data.circle, main = "Circle")
+
+# show how learner perform
+spirals1 = plotLearnerPrediction(rp, task.spirals)
+spirals2 = plotLearnerPrediction(rf, task.spirals)
+grid.arrange(spirals1, spirals2, ncol = 2)
+
+circle1 = plotLearnerPrediction(rp, task.circle)
+circle2 = plotLearnerPrediction(rf, task.circle)
+grid.arrange(circle1, circle2, ncol = 2)
+@
+

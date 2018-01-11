@@ -1,0 +1,79 @@
+\begin{enumerate}
+\item Try to manually compute the first split point that the CART algorithm would do on the following dataset, once using x as feature and once using log(x) as feature:
+
+\begin{center}
+<<echo = FALSE>>=
+x = c(1,2,7,10,20)
+y = c(1,1,0.5,10,11)
+data = t(data.frame(x = x, y = y))
+kable(data)
+@
+\end{center}
+
+Proceed as follows:
+
+\begin{enumerate}
+\item Split x in two groups using each obeservation as split point.
+% \begin{itemize}
+% \item $x_1 = (1)$, $x_2 = (2,7,10,20)$ (splitpoint 1)
+% \item $x_1 = (1,2)$, $x_2 = (7,10,20)$ (splitpoint 2)
+% \item $x_1 = (1,2,7)$, $x_2 = (10,20)$ (splitpoint 7)
+% \item $x_1 = (1,2,7,10)$, $x_2 = (20)$ (splitpoint 10)
+% \end{itemize}
+\item For each possible split point compute the sum of squares in both groups.
+\item Use as split point the observaton that splits both groups best w.r.t. minimizing the sum of squares in both groups.
+\end{enumerate}
+
+Here, we have only one split variable $x$. A split point $t$, leads to the following half-spaces (here, we will have 4 possibilities, see figure below):
+
+\begin{align*}
+\Nl(t) &= \{ (x,y) \in \Np: x \leq t \} \text{ and } \Nr(t) = \{ (x,y) \in \Np: x > t \}.
+\end{align*}
+
+Remember the minimization Problem (here only for one split variable $x$):
+
+\begin{align*}
+\min_{t} \left(\min_{c_1} \sum_{(x,y) \in \Nl} (y - c_1)^2 + \min_{c_2} \sum_{(x,y) \in \Nr} (y - c_2)^2 \right).
+\end{align*}
+The inner minimization is solved through:
+$\hat{c}_1 = \bar{y}_1$ and $\hat{c}_2 = \bar{y}_2$
+
+Which results in:
+
+\begin{align*}
+\min_{t} \left(\sum_{(x,y) \in \Nl} (y - \bar{y}_1)^2 + \sum_{(x,y) \in \Nr} (y - \bar{y}_2)^2 \right).
+\end{align*}
+
+<<echo = -1, fig.height=5, fig.width=5, fig.align='center'>>=
+par(mfrow = c(2,2), mar = c(4,4,1,1))
+x = c(1,2,7,10,20)
+y = c(1,1,0.5,10,11)
+for (i in 1:(length(x) - 1)) plot(x, y, col = as.factor(x <= x[i]))
+@
+
+\item Implement an R code that finds the best split point according to the CART algorithm (i.e., solve the exercise above in R).
+
+<<>>=
+SS = function(x) sum((x - mean(x))^2)
+
+split = function(x, y) {
+  # try out all points as potential split points and ...
+  splits = lapply(x, function(i) {
+    yleft = y[x <= i]
+    yright = y[x > i]
+    SS(yleft) + SS(yright) # ... compute SS in both groups
+  })
+  # select the split point yielding the minimal sum of squares (SS)
+  best = which.min(splits)
+  x[best]
+}
+
+x
+split(x, y) # the 3rd observation is the best split point
+
+log(x)
+split(log(x), y) # also here, the 3rd observation is the best split point
+@
+
+
+\end{enumerate}

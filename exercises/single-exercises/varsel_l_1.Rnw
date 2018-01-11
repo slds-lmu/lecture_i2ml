@@ -1,0 +1,37 @@
+As an example we use the XOR-Problem\footnote{e.g. \url{http://de.wikipedia.org/wiki/Perzeptron\#XOR-Problem}} in two dimension. You can see an example in figure \ref{fig:xor.plot}. Because forward search will add a feature in every step, we cannot increase the classification performance. On the other hand, if we start from the complete model, the fit will decrease if one of both features is removed. Consequently the backward search will stay at the starting configuration.
+
+<<xor.plot, results='asis', echo=TRUE, fig.cap="Datenbeispiel zum XOR-Problem. Eine entsprechende Funktion ist auch im Paket mlbench enthalten.">>=
+library(MASS)
+library(ggplot2)
+
+set.seed(123)
+
+cl.1 = rbind(mvrnorm(100, c(-2,2), diag(1, 2)),
+             mvrnorm(100, c(2,-2), diag(1, 2)))
+cl.2 = rbind(mvrnorm(100, c(-2,-2), diag(1, 2)),
+             mvrnorm(100, c(2,2), diag(1, 2)))
+class = factor(rep(0:1, each=200))
+dat = data.frame(rbind(cl.1, cl.2), class)
+colnames(dat) = c("x", "y", "class")
+
+ggplot(aes(x=x, y=y, color=class), data=dat) + geom_point()
+@
+
+An example with an SVM
+
+<<example, results='asis', echo=TRUE>>=
+
+library(mlr)
+task = makeClassifTask(target="class", data=dat)
+rdesc = makeResampleDesc("CV", iters=10)
+ctrl.for = makeFeatSelControlSequential(method="sfs")
+sfeats.for = selectFeatures(learner="classif.svm", task=task,
+                            resampling=rdesc, control=ctrl.for,
+                            show.info = FALSE)
+ctrl.back = makeFeatSelControlSequential(method="sbs")
+sfeats.back = selectFeatures(learner="classif.svm", task=task,
+                             resampling=rdesc, control=ctrl.back,
+                             show.info = FALSE)
+sfeats.for
+sfeats.back
+@
