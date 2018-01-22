@@ -232,7 +232,53 @@ cross-validation or jackknife).
   \item Repeated $k$-fold CV (multiple random partitions)
     can improve the performance of error estimation for small sample size.
 \end{blocki}
+
+
+\framebreak
+
+\begin{blocki}{Why should we prefer Cross-Validation over Holdout?}
+  \item Estimate prediction error for a knn-classifier on iris data
+  \item Run 10-fold CV and Holdout with $\frac{2}{3}$ train size 50 times
+  \item Holdout is a lot more variant than CV because it depends more on the seed of the random data split
+  \item $\Rightarrow$ danger of getting a biased performance estimate due to an "outlier-split" of train and test data
+\end{blocki}
+
+<<fig.height=2.5, echo = FALSE>>=
+data("iris")
+set.seed(1337)
+task = mlr::makeClassifTask(data = iris, target = "Species")
+rdescCV = mlr::makeResampleDesc(method = "CV", iters = 10)
+rdescHO = mlr::makeResampleDesc(method = "Holdout")
+
+# repeat 10 times to show that holdout is more depending on the randomness
+storage = as.data.frame(matrix(0, nrow = 50, ncol = 2))
+colnames(storage) = c("10-fold CV", "Holdout")
+
+for (i in 1:nrow(storage)) {
+  rCv = mlr::resample(learner = "classif.knn", k = 4, task = task,
+    resampling = rdescCV, show.info = FALSE)
+  rHO = mlr::resample(learner = "classif.knn", k = 4, task = task,
+    resampling = rdescHO, show.info = FALSE)
+
+  storage[i, "10-fold CV"] = as.numeric(rCv$aggr)
+  storage[i, "Holdout"] = as.numeric(rHO$aggr)
+}
+
+# storage
+ggstorage = as.data.frame(cbind(c(storage$`10-fold CV`, storage$Holdout),
+  c(rep("CV", nrow(storage)), rep("Holdout", nrow(storage)))))
+colnames(ggstorage) = c("mmce", "method")
+ggstorage$mmce = as.numeric(as.character(ggstorage$mmce))
+
+# boxplot(storage$`10-fold CV`, storage$Holdout)
+p = ggplot2::ggplot(data = ggstorage) +  ggplot2::geom_boxplot(aes(x = method, y = mmce, fill = method))
+p
+
+@
+
 \end{vbframe}
+
+
 
 \begin{vbframe}{The failure of leave-one-out}
 \begin{itemize}
@@ -455,6 +501,7 @@ grid.arrange(pl1 + theme_minimal(), pl2 + theme_minimal(), layout_matrix = rbind
 \framebreak
 
 \begin{itemize}
+  \item Overall, the error estimate is biased for small train data proportion $s$.
   \item Holdout introduces positive bias and overestimates performance of the model: for split sizes $s \geq 0.9, 0.95$  the average estimated test error is below the "true" mmce of 0.1.
   \item Subsampling does not introduce this bias and is less variant. (Why?)
   \item Optimal data set split before model starts overfitting according to holdout: roughly $\frac{2}{3}$ train and $\frac{1}{3}$ test data. Those values are often recommended in literature as a rule of thumb without general applicability.
