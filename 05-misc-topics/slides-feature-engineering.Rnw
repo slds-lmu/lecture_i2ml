@@ -1,0 +1,166 @@
+%This file is a child of preamble.Rnw in the style folder
+%if you want to add stuff to the preamble go there to make
+%your changes available to all childs
+
+<<setup-child, include = FALSE>>=
+knitr::set_parent("../style/preamble.Rnw")
+@
+% Load all R packages and set up knitr
+<<setup, child="../style/setup.Rnw", include = FALSE>>=
+@
+
+
+\lecturechapter{17}{Feature engineering}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+\begin{vbframe}{Feature engineering}
+
+\begin{itemize}
+  \item using domain specific knowledge or automatic methods for generating, extracting, removing or altering features
+  \item \enquote{applied machine learning}
+  \item strongly related to \emph{feature selection}
+  \item transforming the raw data after preprocessing / cleaning the data and before learning the model
+  \item aggregating, combining, decomposing or splitting of features or adding information from additional sources
+  \item \emph{Feature learning} or \emph{representation learning} try to do this automatically.
+\end{itemize}
+
+\textbf{Goal:} creating features that better represent the underlying problem to increase the predictive power of learning algorithms.
+\emph{What is the best representation of the sample data to learn a solution to your problem?}
+
+\end{vbframe}
+
+\begin{vbframe}{Decomposing features}
+
+\begin{exampleblock}{Decomposing categorical features}
+Categorical variable with three different values:
+
+\texttt{item\_col} $= \{red, blue, unknown\}$
+
+For a model the three values are not different qualitatively, $unknown$ looks just like another color.
+
+Depending on the context an additional dummy variable \texttt{has\_color} might be useful
+that takes on $1$ if \texttt{item\_col} is $red$ or $blue$.
+\end{exampleblock}
+
+\begin{exampleblock}{Decomposing time and date}
+A feature \texttt{datetime} may contain information in the format of \texttt{YYYY-MM-DD-HH:MM:SS}.
+
+This could be split up into several features (\texttt{year, month, day, hour, \ldots}). Furthermore we could add a variable \texttt{weekday} or a dummy for \texttt{workday} as this might be more relevant as the day of the month.
+
+\end{exampleblock}
+
+{\tiny Source: \href{http://machinelearningmastery.com/discover-feature-engineering-how-to-engineer-features-and-how-to-get-good-at-it/}{http://machinelearningmastery.com/discover-feature-engineering}}
+
+\end{vbframe}
+
+\begin{vbframe}{Extracting additional information}
+
+\begin{columns}
+\begin{column}{0.7\textwidth}
+
+\begin{small}
+The Titanic survival data set contains the name of every passenger.
+This feature is not very useful per se as the number of categories equals the number of observations.
+
+But one can extract titles like \emph{Mr., Mrs., Miss, Master, Dr., Major, Col., \ldots}
+which may contain information about socio-economic or marital status.
+
+\emph{Ticket} will also need some processing to be useful (if it provides any additional information at all).
+\end{small}
+
+\end{column}
+\begin{column}{0.29\textwidth}
+
+\includegraphics[width=1\textwidth]{figure_man/titanic.jpg}
+
+\end{column}
+\end{columns}
+
+\lz
+
+\begin{center}
+<<>>=
+data = titanic_train
+rows = c(3, 5, 99, 60, 150)
+cols = c("Survived", "Sex", "Age", "Pclass", "Name", "Ticket")
+
+kable(data[rows, cols], row.names = FALSE)
+@
+\end{center}
+
+\end{vbframe}
+
+\begin{vbframe}{Adding domain specific knowledge}
+
+One can improve the prediction if we add knowledge from additional sources.
+
+\lz
+
+In a dataset about trading activity we may have features like \texttt{item\_category} or \texttt{item\_weight}.
+
+Maybe we can combine that with knowledge about taxes depending on the type or the weight of the commodity.
+
+\end{vbframe}
+
+\begin{vbframe}{Discretization of continuous features}
+
+\begin{exampleblock}{Data binning}
+
+Turning a numerical variable into a categorical by grouping values into several bins using quantiles or statistical models.
+
+\lz
+
+Can help by reducing noise or allowing a non-linear relationship.
+
+\end{exampleblock}
+
+\end{vbframe}
+
+\begin{vbframe}{Natural language processing}
+
+\begin{itemize}
+  \item Cleaning
+  \begin{itemize}
+    {\footnotesize
+    \item Lowercasing: "I work at NASA" $\mapsto$ "i work at nasa"
+    \item Unidecode: "Memórias Póstumas" $\mapsto$ "Memorias Postumas"
+    \item Removing non-alphanumeric: "Breiman et al. (1984)" $\mapsto$ "Breiman et al 1984"}
+  \end{itemize}
+  \item Tokenizing: chop sentences up into tokens
+  \begin{itemize}
+    {\footnotesize
+    \item N-Grams: "I like the Beatles" $\mapsto$ ["I like", "like the", "the Beatles"]}
+  \end{itemize}
+  \item Removing: remove words/tokens that are extremely common (stop words) or rare
+  \item Find word/token root: "cars" $\mapsto$ "car"
+\end{itemize}
+
+{\tiny Source: \url{https://de.slideshare.net/HJvanVeen/feature-engineering-72376750}}
+
+\end{vbframe}
+
+\begin{vbframe}{Feature engineering vs deep learning}
+
+Does deep learning replace feature engineering?
+
+\lz
+
+\enquote{If you have a universal function approximator (neural networks, decision trees, (\ldots)), a model that can express anything, and infinite data, you do not really need to worry that much about feature representation. This is basically what we see with the advances of deep learning. Decades of research on feature construction from images have become entirely obsolete \ldots .But in reality you usually do not have the luxury of ‘infinite data’.}
+(\href{https://www.quora.com/What-are-some-best-practices-in-Feature-Engineering/answer/Claudia-Perlich}{Claudia Perlich})
+
+\end{vbframe}
+
+\begin{vbframe}{Example: predicting student performance at KDD cup}
+
+\begin{itemize}
+\item Yu et al., \href{http://pslcdatashop.org/KDDCup/workshop/papers/kdd2010ntu.pdf}{Feature Engineering and Classifier Ensemble for KDD Cup}, 2010
+\item paper credits feature engineering as a key method in winning
+\item creating millions of binary features simplified the structure of the problem and allowed the team to use very simple linear methods
+\end{itemize}
+
+{\tiny Source: \href{http://machinelearningmastery.com/discover-feature-engineering-how-to-engineer-features-and-how-to-get-good-at-it/}{http://machinelearningmastery.com/discover-feature-engineering}}
+
+\end{vbframe}
+
+\endlecture
