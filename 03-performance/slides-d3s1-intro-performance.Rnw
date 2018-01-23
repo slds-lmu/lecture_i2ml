@@ -46,35 +46,27 @@ x2 = c(rnorm(n, mean = 1,  sd = 2), rnorm(n))
 qda.data = data.frame(x1, x2, tar)
 train_indices = sample(x = seq(1, 2*n, 1), size = (2/3)*2*n)
 qda.data.train = qda.data[train_indices, ]
-qda.data.test = qda.data[-train_indices, ]
+qda.data.test = qda.data[ -train_indices, ]
 
 task = makeClassifTask(data = qda.data.train, target = "tar")
-learner = makeLearner(cl = "classif.knn", k = 3)
+learner = makeLearner(cl = "classif.knn", k = 2)
 mod = train(learner = learner, task = task)
 pred.train = predict(mod, newdata = qda.data.train)
 pred.test = predict(mod, newdata = qda.data.test)
 
-qda.data.test$pred.true = ifelse(pred.test$data$truth != pred.test$data$response, "incorrect", "correct")
-qda.data.train$pred.true = ifelse(pred.train$data$truth != pred.train$data$response, "incorrect", "correct")
+qda.data.test$pred.true = ifelse(pred.test$data$truth == pred.test$data$response, "true", "false")
+qda.data.train$pred.true = ifelse(pred.train$data$truth == pred.train$data$response, "true", "false")
 
 trainplot = ggplot(data = qda.data.train) +
   geom_point(aes(x = x1, y = x2, shape = factor(tar), colour = factor(pred.true)), size = 2.5) +
   labs(color = 'prediction', shape = "class") +
-  coord_fixed() + 
-  scale_x_continuous(limits = c(-5, 5)) + 
-  scale_y_continuous(limits = c(-5, 5)) + 
-  scale_color_manual(values = c("blue", "red")) + 
   theme(legend.justification = c(1, 0), legend.position = c(1, 0)) +
   ggtitle(label = paste0("Prediction on train data with mmce = ", as.numeric(performance(pred.train))) )
 #trainplot
 testplot = ggplot(data = qda.data.test) +
   geom_point(aes(x = x1, y = x2, shape = factor(tar), colour = factor(pred.true)), size = 2.5) +
   labs(color = 'prediction', shape = "class") +
-  coord_fixed() + 
-  scale_color_manual(values = c("blue", "red")) + 
-  scale_x_continuous(limits = c(-5, 5)) + 
-  scale_y_continuous(limits = c(-5, 5)) + 
-theme(legend.justification = c(1, 0), legend.position = c(1, 0))+
+  theme(legend.justification = c(1, 0), legend.position = c(1, 0))+
   ggtitle(label = paste0("Prediction on test data with mmce = ", as.numeric(performance(pred.test))) )
 #testplot
 gridExtra::grid.arrange(trainplot, testplot, ncol = 2)
@@ -166,7 +158,7 @@ The outer loss is also known as \emph{performance measure}.
 
 \begin{vbframe}{Bias-Variance Tradeoff}
 
-Fit two models with polynomial degree 1 and 9 on 30 bootstrapped train data samples
+Fit two models with polynomial degree 1 and 9 on 50 bootstrapped data samples
 
 <<echo=FALSE, out.width="0.9\\textwidth", fig.height=5>>=
 .h = function(x) 0.5 + 0.4 * sin(2 * pi * x)
@@ -175,50 +167,49 @@ h = function(x) .h(x) + rnorm(length(x), mean = 0, sd = 0.05)
 set.seed(1234)
 x.all = seq(0, 1, length = 21L)
 ind = seq(1, length(x.all), by = 3)
+y.all = h(x.all)
 
-x = x.all[-ind]
-y = h(x)
-x.test = x.all[ind]
-y.test = h(x.all[ind])
+ylimits = c(-0.1, 1.1)
+xlimits = c(-0.1, 1.1)
 
-line.palette = c("#E69F00AA", "#56B4E9AA", "#CC79A7AA")
 baseplot = function() {
   par(mar = c(2, 2, 1, 1))
-  plot(.h, lty = 2L, xlim = c(0, 1), ylim = c(-0.1, 1), ylab = "", xlab = "")
-  points(x, y, pch = 19L)
-  points(x.test, y.test)
-  legend(x = "bottomleft", legend = c("true relationship f(x)", "training set", "test set"),
-    col = "black", lty = c(2L, NA, NA), pch = c(NA, 19L, 21L))
+  plot(.h, lty = 2L, xlim = xlimits, ylim = ylimits, ylab = "", xlab = "")
+  points(x.all, y.all, pch = 19L)
+  #points(x.test, y.test)
+  legend(x = "bottomleft", legend = c("true relationship f(x)", "data points"),
+    col = "black", lty = c(2L, NA), pch = c(NA, 19L))
 }
 
 
-# left: linear model
-# bs samples
-df.train = cbind(x, y)
-df.all = cbind(x.all, h(x.all))
-seedlist = seq(190, 220, 1)
+
+
+df.all = cbind(x.all, y.all)
+seedlist = seq(190, 240, 1)
 
 par(mfrow = c(1, 2))
+
+
 
 plot1 = baseplot
 plot1()
 for (i in 1:length(seedlist)) {
   # bs from all data
+  #i = 2
   set.seed(seedlist[[i]])
 
-  #ind = sample(1:nrow(df.all), size = nrow(df.all), replace = TRUE)
-  #df.bs = as.data.frame(df.all[ind, ])
+  ind = sample(1:nrow(df.all), size = nrow(df.all), replace = TRUE)
+  df.bs = as.data.frame(df.all[ind, ])
 
-  train.ind = sample(1:nrow(df.train), size = nrow(df.train), replace = TRUE)
-  df.bs = as.data.frame(df.train[train.ind, ])
+  #train.ind = sample(1:nrow(df.train), size = nrow(df.train), replace = TRUE)
+  #df.bs = as.data.frame(df.train[train.ind, ])
   #df.bs
 
-  p1 = lm(y ~ poly(x, 1, raw = TRUE), data = df.bs)
+  p1 = lm(y.all ~ poly(x.all, 1, raw = TRUE), data = df.bs)
 
   x.plot = seq(0, 1, length = 500L)
 
-
-  lines(x.plot, predict(p1, newdata = data.frame(x = x.plot)),
+  lines(x.plot, predict(p1, newdata = data.frame(x.all = x.plot)),
     col = "#E69F00AA", lwd = 2L)
 }
 
@@ -228,18 +219,18 @@ for (i in 1:length(seedlist)) {
   #i = 2
   set.seed(seedlist[[i]])
 
-  #ind = sample(1:nrow(df.all), size = nrow(df.all), replace = TRUE)
-  #df.bs = as.data.frame(df.all[ind, ])
+  ind = sample(1:nrow(df.all), size = nrow(df.all), replace = TRUE)
+  df.bs = as.data.frame(df.all[ind, ])
 
-  train.ind = sample(1:nrow(df.train), size = nrow(df.train), replace = TRUE)
-  df.bs = as.data.frame(df.train[train.ind, ])
+  #train.ind = sample(1:nrow(df.train), size = nrow(df.train), replace = TRUE)
+  #df.bs = as.data.frame(df.train[train.ind, ])
   #df.bs
 
-  p9 = lm(y ~ poly(x, 9, raw = TRUE), data = df.bs)
+  p9 = lm(y.all ~ poly(x.all, 9, raw = TRUE), data = df.bs)
 
-  x.plot = seq(0, 1, length = 500L)
+ x.plot = seq(0, 1, length = 500L)
 
-  lines(x.plot, predict(p9, newdata = data.frame(x = x.plot)),
+  lines(x.plot, predict(p9, newdata = data.frame(x.all = x.plot)),
     col = "#56B4E9AA", lwd = 2L)
 }
 
