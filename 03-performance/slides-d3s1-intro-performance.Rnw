@@ -46,27 +46,35 @@ x2 = c(rnorm(n, mean = 1,  sd = 2), rnorm(n))
 qda.data = data.frame(x1, x2, tar)
 train_indices = sample(x = seq(1, 2*n, 1), size = (2/3)*2*n)
 qda.data.train = qda.data[train_indices, ]
-qda.data.test = qda.data[ -train_indices, ]
+qda.data.test = qda.data[-train_indices, ]
 
 task = makeClassifTask(data = qda.data.train, target = "tar")
-learner = makeLearner(cl = "classif.knn", k = 2)
+learner = makeLearner(cl = "classif.knn", k = 3)
 mod = train(learner = learner, task = task)
 pred.train = predict(mod, newdata = qda.data.train)
 pred.test = predict(mod, newdata = qda.data.test)
 
-qda.data.test$pred.true = ifelse(pred.test$data$truth == pred.test$data$response, "true", "false")
-qda.data.train$pred.true = ifelse(pred.train$data$truth == pred.train$data$response, "true", "false")
+qda.data.test$pred.true = ifelse(pred.test$data$truth != pred.test$data$response, "incorrect", "correct")
+qda.data.train$pred.true = ifelse(pred.train$data$truth != pred.train$data$response, "incorrect", "correct")
 
 trainplot = ggplot(data = qda.data.train) +
   geom_point(aes(x = x1, y = x2, shape = factor(tar), colour = factor(pred.true)), size = 2.5) +
   labs(color = 'prediction', shape = "class") +
+  coord_fixed() + 
+  scale_x_continuous(limits = c(-5, 5)) + 
+  scale_y_continuous(limits = c(-5, 5)) + 
+  scale_color_manual(values = c("blue", "red")) + 
   theme(legend.justification = c(1, 0), legend.position = c(1, 0)) +
   ggtitle(label = paste0("Prediction on train data with mmce = ", as.numeric(performance(pred.train))) )
 #trainplot
 testplot = ggplot(data = qda.data.test) +
   geom_point(aes(x = x1, y = x2, shape = factor(tar), colour = factor(pred.true)), size = 2.5) +
   labs(color = 'prediction', shape = "class") +
-  theme(legend.justification = c(1, 0), legend.position = c(1, 0))+
+  coord_fixed() + 
+  scale_color_manual(values = c("blue", "red")) + 
+  scale_x_continuous(limits = c(-5, 5)) + 
+  scale_y_continuous(limits = c(-5, 5)) + 
+theme(legend.justification = c(1, 0), legend.position = c(1, 0))+
   ggtitle(label = paste0("Prediction on test data with mmce = ", as.numeric(performance(pred.test))) )
 #testplot
 gridExtra::grid.arrange(trainplot, testplot, ncol = 2)
