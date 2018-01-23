@@ -232,7 +232,53 @@ cross-validation or jackknife).
   \item Repeated $k$-fold CV (multiple random partitions)
     can improve the performance of error estimation for small sample size.
 \end{blocki}
+
+
+\framebreak
+
+\begin{blocki}{Why should we prefer Cross-Validation over Holdout?}
+  \item Estimate prediction error for a knn-classifier on iris data
+  \item Run 10-fold CV and Holdout with $\frac{2}{3}$ train size 50 times
+  \item Holdout is a lot more variant than CV because it depends more on the seed of the random data split
+  \item $\Rightarrow$ danger of getting a biased performance estimate due to an "outlier-split" of train and test data
+\end{blocki}
+
+<<fig.height=2.5, echo = FALSE>>=
+data("iris")
+set.seed(1337)
+task = mlr::makeClassifTask(data = iris, target = "Species")
+rdescCV = mlr::makeResampleDesc(method = "CV", iters = 10)
+rdescHO = mlr::makeResampleDesc(method = "Holdout")
+
+# repeat 10 times to show that holdout is more depending on the randomness
+storage = as.data.frame(matrix(0, nrow = 50, ncol = 2))
+colnames(storage) = c("10-fold CV", "Holdout")
+
+for (i in 1:nrow(storage)) {
+  rCv = mlr::resample(learner = "classif.knn", k = 4, task = task,
+    resampling = rdescCV, show.info = FALSE)
+  rHO = mlr::resample(learner = "classif.knn", k = 4, task = task,
+    resampling = rdescHO, show.info = FALSE)
+
+  storage[i, "10-fold CV"] = as.numeric(rCv$aggr)
+  storage[i, "Holdout"] = as.numeric(rHO$aggr)
+}
+
+# storage
+ggstorage = as.data.frame(cbind(c(storage$`10-fold CV`, storage$Holdout),
+  c(rep("CV", nrow(storage)), rep("Holdout", nrow(storage)))))
+colnames(ggstorage) = c("mmce", "method")
+ggstorage$mmce = as.numeric(as.character(ggstorage$mmce))
+
+# boxplot(storage$`10-fold CV`, storage$Holdout)
+p = ggplot2::ggplot(data = ggstorage) +  ggplot2::geom_boxplot(aes(x = method, y = mmce, fill = method))
+p
+
+@
+
 \end{vbframe}
+
+
 
 \begin{vbframe}{The failure of leave-one-out}
 \begin{itemize}
@@ -360,7 +406,7 @@ $\Dtest^b = \Dtrain \setminus \Dtrain^b$.
 
 \begin{vbframe}{Subsampling}
 
-Subsampling is basically a repeated holdout and is also is very similar to bootstrapping:
+Subsampling is basically a repeated holdout and is also very similar to bootstrapping:
 
 \begin{itemize}
 \item Sampling is done \textit{without} replacement, i.e., in each iteration $\eta < n$ observations without replacement are drawn for the training set.
@@ -368,6 +414,100 @@ Subsampling is basically a repeated holdout and is also is very similar to boots
 \item The smaller the subsampling rate, the larger the bias.
 \item The more sampling iterations, the smaller the variance.
 \end{itemize}
+
+\end{vbframe}
+
+
+
+% Sweet example from bernd. FCIM slide 12 in chapter 6
+
+\begin{vbframe}{Bias-Variance of holdout}
+
+  \begin{itemize}
+    \item If the size of our initial, complete data set $\D$ is limited,
+      single train-test splits can be problematic.
+    \item The smaller our single test set is, the higher the variance
+      of our estimated performance error (e.g., if we test on one observation, in the extreme case).
+      But note that by just making the test set smaller, we do not introduce any bias,
+      as we simply average losses on i.i.d. observations from $\Pxy$.
+    \item The smaller training set becomes, the more pessimistic bias we introduce into the model.
+      Note that if $|D| = n$, our aim is to estimate the performance of a model fitted
+      on n observations (as this is what we will do in the end). If we fit on less data during
+      evaluation, our model will learn less, and perform worse. Very small training sets will also
+      increase variance a bit.
+  \end{itemize}
+
+  \framebreak
+
+  Experiment:
+  \begin{itemize}
+    \item Data: simulate spiral data (sd = 0.1) from the \texttt{mlbench} package.
+    \item Learner: CART (\texttt{classif.rpart} from \texttt{mlr}).
+    \item Goal: estimate real performance of a model with $|\Dtrain| = 500$.
+    \item Get the "true" estimator by repeatedly sampling 500 observations from the simulator,
+      fit the learner, then evaluate on a really large number of observation.
+    \item Analyse different types of holdout and subsampling (= repeated holdout), with different split rates:
+    \begin{itemize}
+    \item Sample $\D$ with $|\D| = 500$ and use split-rate $s \in \{0.05, 0.1, ..., 0.95\}$ for training with $|\Dtrain| = s \cdot 500$.
+    \item Estimate performance on $\Dtest$ with $|\Dtest| = 500 \cdot (1 - s)$.
+    \item Repeat the sampling of $\D$ 50 times for both methods and additionaly the splitting with $s$ 50 times in the subsampling ($\Rightarrow$ 2500 experiments for each split-rate).
+    \end{itemize}
+  \end{itemize}
+
+\framebreak
+
+Visualize the perfomance estimator - and the MSE of the estimator - in relation to the true error rate.
+
+<<>>=
+load("rsrc/holdout-biasvar.RData")
+@
+
+<<echo = FALSE, fig.height = 5>>=
+ggd1 = melt(res)
+colnames(ggd1) = c("split", "rep", "ssiter", "mmce")
+ggd1$split = as.factor(ggd1$split)
+ggd1$mse = (ggd1$mmce -  realperf)^2
+ggd1$type = "holdout"
+ggd1$ssiter = NULL
+mse1 = ddply(ggd1, "split", summarize, mse = mean(mse))
+mse1$type = "holdout"
+
+ggd2 = ddply(ggd1, c("split", "rep"), summarize, mmce = mean(mmce))
+ggd2$mse = (ggd2$mmce -  realperf)^2
+ggd2$type = "subsampling"
+mse2 = ddply(ggd2, "split", summarize, mse = mean(mse))
+mse2$type = "subsampling"
+
+ggd = rbind(ggd1, ggd2)
+gmse = rbind(mse1, mse2)
+
+ggd$type = as.factor(ggd$type)
+pl1 = ggplot(ggd, aes(x = split, y = mmce, col = type))
+pl1 = pl1 + geom_boxplot()
+pl1 = pl1 + geom_hline(yintercept = realperf)
+#pl1 = pl1 + theme(axis.text.x = element_text(angle = 45))
+
+gmse$split = as.numeric(as.character(gmse$split))
+gmse$type = as.factor(gmse$type)
+
+pl2 = ggplot(gmse, aes(x = split, y = mse, col = type))
+pl2 = pl2 + geom_line()
+pl2 = pl2 + scale_y_log10()
+pl2 = pl2 + scale_x_continuous(breaks = gmse$split)
+
+grid.arrange(pl1 + theme_minimal(), pl2 + theme_minimal(), layout_matrix = rbind(1,1,2))
+@
+
+\framebreak
+
+\begin{itemize}
+  \item Overall, the error estimate is biased for small train data proportion $s$.
+  \item Holdout introduces positive bias and overestimates performance of the model: for split sizes $s \geq 0.9, 0.95$  the average estimated test error is below the "true" mmce of 0.1.
+  \item Subsampling does not introduce this bias and is less variant. (Why?)
+  \item Optimal data set split before model starts overfitting according to holdout: roughly $\frac{2}{3}$ train and $\frac{1}{3}$ test data. Those values are often recommended in literature as a rule of thumb without general applicability.
+  \item Subsampling allows for a higher $s \approx 0.9$ which means that we could use more data for training. The price for this is that subsampling is computationally more costly than simple holdout.
+\end{itemize}
+
 
 \end{vbframe}
 
@@ -388,6 +528,8 @@ Subsampling is basically a repeated holdout and is also is very similar to boots
 
 \end{itemize}
 \end{vbframe}
+
+
 
 %
 % \begin{vbframe}{Resampling in \texttt{mlr}}
