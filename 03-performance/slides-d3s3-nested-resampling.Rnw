@@ -59,7 +59,7 @@ In model selection, we are interested in selecting the best model from a set of 
 \end{blocki}
 
 <<fig.height=3.5, echo = FALSE>>=
-ggd = load2("rsrc/overtuning-example.RData", "res2.mean")
+ggd = BBmisc::load2("rsrc/overtuning-example.RData", "res2.mean")
 ggd = melt(ggd, measure.vars = colnames(res2), value.name = "tuneperf");
 colnames(ggd)[1:2] = c("data.size", "iter")
 ggd = sortByCol(ggd, c("data.size", "iter"))
@@ -78,6 +78,51 @@ print(pl)
     \item Experiment was simulated with mlr's \enquote{classif.featureless} learner.
     \item Quiz: How to mathematically calculate the shape of the curves?
 \end{itemize}
+
+\framebreak
+
+\begin{blocki}{Another perspective}
+  \item Tune the same "fake" parameter $\lambda$ with CV
+  \item Run the CV for 10, 100 and 500 different values of $\lambda$
+  \item The "best" $\lambda$ error is getting smaller with increasing iterations
+  \item We would choose the lambda value that yields a mmce = 30\%
+  \item Nonsense as our model could net get better than mmce = 50\%
+  \item The result is based on pure randomness
+  \item The chance of getting such a random "outlier-split" increases with the CV iterations
+  \item We \textbf{overtune} the model
+\end{blocki}
+
+<<fig.heigh = 5>>=
+
+  set.seed(1342)
+
+  makeMyTask = function(n) {
+    y = sample(c(0,1), size = n, replace = TRUE)
+    d = data.frame(x = 1, y = as.factor(y))
+    makeClassifTask(data = d, target = "y")
+  }
+
+  task.size = 100
+  task = makeMyTask(task.size)
+  cv.iters = 2
+  # "tuning" featureless learner by resampling it very often
+  lrn = makeLearner("classif.featureless", method = "sample-prior")
+  rin = makeResampleInstance("CV", iters = cv.iters, task = task)
+  tune.list = c(10, 100, 500)
+
+  # storage
+  storage.list = list()
+  for (i in 1:length(tune.list)) {
+    storage.list[[i]] = replicate(tune.list[[i]], resample(lrn, task, rin, show.info = FALSE)$aggr)
+  }
+  boxplot(storage.list[[1]], storage.list[[2]], storage.list[[3]],
+    names =  tune.list, xlab = "CV iterations", ylab = "mmce", col = "#E69F00AA")
+  abline(h = min(storage.list[[1]]), lty = 3)
+  abline(h = min(storage.list[[2]]), lty = 3)
+  abline(h = min(storage.list[[3]]), lty = 3)
+
+@
+
 
 \begin{blocki}{Simple solution}
 \item Again, simply simulate what happens in model application.
