@@ -33,6 +33,53 @@ Obviously, all goals are quite related, i.e., reliably estimate the performance 
 
 \end{vbframe}
 
+\begin{vbframe}{Example train vs. test error}
+\textbf{kNN applied on binary classification problem:}
+\vspace{0.5cm}
+<<echo=FALSE, fig.height=5>>=
+
+n = 150
+set.seed(1234L)
+tar = factor(c(rep(1L, times = n), rep(2L, times = n)))
+x1 = c(rnorm(n, sd = 2), rnorm(n))
+x2 = c(rnorm(n, mean = 1,  sd = 2), rnorm(n))
+qda.data = data.frame(x1, x2, tar)
+train_indices = sample(x = seq(1, 2*n, 1), size = (2/3)*2*n)
+qda.data.train = qda.data[train_indices, ]
+qda.data.test = qda.data[ -train_indices, ]
+
+task = makeClassifTask(data = qda.data.train, target = "tar")
+learner = makeLearner(cl = "classif.knn", k = 2)
+mod = train(learner = learner, task = task)
+pred.train = predict(mod, newdata = qda.data.train)
+pred.test = predict(mod, newdata = qda.data.test)
+
+qda.data.test$pred.true = ifelse(pred.test$data$truth == pred.test$data$response, "true", "false")
+qda.data.train$pred.true = ifelse(pred.train$data$truth == pred.train$data$response, "true", "false")
+
+trainplot = ggplot(data = qda.data.train) +
+  geom_point(aes(x = x1, y = x2, shape = factor(tar), colour = factor(pred.true)), size = 2.5) +
+  labs(color = 'prediction', shape = "class") +
+  theme(legend.justification = c(1, 0), legend.position = c(1, 0)) +
+  ggtitle(label = paste0("Prediction on train data with mmce = ", as.numeric(performance(pred.train))) )
+#trainplot
+testplot = ggplot(data = qda.data.test) +
+  geom_point(aes(x = x1, y = x2, shape = factor(tar), colour = factor(pred.true)), size = 2.5) +
+  labs(color = 'prediction', shape = "class") +
+  theme(legend.justification = c(1, 0), legend.position = c(1, 0))+
+  ggtitle(label = paste0("Prediction on test data with mmce = ", as.numeric(performance(pred.test))) )
+#testplot
+gridExtra::grid.arrange(trainplot, testplot, ncol = 2)
+
+@
+
+
+
+\end{vbframe}
+
+
+
+
 % \begin{vbframe}{Performance measures}
 % There is a great variety of performance measures available for all types of learning problems.
 % Some of the most important ones are:
@@ -85,8 +132,8 @@ We distinguish between
 
 %\lz
 \begin{itemize}
-\item the inner loss which is optimized during model fitting to obtain $\fh$.
-\item the outer loss which will be used to assess the model afterwards.
+\item the inner loss which is optimized during model fitting to obtain $\fh$
+\item the outer loss which will be used to assess the model afterwards
 \end{itemize}
 
 %\lz
