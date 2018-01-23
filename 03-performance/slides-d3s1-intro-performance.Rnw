@@ -158,6 +158,92 @@ The outer loss is also known as \emph{performance measure}.
 
 \begin{vbframe}{Bias-Variance Tradeoff}
 
+Fit two models with polynomial degree 1 and 9 on 30 bootstrapped train data samples
+
+<<echo=FALSE, out.width="0.9\\textwidth", fig.height=5>>=
+.h = function(x) 0.5 + 0.4 * sin(2 * pi * x)
+h = function(x) .h(x) + rnorm(length(x), mean = 0, sd = 0.05)
+
+set.seed(1234)
+x.all = seq(0, 1, length = 21L)
+ind = seq(1, length(x.all), by = 3)
+
+x = x.all[-ind]
+y = h(x)
+x.test = x.all[ind]
+y.test = h(x.all[ind])
+
+line.palette = c("#E69F00AA", "#56B4E9AA", "#CC79A7AA")
+baseplot = function() {
+  par(mar = c(2, 2, 1, 1))
+  plot(.h, lty = 2L, xlim = c(0, 1), ylim = c(-0.1, 1), ylab = "", xlab = "")
+  points(x, y, pch = 19L)
+  points(x.test, y.test)
+  legend(x = "bottomleft", legend = c("true relationship f(x)", "training set", "test set"),
+    col = "black", lty = c(2L, NA, NA), pch = c(NA, 19L, 21L))
+}
+
+
+# left: linear model
+# bs samples
+df.train = cbind(x, y)
+df.all = cbind(x.all, h(x.all))
+seedlist = seq(190, 220, 1)
+
+par(mfrow = c(1, 2))
+
+plot1 = baseplot
+plot1()
+for (i in 1:length(seedlist)) {
+  # bs from all data
+  set.seed(seedlist[[i]])
+
+  #ind = sample(1:nrow(df.all), size = nrow(df.all), replace = TRUE)
+  #df.bs = as.data.frame(df.all[ind, ])
+
+  train.ind = sample(1:nrow(df.train), size = nrow(df.train), replace = TRUE)
+  df.bs = as.data.frame(df.train[train.ind, ])
+  #df.bs
+
+  p1 = lm(y ~ poly(x, 1, raw = TRUE), data = df.bs)
+
+  x.plot = seq(0, 1, length = 500L)
+
+
+  lines(x.plot, predict(p1, newdata = data.frame(x = x.plot)),
+    col = "#E69F00AA", lwd = 2L)
+}
+
+plot2 = baseplot
+plot2()
+for (i in 1:length(seedlist)) {
+  #i = 2
+  set.seed(seedlist[[i]])
+
+  #ind = sample(1:nrow(df.all), size = nrow(df.all), replace = TRUE)
+  #df.bs = as.data.frame(df.all[ind, ])
+
+  train.ind = sample(1:nrow(df.train), size = nrow(df.train), replace = TRUE)
+  df.bs = as.data.frame(df.train[train.ind, ])
+  #df.bs
+
+  p9 = lm(y ~ poly(x, 9, raw = TRUE), data = df.bs)
+
+  x.plot = seq(0, 1, length = 500L)
+
+  lines(x.plot, predict(p9, newdata = data.frame(x = x.plot)),
+    col = "#56B4E9AA", lwd = 2L)
+}
+
+
+@
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{Bias-Variance Tradeoff}
+
 We can decompose the generalization error for $L_2$-loss as follows:
 \begin{eqnarray*}
   \GED &=& \E( L(y, \fhD(x)) | \D) \\
