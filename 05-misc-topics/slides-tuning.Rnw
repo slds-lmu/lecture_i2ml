@@ -1,0 +1,748 @@
+%This file is a child of preamble.Rnw in the style folder
+%if you want to add stuff to the preamble go there to make
+%your changes available to all childs
+<<setup-child, include = FALSE>>=
+knitr::set_parent("../style/preamble.Rnw")
+@
+% Load all R packages and set up knitr
+<<setup, child="../style/setup.Rnw", include = FALSE>>=
+@
+
+
+\lecturechapter{11}{Tuning}
+\lecture{Fortgeschrittene Computerintensive Methoden}
+
+\begin{vbframe}{Introduction}
+
+  \begin{itemize}
+    \item Many parameters or decisions for an ML algorithm are not decided by the
+      (usually loss-minimizing) fitting procedure.
+    \item Our goal is to optimize these w.r.t. the estimated prediction error (often this implies an independent test set), or by cross-validation.
+    \item The same applies to preprocessing, feature construction and other model-relevant operations.
+      In general we might be interested in optimizing a machine learning \enquote{pipeline}.
+  \end{itemize}
+
+  \framebreak
+
+  \begin{blocki}{Model parameters vs. hyperparameters}
+    \item Model parameters are optimized during training.
+    \item In a simple regression model $ y = \theta^T x $, the model parameter $\theta$ is learned from the training set.
+    \item Hyper parameters are values that must be specified outside of the
+    training phase and need to be set according to the problem.
+    \item Simple linear regression doesn't have hyperparameters, but variants do:
+    \begin{itemize}
+      \item One can add a regularization parameter $\lambda$ to the loss function to control the size of $\theta$.
+      \item The type of the regularization (e.g. Lasso or Ridge regression)
+    \end{itemize}
+  \end{blocki}
+
+\framebreak
+
+  Alternatives are:
+
+  \begin{itemize}
+    \item The algorithm is really insensitive w.r.t. to changes of a parameter, so we don't really have to do anything as long as we stay in a broad range of reasonable values.
+    \item Constant default: we can benchmark the algorithm across a broad range of data sets and scenarios and try to find a constant value that works well in many different situations. Quite optimistic?
+    \item Dynamic (heuristic) default: We can benchmark the algorithm across a broad range of data sets and scenarios and try to find an easily computable function that sets the parameter in a data dependent way,
+    e.g. mtry = p/3 by setting the kernel width of an RBF SVM w.r.t. the distance distribution of training data points.
+      How to construct or learn that heuristic function?
+    \item We can try to set the parameter by extracting more info from the fitted model. E.g.
+      early stopping in boosting or ntree for a random forest (does OOB error increase or stagnate?),
+      or some regularized models allow full-path computation for whole sequences of $\lambda$ values.
+  \end{itemize}
+
+  \framebreak
+
+  \begin{blocki}{Why tuning is important:}
+  \item Hyperparameters control the capacity of a model, i.e., how flexible the model is, how many degrees of freedom it has in fitting the data.
+  \item If our model is to flexible and adapts to the training data too much
+  we will face the problem of overfitting.
+  \item Hence, control of capacity, i.e proper setting of hyperparameters
+  prevents from overfitting the model w.r.t. the training set.
+  \item Many other choices like the type of kernel, preprocessing, etc., can
+    heavily influence model performance in non-trivial ways. It is extremely hard to guess the
+    correct choices here.
+  \end{blocki}
+
+  \framebreak
+
+  \begin{blocki}{Types of hyper parameters:}
+    \item Numerical parameters (real valued / integers)
+    \begin{itemize}
+      \item Cost parameter of an SVM
+      \item Depth, node-size of a tree
+    \end{itemize}
+    \item Categorical parameters:
+    \begin{itemize}
+      \item Which split criterion for trees?
+      \item Which SVM-kernel?
+    \end{itemize}
+    \item Ordinal parameters:
+    \begin{itemize}
+      \item $\{$\texttt{low}, \texttt{medium}, \texttt{high}$\}$
+    \end{itemize}
+    \item Dependent parameters:
+    \begin{itemize}
+      \item Kernel parameter, according to the kernel
+    \end{itemize}
+  \end{blocki}
+
+  \framebreak
+
+  \begin{blocki}{What our tuning problem consists of:}
+    \item Our learning method (or are there actually several?)
+    \item The performance measure. Determined by the application. It gets especially interesting if we have to deviate from the standard cases like classification error or MSE. In general, we could be interested in multiple measures at once.
+    \item Resampling procedure for measuring the performance. How do we choose it?
+    \item Our parameters plus their regions-of-interest for optimization.
+  \end{blocki}
+
+  \framebreak
+
+  \begin{blocki}{Some general remarks on tuning}
+    \item Lots of literature exists for models, far less on efficient tuning.
+    \item Our optimization problem is derivative-free, we can only ask for the
+      quality of selected points (black-box problem).
+    \item Our optimization problem is stochastic in principle.
+      We want to optimize expected performance and use resampling.
+    \item Evaluation of our target function will probably take quite some time.
+      Imagine we are cross-validating a complex model on a larger data set.
+    \item Categorical and dependent parameters complicate the problem.
+    \item For difficult problems parallelizing the computation seems relevant.
+  \end{blocki}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Offline- vs. online-tuning}
+
+  \begin{blocki}{Offline-tuning:}
+    \item Learn optimal parameter settings before solving an instance.
+    \item Tuning on training instances
+  \end{blocki}
+
+  \lz
+
+  \begin{blocki}{Online-tuning:}
+    \item Learn optimal parameter settings during solving.
+    \item No training phase
+  \end{blocki}
+
+\end{vbframe}
+
+\begin{vbframe}{Offline configuration}
+\begin{center}
+\includegraphics{figure_man/offline_configuration.png}
+
+{\tiny Stützle and Lopez-Ibanez, Automatic (Offline) Configuration of Algorithms, 2014.}
+\end{center}
+\end{vbframe}
+
+\begin{vbframe}{Grid search}
+
+  \begin{itemize}
+    \item Offline tuning technique which is still quite popular.
+    \item For each parameter a finite set of candidates is predefined.
+    \item Then, one we simply search the Cartesian product of all possible combinations.
+    \item All solutions are searched in an arbitrary order.
+    \item Extension: Start with a coarse grid and iteratively refine it around a detected optimum.
+  \end{itemize}
+
+\framebreak
+
+<<>>=
+lrn = makeLearner("classif.ksvm", predict.type = "prob")
+# ps = makeParamSet(
+#   makeDiscreteParam("C", values = 2^(-3:3)),
+#   makeDiscreteParam("sigma", values = 2^(-3:3)))
+set.seed(1)
+
+ps = makeParamSet(
+  makeNumericParam("C", lower = -3 , upper = 3, trafo = function(x) 2^x),
+  makeNumericParam("sigma", lower = -3 , upper = 3, trafo = function(x) 2^x)
+)
+
+ctrl = makeTuneControlGrid()
+
+res = tuneParams(lrn, task = sonar.task,
+  par.set = ps, resampling = hout, control = ctrl)
+opt.grid = as.data.frame(res$opt.path)
+
+gridSearch <- ggplot(opt.grid, aes(x = C, y = sigma, size = mmce.test.mean))
+gridSearch +  geom_point(shape = 21 , col = "black", fill = "#56B4E9" , alpha = .6) + scale_size(range = c(3,15))
+@
+
+\framebreak
+
+  \begin{blocki}{Advantages:}
+    \item Very easy to implement, therefore very popular.
+    \item All parameter types possible.
+    \item Parallelization is trivial.
+  \end{blocki}
+
+  \begin{blocki}{Disadvantages}
+    \item Combinatorial explosion, inefficient
+    \item Searches large irrelevant areas.
+    \item Which values / discretization?
+  \end{blocki}
+
+\end{vbframe}
+
+\begin{vbframe}{Random search}
+
+  \begin{itemize}
+    \item Small variation of grid search.
+    \item Instead of evaluating all parameter configurations,
+      we randomly sample from the region-of-interest.
+    \item This often drastically reduces optimization time.
+    \item Performs just as well as normal grid search in surprisingly
+    many applications.
+  \end{itemize}
+
+\framebreak
+
+<<>>=
+set.seed(1)
+ps = makeParamSet(
+  makeNumericParam("C", lower = -3 , upper = 3, trafo = function(x) 2^x),
+  makeNumericParam("sigma", lower = -3 , upper = 3, trafo = function(x) 2^x)
+)
+
+ctrl = makeTuneControlRandom(maxit = 50)
+
+res = tuneParams(lrn, task = sonar.task,
+  par.set = ps, resampling = hout, control = ctrl)
+opt.grid = as.data.frame(res$opt.path)
+
+rndSearch <- ggplot(opt.grid, aes(x = C, y = sigma, size = mmce.test.mean))
+rndSearch + geom_point(shape = 21 , col = "black", fill = "#56B4E9" , alpha = .6) + scale_size(range = c(3,15)) + scale_x_continuous()
+@
+
+
+  % \framebreak
+  %
+  % \begin{blocki}{Why it works:}
+  %   \item Imagine the $5\%$ interval around the optimum.
+  %   \item Now we sample points out of the parameter space.
+  %   \item Each point has a $5\%$-chance of falling into this interval.
+  %   \item If we draw $n$-points, then the probability that at least one of the points falls into the desired interval is:
+  %   $$ 1 - (1 - 0.95)^n $$
+  %   \item We can calculate the number of draws it takes to have a $95\%$-chance of success:
+  %   $$
+  %   1 - (1 - 0.95)^n > 0.95 \quad \Longleftrightarrow \quad n \geq 60
+  %   $$
+  % \end{blocki}
+
+\end{vbframe}
+
+\begin{vbframe}{Derivative-free optimization methods}
+
+    \begin{itemize}
+      \item Nelder Mead
+      \item Simulated Annealing
+      \item Evolution Strategies, especially Covariance Matrix Adaptation Evolution Strategy (CMA-ES)
+      \begin{itemize}
+        \item Stochastic, evolutionary search
+        \item Candidates for each generation are drawn from a Gaussian a normal distribution
+        \item Only the better half is used for low rank update of the covariance matrix.
+        \item Assumption: Adapted covariance matrix approximates inverse hessian matrix.
+      \end{itemize}
+    \end{itemize}
+
+  \framebreak
+
+  % \begin{blocki}{Basic concept:}
+    % \item Try a bunch of random points.
+    % \item Approximate the gradient.
+    % \item Find most likely search direction and go there.
+  % \end{blocki}
+
+  \begin{figure}
+    \includegraphics[width=0.24\textwidth]{figure_man/tuning_cma1.pdf}
+    \includegraphics[width=0.24\textwidth]{figure_man/tuning_cma2.pdf}
+    \includegraphics[width=0.24\textwidth]{figure_man/tuning_cma3.pdf}
+    \includegraphics[width=0.24\textwidth]{figure_man/tuning_cma4.pdf}\\
+    \includegraphics[width=0.24\textwidth]{figure_man/tuning_cma5.pdf}
+    \includegraphics[width=0.24\textwidth]{figure_man/tuning_cma6.pdf}
+    \includegraphics[width=0.24\textwidth]{figure_man/tuning_cma7.pdf}
+    \includegraphics[width=0.24\textwidth]{figure_man/tuning_cma8.pdf}
+    % \includegraphics[width=0.22\textwidth]{cma9.pdf}
+    % \includegraphics[width=0.22\textwidth]{cma10.pdf}
+    % \caption{In principle, the process of a search at CMA-ES.}
+  \end{figure}
+
+  \framebreak
+
+  \begin{blocki}{Advantages:}
+    \item Considerably more efficient than grid search.
+    \item Rather easy to implement.
+  \end{blocki}
+
+  \begin{blocki}{Disadvantages:}
+    \item Basically rather suitable for numeric parameters.
+    \item Partly lots of function evaluations necessary.
+    \item More difficult to parallelize, feasible for ES
+  \end{blocki}
+
+  \framebreak
+
+  \begin{figure}
+    \includegraphics[width=6.5cm]{figure_man/tuning_bc}
+    \caption{Optimization of $C$ and $\gamma$ of a RBF-SVM with 2 loc. methods (BC data)}
+  \end{figure}
+
+\end{vbframe}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Algorithm Configuration}
+
+\begin{frame}{Tuning as Black-Box Optimization}
+\begin{minipage}[t]{0.33\linewidth}
+\vspace{0pt}
+  \includegraphics[width=\linewidth]{figure_man/blackbox}
+\end{minipage}
+\begin{minipage}[t]{0.65\linewidth}
+\vspace{0pt}
+\emph{Parameter Tuning} as Black Box Optimization:
+\only<1>{
+  \begin{itemize}
+    \item{Experiment:} Run on 1 or more problem instances
+    \item{Parameters:} $x_1, \ldots, x_4$ determine the return
+    \item{Return:} Performance quality, runtime, memory (often noisy)
+    \item{Other costs:} Runtime, memory
+    \item{Goal:} Find best configuration efficiently
+    \item{NB:} Runtime, memory: Either direct goals or indirect costs!
+  \end{itemize}
+}
+\end{minipage}
+\vspace{20pt}
+\end{frame}
+
+\begin{frame}
+\frametitle{Complex Parameter Space}
+\vspace{-0.5cm}
+\begin{figure}[t]
+\center
+\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
+                    thick,circ/.style={circle,draw,font=\sffamily\scriptsize},
+                    rect/.style={rectangle,draw,font=\sffamily\scriptsize}]
+  \node[rect] (20) at (3, 4.5) {Parameter Set};
+  \node[circ] (18) at (0, 3.5) {cl.weights};
+  \node[circ]  (1) at (6, 3.5) {learner};
+  \node[rect] (19) at (-0.5, 2) {$2^{[-7,...,7)}$};
+  \node[rect]  (2) at (2, 2) {randomForest};
+  \node[rect]  (3) at (4, 2) {L2 LogReg};
+  \node[rect]  (4) at(6, 2) {svm};
+  \node[circ]  (5) at (0, 0.5) {mtry};
+  \node[circ]  (6) at (2, 0.5) {nodesize};
+  \node[circ]  (7) at (4, 0.5) {cost};
+  \node[circ]  (8) at (6, 0.5) {cost};
+  \node[circ]  (9) at(8, 2) {kernel};
+  \node[rect] (10) at (8.5, 1){radial};
+  \node[rect] (17) at (7, 1){linear};
+  \node[circ] (11) at(8, 0) {$\gamma$};
+  \node[rect] (12) at (-0.5, -1) {$\{0.1p,..., 0.9p\}$};
+  \node[rect] (13) at (2, -1) {$\{1,..., 0.5n\}$};
+  \node[rect] (14) at (4, -1) {$2^{[-15, 15]}$};
+  \node[rect] (15) at (6, -1) {$2^{[-15, 15]}$};
+  \node[rect] (16) at (8, -1) {$2^{[-15, 15]}$};
+  \path[every node/.style={font=\sffamily\small}]
+    (1) edge node {}(2)
+        edge node {}(3)
+        edge node {}(4)
+    (2) edge node {}(5)
+        edge node {}(6)
+    (3) edge node {}(7)
+    (4) edge node {}(8)
+        edge node {}(9)
+    (5) edge node {}(12)
+    (6) edge node {}(13)
+    (7) edge node {}(14)
+    (8) edge node {}(15)
+    (9) edge node {}(10)
+        edge node {}(17)
+    (10) edge node {}(11)
+    (11) edge node {}(16)
+    (18) edge node {}(19)
+    (20) edge node {}(1)
+         edge node {}(18);
+\end{tikzpicture}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}{General Algorithm Configuration}
+
+\begin{itemize}
+\item Assume a (parametrized) algorithm $a$
+\item Popular domain: discrete solvers for NP-hard problems
+\item Parameter space  $\theta \in \Theta$\\
+      might be discrete and dependent / hierarchical
+\item Stochastic generating process for instances $i \sim P$, where we draw i.i.d. from.
+      (Usually predefined set of instances, and i.i.d.-ness somewhat violated)
+\item Run algorithm $a$ on $i$ and measure performance $f(i, \theta) = run(i, a(\theta))$
+\item Objective: $\min_{\theta \in \Theta} E_P[f(i, \theta)]$
+\item No derivative for $f(\cdot, \theta)$, black-box
+\item $f$ is stochastic / noisy
+\item $f$ is likely expensive to evaluate
+\item Consequence: very hard problem
+\item $\leadsto$ \textcolor{blue}{Usual approaches: racing or model-based / bayesian optimization}
+\end{itemize}
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Iterated F-Racing}
+
+\begin{frame}{Idea of (F-)Racing}
+  \begin{columns}
+    \begin{column}{.35\textwidth}
+
+      \begin{tikzpicture}[scale=0.18]
+        \input{race/race-styles}
+        \input{race/race}
+      \end{tikzpicture}
+
+    \end{column}
+    \begin{column}{.65\textwidth}
+
+      \begin{itemize}
+        \item Write down all candidate solutions
+        \item Iterate the following till budget exhausted
+        \item One \enquote{generation}
+          \begin{itemize}
+            \item Evaluate all candidates on an instance, and another, \ldots
+            \item After some time, compare candidates via statistical test,
+              e.g., Friedman test with post-hoc analysis for pairs
+            \item Remove outperformed candidates
+          \end{itemize}
+        \item Output: Remaining candidates
+        \item Yes, the testing completely ignores \enquote{sequentiality} and is somewhat heuristic.
+          %But we would only care about this if it would influence optimization efficiency...
+      \end{itemize}
+      % \bigskip
+
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{vbframe}{Idea of Iterated F-Racing}
+  \begin{block}{}
+    Why doesn't normal Racing work very often?\\
+    Because we might have many or even an infinite number of candidates.
+  \end{block}
+
+  \begin{block}{}
+    \begin{itemize}
+      \item Have a stochastic model to draw candidates from in every generation
+      \item For each parameter: univariate, independent distribution (factorized joint distribution)
+      \item Sample distributions centered at \enquote{elite} candidates from previous generation(s)
+      \item Reduce distributions' width / variance in later generations for convergence
+    \end{itemize}
+  \end{block}
+
+\framebreak
+
+\begin{center}
+\includegraphics{figure_man/irace_visual.png}
+\end{center}
+
+{\tiny Stützle and Lopez-Ibanez, Automatic (Offline) Configuration of Algorithms, 2014.}
+
+\end{vbframe}
+
+\begin{vbframe}{Iterated F-Racing}
+
+  \begin{block}{How many iterations?}
+    \begin{itemize}
+    \item For a given budget, few iterations allow a larger set of
+    configurations, and vice versa.
+    \item Fewer model parameters mean, all else being equal, cheaper optimization $\Rightarrow$ fewer iterations needed
+    \end{itemize}
+  \end{block}
+
+  \begin{block}{How many candidates at each iteration?}
+    \begin{itemize}
+    \item Number of configurations to sample in each iteration needs to be defined beforehand.
+    \item Later in the race parameter configurations become more similar
+    and computing a winner becomes more expensive $\Rightarrow$
+    Decrease number of sampled configurations with increasing iterations.
+    \end{itemize}
+  \end{block}
+
+\framebreak
+
+  \begin{block}{How to generate new configurations?}
+    \begin{itemize}
+    \item Choose an elite configuration.
+    \item Draw from associated, probabilistic model:\\
+    \begin{itemize}
+      \item Numeric parameters $\Rightarrow$ \emph{truncated normal distribution}
+      \item Categorical parameters $\Rightarrow$ \emph{discrete distribution}
+    \end{itemize}
+    \end{itemize}
+  \end{block}
+
+\end{vbframe}
+
+\begin{vbframe}{Iterated F-Racing distributions}
+
+
+\begin{columns}
+\begin{column}{0.64\textwidth}
+
+\textbf{Numeric parameters} $\Rightarrow$ \emph{truncated normal distribution}
+
+\begin{itemize}
+  \item $\mathcal{N}(\mu_l^{\Celite},\sigma_l^k)$
+  \item $\mu_l^{\Celite}$ = value of parameter $l$ in elite configuration $\Celite$
+  \item $\sigma_l^k$ = decreases with number of iterations.
+\end{itemize}
+
+\end{column}
+\begin{column}{0.35\textwidth}
+
+\includegraphics{figure_man/distr_norm_trunc.png}
+
+\end{column}
+\end{columns}
+
+\begin{columns}
+\begin{column}{0.64\textwidth}
+
+\textbf{Categorical parameters} $\Rightarrow$ \emph{discrete distribution}
+
+\begin{itemize}
+  \item Update by increasing probability of parameter value in elite configuration.
+  \item Reduce other probabilities.
+\end{itemize}
+
+\end{column}
+\begin{column}{0.35\textwidth}
+
+\includegraphics{figure_man/distr_discrete.png}
+
+\end{column}
+\end{columns}
+
+
+\end{vbframe}
+
+\begin{vbframe}{Iterated F-Racing summary}
+\textbf{Whats good about this:}
+  \begin{itemize}
+    \item Very simple and generic algorithm
+    \item Can handle all types of parameters
+    \item Much less less model overhead than in MBO
+    \item Can \enquote{easily} be parallelized\\
+      (Well, the shrinking candidate set is a problem \ldots)
+    \item A nice R package exists: irace (Lopez-Ibanez et al, The irace package, Iterated Race for Automatic Algorithm Configuration, 2011.)
+  \end{itemize}
+
+\textbf{What might be not so good:}
+  \begin{itemize}
+    \item  Quite strong (wrong?) assumptions in the probability model
+    \item  Sequential model-based optimization is probably more efficient
+      (But be careful: Somewhat my personal experience and bias,\\
+      as not so many large scale comparisons exist)
+  \end{itemize}
+\end{vbframe}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{MBO for algorithm configuration}
+
+\begin{frame}{Overview}
+\begin{itemize}
+  \item Initial design: LHS principle can be extended, or just use random
+  \item Focus search: Can be (easily) extended, as it is based on random search.
+    To zoom in for categorical parameters we randomly drop a category for each param
+    which is not present in the currently best configuration.
+  \item Surrogate model: GPs are problematic. Switch to random forest.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Surrogate models}
+\begin{itemize}
+\item GPs defined for purely numerical spaces
+  \item Few approaches for GPs with categorical parameters exist (usually with new covar kernels), not very established
+\item Random regression forest (mlrMBO, SMAC)
+  \item Estimate uncertainty / confidence interval for mean response by
+  efficient bootstrap technique (Sexton et al., Standard errors for bagged and random forest estimators, 2009.), or jackknife, so we can define $EI(x)$ for the RF
+  \item Dependent params in mlrMBO: Imputation:
+  \begin{itemize}
+  \item categorical parameters: Introduce new class
+  \item numerical parameters: Impute 2 times the maximum
+  \end{itemize}
+  \item Many of the current techniques to handle these problems are (from a theoretical standpoint) somewhat crude
+  \end{itemize}
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{ML Model Selection and Hyperparameter Optimization}
+
+\begin{frame}{Automatic Model Selection}
+
+\textbf{Prior approaches:}
+\begin{itemize}
+  \item Looking for the silver bullet model $\leadsto$ \textcolor{blue}{Failure}
+  \item Exhaustive benchmarking / search \\
+    $\leadsto$ \textcolor{blue}{Per data set: too expensive} \\
+    $\leadsto$ \textcolor{blue}{Over many: contradicting results}
+  \item Meta-Learning:\\
+    $\leadsto$ \textcolor{blue}{Good meta-features are hard to construct} \\
+    $\leadsto$ \textcolor{blue}{IMHO: Gets more interesting when combined with SMBO} \\
+    % $\leadsto$ \textcolor{blue}{Usually not for preprocessing / hyperparamters}
+\end{itemize}
+
+\textbf{Goal:}
+\begin{itemize}
+  \item Data dependent
+  \item Automatic
+  \item Include every relevant modeling decision
+  \item Efficient
+  \item Learn on the model-settings level!
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Tuning as Black-Box Optimization}
+  \begin{figure}[H]
+  \centering %page 1,10
+  \includegraphics[width=0.7\textwidth]{figure_man/chain.pdf}
+ \end{figure}
+\end{frame}
+
+\begin{frame}{From Normal SMBO to Hyperarameter Tuning}
+  \begin{itemize}
+  \item Instances are resampling training / test splits
+  \item Discrete choices like \textit{which method to apply} become categorical parameters
+  % \item Chain mlr operations (e.g. feature filter + ML model)
+    % so we can jointly optimize complex systems
+  \item For discrete parameters we can either use special GP kernels or random forests
+  \item Dependent parameters can be handled via special kernels or imputation
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Tuning as Black-Box Optimization}
+
+\begin{minipage}{0.33\linewidth}
+
+  \input{gear.tex}
+%http://tex.stackexchange.com/questions/6135/how-to-make-beamer-overlays-with-tikz-node
+
+\tikzset{
+  %Style of the black box
+  bbox/.style={draw, fill=black, minimum size=3cm,
+  label={[white, yshift=-1.3em]above:$in$},
+  label={[white, yshift=1.3em]below:$out$},
+  label={[rotate = 90, xshift=1em, yshift=0.5em]left:Black-Box}
+  },
+  multiple/.style={double copy shadow={shadow xshift=1.5ex,shadow
+  yshift=-0.5ex,draw=black!30,fill=white}}
+}
+
+\begin{tikzpicture}[>=triangle 45, semithick]
+\node[bbox] (a) {};
+\draw[thick, shift=({-0.4cm,0.2cm}), draw = white](a.center) \gear{18}{0.5cm}{0.6cm}{10}{2};
+\draw[thick, shift=({0.4cm,-0.3cm}), draw = white](a.center) \gear{14}{0.3cm}{0.4cm}{10}{2};
+{
+  \begin{scriptsize}
+  \draw[<-] (a.130) --++(90:6em) node [right] {Dataset};
+  \draw[<-] (a.115) --++(90:4.5em) node [right] {Preprocessing steps};
+  \draw[<-] (a.100) --++(90:3em) node [right] {ML method};
+  \draw[<-] (a.85) --++(90:1.5em) node [right] {ML settings};
+  \end{scriptsize}
+}
+{
+  \draw[->] (a.270) --++(90:-2em) node [below] {$Misclassification$};
+}
+\end{tikzpicture}
+
+\end{minipage}
+%
+\begin{minipage}{0.65\linewidth}
+  \textbf{mlrMBO} can be used for:
+  \begin{itemize}
+  \item Expensive black-box optimization
+  \item Hyperparameter tuning for machine learning methods
+  \item Machine learning pipeline configuration
+  \item Algorithm configuration
+  \item ...
+  \end{itemize}
+\end{minipage}
+
+\end{frame}
+
+\begin{frame}{Hyperparameter Tuning}
+ \begin{itemize}
+    \item Still common practice: grid search\\
+    For a SVM it might look like:
+    \begin{itemize}
+      \item $C \in (2^{-12}, 2^{-10}, 2^{-8}, \ldots, 2^{8}, 2^{10}, 2^{12})$
+      \item $\gamma \in (2^{-12}, 2^{-10}, 2^{-8}, \ldots, 2^{8}, 2^{10}, 2^{12})$
+      \item Evaluate all $13^2 = 169$ combinations $C \times \gamma$
+    \end{itemize}
+    \item Bad because:
+    \begin{itemize}
+      \item optimum might be "off the grid"
+      \item lots of evaluations in bad areas
+      \item lots of costly evaluations
+    \end{itemize}
+    \item How bad?
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Hyperparameter Tuning}
+\begin{center}
+\includegraphics[width=0.5\textwidth]{figure_man/grid1.png}
+\end{center}
+\begin{itemize}
+\item Because of budget restrictions grid might even be smaller!
+\item Unpromising area quite big!
+\item Lots of costly evaluations!
+\end{itemize}
+With \textbf{mlrMBO} it is not hard to do it better!
+
+More interesting applications to time-series regression and cost-sensitive classification (Koch, Bischl et al: Tuning and evolution of support vector kernels, EI 2012).
+
+\end{frame}
+
+\begin{frame}{Hyperparameter Tuning}
+\vfill
+\includegraphics[width=\textwidth]{figure_man/res1.png}
+\vfill
+\end{frame}
+\begin{frame}{Hyperparameter Tuning}
+\vfill
+\includegraphics[width=\textwidth]{figure_man/res2.png}
+\vfill
+\end{frame}
+
+\begin{frame}{HPOlib}
+\begin{itemize}
+\item HPOlib is a set of standard benchmarks for hyperparameter optimizer
+\item Allows comparison with
+\begin{itemize}
+\item Spearmint
+\item SMAC
+\item Hyperopt (TPE)
+\end{itemize}
+\item Benchmarks:
+\begin{itemize}
+\item Numeric test functions (similar to the ones we've seen before)
+\item Numeric machine learning problems (lda, SVM, logistic regression)
+\item Deep neural networks and deep belief networks with $15$ and $35$ parameters.
+\end{itemize}
+\item For benchmarks with discrete and dependent parameters (hpnnet, hpdbnet) a random forest with standard error estimation is used.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{MBO: HPOlib}
+\begin{center}
+  \includegraphics[width = 0.9\textwidth]{figure_man/hpolib-1.pdf}
+\end{center}
+\end{frame}
+
+\endlecture
