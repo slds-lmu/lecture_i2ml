@@ -1,7 +1,7 @@
 
 SLOT1=slides-feature-engineering
 SLOT2=slides-tuning
-SLOT3=slides-d4s3-forests1
+SLOT3=slides-practical
 SLOT4=slides-d4s4-forests2
 
 all: $(SLOT1).pdf $(SLOT2).pdf 	$(SLOT3).pdf $(SLOT4).pdf
