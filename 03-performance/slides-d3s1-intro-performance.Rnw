@@ -54,20 +54,25 @@ mod = train(learner = learner, task = task)
 pred.train = predict(mod, newdata = qda.data.train)
 pred.test = predict(mod, newdata = qda.data.test)
 
-qda.data.test$pred.true = ifelse(pred.test$data$truth == pred.test$data$response, "true", "false")
-qda.data.train$pred.true = ifelse(pred.train$data$truth == pred.train$data$response, "true", "false")
+qda.data.test$pred.true = ifelse(pred.test$data$truth == pred.test$data$response, "correct", "incorrect")
+qda.data.train$pred.true = ifelse(pred.train$data$truth == pred.train$data$response, "correct", "incorrect")
 
 trainplot = ggplot(data = qda.data.train) +
   geom_point(aes(x = x1, y = x2, shape = factor(tar), colour = factor(pred.true)), size = 2.5) +
   labs(color = 'prediction', shape = "class") +
   theme(legend.justification = c(1, 0), legend.position = c(1, 0)) +
-  ggtitle(label = paste0("Prediction on train data with mmce = ", as.numeric(performance(pred.train))) )
-#trainplot
+  ggtitle(label = paste0("Prediction on train data with mmce = ", as.numeric(performance(pred.train))) ) + coord_fixed() + 
+   scale_x_continuous(limits = c(-5,5)) + 
+  scale_y_continuous(limits = c(-5, 5))
+ #trainplot
 testplot = ggplot(data = qda.data.test) +
   geom_point(aes(x = x1, y = x2, shape = factor(tar), colour = factor(pred.true)), size = 2.5) +
   labs(color = 'prediction', shape = "class") +
   theme(legend.justification = c(1, 0), legend.position = c(1, 0))+
-  ggtitle(label = paste0("Prediction on test data with mmce = ", as.numeric(performance(pred.test))) )
+  ggtitle(label = paste0("Prediction on test data with mmce = ", as.numeric(performance(pred.test))) ) + coord_fixed() + 
+  scale_x_continuous(limits = c(-5,5)) + 
+  scale_y_continuous(limits = c(-5, 5))
+ 
 #testplot
 gridExtra::grid.arrange(trainplot, testplot, ncol = 2)
 
@@ -296,7 +301,7 @@ The \emph{training error} (also called {\it apparent error} or {\it resubstituti
 % Jann: I hate this framebreaks, therefore made three frames for each of the plots
 \begin{vbframe}{Training Error}
 
-Example 1: we want to train a model to fit the true generating process of this data:
+xample: train a model to fit the true generating process of this data:
 
 <<echo=FALSE, out.width="0.9\\textwidth", fig.height=3.5>>=
 .h = function(x) 0.5 + 0.4 * sin(2 * pi * x)

@@ -34,7 +34,9 @@ Slides are organised by day and slots. Each day has 4 slots and each slots rough
 - Slot 4: rf2: varimp + pros cons
 
 ## Day 5
-TBD
+- Tuning
+- Practical tips
+- Do's and dont's ?
 
 # Ideas for exercises:
 
