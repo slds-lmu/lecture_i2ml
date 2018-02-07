@@ -1,0 +1,134 @@
+Answer the following questions either with formal proof or a (meaningful!) simulation:\\
+Which of the these feature-independet rules will result in a smaller expected error for the general 2-class-case:\\
+\begin{itemize}
+\item[(1)] Always predict the largest class from the traing data. \\
+\item[(2)] For a new observation, draw the class from the empirical probabilities of the classes in the training data.
+\end{itemize}
+Or do both rules always have the same performance?
+
+
+Let $y^{(1)}, \ldots, y^{(n)}, y^{(n+1)}$ be i.i.d. and Bernoulli distributed with parameter $\pi$.
+$y^{(1)}, \ldots, y^{(n)}$ is the trainings data, $y^{(n+1)}$ a new test observation.
+Let $\hat{y}^{(n+1)}$ be the prediction for our data independent rule for $y^{(n+1)}$.
+This is a map of $y^{(1)}, \ldots, y^{(n)}$ and therefore a random variable.
+
+For the 0-1-loss
+
+$$\E(L(\hat{y}^{(n+1)}, y^{(n+1)})) = \P(\hat{y}^{(n+1)} \neq y^{(n+1)})$$
+
+For both rules it holds:
+
+$$\P(\hat{y}^{(n+1)} \neq y^{(n+1)}) = \P(\hat{y}^{(n+1)} = 1 \land y^{(n+1)} = 0) + \P(\hat{y}^{(n+1)} = 0 \land y^{(n+1)} = 1) = $$
+$$\P(\hat{y}^{(n+1)} = 1) \P(y^{(n+1)} = 0) + \P(\hat{y}^{(n+1)} = 0) \P(y^{(n+1)} = 1) = $$
+$$\P(\hat{y}^{(n+1)} = 1) (1-\pi) + (1 - \P(\hat{y}^{(n+1)} = 1)) \pi$$
+
+So we only need to calculate $\P(\hat{y}^{(n+1)} = 1)$.
+
+For (1) it holds, (not that easy actually!):
+
+$$\hat{y}^{(n+1)} = I(\sum_{i=1}^n \yi > n/2) + I(\sum_{i=1}^n \yi = n/2) R$$
+
+where R is supposed to be a randomization, if the number of 1's and 0's is equal.
+So R is Bernoulli-(0.5) and independent of all other random variables.
+
+$$\P(\hat{y}^{(n+1)} = 1) = $$
+$$\P(\sum_{i=1}^n \yi > n/2) + 0.5 P(\sum_{i=1}^n \yi = n/2) =  $$
+$$(1-\P(\sum_{i=1}^n \yi \leq n/2)) + 0.5 f(n/2) =  $$
+$$1 - F(n/2) + 0.5 f(n/2) $$
+
+where F  is the cummulative distribution function and f the density for the Binom(n,p)-distribution, because $\sum_{i=1}^n \yi$ is distributed like that.
+Note that for odd n the same holds.
+
+
+So the expected error for (1) is:
+
+$$\P(\hat{y}^{(n+1)} \neq y^{(n+1)}) = (1 - F(n/2) + 0.5 f(n/2)) (1-p) + (F(n/2) - 0.5 f(n/2)) \pi$$
+
+For (2) the following holds (a lot simpler):
+
+$$\hat{y}^{(n+1)} | y^{(1)}, \ldots, y^{(n)} \sim Bernoulli(\frac{1}{n}\sum^n_{i=1}\yi) $$
+
+Therefore:
+
+$$\P(\hat{y}^{(n+1)} = 1) = \E(\hat{y}^{(n+1)}) = \E(\E(\hat{y}^{(n+1)} | y^{(1)}, \ldots, y^{(n)})) =  $$
+$$\E(\frac{1}{n} \sum_{i=1}^n \yi) = \pi $$
+
+So the expected error for (2) is:
+
+$$\P(\hat{y}^{(n+1)} \neq y^{(n+1)}) = \pi (1-\pi) + (1-\pi) \pi = 2 (1-\pi) \pi  $$
+
+It is actually not so easy to prove that the loss for (1) is always smaller- equal than the one of (2), so we now just plot it with \pkg{R} and \enquote{see}
+it from the graphics.
+
+<<eval=FALSE>>=
+# Draw Y label data from a Bernoulli(p) distribution
+# @param n [integer(1)]
+#   Number of samples
+# @param p [numeric(1)]
+#   Probability for Y=1.
+# @return [integer]. Vector of 0s and 1s of length n.
+#   Probability for Y=1.
+mysample = function(n, p) {
+  rbinom(n, size=1, prob=p)
+}
+
+# Contruct data independent rule (1 or 2 on exercise sheet)
+# on training data of size n with a priori probability p
+# for class Y=1 p and probability
+# (1-p) for class Y=0. Then predict classes for a very large
+# independent test set of size m and measure error.
+#
+# @param rule [integer(1)]
+#   Data independent rule: 1 or 2.
+# @param n [integer(1)]
+#   Number of samples in training set.
+# @param p [numeric(1)]
+#   Probability for Y=1 in training and test set.
+# @param m [integer(1)]
+#   Number of samples in test set.
+# @param repls
+#   Number of replications for the experiment.
+# @return [numeric(1)]
+#   Estimated error on test set, averaged over repls.
+dataInd = function(rule, n, p, m=100000, repls) {
+  errs = replicate(repls, {
+    train = mysample(n, p)
+    p.hat = mean(train)
+    if (rule == 1) {
+      pred = ifelse(p.hat >= 0.5, 1, 0)
+    } else {
+      pred = sample(c(0,1), replace=TRUE, prob=c(1-p.hat, p.hat))
+    }
+    test = mysample(m, p)
+    mean(test != pred)
+  })
+  mean(errs)
+}
+
+n = 10
+ps =seq(0.1, 0.9, by=0.01)
+repls = 100
+errs1 = sapply(ps, dataInd, rule=1, n=n, repls=repls)
+errs2 = sapply(ps, dataInd, rule=2, n=n, repls=repls)
+plot(ps, errs1, type="l")
+lines(ps, errs2, lty="dotted")
+
+
+
+g = function(n, p, i, j) sum(sapply(i:j, function(x) dbinom(x, size=n, prob=p)))
+n = 10
+p = 0.7
+g1 = g(n, p, n/2, n)
+g2 = g(n, p, 0, (n/2)-1)
+
+g1 - p*g1 + p*g2
+
+
+n = 10001
+loss1 = function(p, n) p*(pbinom(n/2, size=n, prob=p)) + (1-p) * (1-pbinom(n/2, size=n, prob=p))
+loss2 = function(p, n) p*(1-p) + (1-p) * p
+
+curve(loss1(x, n))
+curve(loss2(x, n), add=TRUE, lty=2)
+legend("topleft", lty=1:2, legend=c("majority", "sample"))
+@

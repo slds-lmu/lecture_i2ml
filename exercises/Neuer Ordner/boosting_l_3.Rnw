@@ -1,0 +1,36 @@
+Two things should be considered:
+\begin{enumerate}
+\item When using the L2-loss, the opimum can be calculated analytically, no numeric optimization is required.
+\item In case of regression and decision strumps, this optimum is constant over all iterations.
+\end{enumerate}
+
+\subsection*{Regarding 1.}
+Suppose we have n instances and we use t to denote the boosting iteration.
+\begin{align*}
+\beta_t = \text{argmin}_{\beta} \sum \limits_{i=1}^n L(y_i, f_{t-1} + \beta h(x, \theta_t)
+\end{align*}
+Now, with $L(x,y) = (x-y)^2$ and $r_{it} = 2 (y_i-f(x_i)$ \footnote{$L(x,y) = \frac{1}{2}(x-y)^2$ doesn't change the main argument.}
+\begin{align*}
+\beta_t = \text{argmin}_{\beta} \sum \limits_{i=1}^m (\frac{1}{2} r_{it} - \beta h(x_i, \theta_t))^2
+\end{align*}
+Setting the first derivative to zero:
+\begin{align*}
+%\sum \limits_{i=1}^m (-r_{it} h(x_i, \theta_t) + 2 \beta h^2(x_i, \theta_t)) \stackrel{=} 0 \\
+\sum \limits_{i=1}^m (-r_{it} h(x_i, \theta_t) + 2 \beta h^2(x_i, \theta_t)) = 0 \\
+\Rightarrow \beta_t = \frac{\sum \limits_{i=1}^m r_{it} h(x_i, \theta_t)}{\sum \limits_{i=1}^m 2 h^2(x_i, \theta_t)},
+\end{align*}
+The second derivative would show, that this is actually a minimum. So the numeric optimization is unnecessary.
+
+\subsection*{Regarding 2.}
+
+Think about how $ h(x_i, \theta_t)$ looks. With decision stumps we get two possible predictions for the pseudo-residuals, which are in case of regression the mean of the partitions. So a disjunct partitioning of the indices in the sets $M_1$ and $M_2$ is 
+\begin{align*}
+h(x_i, \theta_t) = \frac{1}{|M_1|} \sum \limits_{j \in M_1} r_{jt} I_{M_1}(i) + \frac{1}{|M_2|} \sum \limits_{j \in M_2} r_{jt} I_{M_2}(i)
+\end{align*}
+The fraction from $1.$ can be written as 
+\begin{align*}
+\beta_t &= \frac{\sum \limits_{i=1}^m r_{it} h(x_i, \theta_t)}{\sum \limits_{i=1}^m 2 h^2(x_i, \theta_t)} \\
+ &= \frac{1}{2} \frac{\sum \limits_{i \in M_1} (r_{it} \frac{1}{|M_1|} \sum \limits_{i \in M_1} r_{it}) +  \sum \limits_{i \in M_2} (r_{it} \frac{1}{|M_2|} \sum \limits_{i \in M_2} r_{it})}{\sum \limits_{i \in M_1} (\frac{1}{|M_1|} \sum \limits_{i \in M_1} r_{it})^2 + \sum \limits_{i \in M_2} (\frac{1}{|M_2|} \sum \limits_{i \in M_2} r_{it})^2} \\
+ &= \frac{1}{2} \frac{ \frac{1}{|M_1|} \sum \limits_{i \in M_1}  (r_{it}  \sum \limits_{i \in M_1} r_{it}) +  \frac{1}{|M_2|} \sum \limits_{i \in M_2} (r_{it} \sum \limits_{i \in M_2} r_{it})}{ |M_1| \frac{1}{|M_1|^2} (\sum \limits_{i \in M_1} r_{it})^2 + |M_2| \frac{1}{|M_2|^2} (\sum \limits_{i \in M_2} r_{it})^2} \\ 
+&= \frac{1}{2} \cdot 1
+\end{align*}
