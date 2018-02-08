@@ -1,10 +1,8 @@
 
-SLOT1=slides-feature-engineering
-SLOT2=slides-tuning
-SLOT3=slides-practical
-SLOT4=slides-d4s4-forests2
+SLOT1=slides-tuning
+SLOT2=slides-practical
 
-all: $(SLOT1).pdf $(SLOT2).pdf 	$(SLOT3).pdf $(SLOT4).pdf
+all: $(SLOT1).pdf $(SLOT2).pdf 
 
 $(SLOT1).pdf: $(SLOT1).Rnw
 	Rscript --vanilla -e 'knitr::knit2pdf("$(SLOT1).Rnw")'
@@ -12,8 +10,3 @@ $(SLOT1).pdf: $(SLOT1).Rnw
 $(SLOT2).pdf: $(SLOT2).Rnw
 	Rscript --vanilla -e 'knitr::knit2pdf("$(SLOT2).Rnw")'
 
-$(SLOT3).pdf: $(SLOT3).Rnw
-	Rscript --vanilla -e 'knitr::knit2pdf("$(SLOT3).Rnw")'
-
-$(SLOT4).pdf: $(SLOT4).Rnw
-	Rscript --vanilla -e 'knitr::knit2pdf("$(SLOT4).Rnw")'
