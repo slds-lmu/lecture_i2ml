@@ -11,14 +11,14 @@ data <- abalone[,c("LongestShell", "WholeWeight","Rings")]
 
 library(ggplot2)
 ggplot(data,aes(x=LongestShell,y=WholeWeight,color=Rings)) +
-  geom_point(size=1) 
+  geom_point(size=2) 
 
 
 abalone.task <- makeRegrTask(data = data, target = "Rings")
 
 n = getTaskSize(abalone.task)
-train.set = seq(1, n, by = 2)
-test.set = seq(2, n, by = 2)
+train.set = setdiff(1:n,seq(3, n, by = 3))
+test.set = seq(3, n, by = 3)
 lrn.lm <- makeLearner("regr.lm")
 mod.lm = train(lrn.lm, abalone.task, subset = train.set)
 task.pred.lm = predict(mod.lm, task = abalone.task, subset = test.set)
