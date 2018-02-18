@@ -5,9 +5,16 @@
 #
 #####################
 
-
+library(mlbench)
+library(dplyr)
 library(rpart)
 library(rattle)
+library(mlr)
+library(rpart.plot)
+library(devtools)
+library(BBmisc)
+library(rpart.plot)
+library(partykit)
 
 data("Servo")
 # transform ordered factors to numeric
@@ -39,6 +46,8 @@ rattle::fancyRpartPlot(model1, palettes = "Oranges", sub = "CART from split 1")
 
 model2 = rpart(Class ~., data = train2)
 rattle::fancyRpartPlot(model2, palettes = "Blues", sub = "CART from split 2")
+
+
 
 ################
 #
@@ -75,13 +84,25 @@ plotParamSequenceRPart(task = task, param = "cp", values = cps, minsplit = 5)
 
 
 
-
-
 #################
 #
 #   Random Forests and variable importance
 #
 ###############
+
+
+task = makeRegrTask(data = train1, target = "Class")
+lrn1 = makeLearner("regr.randomForest")
+mod = mlr::train(learner = lrn1, task = task)
+
+varimp = getFeatureImportance(mod)
+var = as.data.frame(t(varimp$res))
+var$names = names(varimp$res)
+p = ggplot(data = var, aes(x = names, y = V1)) + geom_bar(stat = "identity")
+p
+
+
+
 
 
 
