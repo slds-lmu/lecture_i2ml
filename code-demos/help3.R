@@ -206,29 +206,99 @@ selfNR = function(data, target, outerFolds = 3, innerFolds = 4, kCandidates, inf
   return(winnerCV)
 }
 
-foo = selfNR(data = spiral, target = "classes", outerFolds = 10, innerFolds = 9,
-  kCandidates = c(20, 3, 5, 10, 1), inform = TRUE)
+foo = selfNR(data = spiral, target = "classes", outerFolds = 5, innerFolds = 10,
+  kCandidates = c(20, 3, 5, 10, 444), inform = TRUE)
 foo
 
-debug(selfNR)
-foo = selfNR(data = spiral, target = "classes", outerFolds = 4, innerFolds = 5,
-  kCandidates = c(20, 3, 5, 10, 1))
-undebug(selfNR)
 
 
 
 
+tuneCV = function(data, target, folds, kCandidates) {
+
+  candidatesGE = as.data.frame(matrix(data = 0, nrow = length(kCandidates), ncol = 2))
+  colnames(candidatesGE) = c("k", "GE")
+
+  for (l in 1:length(kCandidates)) {
+
+    candidatesGE[l, "k"] = kCandidates[l]
+    candidatesGE[l, "GE"] = selfCV(data = data, target = target, folds = folds,
+      k = kCandidates[l])$GE
+  }
+  return(candidatesGE[order(candidatesGE$GE), ])
+}
+
+
+
+tuneCV(data = spiral, target = "classes", folds = 10, kCandidates = c(1, 3, 5, 10, 20, 30, 40, 100))
+
+
+
+#######################
+#
+#   Confusion Matrices
+#
+######################
+library(mlr)
+library(ggplot2)
+
+
+# data
+data(iris)
+set.seed(1333)
+trainSize = 3/4
+trainIndices = sample(x = seq(1, nrow(iris), by = 1), size = ceiling(trainSize * nrow(iris)), replace = FALSE)
+irisTrain = iris[ trainIndices, ]
+irisTest = iris[ -trainIndices, ]
+
+task = makeClassifTask(data = irisTrain, target = "Species")
+learner = makeLearner("classif.kknn", k = 3)
+model = train(learner, task)
+pred = predict(model, newdata = irisTest)
+performance(pred, measures = mmce)
+calculateConfusionMatrix(pred)
+
+table(iris$Species)
+
+
+library("dplyr")
+data("BreastCancer")
+
+bc = BreastCancer[, -c(1, 7)]
+# mutate all factors to numeric, simlification but ok here
+mut = bc[, -9] %>% mutate_all(as.character) %>% mutate_all(as.numeric)
+bcData = cbind(mut, bc$Class)
+colnames(bcData) = c(colnames(mut), "Class")
+# make it more extreme and kill 50% of the malignant data
+bcData = bcData[ -sample(which(bcData$Class == "malignant"), 150, replace = FALSE), ]
+head(bcData)
+table(bcData$Class) / sum(table(bcData$Class))
 
 
 
 
+trainSize = 3/4
+trainIndices = sample(x = seq(1, nrow(bcData), by = 1), size = ceiling(trainSize * nrow(bcData)), replace = FALSE)
+bcTrain = bcData[ trainIndices, ]
+bcTest = bcData[ -trainIndices, ]
+
+task = makeClassifTask(data = bcTrain, target = "Class")
+
+# knn
+learner = makeLearner("classif.kknn", k = 5, predict.type = "prob")
+model = mlr::train(learner, task)
+predKnn = predict(model, newdata = bcTest)
+performance(predKnn, measures = list(mmce, auc))
+calculateConfusionMatrix(predKnn)
 
 
+# learner that uses simple majority vote for classification
+stupidLearner = makeLearner("classif.featureless", method = "majority", predict.type = "prob")
+model = mlr::train(stupidLearner, task)
+predStupid = predict(model, newdata = bcTest)
+performance(predStupid, measures = list(mmce, auc))
+calculateConfusionMatrix(predStupid)
 
-
-
-
-
-
-
+rocs = generateThreshVsPerfData(list(knn = predKnn, stupid = predStupid), measures = list(fpr, tpr, mmce))
+plotROCCurves(rocs)
 
