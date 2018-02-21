@@ -10,24 +10,24 @@ fat.task = makeRegrTask(data = bodyfat, target = "DEXfat")
 
 ##b)
 
-knn.learner = makeLearner("regr.kknn")
-# Set the hyperparameters of a learner object
-# knn.learner = setHyperPars(knn.learner)
+tree.learner = makeLearner("regr.rpart", cp = 0.05)
+# Alternative:
+tree.learner = makeLearner("regr.rpart")
+tree.learner = setHyperPars(tree.learner, cp = 0.05)
 
-fat.knn.model = train(knn.learner, fat.task)
-fat.knn.model
+fat.tree.model = train(tree.learner, fat.task)
+fat.tree.model
 
 
 ##c)
 
-plotLearnerPrediction(knn.learner, fat.task, features = "waistcirc")
-plotLearnerPrediction(knn.learner, fat.task, features = "anthro3c")
-plotLearnerPrediction(knn.learner, fat.task, features = c("waistcirc", "anthro3c"))
+plotLearnerPrediction(tree.learner, fat.task, features = "waistcirc")
+plotLearnerPrediction(tree.learner, fat.task, features = "anthro3c")
+plotLearnerPrediction(tree.learner, fat.task, features = c("waistcirc", "anthro3c"))
 
 
 ##d)
 
 rdesc = makeResampleDesc(method = "CV", iters = 10)
-res = resample(knn.learner, fat.task, rdesc, measures = list(mlr::mse, medae))
+res = resample(tree.learner, fat.task, rdesc, measures = list(mlr::mse, medae))
 res
-
