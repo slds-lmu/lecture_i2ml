@@ -1,1 +1,33 @@
-Implement your own method to calculate the test error for knn based on k-fold crossvalidation. Test your method for at least two datasets. You can find some datasets to use in the \texttt{mlbench} package.
+We fit a knn model to predict the pixel classes in the Satellite dataset. The performance is evaluated with the kappa coefficient, which measures the aggreement between two scorers: The higher the kappa, the better the agreement (max 1) between predicted and actual classes. \\
+Look at the following R code and output: The performance is estimated in different ways: using training data, test data and then with cross validation. How do the estimates differ and why? Which one should be used?
+
+<<message=FALSE>>=
+library(mlr)
+library(mlbench)
+
+data(Satellite)
+Satellite.task = makeClassifTask(data = Satellite, target = "classes")
+knn.learner = makeLearner("classif.kknn", k = 3)
+
+# Train and test subsets:
+set.seed(42)
+train_indices = sample.int(nrow(Satellite), size = 0.8 * nrow(Satellite))
+test_indices = setdiff(1:nrow(Satellite), train_indices)
+
+# Training data performance estimate
+mod = train(knn.learner, task = Satellite.task, subset = train_indices)
+pred = predict(mod, task = Satellite.task, subset = train_indices)
+performance(pred, measure = mlr::kappa)
+
+# Test data performance estimate
+pred = predict(mod, task = Satellite.task, subset = test_indices)
+performance(pred, measure = mlr::kappa)
+
+# CV performance estimate
+rdesc = makeResampleDesc(method = "CV", iters = 10)
+res = resample(knn.learner, Satellite.task, rdesc, measures = list(mlr::kappa))
+res$measures.test
+mean(res$measures.test$kappa)
+@
+
+

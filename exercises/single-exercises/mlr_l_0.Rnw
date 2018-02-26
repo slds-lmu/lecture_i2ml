@@ -24,16 +24,14 @@ For classification:
 
 \begin{itemize}
 \item 0-1 loss (= mean misclassification error),
-\item Hinge loss,
-\item Logistic loss (bernulli loss) ...
+\item Logistic loss (bernulli loss), ...
 \end{itemize}
 
 For regression:
 
 \begin{itemize}
 \item $L_2$-loss (= mean squared error),
-\item $L_1$-loss (= mean absolute error),
-\item huber loss ...
+\item $L_1$-loss (= mean absolute error), ...
 \end{itemize}
 
 \item Use the \texttt{bh.task} regression task from \texttt{mlr} and split the data into $50\%$ training data and $50\%$ test data while training and predicting (i.e., use the \texttt{subset} argument of the \texttt{train} and \texttt{predict} function).
@@ -59,8 +57,19 @@ mod = train(lrn, bh.task, subset = train.ind)
 pred = predict(mod, bh.task, subset = test.ind)
 pred
 @
+\item Compare the performance on training and test data.
+<<message=FALSE>>=
+# predict on the test set
+pred.test = predict(mod, bh.task, subset = test.ind)
+performance(pred.test, measures = list(mlr::mae, mlr::mse))
 
-\item Now use different observations (but still $50\%$ of them) for the training set. What effects does this have?
+# predict on the test set
+pred.train = predict(mod, bh.task, subset = train.ind)
+performance(pred.train, measures = list(mlr::mae, mlr::mse))
+@
+The generalization error estimate is much higher on the training data.
+
+\item Now use different observations (but still $50\%$ of them) for the training set. What effects does this have on the predictions and the error estimates of the test data?
 
 <<message=FALSE>>=
 # select different index vectors to subset the data randomly
@@ -77,16 +86,32 @@ mod = train(lrn, bh.task, subset = train.ind)
 # predict on the test set
 pred = predict(mod, bh.task, subset = test.ind)
 pred
+pred.test = predict(mod, bh.task, subset = test.ind)
+performance(pred.test, measures = list(mlr::mae, mlr::mse))
 @
 
 Effect: We will predict different observations since the test set is different. The same observations get a slightly different prediction (e.g. observation with id 2).
+The error estimates for the test dataset are also a bit different.
 
-\item What do you have to do in \texttt{mlr} if you want the prediction output to be probabilities (and not classes)?
-
-You have to specify the \texttt{predict.type} in the learner, e.g.:
-
-<<>>=
-makeLearner("classif.rpart", predict.type = "prob")
+\item Use 10 fold cross-validation to estimate the performance.
+<<message=FALSE>>=
+rdesc = makeResampleDesc("CV", iters = 10)
+r = resample(lrn, bh.task, rdesc, measures = list(mlr::mae, mlr::mse))
 @
 
+\item Now use nested resampling to fit the best knn model (try k from 1 to 10) on the \texttt{bh.task} and estimate the generalization error.
+<<message=FALSE>>=
+## Tuning in inner resampling loop
+ps = makeParamSet(makeDiscreteParam("k", values = 1:10))
+ctrl = makeTuneControlGrid()
+inner = makeResampleDesc("CV", iters = 10)
+lrn = makeTuneWrapper("regr.kknn", resampling = inner, par.set = ps, control = ctrl, show.info = FALSE)
+
+## Outer resampling loop
+outer = makeResampleDesc("CV", iters = 5)
+r = resample(lrn, bh.task, resampling = outer, extract = getTuneResult, show.info = FALSE)
+r$measures.test
+r$aggr
+r$extract
+@
 \end{enumerate}
