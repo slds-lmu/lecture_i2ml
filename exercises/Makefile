@@ -4,7 +4,7 @@ d1: day1/exercise_1.pdf day1/solution_1.pdf
 d2: day2/exercise_2.pdf day2/solution_2.pdf
 d3: day3/exercise_3.pdf day3/solution_3.pdf
 d4: day4/exercise_4.pdf day4/solution_4.pdf
-
+d5: day5/exercise_5.pdf
 
 
 
@@ -31,3 +31,5 @@ day4/solution_4.pdf: day4/*.Rnw
 	Rscript --vanilla -e 'setwd("day4"); knitr::knit2pdf("solution_4.Rnw")'
 
 
+day5/exercise_5.pdf: day5/*.Rnw
+	Rscript --vanilla -e 'setwd("day5"); knitr::knit2pdf("exercise_5.Rnw")'
