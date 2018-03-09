@@ -38,6 +38,10 @@ Slides are organised by day and slots. Each day has 4 slots and each slots rough
 - Practical tips
 - Do's and dont's ?
 
+## Code Demos
+
+are publicly accessible via [this link](https://github.com/compstat-lmu/lecture_intro_to_ml_notebooks)
+
 # Ideas for exercises:
 
 - Implement algorithms in code
