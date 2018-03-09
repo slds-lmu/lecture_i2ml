@@ -14,12 +14,12 @@ Proceed as follows:
 
 \begin{enumerate}
 \item Split x in two groups using each observation as split point.
-% \begin{itemize}
-% \item $x_1 = (1)$, $x_2 = (2,7,10,20)$ (splitpoint 1)
-% \item $x_1 = (1,2)$, $x_2 = (7,10,20)$ (splitpoint 2)
-% \item $x_1 = (1,2,7)$, $x_2 = (10,20)$ (splitpoint 7)
-% \item $x_1 = (1,2,7,10)$, $x_2 = (20)$ (splitpoint 10)
-% \end{itemize}
+\begin{itemize}
+\item $ (1)$, $(2,7,10,20)$ (splitpoint 1)
+\item $ (1,2)$, $(7,10,20)$ (splitpoint 2)
+\item $ (1,2,7)$, $(10,20)$ (splitpoint 7)
+\item $= (1,2,7,10)$, $(20)$ (splitpoint 10)
+\end{itemize}
 \item For each possible split point compute the sum of squares in both groups.
 \item Use as split point the observaton that splits both groups best w.r.t. minimizing the sum of squares in both groups.
 \end{enumerate}
@@ -50,25 +50,34 @@ x = c(1,2,7,10,20)
 y = c(1,1,0.5,10,11)
 for (i in 1:(length(x) - 1)) plot(x, y, col = as.factor(x <= x[i]))
 @
-Example calculation of sum of squares for split at $x \leq 1$: $$SS_{total} = SS_{left} + SS_{right} = 
-(1 - 1)^2 + ((1 - 5.625)^2 + (0.5 - 5.625)^2 + (10 - 5.625)^2 + (11 - 5.625)^2) = 95.6875 $$
+The sum of squares error of the parent is: 
+$$MSE_{parent} = \frac{1}{5} \sum_{i=1}^5 (y_i - 4.7)^2 = 22.56 $$
+
+Example calculation of sum of squares for split at $x \leq 1$: 
+$$MSE_{children} = MSE_{left} + MSE_{right}  = 
+\frac{1}{5}(1 - 1)^2 + \frac{4}{5}((1 - 5.625)^2 + (0.5 - 5.625)^2 + (10 - 5.625)^2 + (11 - 5.625)^2) = 19.1375 $$
+The reduction in impurity is: 
+$$MSE_{parent} - MSE_{children} = 22.56 - 19.14 = 3.42
 
 \item Implement an R code that finds the best split point according to the CART algorithm (i.e., solve the exercise above in R).
 
 <<>>=
-SS = function(x) sum((x - mean(x))^2)
+MSE = function(x) mean((x - mean(x))^2)
 
 split = function(x, y) {
+  parent_mse = MSE(y)
+  n = length(y)
   # try out all points as potential split points and ...
   splits = lapply(x, function(i) {
     yleft = y[x <= i]
     yright = y[x > i]
-    ss_total = SS(yleft) + SS(yright) # ... compute SS in both groups
-    print(sprintf("Split at %.1f: %.2f SS", i, ss_total))
-    ss_total
+    # ... compute SS in both groups
+    mse_total = (length(yleft)/n) * MSE(yleft) + (length(yright)/n) * MSE(yright) 
+    print(sprintf("Split at %.1f: %.2f Impurity reduction", i, parent_mse - mse_total))
+    parent_mse - mse_total
   })
-  # select the split point yielding the minimal sum of squares (SS)
-  best = which.min(splits)
+  # select the split point yielding the maximum impurity reduction 
+  best = which.max(splits)
   x[best]
 }
 
