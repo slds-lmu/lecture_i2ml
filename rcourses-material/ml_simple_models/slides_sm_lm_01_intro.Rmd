@@ -1,0 +1,81 @@
+## Straight Line / Univariate Linear Model
+
+```{r, echo=FALSE, out.width="0.7\\textwidth", fig.width=4, fig.height=3}
+ggplot() +
+  stat_function(data = data.frame(x = c(-0.5, 4)), aes(x = x), fun = function (x) { 1 + 0.5 * x }) +
+  geom_segment(mapping = aes(x = 2, y = 2, xend = 3, yend = 2), linetype = "dashed") +
+  geom_segment(mapping = aes(x = 3, y = 2, xend = 3, yend = 2.5), linetype = "dashed", color = "red") +
+  geom_segment(mapping = aes(x = -0.3, y = 1, xend = 0.3, yend = 1), linetype = "dashed", color = "blue") +
+  geom_text(mapping = aes(x = 2.5, y = 2, label = "1 Unit"), vjust = 2) +
+  geom_text(mapping = aes(x = 3, y = 2.25, label = "{theta == slope} == 0.5"), hjust = -0.05, parse = TRUE, color = "red") +
+  geom_text(mapping = aes(x = 0, y = 1, label = "{theta[0] == intercept} == 1"), hjust = -0.25, parse = TRUE, color = "blue") +
+  geom_vline(xintercept = 0, color = "gray", linetype = "dashed") +
+  ylim(c(0, 3.5)) + xlim(c(-0.5, 4.3))
+```
+
+\[
+y = \theta_0 + \theta \cdot x
+\]
+
+
+## Linear Regression: Representation
+
+We want to learn a numerical target variable, by a linear transformation of the features.
+So with $\theta \in \mathbb{R}^p$ this mapping can be written:
+\[
+y = \fx = \theta_0 + \theta^T x
+\]
+
+This restricts the hypothesis space $H$ to all linear functions in $\theta$:
+\[
+H = \{ \theta_0 + \theta^T x\ |\ (\theta_0, \theta) \in \mathbb{R}^{p+1} \}
+\]
+
+Given observed labeled data $\D$, how to find $(\theta, \theta_0$)?
+This is learning or parameter estimation, the inducer does exactly this.
+
+NB: We assume here and from now on that $\theta_0$ is included in $\theta$.
+
+
+
+<!--
+## Linear regression
+
+We don't want do address the model selection problem here, but leave it at:
+In ML we \enquote{dislike} doing this \enquote{manually}.
+
+\lz
+
+A typical ML way to estimate the parameters is to not require the assumption
+$\epsi \iid N(0, \sigma^2)$, but instead assume the that prediction error is measured
+by \emph{squared error} as our \emph{loss function} in \emph{risk minimization}.
+-->
+
+
+## Linear Regression: Evaluation
+
+We now measure training error as sum-of-squared errors. This is also called the L2 loss, or L2 risk:
+\[
+\risket = \operatorname{SSE}(\theta) = \sumin \Lxyit = \sumin \left(\yi - \theta^T \xi\right)^2
+\]
+```{r, echo=FALSE, out.width="0.3\\textwidth", fig.width=4, fig.height=2.5}
+set.seed(1)
+x = 1:5
+y = 0.2 * x + rnorm(length(x), sd = 2)
+d = data.frame(x = x, y = y)
+m = lm(y ~ x)
+pl = ggplot(aes(x = x, y = y), data = d)
+pl = pl + geom_abline(intercept = m$coefficients[1], slope = m$coefficients[2])
+pl = pl + geom_rect(aes(ymin = y[3], ymax = y[3] + (m$fit[3] - y[3]), xmin = 3, xmax = 3 + abs(y[3] - m$fit[3])), color = "black", linetype = "dotted", fill = "transparent")
+pl = pl + geom_rect(aes(ymin = y[4], ymax = y[4] + (m$fit[4] - y[4]), xmin = 4, xmax = 4 + abs(y[4] - m$fit[4])), color = "black", linetype = "dotted", fill = "transparent")
+pl = pl + geom_segment(aes(x = 3, y = y[3], xend = 3, yend = m$fit[3]), color = "white")
+pl = pl + geom_segment(aes(x = 4, y = y[4], xend = 4, yend = m$fit[4]), color = "white")
+pl = pl + geom_segment(aes(x = 3, y = y[3], xend = 3, yend = m$fit[3]), linetype = "dotted", color = "red")
+pl = pl + geom_segment(aes(x = 4, y = y[4], xend = 4, yend = m$fit[4]), linetype = "dotted", color = "red")
+pl = pl + geom_point()
+pl = pl + coord_fixed()
+print(pl)
+```
+\vspace{-0.4cm}
+Optimizing the squared error is computationally much simpler than measuring the absolute
+differences (this would be called L1 loss).

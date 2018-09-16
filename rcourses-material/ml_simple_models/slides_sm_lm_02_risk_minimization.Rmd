@@ -1,0 +1,105 @@
+## Linear Model: Optimization
+
+```{r, include=FALSE, cache=FALSE}
+ap.code = adjust_path(paste0(getwd(), "/code"))
+```
+
+We want to find the parameters of the LM / an element of the hypothesis space H that best suits the data.
+So we evaluate different candidates for $\theta$.
+
+- A first (random) try yields an SSE of 20.33 (**Evaluation**).
+
+```{r, echo=FALSE, fig.height=2.5}
+source(ap.code("frame1.R"))
+```
+
+## Linear Model: Optimization
+
+We want to find the parameters of the LM / an element of the hypothesis space H that best suits the data.
+So we evaluate different candidates for $\theta$.
+
+- Another line yields an lower SSE of 18.51 (**Evaluation**). Therefore, this one is better in
+  terms of empirical risk.
+
+```{r, echo=FALSE, fig.height=2.5}
+source(ap.code("frame2.R"))
+```
+
+## Linear Model: Optimization
+
+Instead of guessing parameters we could also use gradient descent to iteratively find the optimal $\theta$.
+Here, we can even find the optimal value analytically:
+\[
+\hat{\theta} = \argmin_{\theta} \risket = \argmin_{\theta} \|y - X\theta\|^2_2
+\]
+$X$ is the $n \times (p+1)$-feature-data-matrix, also called design matrix.
+
+This yields the so called normal equations for the LM:
+\[
+\frac{\delta}{\delta\theta} \risket = 0 \qquad \Rightarrow\ \qquad \hat{\theta} = \left(X^T X\right)^{-1}X^Ty
+\]
+
+<!--
+For $p = 1$ this can be computed via:
+\[
+\hat{\theta} = \frac{\sumin(\xi - \bar{x})(\yi - \bar{y})}{\sumin(\xi - \bar{x})^2}, \qquad \hat{\theta}_0 = \bar{y} - \hat{\theta}\bar{x}
+\]
+-->
+
+## Linear Model: Optimization
+
+The optimal line has an SSE of 9.77 (**Evaluation**)
+
+```{r, echo=FALSE, fig.height=2.5}
+source(ap.code("frame3.R"))
+```
+
+## Example: Linear Regr. With L1 vs L2 Loss
+
+We could also minimize the L1 loss. This changes the evaluation and optimization step:
+\[
+\risket = \sumin \Lxyit = \sumin \abs{\yi - \theta^T \xi} \qquad \textsf{(Evaluation)}
+\]
+Much harder to optimize, but model is less sensitive to outliers.
+
+```{r, echo=FALSE, out.width="0.7\\textwidth", fig.width=4, fig.height=1.8}
+source(ap.code("plot_loss.R"))
+
+# generate some data, sample from line with gaussian errors
+# make the leftmost obs an outlier
+n = 10
+x = sort(runif(n = n, min = 0, max = 10))
+y = 3 * x + 1 + rnorm(n, sd = 5)
+X = cbind(x0 = 1, x1 = x)
+y[1] = 100
+
+# fit l1/2 models on data without then with outlier data
+b1 = optLoss(X[-1,], y[-1], loss = loss1)
+b2 = optLoss(X[-1,], y[-1], loss = loss2)
+b3 = optLoss(X, y, loss = loss1)
+b4 = optLoss(X, y, loss = loss2)
+
+# plot all 4 models
+pl = plotIt(X, y, models = data.frame(
+  intercept = c(b1[1], b2[1]),
+  slope = c(b1[2], b2[2]),
+  Loss = c("L2", "L1"),
+  lty = rep(c("solid"), 2)
+), remove_outlier = 1) + ylim(c(0, 100)) + ggtitle("L1 vs L2 Without Outlier")
+print(pl)
+```
+
+## Example: Linear Regr. With L1 vs L2 Loss
+
+Adding an outlier (highlighted red) pulls the line fitted with L2 into the direction of the outlier:
+
+```{r, echo=FALSE, out.width="0.8\\textwidth", fig.width=6, fig.height=2.7}
+# plot all 4 models
+pl = plotIt(X, y, models = data.frame(
+  intercept = c(b3[1], b4[1]),
+  slope = c(b3[2], b4[2]),
+  Loss = c("L2", "L1"),
+  lty = rep(c("solid"), 2)
+), highlight_outlier = 1) + ylim(c(0, 100)) + ggtitle("L1 vs L2 With Outlier")
+print(pl)
+```

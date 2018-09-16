@@ -1,0 +1,91 @@
+
+## Linear discriminant analysis (LDA)
+
+LDA further assumes that the covariance structure in each class is the same:
+\[
+\mathcal{N}\left(\mu_k, \Sigma\right)
+\]
+
+<!--
+\[
+\pdfxyk = \frac{1}{(2\pi)^{\frac{p}{2}}\abs{\Sigma}^{\frac{1}{2}}} \exp\left(-\frac{1}{2}(x - \mu_k)^T \Sigma^{-1} (x - \mu_k)\right)
+\]
+-->
+
+```{r, echo=FALSE, fig.height=3}
+library(ggplot2)
+iris.sel = data.frame(iris$Sepal.Length, iris$Sepal.Width)
+
+param.list = list()
+sigma = matrix(0, 2, 2)
+df.sim = data.frame()
+
+for (k in unique(iris$Species)) {
+
+  mydf = iris.sel[iris$Species == k, ]
+
+  param.list[[k]] = list(
+    means = colMeans(mydf),
+    sigma = var(mydf)
+  )
+
+  sigma = sigma + param.list[[k]]$sigma
+}
+
+for (k in unique(iris$Species)) {
+  sim = mvtnorm::rmvnorm(600, mean = param.list[[k]]$means, sigma = sigma)
+  df.sim = rbind(df.sim, data.frame(Sepal.Length = sim[, 1], Sepal.Width = sim[, 2], Species = k))
+}
+
+p = ggplot(df.sim, aes(Sepal.Length, Sepal.Width, color = Species))
+for (l in c(0.01, 0.05, 0.1, 0.2, 0.4)) {
+  p = p + stat_ellipse(type = "norm", level = l)
+}
+p + geom_point(data = iris, aes(Sepal.Length, Sepal.Width, color = Species))
+```
+
+<!--
+## Linear discriminant analysis (LDA)
+
+- Parameters are estimated by per class means and averaging over
+  thecovariances:\vspace{-0.5cm}
+  \begin{eqnarray*}
+  \hat{\pi}_k &=& n_k / n,\text{ where $n_k$ is the number of class $k$ observations} \\
+  \hat{\mu}_k &=& \sum_{i\colon y_i = k} \frac{x_i}{n_k} \\
+  \hat{\Sigma} &=& \frac{1}{n - g} \sum_{k=1}^g \sum_{i\colon y_i = k} (x_i - \hat{\mu}_k) (x_i - \hat{\mu}_k) ^T
+  \end{eqnarray*}
+
+- Afterwards, predicting new classes for given data $x_0$ is done by taking the
+  highest probability of all estimated classes
+  \[
+  \hat{k} = \argmax_{k = 1, \dots, g}\ \hat{\pi}_k ~ f_{\mathcal{N}(\hat{\mu}_k, \hat{\Sigma}_k)} (x_0)
+  \]
+
+Parameters $\theta$ are estimated simply by:
+\begin{eqnarray*}
+\hat{\pi}_k &=& n_k / n,\text{ where $n_k$ is the number of class $k$ observations} \\
+\hat{\mu}_k &=& \sum_{i\colon y_i = k} \frac{x_i}{n_k} \\
+\hat{\Sigma} &=& \frac{1}{n - g} \sum_{k=1}^g \sum_{i\colon y_i = k} (x_i - \hat{\mu}_k) (x_i - \hat{\mu}_k) ^T
+\end{eqnarray*}
+-->
+<!--
+## Linear discriminant analysis (LDA)
+
+
+And (simplified) discriminant functions can be defined as
+\[
+f_k(x) =  \theta_{0k} + x^T \theta_k
+\]
+
+Hence, LDA provides a Linear classifier with linear decision boundaries.
+-->
+
+## Linear discriminant analysis (LDA)
+
+Equal covariance structures yield linear decision boundaries:
+
+```{r, echo=FALSE, fig.height=5}
+mlr::plotLearnerPrediction(learner = "classif.lda", task = iris.task, cv = 0)
+# Not working:
+# plotLearnerPrediction(learner = "classif.lda", task = iris.task, err.mark = "none")
+```

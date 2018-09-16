@@ -1,0 +1,93 @@
+## Naive Bayes classifier
+```{r, include=FALSE, cache=FALSE}
+library(mlr)
+
+n = 30
+set.seed(1234L)
+tar = factor(c(rep(1L, times = n), rep(2L, times = n)))
+feat1 = c(rnorm(n, sd = 1.5), rnorm(n, mean = 2, sd = 1.5))
+feat2 = c(rnorm(n, sd = 1.5), rnorm(n, mean = 2, sd = 1.5))
+bin.data = data.frame(feat1, feat2, tar)
+bin.tsk = makeClassifTask(data = bin.data, target = "tar")
+
+ap = adjust_path(paste0(getwd(), "/figure"))
+ap.code = adjust_path(paste0(getwd(), "/code"))
+```
+
+Here, we make the "naive" *conditional independence assumption*, that the features given the category $y$ are conditionally independent of each other, i. e.,
+
+\[ \pdfxyk = p\left((x_1, x_2, ..., x_p) \mid y = k\right)=\prod_{j=1}^p p\left(x_j \mid y = k\right). \]
+
+
+Putting this together we get \[ \pikx \propto \pik \cdot \prod_{j=1}^p p\left(x_j \mid y = k\right). \]
+
+
+## Naive Bayes classifier
+
+Parameters estimation now has become simple, as we only have to estimate
+$\pdf\left(x_j \mid y = k\right)$, which is univariate (given the class k).
+
+For numerical $x_j$, often a univariate Gaussian is assumed. Estimate $(\mu_j,
+\sigma^2_j)$ in the standard manner. Note, that we now have constructed a QDA
+model with strictly diagonal covariance structures for each class, hence this
+leads to quadratic discriminant functions.
+
+For categorical features $x_j$, use a Bernoulli/categorical distribution model
+for $p\left(x_j \mid y = k\right)$. Estimate the probabilities for $(j,k)$ by
+simply counting of relative frequencies. The resulting classifier is linear
+in these frequencies.
+
+<!--
+Naive Bayes is a linear classifier in a particular feature space if the
+features are from exponential families (e. g. binomial, multinomial,
+normal distribution).
+-->
+
+## Naive Bayes classifier
+
+Hence, Naive Bayes assumes that the covariance structure in each class is
+diagonal. In 2 dimensions:
+\[
+\mathcal{N}\left(\mu_k, \left(\begin{array}{cc}
+\sigma_{k1}^2 & 0 \\
+0 & \sigma_{k2}^2
+\end{array}\right)\right)
+\]
+
+```{r, echo=FALSE, message=FALSE, fig.height=3}
+library(ggplot2)
+iris.sel = data.frame(iris$Sepal.Length, iris$Sepal.Width)
+
+param.list = list()
+sigma = matrix(0, 2, 2)
+df.sim = data.frame()
+
+for (k in unique(iris$Species)) {
+  
+  mydf = iris.sel[iris$Species == k, ]
+  
+  param.list[[k]] = list(
+    means = colMeans(mydf),
+    sigma = diag(diag(var(mydf)))
+  )
+}
+
+for (k in unique(iris$Species)) {
+  sim = mvtnorm::rmvnorm(1000, mean = param.list[[k]]$means, sigma = param.list[[k]]$sigma)
+  df.sim = rbind(df.sim, data.frame(Sepal.Length = sim[, 1], Sepal.Width = sim[, 2], Species = k))
+}
+
+p = ggplot(df.sim, aes(Sepal.Length, Sepal.Width, color = Species))
+for (l in c(0.01, 0.05, 0.1, 0.3, 0.5)) {
+  p = p + stat_ellipse(type = "norm", level = l)
+}
+p + geom_point(data = iris, aes(Sepal.Length, Sepal.Width, color = Species))
+```
+
+## Naive Bayes classifier
+
+```{r, echo=FALSE, message = FALSE}
+learner = makeLearner("classif.naiveBayes")
+plotLearnerPrediction(learner, iris.task)
+```
+
