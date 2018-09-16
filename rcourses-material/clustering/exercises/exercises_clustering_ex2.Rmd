@@ -1,0 +1,80 @@
+\exercise
+
+```{r, echo=FALSE, cache=FALSE}
+if (! exists("solution")) {
+  solution = FALSE
+}
+```
+
+Consider the `ruspini` data set from the R package `cluster`. You can import the data using `data(ruspini, package = "cluster")`.
+
+<!--   ```{r, message=FALSE, echo=FALSE} -->
+<!-- library(cluster) -->
+<!-- data(ruspini) -->
+<!-- par(mar = c(4,4,1,1)) -->
+<!-- ``` -->
+
+<!-- ```{r, message=FALSE, fig.width=5, fig.height=5, out.width="0.5\\textwidth", fig.align="center"} -->
+<!-- plot(ruspini, pch = 19) -->
+<!-- ``` -->
+
+a) Get familiar with the data, normalize the data and compute the euclidean distance for each pairwise observation in R.
+a) Use `hclust()` and the distance matrix from a) to build an agglomerative clustering with *single* and *average* linkage.
+Plot a dendrogram for both clustering algorithms.
+a) Get the cluster assignments for $K=3$ and $K=4$ clusters and use different colors for each cluster to plot the result.
+a) Redo exercise b) and c) but use squared euclidean distances, e.g. use the *squared* distance matrix from a).
+
+
+```{r, results="asis", echo=FALSE, eval=solution}
+cat("__Solution__:")
+```
+
+```{r, message=FALSE, fig.align="center", echo = solution, eval = solution}
+# a)
+##########
+library(cluster)
+data(ruspini)
+
+plot(ruspini)
+
+rusp.norm = scale(ruspini)
+rusp.norm.euclid = dist(rusp.norm, method = "euclidean")
+```
+
+```{r, message=FALSE, fig.width=8, fig.height=8, fig.align="center", echo = solution, eval = solution}
+# b)
+##########
+par(mfrow = c(3, 2))
+cl.sin = hclust(rusp.norm.euclid, method = "single")
+cl.ave = hclust(rusp.norm.euclid, method = "average")
+plot(cl.sin, hang = -1, main = "Dendrogram single linkage")
+plot(cl.ave, hang = -1, main = "Dendrogram average linkage")
+
+# c)
+##########
+par(mar = c(5,4,2,1))
+mycluster = function(data, cluster, K, ...) {
+  col = cutree(cluster, k = K)
+  plot(data, col = col, pch = 19, main = paste(K, "clusters"), ...)
+}
+
+mycluster(ruspini, cl.sin, K = 3)
+mycluster(ruspini, cl.ave, K = 3)
+
+mycluster(ruspini, cl.sin, K = 4)
+mycluster(ruspini, cl.ave, K = 4)
+
+# d)
+##########
+cl.sin = hclust(rusp.norm.euclid^2, method = "single")
+cl.ave = hclust(rusp.norm.euclid^2, method = "average")
+
+# Using a monotone increasing transformation of the distances for
+# average linkage results in different clusters (but not in single linkage).
+plot(cl.sin, hang = -1, main = "Dendrogram single linkage")
+plot(cl.ave, hang = -1, main = "Dendrogram average linkage")
+mycluster(ruspini, cl.sin, K = 3)
+mycluster(ruspini, cl.ave, K = 3)
+mycluster(ruspini, cl.sin, K = 4)
+mycluster(ruspini, cl.ave, K = 4)
+```
