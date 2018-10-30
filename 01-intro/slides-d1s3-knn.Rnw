@@ -67,7 +67,7 @@ q
 
 \textbf{How to calculate distances?}
   \begin{itemize}
-    \item Most popular distance measure for numerical features: \textbf{euclidian distance}
+    \item Most popular distance measure for numerical features: \textbf{Euclidian distance}
     \item Imagine two data points $x^{(i)} = (x_1^{(i)}, ..., x_q^{(i)})$ and $x^{(k)} = (x_1^{(k)}, ..., x_q^{(k)})$ with $q$ features $\in \R$
     \item The Euclidean distance:
     \begin{equation*}
@@ -97,15 +97,31 @@ q
 
 \framebreak
 
+Comparison between Euclidean and Manhattan distance measures \\
+\vspace{0.2cm}
+<<echo=FALSE, out.width='9.8cm'>>=
+getCurrentAspect = function() {
+   uy <- diff(grconvertY(1:2,"user","inches"))
+   ux <- diff(grconvertX(1:2,"user","inches"))
+   uy/ux
+}
+par(mar = c(4,4,0,0)+.1)
+cex = 1.5
+plot(x = c(1L,5L), y = c(1L,4L), ylim = c(0,5), xlim = c(0,6), pch = 19, las=1, 
+  panel.first=grid(col = "lightgray", lty = "solid"),
+  xlab = "Dimension 1", ylab = "Dimension 2", cex.lab = cex, cex.axis = cex, bty='l')
+lines(x = c(1L,5L), y = c(1L,4L))
+text(x = c(1L,5L), y = c(1L,4L), c(expression(X[i]), expression(X[j])), adj = c(1.5, 0), cex = cex)
+lines(x = c(1L, 5L, 5L, 5L), y = c(1L, 1L, 1L, 4L), col = 2)
+legend(x = -0.1, y = 5.1, lty = 1, legend = c("Manhattan", "Euclidean"), col = c(2,1), cex = cex,
+  box.lwd = 0, box.col = "white", bg = "white")
+text(x = 5, y = 0.9, expression(d(X[i],X[j])~"= |5-1| + |4-1| = 7"), adj = c(1,1), col = 2, cex = cex)
+asp = getCurrentAspect()
+text(x = 3, y = 2.5, expression(d(X[i],X[j])~"="~sqrt((5-1)^2 + (4-1)^2)~"= 5"),
+  adj = c(0.5,0), col = 1, srt = 180/pi*atan(3/4*asp), cex=cex)
+@
 
-
-
-
-
-
-
-
-
+\framebreak
 
 Predictions:
 \begin{itemize}
@@ -125,21 +141,42 @@ $$
 
 \framebreak
 
-
-\textbf{Example data set: iris}\\
+Example with iris data excerpt (k = 3) \\
 \begin{columns}[T]
-  \begin{column}{0.4\textwidth}
-    \begin{itemize}
-      \item The iris data set gives the measurements in centimeters of the variables sepal length and width and petal length and width, respectively, for 50 flowers from each of 3 species of iris (setosa, versicolor, and virginica)
-    \end{itemize}
+  \begin{column}{0.5\textwidth}
+    <<>>=
+    circleFun2 = function(center = c(0,0), diameter = 1, npoints = 100){
+      r = diameter / 2
+      tt = seq(0,2*pi,length.out = npoints)
+      xx = center[1L] + r * cos(tt)
+      yy = center[2L] + r * sin(tt)
+      return(data.frame(Sepal.Length = xx, Sepal.Width = yy, Species = NA))
+    }
+    data(iris)
+    circle.dat2 = circleFun2(c(6.4,3), 0.24, npoints = 100)
+    q = ggplot(iris, aes(x = Sepal.Length, y = Sepal.Width, color = Species)) + geom_point(size = 10) 
+    q = q + geom_polygon(data = circle.dat2, alpha = 0.2, fill = "#619CFF")
+    q = q + xlim(6.2, 6.6) + ylim(2.85, 3.2) + theme(legend.position = c(0.14, 0.82), text = element_text(size = 25))
+    q = q  + annotate("text", x = 6.4, y = 3, label = "x[new]", size = 10, parse = TRUE)
+    q
+    @
   \end{column}
-  \begin{column}{0.6\textwidth}
-<<iris-plot, fig.height=12, fig.width=11>>=
-iris = getTaskData(iris.task)
-ggpairs(iris, aes(colour = Species))
-@
+  \begin{column}{0.5\textwidth}
+    <<>>=
+    iris_excerpt = subset(iris, Sepal.Length > 6.1 & Sepal.Length < 6.7 & Sepal.Width > 2.8 & Sepal.Width < 3.3)
+    iris_excerpt = unique(subset(iris_excerpt, select = -c(Petal.Width, Petal.Length)))
+    rownames(iris_excerpt) = 1:nrow(iris_excerpt)
+    kable(iris_excerpt, "latex", booktabs = F) %>%
+      row_spec(c(3,7,10), color = "black", background = "#DFECFF")
+    @
   \end{column}
 \end{columns}
+\vspace{0.6cm}
+$ \hat{\pi}_{setosa}(x_{new}) = \frac{0}{3} = 0\% $ \\
+$ \hat{\pi}_{versicolor}(x_{new}) = \frac{1}{3} = 33\% $ \\
+$ \hat{\pi}_{virginica}(x_{new}) = \frac{2}{3} = 67\% $ \\
+\vspace{0.6cm}
+Prediction: highest posterior probability/majority vote:  \textit{virginica}
 
 \framebreak
 
