@@ -1,8 +1,8 @@
 
-SLOT1=slides-d4s1-cart1
-SLOT2=slides-d4s2-cart2
-SLOT3=slides-d4s3-forests1
-SLOT4=slides-d4s4-forests2
+SLOT1=slides-cart1
+SLOT2=slides-cart2
+SLOT3=slides-forests1
+SLOT4=slides-forests2
 
 all: $(SLOT1).pdf $(SLOT2).pdf 	$(SLOT3).pdf $(SLOT4).pdf
 
