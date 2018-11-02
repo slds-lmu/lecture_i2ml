@@ -1,8 +1,8 @@
 
-SLOT1=slides-d2s1-classification
-SLOT2=slides-d2s2-logistic
-SLOT3=slides-d2s3-classification-approaches
-SLOT4=slides-d2s4-cultures
+SLOT1=slides-classification
+SLOT2=slides-logistic
+SLOT3=slides-classification-approaches
+SLOT4=slides-cultures
 
 all: $(SLOT1).pdf $(SLOT2).pdf 	$(SLOT3).pdf $(SLOT4).pdf
 

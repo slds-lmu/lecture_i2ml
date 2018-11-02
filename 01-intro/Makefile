@@ -1,9 +1,9 @@
 
-SLOT1=slides-d1s1-intro
-SLOT2=slides-d1s2-tasks
-SLOT3=slides-d1s3-knn
-SLOT4=slides-d1s4-loss
-SLOT5=slides-d1s5-limo
+SLOT1=slides-intro
+SLOT2=slides-tasks
+SLOT3=slides-knn
+SLOT4=slides-loss
+SLOT5=slides-limo
 
 
 all: $(SLOT1).pdf $(SLOT2).pdf 	$(SLOT3).pdf $(SLOT4).pdf $(SLOT5).pdf slides-notation.pdf
