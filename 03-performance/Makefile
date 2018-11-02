@@ -1,8 +1,8 @@
 
-SLOT1=slides-d3s1-intro-performance
-SLOT2=slides-d3s2-resampling
-SLOT3=slides-d3s3-nested-resampling
-SLOT4=slides-d3s4-roc-confusion
+SLOT1=slides-intro-performance
+SLOT2=slides-resampling
+SLOT3=slides-nested-resampling
+SLOT4=slides-roc-confusion
 
 all: $(SLOT1).pdf $(SLOT2).pdf 	$(SLOT3).pdf $(SLOT4).pdf
 
