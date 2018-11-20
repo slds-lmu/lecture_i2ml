@@ -123,33 +123,79 @@ text(x = 3, y = 2.5, expression(d(X[i],X[j])~"="~sqrt((5-1)^2 + (4-1)^2)~"= 5"),
 
 \framebreak
 
-Categorical variables and mixed space:
-
-Package \texttt{cluster} function \texttt{daisy} allows option \texttt{metric = "gower"}.
+\textbf{Categorical variables and mixed space:}
 
 The Gower distance \(d_{ij}\) is a weighted mean of \(d_{ij}^{(k)}\):
 
-      $$d_{ij} = d(i,j) = \frac{\sum_{k=1}^p w_k \delta_{ij}^{(k)} d_{ij}^{(k)}}{
-	  \sum_{k=1}^p w_k \delta_{ij}^{(k)}}.
-      $$
-      
-      \begin{itemize}
-      \item \(w_k\)\texttt{= weigths[k]}
-      
-      \item \(\delta_{ij}^{(k)}\) is 0 or 1. It becomes 0
-      when the variable \texttt{x[,k]} is missing in either or both rows
-      (i and j), or when the variable is asymmetric binary and both
-      values are zero. Otherwise it is 1.
-      
-      \item \(d_{ij}^{(k)}\), the k-th variable contribution to the
-      total distance, is a distance between \texttt{x[i,k]} and \texttt{x[j,k]}.
-      For nominal or binary variables the total
-      dissimilarity is 0 if both values are equal, 1 otherwise.
-      The contribution of other variables is the absolute difference of
-      both values, divided by the total range of that variable.
+$$d_{ij} = d(i,j) = \frac{\sum_{k=1}^p w_k \delta_{ij}^{(k)} d_{ij}^{(k)}}{
+\sum_{k=1}^p w_k \delta_{ij}^{(k)}}.
+$$
 
-      \end{itemize}
+\begin{itemize}
+  \item \(w_k\)\texttt{= weigths[k]}
+  
+  \item \(\delta_{ij}^{(k)}\) is 0 or 1. It becomes 0
+  when the variable \texttt{x[,k]} is \textbf{\textit{missing}} in either or both rows
+  (i and j), or when the variable is asymmetric binary (where one of the states is more 
+  important, e. g. a medical test) and both
+  values are zero. Otherwise it is 1.
+  
+  \item \(d_{ij}^{(k)}\), the k-th variable contribution to the
+  total distance, is a distance between \texttt{x[i,k]} and \texttt{x[j,k]}.
+  For nominal or binary variables the total
+  dissimilarity is 0 if both values are equal, 1 otherwise.
+  The contribution of other variables is the absolute difference of
+  both values, divided by the total range of that variable.
+
+\end{itemize}
       
+\framebreak
+
+Example of Gower Distance with data on sex and income:
+
+\begin{columns}[T]
+  \begin{column}{0.4\textwidth}
+    <<>>=
+    library(kableExtra)
+    sex <- c('m','w','NA')
+    salary <- c(2340, 2100, 2680)
+    index <- c(1,2,3)
+    example.data <- data.frame(index, sex, salary)
+    kable(example.data, "latex", booktabs = F) %>%
+      kable_styling(font_size = 10) %>%
+      column_spec(c(1,2,3), color='black')
+    @  
+  \end{column}
+  \begin{column}{0.5\textwidth}
+    \vspace{0.6cm}
+    \fbox{
+    $d_{ij} = d(i,j) = \frac{\sum_{k=1}^p w_k \delta_{ij}^{(k)} d_{ij}^{(k)}}{
+    \sum_{k=1}^p w_k \delta_{ij}^{(k)}}
+    $}
+  \end{column}
+\end{columns}
+
+
+\vfill
+
+$d_{1,2} = \frac{1 \cdot 1 \cdot 1 + 1 \cdot 1 \cdot \frac{\left| 2340 - 2100 \right|}
+{\left| 2680 - 2100 \right|}}{1 + 1} = \frac{1 + \frac{240}{580}}{2} = \frac{1 + 0.414}{2} = 0.707
+$
+
+\vfill
+
+$d_{1,3} = \frac{1 \cdot 0 \cdot 1 + 1 \cdot 1 \cdot \frac{\left| 2340 - 2680 \right|}
+{\left| 2680 - 2100 \right|}}{0 + 1} = \frac{0 + \frac{340}{580}}{1} = \frac{0 + 0.586}{1} = 0.586
+$
+
+\vfill
+
+$d_{2,3} = \frac{1 \cdot 0 \cdot 1 + 1 \cdot 1 \cdot \frac{\left| 2100 - 2680 \right|}
+{\left| 2680 - 2100 \right|}}{0 + 1} = \frac{0 + \frac{580}{580}}{1} = \frac{0 + 1.000}{1} = 1
+$
+
+\vfill
+
 \framebreak
 
 Predictions:
@@ -170,7 +216,7 @@ $$
 
 \framebreak
 
-Example with iris data excerpt (k = 3) \\
+Example with iris data excerpt (k = 3): \\
 \begin{columns}[T]
   \begin{column}{0.5\textwidth}
     <<>>=
