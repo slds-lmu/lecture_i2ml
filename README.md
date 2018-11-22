@@ -5,9 +5,6 @@ This repository contains the slides for the lecture "Introduction to machine lea
 
 The repository latex-math is used. Please read the accompanying ReadMe: https://github.com/compstat-lmu/latex-math
 
-Slides are organised by day and slots. Each day has 4 slots and each slots roughly 30 minutes.
-
-
 # Contents
 
 ## Day 1
