@@ -38,6 +38,6 @@ for (j in 1:reps) {
   }
 }
 res2.mean = apply(res2, 1:2, mean)
-save2(file = "overtuning-example.RData", res1 = res1, res2 = res2, res2.mean = res2.mean)
+save2(file = "rsrc/overtuning-example.RData", res1 = res1, res2 = res2, res2.mean = res2.mean)
 
 

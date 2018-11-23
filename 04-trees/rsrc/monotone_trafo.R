@@ -28,9 +28,9 @@ SSE2.log = log.mod$learner.model$frame$dev[3]
 
 # Create plots
 library(rattle)
-png("monotone_trafo1.png")
+png("figure_man/monotone_trafo1.png")
 fancyRpartPlot(mod$learner.model, sub = "")
 dev.off()
-png("monotone_trafo2.png")
+png("figure_man/monotone_trafo2.png")
 fancyRpartPlot(log.mod$learner.model, sub = "")
 dev.off()

@@ -4,7 +4,13 @@ SLOT2=slides-cart2
 SLOT3=slides-forests1
 SLOT4=slides-forests2
 
+rsrc1=rsrc/monotone_trafo.R # create two pictures monotone_trafo<1/2>.png used in cart2
+
 all: $(SLOT1).pdf $(SLOT2).pdf 	$(SLOT3).pdf $(SLOT4).pdf
+
+sources: rsrc_1
+
+all_sources: rsrc_1 $(SLOT1).pdf $(SLOT2).pdf 	$(SLOT3).pdf $(SLOT4).pdf
 
 $(SLOT1).pdf: $(SLOT1).Rnw
 	Rscript -e 'knitr::knit2pdf("$(SLOT1).Rnw")'
@@ -17,3 +23,8 @@ $(SLOT3).pdf: $(SLOT3).Rnw
 
 $(SLOT4).pdf: $(SLOT4).Rnw
 	Rscript -e 'knitr::knit2pdf("$(SLOT4).Rnw")'
+
+
+
+rsrc_1: $(rsrc1)
+	Rscript $(rsrc1)

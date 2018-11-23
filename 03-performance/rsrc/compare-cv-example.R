@@ -33,7 +33,7 @@ estimate = function(learner, task, measures = mmce, stratify = FALSE,
   }
   return(ret)
 }
-setOMLConfig(arff.reader = "RWeka", server = "https://www.openml.org/api/v1")
+setOMLConfig(arff.reader = "farff", server = "https://www.openml.org/api/v1")
 
 # select imbalanced data set manually
 imbalanced.data = getOMLDataSet(994)
@@ -54,7 +54,7 @@ res.imbalanced = parallelMap(function(i, ...) estimate(...), seq_len(replicates)
 res.imbalanced2 = parallelMap(function(i, ...) estimate(...), seq_len(replicates),
   more.args = list(learner = lrn, task = imbalanced.task, measures = mmce, stratify = FALSE, split = 0.1))
 parallelStop()
-save(res.imbalanced, res.imbalanced2, file = "compare-cv-example.RData")
+save(res.imbalanced, res.imbalanced2, file = "rsrc/compare-cv-example.RData")
 
 # plot results
 summarizeResults = function(res) {
@@ -78,7 +78,7 @@ df.imbalanced2 = summarizeResults(res.imbalanced2)
 df = rbind(cbind(df.imbalanced, stratified = TRUE), cbind(df.imbalanced2, stratified = FALSE))
 df$stratified = as.factor(df$stratified)
 
-jpeg("compare-cv-example.jpg", width = 800, height = 400)
+jpeg("../figure_man/compare-cv-example.jpg", width = 800, height = 400)
 p1 = ggplot(data = df, aes(x = resampling.method, y = mean, colour = stratified)) +
   geom_point(size = 2, position = position_dodge(width = 0.3)) +
   #geom_errorbar(aes(ymin = mean - sd, ymax = mean + sd), width = 0.3, size = 1, position = "dodge") +

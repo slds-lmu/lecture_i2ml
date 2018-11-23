@@ -47,4 +47,4 @@ res.rpart = myLearningCurve(learner = lrn.rpart, measure = mmce, task = task, it
 res.rpart.small = myLearningCurve(learner = lrn.rpart, measure = mmce, task = task, iters = 20)
 parallelStop()
 
-save(res.ranger, res.rpart, res.rpart.small, file = "learning_curve.RData")
+save(res.ranger, res.rpart, res.rpart.small, file = "rsrc/learning_curve.RData")
