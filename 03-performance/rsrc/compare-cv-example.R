@@ -1,3 +1,5 @@
+# create compare-cv-example.jpg (not used)
+
 library(OpenML)
 library(mlr)
 library(parallelMap)
@@ -54,7 +56,7 @@ res.imbalanced = parallelMap(function(i, ...) estimate(...), seq_len(replicates)
 res.imbalanced2 = parallelMap(function(i, ...) estimate(...), seq_len(replicates),
   more.args = list(learner = lrn, task = imbalanced.task, measures = mmce, stratify = FALSE, split = 0.1))
 parallelStop()
-save(res.imbalanced, res.imbalanced2, file = "rsrc/compare-cv-example.RData")
+save(res.imbalanced, res.imbalanced2, file = "compare-cv-example.RData")
 
 # plot results
 summarizeResults = function(res) {

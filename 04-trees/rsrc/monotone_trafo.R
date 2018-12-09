@@ -1,7 +1,8 @@
+# create two pictures monotone_trafo<1/2>.png used in cart2
+
 # Shows that linear transformation of independent variables
 # do not change the SSE, nor the structure of the tree
-# Two trees as pngs will be saved such that it can be modified
-# with a image editing software
+
 library(mlr)
 lrn = makeLearner("regr.rpart", par.vals = list(minsplit = 5))
 x = c(1,2,7,10,20)
@@ -28,9 +29,9 @@ SSE2.log = log.mod$learner.model$frame$dev[3]
 
 # Create plots
 library(rattle)
-png("figure_man/monotone_trafo1.png")
+png("../figure_man/monotone_trafo1.png")
 fancyRpartPlot(mod$learner.model, sub = "")
 dev.off()
-png("figure_man/monotone_trafo2.png")
+png("../figure_man/monotone_trafo2.png")
 fancyRpartPlot(log.mod$learner.model, sub = "")
 dev.off()

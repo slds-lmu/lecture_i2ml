@@ -1,15 +1,14 @@
 #!/bin/bash
 
-all: day1 day2 day3 day4 exercise
+all: day1 day2 day3 day4 day5 exercise
 
-all_sources: day1 day2 day3-all day4-all exercise
-
-sources: day3-rsrc day4-rsrc
+all_sources: day1 day2 day3-all day4-all day5 exercise
 
 DAY1=01-intro
 DAY2=02-classification
 DAY3=03-performance
 DAY4=04-trees
+DAY5=05-misc-topics
 
 day1:
 	cd $(DAY1); make
@@ -22,6 +21,9 @@ day3:
 
 day4:
 	cd $(DAY4); make
+
+day5:
+	cd $(DAY5); make
 
 exercise:
 	cd exercises; make
@@ -36,8 +38,6 @@ day4-all:
 
 # only rsrc
 
-day3-rsrc:
+sources:
 	cd $(DAY3); make sources
-
-day4-rsrc:
 	cd $(DAY4); make sources

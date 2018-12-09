@@ -1,3 +1,5 @@
+# create learning_curve.RData (used in resampling)
+
 # nice report http://www.ritchieng.com/machinelearning-learning-curve/ and
 # http://scikit-learn.org/stable/modules/learning_curve.html#learning-curve
 # http://www.ritchieng.com/applying-machine-learning/
@@ -47,4 +49,4 @@ res.rpart = myLearningCurve(learner = lrn.rpart, measure = mmce, task = task, it
 res.rpart.small = myLearningCurve(learner = lrn.rpart, measure = mmce, task = task, iters = 20)
 parallelStop()
 
-save(res.ranger, res.rpart, res.rpart.small, file = "rsrc/learning_curve.RData")
+save(res.ranger, res.rpart, res.rpart.small, file = "learning_curve.RData")

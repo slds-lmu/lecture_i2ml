@@ -1,3 +1,5 @@
+# create holdout-bias-var.png (not used) and holdout-biasvar.RData (used in intro-performance and resampling)
+
 library(mlbench)
 library(BBmisc)
 library(mlr)
@@ -31,7 +33,7 @@ for (i in 1:nreps) {
    res[j, , i] = r$measures.test[, "mmce"]
  }
 }
-save2(file = "rsrc/holdout-biasvar.RData", n1 = n1, n2 = n2,
+save2(file = "holdout-biasvar.RData", n1 = n1, n2 = n2,
  nreps = nreps, ss.iters = ss.iters, split.rates = split.rates,
  res = res, r1 = r1, realperf = realperf)
 
