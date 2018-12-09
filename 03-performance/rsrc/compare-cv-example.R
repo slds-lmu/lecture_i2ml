@@ -33,7 +33,7 @@ estimate = function(learner, task, measures = mmce, stratify = FALSE,
   }
   return(ret)
 }
-setOMLConfig(arff.reader = "RWeka", server = "https://www.openml.org/api/v1")
+setOMLConfig(arff.reader = "farff", server = "https://www.openml.org/api/v1")
 
 # select imbalanced data set manually
 imbalanced.data = getOMLDataSet(994)

@@ -10,7 +10,7 @@ time = TRUE  # whether we want to compare time or compare accuracy
 library(assertthat)
 assertthat::assert_that(packageVersion("OpenML") == "1.3")
 library(OpenML)
-setOMLConfig(apikey = "c1994bdb7ecb3c6f3c8f3b35f4b47f1f")
+setOMLConfig(apikey = "c1994bdb7ecb3c6f3c8f3b35f4b47f1f", arff.reader="farff")
 all.tasks = listOMLTasks()
 
 tasks = subset(all.tasks,
