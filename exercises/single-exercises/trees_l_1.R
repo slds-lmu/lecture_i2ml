@@ -2,8 +2,7 @@
 library(methods)
 library(devtools)
 library(BBmisc)
-library(RWeka)
-# visuakization of trees
+# visualization of trees
 library(rpart.plot)
 library(partykit)
 # install recent version of mlr
@@ -12,7 +11,7 @@ library(mlr)
 
 
 ### load data, peak into, remove smaller classes and arrive at task
-data = read.arff("lymphography.dat")
+data = read.csv("lymphography.csv")
 print(summary(data))
 
 data = subset(data, Class %in% c("metastases", "malign_lymph"))
@@ -62,7 +61,10 @@ for (i in 1:10) {
 dev.off(); dev.off()
 
 
+
 ### complexity control
+
+
 
 # helpers to fit with different param values and visualize
 plotParamSequence = function(learner, task, param, values, plotfun, ...) {
@@ -95,7 +97,6 @@ plotParamSequenceRPart(task = task, param = "cp", values = cps, minsplit = 1)
 ### complexity control for C4.5 / J48
 
 # understand control params
-print(WOW("J48"))
 Ms = c(5, 20)
 plotParamSequenceJ48(task = task, param = "M", values = Ms)
 Cs = c(0.25, 0.05)

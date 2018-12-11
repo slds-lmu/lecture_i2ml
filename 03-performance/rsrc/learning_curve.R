@@ -6,7 +6,7 @@ library(OpenML)
 library(data.table)
 library(parallelMap)
 library(parallel)
-setOMLConfig(server = "https://www.openml.org/api/v1", apikey = "c1994bdb7ecb3c6f3c8f3b35f4b47f1f")
+setOMLConfig(server = "https://www.openml.org/api/v1", apikey = "c1994bdb7ecb3c6f3c8f3b35f4b47f1f", arff.reader="farff")
 
 #' Does subsampling with 'split' as split rate and 'iters' as number of subsampling iterations
 myLearningCurveSplit = function(learner, task, measure, iters = 100, split = 1) {

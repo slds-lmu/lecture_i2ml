@@ -3,7 +3,7 @@ library(OpenML)
 library(parallelMap)
 
 
-setOMLConfig(apikey = "c1994bdb7ecb3c6f3c8f3b35f4b47f1f")
+setOMLConfig(apikey = "c1994bdb7ecb3c6f3c8f3b35f4b47f1f", arff.reader="farff")
 
 task = getOMLDataSet(data.id = 1471)
 
