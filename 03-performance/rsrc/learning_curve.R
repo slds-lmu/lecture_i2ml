@@ -1,3 +1,5 @@
+# create learning_curve.RData (used in resampling)
+
 # nice report http://www.ritchieng.com/machinelearning-learning-curve/ and
 # http://scikit-learn.org/stable/modules/learning_curve.html#learning-curve
 # http://www.ritchieng.com/applying-machine-learning/

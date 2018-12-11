@@ -1,3 +1,5 @@
+# create compare-cv-example.jpg (not used)
+
 library(OpenML)
 library(mlr)
 library(parallelMap)
@@ -78,7 +80,7 @@ df.imbalanced2 = summarizeResults(res.imbalanced2)
 df = rbind(cbind(df.imbalanced, stratified = TRUE), cbind(df.imbalanced2, stratified = FALSE))
 df$stratified = as.factor(df$stratified)
 
-jpeg("compare-cv-example.jpg", width = 800, height = 400)
+jpeg("../figure_man/compare-cv-example.jpg", width = 800, height = 400)
 p1 = ggplot(data = df, aes(x = resampling.method, y = mean, colour = stratified)) +
   geom_point(size = 2, position = position_dodge(width = 0.3)) +
   #geom_errorbar(aes(ymin = mean - sd, ymax = mean + sd), width = 0.3, size = 1, position = "dodge") +

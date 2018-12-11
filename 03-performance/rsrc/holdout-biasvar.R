@@ -1,4 +1,7 @@
+# create holdout-bias-var.png (not used) and holdout-biasvar.RData (used in intro-performance and resampling)
+
 library(mlbench)
+library(BBmisc)
 library(mlr)
 library(reshape2)
 library(ggplot2)
@@ -16,58 +19,57 @@ n2 = 500
 lrn = makeLearner("classif.rpart")
 task1 = convertMLBenchObjToTask("mlbench.spirals", n1, sd = 0.1)
 
-# r1 = subsample(lrn, task1, iters = ss.iters * 10, split = n2 / n1, keep.pred = FALSE)
-# realperf = r1$aggr
-# res = array(NA, dim = c(length(split.rates), ss.iters, nreps), 
-#   dimnames = list(split.rates, 1:ss.iters, 1:nreps))
+r1 = subsample(lrn, task1, iters = ss.iters * 10, split = n2 / n1, keep.pred = FALSE)
+realperf = r1$aggr
+res = array(NA, dim = c(length(split.rates), ss.iters, nreps), 
+ dimnames = list(split.rates, 1:ss.iters, 1:nreps))
 
-# for (i in 1:nreps) {
-#   task2 = subsetTask(task1, subset = sample(n1, n2))
-#   for (j in seq_along(split.rates)) {
-#     sr = split.rates[j]
-#     messagef("rep = %i;  splitrate = %g", i, sr)
-#     r = subsample(lrn, task2, iters = ss.iters, split = sr, show.info = FALSE)
-#     res[j, , i] = r$measures.test[, "mmce"]
-#   }
-# }
-# save2(file = "rsrc/holdout-biasvar.RData", n1 = n1, n2 = n2,
-#   nreps = nreps, ss.iters = ss.iters, split.rates = split.rates,
-#   res = res, r1 = r1, realperf = realperf)
+for (i in 1:nreps) {
+ task2 = subsetTask(task1, subset = sample(n1, n2))
+ for (j in seq_along(split.rates)) {
+   sr = split.rates[j]
+   messagef("rep = %i;  splitrate = %g", i, sr)
+   r = subsample(lrn, task2, iters = ss.iters, split = sr, show.info = FALSE)
+   res[j, , i] = r$measures.test[, "mmce"]
+ }
+}
+save2(file = "holdout-biasvar.RData", n1 = n1, n2 = n2,
+ nreps = nreps, ss.iters = ss.iters, split.rates = split.rates,
+ res = res, r1 = r1, realperf = realperf)
 
-
-ggd1 = melt(res)
-colnames(ggd1) = c("split", "rep", "ssiter", "mmce")
-ggd1$split = as.factor(ggd1$split)
-ggd1$mse = (ggd1$mmce -  realperf)^2 
-ggd1$type = "ho"
-ggd1$ssiter = NULL
-mse1 = ddply(ggd1, "split", summarize, mse = mean(mse))
-mse1$type = "ho"
-
-
-ggd2 = ddply(ggd1, c("split", "rep"), summarize, mmce = mean(mmce))
-ggd2$mse = (ggd2$mmce -  realperf)^2 
-ggd2$type = "ss"
-mse2 = ddply(ggd2, "split", summarize, mse = mean(mse))
-mse2$type = "ss"
-
-ggd = rbind(ggd1, ggd2)
-ggd$split.and.type = paste(0, ggd$split, ggd$type)
-gmse = rbind(mse1, mse2)
-
-pl1 = ggplot(ggd, aes(x = split.and.type, y = mmce))
-pl1 = pl1 + geom_boxplot()
-pl1 = pl1 + geom_hline(yintercept = realperf)
-pl1 = pl1 + theme(axis.text.x = element_text(angle = 45))
-
-gmse$split = as.numeric(as.character(gmse$split))
-gmse$type = as.factor(gmse$type)
-pl2 = ggplot(gmse, aes(x = split, y = mse, col = type))
-pl2 = pl2 + geom_line()
-pl2 = pl2 + scale_y_log10()
-
-pl = grid.arrange(pl1, pl2)
-print(pl)
+# ggd1 = melt(res)
+# colnames(ggd1) = c("split", "rep", "ssiter", "mmce")
+# ggd1$split = as.factor(ggd1$split)
+# ggd1$mse = (ggd1$mmce -  realperf)^2 
+# ggd1$type = "ho"
+# ggd1$ssiter = NULL
+# mse1 = ddply(ggd1, "split", summarize, mse = mean(mse))
+# mse1$type = "ho"
+# 
+# 
+# ggd2 = ddply(ggd1, c("split", "rep"), summarize, mmce = mean(mmce))
+# ggd2$mse = (ggd2$mmce -  realperf)^2 
+# ggd2$type = "ss"
+# mse2 = ddply(ggd2, "split", summarize, mse = mean(mse))
+# mse2$type = "ss"
+# 
+# ggd = rbind(ggd1, ggd2)
+# ggd$split.and.type = paste(0, ggd$split, ggd$type)
+# gmse = rbind(mse1, mse2)
+# 
+# pl1 = ggplot(ggd, aes(x = split.and.type, y = mmce))
+# pl1 = pl1 + geom_boxplot()
+# pl1 = pl1 + geom_hline(yintercept = realperf)
+# pl1 = pl1 + theme(axis.text.x = element_text(angle = 45))
+# 
+# gmse$split = as.numeric(as.character(gmse$split))
+# gmse$type = as.factor(gmse$type)
+# pl2 = ggplot(gmse, aes(x = split, y = mse, col = type))
+# pl2 = pl2 + geom_line()
+# pl2 = pl2 + scale_y_log10()
+# 
+# pl = grid.arrange(pl1, pl2)
+# print(pl)
 # save(pl, file = "figure_man/holdout-bias-var.png")
 
 
