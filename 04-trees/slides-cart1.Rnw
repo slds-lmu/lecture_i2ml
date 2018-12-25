@@ -46,27 +46,27 @@ Can be used for classification, regression (and much more!)
       \includegraphics[width= 8cm, height = 5.5cm]{figure_man/labelling_of_tree.png}
     \end{figure}
     \item In the greedy top-down construction, features and split points are selected by exhaustive search.
-    \item For each node, one iterates over all features, and for each feature over all split points.
-    \item The best feature and split point, which make both created child nodes most pure, measured by a split criterion, are selected.
-    \item The procedure then is applied to the child nodes in a recursive manner.
+    \item For each node, one iterates over all features, and for each feature over all possible split points.
+    \item The best feature and split point which make both of the created child nodes most pure, as measured by a split criterion, are selected.
+    \item The procedure is then applied to the child nodes in a recursive manner.
     \end{itemize}
 \end{vbframe}
 
 
 \begin{vbframe}{CART}
 \begin{itemize}
-\item Trees divide the feature space $\Xspace$ into rectangles and fit simple models (e.g: ~constant) in these:
+\item Trees divide the feature space $\Xspace$ into rectangles and fit simple models (e.g: ~constant) in them:
   \begin{align*}
     \fx = \sum_{m=1}^M c_m \I(x \in R_m),
   \end{align*}
-  where $M$ rectangles $R_m$ are used. $c_m$ is a predicted numerical response, a class label or a class
+  where $M$ rectangles $R_m \subset \Xspace$ are used. $c_m$ is a predicted numerical response, a class label or a class
   distribution.
 \end{itemize}
 
 \pagebreak
-\textbf{Example for Classification:} Iris-Data
+\textbf{Example for Classification:} Iris Data
 \centering
-<<results='hide', fig.height=2.4>>=
+<<intro-plot1, results='hide', fig.height=2.4>>=
 # Trees on Iris Data
 data("iris")
 
@@ -76,41 +76,38 @@ rpart = setHyperPars(rpart, cp = 0, minbucket = 4, maxdepth = 1) #Illustration
 model = train(rpart, iristask)
 # Plot
 plotLearnerPrediction(rpart, iristask, gridsize = 300, cv = 0) +
-  pers_theme +
-  ggtitle("Iris Data")
+  scale_f_d()
 @
 
-<<results='hide', fig.height=3>>=
+<<intro-tree1, results='hide', fig.height=3>>=
 fancyRpartPlot(model$learner.model, sub = "")
 @
 
 \pagebreak
-\textbf{Example for Classification:} Iris-Data
-<<results='hide', fig.height=2.4>>=
+\textbf{Example for Classification:} Iris Data
+<<intro-plot2, results='hide', fig.height=2.4>>=
 rpart = setHyperPars(rpart, cp = 0, minbucket = 4, maxdepth = 2) #2
 model = train(rpart, iristask)
 # Plot
 plotLearnerPrediction(rpart, iristask, gridsize = 300, cv = 0) +
-  pers_theme +
-  ggtitle("Iris Data")
+  scale_f_d()
 @
 
-<<results='hide', fig.height=3>>=
+<<intro-tree2, results='hide', fig.height=3>>=
 fancyRpartPlot(model$learner.model, sub = "")
 @
 
 \pagebreak
-\textbf{Example for Classification:} Iris-Data
-<<results='hide', fig.height=2.4>>=
+\textbf{Example for Classification:} Iris Data
+<<intro-plot3, results='hide', fig.height=2.4>>=
 rpart = setHyperPars(rpart, cp = 0, minbucket = 4, maxdepth = 3) #3
 model = train(rpart, iristask)
 # Plot
 plotLearnerPrediction(rpart, iristask, gridsize = 300, cv = 0) +
-  pers_theme +
-  ggtitle("Iris Data")
+  scale_f_d()
 @
 
-<<results='hide', fig.height=3>>=
+<<intro-tree3, results='hide', fig.height=3>>=
 fancyRpartPlot(model$learner.model, sub = "")
 @
 
@@ -119,9 +116,9 @@ fancyRpartPlot(model$learner.model, sub = "")
 \vspace{0.5cm}
 \begin{columns}[T,onlytextwidth]
 \column{0.2\textwidth}
-<<out.width='\\textwidth'>>=
+<<forrester1, out.width='\\textwidth'>>=
 modForrester = makeSingleObjectiveFunction(
-  name = "Modification Forrester et. all function",
+  name = "Modification Forrester et. al. function",
   fn = function(x) (sin(4*x - 4)) * ((2*x - 2)^2) * (sin(20*x - 4)),
   par.set = makeNumericParamSet(lower = 0, upper = 1, len = 1L),
   noisy = TRUE
@@ -141,11 +138,11 @@ kable(ordered.design, digits = 3)
 \vspace{0.5cm}
 Data points (red) were generated from the underlying function (black):
 
-$ sin(4x - 4) * (2x - 2)^2 * sin(20x -4) $
+$\sin(4x - 4) (2x - 2)^2  \sin(20x -4)$
 
 \pagebreak
 \textbf{Example for Regression:}
-<<fig.height=5>>=
+<<forrester-tree1, fig.height=5>>=
 regr.task = makeRegrTask(data = design, target = "y")
 regr.rpart = makeLearner("regr.rpart", par.vals = list(minsplit=1, minbucket = 1))
 regr.model = train(regr.rpart, regr.task)
@@ -199,33 +196,33 @@ fancyRpartPlot(regr.model$learner.model, sub="")
   $\hat{c}_1 = \bar{y}_1$ and $\hat{c}_2 = \bar{y}_2$
 
   \framebreak
-  
-  \newcommand{\piN}{\hat{\pi}^\Np}
+
   \item {\bf Categorical targets ($\mathbf{K}$ categories):} \enquote{Impurity Measures}
     \begin{itemize}
     \item Gini index:
-      $$I(\Np) = \sum_{k\neq k'} \piN_k \piN_{k'} = \sum_{k=1}^g \piN_k(1-\piN_k)$$
+      $$I(\Np) = \sum_{k\neq k'} \pikN \hat\pi_{\Np k'} = \sum_{k=1}^g \pikN(1-\pikN)$$
     \item misclassification error:
-      $$I(\Np) = 1 - \max_k \piN_k$$
-    \item Shannon entropy:
-      $$I(\Np) = -\sum_{k=1}^g \piN_k \log \piN_k \ ,$$
+      $$I(\Np) = 1 - \max_k \pikN$$
+    \item (Shannon) entropy:
+      $$I(\Np) = -\sum_{k=1}^g \pikN \log \pikN \ ,$$
     \end{itemize}
-    where $\piN_k$ corresponds to the relative frequency of category $k$ of the response.
+    where $\pikN$ corresponds to the relative frequency of category $k$ of the response in node $\Np$.
   \end{itemize}
 
 \framebreak
 
-<<results='hide', fig.height=5>>=
-Colors = colorspace::rainbow_hcl(3)
+<<splitcriteria-plot, results='hide', fig.height=5>>=
+Colors = pal_3
 par(mar = c(5.1, 4.1, 0.1, 0.1))
-p = seq(0, 1, length.out = 200)
+p = seq(1e-6, 1-1e-6, length.out = 200)
 entropy = function(p) (p * log(p) + (1 - p) * log(1 - p))/(2 * log(0.5))
-gini = function(p) 2 * p * (1-p)
+gini = function(p) 2 * p * (1 - p)
 missclassification = function(p) (1 - max(p, 1 - p))
-plot(p, entropy(p), type = "l", col = Colors[2], ylab = "", ylim = c(0, 0.6))
-lines(p, gini(p), col = Colors[1])
-lines(p, sapply(p, missclassification), col = Colors[3])
-legend("topright", c("Gini Index", "Entropy", "Missclassification Error"),
+plot(p, entropy(p), type = "l", col = Colors[1], lwd = 1.5, ylab = "", 
+  ylim = c(0, 0.6), xlab = expression(hat(pi)[Nk]))
+lines(p, gini(p), col = Colors[2], lwd = 1.5)
+lines(p, sapply(p, missclassification), col = Colors[3], lwd = 1.5)
+legend("topright", c("Gini Index", "Entropy", "Misclassification Error"),
        col = Colors[1:3], lty = 1)
 @
 
@@ -243,7 +240,7 @@ legend("topright", c("Gini Index", "Entropy", "Missclassification Error"),
 \begin{center}
 \textbf{Split 1:} \\
 \vspace{0.25cm}
-<<>>=
+<<split1>>=
 class = as.factor(c(rep(0,400), rep(1,400)))
 x1 = as.factor(c(rep(0,300), rep(1,400), rep(0,100)))
 x2 = as.factor(c(rep(0,600), rep(1,200)))
@@ -258,7 +255,7 @@ kable(tab, row.names = TRUE, col.names = c("class A", "class B"))
 \begin{center}
 \textbf{Split 2:} \\
 \vspace{0.25cm}
-<<>>=
+<<split2>>=
 kable(tab2, row.names = TRUE, col.names = c("class A", "class B"))
 @
 \end{center}
@@ -270,7 +267,7 @@ kable(tab2, row.names = TRUE, col.names = c("class A", "class B"))
 \begin{center}
 \textbf{Split 1:} \\
 \vspace{0.25cm}
-<<>>=
+<<split1-2>>=
 kable(tab, row.names = TRUE, col.names = c("class A", "class B"))
 @
 \end{center}
@@ -278,7 +275,7 @@ kable(tab, row.names = TRUE, col.names = c("class A", "class B"))
 \begin{center}
 \textbf{Split 2:} \\
 \vspace{0.25cm}
-<<>>=
+<<split2-2>>=
 kable(tab2, row.names = TRUE, col.names = c("class A", "class B"))
 @
 \end{center}
@@ -287,7 +284,8 @@ kable(tab2, row.names = TRUE, col.names = c("class A", "class B"))
 \begin{itemize}
 \item Both splits produce a misclassification rate of $\frac{200}{800}=0.25$
 \item Split 2 produces a pure node and is probably preferable.
-\item The average node impurity after a split based on $x_1$ is $0.375$ (Gini) or $0.406$ (Entropy) and $\frac{1}{3}$ (Gini) or $0.344$ (Entropy) after a split based on $x_2$.
+\item The average node impurity for Split 1 is $0.375$ (Gini) or $0.406$ (Entropy) 
+\item The average node impurity for Split 2 is $\frac{1}{3}$ (Gini) or $0.344$ (Entropy)
 % Gini: 6/8 * 2 * 1/3 * 2/3
 % entropy: 6/8 * ((1/3 * log(1/3) + 2/3 * log(2/3)) / (2 * log(0.5)))
 \item Both criteria prefer split 2 and \textit{choose} the result with a pure node.
@@ -295,10 +293,10 @@ kable(tab2, row.names = TRUE, col.names = c("class A", "class B"))
 \framebreak
 \begin{itemize}
 \item For metric features the exact split points can be ambiguous.
-\item If the classes of the response (for classification trees) are completely separated regarding the value range of the feature, a split can be done anywhere between the extreme values of the feature in the classes and the impurity measures stay the same.
+\item If the classes of the response (for classification trees) are completely separated in the value range of the feature, a split can be done anywhere between the extreme valuess of the feature in the classes and the impurity measures stay the same.
 \item Look again at the Iris data and the classes \textit{setosa} and \textit{versicolor}:
 \end{itemize}
-<<results='hide', fig.height=3>>=
+<<iris-rpart-plot, results='hide', fig.height=3>>=
 # Trees on Iris Data
 iristask = makeClassifTask(data = iris[,-(1:2)], target = "Species")
 
@@ -307,11 +305,9 @@ rpart = setHyperPars(rpart, cp = 0, minbucket=4, maxdepth=1) #Illustration
 model = train(rpart, iristask)
 # Plot
 plotLearnerPrediction(rpart, iristask, gridsize = 300, cv = 0) +
-  pers_theme +
-  ggtitle("Iris Data")
+  scale_f_d() 
 @
 \end{vbframe}
-
 
 
 \endlecture

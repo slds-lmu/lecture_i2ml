@@ -28,7 +28,7 @@ library(smoof)
 \begin{itemize}
   \item Single trees are highly interpretable
   \item Random Forests as an ensemble of many trees lose this feature
-  \item Hence, contributions of a single covariate to the fit are difficult to evaluate
+  \item Hence, relevance of each single covariates to the fit is difficult to evaluate
   \item Way out: variable importance measures
 \end{itemize}
 
@@ -42,7 +42,7 @@ library(smoof)
     predictive accuracy.
     \State Permute OOB observations of $j$th variable.
     \State Pass down the permuted OOB observations and evaluate predictive accuracy again.
-    \State The loss of goodness induced by permutation is averaged over all trees and is used as a measure for the importance of the $j^\text{th}$ variable.
+    \State The loss of predictive accuracy induced by permutation is averaged over all trees and is used as a measure for the importance of the $j^\text{th}$ variable.
   \end{algorithmic}
 \end{algorithm}
 
@@ -64,134 +64,23 @@ library(smoof)
 
 \begin{vbframe}{Variable importance}
 \begin{figure}
-<<size="footnotesize", fig.height=3>>=
+<<rf-iris-varimp, size="footnotesize", fig.height=3>>=
 model = randomForest(Species ~ ., data = iris, importance = TRUE)
-randomForest::varImpPlot(model)
+randomForest::varImpPlot(model, main = "")
 @
-\caption{Two importance measures on iris.}
+\caption{Two importance measures on the iris dataset.}
 \end{figure}
 
-\begin{figure}
-<<size="footnotesize", fig.height=3>>=
-v = generateFilterValuesData(iris.task, method = c("randomForest.importance", "cforest.importance"))
+%\begin{figure}
+<<size="footnotesize", fig.height=3, eval = FALSE>>=
+v = generateFilterValuesData(iris.task,
+  method = c("randomForest.importance", "cforest.importance"))
 plotFilterValues(v)
 @
-\caption{RF importance as filters in mlr.}
-\end{figure}
+%\caption{RF importance as filters in mlr.}
+%\end{figure}
 
 \end{vbframe}
-
-\begin{vbframe}{Random Forest: Proximities}
-\begin{itemize}
-  \item the "closeness" or "nearness" between pairs of cases.
-\item Algorithm
-\begin{itemize}
-\item After a tree is grown, put all of the data down the tree.
-\item If cases $x_1$ and $x_2$ are in the same terminal node through one tree increase their proximity by one. 
-\item At the end of the run of all trees, normalize the proximities by dividing by the number of trees.
-\end{itemize}
-\item The proximities originally form a NxN matrix.
-\item Proximities are used in replacing missing data, locating outliers, and producing illuminating low-dimensional views of the data.
-
-\end{itemize}
-\end{vbframe}
-
-
-
-
-
-% data(iris)
-% iris[1:10,]
-% library(randomForest)
-% Try to predict glass type, based on 
-% X <- iris[,-5]
-% Y <- iris[,5]
-% rf <- randomForest(X,Y,ntree=500,proximity=TRUE,oob.prox=TRUE)
-% op <- par()
-% par(mar = rep(2, 4))
-% MDSplot(rf,Y)
-% par(mar = op$mar)
-
-
-
-
-\begin{vbframe}{}
-
-We can visualize our Proximities $P(x_i, x_j)$ for each i $\in \{1,...,n\}$ example by MDS.\\
-
-<<>>=
-require(randomForest)
-require(mlbench) 
-data(Sonar)
-library(randomForest)
-@
-
-Our  data contains 111 patterns obtained by bouncing sonar signals off a metal cylinder at various angles and under various conditions and  97 patterns obtained from rocks under similar conditions. 
-
-%The data set contains signals obtained from a variety of different aspect angles, spanning 90 degrees for the cylinder and 180 degrees for the rock. Each pattern is a set of 60 numbers in the range 0.0 to 1.0. Each number represents the energy within a particular frequency band, integrated over a certain period of time. 
-
-%The label associated with each record contains the letter "R" if the object is a rock and "M" if it is a mine (metal cylinder). 
-
-\begin{center}
-\textbf{} \\
-\vspace{0.25cm}
-<<>>=
-  Sonar[1:10,53:61]
-@
-  \end{center}
-  
-  \framebreak
-
-
-We try to predict the type, based on signals obtained from a variety of different aspect angles, spanning 90 degrees for the cylinder and 180 degrees for the rock
-
-<<include=TRUE>>=
-X <- Sonar[,-61]
-Y <- Sonar[,61]
-rf <- randomForest(X,Y,ntree=500,proximity=TRUE,oob.prox=TRUE)
-@
-
-We calculate the proximities $P(x_i, x_j)$ based on out-of-bag observations.
-
-<<>>=
-  rf
-@
-
-
-
-Now we can visualize proximities $P(x_i, x_j)$ by MDS, using as distance matrix D= 1 - P
-\framebreak
-<<include=TRUE>>=
-op <- par()
-par(mar = rep(1, 4))
-MDSplot(rf,Y)
-par(mar = op$mar)
- @
-
-\end{vbframe}
-
-
-\begin{vbframe}{Adaptive Nearest Neighbors}
-
-Let $P(x, x_i)$ $ \in$ [0, 1] be the Proximity between the  observation x and our original point $x_i$.
-\begin{itemize}
-\item For classification, the prediction will be the weighted greatest number of hits, which is proportional to the proximities $P(x,x_i)$.
-\item  For a regression we can calculate the prediction of Random Forests at  x as:
-\begin{itemize}
-\item if every leaf node contains the same number of observations. 
-\begin{align*}
-\hat{Y}_{RF}(x)  = \frac{ \sum_{n=0}^n P(x,x_i)Y_i}{\sum_{n=0}^n P(x,x_i)}
-\end{align*}
-%This can be seen as a weighted nearest neighbour scheme, where the weights are proportional to our proximities $P(x,x_i)$.
-\item  if some leaf node contains the different number of observations, $P(x,x_i)$ is the
-percentage of trees where x and $x_i$ fall into the same leaf node, and
-weights are inversely proportional for each tree to the number of samples in
-the leaf node where $x_i$ falls into.
-\end{itemize}
-
-\end{itemize}
-\end{vbframe}
-
 
 \begin{vbframe}{Random Forest: Advantages}
 
@@ -222,6 +111,62 @@ the leaf node where $x_i$ falls into.
 
 \end{vbframe}
 
+\begin{vbframe}{Benchmark: Random Forest vs. (bagged) CART vs. (bagged) k-NN}
+
+  \begin{itemize}
+    \item Goal: Compare performance of random forest against (bagged) stable and (bagged) unstable methods
+    \item Algorithms:
+    \begin{itemize}
+      \item classification tree (CART, implemented in \code{rpart}, \code{max.depth}: 30, \code{min.split}: 20, \code{cp}: 0.01)
+      \item bagged classification tree using 50 bagging iterations (\code{bagged.rpart})
+      \item k-nearest neighbors (k-NN, implemented in \code{kknn}, $k=7$)
+      \item bagged k-nearest neighbors using 50 bagging iterations (\code{bagged.knn})
+      \item random forest with 50 trees (implemented in \code{randomForest})
+    \end{itemize}
+    \item Method to evaluate performance: 10-fold cross-validation
+    \item Performance measure: mean missclassification error on test sets
+    \end{itemize}
+
+    \framebreak
+
+    \begin{itemize}
+    \item Datasets from \pkg{mlbench}:
+    \end{itemize}
+
+\begin{table}
+\footnotesize
+\begin{tabular}{p{1.5cm}p{2cm}p{0.5cm}p{0.5cm}p{5cm}}
+Name & Kind of data &  n & p & Task\\
+\hline
+Glass & Glass identification data & 214 & 10 & Predict the type of glass (6 levels) on the basis of the chemical analysis of the glasses represented by the 10 features\\
+Ionosphere & Radar data & 351 & 35 & Predict whether the radar returns show evidence of some type of structure in the ionosphere (\enquote{good}) or not (\enquote{bad}) \\
+Sonar & Sonar data & 208 & 61 & Discriminate between sonar signals bounced off a metal cylinder (\enquote{M}) and those bounced off a cylindrical rock (\enquote{R})\\
+Waveform & Artificial data & 100 & 21 & Simulated 3-class problem which is considered to be a difficult pattern recognition problem. Each class is generated by the waveform generator.\\
+\hline
+\end{tabular}
+\end{table}
+
+\framebreak
+  
+  \begin{center}\includegraphics[width=0.95\textwidth]{figure_man/bm_stable_vs_unstable.pdf}\end{center}{}
+
+%\framebreak
+  
+\end{vbframe}
+
+\begin{vbframe}{Benchmark: Random Forest vs. (bagged) CART vs. (bagged) k-NN}
+
+  Bagging k-NN does not improve performance because:
+
+  \begin{itemize}
+    \item k-NN is stable w.r.t. perturbations
+    \item In a 2-class problem, nearest neighbor based classification only changes under bagging if both
+    \begin{itemize}
+    \item the nearest neighbor in the learning set is \textbf{not} in at least half of the bootstrap samples, but the probability that any given observation is in the bootstrap sample is 63\% which is greater than 50\%,
+    \item and, simultaneously, the \emph{new} nearest neighbor(s) all have a different label than the missing nearest neighbor in those bootstrap samples, which is unlikely for most regions of $\Xspace \times \Yspace$.
+    \end{itemize}
+\end{itemize}
+\end{vbframe}
 
 
 \endlecture
