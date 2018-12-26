@@ -25,3 +25,7 @@ $(SLOT4).pdf: $(SLOT4).Rnw
 
 sources: 
 	cd rsrc/; Rscript monotone_trafo.R # create two pictures monotone_trafo<1/2>.png used in cart2
+
+
+pdf: $(SLOT1).pdf $(SLOT2).pdf $(SLOT3).pdf $(SLOT4).pdf
+	pdfunite $^ day4.pdf

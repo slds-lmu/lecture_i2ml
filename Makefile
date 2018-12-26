@@ -41,3 +41,13 @@ day4-all:
 sources:
 	cd $(DAY3); make sources
 	cd $(DAY4); make sources
+
+# create pdf
+
+pdf:
+	cd $(DAY1); make pdf
+	cd $(DAY2); make pdf
+	cd $(DAY3); make pdf
+	cd $(DAY4); make pdf
+	cd $(DAY5); make pdf
+	pdfunite $(DAY1)/day1.pdf $(DAY2)/day2.pdf $(DAY3)/day3.pdf $(DAY4)/day4.pdf $(DAY5)/day5.pdf all.pdf

@@ -29,6 +29,8 @@ sources:
 	cd rsrc/; Rscript overtuning-example.R  # create overtuning-example.RData (used in nested-resampling)
 
 
+pdf: $(SLOT1).pdf $(SLOT2).pdf $(SLOT3).pdf $(SLOT4).pdf
+	pdfunite $^ day3.pdf
 
 
 

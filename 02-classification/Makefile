@@ -17,3 +17,6 @@ $(SLOT3).pdf: $(SLOT3).Rnw
 
 $(SLOT4).pdf: $(SLOT4).Rnw
 	Rscript -e 'knitr::knit2pdf("$(SLOT4).Rnw")'
+
+pdf: $(SLOT1).pdf $(SLOT2).pdf $(SLOT3).pdf $(SLOT4).pdf
+	pdfunite $^ day2.pdf

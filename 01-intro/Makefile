@@ -1,4 +1,5 @@
 
+SLOT0=slides-notation
 SLOT1=slides-intro
 SLOT2=slides-tasks
 SLOT3=slides-knn
@@ -6,7 +7,10 @@ SLOT4=slides-loss
 SLOT5=slides-limo
 
 
-all: $(SLOT1).pdf $(SLOT2).pdf 	$(SLOT3).pdf $(SLOT4).pdf $(SLOT5).pdf slides-notation.pdf
+all: $(SLOT0).pdf $(SLOT1).pdf $(SLOT2).pdf $(SLOT3).pdf $(SLOT4).pdf $(SLOT5).pdf
+
+$(SLOT0).pdf: $(SLOT0).Rnw
+	Rscript -e 'knitr::knit2pdf("$(SLOT0).Rnw")'
 
 $(SLOT1).pdf: $(SLOT1).Rnw
 	Rscript -e 'knitr::knit2pdf("$(SLOT1).Rnw")'
@@ -23,5 +27,9 @@ $(SLOT4).pdf: $(SLOT4).Rnw
 $(SLOT5).pdf: $(SLOT5).Rnw
 	Rscript -e 'knitr::knit2pdf("$(SLOT5).Rnw")'
 
-slides-notation.pdf: slides-notation.Rnw
-	Rscript -e 'knitr::knit2pdf("slides-notation.Rnw")'
+# This would be way better:
+# %.pdf: %.Rnw
+# 	Rscript -e 'knitr::knit2pdf("$^")'
+
+pdf: $(SLOT0).pdf $(SLOT1).pdf $(SLOT2).pdf $(SLOT3).pdf $(SLOT4).pdf $(SLOT5).pdf
+	pdfunite $^ day1.pdf
