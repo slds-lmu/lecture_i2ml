@@ -1,0 +1,610 @@
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../style/preamble.Rnw")
+@
+% Load all R packages and set up knitr
+<<setup-r, child="../style/setup.Rnw", include = FALSE>>=
+@
+
+\lecturechapter{0}{Additional Material}
+\lecture{Dataset Descriptions}
+
+
+\sloppy
+
+\begin{vbframe}{Boston Housing Data Set}
+
+<<include = FALSE>>=
+# enable caching for this document
+knitr::opts_chunk$set(cache = TRUE)
+library(magrittr)
+library(skimr)
+library(DataExplorer)
+library(tibble)
+skim_with(factor = list(complete = NULL, ordered = NULL,
+                        p0 = NULL, p25 = NULL, p50 = NULL,
+                        p75 = NULL, p100 = NULL, n = NULL),
+          numeric = list(complete = NULL, p0 = NULL, p25 = NULL, p50 = NULL,
+                         p75 = NULL, p100 = NULL, hist = NULL, n = NULL)
+          )
+options(width = 120, tibble.width = 90)
+
+adjust_path = function(path_to_child_folder, rp) {
+  is.child = knitr:::child_mode()
+  function(rp) {
+    if (is.child)
+      rp = file.path(path_to_child_folder, rp)
+    else
+      rp = file.path("figure", rp)
+    rp
+  }
+}
+root = rprojroot::find_root(rprojroot::is_git_root)
+ap = adjust_path(paste0(getwd(), "/figure"))
+@
+
+
+A widely used dataset to benchmark algorithms is the Boston housing dataset.
+The data was originally published 1978 by David Harrison and Daniel Rubinfeld in \textbf{\href{https://www.law.berkeley.edu/files/Hedonic.PDF}{Hedonic Housing Prices and the Demand for Clean Air}}.
+
+This paper investigates the methodological problems associated with the use of
+housing market data to \textbf{measure the willingness to pay for clean air}.
+
+\begin{center}
+\includegraphics[width=0.425\textwidth]{figure_man/boston_housing.png}
+\hspace{0.5cm}
+\includegraphics[width=0.402\textwidth]{figure_man/boston_housing_park.jpg}
+\end{center}
+
+\framebreak
+
+\textbf{Example Data: Boston Housing}
+
+\begin{table}
+  \footnotesize
+    \begin{tabularx}{\textwidth}{l:X}
+    Variable & Description \\
+    \hline
+    \textbf{medv} & median value of owner-occupied homes in USD 1000's \\
+    crim &	per capita crime rate by town \\
+    zn & prop. of residential land zoned for lots over 25,000 sq.ft \\
+    indus & proportion of non-retail business acres per town \\
+    chas &	Charles River dummy variable (= 1 if tract bounds river; 0 otherwise) \\
+    nox & nitric oxides concentration (parts per 10 million) \\
+    rm & average number of rooms per dwelling \\
+    age & proportion of owner-occupied units built prior to 1940 \\
+    dis & weighted distances to five Boston employment centres \\
+    rad & index of accessibility to radial highways \\
+    tax & full-value property-tax rate per USD 10,000 \\
+    ptratio & pupil-teacher ratio by town \\
+    b & $1000(B - 0.63)^2$ where B is the prop. of blacks by town \\
+    lstat & percentage of lower status of the population \\
+    \end{tabularx}
+\end{table}
+
+506 obs., 13 features, 'medv' numerical target.
+
+\framebreak
+
+\textbf{Importing the Data}
+
+We use \href{https://www.openml.org}{Open ML} (\href{https://cran.r-project.org/package=OpenML}{R-Package}) to download the dataset in a machine-readable format and convert it into a 'data.frame':
+
+<<message=FALSE, eval = T>>=
+# load the dataset from OpenML Library
+d = OpenML::getOMLDataSet(data.id = 531)
+
+# convert the OpenML object to a tibble (enhanced data.frame)
+bh = as_tibble(d)
+@
+\vfill
+<<size = "tiny">>=
+print(bh)
+@
+\vfill
+
+\framebreak
+
+\textbf{Exploratory Data Analysis}
+
+
+Factor variables
+
+<<results='asis', size = "tiny">>=
+skimr::skim_to_list(bh) %>%
+ .$factor %>%
+  knitr::kable(format = 'latex', booktabs = TRUE) %>%
+  kableExtra::kable_styling(latex_options = 'HOLD_position', font_size = 7)
+@
+
+
+Barplots of discrete features
+
+<<fig.height=3, size = "tiny">>=
+DataExplorer::plot_bar(bh, ggtheme = ggpubr::theme_pubr())
+@
+
+\framebreak
+
+\textbf{Exploratory Data Analysis}
+
+
+Numeric variables
+
+<<results='asis', size = 'tiny'>>=
+skimr::skim_to_list(bh) %>%
+ .$numeric %>%
+  knitr::kable(format = 'latex', booktabs = TRUE) %>%
+  kableExtra::kable_styling(latex_options = 'HOLD_position', font_size = 6)
+@
+
+\framebreak
+
+\textbf{Exploratory Data Analysis}
+
+
+Histograms of numerical features
+
+<<fig.height=4.5, size = 'tiny'>>=
+DataExplorer::plot_histogram(bh, ggtheme = ggpubr::theme_pubr())
+@
+
+
+\framebreak
+
+\textbf{Exploratory Data Analysis}
+
+
+It is always useful to check the correlation among variables:
+
+<<size = 'tiny', message=FALSE, fig.height=4.8>>=
+DataExplorer::plot_correlation(bh, ggtheme = ggpubr::theme_pubr(base_size = 10),
+  type = "c", cor_args = list(use = "complete.obs"))
+@
+
+\end{vbframe}
+
+\begin{vbframe}{Iris Data Set}
+
+<<include = FALSE>>=
+# enable caching for this document
+knitr::opts_chunk$set(cache = TRUE)
+library(magrittr)
+library(skimr)
+library(DataExplorer)
+library(tibble)
+skim_with(factor = list(complete = NULL, ordered = NULL,
+                        p0 = NULL, p25 = NULL, p50 = NULL,
+                        p75 = NULL, p100 = NULL, n = NULL),
+          numeric = list(complete = NULL, p0 = NULL, p25 = NULL, p50 = NULL,
+                         p75 = NULL, p100 = NULL, hist = NULL, n = NULL)
+          )
+options(width = 120, tibble.width = 90)
+
+adjust_path = function(path_to_child_folder, rp) {
+  is.child = knitr:::child_mode()
+  function(rp) {
+    if (is.child)
+      rp = file.path(path_to_child_folder, rp)
+    else
+      rp = file.path("figure", rp)
+    rp
+  }
+}
+root = rprojroot::find_root(rprojroot::is_git_root)
+ap = adjust_path(paste0(getwd(), "/figure"))
+@
+
+The iris dataset was introduced by the statistician Ronald Fisher and is one
+of the most frequent used datasets. Originally it was designed for linear
+discriminant analysis.
+
+The set is a typical test case for many statistical classification techniques
+and has its own \textbf{\href{https://en.wikipedia.org/wiki/Iris_flower_data_set}{wikipedia page}}.
+
+\begin{center}
+\parbox{0.3\textwidth}{
+\centering
+  \begin{tabular}{@{}c@{}}
+    \includegraphics[width=0.25\textwidth]{figure_man/iris_setosa.jpg} \\[\abovecaptionskip]
+    \small Setosa
+  \end{tabular}
+}
+\parbox{0.3\textwidth}{
+\centering
+  \begin{tabular}{@{}c@{}}
+    \includegraphics[width=0.25\textwidth]{figure_man/iris_versicolor.jpg} \\[\abovecaptionskip]
+    \small Versicolor
+  \end{tabular}
+}
+\parbox{0.3\textwidth}{
+\centering
+  \begin{tabular}{@{}c@{}}
+    \includegraphics[width=0.25\textwidth]{figure_man/iris_virginica.jpg} \\[\abovecaptionskip]
+    \small Virginica
+  \end{tabular}
+}
+\end{center}
+Source: \url{https://en.wikipedia.org/wiki/Iris_flower_data_set}
+
+\framebreak
+
+\textbf{Importing the Data}
+
+We use \href{https://www.openml.org}{OpenML} (\href{https://cran.r-project.org/package=OpenML}{R-Package}) to download the dataset in a machine-readable format and convert it into a 'data.frame':
+
+<<message=FALSE, eval = T>>=
+# load the dataset from OpenML Library
+d = OpenML::getOMLDataSet(data.id = 61)
+
+# convert the OpenML object to a tibble (enhanced data.frame)
+iris = as_tibble(d)
+@
+\begin{columns}
+  \begin{column}{0.5\textwidth}
+    \begin{itemize}
+      \item 150 iris flowers (50 setosa, 50 versicolor, 50 virginica),
+        species should be predicted.
+      \item Sepal length / width and petal length / width in [cm].
+    \end{itemize}
+  \end{column}
+  \begin{column}{0.5\textwidth}
+    \begin{center}
+      \includegraphics[width=0.6\textwidth]{figure_man/iris_petal_sepal.png}
+    \end{center}
+  \end{column}
+\end{columns}
+
+\vfill
+
+\footnotesize
+Source: \url{https://holgerbrandl.github.io/kotlin4ds_kotlin_night_frankfurt//krangl_example_report.html}
+\normalsize
+
+\framebreak
+
+<<>>=
+print(iris)
+@
+
+\framebreak
+
+\textbf{Exploratory Data Analysis}
+
+Factor variables
+
+<<results='asis', size = 'tiny'>>=
+skimr::skim_to_list(iris) %>%
+ .$factor %>%
+  knitr::kable(format = 'latex', booktabs = TRUE) %>%
+  kableExtra::kable_styling(latex_options = 'HOLD_position', font_size = 7)
+@
+
+\textbf{Exploratory Data Analysis}
+
+Barplots of discrete features
+
+<<fig.height=3>>=
+DataExplorer::plot_bar(iris, ggtheme = ggpubr::theme_pubr())
+@
+
+\framebreak
+
+\textbf{Exploratory Data Analysis}
+
+Numeric variables
+
+<<results='asis', size = 'tiny'>>=
+skimr::skim_to_list(iris) %>%
+ .$numeric %>%
+  knitr::kable(format = 'latex', booktabs = TRUE) %>%
+  kableExtra::kable_styling(latex_options = 'HOLD_position', font_size = 8)
+@
+
+\framebreak
+
+\textbf{Exploratory Data Analysis}
+
+Histograms of numerical features
+
+<<fig.height = 5, size = 'tiny'>>=
+DataExplorer::plot_histogram(iris, ggtheme = ggpubr::theme_pubr())
+@
+
+
+
+\end{vbframe}
+
+\begin{vbframe}{Spam Data Set}
+
+<<include = FALSE>>=
+# enable caching for this document
+knitr::opts_chunk$set(cache = TRUE)
+library(magrittr)
+library(skimr)
+library(DataExplorer)
+library(tibble)
+skim_with(factor = list(complete = NULL, ordered = NULL,
+                        p0 = NULL, p25 = NULL, p50 = NULL,
+                        p75 = NULL, p100 = NULL, n = NULL),
+          numeric = list(complete = NULL, p0 = NULL, p25 = NULL, p50 = NULL,
+                         p75 = NULL, p100 = NULL, hist = NULL, n = NULL)
+          )
+options(width = 120, tibble.width = 90)
+@
+
+
+A data set collected at Hewlett-Packard Labs, that classifies 4601 \textbf{e-mails as spam or non-spam} (variable 'class').
+The spam dataset is one of the datasets used in \textbf{The Elements of Statistical Learning} by Trevor Hastie, Robert Tibshirani, and Jerome Friedman.
+Besides the option to import it from \textbf{OpenML} it also comes as an example dataset in the packages \textbf{ElemStatLearn} and \textbf{kernlab}.
+
+\framebreak
+
+\begin{itemize}
+
+  \item 'class'      : 0 = no spam, 1 = spam
+  \item 'word\_freq\_*': 48 features corresponding to the relative frequency of a specific word in an e-mail
+  \item 'char\_freq\_*': 6 features that measures the percentage of a sequence of specific characters occurs relative to the total number of characters
+  \item 'capital\_run\_length\_[average, longest, total]': 3 features indicating the average, longest, and sum of uninterrupted sequence of capital letters
+
+\end{itemize}
+
+\framebreak
+
+\textbf{Importing the Data}
+
+We use \href{https://www.openml.org}{Open ML} (\href{https://cran.r-project.org/package=OpenML}{R-Package}) to download the dataset in a machine-readable format and convert it into a 'data.frame':
+
+<<message=FALSE, eval = T>>=
+# load the dataset from OpenML Library
+d = OpenML::getOMLDataSet(data.id = 44)
+
+# convert the OpenML object to a tibble (enhanced data.frame)
+spam = as_tibble(d)
+@
+
+<<size = "tiny">>=
+#print(spam)
+@
+
+\begin{itemize}
+\item 58 features (e.~g. specific word frequencies)
+\item 4,601 observations
+\item too much to display as a table
+
+\end{itemize}
+
+
+\framebreak
+
+\textbf{Exploratory Data Analysis}
+
+Factor variables
+
+<<results='asis', size = 'tiny'>>=
+skimr::skim_to_list(spam) %>%
+ .$factor %>%
+  knitr::kable(format = 'latex', booktabs = TRUE) %>%
+  kableExtra::kable_styling(latex_options = 'HOLD_position', font_size = 7)
+@
+
+\textbf{Exploratory Data Analysis}
+
+Barplots of discrete features
+
+<<fig.height=3>>=
+DataExplorer::plot_bar(spam, ggtheme = ggpubr::theme_pubr())
+@
+
+
+\framebreak
+
+\textbf{Exploratory Data Analysis}
+
+
+
+The distribution of most variables is highly skewed:
+
+<<fig.height=4.5, size = 'tiny'>>=
+DataExplorer::plot_histogram(spam[, 1:16], ggtheme = ggpubr::theme_pubr())
+@
+
+
+\framebreak
+
+\textbf{Exploratory Data Analysis}
+
+
+
+Histograms of numerical features
+
+<<fig.height=4.5, size = 'tiny'>>=
+DataExplorer::plot_histogram(spam[, 17:32], ggtheme = ggpubr::theme_pubr())
+@
+
+
+\framebreak
+
+\textbf{Exploratory Data Analysis}
+
+
+
+Histograms of numerical features
+
+<<fig.height=4.5, size = 'tiny'>>=
+DataExplorer::plot_histogram(spam[, 33:48], ggtheme = ggpubr::theme_pubr())
+@
+
+
+\framebreak
+
+\textbf{Exploratory Data Analysis}
+
+
+
+Histograms of numerical features
+
+<<fig.height=4.5, size = 'tiny'>>=
+DataExplorer::plot_histogram(spam[, 49:58], ggtheme = ggpubr::theme_pubr())
+@
+
+
+\framebreak
+
+\textbf{Exploratory Data Analysis}
+
+
+
+Let's take a look at the correlation among the variables:
+
+<<size = 'tiny', fig.height=4.8>>=
+DataExplorer::plot_correlation(spam, ggtheme = ggpubr::theme_pubr(base_size = 7))
+@
+
+\end{vbframe}
+
+\begin{vbframe}{Titanic Data Set}
+
+<<include = FALSE>>=
+# enable caching for this document
+knitr::opts_chunk$set(cache = TRUE)
+library(magrittr)
+library(skimr)
+library(DataExplorer)
+library(tibble)
+skim_with(factor = list(complete = NULL, ordered = NULL,
+                        p0 = NULL, p25 = NULL, p50 = NULL,
+                        p75 = NULL, p100 = NULL, n = NULL),
+          numeric = list(complete = NULL, p0 = NULL, p25 = NULL, p50 = NULL,
+                         p75 = NULL, p100 = NULL, hist = NULL, n = NULL)
+          )
+options(width = 120, tibble.width = 90)
+@
+
+
+The original Titanic dataset, describing the \textbf{survival status of individual passengers}(1309) on the Titanic.
+The titanic data does not contain information from the crew, but it does contain actual ages of half of the passengers.
+The principal source for data about Titanic passengers is the Encyclopedia Titanica.
+
+One of the original sources is Eaton \& Haas (1994) Titanic: Triumph and Tragedy, Patrick Stephens Ltd.
+It includes a passenger list created by many researchers (edited by Michael A. Findlay).
+
+\framebreak
+
+\footnotesize
+\begin{table}
+    \begin{tabularx}{\textwidth}{l:X}
+    Variable & Description \\
+    \hline
+    \textbf{survived}  & 0 = No, 1 = Yes                                                    \\
+    pclass    & 1 = 1st; 2 = 2nd; 3 = 3rd                                          \\
+    name      & First and last Name                                                \\
+    sex       & Sex                                                                \\
+    Age       & Age                                                                \\
+    sibsp     & Number of Siblings/Spouses Aboard	                                 \\
+    parch     & Number of Parents/Children Aboard	                                 \\
+    Ticket    & Ticket Number                                                      \\
+    fare      & Passenger Fare                                                     \\
+    cabin     & Cabin                                                              \\
+    embarked  & Port of Embarkation	C = Cherbourg; Q = Queenstown;\newline S = Southampton \\
+    body      & Body Identification Number                                         \\
+    boat      & Boat number                                                        \\
+    home.dest & Home destination                                                   \\
+    \end{tabularx}
+\end{table}
+
+\framebreak
+
+\textbf{Importing the Data}
+
+We use \href{https://www.openml.org}{Open ML} (\href{https://cran.r-project.org/package=OpenML}{R-Package}) to download the dataset in a machine-readable format and convert it into a 'data.frame':
+
+<<message=FALSE, eval = T>>=
+# load the dataset from OpenML Library
+d = OpenML::getOMLDataSet(data.id = 40945)
+
+# convert the OpenML object to a tibble (enhanced data.frame)
+titanic = as_tibble(d)
+@
+
+
+<<size = "tiny">>=
+print(titanic)
+@
+
+
+\framebreak
+
+\textbf{Exploratory Data Analysis}
+
+Factor variables
+
+<<results='asis', size = "tiny">>=
+skimr::skim_to_list(titanic) %>%
+ .$factor %>%
+  knitr::kable(format = 'latex', booktabs = TRUE) %>%
+  kableExtra::kable_styling(latex_options = 'HOLD_position', font_size = 8)
+@
+
+
+Barplots of discrete features
+
+<<fig.height=3, size = "tiny">>=
+DataExplorer::plot_bar(titanic, ggtheme = ggpubr::theme_pubr())
+@
+
+
+\framebreak
+
+\textbf{Exploratory Data Analysis}
+
+
+Numeric variables
+
+<<results='asis', size = 'tiny'>>=
+skimr::skim_to_list(titanic) %>%
+ .$numeric %>%
+  knitr::kable(format = 'latex', booktabs = TRUE) %>%
+  kableExtra::kable_styling(latex_options = 'HOLD_position', font_size = 8)
+@
+
+
+\framebreak
+
+\textbf{Exploratory Data Analysis}
+
+
+Histograms of numerical features
+
+<<fig.height=4.5, size = 'tiny'>>=
+DataExplorer::plot_histogram(titanic, ggtheme = ggpubr::theme_pubr())
+@
+
+
+\framebreak
+
+\textbf{Exploratory Data Analysis}
+
+
+Seems we have quite some missing observations. Let's take a closer look:
+
+<<size = "tiny", fig.height=5>>=
+DataExplorer::plot_missing(titanic, ggtheme = ggpubr::theme_pubr())
+@
+
+
+\framebreak
+
+\textbf{Exploratory Data Analysis}
+
+
+It is always useful to check the correlation among variables:
+
+<<size = 'tiny', message=FALSE, fig.height=5>>=
+DataExplorer::plot_correlation(titanic, ggtheme = ggpubr::theme_pubr(base_size = 10),
+  type = "c", cor_args = list(use = "complete.obs"))
+@
+
+\end{vbframe}
+
+\endlecture
