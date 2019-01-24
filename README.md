@@ -41,7 +41,14 @@ The repository latex-math is used. Please read the accompanying ReadMe: https://
 
 are publicly accessible via [this link](https://github.com/compstat-lmu/lecture_intro_to_ml_notebooks)
 
-# Ideas for exercises:
 
-- Implement algorithms in code
--
+## Creating Lecture Videos
+
+Software: vokoscreen (Linux)
+Format: mkv
+Frames:25
+Videocodec: H.264 (High Profile)    (in vokoscreen: libx264)
+Audiocodec: MPEG-1 Layer 3 (MP3) (in vokoscreen: libmp3lame)
+Resolution: 1920 x 1080
+
+
