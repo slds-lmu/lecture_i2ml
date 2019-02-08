@@ -1,0 +1,430 @@
+# 3rd Notebook for Machine Learning Intro Lecture
+
+## 1. Overfitting kNN
+
+Why do we have to split in train and test?
+
+Check the performance of our knn-classifier on the test and train set depending on the hyperparameter k:
+
+```{r, message=FALSE, warning=FALSE}
+library(mlr)
+library(mlbench)
+
+set.seed(13)
+spiral = as.data.frame(mlbench.spirals(n = 500, sd = 0.1))
+plot(x = spiral$x.1, y = spiral$x.2, col = spiral$classes)
+
+trainSize = 3/4
+trainIndices = sample(x = seq(1, nrow(spiral), by = 1), size = ceiling(trainSize * nrow(spiral)), replace = FALSE)
+spiralTrain = spiral[ trainIndices, ]
+spiralTest = spiral[ -trainIndices, ]
+
+
+
+# run experiment
+k.values = rev(c(1, 2, 3, 4, 5, 7, 8, 9, 10, 15, 20, 25, 30, 35, 45, 50, 60, 70, 80, 90, 100))
+storage = data.frame(matrix(NA, ncol = 3, nrow = length(k.values)))
+colnames(storage) = c("mmce_train", "mmce_test", "k")
+
+for (i in 1:length(k.values)) {
+
+  spiralTask = makeClassifTask(data = spiralTrain, target = "classes")
+  spiralLearner = makeLearner("classif.kknn", k = k.values[i])
+  spiralModel = train(learner = spiralLearner, task = spiralTask)
+
+  # test data
+  # choose additional measures from: listMeasures(irisTask)
+  spiralPred = predict(spiralModel, newdata = spiralTest[])
+  storage[i, "mmce_test"] = performance(pred = spiralPred, measures = mmce)
+
+  # train data
+  spiralPred = predict(spiralModel, newdata = spiralTrain[])
+  storage[i, "mmce_train"] = performance(pred = spiralPred, measures = mmce)
+
+  storage[i, "k"] = k.values[i]
+}
+
+storage = storage[rev(order(storage$k)),]
+
+plot(x = storage$k, y = storage$mmce_train, main = "Overfitting behavior KNN",
+  xlab = "k", ylab = "mmce", col = "blue", type = "l",
+  xlim = rev(range(storage$k)),
+  ylim = c(min(storage$mmce_train, storage$mmce_test), 
+    max(storage$mmce_train, storage$mmce_test)))
+lines(x = storage$k, y = storage$mmce_test, col = "orange")
+legend("bottomleft", c("test", "train"), col = c("orange", "blue"), lty = 1)
+```
+
+## 2. How not to split: the good, the bad, the ugly
+
+How does the choice of the split in train and test data affect our estimation of the model performance?
+
+### the good split
+
+we train on the data 1:30 and test on 31:50. Remember, that iris is an ordered data set with the first 50 obsverations being setosa, the next 50 versicolor and the last 50 virginica. 
+
+```{r}
+library(mlr)
+library(ggplot2)
+
+task = makeClassifTask(data = iris, target = "Species")
+learner = makeLearner("classif.kknn", k = 3)
+model = train(learner, task, subset = c(1:30))
+pred = predict(model, task = task, subset = 31:50)
+performance(pred, measures = mmce)
+calculateConfusionMatrix(pred)
+```
+
+### the bad split
+
+we train on the data 1:100 and test on 101:150.
+
+```{r}
+task = makeClassifTask(data = iris, target = "Species")
+learner = makeLearner("classif.kknn", k = 3)
+model = train(learner, task, subset = c(1:100))
+pred = predict(model, task = task, subset = 101:150)
+performance(pred, measures = mmce)
+calculateConfusionMatrix(pred)
+```
+
+### the ugly split
+
+```{r}
+task = makeClassifTask(data = iris, target = "Species")
+learner = makeLearner("classif.kknn", k = 3)
+model = train(learner, task, subset = c(1:45, 51:95, 101:110))
+pred = predict(model, task = task, subset = c(46:50, 96:100, 111:150))
+performance(pred, measures = mmce)
+calculateConfusionMatrix(pred)
+```
+
+## 3. Confusion matrices, ROC, AUC and unbalanced data
+
+We use the Breast Cancer data set from [UCI database](https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+(Diagnostic)) which is an __unbalanced data set__ within which we want to predict the class of the cancer. We even manipulate the data set further to make it more unbalanced. 
+
+The data looks like that:
+
+```{r, message=FALSE, warning=FALSE}
+library("dplyr")
+data("BreastCancer")
+
+# delete one column with missing values
+bc = BreastCancer[, -c(1, 7)]
+# mutate all factors to numeric, simlification but ok here
+mut = bc[, -9] %>% mutate_all(as.character) %>% mutate_all(as.numeric)
+bcData = cbind(mut, bc$Class)
+colnames(bcData) = c(colnames(mut), "Class")
+# make it more extreme and kill 50% of the malignant data
+bcData = bcData[ -sample(which(bcData$Class == "malignant"), 150, replace = FALSE), ]
+head(bcData)
+table(bcData$Class) / sum(table(bcData$Class))
+```
+
+We split the data again in train and test and check the performance of two classifiers:
+
+1. Good old knn
+2. A stupid learner that simply predicts the majority of the two classes or each obsveration. 
+
+The problem is now, that even the stupid approach yields a reasonable mmce performance. Thus, we need additional measure such as the AUC and ROC curves to compare the two classifiers.
+
+```{r}
+# Data split
+set.seed(1337)
+trainSize = 3/4
+trainIndices = sample(x = seq(1, nrow(bcData), by = 1), size = ceiling(trainSize * nrow(bcData)), replace = FALSE)
+bcTrain = bcData[ trainIndices, ]
+bcTest = bcData[ -trainIndices, ]
+
+task = makeClassifTask(data = bcTrain, target = "Class")
+```
+
+knn
+
+```{r}
+# knn
+learner = makeLearner("classif.kknn", k = 5, predict.type = "prob")
+model = mlr::train(learner, task)
+predKnn = predict(model, newdata = bcTest)
+performance(predKnn, measures = list(mmce, auc))
+calculateConfusionMatrix(predKnn)
+```
+
+Stupid majority vote
+
+```{r}
+# learner that uses simple majority vote for classification
+stupidLearner = makeLearner("classif.featureless", method = "majority", predict.type = "prob")
+model = mlr::train(stupidLearner, task)
+predStupid = predict(model, newdata = bcTest)
+performance(predStupid, measures = list(mmce, auc))
+calculateConfusionMatrix(predStupid)
+```
+
+Compare the ROC curves:
+
+```{r}
+rocs = generateThreshVsPerfData(list(knn = predKnn, stupid = predStupid), measures = list(fpr, tpr, mmce))
+plotROCCurves(rocs)
+```
+
+## 4. Resampling 
+
+### Self made Cross Validation
+
+We want to assess the performance of our model aka estimate its Generalization error. Why is it a good idea to use Cross-Validation?
+
+```{r}
+selfCV = function(data, target, folds, k) {
+
+  storage = as.numeric(folds)
+
+  set.seed(1337)
+  indices = sample(x = seq(1, nrow(data), by = 1), size = nrow(data), replace = FALSE)
+
+  # index matrix for folds
+  indexMat = matrix(data = indices, byrow = TRUE, nrow = folds)
+
+  for (i in 1:folds) {
+
+    # data
+    testData = data[indexMat[i, ], ]
+    trainData = data[-indexMat[i, ], ]
+
+    # model
+    task = makeClassifTask(data = trainData, target = target)
+    learner = makeLearner("classif.kknn", k = k)
+    model = train(learner = learner, task = task)
+    storage[i] = performance(predict(model, newdata = testData),
+      measures = mmce)[[1]]
+  }
+
+  return(list(folds = folds, storage = as.data.frame(storage), GE = mean(storage)))
+}
+
+foo = selfCV(data = spiral, target = "classes", folds = 10, k = 3)
+foo$storage
+foo$GE
+```
+
+```{r}
+p = ggplot(data = foo$storage, aes(y = storage, x = 1)) +
+  geom_boxplot() +
+  ggtitle(label = "Generalization error CV") +
+  xlab("") + ylab("mmce") + xlim(c(0,2))
+p
+```
+
+### mlr's CV implementation
+
+```{r}
+set.seed(1337)
+task = mlr::makeClassifTask(data = spiral, target = "classes")
+rdescCV = mlr::makeResampleDesc(method = "CV", iters = 10)
+mlrCV = resample(learner = "classif.kknn", k = 3, task = task,
+  resampling = rdescCV, show.info = FALSE)
+mlrCV
+mlrCV$measures.test
+```
+
+```{r}
+p = ggplot(data = mlrCV$measures.test, aes(y = mmce, x = 1)) +
+  geom_boxplot() +
+  ggtitle(label = "Generalization error CV mlr") +
+  xlab("") + ylab("mmce") + xlim(c(0,2))
+p
+```
+
+## 5. Nested Resampling 
+   
+
+No we want to find the optimal hyperparameter k for our model. Therefore we use nested resampling with the following options:
+
+  * 10 outer CV loops
+  * 10 inner CV loops
+  * 7 Candidates (like in lecture slides 3.3)
+
+Basically, we want to do two things: find the optimal hyperparameter and estimate its generalization error. We can not do two operations in one CV and therefore use two nested CVs, thus we apply __nested resampling__.
+
+```{r}
+#' @param data whole data set including the target variable 
+#' @param target string indicating the target variable of the task 
+#' @param outerFolds the amount of folds in the outer loop of the nested resampling
+#' @param innerFolds the amount of folds in the inner loop of the nested resampling
+#' @param kCandidates the potential values for k from which we want to select the optimal 
+#' @param inform boolean controling if the user is getting informed about the progress of the procedure or not
+
+
+selfNR = function(data, target, outerFolds = 3, innerFolds = 4, kCandidates, inform = FALSE) {
+  
+  # counter for inform functionality
+  counter = 0
+  
+  set.seed(1337)
+  # indices for the outer loops
+  outerIndices = sample(x = seq(1, nrow(data), by = 1), size = nrow(data), replace = FALSE)
+  indexOuterMat = matrix(data = outerIndices, byrow = TRUE, nrow = outerFolds)
+  
+  # frame to store the winner and its test-GE from all outer folds
+  winnerCV = as.data.frame(matrix(0, nrow = outerFolds, ncol = 2))
+  colnames(winnerCV) = c("k", "GE")
+  
+  for (i in 1:outerFolds) {
+    
+    # split in validation and data for the inner loop
+    testData = data[indexOuterMat[i, ], ]
+    innerData = data[ -indexOuterMat[i, ], ]
+    
+    # frame to store the CV-GEs for each candidate
+    candidateGE = as.data.frame(matrix(0, nrow = length(kCandidates), ncol = 2))
+    colnames(candidateGE) = c("k", "GE")
+    
+    # calculate GE for each of the candidates via CV
+    for (l in 1:length(kCandidates)) {
+      
+      innerIndices = sample(x = seq(1, nrow(innerData), by = 1), size = nrow(innerData), replace = FALSE)
+      
+      # index matrix for inner folds
+      indexInnerMat = matrix(data = innerIndices, byrow = TRUE, nrow = innerFolds)
+      
+      # storage for CV errors for one candidate
+      storageInnerCV = numeric(innerFolds)
+      
+      for (j in 1:innerFolds) {
+          
+        # data split in validation and train data 
+        valData = innerData[indexInnerMat[j, ], ]
+        trainData = innerData[ -indexInnerMat[j, ], ]
+        
+        # model
+        task = makeClassifTask(data = trainData, target = target)
+        learner = makeLearner("classif.kknn", k = kCandidates[l])
+        model = train(learner = learner, task = task)
+        # inform user about progress
+        counter = counter + 1
+        if (inform) print(paste0("model: " ,counter, " inner fold: ", j, " outer fold: ", i))
+        # store GE estimates from test on validation data
+        storageInnerCV[j] = performance(predict(model, newdata = valData),
+          measures = mmce)[[1]]
+      }
+      
+      # CV GE for candidate l
+      candidateGE[l, "GE"] = mean(storageInnerCV)
+      candidateGE[l, "k"] = kCandidates[l]
+    }
+    
+    # get GE for best candidate in this outerFold
+    # in case of equally good Candidates, choose the first one
+    bestCandidate = candidateGE[which(candidateGE$GE == min(candidateGE$GE)), "k"][1]
+    winnerCV[i, "k"] = bestCandidate
+    
+    
+    # model
+    task = makeClassifTask(data = innerData, target = target)
+    learner = makeLearner("classif.kknn", k = kCandidates[l])
+    model = train(learner = learner, task = task)
+    # store GE estimates from test on test data
+    winnerCV[i, "GE"] = performance(predict(model, newdata = testData),
+      measures = mmce)[[1]]
+  }
+  return(winnerCV[order(winnerCV$GE), ])
+}
+```
+
+Run it and check the results of the outer CV:
+
+```{r}
+# let's run it
+resultNR = selfNR(data = spiral, target = "classes", outerFolds = 10, innerFolds = 10,
+  kCandidates = c(1, 3, 5, 10, 20, 30, 40, 100), inform = TRUE)
+# order results by GE
+resultNR
+```
+
+### Use only CV for Hyperparameter Selection:
+
+```{r}
+tuneCV = function(data, target, folds, kCandidates) {
+  
+  candidatesGE = as.data.frame(matrix(data = 0, nrow = length(kCandidates), ncol = 2))
+  colnames(candidatesGE) = c("k", "GE")
+
+  for (l in 1:length(kCandidates)) {
+    
+    candidatesGE[l, "k"] = kCandidates[l]
+    candidatesGE[l, "GE"] = selfCV(data = data, target = target, folds = folds, 
+      k = kCandidates[l])$GE
+  }  
+  return(candidatesGE[order(candidatesGE$GE), ])
+}
+
+
+resultCV = tuneCV(data = spiral, target = "classes", folds = 10, kCandidates = c(1, 3, 5, 10, 20, 30, 40, 100))
+resultCV
+```
+
+### Test the hyperparameters on completely unseen data
+
+Test the hyperparameters proposed by nested resampling and cross-validation on completely new data, that none of the two algorithms have seen before. Neat thing about the spiral data: we can simulate new data points whenever we want!
+
+What would we expect based on the lecture?
+
+An overly optimistic estimate for the perfect hyperparameter by simple CV (overtuning effect) and a more realistic estimate from the nested resampling algorithm. 
+
+#### Nested Resampling Hyperparameter
+
+```{r}
+set.seed(1337)
+unseenSpiral = as.data.frame(mlbench.spirals(n = 200, sd = 0.1))
+
+task = makeClassifTask(data = spiral, target = "classes")
+learner = makeLearner("classif.kknn", k = 20)
+model = train(learner = learner, task = task)
+print(paste0("nested RS k = 20: ", performance(predict(model, newdata = unseenSpiral), measures = mmce)[[1]], 
+     " with NR GE estimate: ", resultNR[1, 2]))
+```
+
+#### Simple Cross-Validation Hyperparameter
+
+```{r}
+set.seed(1337)
+unseenSpiral = as.data.frame(mlbench.spirals(n = 200, sd = 0.1))
+
+task = makeClassifTask(data = spiral, target = "classes")
+learner = makeLearner("classif.kknn", k = 5)
+model = train(learner = learner, task = task)
+print(paste0("CV tuned k = 5: ", performance(predict(model, newdata = unseenSpiral), measures = mmce)[[1]], 
+            " with CV GE estimate: ",resultCV[1, 2]))
+```
+
+### mlr implementation
+
+```{r}
+ps = makeParamSet(
+  makeDiscreteParam("k", values = c(1, 3, 5, 10, 20, 30, 40))
+)
+
+# inner loop
+ctrl = makeTuneControlGrid()
+inner = makeResampleDesc("CV", iters = 10L)
+learner = makeTuneWrapper("classif.kknn", resampling = inner, par.set = ps, control = ctrl, show.info = FALSE)
+
+# outer loop
+outer = makeResampleDesc("CV", iters = 10)
+r = resample(learner, task = task, resampling = outer, extract = getTuneResult, show.info = FALSE)
+r
+```
+
+Get the tuning results for the outer loops
+
+```{r}
+# tune results
+r$extract
+```
+
+```{r}
+getNestedTuneResultsX(r)
+```
+
+```{r}
+```

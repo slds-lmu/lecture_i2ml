@@ -1,0 +1,288 @@
+# First Notebook for Machine Learning Intro Lecture
+
+## 1. kNN
+
+### How does it work?
+
+Recap the functioning of k-NN:
+
+* For each test data point calculate the distance to all train data points using any distance measures
+* Most common measures 
+    * Metric features: 
+        * Euclidean distance: $D_2(a, b) = \sqrt{(a_1 - b_1)^2 + ... + (a_p - b_p)^2}$
+        * Manhattan distance: $D_1(a, b) = |a_1 - b_1| + ... + |a_p - b_p| $
+        * Mahalanobis Distance: $D_{Mahalanobis}(a, b) = \sqrt{(a_i - b_i)^T \Sigma^{-1}(a_i - b_i)}$
+    * Categorical features:
+        * Simple Matching Coefficient
+        * Jaccard Coefficient
+        * Rao's Coefficient 
+* Select the k nearest neighbors for each test data point and use the most frequent neighborhood class as prediction
+
+Use the dummy data set iris with only numeric features and split in test and train data:
+
+```{r}
+data(iris)
+set.seed(1327)
+trainSize = 3/4
+trainIndices = sample(x = seq(1, nrow(iris), by = 1), size = ceiling(trainSize * nrow(iris)), replace = FALSE)
+irisTrain = iris[ trainIndices, ]
+irisTest = iris[ -trainIndices, ]
+str(iris)
+```
+
+### Introductory Example
+
+Imagine five data points:
+
+```{r}
+ill.df = iris[c(1, 2, 3, 55, 110), -4]
+levels(ill.df[, "Species"]) = c(levels(ill.df[, "Species"]), "???")
+ill.df[3, "Species"] = "???"
+print(ill.df)
+```
+
+Which class would you select as prediction for the third observation?
+
+```{r, message=FALSE}
+library(plotly)
+p = plot_ly(ill.df, x = ~ Sepal.Length, y = ~ Sepal.Width, z = ~ Petal.Length, color = ~ Species, 
+            colors = c('#6edaa7', '#6e70da', "#e0ba5c", "#3b2e38")) %>%
+            add_markers() %>%
+            layout(scene = list(xaxis = list(title = 'Sepal.Length'),
+                     yaxis = list(title = 'Sepal.Width'),
+                     zaxis = list(title = 'Petal.Length')))
+p
+```
+
+### Implementation
+
+The function takes target Y, traindata, the testdata on which we want to perform knn classification as well as the k parameter. We also include the option to normalize the features (Why is that important?).
+
+```{r}
+get.knn = function(Y, train.data, test.data, k, normalize = FALSE){
+    
+    n = nrow(test.data)
+    pred = rep(as.character(NA), n)
+    
+    train.labels = train.data[, Y]
+    test.labels = test.data[, Y]
+    
+    # delete Y column from training and test sets
+    train.data[, Y] = NULL
+    test.data[, Y] = NULL
+    
+    # normalize the feature vectors if desired
+    if (normalize == TRUE) {
+        train.data = apply(train.data, MARGIN = 2, FUN = function(x) (x - max(x)) / (max(x) - min(x)) )
+        test.data = apply(test.data, MARGIN = 2, FUN = function(x) (x - max(x)) / (max(x) - min(x)) )
+    }
+
+    # we could eliminate the following loop with another apply, better this way for explanation
+    for (i in 1:n) {
+        # compute squared euclidean distances to all instances in training set
+        nn = order(apply(train.data, 1, function(x) sum((x - test.data[i, ])^2)))[1:k]
+        # compute frequencies of classes
+        class.frequency = table(train.labels[nn])
+        most.frequent.classes = names(class.frequency)[class.frequency == max(class.frequency)]
+        # tie breaking
+        pred[i] = sample(most.frequent.classes, 1) 
+    }
+                         
+    # calculate test error
+    pred.err = round(sum(ifelse(pred != test.labels, 1, 0)) / n, 4)                   
+    
+    # return list of values
+    return(list(prediction = pred, levels=levels(train.labels), mmce = pred.err))
+}
+```
+
+Test the algorithm
+
+```{r}
+# test on 10 flowers
+result = get.knn(Y = "Species", train.data = irisTrain, test.data = irisTest, k = 3, normalize = FALSE)
+print(paste0("mean misclassififation error on test data: ", result$mmce))
+head(cbind(irisTest, result$prediction))
+```
+
+Check the confusion matrix for the predictions
+
+```{r}
+print(table(result$prediction, irisTest$Species))
+```
+
+Run and test it for different k's:
+
+```{r}
+k.values = c(1, 2, 3, 5, 7, 9, 11, 15, 50)
+storage = data.frame(matrix(NA, ncol = 2, nrow = length(k.values)))
+colnames(storage) = c("mmce", "k")
+for (i in 1:length(k.values)) {
+    storage[i, "mmce"] = get.knn(Y = "Species", train.data = irisTrain, 
+                                 test.data = irisTest, k = k.values[i], 
+                                normalize = FALSE)$mmce
+    storage[i, "k"] = k.values[i]
+}
+print(storage)
+```
+
+### Normalization
+
+We included the option to normalize features according to the rule
+
+$$
+x_{normalized} = \frac{x - max(x)}{max(x) - min(x)}
+$$
+
+This makes sense, if features are on totally different scales (e.g. centimeter vs. meter). In such a case we would compare apples with oranges and the distances would be weighted unequally. Does it improve performannce with our data?
+
+```{r}
+k.values = c(1, 2, 3, 5, 7, 9, 11, 15, 50)
+storage = data.frame(matrix(NA, ncol = 2, nrow = length(k.values)))
+colnames(storage) = c("mmce", "k")
+for (i in 1:length(k.values)) {
+    storage[i, "mmce"] = get.knn(Y = "Species", train.data = irisTrain, 
+                                 test.data = irisTest, k = k.values[i], 
+                                normalize = TRUE)$mmce
+    storage[i, "k"] = k.values[i]
+}
+print(storage)
+```
+
+### mlr implementation
+
+The mlr package offers a unified interface to many different machine learning algorithms making complicated implementations as above unnecessary. Check the [tutorial](https://mlr-org.github.io/mlr-tutorial/devel/html/learner/index.html#modifying-a-learner) and the [list of integrated learners](https://mlr-org.github.io/mlr-tutorial/release/html/integrated_learners/). It uses a simple syntax, as used below:
+
+```{r, message=FALSE, warning=FALSE}
+library(mlr)
+# define task
+irisTask = makeClassifTask(data = irisTrain, target = "Species")
+# define learner and check possible models on mlr homepage
+irisLearner = makeLearner("classif.kknn", k = 5)
+# check available parameter settings
+getParamSet(irisLearner)
+```
+
+```{r}
+# train the model
+irisModel = train(learner = irisLearner, task = irisTask)
+# predict on test data
+irisPred = predict(irisModel, newdata = irisTest[, -5])
+# check confusion matrix
+print(table(irisPred$data$response, irisTest$Species))
+# calculate mmce
+(mmce = round(length(which(irisPred$data$response != irisTest$Species)) / length(irisPred$data$response), 5))
+```
+
+## 2. Linear model and loss minimization 
+
+### Problem
+We learned that we can estimate the $\hat \beta$ coefficients in two ways:
+
+   1. Solving the normal equation $$X^TX \beta = X^TY$$ for $\beta$ s.t. $$\hat \beta = (X^TX)^{-1}X^Ty.$$ This is how it is implemented (with some matrix decompositions) in R in the ```lm()``` function. 
+   
+   2. By minimizing the emiprical risk $$R_{emp}(f) = \frac{1}{n}\sum_{i=1}^n L(y_i, f(x_i | \beta))$$ of our estimator over $\beta$ with quadratic loss such that: $$ R_{emp}(f) = \frac{1}{n}\sum_{i=1}^n (y_i - x_i^T \hat\beta)^2.$$
+   This can be written in matrix notation as: $$R_{emp}(f) = \frac{1}{n}(X \beta - Y)^T (X\beta - Y) = \frac{1}{n}[\beta^T X^T X \beta - 2 \beta^TX^TY + Y^TY]$$
+   
+Now we compare both methods and check if they yield the same results for the iris data. We use the quadratic loss and yield this minimization problem w.r.t. $\beta$:
+
+$$\hat \beta = \arg \min_{\beta} R_{emp}(f)$$
+
+### Solution 
+We solve this equation using an iterative technique termed __Gradient Descent__ which follows this algorithm:
+
+1. Initialize $\beta_0$ randomly
+2. Calculate the Gradient of our loss function with respect to the current $\beta$: 
+$$
+\frac{\partial R_{emp}(f)}{\partial \beta} = \nabla_{\beta} \frac{1}{n}[\beta^T X^T X \beta - 2 \beta^TX^TY + Y^TY] = \frac{1}{n}X^T[X\beta - Y]
+$$
+3. in each step, we update the estimate for $\beta$ using this formula:
+$$
+\beta_{t+1} = \beta_{t} - \lambda \frac{\partial R_{emp}(f)}{\partial \beta}
+$$
+4. We stop when the updates of $\beta$ are beyond a certain threshold or the maximum iterations are reached. 
+
+Think of it as mountain from which we try to find the way to the valley. In each step, we check for the steepest descent and walk in that direction: 
+
+![](figures_man/gradient_mountain.png)
+
+### Implementation
+
+```{r}
+set.seed(1337)
+#### simluated data with 3 tricky features
+# X = as.matrix(cbind(runif(100, -3, 5), rnorm(100, -2, 10), rnorm(100, 5, 2)))
+# Y = as.matrix(0.4 * X[, 1] * 0.3 * X[, 2] + 0.3 * X[, 3]+ rnorm(100) + 2)
+
+#### simluated data with 2 simple features
+X = as.matrix(cbind(runif(100, -3, 5), runif(100, -2, 10)))
+Y = as.matrix(0.5*X[, 1] + 0.5*X[, 2] + rnorm(100) + 2)
+# add intercept
+X = cbind(1, X)
+n = nrow(X)
+
+# initialize beta with 0
+beta = as.matrix(rep(0, ncol(X)))
+
+# set maximum of updates
+max.iter = 10000
+
+# function that calculates the squared loss
+error = function(Y, X, beta) {
+  1 / nrow(X) * t(X %*% beta - Y) %*% (X %*% beta - Y) 
+}
+
+# initialize empty data frames for storage
+error.storage = data.frame(matrix(0, ncol = 2, nrow = max.iter))
+beta.storage = data.frame(matrix(0, ncol = 1 + ncol(X), nrow = max.iter))
+error.storage[, 1] = seq(1, max.iter)
+beta.storage[, 1] = seq(1, max.iter)
+
+# learning rate
+lambda = 0.01
+
+#  loop over gradient updates
+for (i in 1:max.iter) {
+  beta = beta - lambda * (1/n * (t(X) %*% (X %*% beta - Y)))
+  error.storage[i , 2] = error(Y = Y, X = X, beta = beta)
+  beta.storage[i , -1] = t(beta)
+}
+
+# Plot stuff 
+for (i in 1:length(beta)) {
+  plot(x = beta.storage[, 1], y = beta.storage[, i + 1], ylab = "coefficient value", 
+    xlab = "iteration", type = "l", col = "blue", main = paste0("beta ", i - 1))
+}
+plot(x = error.storage[, 1], y = error.storage[, 2], ylab = "error value", 
+  xlab = "iteration", type = "l", col = "red", main = "squared error loss")
+```
+
+### Comparison with lm
+
+```{r}
+# compare with lm model
+df = data.frame(cbind(Y, X[,-1 ]))
+colnames(df) = c("Y", paste0("X",seq(1, length(beta) -1 )))
+mod = lm(Y ~., data = df)
+summary(mod)
+```
+
+```{r}
+coeffdf = data.frame(cbind(mod$coefficients, beta))
+colnames(coeffdf) = c("closed form", "minimization form")
+print(coeffdf)
+```
+
+### Comparison with mlr's lm
+
+```{r}
+library(mlr)
+simTask = makeRegrTask(data = df, target = "Y")
+simLm = makeLearner("regr.lm")
+# ngetParamSet(simLm)
+simModel = train(learner = simLm, task = simTask)
+simModel$learner.model
+```
+
+```{r}
+```
