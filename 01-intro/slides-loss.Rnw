@@ -18,14 +18,14 @@ knitr::set_parent("../style/preamble.Rnw")
     \item Assume we trained a model to predict flat rent based on some features
     (size, location, age, ...).
     \item The real rent of a new flat, that the model never saw before, is
-    EUR 1000, our model predicts EUR 1300.
+    EUR 1600, our model predicts EUR 1300.
     \item How do we measure the performance of our model?
     \item We calculate the prediction error and therefore need a suitable error
     measure, aka a loss function such as:
     \begin{itemize}
-      \item Absolute loss: $L(y = 1000, \hat y = 1300) = |1000 - 1300| = 300$
-      \item Squared loss: $L(y = 1000, \hat y = 1300) = (1000 - 1300)^2 = 900$, weighs more heavily
-      for predictions that are far off.
+      \item Absolute loss: $L(y = 1600, \hat y = 1300) = |1600 - 1300| = 300$
+      \item Squared loss: $L(y = 1600, \hat y = 1300) = (1600 - 1300)^2 = 90000$,\\
+      this puts more emphasis on predictions that are far off the mark.
     \end{itemize}
     \item The choice of the loss has a major influence on the final model.
   \end{itemize}
@@ -33,66 +33,42 @@ knitr::set_parent("../style/preamble.Rnw")
 
 
 \begin{vbframe}{Loss minimization}
-
-The goodness of the prediction $y=\fx$ is measured by a \emph{loss function} $\Lxy $
-  and its expectation, the so-called \emph{risk},
-  $$ \riskf = \E [\Lxy] = \int \Lxy d\Pxy. $$
-
-  Obvious aim: Minimize $\riskf$ over $f$. But this is not (in general) practical:
-
 \begin{itemize}
-\item $\Pxy$ is unknown.
-\item We could estimate $\Pxy$ in non-parametric fashion from the data $D$, e.g., by kernel density
-  estimation, but this really does not scale to higher dimensions (see curse of dimensionality).
-\item We can efficiently estimate $\Pxy$, if we place rigorous assumptions on its distributional form,
-  and methods like discriminant analysis work exactly this way. ML usually studies more flexible models.
-\end{itemize}
-
-
-\framebreak
-
-An alternative (without directly assuming something about $\P_{xy}$) is to approximate $\riskf$ based on
-the data $\D$, by means of the \emph{empirical risk}
-
-$$
-\riske(f) = \frac{1}{n} \sumin \Lxyi
-$$
-
-Learning then amounts to \emph{empirical risk minimization}
+    \item The quality of a single prediction $y=\fx$ is measured by a \textbf{loss function} $\Lxy$.
+    \item The ability of a model $f$ to reproduce the association between $x$ and $y$ that is 
+    present in the data $\D$ can be measured by the \textbf{empirical risk}
+    $$
+  \riske(f) = \frac{1}{n} \sumin \Lxyi.
+  $$
+   \item Learning then amounts to \textbf{empirical risk minimization} -- finding the model $f$ that results in the smallest average loss: 
 $$
 \fh = \argmin_{f \in \Hspace} \riske(f).
 $$
-
+\end{itemize}
 \framebreak
 
-When $f$ is parameterized by $\theta$, this becomes:
+The model $f$ is usually controlled by \textbf{parameters} $\theta$, so this becomes:
 
 \begin{eqnarray*}
 \riske(\theta) & = & \frac{1}{n} \sumin \Lxyit \cr
 \hat{\theta} & = & \argmin_{\theta \in \Theta} \riske(\theta)
 \end{eqnarray*}
 
-Thus learning (often) means solving the above \emph{optimization problem}.
-Which implies a tight connection between ML and optimization.
-
-Note that (with a slight abuse of notation), if it is more convenient, and as there is no difference w.r.t.
-the minimizer, we might also define the $\riske$ in its non-average-but-instead-summed version as:
-
-$$
-\risket = \sumin \Lxyit
-$$
+Most learners in ML try to solve the above \emph{optimization problem}, which
+implies a tight connection between ML and optimization.
 
 \framebreak
 
 \begin{itemize}
-\item For regression, the loss usually only depends on residual $\Lxy = L(y - \fx) = L(\eps)$,
-  this is a \emph{translation invariant} loss
-\item Choice of loss decides statistical properties of $f$: Robustness, error distribution (see later)
-\item Choice of loss decides computational / optimization properties of minimization of $\risket$:
-  Smoothness of objective, can gradient methods be applied, uni- or multimodality. \\
-  If $\Lxy$ is convex in its second arguments, and $\fxt$ is linear in $\theta$, then $\risket$ is convex.
-  Hence every local minimum of $\risket$ is a global one. If $\Lxy$ not convex,
-  R might have multiple local minima (bad!).
+\item For regression tasks, the loss usually only depends on residual $\Lxy = L(y - \fx) = L(\eps)$.
+\item Since learning can be re-phrased as minimizing the loss, the choice of loss strongly affects the computational difficulty of learning: 
+\begin{itemize}
+    \item smoothness of $\riske(\theta)$ in $\theta$
+    \item can gradient-based methods be applied to minimize $\riske(\theta)$? 
+    \item uni- or multimodality $\riske(\theta)$ over $\Theta$. \\
+\end{itemize}
+\item The choice of loss implies which kinds of errors are important or not -- need \emph{domain knowledge}!
+\item For learners that correspond to probabilitistic models, the loss determines / is equivalent to distributional assumptions.
 \end{itemize}
 \end{vbframe}
 
@@ -122,28 +98,28 @@ We set the derivative of the empirical risk to zero and solve for $c$:
  \frac{1}{n}\sumin 2(\yi - c) &=& 0 \cr
 \hat{c} &=& \frac{1}{n} \sumin \yi
 \end{eqnarray*}
-$\frac{1}{n} \sumin \yi$ is also the maximum likelihood estimator for the mean  $E[y]$.
+% $\frac{1}{n} \sumin \yi$ is also the maximum likelihood estimator for $\E[y]$ .
 
-\framebreak
-What is the optimal prediction if we allow $c$ to depend on $x$? \\
-According to the law of total expectation:
-\begin{displaymath}
-  \E_{xy} [\Lxy] = \E_x
-  \left[\E_{y|x}[(y-\fx)^2|x=x]\right]
-\end{displaymath}
-For the optimal prediction it suffices to minimize the risk pointwise:
-$$
-  \fh(x) = \mbox{argmin}_c \E_{y|x}[(y-c)^2|x=x]=\E (y | x=x)
-$$
-So for squared loss, the best prediction in every point is the conditional mean of $y$ given $x$.
-
-\lz
-
-The last step follows from:
-$$
-E[(y - c)^2] = Var[y - c] + (E[y - c])^2 = Var[y] + (E[y] - c)^2
-$$
-This is minimal for $c=E[y]$ if $c$ constant and for $c = E[y|x = x]$ if $c$ is not constant.
+% \framebreak
+% What is the optimal prediction if we allow $c$ to depend on $x$? \\
+% According to the law of total expectation:
+% \begin{displaymath}
+%   \E_{xy} [\Lxy] = \E_x
+%   \left[\E_{y|x}[(y-\fx)^2|x=x]\right]
+% \end{displaymath}
+% For the optimal prediction it suffices to minimize the risk pointwise:
+% $$
+%   \fh(x) = \mbox{argmin}_c \E_{y|x}[(y-c)^2|x=x]=\E (y | x=x)
+% $$
+% So for squared loss, the best prediction in every point is the conditional mean of $y$ given $x$.
+% 
+% \lz
+% 
+% The last step follows from:
+% $$
+% E[(y - c)^2] = Var[y - c] + (E[y - c])^2 = Var[y] + (E[y] - c)^2
+% $$
+% This is minimal for $c=E[y]$ if $c$ constant and for $c = E[y|x = x]$ if $c$ is not constant.
 \end{vbframe}
 
 
@@ -155,7 +131,7 @@ This is minimal for $c=E[y]$ if $c$ constant and for $c = E[y|x = x]$ if $c$ is 
 \item No derivatives for $r = 0$, $y = f(x)$, optimization becomes harder
 \item More robust, outliers in $y$ are less problematic
 \item $\fh(x) = \text{median of } y | x$
-\item Connection to Laplace distribution (see later)
+%\item Connection to Laplace distribution (see later)
 \end{itemize}
 
 <<echo=FALSE, results='hide', fig.height=3, fig.align='center'>>=
