@@ -22,56 +22,57 @@ bin.tsk = makeClassifTask(data = bin.data, target = "tar")
 
 \lecturechapter{6}{Logistic Regression}
 \lecture{Introduction to Machine Learning}
-
-  \begin{vbframe}{Bin. classif. losses - Logistic loss}
-  \begin{itemize}
-    \item $\Lxy = \ln(1+\exp(-y\fx))$, used in logistic regression
-    \item $y \in \{-1, 1\}$
-    \item Also called Bernoulli loss
-  \item Convex, differentiable, not robust
-  \end{itemize}
-
-  <<fig.height=3>>=
-  x = seq(-2, 2, by = 0.01); y = log(1 + exp(-x))
-  qplot(x, y, geom = "line", xlab = expression(yf(x)), ylab = expression(L(yf(x))))
-  @
-  % the minimizer of $\risk(f)$ for the logistic loss function is
-
-  % \begin{eqnarray*}
-  % \fh(x) &=&  \ln \biggl(\frac{\pix}{1-\pix}\biggr)
-  % \end{eqnarray*}
-
-  % The function is undefined when $\pix = 1$ or $\pix = 0$, but predicts a smooth curve which grows when $\pix$ increases and equals $0$ when $\pix = 0.5$
-
-
-  \end{vbframe}
+% 
+%   \begin{vbframe}{Bin. classif. losses - Logistic loss}
+%   \begin{itemize}
+%     \item $\Lxy = \ln(1+\exp(-y\fx))$, used in logistic regression
+%     \item $y \in \{-1, 1\}$
+%     \item Also called Bernoulli loss
+%   \item Convex, differentiable, not robust
+%   \end{itemize}
+% 
+%   <<fig.height=3>>=
+%   x = seq(-2, 2, by = 0.01); y = log(1 + exp(-x))
+%   qplot(x, y, geom = "line", xlab = expression(yf(x)), ylab = expression(L(yf(x))))
+%   @
+%   % the minimizer of $\risk(f)$ for the logistic loss function is
+% 
+%   % \begin{eqnarray*}
+%   % \fh(x) &=&  \ln \biggl(\frac{\pix}{1-\pix}\biggr)
+%   % \end{eqnarray*}
+% 
+%   % The function is undefined when $\pix = 1$ or $\pix = 0$, but predicts a smooth curve which grows when $\pix$ increases and equals $0$ when $\pix = 0.5$
+% 
+% 
+%   \end{vbframe}
 
 \begin{vbframe}{Logistic regression}
 
-A \emph{discriminant} approach for directly modeling the posterior probabilities of the classes is \emph{Logistic regression}. For now, we will only look at the binary case $y \in \{0, 1\}$.
+A \emph{discriminant} approach for directly modeling the posterior probabilities $\pix$ of the labels is \textbf{logistic regression}.\\
+
+For now, let's focus on the binary case $y \in \{0, 1\}$.
+
+A naive approach would be to model
+\[
+\pix = \post = \theta^T x .
+\]
+Obviously this could result in predicted probabilities $\pix \not\in [0,1]$.
+
+\framebreak
+
+Logistic regression squashes the estimated linear scores $\theta^T x$ to $[0,1]$ through a sigmoid function $s$:
+\[
+\pix = \post = \frac{\exp\left(\theta^Tx\right)}{1+\exp\left(\theta^Tx\right)} = s\left(\theta^T x\right)
+\]
 Note that we will suppress the intercept in notation.
 
-$$
-\pix = \post = \frac{\exp(\theta^Tx)}{1+\exp(\theta^Tx)} = s(\theta^T x)
-$$
-
-We can either directly assume the above form, or arrive at it by requiring that the log-odds
-are linear in $\theta$:
-
-$$
-\log \frac{\pix}{1-\pix} = \log\frac{\post}{\P(y = 0 | x)} = \theta^Tx.
-$$\
-
 \lz
-
-The logistic function $s(t) = \frac{\exp(t)}{1 + \exp(t)}$
-transforms the scores / log-odds $\theta^Tx$ into a probability.
-
 
 \framebreak
 The logistic function $s(t) = \frac{exp(t)}{1 + exp(t)}$ which we use to model the probability
 $\post = s(\theta^T x)  = \frac{\exp(\theta^Tx)}{1+\exp(\theta^Tx)} $
-<<logistic-function, echo=FALSE, out.height="0.65\\paperheight">>=
+
+<<logistic-function, echo=FALSE, out.height="0.65\\paperheight", fig.height = 6>>=
 n = 100
 df = data.frame(x = seq(from = -10, to  = 10, length.out = n))
 df$y = exp(df$x) / (1 + exp(df$x))
