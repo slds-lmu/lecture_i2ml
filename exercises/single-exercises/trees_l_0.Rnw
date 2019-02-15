@@ -1,95 +1,86 @@
 \begin{enumerate}
-\item Try to manually compute the first split point that the CART algorithm would do on the following dataset, once using x as feature and once using log(x) as feature:
-
-\begin{center}
-<<echo = FALSE>>=
-x = c(1,2,7,10,20)
-y = c(1,1,0.5,10,11)
-data = t(data.frame(x = x, y = y))
-knitr::kable(data)
-@
-\end{center}
-
-Proceed as follows:
-
-\begin{enumerate}
-\item Split x in two groups using each observation as split point.
-\begin{itemize}
-\item $ (1)$, $(2,7,10,20)$ (splitpoint 1)
-\item $ (1,2)$, $(7,10,20)$ (splitpoint 2)
-\item $ (1,2,7)$, $(10,20)$ (splitpoint 7)
-\item $= (1,2,7,10)$, $(20)$ (splitpoint 10)
-\end{itemize}
-\item For each possible split point compute the sum of squares in both groups.
-\item Use as split point the observaton that splits both groups best w.r.t. minimizing the sum of squares in both groups.
-\end{enumerate}
-
-Here, we have only one split variable $x$. A split point $t$, leads to the following half-spaces (here, we will have 4 possibilities, see figure below):
-
-\begin{align*}
-\Nl(t) &= \{ (x,y) \in \Np: x \leq t \} \text{ and } \Nr(t) = \{ (x,y) \in \Np: x > t \}.
-\end{align*}
-
-Remember the minimization Problem (here only for one split variable $x$):
-
-\begin{align*}
-\min_{t} \left(\min_{c_1} \sum_{(x,y) \in \Nl} (y - c_1)^2 + \min_{c_2} \sum_{(x,y) \in \Nr} (y - c_2)^2 \right).
-\end{align*}
-The inner minimization is solved through:
-$\hat{c}_1 = \bar{y}_1$ and $\hat{c}_2 = \bar{y}_2$
-
-Which results in:
-
-\begin{align*}
-\min_{t} \left(\sum_{(x,y) \in \Nl} (y - \bar{y}_1)^2 + \sum_{(x,y) \in \Nr} (y - \bar{y}_2)^2 \right).
-\end{align*}
-
-<<echo = -1, fig.height=5, fig.width=5, fig.align='center'>>=
-par(mfrow = c(2,2), mar = c(4,4,1,1))
-x = c(1,2,7,10,20)
-y = c(1,1,0.5,10,11)
-for (i in 1:(length(x) - 1)) plot(x, y, col = as.factor(x <= x[i]))
-@
-The sum of squares error of the parent is: 
-$$Impurity_{parent} = MSE_{parent} = \frac{1}{5} \sum_{i=1}^5 (y_i - 4.7)^2 = 22.56 $$
-
-Example calculation of sum of squares for split at $x \leq 1$: 
-\begin{align*}
-Impurity_{children} &= \frac{1}{5}MSE_{left} + \frac{4}{5}MSE_{right}  =  \\
- &= \frac{1}{5} \cdot \frac{1}{1}(1 - 1)^2 + \frac{4}{5} \cdot\frac{1}{4}((1 - 5.625)^2 + (0.5 - 5.625)^2 + (10 - 5.625)^2 + (11 - 5.625)^2) \\
- &= 19.1375 
-\end{align*}
-The reduction in impurity is: 
-$$Impurity_{parent} - Impurity_{children} = 22.56 - 19.14 = 3.42 $$
-
-\item Implement an R code that finds the best split point according to the CART algorithm (i.e., solve the exercise above in R).
-
-<<>>=
-MSE = function(x) mean((x - mean(x))^2)
-
-split = function(x, y) {
-  parent_mse = MSE(y)
-  n = length(y)
-  # try out all points as potential split points and ...
-  splits = lapply(x, function(i) {
-    yleft = y[x <= i]
-    yright = y[x > i]
-    # ... compute SS in both groups
-    mse_total = (length(yleft)/n) * MSE(yleft) + (length(yright)/n) * MSE(yright) 
-    print(sprintf("Split at %.1f: %.2f Impurity reduction", i, parent_mse - mse_total))
-    parent_mse - mse_total
-  })
-  # select the split point yielding the maximum impurity reduction 
-  best = which.max(splits)
-  x[best]
-}
-
-x
-split(x, y) # the 3rd observation is the best split point
-
-log(x)
-split(log(x), y) # also here, the 3rd observation is the best split point
-@
-
+  \item[a)] 
+  
+  Proceed as follows:
+  
+  \begin{enumerate}
+    \item Split x in two groups using each observation as split point.
+    \begin{itemize}
+      \item $ (1)$, $(2,7,10,20)$ (splitpoint 1)
+      \item $ (1,2)$, $(7,10,20)$ (splitpoint 2)
+      \item $ (1,2,7)$, $(10,20)$ (splitpoint 7)
+      \item $ (1,2,7,10)$, $(20)$ (splitpoint 10)
+    \end{itemize}
+    \item For each possible split point compute the sum of squares in both groups.
+    \item Use as split point the observaton that splits both groups best w.r.t. minimizing the sum of squares in both groups.
+  \end{enumerate}
+  
+  Here, we have only one split variable $x$. A split point $t$, leads to the following half-spaces (here, we will have 4 possibilities, see figure below):
+  
+  \begin{align*}
+  \Nl(t) &= \{ (x,y) \in \Np: x \leq t \} \text{ and } \Nr(t) = \{ (x,y) \in \Np: x > t \}.
+  \end{align*}
+  
+  Remember the minimization Problem (here only for one split variable $x$):
+  
+  \begin{align*}
+  \min_{t} \left(\min_{c_1} \sum_{(x,y) \in \Nl} (y - c_1)^2 + \min_{c_2} \sum_{(x,y) \in \Nr} (y - c_2)^2 \right).
+  \end{align*}
+  The inner minimization is solved through:
+  $\hat{c}_1 = \bar{y}_1$ and $\hat{c}_2 = \bar{y}_2$
+  
+  Which results in:
+  
+  \begin{align*}
+  \min_{t} \left(\sum_{(x,y) \in \Nl} (y - \bar{y}_1)^2 + \sum_{(x,y) \in \Nr} (y - \bar{y}_2)^2 \right).
+  \end{align*}
+  
+  <<echo = -1, fig.height=5, fig.width=5, fig.align='center'>>=
+  par(mfrow = c(2,2), mar = c(4,4,1,1))
+  x = c(1,2,7,10,20)
+  y = c(1,1,0.5,10,11)
+  for (i in 1:(length(x) - 1)) plot(x, y, col = as.factor(x <= x[i]))
+  @
+  The sum of squares error of the parent is: 
+  $$Impurity_{parent} = MSE_{parent} = \frac{1}{5} \sum_{i=1}^5 (y_i - 4.7)^2 = 22.56 $$
+  
+  Example calculation of sum of squares for split at $x \leq 1$: 
+  \begin{align*}
+  Impurity_{children} &= \frac{1}{5}MSE_{left} + \frac{4}{5}MSE_{right}  =  \\
+   &= \frac{1}{5} \cdot \frac{1}{1}(1 - 1)^2 + \frac{4}{5} \cdot\frac{1}{4}((1 - 5.625)^2 + (0.5 - 5.625)^2 + (10 - 5.625)^2 + (11 - 5.625)^2) \\
+   &= 19.1375 
+  \end{align*}
+  The reduction in impurity is: 
+  $$Impurity_{parent} - Impurity_{children} = 22.56 - 19.14 = 3.42 $$
+  
+  \item[b)] 
+  
+  <<>>=
+  MSE = function(x) mean((x - mean(x))^2)
+  
+  split = function(x, y) {
+    parent_mse = MSE(y)
+    n = length(y)
+    # try out all points as potential split points and ...
+    splits = lapply(x, function(i) {
+      yleft = y[x <= i]
+      yright = y[x > i]
+      # ... compute SS in both groups
+      mse_total = (length(yleft)/n) * MSE(yleft) + (length(yright)/n) * MSE(yright) 
+      print(sprintf("Split at %.1f: %.2f Impurity reduction", i, parent_mse - mse_total))
+      parent_mse - mse_total
+    })
+    # select the split point yielding the maximum impurity reduction 
+    best = which.max(splits)
+    x[best]
+  }
+  
+  x
+  split(x, y) # the 3rd observation is the best split point
+  
+  log(x)
+  split(log(x), y) # also here, the 3rd observation is the best split point
+  @
+  
 
 \end{enumerate}
