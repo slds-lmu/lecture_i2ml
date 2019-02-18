@@ -172,7 +172,7 @@ if (frame == 8) {
   layout(t(c(1,2)))
   p = persp(x = c1_grid, y = c2_grid, sae_surf, theta = -130, phi = 10, 
              ticktype = "detailed", xlab = "Intercept", ylab = "Slope", zlab = "Sum of Absolute Errors", 
-             col = clrs_ramp[clrs_sae], border = rgb(0,0,0,.5))
+             col = clrs_ramp[clrs_sae], border = rgb(0,0,0,.5), main = "L1 Loss Surface")
   sae_min = which(sae_surf == min(sae_surf), arr.ind = TRUE)
   sae_sol <- trans3d(x = c1_grid[sae_min[1]], 
           y = c2_grid[sae_min[2]], 
@@ -184,7 +184,7 @@ if (frame == 8) {
   p <- persp(x = c1_grid, y = c2_grid, sse_surf, theta = -130, phi = 10, 
              zlim = range(sse_surf),
              ticktype = "detailed", xlab = "Intercept", ylab = "Slope", zlab = "SSE", 
-             col = clrs_ramp[clrs], border = rgb(0,0,0,.5))
+             col = clrs_ramp[clrs], border = rgb(0,0,0,.5), main = "L2 Loss Surface")
   points_3d = 
     trans3d(x = coef(m)[1], 
             y = coef(m)[2], 

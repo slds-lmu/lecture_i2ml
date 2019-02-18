@@ -39,13 +39,13 @@ This restricts the hypothesis space $\Hspace$ to all linear functions in $\theta
 <<echo=FALSE, out.width="0.7\\textwidth", fig.width=4, fig.height=3>>=
 ggplot() +
   stat_function(data = data.frame(x = c(-0.5, 4)), aes(x = x), fun = function (x) { 1 + 0.5 * x }) +
+  geom_vline(xintercept = 0, color = "gray", linetype = "dashed") +
   geom_segment(mapping = aes(x = 2, y = 2, xend = 3, yend = 2), linetype = "dashed") +
   geom_segment(mapping = aes(x = 3, y = 2, xend = 3, yend = 2.5), linetype = "dashed", color = "red") +
-  geom_segment(mapping = aes(x = -0.3, y = 1, xend = 0.3, yend = 1), linetype = "dashed", color = "blue") +
+  geom_segment(mapping = aes(x = 0, y = 0, xend = 0, yend = 1), linetype = "dashed", color = "blue") +
   geom_text(mapping = aes(x = 2.5, y = 2, label = "1 Unit"), vjust = 2) +
-  geom_text(mapping = aes(x = 3, y = 2.25, label = "{theta == slope} == 0.5"), hjust = -0.05, parse = TRUE, color = "red") +
-  geom_text(mapping = aes(x = 0, y = 1, label = "{theta[0] == intercept} == 1"), hjust = -0.25, parse = TRUE, color = "blue") +
-  geom_vline(xintercept = 0, color = "gray", linetype = "dashed") +
+  geom_text(mapping = aes(x = 3, y = 2.25, label = "{theta[1] == slope} == 0.5"), hjust = -0.05, parse = TRUE, color = "red") +
+  geom_text(mapping = aes(x = 0, y = 1, label = "{theta[0] == intercept} == 1"), hjust = -0.1, parse = TRUE, color = "blue") +
   ylim(c(0, 3.5)) + xlim(c(-0.5, 4.3))
 @
 
@@ -156,7 +156,7 @@ source("figure_man/sse_lm_viz.R")
 
 \framebreak
 
-Instead of guessing parameters, we use \textbf{optimization} to find the best $\theta$:
+Instead of guessing, we use \textbf{optimization} to find the best $\theta$:
 \lz
 <<echo=FALSE, out.width=".6\\textwidth", fig.width=5, fig.height=5>>=
 frame = 5
@@ -165,7 +165,7 @@ source("figure_man/sse_lm_viz.R")
 
 \framebreak
 
-Instead of guessing parameters, we use \textbf{optimization} to find the best $\theta$:
+Instead of guessing, we use \textbf{optimization} to find the best $\theta$:
 \lz
 <<echo=FALSE, out.width=".6\\textwidth", fig.width=5, fig.height=5>>=
 frame = 6
@@ -174,7 +174,7 @@ source("figure_man/sse_lm_viz.R")
 
 \framebreak
 
-Instead of guessing parameters, we use \textbf{optimization} to find the best $\theta$:
+Instead of guessing, we use \textbf{optimization} to find the best $\theta$:
 \lz
 <<echo=FALSE, out.width="\\textwidth", fig.width=7.5, fig.height=3.5>>=
 frame = 7
@@ -281,7 +281,7 @@ y = h(x)
 line.palette = viridisLite::viridis(4)
 baseplot = function() {
   # par(mar = c(2, 2, 1, 1))
-  plot(x, y, pch = 19L, ylim = c(0, 1.2))
+  plot(x, y, pch = 19L, ylim = c(0, 1.35))
 }
 
 p1 = lm(y ~ poly(x, 1, raw = TRUE))
@@ -345,14 +345,16 @@ legend("topright", paste(sprintf("f(x) with d = %s", c(1, 5, 15)), c("(linear)",
 The higher $d$ is, the more \textbf{capacity} the learner has to learn complicated functions of $x$, but
 this also increases the danger of \textbf{overfitting}:\\
 \lz
+
 The model space $\Hspace$ contains so many complex functions that we are able to find one that approximates 
 the training data arbitrarily well.
 \lz
+
 However, predictions on new data are not as successful because our model includes too much of the \enquote{noise} of the training data (much, much more on this later).  
 
 \framebreak
 
-<<echo=FALSE, out.height=".9\\textheight", fig.height=8>>=
+<<echo=FALSE, fig.height = 6.5>>=
 layout((1:2))
 baseplot()
 title(main = "Training Data")
@@ -365,7 +367,7 @@ plot(x.plot,
      .h(x.plot) + .1 * rnorm(length(x.plot)) + .1, pch = 19, col = rgb(0,0,0,.5),
      cex = .8,
      xlab = "x", ylab = "y",
-     ylim = c(0, 1.2))
+     ylim = c(0, 1.35))
 title(main = "Test Data")
 for (i in 2:3) {
   lines(x.plot, predict(mods[[i]], newdata = data.frame(x = x.plot)),
