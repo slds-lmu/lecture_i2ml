@@ -36,11 +36,14 @@ Practical Tips and best practices for doing machine learning.
 \begin{vbframe}{The Data Science Workflow}
   %  http://docs.aws.amazon.com/machine-learning/latest/dg/building-machine-learning.html
   \begin{enumerate}
-  \item (Re-)formulate the problem as a prediction problem. What is observed? What should be predicted?
+  \item (Re-)formulate the problem as a prediction problem.\\
+  What is observed?\\
+  What should be predicted?
   \item Collect, clean and prepare the data for the machine learning model.
-  \item Explore the data to assess the quality and understand it.
+  \item Explore the data to assess its quality and understand it: Requires domain knowledge, uses visualizations. 
   \item Transform the input and output variables if necessary. Feature engineering is usually a manual job. 
-  \item Train the model, evaluate its performance on independent test data, which was not used for learning.
+  \item Train the model(s)
+   \item Evaluate model performance on previously unseen test data which was not used in any way for training (not even: for data-dependent preprocessing).
   \item Predict new data points with the model
  \end{enumerate}
 \end{vbframe}
@@ -48,20 +51,20 @@ Practical Tips and best practices for doing machine learning.
 \begin{vbframe}{Missing data}
   \begin{itemize}
   \item In real data sets, missing values are common.
-  \item For some observations only a part of the variables might be observed.
+  \item For some observations, only a part of the variables might be observed.
   \item Most algorithms can't handle missing values (e.g. linear models).
   \item Missing data can be missing completely at random (MCAR) or missing not a at random (MNAR). 
-  \item Example MCAR: A blood test get's lost in the lab / Survey questions are not filled out because of internet connectivity problems. 
-  \item Example MNAR: People with a high income leave the question about their income empty (because it's high). 
+  \item Example MCAR: A blood test gets lost in the lab; some survey questions are not filled out because of internet connectivity problems. 
+  \item Example MNAR: The most sick patients do not get blood tests done because they were not able to come to the doctor's office; rich people do not answer survey questions about their income or wealth.
   \end{itemize}
 \end{vbframe}
 
 \begin{vbframe}{Missing data}
   \begin{itemize}
-  \item If only a small portion of the data contains missing values and the values are missing at random (MCAR), these observations can be deleted. 
-  \item Deleting data that is not missing at random (MNAR) might bias the machine learning model. 
+  \item If only a small portion of the data contains missing values and the values are MCAR, these observations can be omitted. 
+  \item Omitting observations that contain MNAR data might bias the model predictions. 
   \item If the missing values have a structure (MNAR), adding a feature indicating missingness can help (e.g. 'Refused to answer'). 
-  \item For randomly missing data (MCAR) \textbf{Imputation} is an option.
+  \item For randomly missing data (MCAR), \textbf{imputation} of missing values is an option.
   \item Imputation is more art than science -- the choice of method depends on the data as well as the prediction problem. 
   \end{itemize}
 \end{vbframe}
@@ -69,19 +72,20 @@ Practical Tips and best practices for doing machine learning.
 \begin{vbframe}{Imputation}
   Imputation methods: 
   \begin{itemize}
-  \item The ``hot deck'' imputation chooses the most similar data point to replace missing values (1-nearest neighbour method).
-  \item The mean imputation replace missing feature values with their mean. Problematic: changes the feature distribution.
-  \item The regression imputation fits a regression model with the missing value feature as target and all other features as input. The predictions are used to impute the missing values. 
-  \item The EM-algorithm is an iterative method to estimate parameters that were not observed or cannot be observed.
+  \item ``Hot deck'' imputation chooses the most similar data point to replace missing values (1-nearest neighbor method).
+  \item Mean imputation replaces missing feature values with their mean. Problematic: changes the feature distribution.
+  \item Model-based imputation fits a prediction model with the missing value feature as target and all other features as input. The predictions are used to impute the missing values. 
+   %\item The EM-algorithm is an iterative method to estimate parameters that were not observed or cannot be observed.
   \end{itemize}
+Uncertainty about the unobserved values of the missing data can be included in predictions by doing \textbf{multiple imputation}: creating a number of different variations of the imputed complete training data and combining the results of different models trained on them.
 \end{vbframe}
 
 \begin{vbframe}{Feature Engineering}
 % http://docs.aws.amazon.com/machine-learning/latest/dg/data-transformations-for-machine-learning.html
   \begin{itemize}
   \item \textbf{Feature Engineering} is the combination and transformation of features to improve the predictive performance.
-  \item Example: The \texttt{flights}-dataset contains flights: departure and arrival time and the delays in minutes. Additionally to knowing departure and arrival, the flight duration might be useful to predict delays.
-  \item $\Rightarrow$ Create a new feature ``flight duration'' as the time between departure and planned arrival time.
+  \item Example: The \texttt{flights}-dataset contains flights: planned departure and arrival time and the delays in minutes. Additionally to knowing departure and arrival, the flight duration might be useful to predict delays.
+  \item $\Rightarrow$ Create a new feature ``flight duration'' as the difference between planned departure and arrival times.
   \end{itemize}
 \end{vbframe}
 
@@ -91,16 +95,29 @@ Practical Tips and best practices for doing machine learning.
   \begin{itemize}
   \item Calculate the logarithm of a feature (useful for GLMs, but not trees).
   \item Create a ``County'' feature from the zip code.
-  \item Split a time variable like \texttt{2016-06-01\_13:49} into the feature ``year'', ``month'', ``day'', ``weekday'' and ``time''.
+  \item Split a date variable like \texttt{2016-06-01\_13:49} into features ``year'', ``month'', ``day'', ``weekday'' and ``time of day''.
   \end{itemize}
 \end{vbframe}
 
-\begin{vbframe}{Model class selection}
-  Which model class should I use?
+\begin{vbframe}{Model selection}
+
+Which model class should I use?
   \begin{itemize}
   \item If you prioritize good \textbf{prediction} over understanding the underlying model, choose a machine learning algorithm. Example: Amazon product recommendations. 
-  \item If you prioritize valid \textbf{insights} over good prediction (e.g. understanding the influence of a feature), choose statistical models. Example: Clinical trials. 
+  \item If you prioritize valid \textbf{insights} over good prediction (e.g. understanding the influence of a feature or being able to "explain" a predicted value), choose statistical models. Example: Clinical trials. 
   \end{itemize}
+  
+\framebreak  
+  
+Additional criteria:
+  \begin{itemize}
+  \item The chosen model should be optimizable in terms of the performance metric it is actually evaluated on.
+  \item Training data size: e.g. simple regression or kNN can be problematic if there are more features than observations in the training data.  
+  \item Are point predictions sufficient or is uncertainty quantification required? 
+  The latter typically requires a statistical / probabilistic model.
+  \item Computational feasibility: memory and time requirements for training / tuning and predicting
+  \end{itemize}
+  
 \end{vbframe}
 
 \begin{vbframe}{Retraining prediction models}
@@ -115,18 +132,18 @@ Practical Tips and best practices for doing machine learning.
 
 \begin{vbframe}{kaggle}
   \begin{itemize}
-  \item Companies and research institutions create machine learning competitions on the online platform kaggle.
-  \item They provide datasets and a clear problem formulation.
-  \item Anyone with ML knowledge, an internet connection and a computer can participate and learn models. 
-  \item The participants with the best scores (predictive performance) on an independent test dataset win prizes. 
+  \item Companies and research institutions create machine learning competitions on the online platform \textbf{Kaggle}.
+  \item Kaggle provides clean datasets and a clear problem formulation.
+  \item Anyone with ML knowledge, an internet connection and a computer can participate and develop models. 
+  \item The participants with the best predictive performance on an independent test dataset win prizes. 
   \item Among the winners certain algorithms are used often. 
   \end{itemize}
 \end{vbframe}
   
 \begin{vbframe}{Which algorithms work best?}
-  A careful generalization:
+  Some careful generalizations:
   \begin{itemize}
-  \item \textbf{GLMs} are the classic choice for parameterized models. \textbf{Lasso} and \textbf{Elastic Net} can be used to avoid overfitting and reduce dimensionality. 
+  \item \textbf{GLMs} are the classic choice for interpretable statistical models. \textbf{Lasso} and \textbf{Elastic Net} can be used to avoid overfitting and reduce dimensionality. 
   \item For good prediction on tabular data, tree ensembles like \textbf{Random Forest} and \textbf{xgboost} (boosted tree stumps) work generally well. 
   \item For audio and image data, \textbf{Deep Learning} is the strongest method. 
   \item But: There is no single algorithm that is the best for all settings. Try different methods and choose the one that works best in your specific problem setting. 
@@ -145,10 +162,10 @@ Practical Tips and best practices for doing machine learning.
 
 \begin{vbframe}{Summary}
   \begin{itemize}
-  \item Machine Learning: Less assumtions $\Rightarrow$ better predictions
-  \item Statistik: Assumptions $\Rightarrow$ better interpretability
-  \item The model choice depends on the problem. 
-  \item Data preparation and feature engineering are even more important. 
+  \item Machine Learning: Fewer assumptions $\Rightarrow$ better predictions
+  \item Statistics: More assumptions $\Rightarrow$ better interpretability and quantification of uncertainty
+  \item The choice of model depends on the problem structure. 
+  \item Data preparation and feature engineering are often more important than which model to use - this typically requires \textbf{domain knowledge}. 
   \end{itemize}
 
 \begin{quote}
