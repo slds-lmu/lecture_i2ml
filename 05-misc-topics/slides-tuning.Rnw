@@ -14,11 +14,11 @@ knitr::set_parent("../style/preamble.Rnw")
 \sloppy
 
 
-\begin{vbframe}{Introduction}
+\begin{vbframe}{Hyperparameters}
 
   \begin{itemize}
-    \item For many learners, a lot of parameters or properties need to be set manually \emph{before} the optimization over the hypothesis space by empirical risk minimization can be performed.\\
-    (For example, setting the maximal depth of a tree or deciding which distance measure to use for kNN.)
+    \item For most learners, some parameters or properties are not affected by the optimization procedure and need to be set manually \emph{before} the learner can be trained, i.e., before we can minimize the empirical risk on the training data.\\
+    Examples: setting the maximal depth of a tree or deciding which distance measure to use for kNN.
     \item Our goal is to optimize these with regard to the expected model performance on new data (often this implies an independent test set, or cross-validation).
     \item This also extends all kinds of preprocessing, feature construction and other model-relevant operations.
       In general, we might be interested in optimizing an entire machine learning \enquote{pipeline}.
@@ -27,44 +27,27 @@ knitr::set_parent("../style/preamble.Rnw")
   \framebreak
 
   \begin{blocki}{Model parameters vs. hyperparameters}
-    \item \textbf{Model parameters} are optimized during training, usually by loss minimization.\\
-     For example, a tree learner finds optimal splits by maximizing impurity reduction and optimal predictions by minimizing the average loss in its leaves.
+    \item \textbf{Model parameters} are optimized during training, usually by some form of loss minimization.\\
+     For example, a tree learner finds optimal splits by maximizing impurity reduction in the child nodes and optimal predictions by minimizing the average loss in its leaves.
      \lz
-    \item \textbf{Hyper parameters} are values that must be specified outside of the
-    training phase and that need to be chosen dependent on the problem.\\
-    For example, the stopping criteria of a tree learner (how deep the tree can become, how small the number of observations in each node can become, etc) need to be set before optimization can be performed.
+    \item \textbf{Hyperparameters} are settings and parameters that must be specified outside of the training phase and that need to be chosen dependent on the problem.\\
+    For example, the stopping criteria of a tree learner (how deep the tree can become, how small the number of observations in a leaf can become, etc.) need to be set before optimization can be performed.
   \end{blocki}
 
 \framebreak
 
-  Alternatives are:
+  Possible scenarios for finding default hyperparameters:
 
   \begin{itemize}
-    \item The learner's performance is really insensitive to changes of a parameter, so we don't really have to do anything as long as we stay in a broad range of reasonable values.
-    \item Constant default: we can benchmark the learner across a broad range of data sets and scenarios and try to find a constant value that works well in many different situations. Quite optimistic?
-    \item Dynamic (heuristic) default: We can benchmark the learner across a broad range of data sets and scenarios and try to find an easily computable function that sets the parameter in a data dependent way,
+    \item If the learner's performance is fairly insensitive to changes of a hyperparameter, we don't really have to worry as long as we remain within the range of reasonable values.
+    \item Constant default: we can benchmark the learner across a broad range of data sets and scenarios and try to find hyperparameter values that work well in many different situations. Quite optimistic?
+    \item Dynamic (heuristic) default: We can benchmark the learner across a broad range of data sets and scenarios and try to find an easily computable function that sets the hyperparameter in a data dependent way,
     e.g. using \texttt{mtry}$ = p/3$ for RF.\\
       How to construct or learn that heuristic function, though...?
-    \item We can try to set the parameter by extracting more info from the fitted model. E.g.
-      \texttt{ntrees} for a random forest (does OOB error increase or stagnate?).
+    \item In some cases, can try to set hyperparameters optimally by extracting more info from the fitted model. E.g. \texttt{ntrees} for a random forest (does OOB error increase or decrease if you remove trees from the ensemble?).
   \end{itemize}
 
-  \framebreak
-
-  \begin{blocki}{Why tuning is important:}
-  \item Hyperparameters control the capacity of a model, i.e., how flexible the model is, how many degrees of freedom it has in fitting the data.
-  \item If a model is too flexible so that it simply \enquote{memorizes} the training data,
-  we will face the dreaded problem of overfitting .
-  \item Hence, control of capacity, i.e., proper setting of hyperparameters
-  can prevent overfitting the model on the training set.
-  \item Many other factors like preprocessing or feature selection can
-    heavily influence model performance in non-trivial ways. It is extremely hard to guess the
-    correct choices here.
-  \end{blocki}
-
-  \framebreak
-
-  \begin{blocki}{Types of hyper parameters:}
+\begin{blocki}{Types of hyperparameters:}
     \item Numerical parameters (real valued / integers)
     \begin{itemize}
       \item Number of trees in a random forest
@@ -85,70 +68,83 @@ knitr::set_parent("../style/preamble.Rnw")
     \end{itemize}
   \end{blocki}
 
+\end{vbframe}
+\begin{vbframe}{Tuning}
+
+  \begin{blocki}{Why tuning is important:}
+  \item Hyperparameters control the capacity of a model, i.e., how flexible the model is, how many degrees of freedom it has in fitting the data.
+  \item If a model is too flexible so that it simply \enquote{memorizes} the training data,
+  we will face the dreaded problem of overfitting .
+  \item Hence, control of capacity, i.e., proper setting of hyperparameters
+  can prevent overfitting the model on the training set.
+  \item Many other factors like preprocessing or feature selection can
+    heavily influence model performance in non-trivial ways. It is extremely hard to guess the
+    correct choices here.
+  \end{blocki}
+
   \framebreak
 
-  \begin{blocki}{What our tuning problem consists of:}
-    \item Our learning method (or are there actually several?)
-    \item The performance measure. Determined by the application. Not necessarily identical
-    to the loss function that the learner tries to minimize.
+  \begin{blocki}{Components of a tuning problem:}
+    \item The learner (possibly: several competing learners?)
+    \item The performance measure. Determined by the application. Not necessarily identical to the loss function that the learner tries to minimize.
     %It gets especially interesting if we have to deviate from the standard cases like classification error or MSE. 
-     We could even be interested in multiple measures at once, e.g. the accuracy of a predicted value \emph{and} how long it took to compute it.
-    \item A resampling procedure for measuring the performance. How do we choose it?
-    \item The hyperparameters with their respective regions-of-interest over which to optimize.
+     We could even be interested in multiple measures simultaneously, e.g. the accuracy of a predicted value \emph{and} how long it takes to compute that value.
+    \item A (resampling) procedure for estimating the predictive performance. 
+    \item The learner's hyperparameters and their respective regions-of-interest over which we optimize.
   \end{blocki}
 
   \framebreak
 
-  \begin{blocki}{Some general remarks on tuning}
+\textbf{Why is tuning so hard?}
+  \begin{itemize}
     %\item Lots of literature exists for models, far less on efficient tuning.
-    \item Tuning is a \enquote{black box problem}: It is usually impossible to compute
-    derivative of the function we try to optimize, we can only evaluate it at given points.
-%%CONTINUE HERE    
-    find out the
-      performance of selected hyperparamter configurations by training .
-    \item Our optimization problem is stochastic in principle.
-      We want to optimize expected performance and use resampling.
-    \item Evaluation of our target function will probably take quite some time.
-      Imagine we are cross-validating a complex model on a larger data set.
-    \item Categorical and dependent parameters complicate the problem.
-    \item For difficult problems parallelizing the computation seems relevant.
-  \end{blocki}
+    \item Tuning is derivative-free (\enquote{black box problem}): It is usually impossible to compute derivatives of the function (i.e., the performance measure) that we try to optimize with regard to the hyperparameters we are optimizing over. All we can do is evaluate the performance for a given hyperparameter setting.
+    \item Every evaluation requires training the learner on (one or multiple) training data sets and evaluating its performance on (one or multiple) corresponding test data sets. That means: every evaluation is very \textbf{expensive}.
+    \item Even worse: the answer we get from that evaluation is \textbf{not exact, but stochastic} in most settings: Since we are optimizing expected performance, we'll have to use resampling to estimate how well the model will do on new, unseen data.
+    \item Even worser: the function value we get from that evaluation is \textbf{likely also biased} -- it is difficult to evaluate the tested hyperparameter settings \emph{honestly}, i.e., in such a way that we neither over- nor underestimate their performance if we only have a limited amount of data available. (Remember resampling-based performance evaluation \& its problems -- this gets worse where tuning comes into play.)
+   % \item Evaluation of our target function will probably take quite some time.
+  %    Imagine we are cross-validating a complex model on a larger data set.
+    \item Categorical and dependent hyperparameters aggravate our difficulties: the space of hyperparameters we optimize over has a non-metric, complicated structure.
+    \item For large and difficult problems parallelizing the computation seems relevant,
+    both to evaluate multiple hyperparameter settings simultaneously and to speed up the
+    (nested) resampling-based performance evaluation
+  \end{itemize}
 
 \end{vbframe}
 
 
-\begin{vbframe}{Offline- vs. online-tuning}
+% \begin{vbframe}{Offline- vs. online-tuning}
+% 
+%   \begin{blocki}{Offline-tuning:}
+%     \item Learn optimal parameter settings before solving an instance.
+%     \item Tuning on training instances
+%   \end{blocki}
+% 
+%   \lz
+% 
+%   \begin{blocki}{Online-tuning:}
+%     \item Learn optimal parameter settings during solving.
+%     \item No training phase
+%   \end{blocki}
+% 
+% \end{vbframe}
+% 
+% \begin{vbframe}{Offline configuration}
+% \begin{center}
+% \includegraphics{figure_man/offline_configuration.png}
+% 
+% {\tiny Stützle and Lopez-Ibanez, Automatic (Offline) Configuration of Algorithms, 2014.}
+% \end{center}
+% \end{vbframe}
 
-  \begin{blocki}{Offline-tuning:}
-    \item Learn optimal parameter settings before solving an instance.
-    \item Tuning on training instances
-  \end{blocki}
-
-  \lz
-
-  \begin{blocki}{Online-tuning:}
-    \item Learn optimal parameter settings during solving.
-    \item No training phase
-  \end{blocki}
-
-\end{vbframe}
-
-\begin{vbframe}{Offline configuration}
-\begin{center}
-\includegraphics{figure_man/offline_configuration.png}
-
-{\tiny Stützle and Lopez-Ibanez, Automatic (Offline) Configuration of Algorithms, 2014.}
-\end{center}
-\end{vbframe}
-
-\begin{vbframe}{Grid search}
+\begin{vbframe}{Tuning with Grid search}
 
   \begin{itemize}
-    \item Offline tuning technique which is still quite popular.
-    \item For each parameter a finite set of candidates is predefined.
-    \item Then, one we simply search the Cartesian product of all possible combinations.
-    \item All solutions are searched in an arbitrary order.
-    \item Extension: Start with a coarse grid and iteratively refine it around a detected optimum.
+    \item Simple tuning technique which is still quite popular.
+    \item For each hyperparameter a finite set of candidates is predefined.
+    \item Then, we simply search all possible combinations.
+    \item Solutions are searched in an arbitrary order.
+    \item More clever: Start with a coarse grid and iteratively refine it around a detected optimum.
   \end{itemize}
 
 \framebreak
@@ -171,8 +167,15 @@ res = tuneParams(lrn, task = sonar.task,
   par.set = ps, resampling = hout, control = ctrl)
 opt.grid = as.data.frame(res$opt.path)
 
+caption_grid <- sprintf("Grid search over %d grid points. Best MMCE: %1.2f",
+                        nrow(opt.grid), min(opt.grid$mmce.test.mean))
+
 gridSearch <- ggplot(opt.grid, aes(x = C, y = sigma, size = mmce.test.mean))
-gridSearch +  geom_point(shape = 21 , col = "black", fill = "#56B4E9" , alpha = .6) + scale_size(range = c(3,15)) + scale_x_continuous("Parameter 1") + scale_y_continuous("Parameter 2")
+gridSearch + geom_point(shape = 21 , col = "black", fill = "#56B4E9" , alpha = .6) + 
+  scale_size("MMCE (Test Set)", range = c(3,15)) + 
+  scale_x_continuous("Parameter 1", limits = c(-3, 3)) + 
+  scale_y_continuous("Parameter 2", limits = c(-3, 3)) + 
+  labs(caption = caption_grid)
 @
 
 \framebreak
@@ -191,7 +194,7 @@ gridSearch +  geom_point(shape = 21 , col = "black", fill = "#56B4E9" , alpha = 
 
 \end{vbframe}
 
-\begin{vbframe}{Random search}
+\begin{vbframe}{Tuning with Random search}
 
   \begin{itemize}
     \item Small variation of grid search.
@@ -217,8 +220,17 @@ res = tuneParams(lrn, task = sonar.task,
   par.set = ps, resampling = hout, control = ctrl)
 opt.grid = as.data.frame(res$opt.path)
 
+caption_grid <- sprintf("Random search over %d grid points. Best MMCE: %1.2f",
+                        nrow(opt.grid), min(opt.grid$mmce.test.mean))
+
+
 rndSearch <- ggplot(opt.grid, aes(x = C, y = sigma, size = mmce.test.mean))
-rndSearch + geom_point(shape = 21 , col = "black", fill = "#56B4E9" , alpha = .6) + scale_size(range = c(3,15)) + scale_x_continuous("Parameter 1") + scale_y_continuous("Parameter 2")
+rndSearch +  
+  geom_point(shape = 21 , col = "black", fill = "#56B4E9" , alpha = .6) + 
+  scale_size(range = c(3,15)) + 
+  scale_x_continuous("Parameter 1", limits = c(-3, 3)) + 
+  scale_y_continuous("Parameter 2", limits = c(-3, 3)) + 
+  labs(caption = caption_grid)
 @
 
 
