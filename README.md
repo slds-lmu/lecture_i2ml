@@ -13,11 +13,15 @@ The repository latex-math is used. Please read the accompanying ReadMe: https://
 - Slot 3: Notation + formale intro +  Risk + Loss minimization  + const predictors
 - Slot 4: Bsp min modell + zeigen dass es das gleiche ist wie max lik
 
+Videos: [YT Playlist](https://www.youtube.com/playlist?list=PLMyWaJl2LoXyhFvMjtbBGs0Pi8khHbKm3)
+
 ## Day 2
 - Slot1: theory of classifications: discrim funktionen, boundaries, posterior probs
 - Slot2: Log Reg + Softmax
 - Slot3: LDA QDA Naive Bayes + gen approach
 - Slot4: der 2 cultures vergleich + philosophy
+
+Videos: [YT Playlist](https://www.youtube.com/playlist?list=PLMyWaJl2LoXxjj3A-nctKtkG5xJqrdFMU)
 
 ## Day 3
 - Slot 1: Intro und Train Test Eval
@@ -47,8 +51,9 @@ are publicly accessible via [this link](https://github.com/compstat-lmu/lecture_
 - Software: vokoscreen (Linux)
 - Format: mkv
 - Frames:25
-- Videocodec: H.264 (High Profile)    (in vokoscreen: libx264)
-- Audiocodec: MPEG-1 Layer 3 (MP3) (in vokoscreen: libmp3lame)
-- Resolution: 1920 x 1080
-
+- Videocodec: H.264 (High Profile)    (in vokoscreen: libx264)  
+  (Day 1/2: H264 MPEG-4 AVC)
+- Audiocodec: MPEG-1 Layer 3 (MP3) (in vokoscreen: libmp3lame)  
+  (Day 1/2: MPEG Audio Layer 1/2 (mp4a) from kazam)
+- Resolution: 1920 x 1080 (Day 1/2: 1280 x 760 from kazam)
 
