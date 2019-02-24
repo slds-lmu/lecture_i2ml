@@ -11,7 +11,7 @@ library(smoof)
 <<setup, child="../style/setup.Rnw", include = FALSE>>=
 @
 
-\lecturechapter{11}{Nested Resampling}
+\lecturechapter{17}{Nested Resampling}
 \lecture{Fortgeschrittene Computerintensive Methoden}
 
 \begin{vbframe}{Training set vs Test Set}
@@ -19,11 +19,11 @@ library(smoof)
 \begin{itemize}
 
 \item The training set contains a known output and our model learns on this data. 
-\item We test our model’s prediction on test subset.
+\item We evaluate our model’s predictive skill on the test set.
 
 \item But what if our train/test split isn’t random? What if one subset of our data has only people from a certain category or is constant in one of the features? 
 
-\item What if we are sure, that we want to apply a certain model, but are undecided on which parameters to use?
+\item What if we are sure that we want to apply a certain model, but don't know which hyperparameters to use?
 
 \end{itemize}
 \end{vbframe}
@@ -32,18 +32,14 @@ library(smoof)
 \includegraphics{figure_man/test_valid_train.png}
 \begin{itemize}
 
-\item Train: Train your models 
+\item Train: Used to train your models. 
 
-\item Validation: for model tuning (validate models with different parameters) or model selection
+\item Validation: used for model tuning (evaluate different hyperparameters) or model selection
 
-\item Test: make a final estimate of the generalization 
+\item Test: used for final estimate of the generalization performance.
 
 \end{itemize}
 \end{vbframe}
-
-
-
-
 
 
 \begin{vbframe}{Nested Resampling}
@@ -70,10 +66,10 @@ In model selection, we are interested in selecting the best model from a set of 
 
 
 \begin{blocki}{Problem}
-    \item We cannot evaluate our finally selected inducer on the same resampling splits that we have used to
+    \item We cannot evaluate our finally selected leaner on the same resampling splits that we have used to
       perform model selection for it, e.g., to tune its hyperparameters.
-    \item By repeatedly evaluating the inducer on the same test set, or the same CV splits, information
-      about the test can enter the algorithm.
+    \item By repeatedly evaluating the learner on the same test set, or the same CV splits, information
+      about the test set \enquote{leaks} into our evaluation.
     \item Danger of overfitting to the resampling splits / overtuning!
     \item The final performance estimate will be optimistically biased.
     \item One could also see this as a problem similar to multiple testing.
@@ -83,15 +79,16 @@ In model selection, we are interested in selecting the best model from a set of 
 \framebreak
 
 \begin{blocki}{Instructive and problematic example}
-    \item Assume a binary classif. problem with equal apriori class sizes.
-    \item Assume an inducer $a(\D, \lambda)$, with hyperparameter $\lambda$.
-    \item $a$ shall be a (non-sensical) feature-independent classifier, where $\lambda$ has no effect.
-      $a$ predicts random labels with equal probability.
-    \item Of course, a's generalization error is 50\%.
-    \item A cross-validation of $a$ (with any fixed $\lambda$) will easily show this
+    \item Assume a binary classification problem with equal class sizes.
+    \item Assume a learner with hyperparameter $\lambda$.
+    \item Here, the learner is a (non-sensical) feature-independent classifier, 
+          where $\lambda$ has no effect. The learner simply 
+          predicts random labels with equal probability.
+    \item Of course, it's true generalization error is 50\%.
+    \item A cross-validation of the learner (with any fixed $\lambda$) will easily show this
       (given that the partitioned data set for CV is not too small).
-    \item Now lets \enquote{tune} $a$, by trying out 100 different $\lambda$ values.
-    \item We repeat the experiment 50 times and average results.
+    \item Now lets \enquote{tune} it, by trying out 100 different $\lambda$ values.
+    \item We repeat this experiment 50 times and average results.
 \end{blocki}
 
 <<fig.height=3.5, echo = FALSE>>=
@@ -119,13 +116,13 @@ print(pl)
 \framebreak
 
 \begin{blocki}{Another perspective}
-  \item Tune the same "fake" parameter $\lambda$ with CV
+  \item Tune the same \enquote{fake} parameter $\lambda$ with CV
   \item Run the CV for 10, 100 and 500 different values of $\lambda$
-  \item The "best" $\lambda$ error is getting smaller with increasing iterations
+  \item The \enquote{best} $\lambda$ error is getting smaller with increasing iterations
   \item We would choose the lambda value that yields a mmce = 30\%
-  \item Nonsense as our model could net get better than mmce = 50\%
+  \item Nonsense as our model could never get better than mmce = 50\%
   \item The result is based on pure randomness
-  \item The chance of getting such a random "outlier-split" increases with the CV iterations
+  \item The chance of getting such a random \enquote{outlier-split} increases with the number of CV iterations
   \item We \textbf{overtune} the model
 \end{blocki}
 
@@ -162,11 +159,11 @@ print(pl)
 
 
 \begin{blocki}{Simple solution}
-\item Again, simply simulate what happens in model application.
-\item All parts of the model building (including model selection, preprocessing) should be embedded
+\item Again, simply simulate what happens in the model's application.
+\item All parts of model building (including model selection, preprocessing) should be embedded
   in the resampling, i.e., repeated for every pair of training/test data.
 \item For steps that themselves require resampling (e.g. hyperparameter tuning) this results
-  in two nested resampling loops, i.e. a resampling strategy for both tuning and outer evaluation.
+  in two \textbf{nested resampling} loops, i.e. a resampling strategy for both tuning and outer evaluation.
 \item Simplest form is a 3-way split into a training, optimization and test set.
   Inducers are trained on the training set, evaluated on the optimization set.
   After the final model is selected, we fit on joint training+optimization set and evaluate
@@ -184,15 +181,14 @@ Example: Outer loop with 3-fold CV and inner loop with 4-fold CV
 \framebreak
 
 \begin{itemize}
-  \item Imagine we want to tune a model with $i = 1, ..., 7$ possible hyperparameter settings $\theta_i \in \Theta$
-  \item We use 4-fold CV in the inner resampling and 3-fold CV in the outer and proceed like this:
+  \item We evaluate hyperparameter candidates $\theta_i; i = 1, \dots$ with 4-fold CV in the inner resampling and 3-fold CV in the outer:
   \begin{itemize}
-    \item Test each $\theta_i$ on the 4 inner samples
-    \item Calculate the corresponding preliminary $\hat GE(\theta_i)$ for all settings
+    \item Evaluate each $\theta_i$ on the 4 inner test samples
+    \item Calculate the corresponding preliminary $\hat GE(\theta_i)$ for $\theta_i$
     \item Choose the winner $\theta^*$ for each of the 3 inner samples
-    \item If we would take this $\hat GE(\theta^*)$ as overall generalization error we would yield an optimistic bias (Why?)
-    \item We receive 3 winners from the inner samples
-    \item For each of them, we calculate the "real" $GE(\theta^{**})$ and choose the best overall hyperparameter setting $\theta^{**}$
+    \item If we would take this $\hat GE(\theta^*)$ as the overall generalization error we would get an optimistic bias (Why?)
+    \item We have (at most) 3 winners from the inner resampling rounds
+    \item For each of them, we re-train the model on the outer train sets (darkgreen), calculate the "real" $GE(\theta^{*})$ on the outer test sets (lightgreen), and choose the best overall hyperparameter setting $\theta^{**}$
   \end{itemize}
   \item The error estimates on the outer samples (lightgreen) are unbiased because this data was strictly excluded from the validation process
 \end{itemize}

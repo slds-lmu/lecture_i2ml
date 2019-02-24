@@ -12,187 +12,369 @@ knitr::set_parent("../style/preamble.Rnw")
 \lecturechapter{5}{Linear regression models}
 \lecture{Introduction to Machine Learning}
 
+% slides adapted from rcourses/chapters/ml/ml_simple_models/slides_sm_lmXXX.Rmd @ fbce91e4277
 
-\begin{vbframe}{Normal linear regression}
+\begin{vbframe}{Linear Regression: Representation}
+\lz
 
-\begin{itemize}
-  \item Machine Learning tries to approximate the true data generating function via loss minimization
-  \item Classic statistics maximizes a likelihood to reach the same goal
-  \item Following example with the linear regression model:
-  \begin{equation*}
-    \begin{split}
-      y^{i} & = \hat f(x^{i}) + \epsilon^{i} = \theta_0 + \theta x^{i} + \epsilon^{i} \\
-      & \text{with } \epsilon, y|x \iid N(\mu,\sigma^2)
-    \end{split}
-  \end{equation*}
-  \item Alternative distributions are applied in generalized linear models.
-  \item Basis functions $\phi(x)=(\phi_1(x), \ldots, \phi_m(x))^T$ can also be included as an extension of linear predictors.
+We want to predict a numerical target variable by a \emph{linear transformation} of the features $x \in \mathbb{R}^p$.
 
-\end{itemize}
-\end{vbframe}
+\lz
 
+So with $\theta \in \mathbb{R}^p$ this mapping can be written as:
+\begin{align*}
+y &= \fx = \theta_0 + \theta^T x \\
+  &= \theta_0 + \theta_1 x_1 + \dots + \theta_p x_p
+\end{align*}
 
-\begin{vbframe}{Way 1: loss minimization}
+\lz
 
-\begin{itemize}
+This restricts the hypothesis space $\Hspace$ to all linear functions in $\theta$:
+\[
+\Hspace = \{ \theta_0 + \theta^T x\ |\ (\theta_0, \theta) \in \mathbb{R}^{p+1} \}
+\]
 
-  \item A typical machine learning way to estimate the parameters is to not require
-  a distribution assumption for the error term but to define a loss function for the
-prediction.
-  \item In this case we decide to measure the prediction error with a \emph{squared loss}
-as \emph{loss function} for the \emph{risk minimization}:
+\framebreak
 
-    $$
-    \riske(\theta) = SSE(\theta) = \sumin \Lxyit = \sumin (\yi - \theta^T \xi)^2
-    $$
-
-  \item NB: We assume here and from now on that $\theta_0$ is included in $\theta$.
-
-  \item Using matrix notation the empirical risk can be written as
-    $$
-    SSE(\theta) = (\ydat - X\theta)^T(\ydat - X\theta)
-    $$
-
-\end{itemize}
-\end{vbframe}
-
-
-\begin{vbframe}{Way 1: loss minimization}
-  \begin{itemize}
-    \item We transform this to the minimization problem:
-    $$
-    \hat \theta = \arg \min_\theta (\ydat - X\theta)^T(\ydat - X\theta)
-    $$
-    \item Differentiating w.r.t. $\theta$ yields the so-called \emph{normal equations}:
-    $$
-    X^T(\ydat - X\theta) = 0
-    $$
-    \item The optimal $\theta^*$ therefore is
-    $$
-    \thetah = (X^T X)^{-1} X^T\ydat
-    $$
-    \item If we face loss functions that we can not solve for $\theta$ analytically,
-    we approximate the solution using optimizers such as \emph{Gradient Descent}.
-  \end{itemize}
-\end{vbframe}
-
-\begin{vbframe}{Way 2: maximum likelihood}
-\begin{itemize}
-  \item In statistics, we would start from a maximum-likelihood perspective
-  $$
-  \yi = \fxi + \epsi \sim N(\fxi, \sigma^2)
-  $$
-  $$
-  \LLt = \prod_{i=1}^n \pdf(\yi | \fxit, \sigma^2) \propto \exp(-\frac{\sumin (\fxit - \yi)^2}{2\sigma^2})
-  $$
-  \item With the log-likelihood that we want to maximize:
-  $$
-  \llt \propto - \sumin (\fxit - \yi)^2
-  $$
-  \item and the optimal parameter
-  $$
-  \theta ^* = \arg \max_{\theta} \llt
-  $$
-\end{itemize}
-
-\end{vbframe}
-\begin{vbframe}{Way 2: maximum likelihood}
-\begin{itemize}
-  \item This is equivalent to minimizing:
-  $$
-  - \llt \propto \sumin (\fxit - \yi)^2
-  $$
-  \item Which is equivalent to our loss minimization approach from the machine learning perspective!
-  \item We can show this relation holds not only for a Gaussian distribution and L2 loss but also for other loss-distribution-combinations (Laplacian - L1 loss, Binomial - logistic loss, ...)
-\end{itemize}
-
-\end{vbframe}
-
-
-
-
-
-
-\begin{vbframe}{Normal linear regression}
-
-<<>>=
-data(mtcars)
-regr.task = makeRegrTask(data = mtcars, target = "mpg")
-plotLearnerPrediction("regr.lm", regr.task, features = "disp")
-@
-\end{vbframe}
-
-\begin{vbframe}{Example: Linear Regr. with L1 vs L2 loss}
-
-<<>>=
-set.seed(123)
-
-# prediction with f, based on vec x and param vec beta
-f = function(x, beta) {
-  crossprod(x, beta)
-}
-
-# L1 and L2 loss, based on design mat X, vec, param vec beta, computed with f
-loss1 = function(X, y, beta) {
-  yhat = apply(X, 1, f, beta = beta)
-  sum((y - yhat)^2)
-}
-loss2 = function(X, y, beta) {
-  yhat = apply(X, 1, f, beta = beta)
-  sum(abs(y - yhat))
-}
-
-# optimize loss (1 or 2) with optim
-# yes, neldermead not really the best, who cares it is 1d
-optLoss = function(X, y, loss) {
-  start = rep(0, ncol(X))
-  res = optim(start, loss, method = "Nelder-Mead", X = X, y = y)
-  res$par
-}
-
-# plot data and a couple of linear models
-plotIt = function(X, y, models = list()) {
-  gd = as.data.frame(cbind(X[-1, 2, drop = FALSE],  y = y[-1]))
-  pl = ggplot(data = gd, aes(x = x1, y = y))
-  pl = pl + geom_point()
-  for (i in seq_along(models)) {
-    m = models[[i]]
-    pl = pl + geom_abline(intercept = m$beta[1], slope = m$beta[2], col = m$col, lty = m$lty)
-  }
-  return(pl)
-}
-
-
-# generate some data, sample from line with gaussian errors
-# make the leftmost obs an outlier
-n = 10
-x = sort(runif(n = n, min = 0, max = 10))
-y = 3 * x + 1 + rnorm(n, sd = 5)
-X = cbind(x0 = 1, x1 = x)
-y[1] = 100
+<<echo=FALSE, out.width="0.7\\textwidth", fig.width=4.5, fig.height=3>>=
+ggplot() +
+  stat_function(data = data.frame(x = c(-0.5, 4)), aes(x = x), fun = function (x) { 1 + 0.5 * x }) +
+  geom_vline(xintercept = 0, color = "gray", linetype = "dashed") +
+  geom_segment(mapping = aes(x = 2, y = 2, xend = 3, yend = 2), linetype = "dashed") +
+  geom_segment(mapping = aes(x = 3, y = 2, xend = 3, yend = 2.5), linetype = "dashed", color = "red") +
+  geom_segment(mapping = aes(x = 0, y = 0, xend = 0, yend = 1), linetype = "dashed", color = "blue") +
+  geom_text(mapping = aes(x = 2.5, y = 2, label = "1 Unit"), vjust = 2) +
+  geom_text(mapping = aes(x = 3, y = 2.25, label = "{theta[1] == slope} == 0.5"), hjust = -0.05, parse = TRUE, color = "red") +
+  geom_text(mapping = aes(x = 0, y = 1, label = "{theta[0] == intercept} == 1"), hjust = -0.1, parse = TRUE, color = "blue") +
+  ylim(c(0, 3.5)) + xlim(c(-0.5, 4.3))
 @
 
-We study the claim that L1 loss is less sensitive to outliers than L2 loss.
-To the displayed data we add a point at (\Sexpr{c(X[1,2],y[1])}). Red = L2, blue = L1 loss.
-Solid = fit without, dashed = fit with outlier.
+\[
+y = \theta_0 + \theta \cdot x
+\]
 
-<<fig.height=4.5>>=
+\framebreak
 
-# fit l1/2 models on data without then with outlier data
-b1 = optLoss(X[-1,], y[-1], loss = loss1)
-b2 = optLoss(X[-1,], y[-1], loss = loss2)
-b3 = optLoss(X, y, loss = loss1)
-b4 = optLoss(X, y, loss = loss2)
+\lz
 
-# plot all 4 models
-pl = plotIt(X, y, models = list(
-  list(beta = b1, col = "red", lty = "solid"),
-  list(beta = b2, col = "blue", lty = "solid"),
-  list(beta = b3, col = "red", lty = "dashed"),
-  list(beta = b4, col = "blue", lty = "dashed")
-))
+Given observed labeled data $\D$, how to find $(\theta, \theta_0$)?\\
+
+\lz
+
+This is \textbf{learning} or parameter estimation, the learner does exactly this by \textbf{empirical risk minimization}.
+
+\lz
+\lz
+
+NB: We assume from now on that $\theta_0$ is included in $\theta$.
+
+\end{vbframe}
+
+\begin{frame}{Linear Regression: Evaluation}
+
+We could measure training error as the sum of squared prediction errors (SSE). This is also called the \textbf{L2 loss}, or L2 risk:
+\[
+\risket = \operatorname{SSE}(\theta) = \sumin \Lxyit = \sumin \left(\yi - \theta^T \xi\right)^2
+\]
+
+<<echo=FALSE, out.width="0.4\\textwidth", fig.width=4, fig.height=2.5>>=
+set.seed(3)
+x = 1:5
+y = 0.2 * x + rnorm(length(x), sd = 2)
+d = data.frame(x = x, y = y)
+m = lm(y ~ x)
+pl = ggplot(aes(x = x, y = y), data = d)
+pl = pl + geom_abline(intercept = m$coefficients[1], slope = m$coefficients[2])
+pl = pl + geom_rect(aes(ymin = y[3], ymax = y[3] + (m$fit[3] - y[3]), xmin = 3, xmax = 3 + abs(y[3] - m$fit[3])), color = "black", linetype = "dotted", fill = "transparent")
+pl = pl + geom_rect(aes(ymin = y[4], ymax = y[4] + (m$fit[4] - y[4]), xmin = 4, xmax = 4 + abs(y[4] - m$fit[4])), color = "black", linetype = "dotted", fill = "transparent")
+pl = pl + geom_segment(aes(x = 3, y = y[3], xend = 3, yend = m$fit[3]), color = "white")
+pl = pl + geom_segment(aes(x = 4, y = y[4], xend = 4, yend = m$fit[4]), color = "white")
+pl = pl + geom_segment(aes(x = 3, y = y[3], xend = 3, yend = m$fit[3]), linetype = "dotted", color = "red")
+pl = pl + geom_segment(aes(x = 4, y = y[4], xend = 4, yend = m$fit[4]), linetype = "dotted", color = "red")
+pl = pl + geom_point()
+pl = pl + coord_fixed()
 print(pl)
 @
+
+
+
+Minimizing the squared error is computationally much simpler than minimizing the absolute differences (this would be called \textbf{L1 loss}).
+
+\end{frame}
+
+\begin{vbframe}{Linear Model: Optimization}
+
+We want to find the parameters $\theta$ of the linear model, i.e., an element of the hypothesis space $\Hspace$ that fits the data optimally.\\ 
+
+So we evaluate different candidates for $\theta$.\\
+
+A first (random) try yields a rather large SSE: (\textbf{Evaluation}).
+\lz
+
+<<echo=FALSE, out.width="\\textwidth", fig.width=7.5, fig.height=3>>=
+frame = 1
+source("figure_man/sse_lm_viz.R")
+@
+
+\framebreak
+
+We want to find the parameters of the LM / an element of the hypothesis space $\Hspace$ that best suits the data.
+So we evaluate different candidates for $\theta$.\\
+
+Another line yields an even bigger SSE (\textbf{Evaluation}). Therefore, this one is even worse in
+terms of empirical risk.
+
+<<echo=FALSE, out.width="\\textwidth", fig.width=7.5, fig.height=3>>=
+frame = 2
+source("figure_man/sse_lm_viz.R")
+@
+
+\framebreak
+
+We want to find the parameters of the LM / an element of the hypothesis space $\Hspace$ that best suits the data.
+So we evaluate different candidates for $\theta$.\\
+
+Another line yields an even bigger SSE (\textbf{Evaluation}). Therefore, this one is even worse in
+terms of empirical risk. Let's try again:
+
+<<echo=FALSE, out.width="\\textwidth", fig.width=7.5, fig.height=3>>=
+frame = 3
+source("figure_man/sse_lm_viz.R")
+@
+
+
+\framebreak
+
+Since every $\theta$ results in a specific value of $\risket$, and we try 
+to find $\argmin_{\theta} \risket$, let's look at what we have so far:
+\lz
+
+<<echo=FALSE, out.width="\\textwidth", fig.width=7.5, fig.height=3.5>>=
+frame = 4
+source("figure_man/sse_lm_viz.R")
+@
+
+\framebreak
+
+Instead of guessing, we use \textbf{optimization} to find the best $\theta$:
+\lz
+<<echo=FALSE, out.width=".6\\textwidth", fig.width=5, fig.height=5>>=
+frame = 5
+source("figure_man/sse_lm_viz.R")
+@
+
+\framebreak
+
+Instead of guessing, we use \textbf{optimization} to find the best $\theta$:
+\lz
+<<echo=FALSE, out.width=".6\\textwidth", fig.width=5, fig.height=5>>=
+frame = 6
+source("figure_man/sse_lm_viz.R")
+@
+
+\framebreak
+
+Instead of guessing, we use \textbf{optimization} to find the best $\theta$:
+\lz
+<<echo=FALSE, out.width="\\textwidth", fig.width=7.5, fig.height=3.5>>=
+frame = 7
+source("figure_man/sse_lm_viz.R")
+@
+
+
+\framebreak
+
+For L2 regression, we can find this optimal value analytically:
+\begin{align*}
+\hat{\theta} &= \argmin_{\theta} \risket = \sumin \left(\yi - \theta^T \xi\right)^2\\
+             &=\argmin_{\theta} \|y - X\theta\|^2_2\
+\end{align*}
+where $X = \left(\begin{smallmatrix}1 & x^{(1)}_1 & \ldots & x^{(1)}_p \\
+                              1 & x^{(2)}_1 & \ldots & x^{(2)}_p \\
+                              \vdots & \vdots & & \vdots \\
+                              1 & x^{(n)}_1 & \ldots & x^{(n)}_p \end{smallmatrix}\right)$ 
+is the $n \times (p+1)$-\textbf{design matrix}.
+
+\lz
+
+This yields the so called normal equations for the LM:
+\[
+\frac{\delta}{\delta\theta} \risket = 0 \qquad \Rightarrow\ \qquad \hat{\theta} = \left(X^T X\right)^{-1}X^Ty
+\]
+
+\end{vbframe}
+
+\begin{vbframe}{Example: Regression With L1 vs L2 Loss}
+
+We could also minimize the L1 loss. This changes the evaluation and optimization step:
+\[
+\risket = \sumin \Lxyit = \sumin \left|\yi - \theta^T \xi\right| \qquad \textsf{(Evaluation)}
+\]
+
+<<echo=FALSE, out.width=".8\\textwidth", fig.width=10, fig.height=5>>=
+frame = 8
+source("figure_man/sse_lm_viz.R")
+@
+
+L1 loss is harder to optimize, but the model is less sensitive to outliers.
+
+\framebreak
+
+\lz
+\lz
+
+{\centering \includegraphics{figure_man/l2-vs-l1-1.pdf}}
+
+\framebreak
+
+Adding an outlier (highlighted red) pulls the line fitted with L2 into the direction of the outlier:
+
+\lz
+
+{\centering \includegraphics{figure_man/l2-vs-l1-2.pdf}}
+
+\end{vbframe}
+
+\begin{frame}{Linear Regression}
+\lz
+
+\textbf{Representation:} Design matrix $X$, coefficients $\theta$.\\
+
+\lz
+
+\textbf{Evaluation:} Any regression loss function. 
+
+\lz
+
+\textbf{Optimization:} Direct analytic solution for L2-loss, numerical optimization for L1 and others.
+
+\end{frame}
+
+
+\begin{vbframe}{Regression: Polynomials}
+
+We can make regression models much more flexible by using \emph{polynomials} $x_j^d$ -- or any other \emph{derived features} like $\sin(x_j)$ or $(x_j \cdot x_k)$ -- as additional features.\\
+
+\lz 
+
+The optimization and evaluation for the learner remains the same.\\
+\lz
+
+Only the representation of the learner changes: it now includes the derived features as additional columns in the design matrix as well as the coefficients associated with them. 
+
+
+\framebreak
+
+\textbf{Polynomial regression example}
+
+ \lz
+
+<<echo=FALSE, out.width="0.9\\textwidth", fig.height = 5>>=
+.h = function(x) 0.5 + 0.4 * sin(2 * pi * x)
+h = function(x) .h(x) + .1 * arima.sim(list(ar = .7, ma = 0), length(x))
+
+set.seed(12345)
+x = seq(0.4, 2, length = 31L)
+y = h(x)
+
+
+line.palette = viridisLite::viridis(4)
+baseplot = function() {
+  # par(mar = c(2, 2, 1, 1))
+  plot(x, y, pch = 19L, ylim = c(0, 1.35))
+}
+
+p1 = lm(y ~ poly(x, 1, raw = TRUE))
+p3 = lm(y ~ poly(x, 5, raw = TRUE))
+p10 = lm(y ~ poly(x, 25, raw = TRUE))
+mods = list(p1, p3, p10)
+x.plot = seq(min(x), max(x), length = 500L)
+baseplot()
+@
+
+\framebreak
+
+\textbf{Polynomial regression example}
+
+Models of different \emph{complexity}, i.e. of different polynomial order $d$, are fitted to the data:
+
+<<echo=FALSE, out.width="0.9\\textwidth", fig.height=5>>=
+baseplot()
+for (i in 1) {
+  lines(x.plot, predict(mods[[i]], newdata = data.frame(x = x.plot)),
+    col = line.palette[i], lwd = 2L)
+}
+legend("topright", paste(sprintf("f(x) for d = %s", c(1, 5, 25)), c("(linear)", "", "")),
+  col = line.palette, lwd = 2L)
+@
+
+\framebreak
+
+\textbf{Polynomial regression example}
+
+Models of different \emph{complexity}, i.e. of different polynomial order $d$, are fitted to the data:
+
+<<echo=FALSE, out.width="0.9\\textwidth", fig.height=5>>=
+baseplot()
+for (i in 1:2) {
+  lines(x.plot, predict(mods[[i]], newdata = data.frame(x = x.plot)),
+    col = line.palette[i], lwd = 2L)
+}
+legend("topright", paste(sprintf("f(x) for d = %s", c(1, 5, 15)), c("(linear)", "", "")),
+  col = line.palette, lwd = 2L)
+@
+
+\framebreak
+
+\textbf{Polynomial regression example}
+
+Models of different \emph{complexity}, i.e. of different polynomial order $d$, are fitted to the data:
+
+<<echo=FALSE, out.width="0.9\\textwidth", fig.height=5>>=
+baseplot()
+for (i in 1:3) {
+  lines(x.plot, predict(mods[[i]], newdata = data.frame(x = x.plot)),
+    col = line.palette[i], lwd = 2L)
+}
+legend("topright", paste(sprintf("f(x) with d = %s", c(1, 5, 15)), c("(linear)", "", "")),
+  col = line.palette, lwd = 2L)
+@
+
+\framebreak
+
+The higher $d$ is, the more \textbf{capacity} the learner has to learn complicated functions of $x$, but
+this also increases the danger of \textbf{overfitting}:\\
+\lz
+
+The model space $\Hspace$ contains so many complex functions that we are able to find one that approximates 
+the training data arbitrarily well.
+\lz
+
+However, predictions on new data are not as successful because our model includes too much of the \enquote{noise} of the training data (much, much more on this later).  
+
+\framebreak
+
+<<echo=FALSE, fig.height = 6.5>>=
+layout((1:2))
+baseplot()
+title(main = "Training Data")
+for (i in 2:3) {
+  lines(x.plot, predict(mods[[i]], newdata = data.frame(x = x.plot)),
+    col = line.palette[i], lwd = 2L)
+}
+
+plot(x.plot, 
+     .h(x.plot) + .1 * rnorm(length(x.plot)) + .1, pch = 19, col = rgb(0,0,0,.5),
+     cex = .8,
+     xlab = "x", ylab = "y",
+     ylim = c(0, 1.35))
+title(main = "Test Data")
+for (i in 2:3) {
+  lines(x.plot, predict(mods[[i]], newdata = data.frame(x = x.plot)),
+    col = line.palette[i], lwd = 2L)
+}
+@
+
 \end{vbframe}
 
 \endlecture

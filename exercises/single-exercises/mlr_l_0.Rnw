@@ -1,9 +1,4 @@
-Read the tutorial of the \texttt{mlr} package at http://mlr-org.github.io/mlr-tutorial.
-Make sure that you start from the quick start example in "Home" then go through each chapter in "Basics".
-\begin{enumerate}
-\item Try out the demo codes in the tutorial and try to understand what the concept of Task and Learner is, and how to use the functions \texttt{train}, \texttt{predict} and \texttt{performance}.
-
-<<message=FALSE>>=
+<<echo=FALSE, message=FALSE, results='hide', warning=FALSE>>=
 library(mlr)
 # Example from ?predict:
 training.set = seq(1, nrow(iris), by = 2)
@@ -16,102 +11,102 @@ pred = predict(mod, newdata = iris[test.set, ])
 performance(pred, measures = mmce)
 @
 
-\item How many performance measures you already know? Try to explain some of them. How can you see which measures are available in \texttt{mlr}?
-
-Each loss function we have learned sofar to fit the model (inner loss) can also be used as performance measure (outer loss).
-
-For classification:
-
-\begin{itemize}
-\item 0-1 loss (= mean misclassification error),
-\item Logistic loss (bernulli loss), ...
-\end{itemize}
-
-For regression:
-
-\begin{itemize}
-\item $L_2$-loss (= mean squared error),
-\item $L_1$-loss (= mean absolute error), ...
-\end{itemize}
-
-\item Use the \texttt{bh.task} regression task from \texttt{mlr} and split the data into $50\%$ training data and $50\%$ test data while training and predicting (i.e., use the \texttt{subset} argument of the \texttt{train} and \texttt{predict} function).
-Fit a prediction model (e.g. CART) to the training set and make predictions for the test set.
-
-<<message=FALSE>>=
-# look at the task
-bh.task
-n = getTaskSize(bh.task)
-
-# select index vectors to subset the data randomly
-set.seed(123)
-train.ind = sort(sample(seq_len(n), 0.5*n))
-test.ind = setdiff(seq_len(n), train.ind)
-
-# specify learner
-lrn = makeLearner("regr.rpart")
-
-# train model to the training set
-mod = train(lrn, bh.task, subset = train.ind)
-
-# predict on the test set
-pred = predict(mod, bh.task, subset = test.ind)
-pred
-@
-\item Compare the performance on training and test data.
-<<message=FALSE>>=
-# predict on the test set
-pred.test = predict(mod, bh.task, subset = test.ind)
-performance(pred.test, measures = list(mlr::mae, mlr::mse))
-
-# predict on the test set
-pred.train = predict(mod, bh.task, subset = train.ind)
-performance(pred.train, measures = list(mlr::mae, mlr::mse))
-@
-The generalization error estimate is much higher on the training data.
-
-\item Now use different observations (but still $50\%$ of them) for the training set. What effects does this have on the predictions and the error estimates of the test data?
-
-<<message=FALSE>>=
-# select different index vectors to subset the data randomly
-set.seed(321)
-train.ind = sort(sample(seq_len(n), 0.5*n))
-test.ind = setdiff(seq_len(n), train.ind)
-
-# specify learner
-lrn = makeLearner("regr.rpart")
-
-# train model to the training set
-mod = train(lrn, bh.task, subset = train.ind)
-
-# predict on the test set
-pred = predict(mod, bh.task, subset = test.ind)
-pred
-pred.test = predict(mod, bh.task, subset = test.ind)
-performance(pred.test, measures = list(mlr::mae, mlr::mse))
-@
-
-Effect: We will predict different observations since the test set is different. The same observations get a slightly different prediction (e.g. observation with id 2).
-The error estimates for the test dataset are also a bit different.
-
-\item Use 10 fold cross-validation to estimate the performance.
-<<message=FALSE>>=
-rdesc = makeResampleDesc("CV", iters = 10)
-r = resample(lrn, bh.task, rdesc, measures = list(mlr::mae, mlr::mse))
-@
-
-\item Now use nested resampling to fit the best knn model (try k from 1 to 10) on the \texttt{bh.task} and estimate the generalization error.
-<<message=FALSE>>=
-## Tuning in inner resampling loop
-ps = makeParamSet(makeDiscreteParam("k", values = 1:10))
-ctrl = makeTuneControlGrid()
-inner = makeResampleDesc("CV", iters = 10)
-lrn = makeTuneWrapper("regr.kknn", resampling = inner, par.set = ps, control = ctrl, show.info = FALSE)
-
-## Outer resampling loop
-outer = makeResampleDesc("CV", iters = 5)
-r = resample(lrn, bh.task, resampling = outer, extract = getTuneResult, show.info = FALSE)
-r$measures.test
-r$aggr
-r$extract
-@
+\begin{enumerate}
+  \item[a)]
+  
+  Each loss function we have learned sofar to fit the model (inner loss) can also be used as performance measure (outer loss).
+  
+  For classification:
+  
+  \begin{itemize}
+    \item 0-1 loss (= mean misclassification error),
+    \item Logistic loss (bernoulli loss), ...
+  \end{itemize}
+  
+  For regression:
+  
+  \begin{itemize}
+    \item $L_2$-loss (= mean squared error),
+    \item $L_1$-loss (= mean absolute error), ...
+  \end{itemize}
+  
+  \item[b)]
+  
+  <<message=FALSE>>=
+  # look at the task
+  bh.task
+  n = getTaskSize(bh.task)
+  
+  # select index vectors to subset the data randomly
+  set.seed(123)
+  train.ind = sort(sample(seq_len(n), 0.5*n))
+  test.ind = setdiff(seq_len(n), train.ind)
+  
+  # specify learner
+  lrn = makeLearner("regr.rpart")
+  
+  # train model to the training set
+  mod = train(lrn, bh.task, subset = train.ind)
+  
+  # predict on the test set
+  pred = predict(mod, bh.task, subset = test.ind)
+  pred
+  @
+  \item[c)]
+  <<message=FALSE>>=
+  # predict on the test set
+  pred.test = predict(mod, bh.task, subset = test.ind)
+  performance(pred.test, measures = list(mlr::mae, mlr::mse))
+  
+  # predict on the test set
+  pred.train = predict(mod, bh.task, subset = train.ind)
+  performance(pred.train, measures = list(mlr::mae, mlr::mse))
+  @
+  The generalization error estimate is much higher on the training data.
+  
+  \item[d)]
+  
+  <<message=FALSE>>=
+  # select different index vectors to subset the data randomly
+  set.seed(321)
+  train.ind = sort(sample(seq_len(n), 0.5*n))
+  test.ind = setdiff(seq_len(n), train.ind)
+  
+  # specify learner
+  lrn = makeLearner("regr.rpart")
+  
+  # train model to the training set
+  mod = train(lrn, bh.task, subset = train.ind)
+  
+  # predict on the test set
+  pred = predict(mod, bh.task, subset = test.ind)
+  pred
+  pred.test = predict(mod, bh.task, subset = test.ind)
+  performance(pred.test, measures = list(mlr::mae, mlr::mse))
+  @
+  
+  Effect: We will predict different observations since the test set is different. The same observations get a slightly different prediction (e.g. observation with id 2).
+  The error estimates for the test dataset are also a bit different.
+  
+  \item[e)]
+  <<message=FALSE>>=
+  rdesc = makeResampleDesc("CV", iters = 10)
+  r = resample(lrn, bh.task, rdesc, measures = list(mlr::mae, mlr::mse))
+  @
+  
+  \item[f)]
+  <<message=FALSE>>=
+  ## Tuning in inner resampling loop
+  ps = makeParamSet(makeDiscreteParam("k", values = 1:10))
+  ctrl = makeTuneControlGrid()
+  inner = makeResampleDesc("CV", iters = 10)
+  lrn = makeTuneWrapper("regr.kknn", resampling = inner, par.set = ps, control = ctrl, show.info = FALSE)
+  
+  ## Outer resampling loop
+  outer = makeResampleDesc("CV", iters = 5)
+  r = resample(lrn, bh.task, resampling = outer, extract = getTuneResult, show.info = FALSE)
+  r$measures.test
+  r$aggr
+  r$extract
+  @
 \end{enumerate}

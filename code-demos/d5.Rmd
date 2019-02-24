@@ -1,0 +1,261 @@
+# 5th Notebook for Machine Learning Intro Lecture
+
+# 1. introductory kaggle challenge
+
+We will compete in our first [kaggle challenge](https://www.kaggle.com/c/titanic) on the prediction of titanic survivors. 
+
+### Preprocessing and Data check
+
+```{r}
+### Data preprocess
+
+# load and check the data
+allTrain = read.csv(file = "data/train_titanic.csv")
+str(allTrain)
+# no target column "survived" on test dataset
+allTest = read.csv(file = "data/test_titanic.csv")
+
+# can we use all features? 
+# Nope: delete those with too many levels as this would inflate the model 
+# also kill the ID
+
+train = allTrain[, -c(which(colnames(allTrain) == "Cabin"), 
+    which(colnames(allTrain) == "Name"), 
+    which(colnames(allTrain) == "Ticket"), 
+    which(colnames(allTrain) == "PassengerId"))]
+
+test = allTest[, -c(which(colnames(allTest) == "Cabin"), 
+    which(colnames(allTest) == "Name"), 
+    which(colnames(allTest) == "Ticket"), 
+    which(colnames(allTest) == "PassengerId"))]
+```
+
+### Build a first simple model with mlr and check the performance via CV
+
+```{r, warning=FALSE}
+### model corner
+library(mlr)
+
+# choose specific model and parameters 
+task = makeClassifTask(data = train, target = "Survived")
+
+learner = makeLearner(cl = "classif.rpart")
+# check choosable parameters and set accordingly
+getLearnerParamSet(learner)
+# check available settings here: https://www.rdocumentation.org/packages/rpart/versions/4.1-12/topics/rpart.control
+learner = makeLearner(cl = "classif.rpart", 
+    par.vals = list(minsplit = 10, cp = 0.05))
+
+# make sure to assign mlr package to train
+mod = mlr::train(learner = learner, task = task)
+
+### performance estimate via CV
+cv = makeResampleDesc(method = "CV", iters = 10)
+# use mlr::listMeasures() to get list of possible measures
+# important: always check on which measure they evaluate you!
+mlr::crossval(learner = learner, task = task, iters = 10, measures = list(mmce, acc))
+```
+
+Store and submit your predictions
+
+```{r}
+# predict for submission
+pred = predict(mod, newdata = test)
+submission = pred$data
+
+submission$PassengerId = allTest$PassengerId
+
+colnames(submission) = c("Survived", "PassengerId")
+
+write.csv(submission, file = "data/submissionTitanic_1.csv", row.names = FALSE)
+```
+
+### Tune the Hyperparameters of the algorithm
+
+```{r}
+### Tune the model 
+# we chose two numeric parameters above and now search for optimal values
+# check available parameters
+set.seed(1337)
+getLearnerParamSet(learner)
+# make parameter set
+paramSet = makeParamSet(
+    makeDiscreteParam("minsplit", values = c(1, 3, 5, 7, 10, 15, 20, 30, 40, 45, 50, 60, 70, 100)), 
+    makeNumericParam("cp", lower = 0.0001, upper = 0.1)
+)
+# choose random search - why not grid search?
+ctrl = makeTuneControlRandom(maxit = 100)
+resDesc = makeResampleDesc("CV", iters = 10L, predict = "both")
+tunes = mlr::tuneParams(learner = learner, task = task, resampling = resDesc,
+    par.set = paramSet, control = ctrl, measures = list(mmce, acc))
+```
+
+Visualize the random search over both parameters:
+
+```{r}
+visHyper = generateHyperParsEffectData(tunes)
+plt = plotHyperParsEffect(visHyper, x = "minsplit", y = "cp", z = "acc.test.mean")
+plt
+# tuning result
+tunes
+```
+
+Store and submit those results to kaggle
+
+```{r}
+# use those param settings for the CART
+learner = makeLearner(cl = "classif.rpart", 
+    par.vals = list(minsplit = 10, cp = 0.0923))# inspect the learner
+# learner
+mod = mlr::train(learner = learner, task = task)
+
+# predict for submission
+pred = predict(mod, newdata = test)
+submission = pred$data
+
+submission$PassengerId = allTest$PassengerId
+
+colnames(submission) = c("Survived", "PassengerId")
+
+write.csv(submission, file = "data/submissionTitanic_2.csv", row.names = FALSE)
+```
+
+#### Check variable importances
+
+```{r}
+library(ggplot2)
+varimp = getFeatureImportance(mod)
+var = as.data.frame(t(varimp$res))
+var$names = names(varimp$res)
+p = ggplot(data = var, aes(x = names, y = V1)) + geom_bar(stat = "identity") +
+    ggtitle(label = "Variable Importances")
+p
+```
+
+### Feature engineering
+
+Can we further condense the information from the multi-level factors and use it for our model?
+
+We take a closer look at the names of the guests. 
+
+```{r, message=FALSE, warning=FALSE}
+### feature engineering
+library(dplyr)
+
+# indicator for train or test set
+allTrain$train = 1
+allTest$train = 0
+allTest$Survived = NA
+
+# compute once for all data and split again for training with ID
+allData = rbind(allTrain, allTest)
+engData = allData
+
+head(allData$Name)
+```
+
+We can see, that there is information on the title of the people in their names. We use that information as a new feature!
+
+```{r}
+# use regular expressions via strplit to extract the title of the people
+# temporary storage
+temp = sapply(strsplit(as.character(allData$Name), split = ","), function(x) x[2])
+title = strsplit(temp, split = " ")
+engData$title = sapply(title, function(x) x[2])
+# unfortunately still too many titles with too few observations
+table(engData$title)
+```
+
+Btw.: we found the Captain:
+
+```{r}
+# btw.: we found the captain:
+allData[which(engData$title == "Capt."), "Name"]
+```
+
+condense those with obs < 5 to class "other"
+
+```{r}
+freqs = as.data.frame(table(engData$title))
+otherTitles = freqs[which(freqs$Freq < 5), "Var1"]
+engData[which(engData$title %in% otherTitles), "title"] = "other"
+engData$title = as.factor(engData$title)
+# looks better now
+table(engData$title)
+```
+
+### Build updated model
+
+```{r}
+### model corner 2 with engineered feature
+library(mlr)
+library(dplyr)
+
+train = engData %>% 
+    filter(train == 1) %>%
+    select(-c(PassengerId, Name, Ticket, train, Cabin))
+
+test = engData %>% 
+    filter(train == 0) %>%
+    select(-c(PassengerId, Name, Ticket, train, Cabin, Survived))
+
+# choose specific model and parameters 
+task = makeClassifTask(data = train, target = "Survived")
+
+learner = makeLearner(cl = "classif.rpart")
+# we chose two numeric parameters above and now search for optimal values
+paramSet = makeParamSet(
+    makeDiscreteParam("minsplit", values = c(1, 3, 5, 7, 10, 15, 20, 30, 40, 45, 50, 60, 70, 100)), 
+    makeNumericParam("cp", lower = 0.0001, upper = 0.1)
+)
+# choose random search - why not grid search?
+ctrl = makeTuneControlRandom(maxit = 100)
+resDesc = makeResampleDesc("CV", iters = 10L, predict = "both")
+tunes = mlr::tuneParams(learner = learner, task = task, resampling = resDesc,
+    par.set = paramSet, control = ctrl, measures = list(mmce, acc))
+```
+
+Check tuning result
+
+```{r}
+tunes
+```
+
+Write and store the submission
+
+```{r}
+# use those param settings for the CART
+learner = makeLearner(cl = "classif.rpart", 
+    par.vals = list(minsplit = 7, cp = 0.00601))
+
+mod = mlr::train(learner = learner, task = task)
+
+# predict for submission
+pred = predict(mod, newdata = test)
+submission = pred$data
+
+submission$PassengerId = engData %>% 
+    filter(train == 0) %>%
+    select(PassengerId)
+
+colnames(submission) = c("Survived", "PassengerId")
+
+write.csv(submission, file = "data/submissionTitanic_3.csv", row.names = FALSE)
+```
+
+#### Check Variable Importances
+
+```{r}
+library(ggplot2)
+varimp = getFeatureImportance(mod)
+var = as.data.frame(t(varimp$res))
+var$names = names(varimp$res)
+p = ggplot(data = var, aes(x = names, y = V1)) + geom_bar(stat = "identity") +
+    ggtitle(label = "Variable Importances")
+p
+```
+
+What can we see? How could we critisize that result? Is there a way to detect the problem?
+
+```{r}
+```
