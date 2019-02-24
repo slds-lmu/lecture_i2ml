@@ -28,30 +28,28 @@ Monotone transformations of one or several features will not change the value of
 \begin{columns}[T]
 \column{0.49\textwidth}
 Original data
-<<>>=
+<<data-monotonetrafo>>=
 x = c(1,2,7,10,20)
 y = c(1,1,0.5,10,11)
-data = t(data.frame(x = x, y = y))
+data = t(data.frame(x = x, y = y, row.names = 1:5))
 kable(data)
 @
-% use picture created in rsrc/monotone_trafo.R
-\includegraphics[width = \textwidth]{figure_man/monotone_trafo1.png}
+
 \column{0.49\textwidth}
 Data with log-transformed $x$
-<<fig.align='right'>>=
+<<data-monotonetrafo2, fig.align='right'>>=
 log.x = log(x)
-data = t(data.frame(log.x, y))
+data = t(data.frame(log.x, y, row.names = 1:5))
 rownames(data) = c("log(x)", "y")
 kable(data,digits = 1)
 @
-% use picture created in rsrc/monotone_trafo.R
-\includegraphics[width = \textwidth]{figure_man/monotone_trafo2.png}
 \end{columns}
 \vspace{0.5cm}
 \centering
+\includegraphics[width = \textwidth]{figure_man/monotone_trafo.png}
 \end{vbframe}
 
-\begin{vbframe}{CART: Stopping-Criteria}
+\begin{vbframe}{CART: Stopping criteria}
   \begin{itemize}
     \item Minimal number of observations per node, for a split to be tried
     \item Minimal number of observations that must be contained in a leaf
@@ -70,10 +68,46 @@ kable(data,digits = 1)
   \end{itemize}
 \end{vbframe}
 
+\begin{vbframe}{CART: Minimal cost complexity pruning}
+  \begin{itemize}
+  \item Method to optimize the trade-off between goodness-of-fit and complexity
+  \item Criteria: cost function
+    \begin{align*}
+      R_{\alpha} &= R(T) + \alpha \cdot \# \text{leafs},
+    \end{align*}
+    where $R(T)$ represents the error of tree $T$ on the training set
+    $\rightarrow$ $R_{\alpha}$ = Training error + Complexity term.
+  \item For every $\alpha$ there is a distinctly defined smallest sub-tree of the original tree,
+  which minimizes the cost function.
+  \item $\hat{\alpha}$ can be assessed with cross-validation.
+  \item Final tree is fitted on the whole data, where $\hat{\alpha}$ is used to
+  to find the optimal size of the tree
+  \end{itemize}
+
+\pagebreak
+
+<<bostonhousing-prep,size='footnotesize'>>=
+lrn = makeLearner("regr.rpart")
+mod = train(lrn, bh.task)
+mod = mod$learner.model
+@
+
+\pagebreak
+
+<<bostonhousing-prune, results='hide'>>=
+# Pruning with every cp taken from the cptable
+cps = rev(mod$cptable[, "CP"])
+lapply(cps, function(x) {
+    p = rpart::prune(mod, cp = x)
+    sub_title = sprintf("Pruning with complexity parameter = %.4f.", x)
+    rattle::fancyRpartPlot(p, sub = sub_title)})
+@
+\end{vbframe}
+
 \begin{vbframe}{CART: Categorical Predictors}
   \begin{itemize}
-  \item For a nominal scaled feature with $Q$ categories,
-  there are $2^{Q-1}-1$ possible partitions of the $Q$ values into two groups:
+  \item For a nominal-scale feature with $Q$ categories,
+  there are $2^{Q-1}-1$ possible partitions of the $Q$ values into two child nodes:
     \begin{itemize}
     \item There are $2^Q$ ways to assign $Q$ distinct values to the left or right node.
     \item Two of these configurations lead to an empty node, while the other one contains all observations.
@@ -95,9 +129,8 @@ For $0-1$ responses, in each node:
 
   \vspace{0.3cm}
 
-<<fig.height=3.4>>=
+<<binarysplit-plot1, fig.height=3.4>>=
 library(gridExtra)
-
 set.seed(1234)
 # generate data (one categorcal variable with 4 categories, 0-1 response)
 data = data.frame(category = sample(c("A", "B", "C", "D"), size = 150,
@@ -161,9 +194,7 @@ For continuous responses, in each node:
 
 \vspace{0.3cm}
 
-<<fig.height=3.5>>=
-library(gridExtra)
-
+<<continuoussplit-plot1, fig.height=3.5>>=
 set.seed(1234)
 # generate data (one categorcal variable with 4 categories, 0-1 response)
 data = rbind(data.frame(category = "A", y = runif(30, 5, 7.5)),
@@ -197,86 +228,49 @@ grid.arrange(p1, p2, p3, ncol = 3)
 \end{vbframe}
 
 
-% \begin{vbframe}{CART: Minimal cost complexity pruning}
-%   \begin{itemize}
-%   \item Method to optimize the trade-off between goodness-of-fit and complexity
-%   \item Criteria: cost function
-%     \begin{align*}
-%       R_{\alpha} &= R(T) + \alpha \cdot \# \text{leafs},
-%     \end{align*}
-%     where $R(T)$ represents the error of tree $T$ on the training set
-%     $\rightarrow$ $R_{\alpha}$ = Training error + Complexity term.
-%   \item For every $\alpha$ there is a distinctly defined smallest sub-tree of the original tree,
-%   which minimizes the cost function.
-%   \item $\hat{\alpha}$ can be assessed with cross-validation.
-%   \item Final tree is fitted on the whole data, where $\hat{\alpha}$ is used to
-%   to find the optimal size of the tree
-%   \end{itemize}
-% 
-% \pagebreak
-% 
-% <<size='footnotesize'>>=
-% lrn = makeLearner("regr.rpart")
-% mod = train(lrn, bh.task)
-% mod = mod$learner.model
-% @
-% 
-% \pagebreak
-% 
-% <<results='hide'>>=
-% # Pruning with every cp taken from the cptable
-% cps = rev(mod$cptable[, "CP"])
-% lapply(cps, function(x) {
-%     p = rpart::prune(mod, cp = x)
-%     sub_title = sprintf("Pruning with complexity parameter = %.4f.", x)
-%     rattle::fancyRpartPlot(p, sub = sub_title)})
-% @
-% \end{vbframe}
-
-
 \begin{vbframe}{CART: Missing predictor values}
   Two approaches:
   \begin{enumerate}
-  \item Missing values of a categorical variable are treated as an own category
+  \item Missing values of a categorical variable are treated as their own category
   \item When considering a predictor for a split,
   only use the observations for which the predictor is not missing.
 
   To pass observations with missing values down the tree (during fitting or predicting),
-    we have to find surrogate variables, that produce similar splits.
+    we identify \enquote{surrogate variables} with split points that produce similar splits.
   \end{enumerate}
 \end{vbframe}
 
 \begin{vbframe}{Advantages}
   \begin{itemize}
-    \item Model is easy to comprehend, graphical representation
-    \item Categorical features can easily be handled
+    \item Model is fairly easy to comprehend and visualize
+    \item Handles features regardless of scale (nominal - ordinal - metric) 
     \item Missing values can be handled
     \item No problems with outliers in features
-    \item Monotone transformations of features change nothing
+    \item Not affected by monotone feature transformations
     \item Interaction effects between features are easily possible
     \item Works for (some) non-linear functions
     \item Inherent feature selection
     \item Quite fast, scales well with larger data
-    \item Trees are flexible by creating a custom split criterion and leaf-node prediction rule
+    \item Trees are flexible: create custom split criteria and leaf-node prediction rules
       (clustering trees, semi-supervised trees, density estimation, etc.)
   \end{itemize}
 \end{vbframe}
 
 \begin{vbframe}{Disadvantages}
   \begin{itemize}
-  \item High instability (variance) of the trees: Small changes in the data could lead to completely different splits, thus, to completely different trees $\rightarrow$ Decisions on the upper level influence decisions on lower levels (\enquote{mistakes} in upper levels proceed to the lower ones.)
-  \item Prediction function isn't smooth because a step function is fitted.
-  \item Linear dependencies must be modeled over several splits\\
+  \item High instability (variance) of fitted trees: Small changes in the data can lead to completely different splits and thus to completely different trees since changes in high-level nodes strongly affect lower level nodes $\Rightarrow$ \enquote{mistakes} in upper levels proceed to the lower ones.
+  \item Prediction function is not smooth because a step function is fitted.
+  \item Linear dependencies must be modeled over several splits
     $\rightarrow$ Simple linear correlations must be translated into a complex tree structure
     (see the following example)
-  \item Really not the best predictor: Combine with bagging (forest) or boosting!
+  \item Really not the best predictor: Combine with bagging (\enquote{random forest}) or boosting!
   (This will also be illustrated in a small benchmark at the end of the random forest chapter.)
   \end{itemize}
 
 \pagebreak
 
 High instability of trees will be demonstrated using the Wisconsin Breast Cancer data set.
-It has 699 observations on 9 features and one target class with values \enquote{benign} and \enquote{malignant}.
+It has 699 observations on 9 features and a target class with values \enquote{benign} and \enquote{malignant}.
 
 \begin{table}
 \begin{tabular}{ll}
@@ -297,7 +291,7 @@ Feature name & Explanation\\
 \pagebreak
 
 Tree fitted on complete Wisconsin Breast Cancer data
-<<results='hide', fig.height=5>>=
+<<breastcancer-plot1, results='hide', fig.height=4>>=
 # Create learner and train learner on the Wisconsin Breast Cancer data
 lrn = makeLearner("classif.rpart")
 model = train(lrn, bc.task)
@@ -315,15 +309,15 @@ fancyRpartPlot(model$learner.model, sub = "")
 \pagebreak
 
 Tree fitted on Wisconsin Breast Cancer data without observation 13
-<<results='hide', fig.height=5>>=
-# Leaving out just one obs leads to a totally differnt tree
+<<breastcancer-plot2, results='hide', fig.height=4>>=
+# Leaving out just one obs leads to a totally different tree
 fancyRpartPlot(model.mod$learner.model, sub = "")
 @
 
 \pagebreak
 \setkeys{Gin}{width=0.95\textwidth}
 \begin{center}
-<<results='hide', fig.height=5>>=
+<<cart-linear-plot1, results='hide', fig.height=5>>=
 set.seed(123)
 n = 100
 data = data.frame(x1 = runif(n), x2 = runif(n))
@@ -331,7 +325,6 @@ data$y = as.factor(with(data, as.integer(x1 > x2)))
 
 ggplot(data, aes(x = x1, y = x2, shape = y, col = y)) +
   geom_point(size = 3) +
-  pers_theme +
   ggtitle("") +
   geom_abline(slope = 1, linetype = 2)
 @
@@ -339,62 +332,26 @@ ggplot(data, aes(x = x1, y = x2, shape = y, col = y)) +
 Linear dependencies must be modeled over several splits.
 \pagebreak
 \begin{center}
-<<results='hide', fig.height=5>>=
+<<cart-linear-plot2, results='hide', fig.height=5>>=
 problemtask = makeClassifTask(data = data, target = "y")
 rpart = makeLearner("classif.rpart")
-rpart = setHyperPars(rpart, cp = 0, minbucket = 2, maxdepth = 1)
-model = train(rpart, problemtask)
-# Plot
-plotLearnerPrediction(rpart, problemtask, gridsize = 300, cv = 0) +
-  pers_theme +
+rpart = setHyperPars(rpart, cp = 0, minbucket=4, maxdepth=1) #Illustration
+for (maxdepth  in 1:4) {
+  rpart = setHyperPars(rpart, cp = 0, minbucket = 2, maxdepth = maxdepth)
+  model = train(rpart, problemtask)
+  # Plot
+  print(plotLearnerPrediction(rpart, problemtask, gridsize = 300, cv = 0) +
+  scale_f_d() +
   ggtitle("") +
-  geom_abline(slope = 1, linetype = 2)
+  geom_abline(slope = 1, linetype = 2))
+}
 @
 \end{center}
 Linear dependencies must be modeled over several splits.
 \pagebreak
-\begin{center}
-<<results='hide', fig.height=5>>=
-rpart = setHyperPars(rpart, cp = 0, minbucket = 2, maxdepth = 2)
-model = train(rpart, problemtask)
-# Plot
-plotLearnerPrediction(rpart, problemtask, gridsize = 300, cv = 0) +
-  pers_theme +
-  ggtitle("") +
-  geom_abline(slope = 1, linetype = 2)
-@
-\end{center}
-Linear dependencies must be modeled over several splits.
-\pagebreak
-\begin{center}
-<<results='hide', fig.height=5>>=
-rpart = setHyperPars(rpart, cp = 0, minbucket = 2, maxdepth = 3)
-model = train(rpart, problemtask)
-# Plot
-plotLearnerPrediction(rpart, problemtask, gridsize = 300, cv = 0) +
-  pers_theme +
-  ggtitle("") +
-  geom_abline(slope = 1, linetype = 2)
-@
-\end{center}
-Linear dependencies must be modeled over several splits.
-\pagebreak
-\begin{center}
-<<results='hide', fig.height=5>>=
-rpart = setHyperPars(rpart, cp = 0, minbucket = 2, maxdepth = 4)
-model = train(rpart, problemtask)
-# Plot
-plotLearnerPrediction(rpart, problemtask, gridsize = 300, cv = 0) +
-  pers_theme +
-  ggtitle("") +
-  geom_abline(slope = 1, linetype = 2)
-@
-\end{center}
-Linear dependencies must be modeled over several splits.
 
-\pagebreak
 \begin{center}
-<<results='hide', fig.height=5>>=
+<<forrester2, results='hide', fig.height=5>>=
 modForrester = makeSingleObjectiveFunction(
   name = "Modification Forrester et. all function",
   fn = function(x) (sin(4*x - 4)) * ((2*x - 2)^2) * (sin(20*x - 4)),
@@ -415,6 +372,35 @@ pp + geom_line(data = data.frame(x = x, y = fn(x)), aes(x, y, color = "True func
 \end{center}
 Prediction function isn't smooth because a step function is fitted.
 \end{vbframe}
+
+\begin{vbframe}{Tree building algorithms and their implementation in R}
+  \begin{itemize}
+  \item CART (Breiman et al., 1984):
+
+  Package \pkg{rpart} with fitting function \code{rpart()}.
+  \begin{itemize}
+    \item No nice plotting functionalities.
+    \item But \pkg{rattle} is able to create fancy visualizations.
+  \end{itemize}
+
+  \item Unbiased Recursive Partitioning (Hothorn et al., 2006):
+
+  \pkg{partykit} (old: \pkg{party}) provides the function \code{ctree()} for recursive partitioning in a conditional inference framework.
+  \begin{itemize}
+    \item Supports continuous, censored, ordered, nominal and multivariate response variables.
+    \item \code{ctree()} uses unbiased split selection based on independence tests and a non-heuristic, theoretically well justified stop criterion that obviates the need for pruning 
+    \item Nice plotting functionality, but rather slow.
+  \end{itemize}
+
+  \item C4.5 (Quinlan, 1993):
+
+  Implemented in the R-package \pkg{RWeka} with function \code{J48()}.
+  %\item \pkg{evtree} (function \code{evtree()}):
+
+  %Uses evolutionary algorithms, which is a global optimization method to search over the parameter space of trees instead of performing a forward stepwise search like in CART.
+  \end{itemize}
+\end{vbframe}
+
 
 
 

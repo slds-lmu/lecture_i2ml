@@ -11,7 +11,7 @@ rpart.lrn = makeLearner("classif.rpart")
 rpart.lrn.bagged = makeBaggingWrapper(rpart.lrn, bw.iters = 50)
 kn = makeLearner("classif.kknn")
 bagged.kn = makeBaggingWrapper(kn, bw.iters = 50)
-randomForest = makeLearner("classif.randomForest", par.vals = list(ntree = 50))
+rF = makeLearner("classif.randomForest", par.vals = list(ntree = 50))
 lrns = list(rpart.lrn, rpart.lrn.bagged, kn, bagged.kn, rF)
 
 # Get some tasks also used by Breiman 1996 and modify them when necessary
@@ -35,7 +35,7 @@ rdesc = makeResampleDesc("CV", iters = 10)
 bmr = benchmark(lrns, tasks, rdesc)
 
 # plot the aggregated results
-jpeg("bm_stable_vs_unstable.jpg")
+pdf("04-random-forest/figure_man/bm_stable_vs_unstable.pdf", w = 8, h = 5.8)
 plotBMRBoxplots(bmr) + facet_wrap(~ task.id, scales = "free")
 dev.off()
 
@@ -52,3 +52,12 @@ sub5 = subset(perf, learner.id == "classif.randomForest")[,3, drop = FALSE]
 overview = rbind(cbind(sub1, sub2), cbind(sub3, sub4))
 overview$decrease = ((overview$mmce.test.mean - overview$mmce.test.mean.bagged) / overview$mmce.test.mean) * 100
 overview
+#       task.id    learner.id mmce.test.mean mmce.test.mean.bagged decrease
+# 1       Glass classif.rpart          0.303                0.2797     7.58
+# 6  Ionosphere classif.rpart          0.131                0.0883    32.59
+# 11      Sonar classif.rpart          0.264                0.2164    18.03
+# 16   Waveform classif.rpart          0.430                0.3500    18.60
+# 3       Glass  classif.kknn          0.290                0.2708     6.64
+# 8  Ionosphere  classif.kknn          0.160                0.1510     5.32
+# 13      Sonar  classif.kknn          0.150                0.1540    -3.03
+# 18   Waveform  classif.kknn          0.320                0.3200     0.00

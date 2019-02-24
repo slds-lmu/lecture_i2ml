@@ -20,7 +20,6 @@ library(smoof)
 \lecture{Introduction to Machine Learning}
 \sloppy
 
-
 \begin{vbframe}{Ensemble methods}
 
 % \begin{itemize}
@@ -33,27 +32,22 @@ library(smoof)
 % \framebreak
 % Common ensemble methods:
   \begin{itemize}
-\item Ensemble methods combine the predictions of several base learners and combine them into an aggregated estimator.
-  \item Homogeneous ensembles (multiple models of same base learner)
+\item Ensemble methods combine the predictions of several \emph{base learners} and combine them into an aggregated estimator.
+  \item Flavors:
     \begin{itemize}
-    \item Bagging: Fit models on bootstrapped versions of training data
-    \item Boosting: runs sequentially: each model on reweighted data version / the previous residuals so
-      it improves the errors of the previous round
+    \item Bagging: Fit (identical) models on bootstrapped versions of the training data
+    \item Boosting: same model is fit sequentially on reweighted data / residuals of the previous fits
+      in order to improve the errors of the previous rounds. (Componentwise boosting: selects one of many different base learners in each iteration)
+      \item Model stacking / \enquote{super learner}:  Fit different base learners on the same data or different \enquote{views} of the same data, then learn how to optimally aggregate their predictions, often with a second layer model.
     \end{itemize}
-  \item Heterogeneous ensembles (different base learners)
-    \begin{itemize}
-      \item Fit different base learners on the same data or different \enquote{views} of the same data.
-        Then learn how to aggregate their predictions, often with a 2nd-layer model.
-    \end{itemize}
-  \end{itemize}
-
+    \item Bagging and boosting are also called \enquote{homogeneous} ensembles, model stacking \enquote{heterogeneous} 
+\end{itemize}
 \framebreak
 
 General homogeneous approach (often it works like this but not always)
   \begin{itemize}
-  \item A \enquote{base learner} is selected and fitted multiple times to either resampled or reweighted versions
-  of the original data.
-  \item The base learner is applied to either resampled or reweighted versions of the original dataset.
+  \item A \enquote{base learner} is selected and fitted multiple times to either resampled or reweighted versions of the original data.\\
+  %\item The base learner is applied to either resampled or reweighted versions of the original dataset.
   % \item his results in $M$ prediction functions $g^{(1)}(x),\dots,g^{(M)}(x)$.
   This results in $M$ prediction functions $\bl{1},\dots,\bl{M}$.
   \item These $M$ function are aggregated, usually in a linear fashion.
@@ -66,7 +60,7 @@ with coefficients $\betai{1},\dots,\betai{M}$.
 
 \begin{vbframe}{Bagging}
   \begin{itemize}
-    \item Bagging is based on {\bf B}ootstrap {\bf Agg}regation.
+    \item Bagging is short for {\bf B}ootstrap {\bf Agg}regation.
     \item Proposed by Breiman (1996).
     \item Train on multiple bootstrap samples of data $\D$, then combine:
 
@@ -76,8 +70,6 @@ with coefficients $\betai{1},\dots,\betai{M}$.
       \item Aggregate the predictions of the $M$ estimators via averaging or majority voting.
     \end{enumerate}
 
-    \item $M$: main hyperparameter, affects Monte-Carlo approximation error.
-    \item Interpretability of the model becomes harder.
   \end{itemize}
 
 \framebreak
@@ -90,25 +82,26 @@ with coefficients $\betai{1},\dots,\betai{M}$.
     \State {\bf Input: } Dataset $\D$, base learner, number of bootstraps $M$
     \For {$m = 1 \to M$}
       \State Draw a bootstrap sample $\D^{[m]}$ from $\D$.
-      \State Train base learner on $\D^{[m]}$, obtain model $\blm$
+      \State Train base learner on $\D^{[m]}$ to obtain model $\blm$
     \EndFor
     \State Aggregate the predictions of the $M$ estimators (via averaging or majority voting), to determine the bagging estimator:
-    $$
-    f(x) = \frac{1}{M} \sum_{m=1}^M \blm
-    $$
+    \begin{align*}
+    \fM &= \frac{1}{M} \sum_{m=1}^M \blm \\
+    \text{or}\quad \fM &= \argmax_{k \in \Yspace} \sum_{m=1}^M \I\left(\blm = k\right)
+    \end{align*}
   \end{algorithmic}
 \end{algorithm}
 
 \framebreak
 
   \begin{itemize}
-    \item Bagging reduces the variance of the estimator, but increases the bias in return.
-    \item Bagging works best for unstable/high variance learners (learners where small perturbations in training set lead to larger changes in the prediction)
+    \item Bagging reduces the variance of the estimator, but increases the bias.
+    \item Bagging works best for unstable/high variance learners (learners where small perturbations of the training set can cause large changes in the prediction)
 
     \begin{itemize}
       \item Classification and regression trees
       \item Neural networks
-      \item Piece-wise variable selection in the regression case, etc.
+      \item Step-wise/forward/backward variable selection for regression
     \end{itemize}
 
     \item For stable estimation methods bagging might degrade performance
@@ -124,8 +117,8 @@ with coefficients $\betai{1},\dots,\betai{M}$.
 
 \begin{vbframe}{Why does bagging work?}
 \begin{itemize}
-  \item Suppose we have a numerical dependent variable.
-  \item The training datasets are given by $\D$ and base learner estimator by $f(x)$.
+  \item Suppose we have a numerical target variable and are looking at quadratic loss.
+  \item The training datasets are given by $\D$, and the base learner estimators derived from it are $f(x)$. $f(x)$ is a random variable whose realized value depends on the values drawn from $\D$. 
   \item The datasets are sampled independently from distribution $\P_{xy}$ (data generating process).
   \item The {\em theoretical} aggregated estimator is given by
     \begin{align*}
@@ -134,52 +127,60 @@ with coefficients $\betai{1},\dots,\betai{M}$.
 
   \framebreak
 
-  \item Let x,y be a random sample from $\P_{xy}$ but independent of $\D$. The average error of the normal
-    $f(x)$ is then
-    $e = E_\D E_{xy} [(y - f(x))^2]$
-    and of the aggregated estimator
-    $e_A = E_{xy} [(y - f_A(x))^2]$.
- \item It follows:
-   $$ e = E_\D E_{xy} [(y - f(x))^2] = E_{xy}[y^2] - 2 E_{xy}[y f_A] + E_{\D} E_{xy} [f^2(x)] $$
-
- \item And we apply Jensen's inequality to $e$:
-   $$ e = E_{xy} E_\D [(y - f(x))^2] \geq E_{xy} (E_\D[y - f(x)])^2 = E_{xy} [(y - f_A(x)])^2] = e_A $$
- $$\qquad\qquad\qquad\qquad = E_{xy}[y^2] - 2 E_{xy}[y f_A] + E_{xy} [f_A^2(x)] $$
-
- \framebreak
- \item The difference between $e$ and $e_A$ is $E_{\D} E_{xy} [f^2(x)] \geq \E_{xy} [f_A^2(x)] $
-
- \item The more unstable $f(x)$, the more error reduction we obtain.
- \item But the bagging estimator only approximates the theoretical $f_A$ (bootstrap), we therefore suffer from approximation error (bias) by using the empirical distribution function instead of the true data generating process and only perform $M$ bootstrap iterations instead of an infinite number.
-\item Bagging does not necessarily lead to an improved classifier.
+ 
+ \item So: The more unstable or diverse $f(x)$ is, the more error reduction we can obtain by bagging.
+ \item But the bagging estimator only approximates the theoretical $f_A$ (bootstrap), we therefore suffer from approximation error (bias) by using the empirical distribution function instead of the true data generating process and only performing $M$ bootstrap iterations instead of all possible bootstrap samples.
+\item Bagging does not necessarily lead to an improved classifier -- (pathological) example:
 \begin{itemize}
-\item Example: binary outcome, $y = 1$ for all values of $x$
+\item Binary outcome, $y = 1$ for all values of $x$
 \item Consider random classifier $f$ with $\text{P}(\fx = 1) = 0.4$
 (independent of $x$)
-\item Prediction error for $f$ is 0.6
-\item Prediction error for the bagging estimator is 1
+\item Expected misclassification rate for $f$ is 0.6
+\item Expected misclassification rate for a majority-vote bagging estimator is 
+$\P(z \leq \tfrac{M}{2}) \stackrel{M \to \infty}{\longrightarrow} 1$ for $z \sim B(M, p = 0.4)$.
 \end{itemize}
+
+%\framebreak
+%\newcommand{\ambiblm}{\text{ambi}\left(\blm\right)}
+%\newcommand{\ambifM}{\text{ambi}\left(\fM\right)}
+% \item Bagging improves predictions if the baselearners in the ensemble are diverse:
+% \begin{itemize}
+% \item Measure diversity as \enquote{ambiguity} of baselearners and ensemble with $\ambiblm = \left(\blm- \fM \right)^2$,
+%  $\ambifM = \tfrac{1}{M}\sum^M_{m} \ambiblm$
+%  \item for quadratic loss, we can write:
+%  \begin{scriptsize}
+%  \begin{align*}
+%  \ambifM &= \tfrac{1}{M}\sum^M_{m} \left(\blm- \fM\right)^2 \\
+%          &= \tfrac{1}{M}\sum^M_{m} \left(\left(\blm - y\right)  + \left(y - \fM\right)\right)^2\\
+%          &= \tfrac{1}{M}\sum^M_{m} L(y, \blm) + L(y, \fm) -\\
+%          & \qquad\qquad\underbrace{- 2 \left(y - \tfrac{1}{M}\sum^M_{m}\blm\right)\left(y - \fM\right)}_{- 2 L(y, \fm)} \\
+%   \text{so } \E_{xy}\left[L(y, \fm)\right] = \tfrac{1}{M}\sum^M_{m} \E_{xy}\left[L(y, \blm)\right] - \E_{xy}\left[\ambifM\right]
+%   \end{align*}
+%   \end{scriptsize}
+%   \end{itemize}
+%   \item The expected loss of the ensemble is always below the average loss of the single base learners, by the amount of ambiguity in the base learners.
+%   \item The more accurate and diverse the base learners, the better the ensemble.
 \end{itemize}
+
+
 
 \end{vbframe}
 
 \begin{vbframe}{Random Forests}
   \begin{itemize}
-  \item Modification of bagging for trees.
-  \item Proposed by Breiman (2001).
+  \item Modification of bagging for trees proposed by Breiman (2001).
   \item Construction of bootstrapped {\bf decorrelated} trees
-  \item The variance of the bagging prediction depends on the correlation between the trees $\rho$
+  \item Variance of the bagging prediction $\fM$ depends on (mean) correlation between trees $\rho = \corr\left(\bl{m}, \bl{m'}\right)$
       \begin{align*}
-        \rho \sigma^2 + \frac{1-\rho}{M} \sigma^2,
+        \var\left(\fM\right) = \rho \sigma^2 + \frac{1-\rho}{M} \sigma^2,
       \end{align*}
-      where $\sigma^2$ describes the variance of a tree.
-  \end{itemize}
-\begin{itemize}
-\item[$\Rightarrow$] Reduce correlation by randomization in each split.
-  Instead of all $p$ features, draw $mtry \le p$ random split candidates.
-\item[$\Rightarrow$] Trees are expanded as much as possible, without aggressive early stopping or pruning,
-  to increase variance.
+      where $\sigma^2 = \var(\blm)$ describes the average variance of the trees.
+\item we want to have as much $\var(\blm)$ as possible (diverse ensemble!), but mimize $\var\left(\fM\right)$ at the same time
+\item[$\Rightarrow$] Reduce correlation by randomization in each node:
+  Instead of all $p$ features, draw $\texttt{mtry} \le p$ random split candidates for each node.
+\item[$\Rightarrow$] Trees $\blm$ are expanded liberally, without aggressive early stopping or pruning, to increase the diversity of the ensemble.
 \end{itemize}
+
 
   \framebreak
 
@@ -187,11 +188,11 @@ with coefficients $\betai{1},\dots,\betai{M}$.
   \caption*{Random Forest algorithm}
   \begin{algorithmic}[1]
   \State {\bf Input: }A dataset $\D$ of $n$ observations, number $M$ of trees
-  in the forest, number $mtry$ of variables to draw for each split
+  in the forest, number $\texttt{mtry}$ of variables to draw for each split
   \For {$m = 1 \to M$}
   \State Draw a bootstrap sample $\D^{[m]}$ from $\D$
   \State Grow tree $\blm$ using $\D^{[m]}$
-  \State For each split only consider $mtry$ randomly selected features
+  \State For each split only consider $\texttt{mtry}$ randomly selected features
   \State Grow tree without early stopping or pruning
 \EndFor
 \State Aggregate the predictions of the $M$ estimators (via averaging or majority voting), to predict on new data.
@@ -205,17 +206,18 @@ with coefficients $\betai{1},\dots,\betai{M}$.
 \framebreak
 
 \begin{itemize}
-  \item The following values are recommended for $mtry$:
+  \item The following values are recommended for $\texttt{mtry}$:
     \begin{itemize}
     \item Classification: $\lfloor \sqrt{p} \rfloor$
     \item Regression: $\lfloor p/3 \rfloor$
     \end{itemize}
 
-  \item Out-Of-Bag error: On average ca. 1/3 of points are not drawn.
+  \item Out-of-bag error: On average $\approx$ 1/3 of points are not drawn.
     \begin{align*}
       \P(\text{Obs. not drawn}) &= \left(1 - \frac{1}{n}\right)^n
       \ \stackrel{n \to \infty}{\longrightarrow} \ \frac{1}{e} \approx
       \Sexpr{round(exp(-1), digits = 2)}.
+      % e^x = lim_n(1 + x/n)^n
     \end{align*}
 
   To compute the OOB error, each observation $x$ is predicted only with those trees that did not use $x$ in their fit.
@@ -226,9 +228,76 @@ with coefficients $\betai{1},\dots,\betai{M}$.
 % This pic has been created with powerpoint. To get a good quality pic
 % I marked all the elements of the pic and copied them into IrfanView,
 % where I can save these elements as a jpg.
+
+% FS: this graphic sucks really badly. students don't understand it.
+% should replace it with somethimg that uses notation from the rest of the slides. 
+
 \begin{center}
 \includegraphics{figure_man/rF_oob_error.jpg}
 \end{center}
 
-  \end{vbframe}
+\framebreak
+
+\begin{figure}
+<<rf-friedman-plot1, echo=FALSE, message=FALSE, warning=FALSE, fig.height=4.5>>=
+set.seed(1)
+lrn = makeLearner("regr.randomForest", predict.type = "response")
+# remove this values from title
+lrn$par.vals$se.boot = NULL
+lrn$par.vals$ntree.for.se = NULL
+lrn2 = makeLearner("classif.randomForest")
+# remove this values from title
+lrn2$par.vals$se.boot = NULL
+lrn2$par.vals$ntree.for.se = NULL
+task = convertMLBenchObjToTask("mlbench.friedman1", n = 500, sd = 0.1)
+plotLearnerPrediction(lrn, task, cv = 0, ntree = 1) + 
+  scale_f() + scale_c() +
+  labs(caption = "M = 1")
+@
+\caption{randomForest trained on the \enquote{friedman1} regression task
+from the \pkg{mlbench} \pkg{R}-package with increasing number of trees}
+\end{figure}
+
+\framebreak
+<<rf-friedman-plot2, echo=FALSE, warning = FALSE>>=
+plotLearnerPrediction(lrn, task, cv = 0, ntree = 10) + 
+  scale_f() + scale_c() +
+  labs(caption = "M = 10")
+@
+\framebreak
+<<rf-friedman-plot3, echo=FALSE, warning = FALSE>>=
+plotLearnerPrediction(lrn, task, cv = 0, ntree = 500) + 
+  scale_f() + scale_c() +
+  labs(caption = "M = 500")
+@
+\framebreak
+\begin{figure}
+<<iris-rf-plot1, echo=FALSE, fig.height=4.5, warning = FALSE>>=
+plotLearnerPrediction(lrn2, iris.task, cv = 0, ntree = 1) + 
+  scale_f_d() + scale_c_d() +
+  labs(caption = "M = 1")
+@
+\caption{randomForest on \enquote{iris} for increasing number of trees}
+\end{figure}
+\framebreak
+<<iris-rf-plot2, echo=FALSE, warning = FALSE>>=
+plotLearnerPrediction(lrn2, iris.task, cv = 0, ntree = 10)+ 
+  scale_f_d() + scale_c_d() +
+  labs(caption = "M = 10")
+@
+\framebreak
+<<iris-rf-plot3, echo=FALSE>>=
+plotLearnerPrediction(lrn2, iris.task, cv = 0, ntree = 500)+ 
+ scale_f_d() + scale_c_d() +
+  labs(caption = "M = 500")
+@
+\framebreak
+
+<<rf-oob-error-plot, echo=FALSE, out.height = '.8\\textheight'>>=
+mod = train(lrn, task)$learner.model
+plot(mod, main = "")
+@
+OOB error for different number of trees for regression forest example.
+\end{vbframe}
+
 \endlecture
