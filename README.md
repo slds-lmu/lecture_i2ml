@@ -6,6 +6,12 @@ Participants acquire theoretical as well as practical competencies regarding som
 
 ## Concept
 
+The course is organized in the flipped classroom format: The active part (solving exercises, discussing material, ...) will happen in the course, while the passive part (watching course videos, reading material) will happen outside of the course (at home / at your favorite café / ...). 
+
+It is important that you watch the course videos before the course! The exercises, code demos and activities in the course depend on the knowledge you gain by working on the course materials before. 
+
+Additionally, we will prepare interactive tutorials where you can watch the videos, answer multiple choice questions, and learn how to apply the learned theory with `R`.
+
 ## Material
 
 ### PDF Slides
