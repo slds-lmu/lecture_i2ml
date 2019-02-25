@@ -4,11 +4,22 @@ The module offers an introductory and applied overview of supervised learning me
 
 Participants acquire theoretical as well as practical competencies regarding some fundamental models of learning from data. Additionally, they will be enabled to conduct a data analysis project themselves, including understanding and interpreting the data, in order to critically judge the advantages and disadvantages of the different methods. The accompanying exercise classes are a mix of theoretical and practical assignments. The latter will be conducted in `R` and will cover all methods introduced during the lecture.
 
+## Concept
+
 ## Material
 
 ### PDF Slides
 
-<a href="reference/figures/slides-intro.pdf">Slideset for Day 1</a>
+The complete slides for each day can be downloaded as zip from the links below. Downloading single slidesets of individual sessions is possible from the [content site](articles/content.html).
+
+- <a href="reference/figures/01-slides.zip">Slideset Day 1</a>
+- <a href="reference/figures/01-slides.zip">Slideset Day 2</a>
+
+### Videos
+
+As for the slides, links to individual videos can be viewed at the [content site](articles/content.html). The links below refers to the whole play list of one day:
+
+- <a href="https://www.youtube.com/playlist?list=PLMyWaJl2LoXyhFvMjtbBGs0Pi8khHbKm3" target="_blank">YouTube Playlist Day 1</a>
+- <a href="https://www.youtube.com/playlist?list=PLMyWaJl2LoXxjj3A-nctKtkG5xJqrdFMU" target="_blank">YouTube Playlist Day 2</a>
 
 ### Tutorials
-
