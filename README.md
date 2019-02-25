@@ -1,59 +1,35 @@
 # Introduction to Machine Learning
 
-This repository contains the slides for the lecture "Introduction to machine learning".
-[See also the moodle page](https://moodle.lmu.de/course/view.php?id=3001).
+This course will teach the fundamental techniques and concepts of supervised Machine Learning, which has become a central part of modern data analysis. In particular non-linear and non-parametric methods have been used successfully in uncovering complex patterns and relationships by computer scientists and statisticians.
 
-The repository latex-math is used. Please read the accompanying ReadMe: https://github.com/compstat-lmu/latex-math
+The module offers an introductory and applied overview of supervised learning methods and concepts for regression and classification. This includes models such as linear regression, discriminant analysis, naive Bayes, decision trees and random forests, but also more advanced techniques like model selection, feature selection, and hyperparameter optimization. The focus of the course is to give a basic understanding of the different algorithms, models and concepts while explaining the necessary mathematical foundation.
+
+Participants acquire theoretical as well as practical competencies regarding some fundamental models of learning from data. Additionally, they will be enabled to conduct a data analysis project themselves, including understanding and interpreting the data, in order to critically judge the advantages and disadvantages of the different methods. The accompanying exercise classes are a mix of theoretical and practical assignments. The latter will be conducted in `R` and will cover all methods introduced during the lecture.
+
 
 # Contents
 
 ## Day 1
-- Slot1: Intro to ML, das sind die IntroSLides, gekürzt und gegimpt, mit weniger von den ganzen Tasks, und ohne "2 cultures"
-- Slot 2: KNN + distances + einfache beispiele
-- Slot 3: Notation + formale intro +  Risk + Loss minimization  + const predictors
-- Slot 4: Bsp min modell + zeigen dass es das gleiche ist wie max lik
 
-Videos: [YT Playlist](https://www.youtube.com/playlist?list=PLMyWaJl2LoXyhFvMjtbBGs0Pi8khHbKm3)
+- Slot 1: Introduction to machine learning (ML)
+- Slot 2: What are tasks?
+- Slot 3: k-nearest neighbors
+- Slot 4: Learning theory basics
+- Slot 5: Linear regression as ML model
+
+Videos: <a href="https://www.youtube.com/playlist?list=PLMyWaJl2LoXyhFvMjtbBGs0Pi8khHbKm3" target="_blank">YT Playlist</a>
 
 ## Day 2
-- Slot1: theory of classifications: discrim funktionen, boundaries, posterior probs
-- Slot2: Log Reg + Softmax
-- Slot3: LDA QDA Naive Bayes + gen approach
-- Slot4: der 2 cultures vergleich + philosophy
+- Slot1: Theory of classifications
+- Slot2: Logistic regression as ML model
+- Slot3: Classification approaches
+- Slot4: Two cultures
 
-Videos: [YT Playlist](https://www.youtube.com/playlist?list=PLMyWaJl2LoXxjj3A-nctKtkG5xJqrdFMU)
+Videos: <a href="https://www.youtube.com/playlist?list=PLMyWaJl2LoXxjj3A-nctKtkG5xJqrdFMU" target="_blank">YT Playlist</a>
 
 ## Day 3
-- Slot 1: Intro und Train Test Eval
-- Slot 2: Resampling und CV
-- Slot 3: nested resampling?
-- Slot 4: ROC + conf matrix
-
 
 ## Day 4
-- Slot 1: CART1: wie geht der fit und split crits?
-- Slot 2: CART2: pruning (short), pros cons, factor features
-- Slot 3: rf1
-- Slot 4: rf2: varimp + pros cons
 
 ## Day 5
-- Tuning
-- Practical tips
-- Do's and dont's ?
-
-## Code Demos
-
-are publicly accessible via [this link](https://github.com/compstat-lmu/lecture_intro_to_ml_notebooks)
-
-
-## Creating Lecture Videos
-
-- Software: vokoscreen (Linux)
-- Format: mkv
-- Frames:25
-- Videocodec: H.264 (High Profile)    (in vokoscreen: libx264)  
-  (Day 1/2: H264 MPEG-4 AVC)
-- Audiocodec: MPEG-1 Layer 3 (MP3) (in vokoscreen: libmp3lame)  
-  (Day 1/2: MPEG Audio Layer 1/2 (mp4a) from kazam)
-- Resolution: 1920 x 1080 (Day 1/2: 1280 x 760 from kazam)
 
