@@ -13,7 +13,7 @@ Participants acquire theoretical as well as practical competencies regarding som
 The complete slides for each day can be downloaded as zip from the links below. Downloading single slidesets of individual sessions is possible from the [content site](articles/content.html).
 
 - <a href="reference/figures/01-slides.zip">Slideset Day 1</a>
-- <a href="reference/figures/01-slides.zip">Slideset Day 2</a>
+- <a href="reference/figures/02-slides.zip">Slideset Day 2</a>
 
 ### Videos
 
