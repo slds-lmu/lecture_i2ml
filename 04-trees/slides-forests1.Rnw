@@ -58,7 +58,52 @@ with coefficients $\betai{1},\dots,\betai{M}$.
   \end{itemize}
 \end{vbframe}
 
+
 \begin{vbframe}{Bagging}
+
+\begin{itemize}
+  \item Bagging is based on \textbf{B}ootstrap \textbf{Agg}regation.
+  \item Ensemble that improves instable / high variance learners
+  \begin{itemize}
+    \item Classification and regression trees
+    \item Neural networks
+    \item Piecewise variable selection in the regression case, etc.
+  \end{itemize}
+\end{itemize}
+
+\framebreak
+
+\begin{itemize}
+\item Train on $B$ \textbf{bootstrap} samples of data $D$:
+  \begin{itemize}
+    \item Draw $n$ observations with replacement 
+    \item Fit the base learner on each of the $B$ bootstrap samples
+    \begin{center}
+    \includegraphics[width=0.5\textwidth]{figure_man/bootstrapping.png}
+    \end{center} 
+  \end{itemize}
+\item  \textbf{Aggregate} the predictions of the $B$ estimators:
+  \begin{itemize}
+    \item Aggregate via averaging or majority voting
+    \item Posterior probabilities for $x$ in classification can be estimated by calculating class frequencies over the ensemble
+  \end{itemize}
+\end{itemize}
+
+\framebreak
+Making Predictions
+
+\begin{itemize}
+  \item In classification task, each tree's vote is calculated and the final output is determined with the majority.
+  \item In regression task, output from each tree is averaged. 
+\end{itemize}
+
+\begin{center}
+\includegraphics[width=0.8\textwidth]{figure_man/rf_majvot_averaging.png}
+\end{center}
+
+
+\framebreak
+
   \begin{itemize}
     \item Bagging is short for {\bf B}ootstrap {\bf Agg}regation.
     \item Proposed by Breiman (1996).
@@ -167,6 +212,156 @@ $\P(z \leq \tfrac{M}{2}) \stackrel{M \to \infty}{\longrightarrow} 1$ for $z \sim
 \end{vbframe}
 
 \begin{vbframe}{Random Forests}
+
+\begin{itemize}
+  \item Modification of Bagging for Trees
+  \item Proposed by Breiman (2001)
+  \item Construction of bootstrapped **decorrelated** trees through randomized splits
+  \item Trees are usually fully expanded, without aggressive early stopping or
+    pruning, to increase variance
+\end{itemize}
+
+\framebreak
+Bagging Predictor
+
+Variance of the bagging prediction:
+
+  \[ \rho \sigma^2 + \frac{1-\rho}{B} \sigma^2 = \left( \rho + (1 - \rho) \frac{1}{B} \right) \sigma^2 \]
+  where $\sigma^2$ describes the variance of a tree and $\rho$ the positive correlation between trees
+  
+\begin{itemize}
+  \item If trees are highly correlated ($\rho \approx 1$), variance $\rightarrow \sigma^2$
+  \item If trees are uncorrelated ($\rho \approx 0$), variance $\rightarrow \frac{\sigma^2}{B}$
+  \item Variance can be reduced by increasing the number of trees $B$
+\end{itemize}
+
+\framebreak
+Bagging Predictor
+
+<<eval=TRUE, echo=FALSE, fig.height= 3.5, fig.align="center">>=
+# artificial graphic, numbers are fictive
+rho = seq(0, 1, by = 0.001)
+B = c(5, 50, 500)
+sigma = 20 
+
+grid = expand.grid(rho = rho, B = B)
+
+grid$var = grid$rho * sigma + (1 - grid$rho) / grid$B * sigma
+grid = grid[order(grid$B), ]
+grid$B = as.factor(grid$B)
+
+horizontal = data.frame(
+  B = as.factor(B), 
+  intercept = sigma / B,
+  intercept.label = sigma / B + c(0, 0.7, -0.04))
+
+p1 = ggplot(data = grid, aes(x = rho, y = var)) +
+  geom_line(aes(group = B, colour = B)) +
+  geom_hline(aes(yintercept = 20), colour = "black", lty = 2) +
+  geom_hline(data = horizontal, aes(yintercept = intercept, colour = B), lty = 2) +
+  xlab(expression(paste("Correlation of Trees ", rho))) +
+  ylab("Theoretical Variance of a Bagging Prediction") +
+  labs(colour = "Number of Trees") +
+  annotate("text", x = 1.1, y = sigma, label = "sigma^2", parse = TRUE) +
+  geom_text(data = horizontal, aes(x = rep(1.08, 3), y = intercept.label, color = B, 
+    label = paste0("sigma^2 / ", B)), parse = TRUE, show.legend = FALSE, hjust = 0) +
+  coord_cartesian(xlim = c(0, 1), clip = "off") +
+  ylim(c(0, 20)) 
+
+p1
+@
+
+\framebreak
+Decorrelation of Trees
+
+\begin{itemize}
+  \item Draw bootstrap samples
+  \item Instead of all $p$ features, draw $\text{mtry} \le p$ random split candidates. Recommended values:
+  \begin{itemize}
+    \item Classification:  $\lfloor \sqrt{p} \rfloor$
+    \item Regression: : $\lfloor p/3 \rfloor$
+  \end{itemize}
+  \item Allow trees to slightly overfit by terminating them late
+\end{itemize}
+
+\framebreak
+With 1 Tree on Iris
+<<output4, eval=TRUE, echo=FALSE, fig.height= 4.5, fig.align="center">>=
+plotLearnerPrediction("classif.randomForest", iris.task, cv = 0, ntree = 1)
+@
+
+
+\framebreak
+With 10 Trees on Iris
+
+<<output5, eval=TRUE, echo=FALSE, fig.height= 4.5, fig.align="center">>=
+plotLearnerPrediction("classif.randomForest", iris.task, cv = 0, ntree = 10)
+@
+
+\framebreak
+With 500 Trees on Iris
+
+<<output6, eval=TRUE, echo=FALSE, fig.height= 4.5, fig.align="center">>=
+plotLearnerPrediction("classif.randomForest", iris.task, cv = 0, ntree = 500)
+@
+
+\framebreak
+OOB Error
+
+\begin{center}
+\includegraphics[width=0.65\textwidth]{figure_man/rF_oob_error.jpg}
+\end{center}
+
+\begin{itemize}
+  \item OOB size: $P(\text{not drawn}) = \left(1 - \frac{1}{n}\right)^n \ \stackrel{n \to \infty}{\longrightarrow} \ \frac{1}{e} \approx 0.37$
+  \item Predict all x with trees that didnt see it, average error
+  \item Similar to CV, can be used for a quick model selection
+\end{itemize}
+
+\framebreak
+OOB Error
+
+Imagine a classification if an email is spam or not. With the Random 
+Forest it is possible to get the mean misclassification errors inherently 
+during the training:
+
+<<eval=FALSE, echo = FALSE>>=
+
+
+lrn = makeLearner("classif.randomForest", ntree = 150)
+
+# download the dataset from OpenMl
+d = OpenML::getOMLDataSet(data.id = 44)
+spam = as_tibble(d)
+
+task = makeClassifTask(data = spam, target = "class")
+mod = train(lrn, task)
+plot(getLearnerModel(mod))
+@
+<<echo=FALSE, fig.height=3.5, message=FALSE, warning=FALSE>>=
+library(tidyr)
+library(kernlab)
+
+data(spam)
+model = randomForest(type ~., data=spam, ntree=150, proximity=TRUE)
+# layout(matrix(c(1,2),nrow=1), width=c(4,1))
+# par(mar=c(5,4,4,0)) #No margin on the right side
+# plot(model, log="y", lwd = 2, main = NULL)
+# par(mar=c(5,0,4,2)) #No margin on the left side
+# plot(c(0,1),type="n", axes=F, xlab="", ylab="")
+# legend("top", colnames(model$err.rate),col=1:4,cex=0.8,fill=1:4)
+
+data.frame(model$err.rate, iter = seq_len(nrow(model$err.rate))) %>%
+  gather(key = "error.type", value = "error.measured", -iter) %>%
+  ggplot(mapping = aes(x = iter, y = error.measured, color = error.type)) +
+  geom_line() + 
+  xlab("Number of Trees") +
+  ylab("Mean Misclassification Error") +
+  labs(color = "")
+@
+
+\framebreak
+
   \begin{itemize}
   \item Modification of bagging for trees proposed by Breiman (2001).
   \item Construction of bootstrapped {\bf decorrelated} trees
@@ -298,6 +493,63 @@ mod = train(lrn, task)$learner.model
 plot(mod, main = "")
 @
 OOB error for different number of trees for regression forest example.
+\end{vbframe}
+
+\begin{vbframe}{Random Forests in R}
+
+<<eval=TRUE>>=
+library(OpenML)
+library(tibble)
+
+# required for loading the dataset
+lrn = makeLearner("classif.randomForest", ntree = 150)
+
+# download the dataset 
+d = OpenML::getOMLDataSet(data.id = 44)
+spam = as_tibble(d)
+
+task = makeClassifTask(data = spam, target = "class")
+mod = train(lrn, task)
+
+# extract OOB predictions for evaluation
+oob = getOOBPreds(mod, task) 
+performance(oob) 
+@
+
+\framebreak
+
+<<echo = FALSE, fig.height=4, message=FALSE, warning=FALSE>>=
+
+
+# download the dataset 
+d = OpenML::getOMLDataSet(data.id = 44)
+spam = as_tibble(d)
+
+model = randomForest(class ~., data = spam, ntree=150, proximity=T)
+
+data.frame(model$err.rate, iter = seq_len(nrow(model$err.rate))) %>%
+  gather(key = "error.type", value = "error.measured", -iter) %>%
+  ggplot(mapping = aes(x = iter, y = error.measured, color = error.type)) +
+  geom_line() + 
+  xlab("Number of Trees") +
+  ylab("Mean Misclassification Error") +
+  labs(color = "")
+@
+
+\framebreak
+
+<<message = FALSE>>=
+lrn = makeLearner("regr.randomForest", ntree = 100)
+mod = train(lrn, bh.task)
+getLearnerModel(mod)
+@
+
+
+\framebreak
+
+<<message = FALSE, fig.height= 4.5, fig.align="center">>=
+plot(getLearnerModel(mod)) # Visualizes OOB error vs. number of trees
+@
 \end{vbframe}
 
 \endlecture

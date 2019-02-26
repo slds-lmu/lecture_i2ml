@@ -26,10 +26,11 @@ library(smoof)
 \begin{vbframe}{Variable importance}
 
 \begin{itemize}
-  \item Single trees are highly interpretable
-  \item Random Forests as an ensemble of many trees lose this feature
-  \item Hence, relevance of each single covariates to the fit is difficult to evaluate
-  \item Way out: variable importance measures
+  \item Single trees are highly interpretable.
+  \item Random Forests as combinations of trees loose this feature.
+  \item Hence, contributions of single covariables to the fit are difficult to
+    evaluate.
+  \item Way out: variable importance measures.
 \end{itemize}
 
 \framebreak
@@ -38,11 +39,11 @@ library(smoof)
   \small
   \caption*{Measure based on permutations of OOB observations}
   \begin{algorithmic}[1]
-    \State After growing tree $\blmh$, pass down OOB observations and record
-    predictive accuracy.
-    \State Permute OOB observations of $j$th variable.
+    \State While growing tree, pass down OOB observations and record predictive accuracy.
+    \State Permute OOB observations of $j$-th variable.
     \State Pass down the permuted OOB observations and evaluate predictive accuracy again.
-    \State The loss of predictive accuracy induced by permutation is averaged over all trees and is used as a measure for the importance of the $j^\text{th}$ variable.
+    \State The loss of goodness induced by permutation is averaged over all trees and
+  is used as a measure for the importance of the $j$-th variable.
   \end{algorithmic}
 \end{algorithm}
 
@@ -54,6 +55,33 @@ library(smoof)
     \State For each variable, this improvement is accumulated over all trees for the importance measure.
   \end{algorithmic}
 \end{algorithm}
+
+
+\framebreak
+
+<<>>=
+lrn = makeLearner("classif.randomForest", importance = TRUE)
+mod = train(lrn, iris.task)
+mlr::getFeatureImportance(mod)
+@
+
+\framebreak
+
+<<echo=TRUE, size="footnotesize", fig.height=4>>=
+rf = getLearnerModel(mod)
+randomForest::varImpPlot(rf,
+  main = "Variable Importance")
+@
+
+\framebreak
+
+<<echo=TRUE, size="footnotesize", fig.height=4>>=
+v = generateFilterValuesData(iris.task,
+  method = c("rf.importance", "cforest.importance"))
+plotFilterValues(v)
+@
+
+
 \end{vbframe}
 
 \begin{vbframe}{Variable Importance based on permutations of OOB observations}
@@ -76,7 +104,6 @@ v = generateFilterValuesData(iris.task,
   method = c("randomForest.importance", "cforest.importance"))
 plotFilterValues(v)
 @
-
 \end{vbframe}
 
 \begin{vbframe}{Random Forest: Proximities}
@@ -97,14 +124,15 @@ plotFilterValues(v)
 \begin{vbframe}{Random Forest: Advantages}
 
 \begin{itemize}
-  \item Easy to implement
+\item Bagging is easy to implement
   \item Can be applied to basically any model
   \item Easy to parallelize
   \item Often works well (enough)
-  \item Enables variance analysis
+  \item Variable importance: Integrated in RF, and IML package in model agnostic fashion!
   \item Integrated estimation of OOB error
   \item Can work on high-dimensional data
   \item Often not much tuning necessary
+  \item Computationally faster implementation in package `ranger`
 \end{itemize}
 
 \end{vbframe}
@@ -113,10 +141,7 @@ plotFilterValues(v)
 
 \begin{itemize}
   \item Often suboptimal for regression
-  \item Hard to interpret, especially interactions
-  \item Does not really optimize loss aggressively
-  \item No real way to adapt to problem\\
-  (see e.g. loss in GBM, kernel in SVM)
+  \item Does not really optimize loss aggressively in comparison to boosting
   \item Implementations sometimes memory-hungry
   \item Prediction can be slow
 \end{itemize}
