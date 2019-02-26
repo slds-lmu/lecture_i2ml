@@ -16,6 +16,15 @@ The course is organized in the flipped classroom format: The active part (solvin
 
 To help you with this, we have prepared interactive **tutorials** where you can watch the videos, answer multiple choice questions, and learn how to apply the theory using `R` on some very short coding exercises -- you can find them under the "Tutorials" tab at the top of the page and in the links below.
 
+## Daily time table
+
+- 9:30 (s.t.) - 11:00: Discussion of exercises from day before 
+- 11:00 - 12:00 Code demos in R
+- **12:00 - 13:00 Lunch break**
+- 13:00 - 15:00 Solving exercises in groups/alone (supervised) 
+- 15:00 - 17:00 Unsupervised self study / Work on practical exercises in groups (See, we also cover unsupervised learning ... Sorry.)
+
+
 ## Requirements
 
 - The course is targeted at Bachelor students from the 4th semester on.
