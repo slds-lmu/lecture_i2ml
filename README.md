@@ -26,7 +26,7 @@ Our plan is to extend this practical self-study material over the next months an
 - Simple linear algebra
 - Simple calculus
 - Simple probability theory
-- Some stats knowledge, you should now what a mean, variance, bias, etc., is
+- Some stats knowledge, you should now what *mean*, *variance*, *bias*, etc., is
 - (Linear) Modelling from a stats perspective can help, but is not required, we sometimes compare to that
 - Working knowledge of R
 
@@ -37,5 +37,5 @@ Approach us, if you think likewise and want help.
 
 - Are you an ML expert and like the course, but have some feedback or consider extending it? 
   Write an email to Bernd and Fabian (see *Team* page).
-- Are you a student taking the lecture - either at the LMU or online - and you spotted a typo, think we shouldrephrase something be or
+- Are you a student taking the lecture - either at the LMU or online - and you spotted a typo, think we should rephrase something be or
   even would like to provide a new quiz question or coding example? Please consider providing a pull request. 
