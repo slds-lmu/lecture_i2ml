@@ -4,6 +4,8 @@
 
 Main course site: https://compstat-lmu.github.io/lecture_i2ml/
 
+Devel repo on Github: https://github.com/compstat-lmu/lecture_i2ml
+
 ## Course overview
 
 The module offers an introductory and applied overview of ML regression and classification. 
