@@ -11,21 +11,3 @@ The course is organized in the flipped classroom format: The active part (solvin
 **It is extremely important that you watch and try to understand all of the course videos and work on the tutorials before we meet for class!** The exercises, code demos and activities we will do together in the course all depend on the knowledge you gain by working on the course materials *in advance*. This is not a passive, lecture-type course -- you need to be active yourself and prepare each day in a self-directed fashion like the responsible adult that you are.
 
 To help you with this, we have prepared interactive **tutorials** where you can watch the videos, answer multiple choice questions, and learn how to apply the theory using `R` on some very short coding exercises -- you can find them under the "Tutorials" tab at the top of the page and in the links below.
-
-## Material
-
-### PDF Slides
-
-The complete slides for each day can be downloaded as zip from the links below. Downloading single slidesets of individual sessions is possible from the [content site](articles/content.html).
-
-- <a href="reference/figures/01-slides.zip">Slideset Day 1</a>
-- <a href="reference/figures/02-slides.zip">Slideset Day 2</a>
-
-### Videos
-
-As for the slides, links to individual videos can be viewed at the [content site](articles/content.html). The links below lead to the entire video play list for each day (... and please don't forget to work on the respective tutorials after each video to check your understanding and prepare yourself for in-class discussions):
-
-- <a href="https://www.youtube.com/playlist?list=PLMyWaJl2LoXyhFvMjtbBGs0Pi8khHbKm3" target="_blank">YouTube Playlist Day 1</a>
-- <a href="https://www.youtube.com/playlist?list=PLMyWaJl2LoXxjj3A-nctKtkG5xJqrdFMU" target="_blank">YouTube Playlist Day 2</a>
-
-### Tutorials
