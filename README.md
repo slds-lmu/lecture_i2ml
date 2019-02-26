@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.com/compstat-lmu/lecture_i2ml.svg?token=yiXTK7TFAHiwv8cwsQus&branch=master)](https://travis-ci.com/compstat-lmu/lecture_i2ml)
+
+Link to website: https://compstat-lmu.github.io/lecture_i2ml/
+
 In this course, you will learn the fundamental techniques and concepts of supervised Machine Learning, which has become a central part of modern data analysis. In particular, non-linear and non-parametric methods have been used successfully in uncovering complex patterns and relationships by computer scientists and statisticians.
 
 The module offers an introductory and applied overview of supervised learning methods and concepts for regression and classification. This includes models such as linear regression, discriminant analysis, naive Bayes, decision trees and random forests, but also more advanced techniques like model selection, feature selection, and hyperparameter optimization. The focus of the course is to give a basic understanding of the different algorithms, models and concepts while explaining the necessary mathematical foundation.
