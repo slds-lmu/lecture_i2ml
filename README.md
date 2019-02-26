@@ -15,3 +15,12 @@ The course is organized in the flipped classroom format: The active part (solvin
 **It is extremely important that you watch and try to understand all of the course videos and work on the tutorials before we meet for class!** The exercises, code demos and activities we will do together in the course all depend on the knowledge you gain by working on the course materials *in advance*. This is not a passive, lecture-type course -- you need to be active yourself and prepare each day in a self-directed fashion like the responsible adult that you are.
 
 To help you with this, we have prepared interactive **tutorials** where you can watch the videos, answer multiple choice questions, and learn how to apply the theory using `R` on some very short coding exercises -- you can find them under the "Tutorials" tab at the top of the page and in the links below.
+
+## Requirements
+
+- The course is targeted at Bachelor students from the 4th semester on.
+- Linear Algebra
+- Probability theory
+- Linear Modelling (suggested, might be possible without this)
+- English
+- Working knowledge of R 
