@@ -13,7 +13,8 @@ This includes models such as linear regression, discriminant analysis, naive Bay
 At the end, we will briefly discuss and summarize more advanced techniques like hyperparameter optimization, model selection, nested resampling, and give some advice regarding practical work. 
 The course is of an introductory nature and geared towards Bachelor's students.
 It aims at a practical and operational understanding of the covered algorithms and models, with less emphasis on theory and formalism.
-The accompanying exercises and tutorials are a mix of theoretical and practical assignments, the latter in `R`.
+The accompanying exercises and tutorials are a mix of theoretical and practical assignments, the latter in `R`, for which we will often use the
+[mlr](https://github.com/mlr-org/mlr) R package.
 
 ## Concept
 
