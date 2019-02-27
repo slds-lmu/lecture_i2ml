@@ -33,7 +33,7 @@ Our plan is to extend this practical self-study material over the next months an
 - (Linear) Modelling from a stats perspective can help, but is not required, we sometimes compare to that
 - Working knowledge of R
 
-# Help is appreciated and welcome!
+## Help is appreciated and welcome!
 
 A lecture like this will never be perfect and hopefully grow over the coming years. We strongly believe in open source and collaborative work. 
 Approach us, if you think likewise and want help.
