@@ -12,8 +12,18 @@ knitr::set_parent("../style/preamble.Rnw")
 \lecturechapter{9}{Performance Estimation}
 \lecture{Fortgeschrittene Computerintensive Methoden}
 
-
 \begin{vbframe}{Introduction}
+
+\vfill
+\textit{"The generalization performance of a learning method relates to its prediction capability on independent test data.
+Assessment of this performance is extremely important in practice, since it guides the choice of learning
+method or model, and gives us a measure of the quality of the ultimately chosen model."}
+
+\hfill Hastie et al. - The Elements of Statistical Learning
+\vfill
+
+\framebreak
+
 In predictive modeling, performance estimation can have different goals:
 
 \begin{itemize}
@@ -137,8 +147,8 @@ We distinguish between
 
 %\lz
 \begin{itemize}
-\item the inner loss which is optimized during model fitting to obtain $\fh$
-\item the outer loss which will be used to assess the model afterwards
+\item \textbf{Inner Loss} which is optimized during model fitting to obtain $\fh$
+\item \textbf{Outer Loss} which will be used to assess the model afterwards
 \end{itemize}
 
 %\lz
@@ -155,7 +165,207 @@ The outer loss is also known as \emph{performance measure}.
 \end{vbframe}
 
 
+\begin{vbframe}{Performance Measures} 
 
+
+\begin{centering}
+\includegraphics[width=9cm,page=1]{figure_man/make_classif_regr_error_intro_plot}
+\end{centering}
+
+To compare the performance of two ML models on a single observation or a new data set,
+we would ideally like to boil them down to a \textbf{single} numeric measure of the performance.
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{Overview}
+Depending on the modeling problem, different \textbf{performance measures} are required:
+
+\begin{center}
+\begin{tabular}{c c}
+\hline
+ Classification 	&  Regression 	            \\
+\hline
+ Accuracy 	      &  Mean Squared Error 	    \\
+ Recall 	        &  Mean Absolute Error 	    \\
+ Precision 	    &  Median Squared Error	    \\
+ F1-Score 	      &  Relative Absolute Error	\\
+ AUC	            &  R-squared	              \\
+ Brier Score     &  Adj. R-squared           \\
+ ...     &  ...           \\
+\hline
+\end{tabular}
+\end{center}
+
+\end{vbframe}
+
+\begin{vbframe}{Regression: MSE}
+
+The \textbf{Mean Squared Error} compares the mean of the squared distances between the target variable $y$ and the predicted target $\yh$.
+
+\[
+MSE = \frac{1}{n} \sumin (\yi - \yih)^2 \in [0;\infty]
+\]
+
+Single observations with a large prediction error heavily influence the \textbf{MSE}, as they enter quadratically.
+
+<<echo=FALSE, out.width="0.7\\textwidth", fig.width = 7, fig.height = 3>>=
+source("rsrc/plot_loss.R")
+
+set.seed(31415)
+
+x = 1:5
+y = 2 + 0.5 * x + rnorm(length(x), 0, 1.5)
+data = data.frame(x = x, y = y)
+model = lm(y ~ x)
+
+plotModQuadraticLoss(data = data, model = model, pt_idx = c(1,4))
+@
+
+\begin{centering}
+\includegraphics[width=10cm,page=1]{figure_man/loss_regression}
+\end{centering}
+
+\end{vbframe}
+
+\begin{vbframe}{Regression: MAE}
+
+A more robust (but not neccessarily better) way to compute a performance measure is the \textbf{Mean Absolute Error}:
+
+\[
+MAE = \frac{1}{n} \sumin |\yi - \yih| \in [0;\infty]
+\]
+
+The absolute error is more robust. On the other hand, the absolute error is not differentiable
+at $0$.
+
+<<echo=FALSE, out.width="0.7\\textwidth", fig.width = 7, fig.height = 3>>=
+plotModAbsoluteLoss(data, model = model, pt_idx = c(1,4))
+@
+
+\end{vbframe}
+
+\begin{vbframe}{Regression: $R^2$}
+
+Another often used measure is $R^2$. It measures the \textit{fraction of variance explained} by the model.
+
+
+\[ 
+R^2 = 1 - \frac{\sumin (\yi - \yih)^2}{\sumin (\yi - \bar{y})^2} = \frac{SSE_{Model}}{SSE_{Intercept}} 
+\]
+
+
+\begin{itemize}
+  \item If $R^2$ is measured on the training data: $R^2 \in [0;1]$.
+  \item If $R^2$ is measured on held out data: $R^2 \in [-\infty;1]$.
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Regression: Defining a custom loss}
+
+Assume a use case, where the target variable can have a wide range of values across different orders of magnitude.
+A possible solution would be to use a loss functions that allows for better model evaluation and comparison.
+The \textbf{Mean Squared Logarithmic Absolute Error} is not strongly influenced by large values due to the logarithm.
+
+\[
+\frac{1}{n} \sumin (\log(|\yi - \yih| + 1))^2
+\]
+
+<<echo=FALSE, out.width="0.7\\textwidth", fig.width = 7, fig.height = 3>>=
+plotModAbsLogQuadLoss(data, model = model, pt_idx = c(1,4))
+@
+\end{vbframe}
+
+\begin{vbframe}{Performance Measures - Classification}
+
+The Confusion matrix is an intuitive metrics used for establishing the correctness and accuracy of a model.
+It is used for classification problems where the output can be of two or more types of classes.
+
+\begin{centering}
+\includegraphics[width=8cm,page=3]{figure_man/confusion_matrix_measures}
+\end{centering}
+
+\end{vbframe}
+
+\begin{vbframe}{Classification: Accuracy / Classification Error}
+
+The Confusion matrix is not a performance measure as such, but most performance metrics for binary classification are based on it.
+
+\textbf{Accuracy; Classification Error = 1 - Accuracy}
+
+\begin{centering}
+\includegraphics[width=8cm,page=4]{figure_man/confusion_matrix_measures}
+\end{centering}
+
+Classification Error = 1 - Accuracy
+
+\end{vbframe}
+
+\begin{vbframe}{Classification: Balanced Accuracy / Error}
+
+\textbf{Problem:} Accuracy is sensitive for imbalanced data situations.
+\textbf{Solution:} Compute the accuracy for each class label
+
+\begin{centering}
+\includegraphics[width=8cm,page=5]{figure_man/confusion_matrix_measures}
+\end{centering}
+
+\end{vbframe}
+
+\begin{vbframe}{Classification: Brier Score}
+
+Measures squared distances of probabilities from the true class labels:
+
+\[
+BS ={\frac {1}{n}} \sumin \left(\pi^{(i)}(x) - \yi\right)^2
+\]
+
+\begin{itemize}
+  \item Above is the usual definition for binary case, $\yi$ must be coded as 0 and 1.
+  \item Measures how well calibrated probabilities are.
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Threshold}
+
+Thresholding flexibly converts measured probabilities to labels.
+
+\begin{centering}
+\includegraphics[width=10cm,page=2]{figure_man/confusion_matrix_measures}
+\end{centering}
+
+\end{vbframe}
+
+\begin{vbframe}{List of Classification Performance Measures}
+
+\small
+
+\begin{center}
+\begin{tabular}{c l}
+\hline
+
+ \textbf{Classification}     & \textbf{Explanation}                                               \\
+\hline
+ \textit{Accuracy}           &  Fraction of correct classifications                               \\
+ \textit{Balanced Accuracy}  &  Fraction of correct classifications in each class                 \\
+ \textit{Recall}             &  Fraction of positives a classifier captures                       \\
+ \textit{Precision}          &  Fraction of positives in instances predicted as positive          \\
+ \textit{F1-Score}           &  Tradeoff between precision and recall                             \\
+ \textit{AUC}                &  Measures calibration of predicted probabilities                   \\
+ \textit{Brier Score}        &  Squared difference between predicted probability and  \\
+  & true label   \\
+ \textit{LogLoss}            &  Emphasizes errors for predicted probabilities close to \\
+ & 0 and 1    \\
+\hline
+\end{tabular}
+\end{center}
+
+\normalsize
+
+\end{vbframe}
 
 \begin{vbframe}{Bias-Variance Tradeoff}
   \includegraphics[height=0.8\textheight, keepaspectratio]{figure_man/biasvariance.png}
@@ -796,7 +1006,6 @@ grid.arrange(pl1 + theme_minimal(), pl2 + theme_minimal(), layout_matrix = rbind
 % \end{itemize}
 
 % \end{vbframe}
-
 
 
 \endlecture
