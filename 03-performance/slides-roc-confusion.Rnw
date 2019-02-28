@@ -8,6 +8,7 @@ knitr::set_parent("../style/preamble.Rnw")
 
 % Load all R packages and set up knitr
 <<setup, child="../style/setup.Rnw", include = FALSE>>=
+requireNamespace("ROCR")
 @
 
 \lecturechapter{11}{ROC and confusion matrix}
@@ -28,205 +29,77 @@ The following notation will be used in this chapter:
 \end{itemize}
 \end{vbframe}
 
-
-
 \begin{vbframe}{Evaluation of Binary Classifiers}
 
 \begin{itemize}
-
-\item  Consider a binary classifier $C(x)$, e.g. for cancer prediction (with true label $y$).
-    \begin{itemize}
-      \item   for $C(x) = 1 = \hat{y}$, we predict cancer
-      \item   for $C(x) = 0 = \hat{y}$, we predict no cancer
-    \end{itemize}
-\item  One possible evaluation measure is the \textit{misclassification error} or \textit{error rate} (i.e. the proportion of patients for which $\hat{y} \neq y$).
-\item  Example: If 10 out of 1000 patients are misclassified, the \textit{error rate} would be 1\%.
-\item  In general, lower \textit{error rates} are better.
-
-\end{itemize}
-
-\framebreak
-
-\begin{itemize}
-\item   Using the \textit{error rate} for imbalanced true labels is not suggested.
-\item   Example: Assume that only 0.5\% of 1000 patients have cancer.
+  \item Consider a binary classifier for cancer prediction
+  \item Evaluating with \textit{error rate} for imbalanced labels if often bad
+  \item Assume that only 0.5\,\% of 1000 patients have cancer.
   \begin{itemize}
-    \item   Always returning $C(x) = 0 = \hat{y}$ gives an \textit{error rate} of 0.5\%, which sounds good.
-    \item   However, we would never predict cancer, which is bad.
+    \item Always returning "no disease" has an error rate of 0.5\,\%,
+      which sounds good
+    \item However, this sends all sick patients home, which is the worst possible system
   \end{itemize}
 \end{itemize}
 
-$\Rightarrow$ We also need different evaluation metrics and should not only trust the \textit{error rate}.
+The phenomenon described above is referred to as \textbf{accuracy paradox}: The accuracy is only reflecting the underlying class distribution.
+
+We need to find better performance measure than accuracy for imbalanced data.
 
 \end{vbframe}
-
 
 \begin{vbframe}{Confusion Matrix}
 
-The confusion matrix is a $2 \times 2$ contingency table of predictions $\hat{y}$ and true labels $y$.
-Several evaluation metrics can be derived from a confusion matrix:
+The confusion matrix is a $2 \times 2$ contingency table of predictions
+$\hat{y}$ and true labels $y$. Several evaluation metrics can be derived from
+a confusion matrix:
 
 \begin{center}
-\includegraphics[width=0.9\textwidth]{figure_man/roc-confusion_matrix.png}
+\includegraphics[width=0.8\textwidth]{figure_man/confusion_matrix.png}
 \end{center}
-%
-% \framebreak
-%
-% Terminology:
-%
-% \begin{itemize}
-%
-% \item   \textbf{True positive (TP):} \newline
-%     We predicted "1" and the true class is "1".
-%
-% \item  \textbf{True negative (TN):} \newline
-%     We predicted "0" and the true class is "0".
-%
-% \item  \textbf{False positive (FP):} \newline
-%     We predicted "1" and the true class is "0" (type I error).
-%
-% \item  \textbf{False negative (FN):} \newline
-%     We predicted "0" and the true class is "1" (type II error).
-%
-% \item  \textbf{Positive (pos):} \newline
-%     Fraction of true class labels with "1". %<!-- \text{POS} = \sum_i I(y_i = 1)$ and $\text{NEG} = \sum_i I(y_i = 0)$-->
-%
-% \item   \textbf{Negative (neg):} \newline
-%     Fraction of true class labels with "0".
-%
-% \end{itemize}
-% %<!-- (see also [Statistical Tests of Significance \& Type I and Type II Errors](http://0agr.ru/wiki/index.php/Statistical_Tests_of_Significance#Type_I_and_Type_II_Errors "wikilink2")) -->
-%
-%
-% \framebreak
-%
-%
-% The following measures can be obtained from the confusion matrix:
-%
-% \begin{itemize}
-% \item   True positive rate (also known as sensitivity or recall)
-%   \begin{itemize}
-%     \item   Fraction of positive observations correctly classified
-%     \item   $\text{tpr} = \cfrac{\text{\#TP}}{\text{\#TP} + \text{\#FN}}$
-%   \end{itemize}
-% \item   False positive rate (also known as fall-out)
-%   \begin{itemize}
-%     \item   Fraction of negative observations incorrectly classified
-%     \item   $\text{fpr} = \cfrac{\text{\#FP}}{\text{\#FP} + \text{\#TN}} = \text{1 - Specificity}$
-%   \end{itemize}
-% \item   Accuracy
-% \item   Misclassification error (or error rate)
-% \item   Positive predictive value (or precision) %<!--, $P = \cfrac{\text{TP}}{\text{TP} + \text{FP}}$ -->
-% \item   Negative predictive value
-% \item   ...
-% \end{itemize}
-% %<!-- -   Support - fraction of positively classified observations
-% %    -   $\text{sup} = \cfrac{\text{TP} + \text{FP}}{N} =
-% %        \cfrac{\text{predicted pos}}{\text{total}}$ -->
-%
-%
 
-% \end{vbframe}
-%
-% \begin{vbframe}{Accuracy and Misclassification Error}
-%
-% In practice, these are the most widely used metrics
-% \begin{itemize}
-%   \item   Accuracy: $\text{acc} = \cfrac{\text{\#TP} + \text{\#TN}}{N}$
-%
-%   \begin{itemize}
-%     \item fraction of correctly classified observations
-%   \end{itemize}
-%
-%   \item   Error rate: $\text{error} = \cfrac{\text{\#FN} + \text{\#FP}}{N} = 1 - \text{acc}$
-%
-%   \begin{itemize}
-%     \item Fraction of misclassified observations
-%   \end{itemize}
-%
-% \end{itemize}
-% \end{vbframe}
-
-
-%
-%
-% \begin{vbframe}{Precision (P) or Positive Predictive Value (PPV)}
-%   $$P = \cfrac{\text{\#TP}}{\text{\# predicted positives}} = \cfrac{\text{\#TP}}{\text{\#TP} + \text{\#FP}}$$
-%
-% \begin{center}
-%   or
-% \end{center}
-% \vspace{-0.75cm}
-%
-%   $$P = \cfrac{pos \cdot tpr}{pos \cdot tpr + neg \cdot fpr} = \cfrac{tpr}{tpr + \tfrac{neg}{pos} \cdot fpr}$$
-%
-% \begin{itemize}
-% \item   Interpretation: For all observations that we predicted $\hat{y} = 1$, what fraction actually has $y = 1$?
-% \item   Higher \textit{precision} is better.
-% \end{itemize}
-% \end{vbframe}
-%
-%
-% \begin{vbframe}{Recall (R)}
-%
-% $$R = \cfrac{\text{\#TP}}{\text{\# actual positives}} = \cfrac{\text{\#TP}}{\text{\#TP + \#FN}} = \text{tpr}$$
-%
-% \begin{itemize}
-% \item   Interpretation: For all observations that actually have $y = 1$, what fraction did we correctly detect as $\hat{y} = 1$?
-% \item   Higher \textit{recall} is better.
-% \item   For a classifier that always returns zero (i.e. $\hat{y} = 0$), the \textit{recall} would be zero.
-% \end{itemize}
-%
 \end{vbframe}
 
+\begin{vbframe}{Terminology - More Confusion}
 
-%<!--
-%-   Out of all the people that do actually have %cancer, how much had been identified?
-%-   We don't fail to spot many people that actually %have cancer.
-% -->
+\begin{itemize}
+  \item True positive rate; aka: recall, sensitivity\
+  How many of the true 1s did we predict as 1?\
+  1 - TPR = false negative rate = miss rate
 
-%<!-- The [F Measure](http://0agr.ru/wiki/index.php%/F_Measure#F_Measure "wikilink3") is a combination %of [Precision and
-%Recall](http://0agr.ru/wiki/index.php/Precision_and_%Recall "wikilink4") -->
+  \item True negative rate; aka: specificity\
+  How many of the true 0s did we predict as 0?\
+  1 - TNR = False positive rate = fallout = false alarm rate
+
+  \item Positive predictive value; aka precision\
+  If we predict 1 how likely is it a true 1?\
+  1 - PPV = false discovery rate
+
+  \item Negative predictive value\
+  If we predict 0 how likely is it a true 0?\
+  1 - PPV = false omission rate
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Example}
+
+\begin{center}
+\includegraphics[width=0.9\textwidth]{figure_man/confusion_matrix_example.png}
+\end{center}
+
+\end{vbframe}
 
 \begin{vbframe}{F-Measure}
-%<!--
-%$P$ and $R$ don't make sense in the isolation from each other
-
-%-   higher level of $\rho$ may be obtained by lowering $\pi$ and
-%    vice versa
-
-%Suppose we have a ranking classifier that produces some score (e.g. a probability) for $\mathbf{x}$:
-
-%-   we decide whether to classify it $\hat{y} = 1$ or $\hat{y} = 0$ based on some threshold parameter $\tau$.
-%-   varying $\tau$, will lead to different values for precision and recall.
-%-   improving recall yields a worse precision and vice versa.
-%-   combine $P$ and $R$ into one measure (also see [ROC Analysis])
-
-%$F_{\beta} = \cfrac{(\beta^2 + 1) P \, R}{\beta^2 \, %P + R}$
-
-%-   $\beta$ is the tradeoff between $P$ and $R$
-%-   if $\beta$ is close to 0, then we give more %importance to $P$
-%    -   $F_0 = P$
-%-   if $\beta$ is closer to $+ \infty$, we give more %importance to
-%    $R$
-
-%When $\beta = 1$ we have $F_1$ score: -->
 
 It is difficult to achieve a high \textit{precision} and high \textit{recall} simultaneously.
-A trade-off offers the $F_1$-measure, which is the harmonic mean of precision $P$ and recall $R$:
+A trade-off offers the $F_1$-measure, which is the harmonic mean of precision
+$P$ and recall $R$:
 
-$$F_1 = 2 \cfrac{P \cdot R}{P + R} = \cfrac{2\text{tpr}}{\text{tpr} + \tfrac{neg}{pos} \cdot \text{fpr} + 1 } $$
+$$F_1 = 2 \cfrac{P \, R}{P + R} = \cfrac{2\text{tpr}}{\text{tpr} + \tfrac{neg}{pos} \cdot \text{fpr} + 1 } $$
 
 \end{vbframe}
 
-% \begin{vbframe}{Example}
-%
-% \begin{center}
-% \includegraphics[width=0.7\textwidth]{figure_man/roc-confusion_matrix_example.png}
-% \end{center}
-%
-%
-% \end{vbframe}
 
 \begin{vbframe}{Multiclass Confusion Matrix}
   \begin{itemize}
@@ -250,98 +123,22 @@ $$F_1 = 2 \cfrac{P \cdot R}{P + R} = \cfrac{2\text{tpr}}{\text{tpr} + \tfrac{neg
   \end{itemize}
 
 \end{vbframe}
-%
-%    <<echo = FALSE, message = FALSE, warning = FALSE>>=
-%   library(mlr)
-%   set.seed(1)
-%   lrn = makeLearner("classif.rpart")
-%   iris2 = rbind(iris, iris)
-%   iris2$Species = c(rep("A", 100), rep("B", 100), rep("C", 100))
-%   iris2.task = makeClassifTask(data = iris2, target = "Species")
-%   mod = train(lrn, iris2.task)
-%   pred = predict(mod, newdata = iris2)
-%   pred$data$response = c(rep("A", 30), rep("B", 50), rep("C", 20),
-%                          rep("A", 20), rep("B", 60), rep("C", 20),
-%                          rep("A", 10), rep("B", 10), rep("C", 80))
-%   cm = calculateConfusionMatrix(pred)
-%   t(cm$result)
-%   @
 
+\begin{vbframe}{Receiver Operating Characteristic (ROC)}
 
-%<!--
-%# Visual Analysis
+\begin{itemize}
+  \item Plot TPR vs FPR for classifiers
+  \item The best classifier lies on the top-left corner
+  \item Diagonal contains worst possible solutions
+  \item ROC curves are insensitive to class distribution
+\end{itemize}
 
-%Visual ways of evaluating the performance of a classifier
+\begin{center}
+\includegraphics[width=0.45\textwidth]{figure_man/roc-space.png}
+\includegraphics[width=0.45\textwidth]{figure_man/roc-plot-classifiers.png}
+\end{center}
 
-%-   [ROC Analysis](http://0agr.ru/wiki/index.php/ROC_Analysis "wikilink5") - True Positive Rate vs
-    %False Positive Rate
-%-   [Cumulative Gain Charts](http://0agr.ru/wiki/index.php/Cumulative_Gain_Chart "wikilink6") - True
-  %  Positive Rate vs Predicted Positive Rate
-
-
-%# Not Binary Classifiers
-
-%When we have multi-class classifiers we can use:
-
-%-   Contingency Table
-%    -   just show misclassified observations side-by-side
-%-   [Cost Matrix](http://0agr.ru/wiki/index.php/Cost_Matrix "wikilink8")
-%    -   we define the cost for each misclassification
-%    -   and calculate the total cost
-%-   some measures can be extended to multiclass classifiers:
-%    -   see Evaluation of Multiclass Classifiers
-%-->
-%
-% \begin{vbframe}{Binary Cost-sensitive Classification}
-% \begin{itemize}
-%   \item Regular classification:
-%   \begin{itemize}
-%     \item All misclassification errors equally severe.
-%     \item Aim: minimize the misclassification rate.
-%   \end{itemize}
-%   \item Cost-sensitive classification:
-%     \begin{itemize}
-%     \item Costs caused by different kinds of errors are not assumed to be equal.
-%     \item Aim: minimize expected costs.
-%   \end{itemize}
-% \end{itemize}
-%
-% \framebreak
-%
-% Cost matrix:
-% \begin{table}[]
-% \centering
-% \begin{tabular}{|l|c|c|}
-% \hline
-%                    & Actual positive & Actual negative \\ \hline
-% Predicted positive & $c_{11}$              & $c_{10}$              \\
-% Predicted negative & $c_{01}$              & $c_{00}$              \\ \hline
-% \end{tabular}
-% \end{table}
-% \begin{itemize}
-% \item \textit{Reasonableness} conditions:
-%      $$c_{01} > c_{11} \hspace{5pt} \text{ and } \hspace{5pt} c_{10} > c_{00}$$
-% \item Given the cost matrix, an example should be classified into the class that has the minimum
-% expected cost.
-%  \item Let $\pix  := \P(y = 1|x)$ and $1 - \pix  = \P(y = 0|x)$.
-%  \item $\P(y|x)$ is the probability estimation classifying an instance $x$ into class $y$.
-% % \item There are classification methods that can accomodate misclassification costs directly (e.g. \href{http://www.rdocumentation.org/UKljZ/packages/rpart/functions/rpart.html}{rpart}).
-% % \item Alternatively, choose thresholds to turn posterior probabilities into class labels, such that the costs are minimized.
-% \end{itemize}
-%
-% \framebreak
-% Choose thresholds to turn posterior probabilities into class labels, such that the costs are minimized:
-% \begin{itemize}
-%   \item Optimal prediction for class 1
-%   \item[]$\Leftrightarrow$  Expected cost of predicting 1 $\leq$ expected cost of predicting 0
-%   \item[]$\Leftrightarrow$  $(1-\pix )c_{10} + \pix c_{11} \leq (1-\pix ) c_{00} + \pix c_{01}$
-%   \item If this inequality is an equality, then predicting either class is optimal
-%   \item[] $\Rightarrow$ Choose optimal threshold $\pix ^*$ such that
-%   $$\pix ^* = \cfrac{c_{10} - c_{00}}{c_{10}- c_{00} + c_{01} - c_{11}}$$
-%   \item The \textit{Reasonableness} conditions ensure, that $\pix ^*$ is well defined.
-% \end{itemize}
-%
-% \end{vbframe}
+\end{vbframe}
 
 \begin{vbframe}{ROC Analysis}
 %<!-- (from Signal Detection Theory) -->
@@ -677,14 +474,25 @@ Given a ranker $f$ and a dataset with $n$ training observations:
 \end{itemize}
 \end{vbframe}
 
-\begin{vbframe}{Example Naive Method}
-\centering
-\includegraphics[width=0.7\textwidth]{figure_man/roc-naive-method.png}
 
-See \url{https://quayau.shinyapps.io/roc_shiny/} for a live demo.
+\begin{vbframe}{Scoring Classifiers}
+
+\begin{itemize}
+  \item Classifiers often output scores or probabilities
+  \item Set some threshold $\alpha$ to transform score into a label
+  \item Predict $\yh = 1$ (positive class) if $\fx > \alpha$ else predict $\yh = 0$
+  \item Draw a point in the ROC space for each possible threshold
+\end{itemize}
+
+\begin{center}
+\includegraphics[width=\textwidth]{figure_man/roc-curves2.png}
+\end{center}
+
 \end{vbframe}
 
-\begin{vbframe}{Example Practical Method}
+
+
+\begin{vbframe}{ROC Curve}
 Given:
 \begin{itemize}
   \item 20 observations
@@ -715,79 +523,184 @@ Given:
   \end{itemize}
 \end{itemize}
 
-\framebreak
+<<echo=FALSE, out.width="0.8\\textwidth", fig.width=6, fig.height=4, fig.align="center">>=
+source("rsrc/plot_roc.R")
 
-\begin{center}
-\includegraphics[page=1]{figure_man/gif.pdf}
+df_auc = data.frame(
+  '#' = 1:12,
+  Truth = c("Pos", "Neg")[c(1, 1, 1, 2, 1, 2, 1, 2, 2, 2, 1, 2)],
+  Score = c(0.95, 0.86, 0.69, 0.65, 0.59, 0.52, 0.51, 0.39, 0.28, 0.18, 0.15, 0.06)
+)
+names(df_auc) = c("#", "Truth", "Score")
 
- $x$ is positive, move $1/\text{pos} = 0.1$ up.
-\end{center}
+thresh = 0.9
+tpr = mlr::measureTPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos")
+fpr = mlr::measureFPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos", negative = "Neg")
 
-\framebreak
+plotROC(df_auc, thresh)
+@
 
-\begin{center}
-\includegraphics[page=2]{figure_man/gif.pdf}
+Set threshold $\alpha =$ \Sexpr{thresh} yields TPR \Sexpr{tpr} and FPR \Sexpr{fpr}.
 
- $x$ is positive, move $1/\text{pos} = 0.1$ up.
-\end{center}
-
-\framebreak
-
-\begin{center}
-\includegraphics[page=3]{figure_man/gif.pdf}
-
- $x$ is negative, move $1/\text{neg} = 0.1$ right.
-\end{center}
 
 \framebreak
 
-\begin{center}
-\includegraphics[page=4]{figure_man/gif.pdf}
+<<echo=FALSE, out.width="0.8\\textwidth", fig.width=6, fig.height=4, fig.align="center">>=
+thresh = 0.85
+tpr = mlr::measureTPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos")
+fpr = mlr::measureFPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos", negative = "Neg")
 
- $x$ is positive, move $1/\text{pos} = 0.1$ up.
-\end{center}
+plotROC(df_auc, thresh)
+@
+
+Set threshold $\alpha =$ \Sexpr{thresh} yields TPR \Sexpr{tpr} and FPR \Sexpr{fpr}.
+
+\framebreak
+
+<<echo=FALSE, out.width="0.8\\textwidth", fig.width=6, fig.height=4, fig.align="center">>=
+thresh = 0.66
+tpr = mlr::measureTPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos")
+fpr = mlr::measureFPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos", negative = "Neg")
+
+plotROC(df_auc, thresh)
+@
+
+Set threshold $\alpha =$ \Sexpr{thresh} yields TPR \Sexpr{tpr} and FPR \Sexpr{fpr}.
+
+\framebreak
+
+<<echo=FALSE, out.width="0.8\\textwidth", fig.width=6, fig.height=4, fig.align="center">>=
+thresh = 0.6
+tpr = mlr::measureTPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos")
+fpr = mlr::measureFPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos", negative = "Neg")
+
+plotROC(df_auc, thresh)
+@
+
+Set threshold $\alpha =$ \Sexpr{thresh} yields TPR \Sexpr{tpr} and FPR \Sexpr{fpr}.
+
+
+\framebreak
+
+<<echo=FALSE, out.width="0.8\\textwidth", fig.width=6, fig.height=4, fig.align="center">>=
+thresh = 0.55
+tpr = mlr::measureTPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos")
+fpr = mlr::measureFPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos", negative = "Neg")
+
+plotROC(df_auc, thresh)
+@
+
+Set threshold $\alpha =$ \Sexpr{thresh} yields TPR \Sexpr{tpr} and FPR \Sexpr{fpr}.
+
+\framebreak
+
+<<echo=FALSE, out.width="0.8\\textwidth", fig.width=6, fig.height=4, fig.align="center">>=
+thresh = 0.3
+tpr = mlr::measureTPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos")
+fpr = mlr::measureFPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos", negative = "Neg")
+
+plotROC(df_auc, thresh)
+@
+
+Set threshold $\alpha =$ \Sexpr{thresh} yields TPR \Sexpr{tpr} and FPR \Sexpr{fpr}.
+
+\framebreak
+
+<<echo=FALSE, out.width="0.8\\textwidth", fig.width=6, fig.height=4, fig.align="center">>=
+plotROC(df_auc, 0, highlight = FALSE)
+@
 
 \framebreak
 
 \begin{center}
-\includegraphics[page=5]{figure_man/gif.pdf}
-
- $x$ is positive, move $1/\text{pos} = 0.1$ up.
+\includegraphics[width=0.7\textwidth]{figure_man/roc-naive-method.png}
 \end{center}
 
-\framebreak
+See \url{https://quayau.shinyapps.io/roc_shiny/} for a live demo.
 
-\begin{center}
-\includegraphics[page=6]{figure_man/gif.pdf}
+\end{vbframe}
 
- $x$ is positive, move $1/\text{pos} = 0.1$ up.
-\end{center}
+\begin{vbframe}{AUC: Area Under ROC Curve}
 
-\framebreak
-
-\begin{center}
-\includegraphics[page=7]{figure_man/gif.pdf}
-
- $x$ is negative, move $1/\text{neg} = 0.1$ right.
-\end{center}
-
-\framebreak
-
-\begin{center}
-\includegraphics[page=20]{figure_man/gif.pdf}
-\end{center}
-
-\framebreak
-
-\begin{center}
-\includegraphics[width=0.5\textwidth]{figure_man/roc-curve-ex1.png}
-\end{center}
+<<echo=FALSE, out.width="0.4\\textwidth", fig.width=4, fig.height=4, fig.align="center">>=
+plotROC(df_auc, 0, table = FALSE, auc = TRUE, highlight = FALSE)
+@
 
 \begin{itemize}
-  \item Score of the best (6th) classifier is used as the threshold $\theta$.
-  \item Predict positive class for $\theta \geqslant 0.54$ ($\Rightarrow$ accuracy = 0.7).
+  \item AUC represents degree or measure of separability by calculating the area under the ROC curve
+  \item AUC =   1: Perfect, ranks all pos. higher than all neg.
+  \item AUC = 0.5: Randomly ordered
+  \item AUC =   0: Perfect, but inverted labels
 \end{itemize}
+
+
+
+The area under the ROC curve (AUC $\in [0, 1]$) is
+\begin{itemize}
+  \item A measure for evaluating the performance of a classifier
+%<!-- https://www.quora.com/How-is-statistical-significance-determined-for-ROC-curves-and-AUC-values -->
+  \item Related to the Mann-Whitney-U test, which
+  \begin{itemize}
+    \item Estimates the probability that randomly chosen positives
+      are ranked higher than randomly chosen negatives.
+    \item Relation: $AUC = \cfrac{U}{POS \cdot NEG}$.
+  \end{itemize}
+  % \item related to the Gini coefficient $= 2 \cdot AUC - 1$ (area above diag.)
+\end{itemize}
+
+\framebreak
+
+\textbf{Interpetation}
+
+\begin{itemize}
+  \item Interpretation: Probability that classifier ranks a
+  random positive higher than a random negative observation
+
+\begin{center}
+\includegraphics[width=0.8\textwidth,page=1]{figure_man/auc_interpretation.pdf}
+\end{center}
+
+<<echo=FALSE, fig.width=6, fig.height=3, out.width="0.8\\textwidth">>=
+# df_auc = data.frame(
+#   truth = c(1, 1, 1, 0, 1, 0, 0),
+#   scores =  c(0.9, 0.76, 0.7, 0.5, 0.45, 0.3, 0.1)
+# )
+df_auc = data.frame(
+  truth = ifelse(df_auc$Truth == "Pos", 1, 0),
+  scores =  df_auc$Score
+)
+df_auc_lines = merge(df_auc[df_auc$truth == 1, ], df_auc[df_auc$truth == 0, -3], by = NULL)
+df_auc_lines$correct = factor(ifelse(df_auc_lines$scores.x < df_auc_lines$scores.y, "false", "correct"), levels = c("false", "correct"))
+
+# ggplot() + geom_point(data = df_auc, aes(x = abs(truth - 1), y = scores, color = as.factor(truth)), show.legend = FALSE) +
+ggplot() +
+  geom_point(data = df_auc, aes(x = abs(truth - 1), y = scores), size = 3, shape = 1, stroke = 2, color = rgb(0.4, 0.4, 0.4), alpha = 0.8) +
+  geom_segment(data = df_auc_lines, aes(x = abs(truth.x - 1), xend = abs(truth.y - 1), y = scores.x, yend = scores.y, color = correct),
+    show.legend = FALSE) +
+  ylab("Predicted Scores\nof Classifier") +
+  xlab("True Label") +
+  scale_x_continuous(breaks = c(0, 1), labels = c("Positive", "Negative"), limits = c(-0.3, 1.3)) +
+  theme_minimal()
+@
+
+  \item AUC is the fraction of blue (correct classified) and all lines:
+
+<<echo=FALSE, results="asis">>=
+auc = mlr::measureAUC(probabilities = df_auc$scores, truth = df_auc$truth, positive = 1)
+n_true = sum(df_auc_lines$correct == "correct")
+cat("\\[\\mathsf{AUC} = ", n_true, "/", nrow(df_auc_lines) ," = ", round(auc, 4), "\\]")
+@
+
+\end{itemize}
+
 \end{vbframe}
+
+
+
+
+
+
+
 
 %
 % \begin{vbframe}{Example Practical Method}
@@ -828,48 +741,6 @@ Given:
 %   \item Setting $\theta = 0.88 \Rightarrow$ accuracy of $15/20 \; \hat{=} \; 75 \%$.
 % \end{itemize}
 % \end{vbframe}
-
-\begin{vbframe}{Other ROC Curve Examples}
-%<!-- (http://www.cs.bris.ac.uk/~flach/ICML04tutorial/ROCtutorialPartI.pdf) -->
-\begin{center}
-\includegraphics[width=0.6\textwidth]{figure_man/roc-curves.png}
-\end{center}
-\end{vbframe}
-
-\begin{vbframe}{AUC: Area Under ROC Curve}
-The area under the ROC curve (AUC $\in [0, 1]$) is
-\begin{itemize}
-  \item A measure for evaluating the performance of a classifier:
-  \begin{itemize}
-    \item AUC =   1: Perfect classifier, for which all positives are ranked higher than all negatives
-    \item AUC = 0.5: Randomly ordered
-    \item AUC =   0: All negatives are ranked higher than all positives
-    \item Interpretation of AUC: Probability that a classifier $C$ ranks a randomly drawn
-    positive observation "$+$" higher than a randomly drawn negative observation "$-$".
-  \end{itemize}
-
-%<!-- https://www.quora.com/How-is-statistical-significance-determined-for-ROC-curves-and-AUC-values -->
-
-  \item Related to the Mann-Whitney-U test, which
-  \begin{itemize}
-    \item Estimates the probability that randomly chosen positives
-      are ranked higher than randomly chosen negatives.
-    \item Relation: $AUC = \cfrac{U}{POS \cdot NEG}$.
-  \end{itemize}
-  % \item related to the Gini coefficient $= 2 \cdot AUC - 1$ (area above diag.)
-\end{itemize}
-\end{vbframe}
-
-\begin{vbframe}{AUC: Area Under ROC Curve}
-%<!--
-%-   Measure for evaluating the performance of a classifier
-%-   it's the area under the ROC Curve, total area is 100%
-%-->
-
-\begin{center}
-\includegraphics[width=0.75\textwidth]{figure_man/roc-auc-ex1.png}
-\end{center}
-\end{vbframe}
 
 
 
