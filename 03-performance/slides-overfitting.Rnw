@@ -1,0 +1,192 @@
+% Introduction to Machine Learning
+% Day 3
+
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../style/preamble.Rnw")
+@
+
+% Load all R packages and set up knitr
+<<setup, child="../style/setup.Rnw", include = FALSE>>=
+@
+
+
+\lecturechapter{10}{Overfitting}
+\lecture{Introduction to Machine Learning}
+
+\begin{vbframe}{Overfitting}
+
+\begin{itemize}
+  \item Learner finds a pattern in the data that is not actually true in the real world: \textit{overfits} the data
+  \item Every powerful learner can "hallucinate" patterns
+  \item Happens when you have too many hypotheses and not enough data to tell them apart
+  \item The more data, the more "bad" hypotheses are eliminated
+  \item If the hypothesis space is not constrained, there may never be enough data
+  \item There is often a parameter that allows you to constrain (\textit{regularize}) the learner
+\end{itemize}
+
+\framebreak
+
+\begin{columns}[T,onlytextwidth]
+\column{0.5\textwidth}
+Overfitting learner \\
+\vspace{0.5cm}
+<<echo=FALSE, results='hide', out.width='\\textwidth'>>=
+library(mlr)
+library(mlbench)
+library(plyr)
+
+data = as.data.frame(mlbench.2dnormals(n = 200, cl = 3))
+data$classes = mapvalues(data$classes, "3", "1")
+task = makeClassifTask(data = data, target = "classes")
+learner = makeLearner("classif.ksvm")
+plotLearnerPrediction(learner, task, kernel = "rbfdot", C = 1, sigma = 100, pointsize = 4)
+@
+Better training set performance (seen examples)
+
+\column{0.5\textwidth}
+Non-overfitting learner \\
+\vspace{0.5cm}
+<<echo=FALSE, results='hide', out.width='\\textwidth'>>=
+plotLearnerPrediction(learner, task, kernel = "rbfdot", C = 1, sigma = 1, pointsize = 4)
+@
+Better test set performance (unseen examples)
+\end{columns}
+
+
+\framebreak
+
+\textbf{Noise}
+\begin{itemize}
+  \item Overfitting is seriously exacerbated by \textit{noise} (errors in the training data)
+  \item An unconstrained learner will start to model that noise
+  \item It can also arise when relevant features are missing in the data
+  \item In general it's better to make some mistakes on training data ("ignore some observations") than trying to get all correct
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Example: Polynomial Regression}
+
+Assume that $y$ can be approximated by a $d^{th}$-order polynomial
+\[
+f(x) = \theta_0 + \theta_1 x + \ldots + \theta_d x^d = \sum_{j = 0}^{d} \theta_j
+x^j\text{.}
+\]
+\begin{itemize}
+  \item $\theta_j$ are the coefficients and $d$ is called the degree (or order).
+  \item For a fixed $d$, the form of the function $\fx$ is determined by the values of the coefficients $\theta_j$.
+  \item Therefore, the model function has the form $f(x)$, and the task is to find the $\theta$ that best fits the data.
+\end{itemize}
+\framebreak
+
+Consider the following true relationship $f(x)$ with the corresponding training and test set created by the \textit{holdout} method:
+
+<<echo=FALSE, out.width="0.9\\textwidth", fig.height=5>>=
+.h = function(x) 0.5 + 0.4 * sin(2 * pi * x)
+h = function(x) .h(x) + rnorm(length(x), mean = 0, sd = 0.05)
+
+set.seed(1234)
+x.all = seq(0, 1, length = 21L)
+ind = seq(1, length(x.all), by = 2)
+
+x = x.all[ind]
+y = h(x)
+x.test = x.all[-ind]
+y.test = h(x.all[-ind])
+
+line.palette = c("#E69F00AA", "#56B4E9AA", "#CC79A7AA")
+baseplot = function() {
+  par(mar = c(2, 2, 1, 1))
+  plot(.h, lty = 2L, xlim = c(0, 1), ylim = c(-0.1, 1), ylab = "", xlab = "")
+  points(x, y, pch = 19L)
+  points(x.test, y.test)
+  legend(x = "bottomleft", legend = c("true relationship f(x)", "training set", "test set"),
+    col = "black", lty = c(2L, NA, NA), pch = c(NA, 19L, 21L))
+}
+
+p1 = lm(y ~ poly(x, 1, raw = TRUE))
+p3 = lm(y ~ poly(x, 5, raw = TRUE))
+p10 = lm(y ~ poly(x, 9, raw = TRUE))
+mods = list(p1, p3, p10)
+x.plot = seq(0, 1, length = 500L)
+baseplot()
+@
+
+\framebreak
+
+Models of different \textit{complexity}, i.e. of different polynomial order $d$, are fitted to the training set:
+
+<<echo=FALSE, out.width="0.9\\textwidth", fig.height=5>>=
+baseplot()
+for (i in seq_along(mods)) {
+  lines(x.plot, predict(mods[[i]], newdata = data.frame(x = x.plot)),
+    col = line.palette[i], lwd = 2L)
+}
+legend("topright", paste(sprintf("d = %s", c(1, 5, 9)), c("(underfit)", "(good)", "(overfit)")),
+  col = line.palette, lwd = 2L)
+@
+
+\framebreak
+\begin{itemize}
+  \item The polynomial of order $d = 9$ was almost optimal on $\Dtrain$ but lacked in performing good on new data points $\Dtest$ (leads to overfitting as the model is too complex / flexible).
+  \item The linear model with $d = 1$ was not able to capture the non-linear relationship, even on $\Dtrain$ (leads to underfitting as the model is not complex enough).
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Avoiding Overfitting}
+\begin{itemize}
+  \item You should never believe your model until you've \textit{verified it on data that the learner didn't see}
+  \item Scientific method applied to machine learning: model must make new predictions that can be experimentally verified
+  \item Randomly divide the data into:
+  \begin{itemize}
+    \item \textit{Training set} $\Dtrain$ which you give to the learner
+    \item \textit{Test set} $\Dtest$ which you hide to verify predictive performance
+  \end{itemize}
+  \item Some learner can do "early stopping" before perfectly fitting (i.e., overfitting) the training data
+  \item In general, prefer simpler hypotheses altogether when they work well (e.g. regularization, pruning)
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Triple Trade-Off}
+
+In all learning algorithms that are trained from data, there is a trade-off between three factors:
+\begin{itemize}
+  \item The complexity of the hypothesis we fit to the training data
+  \item The amount of training data (in terms of both instances and informative features)
+  \item The generalization error on new examples
+\end{itemize}
+If the capacity of the learning algorithm is large enough to a) approximate the data generating process and b) exploit the information contained in the data, the generalization error will decrease as the amount of training data increases.
+
+For a fixed size of training data, the generalization error decreases first and then starts to increase (overfitting) as the complexity of the hypothesis space $H$ increases.
+\end{vbframe}
+
+\begin{vbframe}{Trade-Off Between Generalization Error and Complexity}
+
+Apparent error (on the training data) and real error (prediction error on new data) evolve in the opposite direction with increasing complexity:
+
+<<fig.height=3, fig.width=8, echo=FALSE>>=
+par(mar = c(2.1, 2.1, 0, 0))
+x <- seq(0, 1, length.out = 20)
+y1 <- c(1 - x[1:4], 1.5 - 4 * x[5:6], 0.5 - 0.8 * x[7:10], 0.15 - 0.1 * x[11:20])
+X <- seq(0, 1, length.out = 1000)
+Y1 <- predict(smooth.spline(x, y1, df = 10), X)$y
+plot(X, Y1, type = "l", axes = FALSE, xlab = "Complexity", ylab = "Error")
+mtext("Complexity", side = 1, line = 1)
+mtext("Error", side = 2, line = 1)
+Y2 <- 0.5 * X
+lines(X, Y1 + Y2)
+abline(v = 0.42, lty = 2)
+text(0.4, 0.93, "Underfitting", pos = 2)
+text(0.44, 0.93, "Overfitting", pos = 4)
+arrows(0.4, 0.98, 0.2, 0.98, length = 0.1)
+arrows(0.44, 0.98, 0.64, 0.98, length = 0.1)
+box()
+text(0.85, 0.13, "Apparent error")
+text(0.85, 0.55, "Actual error")
+@
+\vspace{-0.2cm}
+$\Rightarrow$ Optimization regarding the model complexity is desirable: Find the right amount of complexity for the given amount of data where generalization error becomes minimal.
+
+\end{vbframe}
+
+\endlecture
