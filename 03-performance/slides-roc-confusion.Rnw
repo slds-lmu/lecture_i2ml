@@ -1,62 +1,68 @@
-% Introduction to Machine Learning
-% Day 3
-
-% Set style/preamble.Rnw as parent.
 <<set-parent, include = FALSE>>=
 knitr::set_parent("../style/preamble.Rnw")
 @
-
-% Load all R packages and set up knitr
 <<setup, child="../style/setup.Rnw", include = FALSE>>=
 requireNamespace("ROCR")
 @
+\lecturechapter{Evaluation: ROC Analysis}
+\lecture{Introduction to Machine Learning}
+%<!-- (from Signal Detection Theory) -->
+%<!--
+%\vspace{-0.25cm}
+%-   initially - for distinguishing noise from not %noise
+%-   so it's a way of showing the performance of %Binary Classifiers
+%    -   only two classes - noise vs not noise  -->
+% The \textbf{R}eceiver \textbf{O}perating \textbf{C}haracteristic (ROC) curve is created by plotting the \textit{TPR} vs. \textit{FPR}, i.e. the
 
-\lecturechapter{11}{ROC and confusion matrix}
-\lecture{Fortgeschrittene Computerintensive Methoden}
-
-\begin{vbframe}{Notation}
-The following notation will be used in this chapter:
-
+\begin{vbframe}{Binary Classifiers and Imbalanced Labels}
 \begin{itemize}
-  \item $\Xspace$: $p$-dim. input space%, usually we assume $\Xspace = \R^p$, but categorical features can occur, too
-\item $\Yspace$: target space. In this chapter binary $\Yspace = \lbrace 0, 1 \rbrace$ or multi class $\Yspace = \gset$.
-\item $x = \xvec \in \Xspace$ observation.
-\item A binary classifier is a function $C: \Xspace \longrightarrow \Yspace = \lbrace 0,1\rbrace$.
-\item A binary scoring classifier (or ranker) is a function $f$, which outputs a score (e.g. probability) for the positive class.
-\item   $n$ is the total number of observations.
-\item   $\text{NEG}$ and $\text{POS}$ are the number of negative and positive observations.
-\item   $\text{neg}$ and $\text{pos}$ are the fraction of negative and positive observations, respectively.
+  \item Consider a binary classifier for diagnosing a serious medical condition
+  \item Here, label distribution is often \textbf{imbalanced}, i.e, not many people have the disease  
+  \item Evaluating with error rate for imbalanced labels is often inappropriate
+  \item Assume that only 0.5\,\% of 1000 patients have the disease
+  \item Always returning "no disease" has an error rate of 0.5\,\%, which sounds good
+  \item However, this sends all sick patients home, which is the worst possible system, even classifying everyone as "sick" might be better, depending on what happens next
+  \item This problem is sometimes known as the \textbf{accuracy paradox}
 \end{itemize}
 \end{vbframe}
 
-\begin{vbframe}{Evaluation of Binary Classifiers}
-
+\begin{vbframe}{Binary Classifiers and Costs}
 \begin{itemize}
-  \item Consider a binary classifier for cancer prediction
-  \item Evaluating with \textit{error rate} for imbalanced labels if often bad
-  \item Assume that only 0.5\,\% of 1000 patients have cancer.
-  \begin{itemize}
-    \item Always returning "no disease" has an error rate of 0.5\,\%,
-      which sounds good
-    \item However, this sends all sick patients home, which is the worst possible system
-  \end{itemize}
+  \item Another point of view is imbalanced costs
+  \item In our example, classifying a sick patient as healthy, should incurs a much higher loss then classifying a healthy patient as sick
+  \item The costs depend a lot on what happens next: We can likely assume that our system is some type of screening filter, 
+    often the next step after labeling someone as "sick" might be a more invasive, expensive, but reliable test for the disease
+  \item Erroneously, subjecting someone to that second step is not good (psychologically, economically, or because the second test might introduce
+    medical risks), but sending someone home to get worse or die seems much worse
+  \item Such a situation not only arises under label imbalance, but also when labels are maybe balanced but costs differ
+  \item We could also see this as imbalanced costs of misclassification, rather than imbalanced labels; both situations are tightly connected
 \end{itemize}
-
-The phenomenon described above is referred to as \textbf{accuracy paradox}: The accuracy is only reflecting the underlying class distribution.
-
-We need to find better performance measure than accuracy for imbalanced data.
-
 \end{vbframe}
 
-\begin{vbframe}{Confusion Matrix}
+\begin{vbframe}{Binary Classifiers and Costs}
+\begin{itemize}
+  \item Problem is: If we could specify costs precisely, we could evaluate against them, we might even optimize our model for them
+  \item Unfortunately, users often have a notoriously hard time to come up with precise numbers in these scenarios
+  \item Evaluating "from different" perspectives, with multiple metrics, often helps, especially to get a first impression
+    of the quality of the system
+\end{itemize}
+\end{vbframe}
 
-The confusion matrix is a $2 \times 2$ contingency table of predictions
-$\hat{y}$ and true labels $y$. Several evaluation metrics can be derived from
-a confusion matrix:
 
-\begin{center}
-\includegraphics[width=0.8\textwidth]{figure_man/confusion_matrix.png}
-\end{center}
+\begin{vbframe}{Confusion Matrix and ROC Metrics}
+
+For a binary problem / predictor we can normalize in rows and cols of the 
+confusion matrix to derive several informative metrics in imbalanced 
+or cost-sensitive situations:
+
+\includegraphics[width=0.8\textwidth, height=4cm]{figure_man/confusion_matrix.png}
+
+\begin{itemize}
+  \item \textbf{TPR}: How many of the true 1s did we predict as 1?
+  \item \textbf{TNR}: How many of the true 0s did we predict as 0?
+  \item \textbf{PPV}: If we predict 1 how likely is it a true 1?
+  \item \textbf{NPV}: If we predict 0 how likely is it a true 0?
+\end{itemize}
 
 \end{vbframe}
 
@@ -64,112 +70,76 @@ a confusion matrix:
 \begin{vbframe}{Example}
 
 \begin{center}
-\includegraphics[width=0.9\textwidth]{figure_man/confusion_matrix_example.png}
+  \includegraphics[width=\textwidth, height=7cm]{figure_man/confusion_matrix_example.png}
 \end{center}
 
 \end{vbframe}
 
-\begin{vbframe}{F-Measure}
+\begin{vbframe}{F1-Measure}
 
 It is difficult to achieve a high \textit{Positive Predictive Value} and high \textit{True Positive Rate} simultaneously.
 A trade-off offers the $F_1$-measure, which is the harmonic mean of PPV and TPR:
 
 $$F_1 = 2 \cfrac{PPV \cdot TPR}{PPV + TPR} = \cfrac{2\text{TPR}}{\text{TPR} + \tfrac{neg}{pos} \cdot \text{FPR} + 1 } $$
 
-\end{vbframe}
-
-
-\begin{vbframe}{Multiclass Confusion Matrix}
-  \begin{itemize}
-    \item The performance of a multiclass classifier can also be summarized in a confusion matrix.
-    \item E.g., in a 3-class classification problem with labels A, B and C:
-    \item[] \includegraphics[width=0.9\textwidth]{figure_man/roc-multiclass_confmatrix.png}
-    \item The overall accuracy is calculated similarly to the binary confusion matrix.
-    \item Example:
-          $acc = \cfrac{\# \text{TP}_A + \# \text{TP}_B + \# \text{TP}_C}{n} = \cfrac{30+60+80}{300} \approx 56\%$
-  \end{itemize}
-
-  \framebreak
-
-  \begin{itemize}
-    \item[]   \includegraphics[width=0.9\textwidth]{figure_man/roc-multiclass_confmatrix.png}
-    \item Other measures, e.g. tpr, need to be calculated in a one-vs-all manner.
-    \item Example (True Positive Rate for label A):
-    $$\text{TPR}_A = \cfrac{\# \text{TP}_A}{\# \text{TP}_A + \# \text{FN}_A} = \cfrac{30}{30+50+20} = 0.3$$
-    \item Example (Positive Predictive Value for label A):
-    $$\text{PPV}_A = \cfrac{\# \text{TP}_A}{\# \text{TP}_A + \# \text{FP}_A} = \cfrac{30}{30+20+10} = 0.5$$
-  \end{itemize}
-
-\end{vbframe}
-
-\begin{vbframe}{Receiver Operating Characteristic (ROC)}
+<<echo=FALSE, fig.width=6, fig.height=3, out.width="0.8\\textwidth">>=
+oo = options()
+options(digits = 2)
+tpr = ppv = seq(0, 1, by = 0.2)
+f1 = function(tpr, ppv) 2*tpr*ppv / (tpr + ppv)
+g = expand.grid(tpr, ppv)
+f1_tab = outer(tpr, ppv, f1)
+f1_tab[1,1] = 0
+colnames(f1_tab) = sprintf("%.1f", tpr)
+rownames(f1_tab) = sprintf("%.1f", ppv)
+print(f1_tab)
+options(oo)
+@
 
 \begin{itemize}
-  \item Plot TPR vs FPR for classifiers
+  \item A model with $TPR=0$ (no one predicted as postitive from the positive class) or $PPV=0$ (no real positives among the predicted) has an F1 of 0
+  \item Predicting every one as N has F1=0  
+  \item Predicting every one as P has F1=0  
   \item The best classifier lies on the top-left corner
   \item Diagonal contains worst possible solutions
-  \item ROC curves are insensitive to class distribution
 \end{itemize}
 
-\begin{center}
-\includegraphics[width=0.45\textwidth]{figure_man/roc-space.png}
-\includegraphics[width=0.45\textwidth]{figure_man/roc-plot-classifiers.png}
-\end{center}
+\end{vbframe}
 
+
+
+\begin{vbframe}{Receiver Operating Characteristic (ROC)}
+\begin{itemize}
+  \item Plot TPR vs FPR; False Positive Rate: $FPR = 1 - TNR$
+  \item The best classifier lies on the top-left corner
+  \item Diagonal contains worst possible solutions
+\end{itemize}
+\begin{center}
+\includegraphics[width=0.7\textwidth, height=5.5cm]{figure_man/roc-space.png}
+\end{center}
 \end{vbframe}
 
 \begin{vbframe}{ROC Analysis}
-%<!-- (from Signal Detection Theory) -->
-%<!--
-%\vspace{-0.25cm}
-%-   initially - for distinguishing noise from not %noise
-%-   so it's a way of showing the performance of %Binary Classifiers
-%    -   only two classes - noise vs not noise  -->
-The \textbf{R}eceiver \textbf{O}perating \textbf{C}haracteristic (ROC) curve is created by plotting the \textit{TPR} vs. \textit{FPR}, i.e. the
-
-\begin{itemize}
-  \item   True Positive Rate, $\text{TPR} = \cfrac{\text{\#TP}}{\text{\#TP} + \text{\#FN}}$
-  \item   False Positive Rate, $\text{FPR} = 1-\text{TNR} = \cfrac{\text{\#FP}}{\text{\#FP} + \text{\#TN}}$
-\end{itemize}
-
-Properties:
-\begin{itemize}
-\item   ROC curves are insensitive to class distribution.
-\item   If the proportion of positive to negative instances changes, the ROC curve will not change.
-%\item   ROC space is 2 dimensional, i.e. $X: \text{fpr}, Y: \text{tpr}$.
-\item To see why, consider a binary confusion matrix.
-\end{itemize}
-%<!--%
-%# ROC Space
-
-%When evaluating a binary classifier, we often use a %confusion matrix.
-
-%-   Here, we need only *tpr* and *fpr*
-%-   $\text{tpr} = \cfrac{\text{TP}}{\text{TP} + %\text{FN}}$
-%-   $\text{fpr} = \cfrac{\text{FP}}{\text{FP} + %\text{TN}}$
-%-   ROC space is 2 dimensional:
-%    -   $X: \text{fpr}, Y: \text{tpr}$
-%-->
-
-\framebreak
-Example:
+ROC curves are insensitive to class distributions (at prediction time).
 \begin{table}[]
 \centering
 \begin{tabular}{|l|c|c|}
                 \hline
-               & True Positive & True Negative \\ \hline
+               & Class Positive & Class Negative \\ \hline
 Pred. Positive & 40            & 25            \\ \hline
 Pred. Negative & 10            & 25           \\ \hline
 \end{tabular}
 \end{table}
 
-Here we have we have a proportion $\text{pos}/\text{neg} = 1$.
-Now we change the proportion to $\text{pos}/\text{neg} = 2$.
+Here we have we have a proportion $\text{pos}/\text{neg} = 1$. MCE = 35/100.
+\lz
+Now we change the proportion to $\text{pos}/\text{neg} = 2$. MCE = 30/100.
+
 \begin{table}[]
 \centering
 \begin{tabular}{|l|c|c|}
                 \hline
-               & True Positive & True Negative \\ \hline
+               & Class Positive & Class Negative \\ \hline
 Pred. Positive & 80            & 25            \\ \hline
 Pred. Negative & 20            & 25           \\ \hline
 \end{tabular}
@@ -177,16 +147,6 @@ Pred. Negative & 20            & 25           \\ \hline
 
 The True Positive Rate and ($\text{TPR} = 0.8$) and the False Positive Rate ($\text{FPR} = 0.5$) do not change.
 
-
-% \begin{itemize}
-%   \item Note that the class distribution is
-% the relationship of the left column to the right column.
-%   \item Any performance metric that uses values from both
-% columns will be inherently sensitive to class skews (such as accuracy, precision, F measure)
-%   \item ROC curves are based upon tpr and fpr.
-%   \item Each measure uses only values in their respective columns.
-%   \item Changing the class distribution will therefore not change the ROC curve.
-% \end{itemize}
 
 \end{vbframe}
 
@@ -587,14 +547,6 @@ Set threshold $\alpha =$ \Sexpr{thresh} yields TPR \Sexpr{tpr} and FPR \Sexpr{fp
 <<echo=FALSE, out.width="0.8\\textwidth", fig.width=6, fig.height=4, fig.align="center">>=
 plotROC(df_auc, 0, highlight = FALSE)
 @
-
-\framebreak
-
-\begin{center}
-\includegraphics[width=0.7\textwidth]{figure_man/roc-naive-method.png}
-\end{center}
-
-See \url{https://quayau.shinyapps.io/roc_shiny/} for a live demo.
 
 \end{vbframe}
 
@@ -1003,7 +955,7 @@ cat("\\[\\mathsf{AUC} = ", n_true, "/", nrow(df_auc_lines) ," = ", round(auc, 4)
 % \end{vbframe}
 
 
-\begin{vbframe}{Terminology - More Confusion}
+\begin{vbframe}{Confusing alternative terminology}
 
 
 \begin{table}
@@ -1012,36 +964,17 @@ cat("\\[\\mathsf{AUC} = ", n_true, "/", nrow(df_auc_lines) ," = ", round(auc, 4)
 \hline
 measure &  synonyms & formula \\
 \hline
-
 True Positive Rate (TPR) & recall, sensitivity, hit rate & $\frac{\#TP}{\#TP + \#FN}$  \\
 True Negative Rate (TNR) & specificity, selectivity & $\frac{\#TN}{\#FP + \#TN}$  \\
 Positive Predictive Value (PPV) & precision & $\frac{\#TP}{\#TP + \#FP}$  \\
-Negative Predictive Value (NPV) & - & $\frac{\#TN}{\#FN + \#TN}$  \\
+Negative Predictive Value (NPV) &  & $\frac{\#TN}{\#FN + \#TN}$  \\
+false negative rate (FNR) & miss rate  & $1 - TPR$ \\
+false positive rate (FPR) &  fallout, false alarm rate & $1 - TNR$ \\
+false discovery rate & & $1 - PPV$ \\
+false omission rate & & $1 - PPV$ \\
 \hline
 \end{tabular}
 }
-\end{table}
-
-\begin{itemize}
-  \item \textbf{TPR}: How many of the true 1s did we predict as 1?
-  \item \textbf{TNR}: How many of the true 0s did we predict as 0?
-  \item \textbf{PPV}: If we predict 1 how likely is it a true 1?
-  \item \textbf{NPV}: If we predict 0 how likely is it a true 0?
-\end{itemize}
-
-Additional measures
-
-\begin{table}
-\begin{tabular}{l c}
-\hline
-$1 - \text{measure}$ &  name(s)\\
-\hline
-$1 - TPR$  & false negative rate, miss rate  \\
-$1 - TNR$  & false positive rate, fallout, false alarm rate  \\
-$1 - PPV$  & false discovery rate  \\
-$1 - PPV$  & false omission rate   \\
-\hline
-\end{tabular}
 \end{table}
 
 
