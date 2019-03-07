@@ -12,7 +12,7 @@ ggTrainTestPlot = function (data, truth.fun, truth.min, truth.max, test.plot, te
 	# browser()
 
 	gg = ggplot() + 
-	  geom_line(data = line.data, aes(x = x, y = y, size = "True relationship f(x)"), linetype = "longdash", colour = "grey") +
+	  geom_line(data = line.data, aes(x = x, y = y, size = "True function"), linetype = "longdash", colour = "grey") +
     scale_size_manual("", values = 0.5, guide = guide_legend(override.aes = list(colour = "grey"))) +
 	  # geom_point(data = data[-ind, ], aes(x = x, y = y, fill = dummy)) +
 	  # scale_color_identity(name = "", guide = "legend", labels = c("True relationship f(x)")) +
