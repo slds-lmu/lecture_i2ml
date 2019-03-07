@@ -76,7 +76,7 @@ Simply using the training error seems to be a bad idea.
     After normal fitting, we also store the training data.
     During prediction, we first check whether $x$ is already stored in this set. If so, we replicate its label.
     The train error of such an (unreasonable) procedure will be 0.
-  \item There are so called interpolators - interpolating splines, interpolating Kriging - whose predictions can always perfectly match the 
+  \item There are so called interpolators - interpolating splines, interpolating Gaussian processes - whose predictions can always perfectly match the 
     regression targets, they are not necessarily good as they will interpolate the noise, too
 \end{itemize}
 \end{vbframe}
@@ -84,27 +84,22 @@ Simply using the training error seems to be a bad idea.
 \begin{vbframe}{Training Error Problems}
 \begin{itemize}
   \item Goodness-of-fit measures like (classical) $R^2$, likelihood, AIC, BIC, deviance are all based on the training error.
-  \item For models of severely restricted capacity, and given enough data, the training error might provide reliable information. E.g. consider a linear model with p = 5, with 10 6 training points. But: What happens if we have less data or as p increases? Not possible to determine when training error becomes unreliable.
+  \item For models of severely restricted capacity, and given enough data, the training error might provide reliable information. E.g. consider a linear model with $p = 5$ features, with $10^6$ training points. But: What happens if we have less data or as $p$ increases? Not possible to determine when training error becomes unreliable.
 \end{itemize}
 \end{vbframe}
 
 \begin{vbframe}{Test Error and Hold-Out Splitting}
-The fundamental idea behind test error estimation (and everything
-that will follow) is quite simple: 
-\lz 
-To measure performance, let’s
-simulate how our model will be applied on new, unseen data
-So, to evaluate a given model do exactly that, predict only on data
-not used during training and measure performance there.
-\lz
-That implies that for a given set D , we have to preserve some data
-for testing that we cannot use for training, 
+\begin{itemize}
+\item The fundamental idea behind test error estimation (and everything that will follow) is quite simple
+\item To measure performance, let’s simulate how our model will be applied on new, unseen data
+\item So, to evaluate a given model do exactly that, predict only on data not used during training and measure performance there
+\item That implies that for a given set D , we have to preserve some data for testing that we cannot use for training
+\end{itemize}
 \end{vbframe}
     
 \begin{vbframe}{Test Error and Hold-Out Splitting}
 \begin{itemize}
-  \item Straightforward idea: To measure performance, let's simulate how our model will be applied on new, unseen data
-  \item Split data into 2 parts, e.g. 2/3 for training, 1/3 for testing
+  \item Split data into 2 parts, e.g. a common setup is 2/3 for training, 1/3 for testing
   \item Evaluate on data not used for model building, no way to \enquote{cheat}
 \end{itemize}
 
@@ -163,6 +158,55 @@ First we underfit, then we over-fit, sweet-spot is in the middle. Numerically be
 
 \end{vbframe}
 
+\begin{vbframe}{Problems of test error} 
+\begin{itemize}
+  \item In general, the test is a good way to estimate future performance, \textbf{given} that the test data is
+    i.i.d. compared to the data we will see when we apply the model.
+  \item The estimator on the will suffer from high variance and be less reliable if the test set is too small. 
+    If the test set contains less than a few hundred observations, you should worry. 
+  \item Small sample size problems can come in different shapes and forms in ML. Maybe your test set (for binary classification) is large, 
+    but one of the two classes is small.
+  \item Try out different train-test splits in your own experiments and study error measurement fluctuation.
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Problems of test error} 
+Let's produce repeated 2/3 training, 1/3 testing splits on two ML tasks: a) iris (n = 150) b) sonar (n = 208).
+So we have about 50 (iris) and ca 70 (sonar) observations in our respective test sets. 
+The plots below show the strong stochastic fluctuation of test errors (50 repeats). 
+
+<<echo=FALSE, fig.width = "\\textwidth", fig.height = 3, fig.align="center">>=
+set.seed(123)
+my_ss = function(task) {
+  lrn = makeLearner("classif.naiveBayes")
+  r1 = subsample(lrn, task, iters = 50, show.info = FALSE)
+  return(r1$measures.test[,2])
+}
+err1 = my_ss(iris.task)
+err2 = my_ss(sonar.task)
+d = rbind(
+  data.frame(task = "iris", mce = err1),
+  data.frame(task = "sonar", mce = err2)
+)
+pl = ggplot(d, aes(x = mce)) + geom_histogram()
+pl = pl + facet_wrap(vars(task), scales = "free")
+print(pl)
+@
+\end{vbframe}
+
+
+\begin{vbframe}{Problems of test error} 
+A major point of confusion: 
+\begin{itemize}
+\item In ML we are in a weird situation. We are usually given one data set. At the end of our model selection and evaluation process
+we will likely fit one model on exactly that complete data set. As training error evaluation does not work, 
+we have now nothing left to evaluate exactly that model. 
+\item Holdout splitting (and the soon following resampling) are tools just to estimate that future performance, to put that
+next to our final model. All of the models produced during that phase of evaluation are basically intermediate results.
+\item Keep that already in mind now, it will help to avoid confusion when we move on to cross-validation and nested cross-validation.
+\end{itemize}
+\end{vbframe}
+
 
 \begin{vbframe}{Training vs. test error}
   \vspace{-0.25cm}
@@ -182,195 +226,91 @@ First we underfit, then we over-fit, sweet-spot is in the middle. Numerically be
 \end{vbframe}
 
 
-\begin{vbframe}{Bias-Variance of holdout}
-  \begin{itemize}
-    \item If the size of our initial, complete data set $\D$ is limited,
-      single train-test splits can be problematic.
-    \item The smaller our single test set is, the higher the variance
-      of our estimated performance error (e.g., if we test on one observation, in the extreme case).
-      But note that by just making the test set smaller, we do not introduce any bias,
-      as we simply average losses on i.i.d. observations from $\Pxy$.
-    \item The smaller training set becomes, the more pessimistic bias we introduce into the model.
-      Note that if $|D| = n$, our aim is to estimate the performance of a model fitted
-      on n observations (as this is what we will do in the end). If we fit on less data during
-      evaluation, our model will learn less, and perform worse. Very small training sets will also
-      increase variance a bit.
-  \end{itemize}
-\end{vbframe}
-
-
-% \begin{vbframe}{Bias-Variance of holdout}
-%
-%   Experiment:
-%   \begin{itemize}
-%     \item Data: simulate spiral data (sd = 0.1) from the \texttt{mlbench} package.
-%     \item Learner: CART (\texttt{classif.rpart} from \texttt{mlr}).
-%     \item Goal: estimate real performance of a model with $|\Dtrain| = 500$.
-%     \item Get the "true" estimator by repeatedly sampling 500 observations from the simulator,
-%       fit the learner, then evaluate on a really large number of observation.
-%     \item Analyse different types of holdout and subsampling (= repeated holdout), with different split rates:
-%     \begin{itemize}
-%     \item Sample $\D$ with $|\D| = 500$ and use split-rate $s \in \{0.05, 0.1, ..., 0.95\}$ for training with $|\Dtrain| = s \cdot 500$.
-%     \item Estimate performance on $\Dtest$ with $|\Dtest| = 500 \cdot (1 - s)$.
-%     \item Repeat the samping of $\D$ 50 times and the splitting with $s$ 50 times ($\Rightarrow$ 2500 experiments for each split-rate).
-%     \end{itemize}
-%   \end{itemize}
-%
 % \framebreak
 %
 % Visualize the perfomance estimator - and the MSE of the estimator - in relation to the true error rate.
 
-<<eval = FALSE>>=
-# rsrc data from rsrc/holdout-biasvar.R
-load("rsrc/holdout-biasvar.RData")
-@
+\begin{vbframe}{Bias-Variance of Hold-Out}
+\begin{itemize}
+\item If the size of our initial, complete data set $\D$ is limited,
+  single train-test splits can be problematic.
+\item The smaller our single test set is, the higher the variance
+  of our estimated performance error (e.g., if we test on one observation, in the extreme case).
+  But note that by just making the test set smaller, we do not introduce any bias,
+  as we simply average losses on i.i.d. observations from $\Pxy$.
+\item The smaller our training set becomes, the more pessimistic bias we introduce into the model.
+  Note that if $|D| = n$, our aim is to estimate the performance of a model fitted
+  on $n$ observations (as this is what we will do in the end). If we fit on less data during
+  evaluation, our model will learn less, and perform worse. Very small training sets will also
+  increase variance a bit.
+\end{itemize}
+\end{vbframe}
 
-<<eval = FALSE, echo = FALSE, fig.height = 5>>=
-ggd1 = melt(res)
+\begin{vbframe}{Bias-Variance of Hold-Out - Experiment}
+\begin{itemize}
+\item Data: simulate spiral data (sd = 0.1) from \texttt{mlbench}
+\item Learner: CART (\texttt{classif.rpart} from \texttt{mlr})
+\item Goal: estimate real performance of a model with $|\Dtrain| = 500$
+\item Get the "true" estimator by repeatedly sampling 500 observations from the simulator, fit the learner, then evaluate on $10^5$ observations - obviously cannot be done in practice
+\item Sample $\D$ with $|\D| = 500$ and analyze different split-rate $s \in \{0.05, 0.1, ..., 0.95\}$ for training with $|\Dtrain| = s \cdot 500$
+\item Estimate performance on $\Dtest$ with $|\Dtest| = 500 \cdot (1 - s)$
+\item Repeat the experiment for each split rate 50 times
+\end{itemize}
+
+\framebreak
+
+<<out.width="0.8\\textwidth", out.height="5cm">>=
+load("rsrc/holdout-biasvar.RData")
+ggd1 = reshape2::melt(res)
 colnames(ggd1) = c("split", "rep", "ssiter", "mmce")
 ggd1$split = as.factor(ggd1$split)
 ggd1$mse = (ggd1$mmce -  realperf)^2
 ggd1$type = "holdout"
 ggd1$ssiter = NULL
-mse1 = ddply(ggd1, "split", summarize, mse = mean(mse))
+mse1 = plyr::ddply(ggd1, "split", plyr::summarize, mse = mean(mse))
 mse1$type = "holdout"
 
-ggd2 = ddply(ggd1, c("split", "rep"), summarize, mmce = mean(mmce))
+ggd2 = plyr::ddply(ggd1, c("split", "rep"), plyr::summarize, mmce = mean(mmce))
 ggd2$mse = (ggd2$mmce -  realperf)^2
 ggd2$type = "subsampling"
-mse2 = ddply(ggd2, "split", summarize, mse = mean(mse))
+mse2 = plyr::ddply(ggd2, "split", plyr::summarize, mse = mean(mse))
 mse2$type = "subsampling"
 
 ggd = rbind(ggd1, ggd2)
 gmse = rbind(mse1, mse2)
-
 ggd$type = as.factor(ggd$type)
-pl1 = ggplot(ggd, aes(x = split, y = mmce, col = type))
-pl1 = pl1 + geom_boxplot()
-pl1 = pl1 + geom_hline(yintercept = realperf)
-#pl1 = pl1 + theme(axis.text.x = element_text(angle = 45))
-
 gmse$split = as.numeric(as.character(gmse$split))
 gmse$type = as.factor(gmse$type)
 
-pl2 = ggplot(gmse, aes(x = split, y = mse, col = type))
+pl1 = ggplot(ggd[ggd$type == "holdout", ], aes(x = split, y = mmce, col = type))
+pl1 = pl1 + geom_boxplot()
+pl1 = pl1 + geom_hline(yintercept = realperf)
+pl1 = pl1 + theme(axis.text.x = element_text(angle = 45))
+print(pl1)
+@
+
+\begin{itemize}
+\item We clearly see the pessimistic bias for small training sets -- we cannot learn well here with much less data compared to n=500
+\item We see the increased variance, when test sets become smaller
+\end{itemize}
+
+\framebreak
+
+\begin{itemize}
+  \item We now plot the mean quadratic error between the true performance (line in 1st plot) and the hold-out values in each boxplot
+  \item The split rate with the lowest MSE value produces the best estimator, which is pretty much 2/3 data for training
+  \item NB: This is a single experiment and not a scientific study, but this rule-of-thump is also validated in larger studies
+\end{itemize}
+
+<<out.width="0.7\\textwidth", out.height="4cm">>=
+pl2 = ggplot(gmse[gmse$type == "holdout", ], aes(x = split, y = mse, col = type))
 pl2 = pl2 + geom_line()
 pl2 = pl2 + scale_y_log10()
 pl2 = pl2 + scale_x_continuous(breaks = gmse$split)
-
-grid.arrange(pl1 + theme_minimal(), pl2 + theme_minimal(), layout_matrix = rbind(1,1,2))
+pl2 = pl2 + theme(axis.text.x = element_text(angle = 45))
+print(pl2)
 @
 
-
-% \framebreak
-%
-%   \begin{itemize}
-%     \item The training error decreases with smaller training set size as it is easier for the model to learn the underlying structure in smaller training sets perfectly.
-%     \item The test error (its bias) decreases with increasing training set size as the model generalizes better with more data, however, the variance increases as the test set size decreases at the same time.
-%     \item The variance of the test error should decrease if we repeat the hold-out more often. %(here 10 vs. 100 repetitions):
-%
-% <<echo = FALSE, cache = TRUE, eval = FALSE, out.width="0.85\\textwidth", fig.height=3>>=
-% res = rbind(cbind(res.rpart, repetitions = 100), cbind(res.rpart.small, repetitions = 20))
-% res$repetitions = as.factor(res$repetitions)
-%
-% p1 = ggplot(data = subset(res, measure == "1"), aes(x = percentage, y = mmce)) +
-%   geom_errorbar(aes(ymin = mmce - sd, ymax = mmce + sd, colour = repetitions), width = 0.025, position = position_dodge(width = 0.01)) +
-%   geom_line(aes(colour = repetitions), position = position_dodge(width = 0.01)) +
-%   geom_point(aes(colour = repetitions), position = position_dodge(width = 0.01)) +
-%   ylab("Test error") +
-%   xlab("Training set percentage") +
-%   theme_minimal()
-% p1
-% @
-%
-% \end{itemize}
-%\framebreak
-
-
-%\end{vbframe}
-%
-% \begin{vbframe}{Bias vs. Variance}
-% Both, training error and test error are estimators and suffer, as all statistical estimators, from the bias-variance issue:
-%
-% % \begin{figure}
-% %     \centering
-% %     \includegraphics[width=6cm]{bias_variance_target}
-% % \end{figure}
-%
-% <<fig.height=5, fig.width=5, out.width="0.5\\textwidth">>=
-% n = 10
-% set.seed(14)
-% na_np = data.frame(x1 = rnorm(10, mean = -2, sd = 1),
-%   x2 = rnorm(10, mean = 2, sd = 1),
-%   Acc = "Not Accurate",
-%   Pre = "Not Precise")
-% set.seed(2)
-% a_np = data.frame(x1 = rnorm(10, mean = 0, sd = 1),
-%   x2 = rnorm(10, mean = 0, sd = 1),
-%   Acc = "Accurate",
-%   Pre = "Not Precise")
-% set.seed(3)
-% a_p = data.frame(x1 = rnorm(10, mean = 0, sd = .35),
-%   x2 = rnorm(10, mean = 0, sd = .35),
-%   Acc = "Accurate",
-%   Pre = "Precise")
-% set.seed(12)
-% na_p = data.frame(x1 = rnorm(10, mean = 2, sd = .35),
-%   x2 = rnorm(10, mean = 2, sd = .35),
-%   Acc = "Not Accurate",
-%   Pre = "Precise")
-%
-% plot_dat = rbind(na_np, a_p, a_np, na_p)
-%
-% ggplot(plot_dat, aes(x = x1, y = x2)) +
-%   facet_grid(Acc ~ Pre) +
-%   xlim(c(-5, 5)) + ylim(c(-5, 5)) +
-%   xlab("") + ylab("") +
-%   theme_bw() +
-%   theme(axis.ticks = element_blank(),
-%     axis.text.y = element_blank(),
-%     axis.text.x = element_blank(),
-%     panel.grid.major = element_blank(),
-%     panel.grid.minor = element_blank(),
-%     #panel.border = theme_blank(),
-%     panel.background = element_blank())  +
-%   annotate("path",
-%     x = .25*cos(seq(0,2*pi,length.out = 100)),
-%     y = .25*sin(seq(0,2*pi,length.out = 100)),
-%     col = rgb(.2, .2, .2, .5)) +
-%   annotate("path",
-%     x = 1*cos(seq(0,2*pi,length.out = 100)),
-%     y = 1*sin(seq(0,2*pi,length.out = 100)),
-%     col = rgb(.2, .2, .2, .5)) +
-%   annotate("path",
-%     x = 2*cos(seq(0,2*pi,length.out = 100)),
-%     y = 2*sin(seq(0,2*pi,length.out = 100)),
-%     col = rgb(.2, .2, .2, .5)) +
-%   annotate("path",
-%     x = 3*cos(seq(0,2*pi,length.out = 100)),
-%     y = 3*sin(seq(0,2*pi,length.out = 100)),
-%     col = rgb(.2, .2, .2, .5)) +
-%   annotate("path",
-%     x = 4*cos(seq(0,2*pi,length.out = 100)),
-%     y = 4*sin(seq(0,2*pi,length.out = 100)),
-%     col = rgb(.2, .2, .2, .5)) +
-%   geom_point()
-% @
-%
-% \end{vbframe}
-
-
-
-% \framebreak
-
-
-% \begin{itemize}
-% \item A learner that can learn more complex concepts (higher order polynomial) has, in general, a lower bias (but higher variance).
-% \item The training error consistently decreases with model complexity.%, typically dropping to zero if we increase the model complexity.
-% \item A model with zero training error is \emph{overfitting} to the training data and will typically generalize poorly.
-% \end{itemize}
-
-% \end{vbframe}
-
+\end{vbframe}
 \endlecture
 
