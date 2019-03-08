@@ -22,14 +22,19 @@ E.g., the coefficients of a linear model or the optimal splits of a tree learner
 E.g., how small a leaf can become for a tree; $k$ and which distance measure to use for kNN
 \item HPs have to be set either by the user or by (smart) default values
 \item Our goal is to optimize these w.r.t. the estimated prediction error; this implies an independent test set, or cross-validation
+\item The same applies to preprocessing, feature construction and other model-relevant operations. In general we might be interested in optimizing an entire ML \enquote{pipeline}
 \end{itemize}
-% - The same applies to preprocessing, feature construction and other model-relevant operations.
-  % In general we might be interested in optimizing a machine learning \enquote{pipeline}
-    % \item This also extends all kinds of preprocessing, feature construction and other model-relevant operations.
-      % In general, we might be interested in optimizing an entire machine learning \enquote{pipeline}.
 \end{vbframe}
 
-
+\begin{vbframe}{Why tuning is important}
+\begin{itemize}
+\item Hyperparameters control the complexity of a model, i.e., how flexible the model is
+\item If a model is too flexible so that it simply \enquote{memorizes} the training data, we will face the dreaded problem of overfitting .
+\item Hence, control of capacity, i.e., proper setting of hyperparameters
+ can prevent overfitting the model on the training set
+\item Many other factors like optimization control settings, distance functions, scaling, algorithmic variants in the fitting procedure can heavily influence model performance in non-trivial ways. It is extremely hard to guess the correct choices here.
+\end{itemize}
+\end{vbframe}
 
 % \framebreak
 
@@ -68,26 +73,31 @@ E.g., how small a leaf can become for a tree; $k$ and which distance measure to 
   \end{itemize}
 \end{vbframe}
 
-\begin{vbframe}{Why tuning is important}
-\begin{itemize}
-\item Hyperparameters control the capacity of a model, i.e., how flexible the model is, how many degrees of freedom it has in fitting the data.
-\item If a model is too flexible so that it simply \enquote{memorizes} the training data, we will face the dreaded problem of overfitting .
-\item Hence, control of capacity, i.e., proper setting of hyperparameters
- can prevent overfitting the model on the training set.
-\item Many other factors like preprocessing or feature selection can
-  heavily influence model performance in non-trivial ways. It is extremely hard to guess the correct choices here.
-\end{itemize}
-\end{vbframe}
-
 \begin{vbframe}{Components of tuning problem}
 \begin{itemize}
 \item The learner (possibly: several competing learners?)
 \item The performance measure. Determined by the application. Not necessarily identical to the loss function that the learner tries to minimize
   We could even be interested in multiple measures simultaneously, 
-  e.g. accuracy and sparseness of our model, TRP and PPV, etc. 
+  e.g. accuracy and sparseness of our model, TPR and PPV, etc. 
 \item A (resampling) procedure for estimating the predictive performance 
 \item The learner's hyperparameters and their respective regions-of-interest over which we optimize
 \end{itemize}
+\end{vbframe}
+
+
+
+\begin{vbframe}{Hyperparameter Tuning}
+% \begin{itemize}
+% \item Optimize hyperparameters for learner w.r.t. prediction error
+Tuner proposes configuration, eval by resampling, tuner receives performance, iterate
+% \end{itemize}
+\begin{columns}[c, onlytextwidth]
+\column{0.45\textwidth}
+  \includegraphics[trim={0cm 0cm 0cm 0cm}, clip, width=1.2\textwidth]{figure_man/chain.jpg}
+\column{0.45\textwidth}
+\includegraphics[trim={1cm 0cm 1cm 0cm}, clip, width=1.2\textwidth]{figure_man/tuning_process.jpg}
+\end{columns}
+
 \end{vbframe}
 
 
@@ -103,6 +113,7 @@ E.g., how small a leaf can become for a tree; $k$ and which distance measure to 
 \end{itemize}
 \end{vbframe}
 
+
 \begin{vbframe}{Grid search}
 
 \begin{itemize}
@@ -114,10 +125,11 @@ E.g., how small a leaf can become for a tree; $k$ and which distance measure to 
 
 <<fig.height=3.7>>=
 plotTune = function(d) {
-  d$Accuracy = mvtnorm::dmvnorm(x = d, mean = c(5,5), sigma = 40 * diag(2)) * 120 + 0.4
-  pl = ggplot(data = d, aes(x = x, y = y, color = Accuracy))
-  pl = pl + geom_point(size = d$Accuracy * 4)
+  d$TestAccuracy = mvtnorm::dmvnorm(x = d, mean = c(5,5), sigma = 40 * diag(2)) * 120 + 0.4
+  pl = ggplot(data = d, aes(x = x, y = y, color = TestAccuracy))
+  pl = pl + geom_point(size = d$TestAccuracy * 4)
   pl = pl + xlab("Parameter 1") + ylab("Parameter 2") + coord_fixed()
+  return(pl)
 }
 x = y = seq(-10, 10, length.out = 10)
 d = expand.grid(x = x, y = y)
@@ -157,7 +169,6 @@ d = data.frame(x = x, y = y)
 pl = plotTune(d)
 print(pl)
 @
-
 Random search over 100 points
 
 \framebreak
@@ -175,20 +186,15 @@ Random search over 100 points
 \end{blocki}
 \end{vbframe}
 
-
-  % \framebreak
-  %
-  % \begin{blocki}{Why it works:}
-  %   \item Imagine the $5\%$ interval around the optimum.
-  %   \item Now we sample points out of the parameter space.
-  %   \item Each point has a $5\%$-chance of falling into this interval.
-  %   \item If we draw $n$-points, then the probability that at least one of the points falls into the desired interval is:
-  %   $$ 1 - (1 - 0.95)^n $$
-  %   \item We can calculate the number of draws it takes to have a $95\%$-chance of success:
-  %   $$
-  %   1 - (1 - 0.95)^n > 0.95 \quad \Longleftrightarrow \quad n \geq 60
-  %   $$
-  % \end{blocki}
-
+\begin{vbframe}{Advanced Tuning Techniques}
+\begin{itemize}
+\item Stochastic local search, e.g. simulated annealing
+\item Genetic algorithms / CMAES
+\item Iterated F-Racing
+\item Model-based Optimization / Bayesian Optimization
+\item Hyperband
+\item $\ldots$
+\end{itemize}
+\end{vbframe}
 
 \endlecture
