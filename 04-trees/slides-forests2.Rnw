@@ -17,7 +17,7 @@ library(smoof)
 @
 
 
-\lecturechapter{15}{Random Forest cont.}
+\lecturechapter{Bagging and Random Forest 2}
 \lecture{Introduction to Machine Learning}
 
 \sloppy
@@ -26,12 +26,18 @@ library(smoof)
 \begin{vbframe}{Variable importance}
 
 \begin{itemize}
-  \item Single trees are highly interpretable.
-  \item Random Forests as combinations of trees loose this feature.
-  \item Hence, contributions of single covariables to the fit are difficult to
-    evaluate.
-  \item Way out: variable importance measures.
+  \item Single trees are highly interpretable
+  \item Random Forests as combinations of trees loose this feature
+  \item Contributions of features to model are difficult to evaluate
+  \item Way out: variable importance measures
 \end{itemize}
+\begin{figure}
+<<size="footnotesize", fig.height=3.5>>=
+model = randomForest(Species ~ ., data = iris, importance = TRUE)
+randomForest::varImpPlot(model, main = "")
+@
+% \caption{Two importance measures on the iris dataset.}
+\end{figure}
 
 \framebreak
 
@@ -57,29 +63,29 @@ library(smoof)
 \end{algorithm}
 
 
-\framebreak
+% \framebreak
 
-<<>>=
-lrn = makeLearner("classif.randomForest", importance = TRUE)
-mod = train(lrn, iris.task)
-mlr::getFeatureImportance(mod)
-@
+% <<>>=
+% lrn = makeLearner("classif.randomForest", importance = TRUE)
+% mod = train(lrn, iris.task)
+% mlr::getFeatureImportance(mod)
+% @
 
-\framebreak
+% \framebreak
 
-<<echo=TRUE, size="footnotesize", fig.height=4>>=
-rf = getLearnerModel(mod)
-randomForest::varImpPlot(rf,
-  main = "Variable Importance")
-@
+% <<echo=TRUE, size="footnotesize", fig.height=4>>=
+% rf = getLearnerModel(mod)
+% randomForest::varImpPlot(rf,
+%   main = "Variable Importance")
+% @
 
-\framebreak
+% \framebreak
 
-<<echo=TRUE, size="footnotesize", fig.height=4>>=
-v = generateFilterValuesData(iris.task,
-  method = c("rf.importance", "cforest.importance"))
-plotFilterValues(v)
-@
+% <<echo=TRUE, size="footnotesize", fig.height=4>>=
+% v = generateFilterValuesData(iris.task,
+%   method = c("rf.importance", "cforest.importance"))
+% plotFilterValues(v)
+% @
 
 
 \end{vbframe}
@@ -90,49 +96,42 @@ plotFilterValues(v)
 \end{center}
 \end{vbframe}
 
-\begin{vbframe}{Variable importance}
-\begin{figure}
-<<rf-iris-varimp, size="footnotesize", fig.height=3>>=
-model = randomForest(Species ~ ., data = iris, importance = TRUE)
-randomForest::varImpPlot(model, main = "")
-@
-\caption{Two importance measures on the iris dataset.}
-\end{figure}
+% \begin{vbframe}{Variable importance}
 
-<<size="footnotesize", fig.height=3, eval = FALSE>>=
-v = generateFilterValuesData(iris.task,
-  method = c("randomForest.importance", "cforest.importance"))
-plotFilterValues(v)
-@
-\end{vbframe}
+% <<size="footnotesize", fig.height=3, eval = FALSE>>=
+% v = generateFilterValuesData(iris.task,
+  % method = c("randomForest.importance", "cforest.importance"))
+% plotFilterValues(v)
+% @
+% \end{vbframe}
 
-\begin{vbframe}{Random Forest: Proximities}
-\begin{itemize}
-  \item the "closeness" or "nearness" between pairs of cases.
-\item Algorithm
-\begin{itemize}
-\item After a tree is grown, put all of the data down the tree.
-\item If cases $x_1$ and $x_2$ are in the same terminal node through one tree increase their proximity by one. 
-\item At the end of the run of all trees, normalize the proximities by dividing by the number of trees.
-\end{itemize}
-\item The proximities originally form a $N \times N$ matrix.
-\item Proximities are used in replacing missing data, locating outliers, and producing illuminating low-dimensional views of the data.
+% \begin{vbframe}{Random Forest: Proximities}
+% \begin{itemize}
+%   \item the "closeness" or "nearness" between pairs of cases.
+% \item Algorithm
+% \begin{itemize}
+% \item After a tree is grown, put all of the data down the tree.
+% \item If cases $x_1$ and $x_2$ are in the same terminal node through one tree increase their proximity by one. 
+% \item At the end of the run of all trees, normalize the proximities by dividing by the number of trees.
+% \end{itemize}
+% \item The proximities originally form a $N \times N$ matrix.
+% \item Proximities are used in replacing missing data, locating outliers, and producing illuminating low-dimensional views of the data.
 
-\end{itemize}
-\end{vbframe}
+% \end{itemize}
+% \end{vbframe}
 
 \begin{vbframe}{Random Forest: Advantages}
 
 \begin{itemize}
 \item Bagging is easy to implement
   \item Can be applied to basically any model
+  \item All advantages of trees propagate to the RF, especially w.r.t. preprocessing 
   \item Easy to parallelize
   \item Often works well (enough)
-  \item Variable importance: Integrated in RF, and IML package in model agnostic fashion!
+  \item Integrated variable importance
   \item Integrated estimation of OOB error
   \item Can work on high-dimensional data
   \item Often not much tuning necessary
-  \item Computationally faster implementation in package `ranger`
 \end{itemize}
 
 \end{vbframe}
@@ -141,9 +140,12 @@ plotFilterValues(v)
 
 \begin{itemize}
   \item Often suboptimal for regression
+  \item Same extrapolation problem as for trees
+  \item Harder to interpret than trees, but many extra tools are nowadays
+    available for interpreting RFs
   \item Does not really optimize loss aggressively in comparison to boosting
   \item Implementations sometimes memory-hungry
-  \item Prediction can be slow
+  \item Prediction can be (slightly) slower, as it is an ensemble
 \end{itemize}
 
 \end{vbframe}
