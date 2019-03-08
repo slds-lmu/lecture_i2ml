@@ -14,52 +14,63 @@ library(smoof)
 \lecturechapter{Nested Resampling}
 \lecture{Introduction to Machine Learning}
 
+%%%%%%%%%%%%%%%%%%%%%%
+%% ORIGINAL follows %%
+%%%%%%%%%%%%%%%%%%%%%%
+
 \begin{vbframe}{Training set vs Test Set}
-\includegraphics{figure_man/test_train.png}
-\begin{itemize}
+  \includegraphics{figure_man/test_train.png}
+  \begin{itemize}
 
-\item The training set contains a known output and our model learns on this data. 
-\item We evaluate our model’s predictive skill on the test set.
+  \item The training set contains a known output and our model learns on this data.
+  \item We evaluate our model’s predictive skill on the test set.
 
-\item But what if our train/test split isn’t random? What if one subset of our data has only people from a certain category or is constant in one of the features? 
+  \item But what if our train/test split isn’t random? What if one subset of our data
+    has only people from a certain category or is constant in one of the features?
 
-\item What if we are sure that we want to apply a certain model, but don't know which hyperparameters to use?
+  \item What if we are sure that we want to apply a certain model, but don't know which hyperparameters to use?
 
-\end{itemize}
+  \end{itemize}
 \end{vbframe}
 
+
+
 \begin{vbframe}{Train - Validate - Test}
-\includegraphics{figure_man/test_valid_train.png}
-\begin{itemize}
+  \includegraphics{figure_man/test_valid_train.png}
+  \begin{itemize}
 
-\item Train: Used to train your models. 
+  \item Train: Used to train your models.
 
-\item Validation: used for model tuning (evaluate different hyperparameters) or model selection
+  \item Validation: used for model tuning (evaluate different hyperparameters) or model selection
 
-\item Test: used for final estimate of the generalization performance.
+  \item Test: used for final estimate of the generalization performance.
 
-\end{itemize}
+  \end{itemize}
 \end{vbframe}
 
 
 \begin{vbframe}{Nested Resampling}
 
-Imagine this situation:
+  Imagine this situation:
 
-\begin{itemize}
+  \begin{itemize}
   \item We want to use the k-NN algorithm for classification on the iris data set
   \item As we learned before, we use Cross-Validation to tune the hyperparameter $k$ (the size of the neighborhood)
   \item Therefore, we split our data in a validation and a train data set
   \item Now that we found the perfect $k^*$, we want to evaluate the performance of our model
   \item Problem: we already spent all our data in the Cross-Validation and do not have any unseen data left
   \item Solution: \textbf{nested resampling}
-\end{itemize}
+  \end{itemize}
 
 \end{vbframe}
 
 \begin{vbframe}{Cross validation}
-\includegraphics{figure_man/cross-validation.pdf}
+  \includegraphics{figure_man/cross-validation.pdf}
 \end{vbframe}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% BOTH RCOURSES AND ORIGINAL follows %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{vbframe}{Nested resampling}
 In model selection, we are interested in selecting the best model from a set of potential candidate models (e.g., different model classes, different hyperparameter settings, different feature sets).
@@ -73,7 +84,6 @@ In model selection, we are interested in selecting the best model from a set of 
     \item Danger of overfitting to the resampling splits / overtuning!
     \item The final performance estimate will be optimistically biased.
     \item One could also see this as a problem similar to multiple testing.
-
 \end{blocki}
 
 \framebreak
@@ -81,8 +91,8 @@ In model selection, we are interested in selecting the best model from a set of 
 \begin{blocki}{Instructive and problematic example}
     \item Assume a binary classification problem with equal class sizes.
     \item Assume a learner with hyperparameter $\lambda$.
-    \item Here, the learner is a (non-sensical) feature-independent classifier, 
-          where $\lambda$ has no effect. The learner simply 
+    \item Here, the learner is a (non-sensical) feature-independent classifier,
+          where $\lambda$ has no effect. The learner simply
           predicts random labels with equal probability.
     \item Of course, it's true generalization error is 50\%.
     \item A cross-validation of the learner (with any fixed $\lambda$) will easily show this
@@ -109,9 +119,81 @@ print(pl)
   \item Plotted is the best \enquote{tuning error} after $k$ tuning iterations
     \item We have performed the experiment for different sizes of learning data
       that where cross-validated.
-    \item Experiment was simulated with mlr's \enquote{classif.featureless} learner.
-    \item Quiz: How to mathematically calculate the shape of the curves?
 \end{itemize}
+
+\end{vbframe}
+
+%%%%%%%%%%%%%%%%%%%%%%
+%% RCOURSES follows %%
+%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{vbframe}{Train Test and Validation Set}
+  \begin{itemize}
+  \item Again, simply simulate what happens in model application.
+  \item All parts of the model building (including model selection,
+    preprocessing) should be embedded in the model-finding process
+    \textbf{on the training data}
+  \item In order to get an unbiased performance estimate we cross
+    validate this model-finding process
+  \end{itemize}
+
+  \framebreak
+
+  \begin{itemize}
+  \item Simplest form is a 3-way split into a training, optimization and test set.
+  \item Learner are trained on the training set, evaluated on the validated set.
+  \item After the final model is selected, we fit on joint training+validation set and evaluate
+    a final time on the test set. Note that we touch the test set only once,
+    and have no way of \enquote{cheating}.
+  \end{itemize}
+
+  \framebreak
+
+  \begin{description}
+  \item[Train Set]
+    The actual dataset that used to train the model. The model only sees this data.
+  \item[Validation Set]
+    The validation set is used to evaluate a given model. By comparing model predictions
+    and the true label on this data set, we can compare learner hyper-parameter configurations.
+  \item[Test Set]
+    The Test dataset is only used once a model is completely trained, after deciding for
+    example on specific hyper-parameters.Performances obtained from the test set are
+    \emph{unbiased estimates} of the true performance.
+  \end{description}
+
+  \framebreak
+
+  \includegraphics[width = 0.99\textwidth]{figure_man/train_valid_test.jpg}
+\end{vbframe}
+
+
+\begin{vbframe}{Nested Resampling}
+  \begin{itemize}
+  \item As we can generalize holdout splitting to resampling, we can generalize the
+    train+valid+test approach to nested resampling.
+  \item This results in in two nested resampling loops, i.e. a resampling strategy for
+    both tuning and outer evaluation.
+  \end{itemize}
+
+  \framebreak
+
+  Outer loop with 3-fold CV and inner loop with 4-fold CV
+
+  \includegraphics[width=0.87\textwidth]{figure_man/Nested_Resampling.png}
+
+  \framebreak
+
+  \begin{itemize}
+  \item The tuning step is now effectively included in the model fit.
+  \item We could see this as removing the hyperparameters from the algorithm and making it self-tuning.
+  \end{itemize}
+\includegraphics[width=0.9\textwidth]{figure_man/autotune_in_model_fit.jpg}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%
+%% ORIGINAL follows %%
+%%%%%%%%%%%%%%%%%%%%%%
 
 \framebreak
 
@@ -125,6 +207,7 @@ print(pl)
   \item The chance of getting such a random \enquote{outlier-split} increases with the number of CV iterations
   \item We \textbf{overtune} the model
 \end{blocki}
+
 
 <<fig.heigh = 5>>=
 
