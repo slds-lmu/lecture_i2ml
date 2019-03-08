@@ -16,109 +16,116 @@ library(smoof)
 @
 
 
-\lecturechapter{12}{Trees}
+\lecturechapter{CART 1}
 \lecture{Introduction to Machine Learning}
 \sloppy
 
+<<results='hide'>>=
+draw_cart_on_iris = function(depth, with_tree_plot = FALSE) {
+  set.seed(123)
+  task = makeClassifTask(data = iris[,3:5], target = "Species")
+  lrn = makeLearner("classif.rpart", cp = 0, minbucket = 4, maxdepth = depth) 
+  model = train(lrn, task)
+  p = plotLearnerPrediction(lrn, task, gridsize = 100, cv = 0, prob.alpha = FALSE, err.mark = "train")
+  p = p + pers_theme + ggtitle("Iris Data")
+  print(p)
+  if (with_tree_plot)
+    # "palettes" should ensure that colors in tree growing in rectangles and tree match
+    fancyRpartPlot(model$learner.model, sub = "", palettes = c("Reds", "Greens", "Blues"))
+  invisible(model)
+}
+@
 
-
-\begin{vbframe}{Trees - Introduction}
-
-Can be used for classification, regression (and much more!)
-
-\begin{blocki}{Zoo of tree methodologies}
-\item AID (Sonquist and Morgan, 1964)
-\item CHAID (Kass, 1980)
-\item CART (Breiman et al., 1984)
-\item C4.5 (Quinlan, 1993)
-\item Unbiased Recursive Partitioning (Hothorn et al., 2006)
-\end{blocki}
-
-\end{vbframe}
-
-\begin{vbframe}{CART}
+\begin{vbframe}{Tree Model and Prediction}
   \begin{itemize}
     \item Classification and Regression Trees, introduced by Breiman
     \item Binary splits are constructed top-down
-    \item Only constant prediction in each leaf
+    \item Only constant prediction in each leaf, either a numerical value,
+  a class label or a probability vector.
+  \end{itemize}
     \begin{figure}
     \centering
-      \includegraphics[width= 8cm, height = 5.5cm]{figure_man/labelling_of_tree.png}
+      \includegraphics[height = 5.0cm]{figure_man/labelling_of_tree.png}
     \end{figure}
-    \item In the greedy top-down construction, features and split points are selected by exhaustive search.
-    \item For each node, one iterates over all features, and for each feature over all possible split points.
-    \item The best feature and split point which make both of the created child nodes most pure, as measured by a split criterion, are selected.
-    \item The procedure is then applied to the child nodes in a recursive manner.
-    \end{itemize}
 \end{vbframe}
 
+\begin{vbframe}{Tree Model and Prediction}
+  \begin{itemize}
+    \item During prediction, observations are passed down the tree, according to the splitting rules
+      in each node
+    \item An observation will end up in exactly one leaf node
+    \item The constant label of that leaf node determines the prediction
+  \end{itemize}
+    \begin{figure}
+    \centering
+      \includegraphics[height = 5.0cm]{figure_man/labelling_of_tree.png}
+    \end{figure}
+\end{vbframe}
 
-\begin{vbframe}{CART}
-\begin{itemize}
-\item Trees divide the feature space $\Xspace$ into rectangles and fit simple models (e.g: ~constant) in them:
+\begin{vbframe}{Tress as an additive model}
+Each point in input space is assigned to one leaf node, and each leaf node has a set of input points leading to it, through axis-parallel splits. Hence, trees divide the feature space $\Xspace$ into rectangles. We can write the tree as a additive model over the leaf-rectangles: 
   \begin{align*}
-    \fx = \sum_{m=1}^M c_m \I(x \in R_m),
+    \fx = \sum_{m=1}^M c_m \I(x \in Q_m),
   \end{align*}
-  where $M$ rectangles $R_m \subset \Xspace$ are used. $c_m$ is a predicted numerical response, a class label or a class
+  where $M$ rectangles $Q_m$ are used. $c_m$ is a predicted numerical response, a class label or a class
   distribution.
-\end{itemize}
 
-\pagebreak
-\textbf{Example for Classification:} Iris Data
-\centering
-<<intro-plot1, results='hide', fig.height=2.4>>=
-# Trees on Iris Data
-data("iris")
-
-iristask = makeClassifTask(data = iris[,-(1:2)], target = "Species")
-rpart = makeLearner("classif.rpart")
-rpart = setHyperPars(rpart, cp = 0, minbucket = 4, maxdepth = 1) #Illustration
-model = train(rpart, iristask)
-# Plot
-plotLearnerPrediction(rpart, iristask, gridsize = 300, cv = 0) +
-  scale_f_d()
+<<result='hide', fig.height=2.4>>=
+model = draw_cart_on_iris(depth = 2)
 @
 
-<<intro-tree1, results='hide', fig.height=3>>=
-fancyRpartPlot(model$learner.model, sub = "")
+\end{vbframe}
+  
+\begin{vbframe}{Tree Growing}
+In the greedy top-down construction, features and split points are selected by exhaustive search. The training data is distributed to child nodes according to the splits - see below that nodes display the percentage of currently contained data.
+<<result='hide', fig.height=2.2>>=
+draw_cart_on_iris(depth = 1, with_tree_plot = TRUE)
 @
 
-\pagebreak
-\textbf{Example for Classification:} Iris Data
-<<intro-plot2, results='hide', fig.height=2.4>>=
-rpart = setHyperPars(rpart, cp = 0, minbucket = 4, maxdepth = 2) #2
-model = train(rpart, iristask)
-# Plot
-plotLearnerPrediction(rpart, iristask, gridsize = 300, cv = 0) +
-  scale_f_d()
+\framebreak
+
+We start with an empty tree, a full root node of all data. We search for a feature and split-point, which makes the label distribution in the resulting left and right child (or sub-rectangles) most pure (defined later). See below that nodes display their current label distribution.
+<<result='hide', fig.height=2.2>>=
+draw_cart_on_iris(depth = 1, with_tree_plot = TRUE)
 @
 
-<<intro-tree2, results='hide', fig.height=3>>=
-fancyRpartPlot(model$learner.model, sub = "")
+\framebreak
+
+We proceed then recursively for each child node: 
+Iterate over all features, and for each feature over all split points. Select the "best" split, divide training data from parent into left and right child.
+<<result='hide', fig.height=2.2>>=
+draw_cart_on_iris(depth = 2, with_tree_plot = TRUE)
 @
 
-\pagebreak
-\textbf{Example for Classification:} Iris Data
-<<intro-plot3, results='hide', fig.height=2.4>>=
-rpart = setHyperPars(rpart, cp = 0, minbucket = 4, maxdepth = 3) #3
-model = train(rpart, iristask)
-# Plot
-plotLearnerPrediction(rpart, iristask, gridsize = 300, cv = 0) +
-  scale_f_d()
+\framebreak
+
+We proceed then recursively for each child node: 
+Iterate over all features, and for each feature over all split points. Select the "best" split, divide training data from parent into left and right child.
+<<result='hide', fig.height=2.2>>=
+draw_cart_on_iris(depth = 3, with_tree_plot = TRUE)
 @
 
-<<intro-tree3, results='hide', fig.height=3>>=
-fancyRpartPlot(model$learner.model, sub = "")
-@
+\end{vbframe}
 
-\pagebreak
-\textbf{Example for Regression:}
-\vspace{0.5cm}
+\begin{vbframe}{Split placement}
+<<fig.height=4>>=
+task = subsetTask(iris.task, seq(1, 150, by = 20))
+lrn = makeLearner("classif.rpart", cp = 0, minbucket = 1, maxdepth = 1)
+pl = plotLearnerPrediction(lrn, task, gridsize = 100, 
+  cv = 0, prob.alpha = FALSE, err.mark = "none")
+pl = pl + theme(legend.position="none")
+print(pl)
+@
+\lz
+Splits are usually placed "in the middle" between the observations they split, so the large margin to the next observations ensures better generalization
+\end{vbframe}
+
+\begin{vbframe}{Regression Example}
 \begin{columns}[T,onlytextwidth]
 \column{0.2\textwidth}
-<<forrester1, out.width='\\textwidth'>>=
+<<out.width='\\textwidth'>>=
 modForrester = makeSingleObjectiveFunction(
-  name = "Modification Forrester et. al. function",
+  name = "Modification Forrester et. all function",
   fn = function(x) (sin(4*x - 4)) * ((2*x - 2)^2) * (sin(20*x - 4)),
   par.set = makeNumericParamSet(lower = 0, upper = 1, len = 1L),
   noisy = TRUE
@@ -138,103 +145,127 @@ kable(ordered.design, digits = 3)
 \vspace{0.5cm}
 Data points (red) were generated from the underlying function (black):
 
-$\sin(4x - 4) (2x - 2)^2  \sin(20x -4)$
+$ sin(4x - 4) * (2x - 2)^2 * sin(20x -4) $
 
-\pagebreak
-\textbf{Example for Regression:}
-<<forrester-tree1, fig.height=5>>=
-regr.task = makeRegrTask(data = design, target = "y")
-regr.rpart = makeLearner("regr.rpart", par.vals = list(minsplit=1, minbucket = 1))
-regr.model = train(regr.rpart, regr.task)
-fancyRpartPlot(regr.model$learner.model, sub="")
-@
+% \framebreak
+
+% BB: doesnt seem too useful to show this, nothing really new in here
+% <<fig.height=5>>=
+% regr.task = makeRegrTask(data = design, target = "y")
+% regr.rpart = makeLearner("regr.rpart", par.vals = list(minsplit=1, minbucket = 1))
+% regr.model = train(regr.rpart, regr.task)
+% fancyRpartPlot(regr.model$learner.model, sub="")
+% @
 \end{vbframe}
 
 
-%there were commented frames here in the original file
-
-\begin{vbframe}{CART: Split criteria}
-
-  Let $\Np \subseteq \D$ be a parent node with two child nodes $\Nl$ and $\Nr$.
-
-  Dividing all of the data with respect to the split variable $\xj$ at split point $t$, leads to the following half-spaces:
-
-  \begin{align*}
-    \Nl(j,t) &= \{ (x,y) \in \Np: \xj \leq t \} \text{ and } \Nr(j,t) = \{ (x,y) \in \Np: \xj > t \}.
-  \end{align*}
-
-  Assume we can measure the impurity of the data in node $\Np$ (usually the label distribution) with function $I(\Np)$.
-  This function should return an \enquote{average quantity per observation}.
-
-  Potential splits created in a node $\Np$ are then evaluated via impurity reduction:
-
-    $$  I(\Np) - \frac{|\Nl|}{|\Np|} I(\Nl) - \frac{|\Nr|}{|\Np|} I(\Nr) $$
-
-  $|\Np|$ means number of data points contained in (parent) node $\Np$.
-
-  \framebreak
-
+\begin{vbframe}{Stopping Criteria}
+  At some point we have to stop the recursive splitting of child nodes and produce a leaf. Multiple simple criteria for stopping can be defined:
   \begin{itemize}
-  \item {\bf Continuous targets:} mean-squared error / variance
-
-  $$I(\Np) = \frac{1}{|\Np|} \sum\limits_{(x,y) \in \Np} (y - \bar{y}_\Np)^2$$
-  with $\bar{y}_\Np = \frac{1}{|\Np|} \sum\limits_{(x,y) \in \Np} y$.
-
-  \vspace{0.3cm}
-
-  Hence, the best prediction in a potential leaf $\Np$ is the mean of the contained y-values, i.e. impurity here is variance of y-values.
-
-  \vspace{0.3cm}
-
-  We can also obtain this by considering:
-  \begin{align*}
-    \min_{j,t} \left(\min_{c_1} \sum_{(x,y) \in \Nl} (y -
-        c_1)^2 + \min_{c_2} \sum_{(x,y) \in \Nr} (y - c_2)^2
-    \right).
-  \end{align*}
-  The inner minimization is solved through:
-  $\hat{c}_1 = \bar{y}_1$ and $\hat{c}_2 = \bar{y}_2$
-
-  \framebreak
-
-  \item {\bf Categorical targets ($\mathbf{K}$ categories):} \enquote{Impurity Measures}
-    \begin{itemize}
-    \item Gini index:
-      $$I(\Np) = \sum_{k\neq k'} \pikN \hat\pi_{\Np k'} = \sum_{k=1}^g \pikN(1-\pikN)$$
-    \item misclassification error:
-      $$I(\Np) = 1 - \max_k \pikN$$
-    \item (Shannon) entropy:
-      $$I(\Np) = -\sum_{k=1}^g \pikN \log \pikN \ ,$$
-    \end{itemize}
-    where $\pikN$ corresponds to the relative frequency of category $k$ of the response in node $\Np$.
+    \item Minimal number of observations per node, for a split to be tried
+    \item Minimal number of observations that must be contained in a leaf
+    \item Minimal increase in label distribution purity that must be reached for the best split
+    \item Maximum number of levels for the tree
   \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Constant predictions in leafs}
+  After growing, for each leaf, we know which training observations are assigned to it. We produce a constant optimal rule here, for the complete associated 
+  rectangle $Q_m$
+  \begin{itemize}
+    \item Regression: We usually use the average value of all $\yi$ contained in the leaf. This is the optimal constant prediction under squared loss.
+      We could also fit the median, which would be optimal under L1 loss.
+    \item Classification: We fit the most common label of the data contained in that node. In order to estimate probabilities, we simply count class proportions for the training data contained in that leaf. 
+  \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Splitting criteria}
+
+  Let $\Np \subseteq \D$ be the data of a parent node with two child nodes $\Nl$ and $\Nr$,
+  which are created by a split w.r.t. feature $\xj$ at split point $t$:
+  \begin{align*}
+    \Nl &= \{ (x,y) \in \Np: \xj \leq t \} \text{ and } \Nr = \{ (x,y) \in \Np: \xj > t \}.
+  \end{align*}
+  In order to quantify the (negative) quality of the considered split we compute the empirical risks
+  of both child nodes and sum it up
+    $$\risk(j, t) = \risk(\Nl) + \risk(\Nr)$$
+  The risk $\risk(N)$ for a node is simply the summed loss for the data contained in that node
+  under a selected loss function $L$
+  $$\risk(\Np) = \sum\limits_{(x,y) \in \Np} L(y, c), $$
+  if we model the data in that node with an optimal constant $c = \argmin_c \risk(\Np)$.
+  This is basically pretending that after split $(j,t)$ our two child nodes become leafs.
+
+\end{vbframe}
+
+\begin{vbframe}{Split criteria: Regression}
+\begin{itemize}
+ \item For regression, we usually use $L_2$ loss / the SSE-criterion
+  $$\risk(\Np) = \sum\limits_{(x,y) \in \Np} (y - c)^2$$
+ \item The best constant under $L_2$ is the mean 
+  $c = \bar{y}_\Np = \frac{1}{|\Np|} \sum\limits_{(x,y) \in \Np} y$
+\item Up to a constant, we just computed the variance of the label distribution in $\Np$; we can also interpret this as a way of measuring the impurity of the distribution / fluctuation around the constant. 
+  \item We could have also used the $L_1$ loss and the median
+\end{itemize}
+
+<<result='hide', fig.height=2.2>>=
+set.seed(2)
+x = rnorm(20)
+m = mean(x)
+s = var(x)
+d = data.frame(x = x, y = 1)
+pl = ggplot(d, aes(x = x, y = y))
+pl = pl + geom_point()
+pl = pl + geom_segment(x = m, xend = m, y = 0.9, yend = 1.1)
+pl = pl + geom_segment(x = m-s, xend = m+s, y = 1.05, yend = 1.05)
+pl = pl + geom_text(x = m, y = 1.15, label = "mean +- 1 std")
+pl = pl + xlab("y") + ylab("")
+pl = pl + coord_map(xlim = c(-2, 2),ylim = c(0.75, 1.25))
+print(pl)
+@
+\end{vbframe}
+
+\begin{vbframe}{Splitting Criteria: Classification}
+
+\begin{itemize}
+\item We normally use either Brier (so $L_2$ loss on probabilities) or the Bernoulli loss (from logistic regression) as loss function 
+\item We usually model constant predictions in node $\Np$ by simply calculating the class proportions 
+$$ \pikN = \frac{1}{|\Np|} \sum\limits_{(x,y) \in \Np} [y = k] $$
+This is the optimal constant under the 2 mentioned losses above
+\end{itemize}
+
+<<fig.height=2.2>>=
+d = data.frame(prob = c(0.1, 0.7, 0.2), label = 1:3)
+pl = ggplot(data = d, aes(x = label, y = prob, fill = label)) 
+pl = pl + geom_bar(stat = "identity")  + theme(legend.position = "none")
+pl = pl + ylab("Class prob.") + xlab("Label")
+print(pl)
+@
+\end{vbframe}
+
+\begin{vbframe}{Splitting Criteria: Comments}
+
+\begin{itemize}
+\item Tree splitting is usually introduced under the concept of "impurity reduction", but our approach above is simpler and more in line with empirical risk minimization and our previous concepts
+\item Splitting on Brier score is normally called splitting on Gini impurity
+$$I(\Np) = \sum_{k\neq k'} \pikN \hat\pi_{\Np k'} = \sum_{k=1}^g \pikN(1-\pikN)$$
+\item Splitting on Bernoulli loss is normally called splitting on entropy impurity
+$$I(\Np) = -\sum_{k=1}^g \pikN \log \pikN$$
+\item The pairs Brier score / Gini and Bernoulli / entropy are equivalent (which is not hard to prove, but will not be done here)
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Splitting with misclassification loss}
+\begin{itemize}
+\item Why don't we simply split according to the misclassification loss? We could use the majority class in each child
+  as "best constant" and count how many errors we make? Aren't we often interested in minimizing this error, but have to 
+  approximate it? We do not have to compute derivatives when we optimize the tree!
+\item Actually, that is possible, but Brier score and Bernoulli loss are more sensitive to changes in the node probabilities, and
+  therefore often preferred
+\end{itemize}
 
 \framebreak
 
-<<splitcriteria-plot, results='hide', fig.height=5>>=
-Colors = pal_3
-par(mar = c(5.1, 4.1, 0.1, 0.1))
-p = seq(1e-6, 1-1e-6, length.out = 200)
-entropy = function(p) (p * log(p) + (1 - p) * log(1 - p))/(2 * log(0.5))
-gini = function(p) 2 * p * (1 - p)
-missclassification = function(p) (1 - max(p, 1 - p))
-plot(p, entropy(p), type = "l", col = Colors[1], lwd = 1.5, ylab = "", 
-  ylim = c(0, 0.6), xlab = expression(hat(pi)[Nk]))
-lines(p, gini(p), col = Colors[2], lwd = 1.5)
-lines(p, sapply(p, missclassification), col = Colors[3], lwd = 1.5)
-legend("topright", c("Gini Index", "Entropy", "Misclassification Error"),
-       col = Colors[1:3], lty = 1)
-@
-
-\end{vbframe}
-
-
-\begin{vbframe}{Impurity Measures}
-\begin{itemize}
-\item In general the three proposed splitting criteria are quite similar.
-\item Entropy and Gini index are more sensitive to changes in the node probabilities.
-\item \textbf{Example:} two-class problem with 400 obs in each class and two possible splits:
-\end{itemize}
+Example: two-class problem with 400 obs in each class and two possible splits:
 \begin{columns}[T,onlytextwidth]
 \column{0.5\textwidth}
 \begin{center}
@@ -248,7 +279,7 @@ tab = table(x1, class)
 tab2 = table(x2, class)
 rownames(tab) = c("Left node", "Right node")
 rownames(tab2) = c("Left node", "Right node")
-kable(tab, row.names = TRUE, col.names = c("class A", "class B"))
+kable(tab, row.names = TRUE, col.names = c("class 0", "class 1"))
 @
 \end{center}
 \column{0.5\textwidth}
@@ -256,58 +287,46 @@ kable(tab, row.names = TRUE, col.names = c("class A", "class B"))
 \textbf{Split 2:} \\
 \vspace{0.25cm}
 <<split2>>=
-kable(tab2, row.names = TRUE, col.names = c("class A", "class B"))
+kable(tab2, row.names = TRUE, col.names = c("class 0", "class 1"))
 @
 \end{center}
 \end{columns}
 
-\framebreak
-\begin{columns}[T,onlytextwidth]
-\column{0.5\textwidth}
-\begin{center}
-\textbf{Split 1:} \\
-\vspace{0.25cm}
-<<split1-2>>=
-kable(tab, row.names = TRUE, col.names = c("class A", "class B"))
-@
-\end{center}
-\column{0.5\textwidth}
-\begin{center}
-\textbf{Split 2:} \\
-\vspace{0.25cm}
-<<split2-2>>=
-kable(tab2, row.names = TRUE, col.names = c("class A", "class B"))
-@
-\end{center}
-\end{columns}
+\lz
 
 \begin{itemize}
-\item Both splits produce a misclassification rate of $\frac{200}{800}=0.25$
+\item Both splits misclassify 200 observations
 \item Split 2 produces a pure node and is probably preferable.
-\item The average node impurity for Split 1 is $0.375$ (Gini) or $0.406$ (Entropy) 
-\item The average node impurity for Split 2 is $\frac{1}{3}$ (Gini) or $0.344$ (Entropy)
-% Gini: 6/8 * 2 * 1/3 * 2/3
-% entropy: 6/8 * ((1/3 * log(1/3) + 2/3 * log(2/3)) / (2 * log(0.5)))
-\item Both criteria prefer split 2 and \textit{choose} the result with a pure node.
+\item Brier and Bernoulli loss (slightly) prefer the 2nd split
+% \item The average node impurity for Split 2 is $\frac{1}{3}$ (Gini) or $0.344$ (Entropy)
+ % Gini: 6/8 * 2 * 1/3 * 2/3
+ % entropy: 6/8 * ((1/3 * log(1/3) + 2/3 * log(2/3)) / (2 * log(0.5)))
+\item Calculation for Brier:\\
+$Split1: 300(0-\frac{1}{4})^2 + 100(1-\frac{1}{4})^2 + 100(0-\frac{3}{4})^2+300(1-\frac{3}{4})^2 = 150$\\
+$Split2: 400(0-\frac{1}{3})^2 + 200(1-\frac{1}{3})^2 = 133.3$
 \end{itemize}
-\framebreak
-\begin{itemize}
-\item For metric features the exact split points can be ambiguous.
-\item If the classes of the response (for classification trees) are completely separated in the value range of the feature, a split can be done anywhere between the extreme valuess of the feature in the classes and the impurity measures stay the same.
-\item Look again at the Iris data and the classes \textit{setosa} and \textit{versicolor}:
-\end{itemize}
-<<iris-rpart-plot, results='hide', fig.height=3>>=
-# Trees on Iris Data
-iristask = makeClassifTask(data = iris[,-(1:2)], target = "Species")
-
-rpart = makeLearner("classif.rpart")
-rpart = setHyperPars(rpart, cp = 0, minbucket=4, maxdepth=1) #Illustration
-model = train(rpart, iristask)
-# Plot
-plotLearnerPrediction(rpart, iristask, gridsize = 300, cv = 0) +
-  scale_f_d() 
-@
 \end{vbframe}
+
+
+
+ 
+
+
+% % BB: as we are not really talking too much about impurity anymore, I took this out
+% % <<splitcriteria-plot, results='hide', fig.height=5>>=
+% % Colors = pal_3
+% % par(mar = c(5.1, 4.1, 0.1, 0.1))
+% % p = seq(1e-6, 1-1e-6, length.out = 200)
+% % entropy = function(p) (p * log(p) + (1 - p) * log(1 - p))/(2 * log(0.5))
+% % gini = function(p) 2 * p * (1 - p)
+% % missclassification = function(p) (1 - max(p, 1 - p))
+% % plot(p, entropy(p), type = "l", col = Colors[1], lwd = 1.5, ylab = "", 
+% %   ylim = c(0, 0.6), xlab = expression(hat(pi)[Nk]))
+% % lines(p, gini(p), col = Colors[2], lwd = 1.5)
+% % lines(p, sapply(p, missclassification), col = Colors[3], lwd = 1.5)
+% % legend("topright", c("Gini Index", "Entropy", "Misclassification Error"),
+% %        col = Colors[1:3], lty = 1)
+% % @
 
 
 \endlecture
