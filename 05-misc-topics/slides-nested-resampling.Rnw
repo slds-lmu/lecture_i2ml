@@ -14,55 +14,118 @@ library(smoof)
 \lecturechapter{Nested Resampling}
 \lecture{Introduction to Machine Learning}
 
+%%%%%%%%%%%%%%%%%%%%%%
+%% ORIGINAL follows %%
+%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{vbframe}{Training set vs Test Set}
+  \includegraphics{figure_man/test_train.png}
+  \begin{itemize}
+
+  \item The training set contains a known output and our model learns on this data.
+  \item We evaluate our model’s predictive skill on the test set.
+
+  \item But what if our train/test split isn’t random? What if one subset of our data
+    has only people from a certain category or is constant in one of the features?
+
+  \item What if we are sure that we want to apply a certain model, but don't know which hyperparameters to use?
+
+  \end{itemize}
+\end{vbframe}
+
+
+
+\begin{vbframe}{Train - Validate - Test}
+  \includegraphics{figure_man/test_valid_train.png}
+  \begin{itemize}
+
+  \item Train: Used to train your models.
+
+  \item Validation: used for model tuning (evaluate different hyperparameters) or model selection
+
+  \item Test: used for final estimate of the generalization performance.
+
+  \end{itemize}
+\end{vbframe}
+
+
 \begin{vbframe}{Nested Resampling}
-  In model selection, we are interested in selecting the best model from a set
-  of potential candidate models (e.g., different model classes, different
-  hyperparameter settings, different feature sets).
+
+  Imagine this situation:
+
   \begin{itemize}
-  \item We cannot evaluate our finally selected learner on the same resampling
-    splits that we have used to perform model selection for it, e.g., to tune
-    its hyperparameters
-  \item By repeatedly evaluating the learner on the same test set, or the same
-    CV splits, information about the test can enter the algorithm
-  \item Danger of overfitting to the resampling splits / overtuning
-  \item The final performance estimate will be optimistically biased
-  \item One could also see this as a problem similar to multiple testing
+  \item We want to use the k-NN algorithm for classification on the iris data set
+  \item As we learned before, we use Cross-Validation to tune the hyperparameter $k$ (the size of the neighborhood)
+  \item Therefore, we split our data in a validation and a train data set
+  \item Now that we found the perfect $k^*$, we want to evaluate the performance of our model
+  \item Problem: we already spent all our data in the Cross-Validation and do not have any unseen data left
+  \item Solution: \textbf{nested resampling}
   \end{itemize}
+
 \end{vbframe}
 
-\begin{vbframe}{Instructive Example}
-  \begin{itemize}
-  \item Assume a binary classification problem with equal class sizes
-  \item Assume a learner $a(\D, \lambda)$, with hyperparameter $\lambda$
-  \item $a$ shall be a (nonsensical) feature-independent classifier, where
-    $\lambda$ has no effect. $a$ predicts random labels with equal probability
-  \item Of course, $a$'s generalization error is 50\%
-  \item A cross-validation of $a$ (with any fixed $\lambda$) will easily show this
-    (given that the partitioned data set for CV is not too small)
-  \item Now lets \enquote{tune} $a$, by trying out 100 different $\lambda$ values
-  \item We repeat the experiment 50 times and average results
-  \end{itemize}
+\begin{vbframe}{Cross validation}
+  \includegraphics{figure_man/cross-validation.pdf}
+\end{vbframe}
 
-  \framebreak
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% BOTH RCOURSES AND ORIGINAL follows %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  <<echo = FALSE, fig.heigh = 3.5>>=
-  ggd = load2("rsrc/overtuning-example.RData", "res2.mean")
-  ggd = melt(ggd, measure.vars = colnames(res2));
-  colnames(ggd) = c("data.size", "iter", "tuneperf")
-  ggd = sortByCol(ggd, c("data.size", "iter"))
-  ggd$data.size = as.factor(ggd$data.size)
-  pl = ggplot(ggd, aes(x = iter, y = tuneperf, col = data.size))
-  pl =  pl + geom_line()
-  print(pl)
-  @
-  \begin{itemize}
+\begin{vbframe}{Nested resampling}
+In model selection, we are interested in selecting the best model from a set of potential candidate models (e.g., different model classes, different hyperparameter settings, different feature sets).
+
+
+\begin{blocki}{Problem}
+    \item We cannot evaluate our finally selected leaner on the same resampling splits that we have used to
+      perform model selection for it, e.g., to tune its hyperparameters.
+    \item By repeatedly evaluating the learner on the same test set, or the same CV splits, information
+      about the test set \enquote{leaks} into our evaluation.
+    \item Danger of overfitting to the resampling splits / overtuning!
+    \item The final performance estimate will be optimistically biased.
+    \item One could also see this as a problem similar to multiple testing.
+\end{blocki}
+
+\framebreak
+
+\begin{blocki}{Instructive and problematic example}
+    \item Assume a binary classification problem with equal class sizes.
+    \item Assume a learner with hyperparameter $\lambda$.
+    \item Here, the learner is a (non-sensical) feature-independent classifier,
+          where $\lambda$ has no effect. The learner simply
+          predicts random labels with equal probability.
+    \item Of course, it's true generalization error is 50\%.
+    \item A cross-validation of the learner (with any fixed $\lambda$) will easily show this
+      (given that the partitioned data set for CV is not too small).
+    \item Now lets \enquote{tune} it, by trying out 100 different $\lambda$ values.
+    \item We repeat this experiment 50 times and average results.
+\end{blocki}
+
+<<fig.height=3.5, echo = FALSE>>=
+# rsrc data from rsrc/overtuning-example.R
+ggd = BBmisc::load2("rsrc/overtuning-example.RData", "res2.mean")
+ggd = melt(ggd, measure.vars = colnames(res2), value.name = "tuneperf");
+colnames(ggd)[1:2] = c("data.size", "iter")
+ggd = sortByCol(ggd, c("data.size", "iter"))
+ggd$data.size = as.factor(ggd$data.size)
+
+
+pl = ggplot(ggd, aes(x = iter, y = tuneperf, col = data.size))
+pl =  pl + geom_line()
+print(pl)
+@
+
+\begin{itemize}
   \item Plotted is the best \enquote{tuning error} after $k$ tuning iterations
-  \item We have performed the experiment for different sizes of learning data
-    that where cross-validated.
-  \end{itemize}
+    \item We have performed the experiment for different sizes of learning data
+      that where cross-validated.
+\end{itemize}
 
 \end{vbframe}
 
+%%%%%%%%%%%%%%%%%%%%%%
+%% RCOURSES follows %%
+%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{vbframe}{Train Test and Validation Set}
   \begin{itemize}
@@ -125,112 +188,12 @@ library(smoof)
   \item We could see this as removing the hyperparameters from the algorithm and making it self-tuning.
   \end{itemize}
 \includegraphics[width=0.9\textwidth]{figure_man/autotune_in_model_fit.jpg}
-\end{vbframe}
-
-\begin{vbframe}
-  \huge{OLD SLIDES FOLLOW}
-\end{vbframe}
-
-\begin{vbframe}{Training set vs Test Set}
-\includegraphics{figure_man/test_train.png}
-\begin{itemize}
-
-\item The training set contains a known output and our model learns on this data.
-\item We evaluate our model’s predictive skill on the test set.
-
-\item But what if our train/test split isn’t random? What if one subset of our data has only people from a certain category or is constant in one of the features?
-
-\item What if we are sure that we want to apply a certain model, but don't know which hyperparameters to use?
-
-\end{itemize}
-\end{vbframe}
 
 
 
-\begin{vbframe}{Train - Validate - Test}
-\includegraphics{figure_man/test_valid_train.png}
-\begin{itemize}
-
-\item Train: Used to train your models.
-
-\item Validation: used for model tuning (evaluate different hyperparameters) or model selection
-
-\item Test: used for final estimate of the generalization performance.
-
-\end{itemize}
-\end{vbframe}
-
-
-\begin{vbframe}{Nested Resampling}
-
-Imagine this situation:
-
-\begin{itemize}
-  \item We want to use the k-NN algorithm for classification on the iris data set
-  \item As we learned before, we use Cross-Validation to tune the hyperparameter $k$ (the size of the neighborhood)
-  \item Therefore, we split our data in a validation and a train data set
-  \item Now that we found the perfect $k^*$, we want to evaluate the performance of our model
-  \item Problem: we already spent all our data in the Cross-Validation and do not have any unseen data left
-  \item Solution: \textbf{nested resampling}
-\end{itemize}
-
-\end{vbframe}
-
-\begin{vbframe}{Cross validation}
-\includegraphics{figure_man/cross-validation.pdf}
-\end{vbframe}
-
-\begin{vbframe}{Nested resampling}
-In model selection, we are interested in selecting the best model from a set of potential candidate models (e.g., different model classes, different hyperparameter settings, different feature sets).
-
-
-\begin{blocki}{Problem}
-    \item We cannot evaluate our finally selected leaner on the same resampling splits that we have used to
-      perform model selection for it, e.g., to tune its hyperparameters.
-    \item By repeatedly evaluating the learner on the same test set, or the same CV splits, information
-      about the test set \enquote{leaks} into our evaluation.
-    \item Danger of overfitting to the resampling splits / overtuning!
-    \item The final performance estimate will be optimistically biased.
-    \item One could also see this as a problem similar to multiple testing.
-
-\end{blocki}
-
-\framebreak
-
-\begin{blocki}{Instructive and problematic example}
-    \item Assume a binary classification problem with equal class sizes.
-    \item Assume a learner with hyperparameter $\lambda$.
-    \item Here, the learner is a (non-sensical) feature-independent classifier,
-          where $\lambda$ has no effect. The learner simply
-          predicts random labels with equal probability.
-    \item Of course, it's true generalization error is 50\%.
-    \item A cross-validation of the learner (with any fixed $\lambda$) will easily show this
-      (given that the partitioned data set for CV is not too small).
-    \item Now lets \enquote{tune} it, by trying out 100 different $\lambda$ values.
-    \item We repeat this experiment 50 times and average results.
-\end{blocki}
-
-<<fig.height=3.5, echo = FALSE>>=
-# rsrc data from rsrc/overtuning-example.R
-ggd = BBmisc::load2("rsrc/overtuning-example.RData", "res2.mean")
-ggd = melt(ggd, measure.vars = colnames(res2), value.name = "tuneperf");
-colnames(ggd)[1:2] = c("data.size", "iter")
-ggd = sortByCol(ggd, c("data.size", "iter"))
-ggd$data.size = as.factor(ggd$data.size)
-
-
-pl = ggplot(ggd, aes(x = iter, y = tuneperf, col = data.size))
-pl =  pl + geom_line()
-print(pl)
-@
-
-\begin{itemize}
-  \item Plotted is the best \enquote{tuning error} after $k$ tuning iterations
-    \item We have performed the experiment for different sizes of learning data
-      that where cross-validated.
-    \item Experiment was simulated with mlr's \enquote{classif.featureless} learner.
-    \item Quiz: How to mathematically calculate the shape of the curves?
-\end{itemize}
+%%%%%%%%%%%%%%%%%%%%%%
+%% ORIGINAL follows %%
+%%%%%%%%%%%%%%%%%%%%%%
 
 \framebreak
 
@@ -244,6 +207,7 @@ print(pl)
   \item The chance of getting such a random \enquote{outlier-split} increases with the number of CV iterations
   \item We \textbf{overtune} the model
 \end{blocki}
+
 
 <<fig.heigh = 5>>=
 
