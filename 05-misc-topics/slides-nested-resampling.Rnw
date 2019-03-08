@@ -14,25 +14,144 @@ library(smoof)
 \lecturechapter{Nested Resampling}
 \lecture{Introduction to Machine Learning}
 
+\begin{vbframe}{Nested Resampling}
+  In model selection, we are interested in selecting the best model from a set
+  of potential candidate models (e.g., different model classes, different
+  hyperparameter settings, different feature sets).
+  \begin{itemize}
+  \item We cannot evaluate our finally selected learner on the same resampling
+    splits that we have used to perform model selection for it, e.g., to tune
+    its hyperparameters
+  \item By repeatedly evaluating the learner on the same test set, or the same
+    CV splits, information about the test can enter the algorithm
+  \item Danger of overfitting to the resampling splits / overtuning
+  \item The final performance estimate will be optimistically biased
+  \item One could also see this as a problem similar to multiple testing
+  \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Instructive Example}
+  \begin{itemize}
+  \item Assume a binary classification problem with equal class sizes
+  \item Assume a learner $a(\D, \lambda)$, with hyperparameter $\lambda$
+  \item $a$ shall be a (nonsensical) feature-independent classifier, where
+    $\lambda$ has no effect. $a$ predicts random labels with equal probability
+  \item Of course, $a$'s generalization error is 50\%
+  \item A cross-validation of $a$ (with any fixed $\lambda$) will easily show this
+    (given that the partitioned data set for CV is not too small)
+  \item Now lets \enquote{tune} $a$, by trying out 100 different $\lambda$ values
+  \item We repeat the experiment 50 times and average results
+  \end{itemize}
+
+  \framebreak
+
+  <<echo = FALSE, fig.heigh = 3.5>>=
+  ggd = load2("rsrc/overtuning-example.RData", "res2.mean")
+  ggd = melt(ggd, measure.vars = colnames(res2));
+  colnames(ggd) = c("data.size", "iter", "tuneperf")
+  ggd = sortByCol(ggd, c("data.size", "iter"))
+  ggd$data.size = as.factor(ggd$data.size)
+  pl = ggplot(ggd, aes(x = iter, y = tuneperf, col = data.size))
+  pl =  pl + geom_line()
+  print(pl)
+  @
+  \begin{itemize}
+  \item Plotted is the best \enquote{tuning error} after $k$ tuning iterations
+  \item We have performed the experiment for different sizes of learning data
+    that where cross-validated.
+  \end{itemize}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Train Test and Validation Set}
+  \begin{itemize}
+  \item Again, simply simulate what happens in model application.
+  \item All parts of the model building (including model selection,
+    preprocessing) should be embedded in the model-finding process
+    \textbf{on the training data}
+  \item In order to get an unbiased performance estimate we cross
+    validate this model-finding process
+  \end{itemize}
+
+  \framebreak
+
+  \begin{itemize}
+  \item Simplest form is a 3-way split into a training, optimization and test set.
+  \item Learner are trained on the training set, evaluated on the validated set.
+  \item After the final model is selected, we fit on joint training+validation set and evaluate
+    a final time on the test set. Note that we touch the test set only once,
+    and have no way of \enquote{cheating}.
+  \end{itemize}
+
+  \framebreak
+
+  \begin{description}
+  \item[Train Set]
+    The actual dataset that used to train the model. The model only sees this data.
+  \item[Validation Set]
+    The validation set is used to evaluate a given model. By comparing model predictions
+    and the true label on this data set, we can compare learner hyper-parameter configurations.
+  \item[Test Set]
+    The Test dataset is only used once a model is completely trained, after deciding for
+    example on specific hyper-parameters.Performances obtained from the test set are
+    \emph{unbiased estimates} of the true performance.
+  \end{description}
+
+  \framebreak
+
+  \includegraphics[width = 0.99\textwidth]{figure_man/train_valid_test.jpg}
+\end{vbframe}
+
+
+\begin{vbframe}{Nested Resampling}
+  \begin{itemize}
+  \item As we can generalize holdout splitting to resampling, we can generalize the
+    train+valid+test approach to nested resampling.
+  \item This results in in two nested resampling loops, i.e. a resampling strategy for
+    both tuning and outer evaluation.
+  \end{itemize}
+
+  \framebreak
+
+  Outer loop with 3-fold CV and inner loop with 4-fold CV
+
+  \includegraphics[width=0.87\textwidth]{figure_man/Nested_Resampling.png}
+
+  \framebreak
+
+  \begin{itemize}
+  \item The tuning step is now effectively included in the model fit.
+  \item We could see this as removing the hyperparameters from the algorithm and making it self-tuning.
+  \end{itemize}
+\includegraphics[width=0.9\textwidth]{figure_man/autotune_in_model_fit.jpg}
+\end{vbframe}
+
+\begin{vbframe}
+  \huge{OLD SLIDES FOLLOW}
+\end{vbframe}
+
 \begin{vbframe}{Training set vs Test Set}
 \includegraphics{figure_man/test_train.png}
 \begin{itemize}
 
-\item The training set contains a known output and our model learns on this data. 
+\item The training set contains a known output and our model learns on this data.
 \item We evaluate our model’s predictive skill on the test set.
 
-\item But what if our train/test split isn’t random? What if one subset of our data has only people from a certain category or is constant in one of the features? 
+\item But what if our train/test split isn’t random? What if one subset of our data has only people from a certain category or is constant in one of the features?
 
 \item What if we are sure that we want to apply a certain model, but don't know which hyperparameters to use?
 
 \end{itemize}
 \end{vbframe}
 
+
+
 \begin{vbframe}{Train - Validate - Test}
 \includegraphics{figure_man/test_valid_train.png}
 \begin{itemize}
 
-\item Train: Used to train your models. 
+\item Train: Used to train your models.
 
 \item Validation: used for model tuning (evaluate different hyperparameters) or model selection
 
@@ -81,8 +200,8 @@ In model selection, we are interested in selecting the best model from a set of 
 \begin{blocki}{Instructive and problematic example}
     \item Assume a binary classification problem with equal class sizes.
     \item Assume a learner with hyperparameter $\lambda$.
-    \item Here, the learner is a (non-sensical) feature-independent classifier, 
-          where $\lambda$ has no effect. The learner simply 
+    \item Here, the learner is a (non-sensical) feature-independent classifier,
+          where $\lambda$ has no effect. The learner simply
           predicts random labels with equal probability.
     \item Of course, it's true generalization error is 50\%.
     \item A cross-validation of the learner (with any fixed $\lambda$) will easily show this
