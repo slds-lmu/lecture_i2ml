@@ -14,67 +14,8 @@ library(smoof)
 \lecturechapter{Nested Resampling}
 \lecture{Introduction to Machine Learning}
 
-%%%%%%%%%%%%%%%%%%%%%%
-%% ORIGINAL follows %%
-%%%%%%%%%%%%%%%%%%%%%%
-
-\begin{vbframe}{Training set vs Test Set}
-  \includegraphics{figure_man/test_train.png}
-  \begin{itemize}
-
-  \item The training set contains a known output and our model learns on this data.
-  \item We evaluate our model’s predictive skill on the test set.
-
-  \item But what if our train/test split isn’t random? What if one subset of our data
-    has only people from a certain category or is constant in one of the features?
-
-  \item What if we are sure that we want to apply a certain model, but don't know which hyperparameters to use?
-
-  \end{itemize}
-\end{vbframe}
-
-
-
-\begin{vbframe}{Train - Validate - Test}
-  \includegraphics{figure_man/test_valid_train.png}
-  \begin{itemize}
-
-  \item Train: Used to train your models.
-
-  \item Validation: used for model tuning (evaluate different hyperparameters) or model selection
-
-  \item Test: used for final estimate of the generalization performance.
-
-  \end{itemize}
-\end{vbframe}
-
-
-\begin{vbframe}{Nested Resampling}
-
-  Imagine this situation:
-
-  \begin{itemize}
-  \item We want to use the k-NN algorithm for classification on the iris data set
-  \item As we learned before, we use Cross-Validation to tune the hyperparameter $k$ (the size of the neighborhood)
-  \item Therefore, we split our data in a validation and a train data set
-  \item Now that we found the perfect $k^*$, we want to evaluate the performance of our model
-  \item Problem: we already spent all our data in the Cross-Validation and do not have any unseen data left
-  \item Solution: \textbf{nested resampling}
-  \end{itemize}
-
-\end{vbframe}
-
-\begin{vbframe}{Cross validation}
-  \includegraphics{figure_man/cross-validation.pdf}
-\end{vbframe}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% BOTH RCOURSES AND ORIGINAL follows %%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\begin{vbframe}{Nested resampling}
+\begin{vbframe}{Motivation}
 In model selection, we are interested in selecting the best model from a set of potential candidate models (e.g., different model classes, different hyperparameter settings, different feature sets).
-
 
 \begin{blocki}{Problem}
     \item We cannot evaluate our finally selected leaner on the same resampling splits that we have used to
@@ -85,13 +26,13 @@ In model selection, we are interested in selecting the best model from a set of 
     \item The final performance estimate will be optimistically biased.
     \item One could also see this as a problem similar to multiple testing.
 \end{blocki}
+\end{vbframe}
 
-\framebreak
-
-\begin{blocki}{Instructive and problematic example}
+\begin{vbframe}{Instructive and problematic example}
+\begin{itemize}
     \item Assume a binary classification problem with equal class sizes.
     \item Assume a learner with hyperparameter $\lambda$.
-    \item Here, the learner is a (non-sensical) feature-independent classifier,
+    \item Here, the learner is a (nonsense) feature-independent classifier,
           where $\lambda$ has no effect. The learner simply
           predicts random labels with equal probability.
     \item Of course, it's true generalization error is 50\%.
@@ -99,7 +40,9 @@ In model selection, we are interested in selecting the best model from a set of 
       (given that the partitioned data set for CV is not too small).
     \item Now lets \enquote{tune} it, by trying out 100 different $\lambda$ values.
     \item We repeat this experiment 50 times and average results.
-\end{blocki}
+\end{itemize}
+
+\framebreak
 
 <<fig.height=3.5, echo = FALSE>>=
 # rsrc data from rsrc/overtuning-example.R
@@ -116,192 +59,149 @@ print(pl)
 @
 
 \begin{itemize}
-  \item Plotted is the best \enquote{tuning error} after $k$ tuning iterations
-    \item We have performed the experiment for different sizes of learning data
+\item Plotted is the best \enquote{tuning error} after $k$ tuning iterations
+\item We have performed the experiment for different sizes of learning data
       that where cross-validated.
 \end{itemize}
 
-\end{vbframe}
+<<fig.height=3.5, echo = FALSE>>=
+set.seed(123)
 
-%%%%%%%%%%%%%%%%%%%%%%
-%% RCOURSES follows %%
-%%%%%%%%%%%%%%%%%%%%%%
+size = 200
+p = 0.5
+dens.x = seq(0, 1, length.out = 100)
+myd = function(x, size, p) dbinom(round(x*size), p = p, size = size)
+dens.y = myd(dens.x, p = p, size = size)
+d.dens = data.frame(x = dens.x, y = dens.y)
+sample_some_errs = function(k) rbinom(k, size = size, p = p) / size
+errs = sample_some_errs(1000)
+d.errs = data.frame(x = errs, y = 0.0)
 
-\begin{vbframe}{Train Test and Validation Set}
-  \begin{itemize}
-  \item Again, simply simulate what happens in model application.
-  \item All parts of the model building (including model selection,
-    preprocessing) should be embedded in the model-finding process
-    \textbf{on the training data}
-  \item In order to get an unbiased performance estimate we cross
-    validate this model-finding process
-  \end{itemize}
+plot_dens_with_errs = function(k) {
+  pl = ggplot(mapping = aes(x = x, y = y)) + geom_line(data = d.dens)
+  pl = pl + geom_point(data = d.errs[1:k,])
+  minerr = min(d.errs[1:k, "x"])
+  pl = pl + geom_vline(xintercept = minerr, col = "red")
+  # pl = pl + geom_label()
+  label = sprintf("n=%i; #runs=%i; best err=%.2f", size, k, minerr)
+  pl = pl + ggtitle(label = label)
+  pl = pl + xlab("Test Error") + ylab("density")
+  return(pl)
+}
 
-  \framebreak
-
-  \begin{itemize}
-  \item Simplest form is a 3-way split into a training, optimization and test set.
-  \item Learner are trained on the training set, evaluated on the validated set.
-  \item After the final model is selected, we fit on joint training+validation set and evaluate
-    a final time on the test set. Note that we touch the test set only once,
-    and have no way of \enquote{cheating}.
-  \end{itemize}
-
-  \framebreak
-
-  \begin{description}
-  \item[Train Set]
-    The actual dataset that used to train the model. The model only sees this data.
-  \item[Validation Set]
-    The validation set is used to evaluate a given model. By comparing model predictions
-    and the true label on this data set, we can compare learner hyper-parameter configurations.
-  \item[Test Set]
-    The Test dataset is only used once a model is completely trained, after deciding for
-    example on specific hyper-parameters.Performances obtained from the test set are
-    \emph{unbiased estimates} of the true performance.
-  \end{description}
-
-  \framebreak
-
-  \includegraphics[width = 0.99\textwidth]{figure_man/train_valid_test.jpg}
-\end{vbframe}
-
-
-\begin{vbframe}{Nested Resampling}
-  \begin{itemize}
-  \item As we can generalize holdout splitting to resampling, we can generalize the
-    train+valid+test approach to nested resampling.
-  \item This results in in two nested resampling loops, i.e. a resampling strategy for
-    both tuning and outer evaluation.
-  \end{itemize}
-
-  \framebreak
-
-  Outer loop with 3-fold CV and inner loop with 4-fold CV
-
-  \includegraphics[width=0.87\textwidth]{figure_man/Nested_Resampling.png}
-
-  \framebreak
-
-  \begin{itemize}
-  \item The tuning step is now effectively included in the model fit.
-  \item We could see this as removing the hyperparameters from the algorithm and making it self-tuning.
-  \end{itemize}
-\includegraphics[width=0.9\textwidth]{figure_man/autotune_in_model_fit.jpg}
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%
-%% ORIGINAL follows %%
-%%%%%%%%%%%%%%%%%%%%%%
-
-\framebreak
-
-\begin{blocki}{Another perspective}
-  \item Tune the same \enquote{fake} parameter $\lambda$ with CV
-  \item Run the CV for 10, 100 and 500 different values of $\lambda$
-  \item The \enquote{best} $\lambda$ error is getting smaller with increasing iterations
-  \item We would choose the lambda value that yields a mmce = 30\%
-  \item Nonsense as our model could never get better than mmce = 50\%
-  \item The result is based on pure randomness
-  \item The chance of getting such a random \enquote{outlier-split} increases with the number of CV iterations
-  \item We \textbf{overtune} the model
-\end{blocki}
-
-
-<<fig.heigh = 5>>=
-
-  set.seed(1342)
-
-  makeMyTask = function(n) {
-    y = sample(c(0,1), size = n, replace = TRUE)
-    d = data.frame(x = 1, y = as.factor(y))
-    makeClassifTask(data = d, target = "y")
-  }
-
-  task.size = 100
-  task = makeMyTask(task.size)
-  cv.iters = 2
-  # "tuning" featureless learner by resampling it very often
-  lrn = makeLearner("classif.featureless", method = "sample-prior")
-  rin = makeResampleInstance("CV", iters = cv.iters, task = task)
-  tune.list = c(10, 100, 500)
-
-  # storage
-  storage.list = list()
-  for (i in 1:length(tune.list)) {
-    storage.list[[i]] = replicate(tune.list[[i]], resample(lrn, task, rin, show.info = FALSE)$aggr)
-  }
-  boxplot(storage.list[[1]], storage.list[[2]], storage.list[[3]],
-    names =  tune.list, xlab = "CV iterations", ylab = "mmce", col = "#E69F00AA")
-  abline(h = min(storage.list[[1]]), lty = 3)
-  abline(h = min(storage.list[[2]]), lty = 3)
-  abline(h = min(storage.list[[3]]), lty = 3)
-
+pl1 = plot_dens_with_errs(k = 1)
+pl2 = plot_dens_with_errs(k = 10)
+grid.arrange(pl1, pl2, ncol = 2)
 @
 
-
-\begin{blocki}{Simple solution}
-\item Again, simply simulate what happens in the model's application.
-\item All parts of model building (including model selection, preprocessing) should be embedded
-  in the resampling, i.e., repeated for every pair of training/test data.
-\item For steps that themselves require resampling (e.g. hyperparameter tuning) this results
-  in two \textbf{nested resampling} loops, i.e. a resampling strategy for both tuning and outer evaluation.
-\item Simplest form is a 3-way split into a training, optimization and test set.
-  Inducers are trained on the training set, evaluated on the optimization set.
-  After the final model is selected, we fit on joint training+optimization set and evaluate
-  a final time on the test set. Note that we touch the test set only once, and have no way of \enquote{cheating}.
-\end{blocki}
-
-  \framebreak
-
-Example: Outer loop with 3-fold CV and inner loop with 4-fold CV
-
-\begin{center}
-  \includegraphics[width=9.5cm]{figure_man/Nested_Resampling.png}
-\end{center}
+\begin{itemize}
+\item For 1 experiment, the CV score will be nearly 0.5, as expected
+\item We basically sample from a (rescaled) binomial distribution when we calculate error rates
+\item And multiple experiment scores are also nicely arranged around the expected mean 0.5
+\end{itemize}
 
 \framebreak
 
+<<fig.height=3.5, echo = FALSE>>=
+set.seed(123)
+pl3 = plot_dens_with_errs(k = 100)
+pl4 = plot_dens_with_errs(k = 1000)
+grid.arrange(pl3, pl4, ncol = 2)
+@
+
 \begin{itemize}
-  \item We evaluate hyperparameter candidates $\theta_i; i = 1, \dots$ with 4-fold CV in the inner resampling and 3-fold CV in the outer:
-  \begin{itemize}
-    \item Evaluate each $\theta_i$ on the 4 inner test samples
-    \item Calculate the corresponding preliminary $\hat GE(\theta_i)$ for $\theta_i$
-    \item Choose the winner $\theta^*$ for each of the 3 inner samples
-    \item If we would take this $\hat GE(\theta^*)$ as the overall generalization error we would get an optimistic bias (Why?)
-    \item We have (at most) 3 winners from the inner resampling rounds
-    \item For each of them, we re-train the model on the outer train sets (darkgreen), calculate the "real" $GE(\theta^{*})$ on the outer test sets (lightgreen), and choose the best overall hyperparameter setting $\theta^{**}$
-  \end{itemize}
-  \item The error estimates on the outer samples (lightgreen) are unbiased because this data was strictly excluded from the validation process
+\item But in tuning we take the minimum of those! 
+\item The more we sample, the more "biased" this value becomes
 \end{itemize}
 \end{vbframe}
 
-% \begin{vbframe}{Nested resampling with mlr}
+\begin{vbframe}{Untouched Test Set Principle}
+\begin{itemize}
+\item Again, simply simulate what happens in model application.
+\item All parts of the model building (including model selection,
+  preprocessing) should be embedded in the model-finding process
+  \textbf{on the training data}
+\item The test set we should only touch once, so we have no way of \enquote{cheating}. The test dataset is only used once a model is completely trained, after deciding for example on specific hyper-parameters. Performances obtained from the test set are
+  \emph{unbiased estimates} of the true performance.
+\item For steps that themselves require resampling (e.g., hyperparameter tuning) this results
+  in two \textbf{nested resampling} loops, i.e., a resampling strategy for both tuning and outer evaluation.
+\end{itemize}
+\end{vbframe}
 
-% <<size="footnotesize">>=
-% ## Tuning in inner resampling loop
-% ps = makeParamSet(
-%   makeDiscreteParam("C", values = 2^(-2:2)),
-%   makeDiscreteParam("sigma", values = 2^(-2:2))
-% )
-% ctrl = makeTuneControlGrid()
-% inner = makeResampleDesc("Subsample", iters = 2L)
-% lrn = makeTuneWrapper("classif.ksvm", resampling = inner,
-%   par.set = ps, control = ctrl, show.info = FALSE)
-% ## Outer resampling loop
-% outer = makeResampleDesc("CV", iters = 3L)
-% @
+  
+\begin{vbframe}{Tuning as part of model building}
+\begin{itemize}
+\item It conceptually helps to see the tuning step as now effectively part of a more complex training procedure
+ \item We could see this as removing the hyperparameters from the inputs of the algorithm and making it "self-tuning"
+ \end{itemize}
 
-%   \framebreak
+\begin{center}
+\includegraphics[width=0.75\textwidth]{figure_man/autotune_in_model_fit.jpg}
+\end{center}
+\end{vbframe}
 
-% <<size="footnotesize">>=
-% r = resample(lrn, iris.task, resampling = outer,
-%   extract = getTuneResult, show.info = FALSE); print(r)
+  
+\begin{vbframe}{Train Validation Test}
 
-% print(r$extract[[1L]])
-% @
-% \end{vbframe}
+\begin{itemize}
+\item Simple 3-way split; during tuning, a learner is trained on the training set, 
+  evaluated on the validation set
+\item After the final model is selected, we fit on joint (training+validation) set and evaluate a final time on the test set
+\end{itemize}
+\begin{center}  
+\includegraphics[height=5.5cm]{figure_man/train_valid_test.jpg}
+\end{center}  
 
+\framebreak
+
+More precisely: the joint train+valid set is actually the training test for the "self-tuning" endowed algorithm
+\vspace{1cm}
+\begin{columns}[c, onlytextwidth]
+\column{0.45\textwidth}
+\includegraphics[width=8cm]{figure_man/train_valid_test.jpg}
+\column{0.45\textwidth}
+\includegraphics[width=6cm]{figure_man/autotune_in_model_fit.jpg}
+\end{columns}
+\end{vbframe}
+
+\begin{vbframe}{Nested Resampling}
+As we can generalize holdout splitting to resampling, we can generalize the train+valid+test approach to nested resampling. This results in two nested resampling loops, i.e., a resampling strategy for both tuning and outer evaluation.
+
+\begin{center}\includegraphics[height=5.5cm]{figure_man/Nested_Resampling.png}\end{center}
+
+\framebreak
+
+Assume we want to tune over a set of candidate HP configurations $\lambda_i; i = 1, \dots$ with 4-fold CV in the inner resampling and 3-fold CV in the outer loop. The outer loop is visualized as the light green and dark green parts. 
+
+\begin{center}\includegraphics[height=5.5cm]{figure_man/Nested_Resampling.png}\end{center}
+  
+\framebreak
+
+In each outer loop we do:
+\begin{itemize}
+\item Split off light green testing data
+\item Run the tuner on the dark green part, e.g., 
+  evaluate each $\lambda_i$ through 4CV on the dark green part
+\end{itemize}
+\begin{center}\includegraphics[height=5.5cm]{figure_man/Nested_Resampling.png}\end{center}
+  
+\framebreak
+
+In each outer loop we do:
+\begin{itemize}
+\item Return the winning $\lambda^*$ 
+\item Re-train the model on the full outer dark green train set
+\item Predict on the outer light green test set 
+\end{itemize}
+
+\begin{center}\includegraphics[height=5.5cm]{figure_man/Nested_Resampling.png}\end{center}
+  
+\framebreak
+
+The error estimates on the outer samples (light green) are unbiased because this data was strictly excluded from the model-building process of the model that was tested on.
+
+\begin{center}\includegraphics[height=5.5cm]{figure_man/Nested_Resampling.png}\end{center}
+
+\end{vbframe}
 
 \endlecture
