@@ -3,51 +3,63 @@
   \item[a)]
 
   $\pi_1(x)=\frac{e^{\theta_1^T x}}{e^{\theta_1^T x} + e^{\theta_2^T x}}$
-  
+
   $\pi_2(x)=\frac{e^{\theta_2^T x}}{e^{\theta_1^T x} + e^{\theta_2^T x}}$
-  
+
   $\pi_1(x)=\frac{1}{ (e^{\theta_1^T x} + e^{\theta_2^T x} )/ e^{\theta_1^T x}} = \frac{1}{1+e^{\theta^{T} x}}$ where $\theta =\theta_2 - \theta_1 $ and $\pi_2(x) = 1 - \pi_1(x)$
-  
-  \item[b)] 
-  
+
+  \item[b)]
+
   %$\log  \frac{e^{-\theta_i^T x}}{\sum_k e^{-\theta_k^T x}}= -z_i-\log {\sum_k e^{-z_k}}$
-  
-  likelihood for one instance
-  $l = \prod_k \pi_k^{I_k}$
-  
-  where $\pi_k = \frac{e^{\theta_k^T x}}{\sum_j e^{\theta_j^T x}}$
-  , $\sum_{k=1}^g \pi_k = 1$, and $I_k = [y = k]$
-  , $\sum_{k=1}^g I_k = 1$
-  
-  negative log likelihood for one instance: 
-  $-\log L_i = - \sum_{k=1}^g {I_k} \log  \pi_k$
-  
-  negative log likelihood: $-\log \mathcal{L} = \sum_{i=1}^n -\log L_i$
-      
-  \item[c)] 
-  
-  $\frac{\partial (-\log L)}{\partial \theta_i} = - \sum_k I_k \frac{1}{\pi_k} \frac{\partial \pi_k}{\partial \theta_i}$
-  
-  since 
-  
-  $ \frac{\partial \pi_i}{\partial \theta_i} = \triangledown_{\theta_i} \frac{e^{\theta_i^T x}}{\sum_k e^{\theta_k^T x}}= \frac{e^{z_i}(\sum_k e^{z_k})-(e^{z_i})^2}{(\sum_k e^{z_k})^2}x = \frac{e^{z_i}(\sum_{k \neq i} e^{z_k})}{(\sum_k e^{z_k})^2}x= \pi_i(1 - \pi_i)x$,
-  
-  $ \frac{\partial \pi_i}{\partial \theta_j} = \triangledown_{\theta_j} \frac{e^{\theta_i^T x}}{\sum_k e^{\theta_k^T x}}= \frac{-e^{z_i}e^{z_j}}{(\sum_k e^{z_k})^2}x= - \pi_i\pi_j x$, ($i \neq j$)
-  
-  Conclusion:
-  
-  $\frac{- \partial \log L}{\partial \theta_i} = - \sum_k I_k \frac{1}{\pi_k} \frac{\partial \pi_k}{\partial \theta_i} = -(1-\pi_i)x$ ($i = y$)
-  and 
-  
-  $\frac{- \partial \log L}{\partial \theta_j} = - \sum_k I_k \frac{1}{\pi_k} \frac{\partial \pi_k}{\partial \theta_j} = \pi_j x$
-  ($j \neq y$)
-  
-  Writing the two cases in one formula, we have 
-  
-  $\frac{- \partial \log L}{\partial \theta_k} = -(I_k -\pi_k )x$ where $I_k = [y = k]$
-  
-  summing over all instances, we have
-  
-  $\triangledown_{\theta_k}\mathcal{L} = \sum_{i=1}^n-([y_i = k] -\pi_k )x$ 
+
+  Likelihood for one instance
+  $$L_i = P(y^{(i)} = k|\theta) = \prod_k \pi_k(x)^{I_k}$$
+
+  where
+  $$\pi_k(x) = \frac{e^{\theta_k^T x}}{\sum_j e^{\theta_j^T x}}$$
+  $$\sum_{k=1}^g \pi_k = 1 \ \ \text{and} \ \ I_k = [y = k]$$
+  $$\sum_{k=1}^g I_k = 1$$
+
+  negative log likelihood for one instance:
+  $$-\log(L_i) = - \sum_{k=1}^g {I_k} \log(\pi_k(x))$$
+
+  negative log likelihood:
+  $$-\log(\mathcal{L}) = \sum_{i=1}^n -\log(L_i)$$
+
+  \item[c)]
+    For $g$ classes we get $g - 1$ discriminant functions from the softmax $\pi_1(x), \dots, \pi_{g-1}(x)$ which can be interpreted as probability. The probability for class $g$ can be calculated by using $1 - \sum_{k = 1}^{g-1} \pi_k(x)$. To estimate the class we are using majority vote:
+    $$
+    \hat{y} = \argmax_k \pi_k(x)
+    $$
+    The parameter of the softmax regression is defined as parameter matrix where each class has its own parameter vector $\theta_k$, $k \in \{1, \dots, g-1\}$:
+    $$
+    \theta = [\theta_1, \dots, \theta_{g-1}]
+    $$
+
+
+
+  % $\frac{\partial (-\log L)}{\partial \theta_i} = - \sum_k I_k \frac{1}{\pi_k} \frac{\partial \pi_k}{\partial \theta_i}$
+
+  % since
+
+  % $ \frac{\partial \pi_i}{\partial \theta_i} = \triangledown_{\theta_i} \frac{e^{\theta_i^T x}}{\sum_k e^{\theta_k^T x}}= \frac{e^{z_i}(\sum_k e^{z_k})-(e^{z_i})^2}{(\sum_k e^{z_k})^2}x = \frac{e^{z_i}(\sum_{k \neq i} e^{z_k})}{(\sum_k e^{z_k})^2}x= \pi_i(1 - \pi_i)x$,
+
+  % $ \frac{\partial \pi_i}{\partial \theta_j} = \triangledown_{\theta_j} \frac{e^{\theta_i^T x}}{\sum_k e^{\theta_k^T x}}= \frac{-e^{z_i}e^{z_j}}{(\sum_k e^{z_k})^2}x= - \pi_i\pi_j x$, ($i \neq j$)
+
+  % Conclusion:
+
+  % $\frac{- \partial \log L}{\partial \theta_i} = - \sum_k I_k \frac{1}{\pi_k} \frac{\partial \pi_k}{\partial \theta_i} = -(1-\pi_i)x$ ($i = y$)
+  % and
+
+  % $\frac{- \partial \log L}{\partial \theta_j} = - \sum_k I_k \frac{1}{\pi_k} \frac{\partial \pi_k}{\partial \theta_j} = \pi_j x$
+  % ($j \neq y$)
+
+  % Writing the two cases in one formula, we have
+
+  % $\frac{- \partial \log L}{\partial \theta_k} = -(I_k -\pi_k )x$ where $I_k = [y = k]$
+
+  % summing over all instances, we have
+
+  % $\triangledown_{\theta_k}\mathcal{L} = \sum_{i=1}^n-([y_i = k] -\pi_k )x$
 \end{enumerate}
 

@@ -1,16 +1,14 @@
-
 library(mlbench)
 library(mlr)
 
 set.seed(123L)
 
-mydata1 = mlbench.spirals(n = 500, sd = 0.1)
-mydata2 = as.data.frame(mydata1)
+spiral = mlbench.spirals(n = 500, sd = 0.1)
+df_spiral = as.data.frame(spiral)
 
-# head(mydata2)
-# plot(mydata1)
+plot(spiral)
 
-task = makeClassifTask(data = mydata2, target = "classes")
+task = makeClassifTask(data = df_spiral, target = "classes")
 
 plotLearnerPrediction("classif.lda", task)
 plotLearnerPrediction("classif.qda", task)
@@ -18,4 +16,3 @@ plotLearnerPrediction("classif.logreg", task)
 plotLearnerPrediction("classif.kknn", task, k = 5)
 plotLearnerPrediction("classif.kknn", task, k = 1)
 plotLearnerPrediction("classif.kknn", task, k = 100)
-
