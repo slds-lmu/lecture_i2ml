@@ -1,10 +1,12 @@
 library(mlr)
 
+# Download data from:
 # http://archive.ics.uci.edu/ml/datasets/Abalone
-# we only use 2 Features
 
-abalone = read.csv("exercises/data/abalone.csv", header = FALSE)
+abalone = read.csv("abalone.csv", header = FALSE)
 colnames(abalone) = c("Sex", "LongestShell", "Diameter", "Height", "WholeWeight", "ShuckedWeight", "VisceraWeight", "ShellWeight", "Rings")
+
+# We only use 2 features:
 data = abalone[, c("LongestShell", "WholeWeight","Rings")]
 
 
