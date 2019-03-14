@@ -1,39 +1,39 @@
 \begin{enumerate}
   \item[a)]
-  The spam data is a classification task where the aim is to classify an email as spam or no-spam.
-  
+  The spam data is a binary classification task where the aim is to classify an email as spam or no-spam.
+
   <<warning=FALSE, message=FALSE>>=
   library(mlr)
-  library(ElemStatLearn)
-  spam.task = makeClassifTask(data = spam, target = "spam")
   spam.task
   @
   \item[b)]
-  
+
   <<fig.height=5, cache = FALSE>>=
+  library(rpart.plot)
+
   lrn = makeLearner("classif.rpart")
   model = train(lrn, spam.task)
   mod = getLearnerModel(model)
-  mod
-  
+  rpart.plot(mod)
+
   set.seed(42)
-  subset1 = sample.int(nrow(spam), size = 0.8 * nrow(spam))
-  subset2 = sample.int(nrow(spam), size = 0.8 * nrow(spam))
-  
+  subset1 = sample.int(getTaskSize(spam.task), size = 0.8 * getTaskSize(spam.task))
+  subset2 = sample.int(getTaskSize(spam.task), size = 0.8 * getTaskSize(spam.task))
+
   model = train(lrn, spam.task, subset = subset1)
   mod = getLearnerModel(model)
-  mod
-  
-  
+  rpart.plot(mod)
+
+
   model = train(lrn, spam.task, subset = subset2)
   mod = getLearnerModel(model)
-  mod
-  
+  rpart.plot(mod)
+
   @
-  Observation: Trees with different sample find different split points and variables, leading to different trees!   
-  
+  Observation: Trees with different sample find different split points and variables, leading to different trees!
+
   \item[c)]
-  
+
   <<fig.height=5, cache = FALSE>>=
   lrn = makeLearner("classif.randomForest")
   model = train(lrn, spam.task)
@@ -41,13 +41,13 @@
   mod
   plot(mod)
   @
-  
+
   \item[d)]
-  
+
   <<fig.height=5>>=
   imp = getFeatureImportance(model)
   sort(imp$res, decreasing = TRUE)
-  
+
   # as alternative, the randomForest package provides a plotting function
   randomForest::varImpPlot(getLearnerModel(model))
   @

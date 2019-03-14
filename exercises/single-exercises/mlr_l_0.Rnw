@@ -13,41 +13,43 @@ performance(pred, measures = mmce)
 
 \begin{enumerate}
   \item[a)]
-  
-  Each loss function we have learned sofar to fit the model (inner loss) can also be used as performance measure (outer loss).
-  
+
+  Each loss function we have learned so far to fit the model (inner loss) can also be used as performance measure (outer loss).
+
   For classification:
-  
+
   \begin{itemize}
     \item 0-1 loss (= mean misclassification error),
     \item Logistic loss (bernoulli loss), ...
   \end{itemize}
-  
+
   For regression:
-  
+
   \begin{itemize}
     \item $L_2$-loss (= mean squared error),
     \item $L_1$-loss (= mean absolute error), ...
   \end{itemize}
-  
+
+  To get a list of all measures you can use \texttt{listLearners()}.
+
   \item[b)]
-  
+
   <<message=FALSE>>=
   # look at the task
   bh.task
   n = getTaskSize(bh.task)
-  
+
   # select index vectors to subset the data randomly
   set.seed(123)
-  train.ind = sort(sample(seq_len(n), 0.5*n))
+  train.ind = sample(seq_len(n), 0.5*n)
   test.ind = setdiff(seq_len(n), train.ind)
-  
+
   # specify learner
-  lrn = makeLearner("regr.rpart")
-  
+  lrn = makeLearner("regr.kknn", k = 3)
+
   # train model to the training set
   mod = train(lrn, bh.task, subset = train.ind)
-  
+
   # predict on the test set
   pred = predict(mod, bh.task, subset = test.ind)
   pred
@@ -57,56 +59,55 @@ performance(pred, measures = mmce)
   # predict on the test set
   pred.test = predict(mod, bh.task, subset = test.ind)
   performance(pred.test, measures = list(mlr::mae, mlr::mse))
-  
+
   # predict on the test set
   pred.train = predict(mod, bh.task, subset = train.ind)
   performance(pred.train, measures = list(mlr::mae, mlr::mse))
   @
   The generalization error estimate is much higher on the training data.
-  
+
   \item[d)]
-  
+
   <<message=FALSE>>=
   # select different index vectors to subset the data randomly
   set.seed(321)
   train.ind = sort(sample(seq_len(n), 0.5*n))
   test.ind = setdiff(seq_len(n), train.ind)
-  
+
   # specify learner
   lrn = makeLearner("regr.rpart")
-  
+
   # train model to the training set
   mod = train(lrn, bh.task, subset = train.ind)
-  
+
   # predict on the test set
   pred = predict(mod, bh.task, subset = test.ind)
   pred
   pred.test = predict(mod, bh.task, subset = test.ind)
   performance(pred.test, measures = list(mlr::mae, mlr::mse))
   @
-  
-  Effect: We will predict different observations since the test set is different. The same observations get a slightly different prediction (e.g. observation with id 2).
-  The error estimates for the test dataset are also a bit different.
-  
+
+  Effect: We will predict different observations since the test set is different. The same observations get a slightly different prediction (e.g. observation with id 2). This affects the final error estimation.
+
   \item[e)]
   <<message=FALSE>>=
   rdesc = makeResampleDesc("CV", iters = 10)
   r = resample(lrn, bh.task, rdesc, measures = list(mlr::mae, mlr::mse))
   @
-  
-  \item[f)]
-  <<message=FALSE>>=
-  ## Tuning in inner resampling loop
-  ps = makeParamSet(makeDiscreteParam("k", values = 1:10))
-  ctrl = makeTuneControlGrid()
-  inner = makeResampleDesc("CV", iters = 10)
-  lrn = makeTuneWrapper("regr.kknn", resampling = inner, par.set = ps, control = ctrl, show.info = FALSE)
-  
-  ## Outer resampling loop
-  outer = makeResampleDesc("CV", iters = 5)
-  r = resample(lrn, bh.task, resampling = outer, extract = getTuneResult, show.info = FALSE)
-  r$measures.test
-  r$aggr
-  r$extract
-  @
+
+  % \item[f)]
+  % <<message=FALSE>>=
+  % ## Tuning in inner resampling loop
+  % ps = makeParamSet(makeDiscreteParam("k", values = 1:10))
+  % ctrl = makeTuneControlGrid()
+  % inner = makeResampleDesc("CV", iters = 10)
+  % lrn = makeTuneWrapper("regr.kknn", resampling = inner, par.set = ps, control = ctrl, show.info = FALSE)
+
+  % ## Outer resampling loop
+  % outer = makeResampleDesc("CV", iters = 5)
+  % r = resample(lrn, bh.task, resampling = outer, extract = getTuneResult, show.info = FALSE)
+  % r$measures.test
+  % r$aggr
+  % r$extract
+  % @
 \end{enumerate}
