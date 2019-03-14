@@ -9,13 +9,48 @@ with a randomizing rule, in which we draw the classes in one node from their est
 Derive an estimator for the misclassification rate in node $\mathcal{N}$.
 What do you (hopefully) recognize?
 
-The estimated probability, that an object of class $k$ is in node $\mathcal{N}$ is $p(k|\mathcal{N})$.
-The estimated proportion, that an object from class $k$ and is predicted as a different class is:
-$$p(k|\mathcal{N})\sum_{j \neq k} p(j|\mathcal{N}) = p(k|\mathcal{N}) (1 - p(k|\mathcal{N}))$$
+\textbf{Solution:} \\
 
-Summing over all classes we get an estimator for probability of misclassifying
-in node $\mathcal{N}$:
+\begin{itemize}
 
-$$\widehat{\text{err}}_\mathcal{N}= \sum_{k=1}^g p(k|\mathcal{N}) (1 - p(k|\mathcal{N})) = \sum_{k=1}^g p(k|\mathcal{N}) - \sum_{k=1}^g p(k|\mathcal{N})^2 = 1  - \sum_{k=1}^g p(k|\mathcal{N})^2 $$
+  \item
+    For the feature space $\mathcal{Y} = \{1, \dots, g\}$ we assume the distribution $P_Y$. The distribution $P_{\hat{Y}}$ of our classifier $\hat{Y} = h(x)$ is defined as the individual class frequencies in a node $\mathcal{N}$ (estimated probability, that an object of class $k$ is in node $\mathcal{N}$):
+    $$P(\hat{Y} = k\ |\ \mathcal{N}) = p(k|\mathcal{N})$$
+
+  \item
+    As estimate of the target distribution $P_Y$ we use the distribution of the classifier $h(x)$ which we assume to be independent of $P_{\hat{Y}}$:
+    $$P_Y \overset{\text{ind.}}{\sim} P_{\hat{Y}}$$
+
+  \item
+    The individual error rate of wrongly predicting a true label $k$ in node $\mathcal{N}$ ($\mathsf{err}_{k|\mathcal{N}}$) can be written as probability that $Y = k$ and $\hat{Y} \neq k$:
+    \begin{align*}
+    P(\mathsf{err}_{k|\mathcal{N}}) &= P(Y = k, \hat{Y} \neq k\ |\ \mathcal{N}) \\
+                      &= P(Y = k\ |\ \mathcal{N})P(\hat{Y} \neq k\ |\ \mathcal{N}) \\
+                      &= p(k|\mathcal{N})(1 - p(k|\mathcal{N}))
+    \end{align*}
+
+  \item
+    The error rate is the combination of all individual error rates:
+    $$\mathsf{err}_\mathcal{N} = \bigcup\limits_{k = 1}^g \mathsf{err}_{k|\mathcal{N}}$$
+
+  \item
+    Finally, we are interested in the probability of the error rate $\mathsf{err}_\mathcal{N}$ as estimator for the missclassification rate:
+    \begin{align*}
+    P(\mathsf{err}_\mathcal{N}) &= P\left(\bigcup\limits_{k = 1}^g \mathsf{err}_{k|\mathcal{N}}\right) \\
+                                &= \sum\limits_{k = 1}^g P\left(\mathsf{err}_{k|\mathcal{N}}\right) \\
+                                &= \sum\limits_{k = 1}^g p(k|\mathcal{N})(1 - p(k|\mathcal{N})) \\
+                                &= \sum\limits_{k = 1}^g p(k|\mathcal{N}) - \sum\limits_{k = 1}^g p(k|\mathcal{N})^2 \\
+                                &= 1 - \sum\limits_{k = 1}^g p(k|\mathcal{N})^2
+    \end{align*}
+\end{itemize}
+
+% The estimated probability, that an object of class $k$ is in node $\mathcal{N}$ is $p(k|\mathcal{N})$.
+% The estimated proportion, that an object from class $k$ and is predicted as a different class is:
+% $$p(k|\mathcal{N})\sum_{j \neq k} p(j|\mathcal{N}) = p(k|\mathcal{N}) (1 - p(k|\mathcal{N}))$$
+
+% Summing over all classes we get an estimator for probability of misclassifying
+% in node $\mathcal{N}$:
+
+% $$\widehat{\text{err}}_\mathcal{N}= \sum_{k=1}^g p(k|\mathcal{N}) (1 - p(k|\mathcal{N})) = \sum_{k=1}^g p(k|\mathcal{N}) - \sum_{k=1}^g p(k|\mathcal{N})^2 = 1  - \sum_{k=1}^g p(k|\mathcal{N})^2 $$
 
 This is exactly the Gini-Index that CART uses for splitting the tree.
