@@ -42,3 +42,20 @@ Approach us, if you think likewise and want help.
   Write an email to Bernd and Fabian (see *Team* page).
 - Are you a student taking the lecture - either at the LMU or online - and you spotted a typo, think we should rephrase something be or
   even would like to provide a new quiz question or coding example? Please consider providing a pull request. 
+    
+## mlrPlayground
+
+The [mlrPlayground](https://compstat-lmu.shinyapps.io/mlrPlayground/) is an interactive web application allowing the user to explore different kinds of machine learning datasets on predefined, but miscellaneous and customizable toy datasets in the domain of classification and regression. Information about the performance of each learner is given reactively in the form of prediction surfaces/lines, an high amount of different measures, a learning curve and an ROC plot.
+Additionally the hyperparameters of each learner can be changed to observe their impact on the learner behaviour.
+
+#### Select predefined (but tunable) tasks:
+<img src="https://i.imgur.com/BVxxNQx.gif" width="550">
+
+#### Select learner and its hyperparameters to view prediction surfaces:
+<img src="https://i.imgur.com/vR5UWyN.gif">
+
+#### Compare different learners:
+<img src="https://i.imgur.com/SzPSFle.gif">
+
+#### View learning curve and ROC plot:
+<img src="https://i.imgur.com/WGdOKeJ.gif">
