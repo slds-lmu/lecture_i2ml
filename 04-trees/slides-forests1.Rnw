@@ -31,13 +31,13 @@ library(smoof)
 
 Train on $B$ \textbf{bootstrap} samples of data $D$:
 \begin{itemize}
-  \item Draw $n$ observations with replacement 
+  \item Draw $n$ observations with replacement
   \item Fit the base learner on each of the $B$ bootstrap samples
 \end{itemize}
 
 \begin{center}
 \includegraphics[width=0.45\textwidth]{figure_man/bootstrapping.png}
-\end{center} 
+\end{center}
 
 
 
@@ -97,7 +97,7 @@ Train on $B$ \textbf{bootstrap} samples of data $D$:
 % \begin{vbframe}{Why does bagging work?}
 % \begin{itemize}
 %   \item Suppose we have a numerical target variable and are looking at quadratic loss.
-%   \item The training datasets are given by $\D$, and the base learner estimators derived from it are $f(x)$. $f(x)$ is a random variable whose realized value depends on the values drawn from $\D$. 
+%   \item The training datasets are given by $\D$, and the base learner estimators derived from it are $f(x)$. $f(x)$ is a random variable whose realized value depends on the values drawn from $\D$.
 %   \item The datasets are sampled independently from distribution $\P_{xy}$ (data generating process).
 %   \item The {\em theoretical} aggregated estimator is given by
 %     \begin{align*}
@@ -106,7 +106,7 @@ Train on $B$ \textbf{bootstrap} samples of data $D$:
 
 %   \framebreak
 
- 
+
 %  \item So: The more unstable or diverse $f(x)$ is, the more error reduction we can obtain by bagging.
 %  \item But the bagging estimator only approximates the theoretical $f_A$ (bootstrap), we therefore suffer from approximation error (bias) by using the empirical distribution function instead of the true data generating process and only performing $M$ bootstrap iterations instead of all possible bootstrap samples.
 % \item Bagging does not necessarily lead to an improved classifier -- (pathological) example:
@@ -115,7 +115,7 @@ Train on $B$ \textbf{bootstrap} samples of data $D$:
 % \item Consider random classifier $f$ with $\text{P}(\fx = 1) = 0.4$
 % (independent of $x$)
 % \item Expected misclassification rate for $f$ is 0.6
-% \item Expected misclassification rate for a majority-vote bagging estimator is 
+% \item Expected misclassification rate for a majority-vote bagging estimator is
 % $\P(z \leq \tfrac{M}{2}) \stackrel{M \to \infty}{\longrightarrow} 1$ for $z \sim B(M, p = 0.4)$.
 % \end{itemize}
 
@@ -161,7 +161,7 @@ Train on $B$ \textbf{bootstrap} samples of data $D$:
 
   \[ \rho \sigma^2 + \frac{1-\rho}{B} \sigma^2 = \left( \rho + (1 - \rho) \frac{1}{B} \right) \sigma^2 \]
   $\sigma^2$ is variance of a tree and $\rho$ the correlation between trees
-  
+
 \begin{itemize}
   \item If trees are highly correlated ($\rho \approx 1$), variance $\rightarrow \sigma^2$
   \item If trees are uncorrelated ($\rho \approx 0$), variance $\rightarrow \frac{\sigma^2}{B}$
@@ -172,7 +172,7 @@ Train on $B$ \textbf{bootstrap} samples of data $D$:
 # artificial graphic, numbers are fictive
 rho = seq(0, 1, by = 0.001)
 B = c(5, 50)
-sigma = 20 
+sigma = 20
 
 grid = expand.grid(rho = rho, B = B)
 
@@ -181,7 +181,7 @@ grid = grid[order(grid$B), ]
 grid$B = as.factor(grid$B)
 
 horizontal = data.frame(
-  B = as.factor(B), 
+  B = as.factor(B),
   intercept = sigma / B,
   intercept.label = sigma / B + c(0, 0.7))
 
@@ -193,10 +193,10 @@ p1 = ggplot(data = grid, aes(x = rho, y = var)) +
   ylab("Variance") +
   labs(colour = "Number of Trees") +
   annotate("text", x = 1.1, y = sigma, label = "sigma^2", parse = TRUE) +
-  geom_text(data = horizontal, aes(x = rep(1.08, 2), y = intercept.label, color = B, 
+  geom_text(data = horizontal, aes(x = rep(1.08, 2), y = intercept.label, color = B,
     label = paste0("sigma^2 / ", B)), parse = TRUE, show.legend = FALSE, hjust = 0) +
   coord_cartesian(xlim = c(0, 1), clip = "off") +
-  ylim(c(0, 20)) 
+  ylim(c(0, 20))
 
 p1
 @
@@ -256,7 +256,7 @@ plotLearnerPrediction("classif.randomForest", iris.task, cv = 0, ntree = 500)
 \end{vbframe}
 
 \begin{vbframe}{Out-of-Bag Error Estimate}
-With the RF it is possible to obtain unbiased estimates of generalization error directly 
+With the RF it is possible to obtain unbiased estimates of generalization error directly
 during training:
 
 <<echo=FALSE, fig.height=4.5, message=FALSE, warning=FALSE>>=
@@ -275,7 +275,7 @@ model = randomForest(type ~., data=spam, ntree=150, proximity=TRUE)
 data.frame(model$err.rate, iter = seq_len(nrow(model$err.rate))) %>%
   gather(key = "error.type", value = "error.measured", -iter) %>%
   ggplot(mapping = aes(x = iter, y = error.measured, color = error.type)) +
-  geom_line() + 
+  geom_line() +
   xlab("Number of Trees") +
   ylab("MCE") +
   labs(color = "")
@@ -301,7 +301,6 @@ data.frame(model$err.rate, iter = seq_len(nrow(model$err.rate))) %>%
 
 % \begin{figure}
 % <<rf-friedman-plot1, echo=FALSE, message=FALSE, warning=FALSE, fig.height=4.5>>=
-% set.seed(1)
 % lrn = makeLearner("regr.randomForest", predict.type = "response")
 % # remove this values from title
 % lrn$par.vals$se.boot = NULL
@@ -311,7 +310,7 @@ data.frame(model$err.rate, iter = seq_len(nrow(model$err.rate))) %>%
 % lrn2$par.vals$se.boot = NULL
 % lrn2$par.vals$ntree.for.se = NULL
 % task = convertMLBenchObjToTask("mlbench.friedman1", n = 500, sd = 0.1)
-% plotLearnerPrediction(lrn, task, cv = 0, ntree = 1) + 
+% plotLearnerPrediction(lrn, task, cv = 0, ntree = 1) +
 %   scale_f() + scale_c() +
 %   labs(caption = "M = 1")
 % @
