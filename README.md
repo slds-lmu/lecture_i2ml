@@ -41,4 +41,4 @@ Approach us, if you think likewise and want help.
 - Are you an ML expert and like the course, but have some feedback or consider extending it? 
   Write an email to Bernd and Fabian (see *Team* page).
 - Are you a student taking the lecture - either at the LMU or online - and you spotted a typo, think we should rephrase something be or
-  even would like to provide a new quiz question or coding example? Please consider providing a pull request. 
+  even would like to provide a new quiz question or coding example? Please consider providing a pull request. To do so, please check out the *devel* branch of the repo and add your fixes there. Writing an e-mail with suggested improvements is obviously very welcome as well!
