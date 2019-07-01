@@ -1,0 +1,74 @@
+% Introduction to Machine Learning
+% Day 3
+
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../style/preamble.Rnw")
+@
+
+% Load all R packages and set up knitr
+<<setup, child="../style/setup.Rnw", include = FALSE>>=
+@
+
+\lecturechapter{Code demo for splines}
+\lecture{intro to ML}
+
+\begin{vbframe}{Splines}
+
+\begin{itemize}
+\item One common idea in machine learning consists in transforming the features of interest.
+\item Here we will take a look on so-called splines.
+\item With splines we can model arbitrarily well smooth functional relationships.
+\item This means that we will represent the features as projections on a splines basis.
+\item We can treat this projected features like we did for the linear model and by using the emperical risk minimization we can get then an estimation for the regression coefficients, which determine the shape of the spline.
+\end{itemize}
+
+\framebreak
+
+\begin{itemize}
+\item One of the most common used spline basis is the so-called B-spline basis.
+\item To use splines firstly we have to fill our domain with knots $t_1,\dots,t_m$, which will serve as supporting points for the spline.
+\item Formally we can define its one-dimensional variant of order $n$ with the following recursive formula:
+\\ For $i \in \{1,\dots,m-1\}$
+$$ B_{i,1}(x) := \begin{cases} 1 & \text{if } t_i \leq x < t_{i+1} \\
+0 & \text{otherwise}
+\end{cases}.$$
+\\ And for $k \in \{1,\dots,n-1\}, i \in \{1,\dots,m-k-1\}$
+$$B_{i,k+1}(x) := \frac{x-t_i}{t_{i+k}-t_i}B_{i,k}(x) +
+\frac{t_{i+k+1}-x}{t_{i+k+1}-t_{i+1}}B_{i+1,k}(x)$$
+\end{itemize}
+
+\framebreak
+B-spline implementation:
+<<bspline, eval= TRUE, echo = TRUE, tidy=TRUE, tidy.opts=list(width.cutoff=58)>>=
+bbasis <- function(x, knots, i, k){
+  if(k==1){
+    return(ifelse((knots[i] <= x) & (x < knots[i+1]), 1, 0))
+  }else{
+    return ((x-knots[i])/(knots[i+k-1]-knots[i]) *
+            bbasis(x, knots, i, k-1) +
+            (knots[i+k]-x)/(knots[i+k]-knots[i+1]) *
+            bbasis(x, knots, i+1, k-1))
+  }
+}
+@
+
+\framebreak
+
+Suppose we divide the interval $[0,1]$ uniformely in four segments, then we can plot the basis funtions:
+
+<<eval= TRUE, echo = TRUE, tidy=TRUE, tidy.opts=list(width.cutoff=58)>>=
+knots = seq(0,1, length.out=4)
+x_len = 100
+x_data=seq(0,1, length.out=x_len)
+num_bfunc = 2
+basis_eval = data.frame(cbind(sapply(1:num_bfunc, function(y) sapply(x_data, function(x)     bbasis(x, knots, y, 2))),x_data))
+
+df = melt(basis_eval, id="x_data")
+
+ggplot(df, aes(x=x_data, , color=variable)) +
+  geom_line(aes( y=value))
+@
+
+\end{vbframe}
+\endlecture
