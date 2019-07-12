@@ -1,12 +1,11 @@
 SLOT1=code_demo_knn
 SLOT2=code_demo_limo
 SLOT3=code_demo_splines
-SLOT4=code_demo_4
-SLOT5=code_demo_3
+
 
 all_sources: sources all
 
-all: texclean $(SLOT1).pdf $(SLOT2).pdf $(SLOT3).pdf $(SLOT4).pdf $(SLOT5).pdf
+all: texclean $(SLOT1).pdf $(SLOT2).pdf $(SLOT3).pdf 
 
 $(SLOT1).pdf: $(SLOT1).Rnw
 	Rscript -e 'knitr::knit2pdf("$(SLOT1).Rnw")'
