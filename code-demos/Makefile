@@ -1,26 +1,19 @@
-SLOT1=code_demo_knn
-SLOT2=code_demo_limo
+SLOT1=code_demo_limo
+SLOT2=code_demo_knn
 SLOT3=code_demo_splines
-
 
 all_sources: sources all
 
-all: texclean $(SLOT1).pdf $(SLOT2).pdf $(SLOT3).pdf 
+all: texclean $(SLOT1).pdf $(SLOT2).pdf $(SLOT3).pdf
 
-$(SLOT1).pdf: $(SLOT1).Rnw
-	Rscript -e 'knitr::knit2pdf("$(SLOT1).Rnw")'
+$(SLOT1).pdf: $(SLOT1).Rmd
+	Rscript -e 'rmarkdown::render("$(SLOT1).Rmd", "pdf_document")'
 
-$(SLOT2).pdf: $(SLOT2).Rnw
-	Rscript -e 'knitr::knit2pdf("$(SLOT2).Rnw")'
+$(SLOT2).pdf: $(SLOT2).Rmd
+	Rscript -e 'rmarkdown::render("$(SLOT2).Rmd", "pdf_document")'
 
-$(SLOT3).pdf: $(SLOT3).Rnw
-	Rscript -e 'knitr::knit2pdf("$(SLOT3).Rnw")'
-
-$(SLOT4).pdf: $(SLOT4).Rnw
-	Rscript -e 'knitr::knit2pdf("$(SLOT4).Rnw")'
-
-$(SLOT5).pdf: $(SLOT5).Rnw
-	Rscript -e 'knitr::knit2pdf("$(SLOT5).Rnw")'
+$(SLOT3).pdf: $(SLOT3).Rmd
+	Rscript -e 'rmarkdown::render("$(SLOT3).Rmd", "pdf_document")'
 
 sources:
 	cd ../03-performance/rsrc/; Rscript holdout-biasvar.R  # create holdout-bias-var.png (not used) and holdout-biasvar.RData (used in intro-performance and resampling)

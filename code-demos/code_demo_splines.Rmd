@@ -1,0 +1,179 @@
+---
+params:
+    set_title: "Code demo for Splines"
+---
+
+```{r, child = "../style/preamble_code.Rmd", include = FALSE}
+```
+
+```{r, child = "../style/setup.Rmd", include = FALSE}
+```  
+
+
+
+# Splines
+
+## Basic idea  
+
+- One common idea in machine learning consists in transforming the features of interest.
+- Here we will take a look on so-called splines.
+- With splines we can model arbitrarily well smooth functional relationships.
+- This means that we will represent the features as projections on a splines basis.
+- We can treat this projected features *like we did for the linear model* and by using the empirical risk minimization we can get then an estimation for the regression coefficients, which determine the shape of the spline.
+
+## B-splines
+
+- One of the most common used spline basis is the so-called B-spline basis, which consists of locally defined polynomials.
+- To use splines we have to fill our domain with knots $t_0,\dots,t_{m+1}$, which will serve as supporting points for the spline.
+- For example we can use 5 equidistant knots with a piecewise polynomial degree
+$l = 1$:
+```{r, echo=FALSE}
+library(splines)
+library(reshape2) 
+ 
+bsPlot <- function(polyDeg = 1, numBFuns = 3, min, max) {
+  numData = 1000
+
+  x = seq(min, max, length.out = numData)
+
+  bbasis = bs(x, df=numBFuns, degree = polyDeg, intercept = T)
+
+  plotData = melt(data.frame(cbind(bbasis, x)), id = "x")
+
+  ggplot(plotData, aes(x = x, color = variable)) +
+    geom_line(aes(y = value),size=2) + xlim(min, max) +
+    ylab("y") + theme(legend.position = "none") + scale_color_brewer(palette ="Set3") + labs(title=paste("Piecewise polynomial degree:",as.character(polyDeg)))
+}
+
+ exampleXMin = -3
+ exampleXMax = 3
+ examplePolyDeg = 1
+ exampleNumBFun = 5
+ bsPlot(polyDeg = examplePolyDeg, numBFuns = exampleNumBFun, exampleXMin,
+  exampleXMax)
+```
+
+- For the number of basis function $K$ it holds that
+$$K = m+l+1$$.
+- This means from our machine learning perspective we are projecting the feature $x$ into a $(3+1+1=5)$-dimensional vector space in our little example, s.t. it holds e.g. for $x = 0.3$
+
+```{r, echo=FALSE}
+library(splines)
+library(reshape2)
+x = 0.3 
+  xs = seq(exampleXMin,exampleXMax, by=0.1)
+ bsPlot(polyDeg = examplePolyDeg, numBFuns = exampleNumBFun, exampleXMin,
+  exampleXMax) + geom_vline(xintercept = x, size=1.5,
+ linetype="dashed")
+  print(paste0("y = (",paste( (bs(x = xs, df=exampleNumBFun, degree = examplePolyDeg, intercept = T,
+  Boundary.knots = c(exampleXMin, exampleXMax))[which(xs >= x)[1],]),
+  collapse=", "),")."))
+```
+
+
+## Example
+Let's look at real data, where we want to model a functional relationship:
+```{r}
+library(mlbench)
+library(ggplot2)
+library(splines)
+
+data(BostonHousing2)
+
+(medvRoomsPlot = ggplot() +
+  geom_point(data=BostonHousing2,aes(x = rm, y = medv), alpha = 0.3) +
+  labs(   x = "Average number of rooms",
+       y = "Median value"))
+```
+
+Now let's say we want to use 5 piecewise polynomials of degree 2:
+```{r}
+
+polyDeg = 2
+numBFun = 5
+numData = 1000 # number of points we want to use for plotting
+
+rmMin = min(BostonHousing2$rm)
+rmMax = max(BostonHousing2$rm)
+
+rooms = seq(rmMin, rmMax, length.out = numData)
+
+bbasisPlot = bs(rooms, df= numBFun ,degree = polyDeg, intercept=TRUE)
+plotData = melt(data.frame(cbind(bbasisPlot, rooms)), id = "rooms")
+
+medvRoomsPlot + geom_line(data=plotData, aes(x=rooms, y = value, color=variable)) +  theme(legend.position = "none")
+```
+
+Train a linear model but for the transformed features:
+
+```{r}
+# since we want to use the same transformation, we have to specify the knots and piecewiese polynomial degree, we have used before
+bbasisData = data.frame(bs(x=BostonHousing2$rm,Boundary.knots = attr(bbasisPlot,"Boundary.knots"),
+  knots=attr(bbasisPlot,"knots"), degree = polyDeg, intercept=TRUE)
+  )
+bbasisData$medv = BostonHousing2$medv
+
+# estimate a linear model for transformed features and exclude the intercept term  as it has already been included in the b-splines basis functions
+lmBS = lm(medv ~ . -1, data = bbasisData)
+
+# use the solution of the linear model to scale the features
+for(i in 1:ncol(bbasisPlot)){ bbasisPlot[,i] = bbasisPlot[,i]*
+  lmBS$coefficients[i] }
+
+  plotData = melt(data.frame(cbind(bbasisPlot, rooms)), id = "rooms")
+
+  medvRoomsPlot + geom_line(data=plotData, aes(x=rooms, y = value, color=variable)) +  theme(legend.position = "none")
+
+```
+
+We can get our estimate for the functional relationship simply by summing the scaled features:
+
+```{r}
+functionEstimate = data.frame(x = rooms)
+
+functionEstimate$y = rowSums(bbasisPlot)
+
+    medvRoomsPlot + geom_line(data=functionEstimate, aes(x=rooms, y = y)) +  theme(legend.position = "none")
+```
+ Wrap these steps up in one plot function:
+```{r bspline}
+
+plotBSFit <- function(polyDeg, numBFuns) {
+  numData = 1000
+  bSpline = bs(BostonHousing2$rm,df = numBFuns,degree = polyDeg, intercept = TRUE
+  )
+  bSplineData =  data.frame(bSpline)
+  bSplineData$medv = BostonHousing2$medv
+  # estimate a linear model for transformed features (without intercept)
+  LmBS = lm("medv ~ . -1", data = bSplineData)
+
+  plotData = data.frame(x = seq(min(BostonHousing2$rm),max(BostonHousing2$rm), length.out = numData))
+  # scale and add up (i.e. use matrix product)
+  plotData$y = bs(plotData$x, knots = attr(bSpline,"knots"), degree = polyDeg,
+      Boundary.knots = attr(bSpline,"Boundary.knots"), intercept=TRUE
+  ) %*%
+    LmBS$coefficients
+  ggplot() +
+    geom_point(data=BostonHousing2,aes(x=rm, y = medv), alpha = 0.3) +
+    geom_line(data = plotData, aes(x = x, y = y), color="red") +
+    labs(title = paste(as.character(numBFuns), "basis function(s)"),
+         x = "Average number of rooms",
+         y = "Median value")
+}
+
+```
+
+Vary number of basis functions for piecewiese cubic splines:
+```{r}
+library(ggplot2)
+library(gridExtra)
+
+polyDeg = 3
+numBFuns = c(1, 5, 15, 50)
+ggplotList = lapply(numBFuns, function(x) plotBSFit(polyDeg,x))
+do.call(grid.arrange, ggplotList)
+```
+
+- We only computed a simple linear model, but instead of the original feature we used its transformed features.
+- We observe that the quality of the fit depends on the number of basis functions/knots that we choose.
+- For higher number of basis functions/knots a phenomenon called overfitting, where the model fits the observed data very well, but does not generalize well on unseen data, can be seen which will be discussed in chapter 3.

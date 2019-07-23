@@ -1,0 +1,256 @@
+---
+params:
+    set_title: "Code demo for Linear model"
+---
+
+```{r, child = "../style/preamble_code.Rmd", include = FALSE}
+```
+
+```{r, child = "../style/setup.Rmd", include = FALSE}
+```  
+
+# Linear model and loss minimization
+
+## Note
+
+This code demo covers additional material, which is intended for students interested in more in-depth knowledge.
+
+## Problem
+
+We can estimate the $\hat \beta$ coefficients by minimizing the empirical risk $$R_{emp}(f) = \frac{1}{n}\sum_{i=1}^n L(yI, f(xI | \beta))$$ of the model over $\beta$. With quadratic loss, this yields $$ R_{emp}(f) = \frac{1}{n}\sum_{i=1}^n (yI - xI^T \hat\beta)^2.$$
+This can be written in matrix notation as: $$R_{emp}(f) = \frac{1}{n}(X \beta - Y)^T (X\beta - Y) = \frac{1}{n}[\beta^T X^T X \beta - 2 \beta^TX^TY + Y^TY]$$
+and our optimization problem becomes:
+
+$$\hat \beta = \arg \min_{\beta} R_{emp}(f)$$
+
+## Solution
+
+- We can solve this kind of minimization problem using an iterative technique termed *Gradient Descent*
+- this is an extremely important technique that is applied - in many variants - to solve the *optimization* problem when finding a learner.
+- *Note*: An analytic solution exists for the quadratic loss, s.t. $$\hat \beta = (X^TX)^{-1}X^Ty.$$
+
+## Gradient Descent
+The Gradient Descent method follows this algorithm:
+
+1. Initialize $\beta_0$ randomly
+2. Calculate the Gradient of our loss function with respect to the current $\beta$:
+$$
+\frac{\partial R_{emp}(f)}{\partial \beta} = \frac{\partial}{\partial \beta} \frac{1}{n}[\beta^T X^T X \beta - 2 \beta^TX^TY + Y^TY] = \frac{2}{n}X^T[X\beta - Y]
+$$
+3. in each step, we update the estimate for $\beta$ using this formula:
+$$
+\beta_{t+1} = \beta_{t} - \lambda \frac{\partial R_{emp}(f)}{\partial \beta}
+$$
+The \emph{stepsize} parameter $\lambda$ controls the size of the updates per iteration, i.e., it is the \emph{learning rate}.
+\item We stop if the differences between successive updates of $\beta$ are below a certain threshold or once the maximum number of iterations is reached.
+
+## Idea of Gradient Descent
+
+Think of it as mountain from which we try to find the way to the valley. In each step, we check for the steepest descent and walk in that direction:
+
+![](figures_man/gradient_mountain.png)
+
+## Implementation
+
+```{r, echo=TRUE}
+# function that calculates the risk for squared error loss
+riskQuadratic = function(Y, X, beta) {
+  1 / nrow(X) * t(X %*% beta - Y) %*% (X %*% beta - Y)
+}
+# function that calculates the gradient of the risk for squared error loss
+gradientQuadratic = function(Y, X, beta) {
+  2/ nrow(X) * (t(X) %*% (X %*% beta - Y))
+}
+# function to perform gradient descent:
+gradientDescent <- function(Y, X, beta,
+                             risk = riskQuadratic,
+                             gradient = gradientQuadratic,
+                             lambda = 0.005,
+                             maxIterations = 2000,
+                             plot = TRUE) {
+  # initialize storage for visualizations below (with maxIter + 1 slots)
+  lossStorage = data.frame(iterations = seq_len(maxIterations) - 1,
+                            loss = NA)
+  betaStorage = matrix(0, ncol = ncol(X), nrow = maxIterations + 1)
+
+  lossStorage[1, "loss"] = risk(Y, X, beta)
+  betaStorage[1, ] = beta
+
+  #  loop over gradient updates
+  for (i in 1:maxIterations) {
+    beta = beta - lambda * gradient(Y = Y, X = X, beta = beta)
+    lossStorage[i + 1, "loss"] = risk(Y = Y, X = X, beta = beta)
+    betaStorage[i + 1, ] = t(beta)
+  }
+  if(plot) {
+    layout(t(1:(length(beta) + 1)))
+    for (i in 1:length(beta)) {
+      plot(betaStorage[, i], ylab = "coefficient value",
+           xlab = "iteration", type = "l", col = "blue",
+           main = bquote(beta[.(i - 1)]))
+    }
+    plot(lossStorage[, "loss"], ylab = "empirical risk",
+         xlab = "iteration", type = "l", col = "red",
+         main = expression(R[emp](beta)))
+  }
+  return(beta)
+}
+set.seed(1337)
+n = 100
+
+#### simulated data with 2 simple features
+# design matrix with intercept column:
+X = cbind(1,
+          runif(n, -3, 5),
+          runif(n, -2, 10))
+true_beta = c(2, 0.5, 0.5)
+Y = X %*% true_beta + rnorm(n)
+
+# initialize beta with 0
+betaInit = rep(0, ncol(X))
+
+(beta = gradientDescent(Y = Y, X = X, beta = betaInit))
+```
+
+## Stopping criterion
+By looking at the figures we see that the loss quickly starts to stagnate and is not improving, i.e. we are doing unnecessary computations. Because of this it makes sense to use a stopping criterion. One commonly used stopping criterion consists in checking if $\beta$ is not changing notably, e.g. that for an $\epsilon > 0$
+$$
+||\beta_{t+1}-\beta_{t}||_2 < \epsilon .
+$$
+
+```{r, echo=TRUE}
+gradientDescentThreshold <- function(Y, X, beta,
+                             risk = riskQuadratic,
+                             gradient = gradientQuadratic,
+                             lambda = 0.005,
+                             epsilon = 0.0001,
+                             maxIterations = 2000,
+                             plot = TRUE) {
+  # initialize storage for visualizations below (with maxIter + 1 slots)
+  lossStorage = data.frame(iterations = seq_len(maxIterations) - 1,
+                            loss = NA)
+  betaStorage = matrix(NA, ncol = ncol(X), nrow = maxIterations + 1)
+
+  lossStorage[1, "loss"] = risk(Y, X, beta)
+  betaStorage[1, ] = beta
+
+  #  loop over gradient updates
+  for (i in 1:maxIterations) {
+    beta = beta - lambda * gradient(Y = Y, X = X, beta = beta)
+    lossStorage[i + 1, "loss"] = risk(Y = Y, X = X, beta = beta)
+    betaStorage[i + 1, ] = t(beta)
+    # check if convergence has been reached
+    if(i > 1 && sqrt(sum((betaStorage[i, ] - betaStorage[i + 1, ])^2)) < epsilon){
+      break
+    }
+  }
+  if(plot) {
+    layout(t(1:(length(beta) + 1)))
+    for (i in 1:length(beta)) {
+      plot(betaStorage[, i], ylab = "coefficient value",
+           xlab = "iteration", type = "l", col = "blue",
+           main = bquote(beta[.(i - 1)]))
+    }
+    plot(lossStorage[, "loss"], ylab = "empirical risk",
+         xlab = "iteration", type = "l", col = "red",
+         main = expression(R[emp](beta)))
+  }
+  return(beta)
+}
+set.seed(1337)
+
+(beta = gradientDescentThreshold(Y = Y, X = X, beta = betaInit))
+```
+ 
+
+## Stepsize
+
+We notice that our implementation depends on the hyperparameter stepsize $\lambda$. Our implementation can be improved by doing an inner optimization
+ for the stepsize $\lambda$, s.t. we follow the direction of the gradient as long as optimal. For this task we use the *optim* function:
+
+```{r}
+gradientDescentOptStepsize <- function(Y, X, beta,
+                                       risk = riskQuadratic,
+                                       gradient = gradientQuadratic,
+                                       lambda = 0.005,
+                                       epsilon = 0.0001,
+                                       maxIterations = 2000,
+                                       plot = TRUE) {
+  # initialize storage for visualizations below (with maxIter + 1 slots)
+  lossStorage = data.frame(iterations = seq_len(maxIterations) - 1,
+                            loss = NA)
+  betaStorage = matrix(NA, ncol = ncol(X), nrow = maxIterations + 1)
+
+  lossStorage[1, "loss"] = risk(Y, X, beta)
+  betaStorage[1, ] = beta
+
+  #  loop over gradient updates
+  for (i in 1:maxIterations) {
+    grad = gradient(Y = Y, X = X, beta = beta)
+    lambdaOpt = optim(par = lambda,   # start value
+                  fn =function(x) risk(Y = Y, X = X, beta = beta-x*grad), # to min
+                  method = "Brent", # 1d minimization
+                  lower = 0,
+                  upper = 1)$par
+
+    beta = beta - lambdaOpt * grad
+    lossStorage[i + 1, "loss"] = risk(Y = Y, X = X, beta = beta)
+    betaStorage[i + 1, ] = t(beta)
+    # check if convergence has been reached
+    if(i > 1 && sqrt(sum((betaStorage[i, ] - betaStorage[i + 1, ])^2)) < epsilon){
+      break
+    }
+  }
+  if(plot) {
+    layout(t(1:(length(beta) + 1)))
+    for (i in 1:length(beta)) {
+      plot(betaStorage[, i], ylab = "coefficient value",
+           xlab = "iteration", type = "l", col = "blue",
+           main = bquote(beta[.(i - 1)]))
+    }
+    plot(lossStorage[, "loss"], ylab = "empirical risk",
+         xlab = "iteration", type = "l", col = "red",
+         main = expression(R[emp](beta)))
+  }
+  return(beta)
+}
+set.seed(1337)
+
+(beta = gradientDescentOptStepsize(Y = Y, X = X, beta = betaInit))
+
+```
+
+## L1 Loss
+
+There exists -as already mentioned- an analytic solution to the empirical risk minimization with quadratic risk. But note that the gradient descent method is not restricted to minimize risks where this is the case, such as it is for the absolute risk:
+
+```{r}
+riskAbsolute = function(Y, X, beta) {
+  mean(abs(X %*% beta - Y))
+}
+# function that calculates the gradient of the risk for absolute error loss
+gradientAbsolute = function(Y, X, beta) {
+  1/ nrow(X) *  (t(X) %*% sign(X %*% beta - Y))
+}
+
+set.seed(1337)
+
+(beta = gradientDescentOptStepsize(Y = Y, X = X, beta = betaInit,
+  risk = riskAbsolute,
+  gradient = gradientAbsolute))
+```
+
+*Note*: The gradient does not exist at the minimum, which is not often a problem, but this naive implementation can run into problems in corner cases.
+
+## Comparison with mlr's lm
+
+```{r, echo=TRUE}
+library(mlr)
+df = data.frame(cbind(Y, X[,-1 ]))
+colnames(df) = c("Y", paste0("X",seq(1, length(beta) -1 )))
+simTask = makeRegrTask(data = df, target = "Y")
+simLm = makeLearner("regr.lm")
+# ngetParamSet(simLm)
+simModel = train(learner = simLm, task = simTask)
+simModel$learner.model
+```
