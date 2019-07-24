@@ -5,238 +5,353 @@ params:
 ---
 
 ```{r, child = "../style/preamble_code_demos.Rmd", include = FALSE}
+
 ```
 
 ```{r, child = "../style/setup.Rmd", include = FALSE}
+
 ```  
 
 # Code demo for KNN
 
-## Recap the functioning of k-NN
+## Recap the functioning of $k$-NN
 
-- For each test data point calculate the distance to all train data points using any distance measures
-- Most common measures
-  - Metric features:
-      - Euclidean distance: $D_2(a, b) = \sqrt{(a_1 - b_1)^2 + \dots + (a_p - b_p)^2}$
-      - Manhattan distance: $D_1(a, b) = |a_1 - b_1| + \dots + |a_p - b_p|$
-      - Mahalanobis distance: $D_{Mahalanobis}(a, b) = \sqrt{(a_i - b_i)^T \Sigma^{-1}(a_i - b_i)}$
-  - Categorical features:
-      - Simple Matching Coefficient
-      - Jaccard Coefficient
-      - Rao's Coefficient
-- Select the k nearest neighbors for each test data point and use the most frequent neighborhood class as prediction
+- For each point to be predicted, calculate the distance or dissimilarity to all training data points using any distance measure
+- Most common distance measures:
+  - Metric feature vectors in $\mathbb R^p$:
+      - Euclidean distance: $d_2(a, b) = \sqrt{(a - b)^T(a - b)} = \sqrt{(a_1 - b_1)^2 + \dots + (a_p - b_p)^2}$
+      - Manhattan distance: $d_1(a, b) = |a_1 - b_1| + \dots + |a_p - b_p|$
+      - [Mahalanobis distance](https://en.wikipedia.org/wiki/Mahalanobis_distance): $d_{\text{Mahalanobis}}(a, b) = \sqrt{(a - b)^T S^{-1}(a - b)}$, where $S$ is the [covariance matrix](https://en.wikipedia.org/wiki/Covariance_matrix) of the features.
+  - Categorical feature vectors:
+      - [Simple Matching Coefficient](https://en.wikipedia.org/wiki/Simple_matching_coefficient): relative proportion of matching attributes
+      - [Jaccard Coefficient](https://en.wikipedia.org/wiki/Jaccard_index#Similarity_of_asymmetric_binary_attributes): Similar to above, but discards entries where neither $a$ nor $b$ have a value of 1.
+  - Mixed feature vectors:
+      - [Gower distance](https://stats.stackexchange.com/a/15313)
+- Select the $k$ nearest neighbors to the point and use the most frequently occurring class in this neighborhood as prediction
 
 ## Example
 
-We look at the iris data set which consists of only numeric features and a categorical output. In the lecture we learnt that for k-NN the representation is the training data. Let's say our training data is only 50 percent of our original data.
+We look at the `iris` data set which consists of only numeric features and a categorical output. In the lecture we learnt that for $k$-NN the *representation* is the training data. Let's say our training data is only 50 percent of our original data.
 
-```{r}
-data(iris) 
+```{r knn-import-iris}
+data(iris)
 
 set.seed(2)
 
-trainRelativeSize = 0.5
-trainIndices = sample(x = seq(1, nrow(iris), by = 1), size =
-                         ceiling(trainRelativeSize * nrow(iris)), replace = FALSE)
-irisTrain = iris[ trainIndices, ]
+trainRelativeSize <- 0.5
+trainIndices <- sample(
+  x = seq(1, nrow(iris), by = 1), size =
+    ceiling(trainRelativeSize * nrow(iris)), replace = FALSE
+)
+irisTrain <- iris[ trainIndices, ]
 str(iris)
 ```
 
 Imagine five data points:
 
-```{r}
-dataSnippet = iris[c(1, 2, 3, 55, 110), -4]
-levels(dataSnippet[, "Species"]) = c(levels(dataSnippet[, "Species"]), "???")
-dataSnippet[3, "Species"] = "???"
-print(dataSnippet) 
+```{r knn-subset-iris}
+dataSnippet <- iris[c(1, 2, 3, 55, 110), -4]
+levels(dataSnippet[, "Species"]) <- c(levels(dataSnippet[, "Species"]), "???")
+dataSnippet[3, "Species"] <- "???"
+print(dataSnippet)
 ```
 
-Which class would you select as prediction for the third observation?
+Which class would you select as prediction for the unknown observation?
 
-```{r, echo=TRUE}
+```{r knn-plot-iris, echo=TRUE}
 library(ggplot2)
-library(gridExtra) 
+library(gridExtra)
 
-proj1 = ggplot(dataSnippet, aes(x=Sepal.Length, y=Sepal.Width, color=Species, )) + geom_point(size=3)
-proj2 = ggplot(dataSnippet, aes(x=Sepal.Length, y=Petal.Length,color=Species)) + geom_point(size=3)
-proj3 = ggplot(dataSnippet, aes(x=Sepal.Width, y=Petal.Length,color=Species)) + geom_point(size=3)
-grid.arrange(proj1, proj2, proj3, ncol=2,nrow=2)
+proj1 <- ggplot(
+  dataSnippet, 
+  aes(
+    x = Sepal.Length,
+    y = Sepal.Width,
+    color = Species,
+  )) +
+  geom_point(size = 3)
+proj2 <- ggplot(
+  dataSnippet, 
+  aes(
+    x = Sepal.Length,
+    y = Petal.Length,
+    color = Species
+  )) +
+  geom_point(size = 3)
+proj3 <- ggplot(
+  dataSnippet, 
+  aes(
+    x = Sepal.Width,
+    y = Petal.Length,
+    color = Species
+  )) +
+  geom_point(size = 3)
+
+grid.arrange(proj1, proj2, proj3, ncol = 2, nrow = 2)
 ```
+
+---------------------------
 
 ## Implementation
 
+The function takes a vector of training data class labels, 
+the training data, the data on which we want to perform knn classification as well as the $k$ parameter, and the distance measure we want to use. 
+We also include the option to standardize the features. (Why is that important?)
 
-The function takes target Y, training data, the data on which we want to perform knn classification as well as the k parameter. We also include the option to normalize the features (Why is that important?).
+```{r knn-knn-def} 
+distance_euclidean <- function(a, b) {
+  sqrt(sum((a - b)^2))
+}
 
-```{r} 
-# function to classify data with knn 
-getKNN <- function(Y, trainData, toClassifyData, k, normalize = FALSE, scaleClassifyData=NULL){
-  numPreds = nrow(toClassifyData)
-  pred = rep(as.character(NA), numPreds)
-  trainLabels = trainData[, Y]
+# function to classify data with knn
+getKNN <- function(trainLabels, trainData, toClassifyData, k,
+                   distance = distance_euclidean, standardize = FALSE) {
+  # TODO: for a real implementation, we would need to add input checks here to
+  #       make our implicit assumptions about the inputs explicit:
+  #  trainLabels: vector with no NAs, same length as rows of trainData
+  #  trainData: data.frame or matrix without NAs, same columns as toClassifyData
+  #  toClassifyData: data.frame or matrix without NAs
+  #  k: single positive integer, at most number of rows of trainData
+  #  distance: a function taking two arguments (hard to check beyond that...)
 
-  # delete Y column from both datasets
-  trainData[, Y] = NULL
-  toClassifyData[, Y] = NULL
+  numPreds <- nrow(toClassifyData)
+  pred <- rep(as.character(NA), numPreds)
 
   # transform data to speedup computation
-  trainData = data.matrix(trainData)
-  toClassifyData = data.matrix(toClassifyData)
+  trainData <- data.matrix(trainData)
+  toClassifyData <- data.matrix(toClassifyData)
 
-  # normalize the feature vectors if desired
-  if (normalize == TRUE) {
-    trainData = scale(trainData)
-    if(is.null(scaleClassifyData))
-      toClassifyData = scale(toClassifyData)
-    else
-      toClassifyData = scale(toClassifyData,center=attr(scaleClassifyData,"scaled:center"),
-                               scale=attr(scaleClassifyData,"scaled:scale"))
+  # standardize the feature vectors if desired
+  if (standardize == TRUE) {
+    trainData <- scale(trainData)
+    toClassifyData <- scale(
+      toClassifyData,
+      center = attr(trainData, "scaled:center"),
+      scale = attr(trainData, "scaled:scale")
+    )
   }
-  # we could eliminate the following loop with another apply,
-  # better this way for explanation
-  for (i in 1:numPreds) {
-    # compute squared euclidean distances to all instances in training set
-    nearNeighbs = order(apply(trainData, 1, function(x)
-      sum((x - toClassifyData[i, ])^2)))[1:k]
-    # compute frequencies of classes
-    classFrequency = table(trainLabels[nearNeighbs])
-    mostFrequentClasses =
+  for (i in seq_len(numPreds)) {
+    # compute distance to all training data points
+    distanceToTrain <- apply(
+      trainData, 
+      MARGIN = 1,
+      FUN = function(x) distance(x, toClassifyData[i, ])
+    )
+    # extract row indices of k nearest ones
+    nearestNeighbors <- order(distanceToTrain)[1:k]
+    # compute frequencies of classes in neighborhood
+    classFrequency <- table(trainLabels[nearestNeighbors])
+    mostFrequentClasses <-
       names(classFrequency)[classFrequency == max(classFrequency)]
-    # tie breaking
-    pred[i] = sample(mostFrequentClasses, 1)
+    # random tie breaking if more than 1 class has maximal frequency
+    pred[i] <- sample(mostFrequentClasses, 1)
   }
 
-  # return list of values
-  return(list(prediction = pred, levels=levels(trainLabels)))
+  list(prediction = pred, levels = levels(trainLabels))
 }
 ```
 Let's check how well the training data is classified with our implementation for $k = 5$:
-```{r}
-Y = "Species"
-toCheckResult = getKNN(Y,
-                       irisTrain,
-                       irisTrain,
-                       k=4, normalize=FALSE)
-correct = (toCheckResult$prediction == irisTrain[,Y])
+```{r knn-run}
+toCheckResult <- getKNN(
+  trainLabels = irisTrain$Species,
+  trainData = irisTrain[, 1:4],
+  toClassifyData = irisTrain[, 1:4],
+  k = 5, standardize = FALSE
+)
+table(actual = irisTrain$Species, predicted = toCheckResult$prediction)
+
+correct <- (irisTrain$Species == toCheckResult$prediction)
 print(paste(
-  as.character(100*round(sum(correct)/nrow(irisTrain),5)),
-    "% correctly classified"))
+  100 * round(mean(correct), 4),
+  "% correctly classified"
+))
 ```
 
-To get a better understanding how knn works we can write a simple plot function for knn with 2 features, where we divide the domain into a two dimensional grid and classify all midpoints of the grid with our method.
-```{r}  
-# function for knn with two features and checking how well the data is classified
-plot2DKNN <- function (lengthX1 = 5,
-                        lengthX2=5,
-                        trainData,
-                        toCheckData,
-                        X1, X2, Y,
-                        k,
-                        normalize = FALSE){
-  dataX1 = seq(min(toCheckData[,X1]),
-               max(toCheckData[,X1]), length.out = lengthX1)
-  dataX2 = seq(min(toCheckData[,X2]),
-               max(toCheckData[,X2]), length.out = lengthX2)
+Since the model above is based on a $p = 4$ dimensional feature vector, it's hard to visualize what $k$-NN actually does. 
+
+To get a better understanding how $k$-NN works, at least for just two features, we can write a simple plot function, where we divide the two dimensional feature space into a grid and color all grid cells according to the class that $k$-NN would assign to their midpoint based on a given training data set. Data points that are misclassified are shown in white, the others in gray.
+```{r knn-plot2dknn-def}  
+# function for simple k-NN with two features to visualize class boundaries
+# X1 and X2 are the names of the two features to use. 
+plot2DKNN <- function(trainLabels, trainData, k, X1, X2,
+                      distance = distance_euclidean, standardize = FALSE,
+                      # by default, we "predict" the class of the training data:_
+                      toClassifyLabels = trainLabels,
+                      toClassifyData = trainData,
+                      lengthX1 = 100, lengthX2 = 100) {
+  gridX1 <- seq(
+    min(toClassifyData[, X1]),
+    max(toClassifyData[, X1]),
+    length.out = lengthX1
+  )
+  gridX2 <- seq(
+    min(toClassifyData[, X2]),
+    max(toClassifyData[, X2]),
+    length.out = lengthX2
+  )
 
   # compute grid coordinates with cartesian product
-  gridData = expand.grid(dataX1, dataX2)
-  names(gridData) = c(X1, X2)
-
-  # scale grid data like toCheckData in case of normalization
-  scaleToCheck = if(normalize) scale(toCheckData[,c(X1,X2)]) else NULL
+  gridData <- expand.grid(gridX1, gridX2)
+  names(gridData) <- c(X1, X2)
   
-  gridResult = getKNN(Y, trainData[,c(X1,X2,Y)], gridData, k, normalize, scaleToCheck)
-  gridData$prediction = gridResult$prediction
- 
-  toCheckResult = getKNN(Y,
-                         trainData[,c(X1,X2,Y)],
-                         toCheckData[,c(X1,X2,Y)],
-                         k, normalize)
-  toCheckData$correct = (toCheckResult$prediction == toCheckData[,Y])
+  # assign grid cells to classes based on k-NN rule:
+  gridResult <- getKNN(
+    trainLabels = trainLabels,
+    trainData = trainData[, c(X1, X2)],
+    toClassifyData = gridData,
+    k = k, distance = distance, standardize = standardize
+  )
+  gridData$prediction <- gridResult$prediction
+  
+  toCheckResult <- getKNN(
+    trainLabels = trainLabels,
+    trainData = trainData[, c(X1, X2)],
+    toClassifyData = toClassifyData[, c(X1, X2)],
+    k = k, distance = distance, standardize = standardize
+  )
+  toClassifyData$class <- toClassifyLabels
+  toClassifyData$correct <- (toCheckResult$prediction == toClassifyLabels)
+
 
   ggplot() +
-    geom_raster(data=gridData, aes_string(x=X1, y=X2,fill="prediction")) +
-    geom_point(data=toCheckData,aes_string(x=X1, y=X2, shape=Y, color="correct")) +
+    geom_raster(
+      data = gridData, 
+      aes_string(x = X1, y = X2, fill = "prediction"), 
+      alpha = .8
+    ) +
+    geom_point(
+      data = toClassifyData, 
+      aes_string(x = X1, y = X2, shape = "class", color = "correct"),
+      alpha = .8
+    ) +
     scale_color_manual(
-      values = c("TRUE" = "white", "FALSE" = "gray70"), guide = FALSE
-    ) + 
-    labs(fill = "Species", shape= "Species",
-    title= paste0("K = ",as.character(k),": ",
-      as.character(100*round(sum(toCheckData$correct)/nrow(toCheckData),5)),
-        "% correctly classified"))
+      values = c("TRUE" = "darkgray", "FALSE" = "white"), 
+      guide = FALSE
+    ) +
+    labs(
+      fill = "Class", shape = "Class",
+      title = paste0(
+        "k = ", as.character(k), ": ",
+        100 * round(mean(toClassifyData$correct), 4),
+        "% correctly classified"
+      )
+    )
 }
 ```
 
 Let's plot the classification we did before, but now with only two features:
 
-```{r, fig.height=4.5} 
-gridSpacing = 100 
-plot2DKNN(lengthX1 = gridSpacing, lengthX2=gridSpacing, trainData=irisTrain,
-                      toCheckData = irisTrain,
-                      X1="Petal.Width", X2="Sepal.Length", Y="Species", k=3, normalize = FALSE)
+```{r knn-plot2dknn-1} 
+plot2DKNN(
+  trainLabels = irisTrain$Species,
+  trainData = irisTrain[, -5],
+  k = 3,
+  X1 = "Petal.Width", X2 = "Sepal.Length"
+)
 ```
 
-Run and test it for different k's:
-```{r}   
-kValues = c(1, 5, 15, 43) 
-ggplotList = lapply(kValues, function(x) plot2DKNN(lengthX1 = gridSpacing, lengthX2=gridSpacing, trainData=irisTrain,
-                          toCheckData = irisTrain,
-                          X1="Petal.Width", X2="Sepal.Length", Y="Species", k=x, normalize = FALSE)) 
+Visualize results for different $k$:
+```{r knn-plot2dknn-2}   
+kValues <- c(1, 5, 15, 43)
+ggplotList <- lapply(
+  kValues,
+  function(k) {
+    plot2DKNN(
+      trainLabels = irisTrain$Species,
+      trainData = irisTrain[, -5],
+      k = k,
+      X1 = "Petal.Width", X2 = "Sepal.Length"
+    )
+  }
+)
 do.call(grid.arrange, ggplotList)
 ```
-For $k=1$ we get the optimal classification rate - as we would expect since we classified the data we used for training and there are no observations with identical features, but different labels in our training data set.
-So why should we use a $k \neq 1$? Let's look how we perform when we use data from the iris data set, which was not used for training:
-```{r}    
-irisToCheck = iris[ -trainIndices, ]  
-ggplotList = lapply(kValues, function(x) plot2DKNN(lengthX1 = gridSpacing, lengthX2=gridSpacing, trainData=irisTrain,
-                          toCheckData = irisToCheck,
-                          X1="Petal.Width", X2="Sepal.Length", Y="Species", k=x, normalize = FALSE))
+For $k=1$ we only get a single error (see center of the plane) since there are only two observations with identical features, but different labels, in our training data set (and that case is the only way we could ever make an error for $k = 1$).
+
+So why should we use a $k \neq 1$?
+
+Let's look how we perform when we apply our $k$-NN classification rules to the entries in the `iris` data set which were not used for training:
+```{r knn-plot2dknn-3}    
+# new, previously unseen data to classify:
+irisToCheck <- iris[-trainIndices, ]
+kValues <- c(1, 5, 15, 43)
+ggplotList <- lapply(
+  kValues,
+  function(k) {
+    plot2DKNN(
+      trainLabels = irisTrain$Species,
+      trainData = irisTrain[, -5],
+      k = k,
+      toClassifyLabels = irisToCheck$Species,
+      toClassifyData = irisToCheck[, -5],
+      X1 = "Petal.Width", 
+      X2 = "Sepal.Length"
+    )
+  }
+)
 do.call(grid.arrange, ggplotList)
 ```
-Now we observe that on data we didn't use as training data the optimal value of $k$ seems to be higher than 1.
- The phenomenon we encounter here is called
- overfitting and will be discussed thoroughly
- in the following chapters. Also we will discuss methods to find an optimal k.
+Now we observe that, on data we didn't use as training data, the value of $k$ for which we get the best classification accuracy seems to be higher than 1.
 
-## Normalization
+Models very often perform much better on the training data than on other data sets, this
+is called **overfitting** and will be discussed in details in the chapters on performance evaluation and tuning. 
 
-We included the option to normalize features according to the rule for all $i \in \{1,\dots,n\}:$
+## Standardization
+
+We included the option to standardize features by subtracting their mean and dividing by their standard deviation so that the value of the $i$-th value of the $j$-th feature is:
 
 $$ 
-x_{i,\text{normalized}} = \frac{x_i - \overline{x}}{\sqrt{\frac{1}{n-1}\sum^n_{i=1}(x_{i} - \overline{x})^2}}.
+x_{ij,\text{standardized}} = \frac{x_{ij} - \overline{x}_j}{\sqrt{\frac{1}{n-1}\sum^n_{i=1}(x_{ij} - \overline{x}_j)^2}}.
 $$
 
-- This makes sense, if features are on totally different scales (e.g. centimeter vs. meter). In such a case we would compare apples with oranges and the distances would be weighted unequally.
-- Does it improve performance with our data?
+This makes sense if features are on totally different scales (e.g. millimeter vs. kilometer) or even in completely different units (e.g. kilogram vs Euro). In such cases we would compare apples with oranges and the distances would be weighted unequally. After standardization, all features are unitless and the numbers simply represent how many standard deviations an observation of a feature is above or below its mean. (Can you figure out under which conditions the Mahalaobis distance and the Euclidean distance of the standardized features are identical?)
 
-```{r}  
-ggplotList = lapply(kValues, function(x) plot2DKNN(lengthX1 = gridSpacing, lengthX2=gridSpacing, trainData=irisTrain,
-                          toCheckData = irisToCheck,
-                          X1="Petal.Width", X2="Sepal.Length", Y="Species", k=x, normalize = TRUE))
+Does standardization improve performance for the `iris` data?
+
+```{r knn-plot2dknn-4}  
+kValues <- c(1, 5, 15, 43)
+ggplotList <- lapply(
+  kValues,
+  function(k) {
+    plot2DKNN(
+      trainLabels = irisTrain$Species,
+      trainData = irisTrain[, -5],
+      k = k,
+      ##
+      standardize = TRUE,
+      ##
+      toClassifyLabels = irisToCheck$Species,
+      toClassifyData = irisToCheck[, -5],
+      X1 = "Petal.Width", 
+      X2 = "Sepal.Length"
+    )
+  }
+)
 do.call(grid.arrange, ggplotList)
 ```
-### mlr implementation
 
-The mlr package offers a unified interface to many different machine learning algorithms making complicated implementations as above unnecessary. Check the [tutorial](https://mlr-org.github.io/mlr-tutorial/devel/html/learner/index.html#modifying-a-learner) and the [list of integrated learners](https://mlr-org.github.io/mlr-tutorial/release/html/integrated_learners/). It uses a simple syntax, as used below:
+### `mlr` implementation
 
-```{r}
+The `mlr` package offers a unified interface to many different machine learning algorithms making complicated, inefficient and error-prone implementations as above unnecessary.  
+Check the [tutorial](https://mlr-org.github.io/mlr-tutorial/devel/html/learner/index.html#modifying-a-learner) and the [list of integrated learners](https://mlr-org.github.io/mlr-tutorial/release/html/integrated_learners/). It uses a simple syntax, as used below:
+
+```{r knn-mlr-1}
 library(mlr)
 # define task
-irisTask = makeClassifTask(data = irisTrain, target = "Species")
+irisTask <- makeClassifTask(data = irisTrain, target = "Species")
 # define learner and check possible models on mlr homepage
-irisLearner = makeLearner("classif.kknn", k = 5)
+irisLearner <- makeLearner("classif.kknn", k = 5)
 # check available parameter settings
 getParamSet(irisLearner)
 ```
 
-```{r}
+```{r knn-mlr-2}
 # train the model
-irisModel = train(learner = irisLearner, task = irisTask)
+irisModel <- train(learner = irisLearner, task = irisTask)
 # predict on test data
-irisPred = predict(irisModel, newdata = irisToCheck[, -5])
-# check confusion matrix
-print(table(irisPred$data$response, irisToCheck$Species))
+irisPred <- predict(irisModel, newdata = irisToCheck[, -5])
+# check "confusion" matrix
+print(table(actual = irisToCheck$Species, predicted = irisPred$data$response))
 
-(round(length(which(irisPred$data$response == irisToCheck$Species)) /
-  length(irisPred$data$response), 5))
+round(mean(irisPred$data$response == irisToCheck$Species), 5)
 ```
