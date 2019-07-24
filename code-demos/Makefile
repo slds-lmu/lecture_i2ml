@@ -15,9 +15,6 @@ $(SLOT2).pdf: $(SLOT2).Rmd
 $(SLOT3).pdf: $(SLOT3).Rmd
 	Rscript -e 'rmarkdown::render("$(SLOT3).Rmd", "pdf_document")'
 
-sources:
-	cd ../03-performance/rsrc/; Rscript holdout-biasvar.R  # create holdout-bias-var.png (not used) and holdout-biasvar.RData (used in intro-performance and resampling)
-
 texclean:
 	rm -rf *.out
 	rm -rf *.dvi
