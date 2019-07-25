@@ -1,12 +1,15 @@
 ---
+output: pdf_document
 params:
-    set_title: "Code demo for Linear model"
+    set_title: "Code demo for Linear model & gradient descent"
 ---
 
 ```{r, child = "../style/preamble_code_demos.Rmd", include = FALSE}
+
 ```
 
 ```{r, child = "../style/setup.Rmd", include = FALSE}
+
 ```  
 
 # Linear model and loss minimization
@@ -17,207 +20,241 @@ This code demo covers additional material, which is intended for students intere
 
 ## Problem
 
-We can estimate the $\hat \beta$ coefficients by minimizing the empirical risk $$R_{emp}(f) = \frac{1}{n}\sum_{i=1}^n L(yI, f(xI | \beta))$$ of the model over $\beta$. With quadratic loss, this yields $$ R_{emp}(f) = \frac{1}{n}\sum_{i=1}^n (yI - xI^T \hat\beta)^2.$$
-This can be written in matrix notation as: $$R_{emp}(f) = \frac{1}{n}(X \beta - Y)^T (X\beta - Y) = \frac{1}{n}[\beta^T X^T X \beta - 2 \beta^TX^TY + Y^TY]$$
+We can estimate the $\hat \theta$ coefficients by minimizing the empirical risk $$R_{emp}(f) = \frac{1}{n}\sum_{i=1}^n L(y^{(i)}, f(x^{(i)} | \theta))$$ of the model over $\theta$. With quadratic loss, this yields $$ R_{emp}(f) = \frac{1}{n}\sum_{i=1}^n (y^{(i)} - (x^{(i)})^T \hat\theta)^2.$$
+This can be written in matrix notation as: $$R_{emp}(f) = \frac{1}{n}(X \theta - y)^T (X\theta - y) = \frac{1}{n}[\theta^T X^T X \theta - 2 \theta^TX^Ty + y^Ty]$$
 and our optimization problem becomes:
 
-$$\hat \beta = \arg \min_{\beta} R_{emp}(f)$$
+$$\hat \theta = \arg \min_{\theta} R_{emp}(f)$$
 
 ## Solution
 
 - We can solve this kind of minimization problem using an iterative technique termed *Gradient Descent*
 - this is an extremely important technique that is applied - in many variants - to solve the *optimization* problem when finding a learner.
-- *Note*: An analytic solution exists for the quadratic loss, s.t. $$\hat \beta = (X^TX)^{-1}X^Ty.$$
+- *Note*: An analytic solution exists for the quadratic loss, s.t. $$\hat \theta = (X^TX)^{-1}X^Ty.$$
 
 ## Gradient Descent
 The Gradient Descent method follows this algorithm:
 
-1. Initialize $\beta_0$ randomly
-2. Calculate the Gradient of our loss function with respect to the current $\beta$:
+0. Initialize $\theta^{[0]}$ (randomly) and calculate the gradient of the empirical risk with respect to $\theta$, for example for the squared error loss:
 $$
-\frac{\partial R_{emp}(f)}{\partial \beta} = \frac{\partial}{\partial \beta} \frac{1}{n}[\beta^T X^T X \beta - 2 \beta^TX^TY + Y^TY] = \frac{2}{n}X^T[X\beta - Y]
+\frac{\partial R_{emp}(f)}{\partial \theta} = \frac{\partial}{\partial \theta} \left(\frac{1}{n}[\theta^T X^T X \theta - 2 \theta^TX^Ty + y^Ty]\right) = \frac{2}{n}X^T[X\theta - y]
 $$
-3. in each step, we update the estimate for $\beta$ using this formula:
+
+Now iterate these two steps: 
+
+1. Evaluate the gradient at the current value of the parameter vector $\theta^{[t]}$:
 $$
-\beta_{t+1} = \beta_{t} - \lambda \frac{\partial R_{emp}(f)}{\partial \beta}
+\frac{\partial R_{emp}(f)}{\partial \theta}\bigg|_{\theta = \theta^{[t]}} = \frac{2}{n}X^T[X\theta^{[t]} - y]
 $$
-The \emph{stepsize} parameter $\lambda$ controls the size of the updates per iteration, i.e., it is the \emph{learning rate}.
-\item We stop if the differences between successive updates of $\beta$ are below a certain threshold or once the maximum number of iterations is reached.
+2. update the estimate for $\theta$ using this formula:
+$$
+\theta^{[t+1]} = \theta^{[t]} - \lambda \frac{\partial R_{emp}(f)}{\partial \theta}\bigg|_{\theta = \theta^{[t]}}
+$$
+- The \emph{stepsize} or \emph{learning rate} parameter $\lambda$ controls the size of the updates per iteration $t$.
+- We stop if the differences between successive updates of $\theta$ are below a certain threshold or once a maximum number of iterations is reached.
+- Many variants of gradient descent exist that either 
+    - develop clever ways on how to choose good stepsizes (maybe even dependent on $t$),
+    - and/or how to compute (approximations to) the gradient effectively,
+    - and/or even adapt the direction of the update itself by taking into account, for example, the previously used update directions or the second derivatives of the empirical risk (i.e., the curvature of the risk surface).... 
 
 ## Idea of Gradient Descent
 
-Think of it as mountain from which we try to find the way to the valley. In each step, we check for the steepest descent and walk in that direction:
+Think of the function to minimize as a mountain from which we try to find the way to the valley. In each step, we check for the direction of steepest descent (i.e., the negative gradient [^1])
+and move in that direction:
 
 ![](figures_man/gradient_mountain.png)
+
+[^1]: if that doesn't mean anything to you or seems mysterious at all, please do read these [additional explanations](https://eli.thegreenplace.net/2016/understanding-gradient-descent/)
 
 ## Implementation
 
 ```{r, echo=TRUE}
 # function that calculates the risk for squared error loss
-riskQuadratic = function(Y, X, beta) {
-  1 / nrow(X) * t(X %*% beta - Y) %*% (X %*% beta - Y)
+riskQuadratic <- function(Y, X, theta) {
+  1 / nrow(X) * t(X %*% theta - Y) %*% (X %*% theta - Y)
 }
 # function that calculates the gradient of the risk for squared error loss
-gradientQuadratic = function(Y, X, beta) {
-  2/ nrow(X) * (t(X) %*% (X %*% beta - Y))
+gradientQuadratic <- function(Y, X, theta) {
+  2 / nrow(X) * (t(X) %*% (X %*% theta - Y))
 }
 # function to perform gradient descent:
-gradientDescent <- function(Y, X, beta,
-                             risk = riskQuadratic,
-                             gradient = gradientQuadratic,
-                             lambda = 0.005,
-                             maxIterations = 2000,
-                             plot = TRUE) {
-  # initialize storage for visualizations below (with maxIter + 1 slots)
-  lossStorage = data.frame(iterations = seq_len(maxIterations) - 1,
-                            loss = NA)
-  betaStorage = matrix(0, ncol = ncol(X), nrow = maxIterations + 1)
+gradientDescent <- function(Y, X, theta,
+                            risk = riskQuadratic,
+                            gradient = gradientQuadratic,
+                            lambda = 0.005,
+                            maxiterations = 2000,
+                            plot = TRUE) {
+  # initialize storage for visualizations below (with maxiter + 1 slots)
+  lossStorage <- data.frame(
+    iterations = seq_len(maxiterations) - 1,
+    loss = NA
+  )
+  thetaStorage <- matrix(0, ncol = ncol(X), nrow = maxiterations + 1)
 
-  lossStorage[1, "loss"] = risk(Y, X, beta)
-  betaStorage[1, ] = beta
+  lossStorage[1, "loss"] <- risk(Y, X, theta)
+  thetaStorage[1, ] <- theta
 
   #  loop over gradient updates
-  for (i in 1:maxIterations) {
-    beta = beta - lambda * gradient(Y = Y, X = X, beta = beta)
-    lossStorage[i + 1, "loss"] = risk(Y = Y, X = X, beta = beta)
-    betaStorage[i + 1, ] = t(beta)
+  for (i in 1:maxiterations) {
+    theta <- theta - lambda * gradient(Y = Y, X = X, theta = theta)
+    lossStorage[i + 1, "loss"] <- risk(Y = Y, X = X, theta = theta)
+    thetaStorage[i + 1, ] <- t(theta)
   }
-  if(plot) {
-    layout(t(1:(length(beta) + 1)))
-    for (i in 1:length(beta)) {
-      plot(betaStorage[, i], ylab = "coefficient value",
-           xlab = "iteration", type = "l", col = "blue",
-           main = bquote(beta[.(i - 1)]))
+  if (plot) {
+    layout(t(1:(length(theta) + 1)))
+    for (i in 1:length(theta)) {
+      plot(thetaStorage[, i],
+        ylab = "coefficient value",
+        xlab = "iteration", type = "l", col = "blue",
+        main = bquote(theta[.(i - 1)])
+      )
     }
-    plot(lossStorage[, "loss"], ylab = "empirical risk",
-         xlab = "iteration", type = "l", col = "red",
-         main = expression(R[emp](beta)))
+    plot(lossStorage[, "loss"],
+      ylab = "empirical risk",
+      xlab = "iteration", type = "l", col = "red",
+      main = expression(R[emp](theta))
+    )
   }
-  return(beta)
+  list(theta = theta, risk = risk(Y, X, theta))
 }
 set.seed(1337)
-n = 100
+n <- 100
 
 #### simulated data with 2 simple features
 # design matrix with intercept column:
-X = cbind(1,
-          runif(n, -3, 5),
-          runif(n, -2, 10))
-true_beta = c(2, 0.5, 0.5)
-Y = X %*% true_beta + rnorm(n)
+X <- cbind(
+  1,
+  runif(n, -3, 5),
+  runif(n, -2, 10)
+)
+true_theta <- c(2, 0.5, 0.5)
+Y <- X %*% true_theta + rnorm(n)
 
-# initialize beta with 0
-betaInit = rep(0, ncol(X))
+# initialize theta with 0
+thetaInit <- rep(0, ncol(X))
 
-(beta = gradientDescent(Y = Y, X = X, beta = betaInit))
+gradientDescent(Y = Y, X = X, theta = thetaInit)
 ```
 
 ## Stopping criterion
-By looking at the figures we see that the loss quickly starts to stagnate and is not improving, i.e. we are doing unnecessary computations. Because of this it makes sense to use a stopping criterion. One commonly used stopping criterion consists in checking if $\beta$ is not changing notably, e.g. that for an $\epsilon > 0$
+
+By looking at the figures we see that the empirical risk quickly starts to stagnate and is not improving much more, i.e., we are doing unnecessary computations. Because of this it makes sense to use a stopping criterion. One commonly used stopping criterion consists in checking if $\theta$ is not changing notably, e.g. that for an $\epsilon > 0$
 $$
-||\beta_{t+1}-\beta_{t}||_2 < \epsilon .
+||\theta^{[t+1]}-\theta^{[t]}||_2 < \epsilon .
 $$
 
 ```{r, echo=TRUE}
-gradientDescentThreshold <- function(Y, X, beta,
-                             risk = riskQuadratic,
-                             gradient = gradientQuadratic,
-                             lambda = 0.005,
-                             epsilon = 0.0001,
-                             maxIterations = 2000,
-                             plot = TRUE) {
-  # initialize storage for visualizations below (with maxIter + 1 slots)
-  lossStorage = data.frame(iterations = seq_len(maxIterations) - 1,
-                            loss = NA)
-  betaStorage = matrix(NA, ncol = ncol(X), nrow = maxIterations + 1)
+gradientDescentThreshold <- function(Y, X, theta,
+                                     risk = riskQuadratic,
+                                     gradient = gradientQuadratic,
+                                     lambda = 0.005,
+                                     epsilon = 0.0001,
+                                     maxiterations = 2000,
+                                     plot = TRUE) {
+  # initialize storage for visualizations below (with maxiter + 1 slots)
+  lossStorage <- data.frame(
+    iterations = seq_len(maxiterations) - 1,
+    loss = NA
+  )
+  thetaStorage <- matrix(NA, ncol = ncol(X), nrow = maxiterations + 1)
 
-  lossStorage[1, "loss"] = risk(Y, X, beta)
-  betaStorage[1, ] = beta
+  lossStorage[1, "loss"] <- risk(Y, X, theta)
+  thetaStorage[1, ] <- theta
 
   #  loop over gradient updates
-  for (i in 1:maxIterations) {
-    beta = beta - lambda * gradient(Y = Y, X = X, beta = beta)
-    lossStorage[i + 1, "loss"] = risk(Y = Y, X = X, beta = beta)
-    betaStorage[i + 1, ] = t(beta)
+  for (i in 1:maxiterations) {
+    theta <- theta - lambda * gradient(Y = Y, X = X, theta = theta)
+    lossStorage[i + 1, "loss"] <- risk(Y = Y, X = X, theta = theta)
+    thetaStorage[i + 1, ] <- t(theta)
     # check if convergence has been reached
-    if(i > 1 && sqrt(sum((betaStorage[i, ] - betaStorage[i + 1, ])^2)) < epsilon){
+    if (i > 1 && sqrt(sum((thetaStorage[i, ] - thetaStorage[i + 1, ])^2)) < epsilon) {
       break
     }
   }
-  if(plot) {
-    layout(t(1:(length(beta) + 1)))
-    for (i in 1:length(beta)) {
-      plot(betaStorage[, i], ylab = "coefficient value",
-           xlab = "iteration", type = "l", col = "blue",
-           main = bquote(beta[.(i - 1)]))
+  if (plot) {
+    layout(t(1:(length(theta) + 1)))
+    for (i in 1:length(theta)) {
+      plot(thetaStorage[, i],
+        ylab = "coefficient value",
+        xlab = "iteration", type = "l", col = "blue",
+        main = bquote(theta[.(i - 1)])
+      )
     }
-    plot(lossStorage[, "loss"], ylab = "empirical risk",
-         xlab = "iteration", type = "l", col = "red",
-         main = expression(R[emp](beta)))
+    plot(lossStorage[, "loss"],
+      ylab = "empirical risk",
+      xlab = "iteration", type = "l", col = "red",
+      main = expression(R[emp](theta))
+    )
   }
-  return(beta)
+  list(theta = theta, risk = risk(Y, X, theta))
 }
 set.seed(1337)
 
-(beta = gradientDescentThreshold(Y = Y, X = X, beta = betaInit))
+gradientDescentThreshold(Y = Y, X = X, theta = thetaInit)
 ```
  
 
 ## Stepsize
 
-We notice that our implementation depends on the hyperparameter stepsize $\lambda$. Our implementation can be improved by doing an inner optimization
- for the stepsize $\lambda$, s.t. we follow the direction of the gradient as long as optimal. For this task we use the *optim* function:
+We notice that our implementation depends on the hyperparameter stepsize $\lambda$. Our implementation could be improved by doing an inner optimization
+ for the stepsize $\lambda$, s.t. we follow the direction of the gradient until the function starts to increase again. For this task we can use the `optim` function. This is called a *line search* algorithm, because we're looking for a (local) minimum along the line of steepest descent.
 
 ```{r}
-gradientDescentOptStepsize <- function(Y, X, beta,
+gradientDescentOptStepsize <- function(Y, X, theta,
                                        risk = riskQuadratic,
                                        gradient = gradientQuadratic,
                                        lambda = 0.005,
                                        epsilon = 0.0001,
-                                       maxIterations = 2000,
+                                       maxiterations = 2000,
                                        plot = TRUE) {
-  # initialize storage for visualizations below (with maxIter + 1 slots)
-  lossStorage = data.frame(iterations = seq_len(maxIterations) - 1,
-                            loss = NA)
-  betaStorage = matrix(NA, ncol = ncol(X), nrow = maxIterations + 1)
+  # initialize storage for visualizations below (with maxiter + 1 slots)
+  lossStorage <- data.frame(
+    iterations = seq_len(maxiterations) - 1,
+    loss = NA
+  )
+  thetaStorage <- matrix(NA, ncol = ncol(X), nrow = maxiterations + 1)
 
-  lossStorage[1, "loss"] = risk(Y, X, beta)
-  betaStorage[1, ] = beta
+  lossStorage[1, "loss"] <- risk(Y, X, theta)
+  thetaStorage[1, ] <- theta
 
   #  loop over gradient updates
-  for (i in 1:maxIterations) {
-    grad = gradient(Y = Y, X = X, beta = beta)
-    lambdaOpt = optim(par = lambda,   # start value
-                  fn =function(x) risk(Y = Y, X = X, beta = beta-x*grad), # to min
-                  method = "Brent", # 1d minimization
-                  lower = 0,
-                  upper = 1)$par
+  for (i in 1:maxiterations) {
+    grad <- gradient(Y = Y, X = X, theta = theta)
+    lambdaOpt <- optim(
+      par = lambda, # start value
+      fn = function(lambda) risk(Y = Y, X = X, theta = theta - lambda * grad), # to min
+      method = "Brent", # 1d minimization
+      lower = 0,
+      upper = 1
+    )$par
 
-    beta = beta - lambdaOpt * grad
-    lossStorage[i + 1, "loss"] = risk(Y = Y, X = X, beta = beta)
-    betaStorage[i + 1, ] = t(beta)
+    theta <- theta - lambdaOpt * grad
+    lossStorage[i + 1, "loss"] <- risk(Y = Y, X = X, theta = theta)
+    thetaStorage[i + 1, ] <- t(theta)
     # check if convergence has been reached
-    if(i > 1 && sqrt(sum((betaStorage[i, ] - betaStorage[i + 1, ])^2)) < epsilon){
+    if (i > 1 && sqrt(sum((thetaStorage[i, ] - thetaStorage[i + 1, ])^2)) < epsilon) {
       break
     }
   }
-  if(plot) {
-    layout(t(1:(length(beta) + 1)))
-    for (i in 1:length(beta)) {
-      plot(betaStorage[, i], ylab = "coefficient value",
-           xlab = "iteration", type = "l", col = "blue",
-           main = bquote(beta[.(i - 1)]))
+  if (plot) {
+    layout(t(1:(length(theta) + 1)))
+    for (i in 1:length(theta)) {
+      plot(thetaStorage[, i],
+        ylab = "coefficient value",
+        xlab = "iteration", type = "l", col = "blue",
+        main = bquote(theta[.(i - 1)])
+      )
     }
-    plot(lossStorage[, "loss"], ylab = "empirical risk",
-         xlab = "iteration", type = "l", col = "red",
-         main = expression(R[emp](beta)))
+    plot(lossStorage[, "loss"],
+      ylab = "empirical risk",
+      xlab = "iteration", type = "l", col = "red",
+      main = expression(R[emp](theta))
+    )
   }
-  return(beta)
+  list(theta = theta, risk = risk(Y, X, theta))
 }
 set.seed(1337)
-
-(beta = gradientDescentOptStepsize(Y = Y, X = X, beta = betaInit))
-
+gradientDescentOptStepsize(Y = Y, X = X, theta = thetaInit)
 ```
 
 ## L1 Loss
@@ -225,32 +262,43 @@ set.seed(1337)
 There exists -as already mentioned- an analytic solution to the empirical risk minimization with quadratic risk. But note that the gradient descent method is not restricted to minimize risks where this is the case, such as it is for the absolute risk:
 
 ```{r}
-riskAbsolute = function(Y, X, beta) {
-  mean(abs(X %*% beta - Y))
+riskAbsolute <- function(Y, X, theta) {
+  mean(abs(X %*% theta - Y))
 }
 # function that calculates the gradient of the risk for absolute error loss
-gradientAbsolute = function(Y, X, beta) {
-  1/ nrow(X) *  (t(X) %*% sign(X %*% beta - Y))
+gradientAbsolute <- function(Y, X, theta) {
+  1/nrow(X) * t(X) %*% sign(X %*% theta - Y)
 }
 
 set.seed(1337)
 
-(beta = gradientDescentOptStepsize(Y = Y, X = X, beta = betaInit,
+gradientDescentOptStepsize(
+  Y = Y, X = X, theta = thetaInit,
   risk = riskAbsolute,
-  gradient = gradientAbsolute))
+  gradient = gradientAbsolute,
+  maxiterations = 3e3
+)
+# seems weird, this works much better...?
+gradientDescentThreshold(
+  Y = Y, X = X, theta = thetaInit,
+  risk = riskAbsolute,
+  gradient = gradientAbsolute,
+  maxiterations = 3e3
+)
 ```
 
-*Note*: The gradient does not exist at the minimum, which is not often a problem, but this naive implementation can run into problems in corner cases.
+*Note*: The gradient of the absolute loss is not defined at the minimum (think about why...?), which is often not a problem in practice, but this naive implementation could run into problems in corner cases.
 
 ## Comparison with mlr's lm
 
 ```{r, echo=TRUE}
 library(mlr)
-df = data.frame(cbind(Y, X[,-1 ]))
-colnames(df) = c("Y", paste0("X",seq(1, length(beta) -1 )))
-simTask = makeRegrTask(data = df, target = "Y")
-simLm = makeLearner("regr.lm")
+df <- data.frame(Y= Y, X = X[, -1 ])
+simTask <- makeRegrTask(data = df, target = "Y")
+simLm <- makeLearner("regr.lm")
 # ngetParamSet(simLm)
-simModel = train(learner = simLm, task = simTask)
+simModel <- train(learner = simLm, task = simTask)
 simModel$learner.model
 ```
+
+
