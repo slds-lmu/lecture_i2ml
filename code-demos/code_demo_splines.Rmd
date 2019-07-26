@@ -1,6 +1,7 @@
 ---
+output: pdf_document
 params:
-    set_title: "Code demo for Splines"
+  set_title: Code demo for Splines
 ---
 
 ```{r, child = "../style/preamble_code_demos.Rmd", include = FALSE}
@@ -31,26 +32,26 @@ $l = 1$:
 library(splines)
 library(reshape2) 
  
-bsPlot <- function(polyDeg = 1, numBFuns = 3, min, max) {
-  numData = 1000
+bs_plot <- function(poly_deg = 1, num_bfuns = 3, min, max) {
+  num_data = 1000
 
-  x = seq(min, max, length.out = numData)
+  x = seq(min, max, length.out = num_data)
 
-  bbasis = bs(x, df=numBFuns, degree = polyDeg, intercept = T)
+  bbasis = bs(x, df=num_bfuns, degree = poly_deg, intercept = T)
 
-  plotData = melt(data.frame(cbind(bbasis, x)), id = "x")
+  plot_data = melt(data.frame(cbind(bbasis, x)), id = "x")
 
-  ggplot(plotData, aes(x = x, color = variable)) +
+  ggplot(plot_data, aes(x = x, color = variable)) +
     geom_line(aes(y = value),size=2) + xlim(min, max) +
-    ylab("y") + theme(legend.position = "none") + scale_color_brewer(palette ="Set3") + labs(title=paste("Piecewise polynomial degree:",as.character(polyDeg)))
+    ylab("y") + theme(legend.position = "none") + scale_color_brewer(palette ="Set3") + labs(title=paste("Piecewise polynomial degree:",as.character(poly_deg)))
 }
 
- exampleXMin = -3
- exampleXMax = 3
- examplePolyDeg = 1
- exampleNumBFun = 5
- bsPlot(polyDeg = examplePolyDeg, numBFuns = exampleNumBFun, exampleXMin,
-  exampleXMax)
+ example_xmin = -3
+ example_xmax = 3
+ examplepoly_deg = 1
+ example_num_bfuns = 5
+ bs_plot(poly_deg = examplepoly_deg, num_bfuns = example_num_bfuns, example_xmin,
+  example_xmax)
 ```
 
 - For the number of basis function $K$ it holds that
@@ -61,12 +62,12 @@ $$K = m+l+1$$.
 library(splines)
 library(reshape2)
 x = 0.3 
-  xs = seq(exampleXMin,exampleXMax, by=0.1)
- bsPlot(polyDeg = examplePolyDeg, numBFuns = exampleNumBFun, exampleXMin,
-  exampleXMax) + geom_vline(xintercept = x, size=1.5,
+  xs = seq(example_xmin,example_xmax, by=0.1)
+ bs_plot(poly_deg = examplepoly_deg, num_bfuns = example_num_bfuns, example_xmin,
+  example_xmax) + geom_vline(xintercept = x, size=1.5,
  linetype="dashed")
-  print(paste0("y = (",paste( (bs(x = xs, df=exampleNumBFun, degree = examplePolyDeg, intercept = T,
-  Boundary.knots = c(exampleXMin, exampleXMax))[which(xs >= x)[1],]),
+  print(paste0("y = (",paste( (bs(x = xs, df=example_num_bfuns, degree = examplepoly_deg, intercept = T,
+  Boundary.knots = c(example_xmin, example_xmax))[which(xs >= x)[1],]),
   collapse=", "),")."))
 ```
 
@@ -80,7 +81,7 @@ library(splines)
 
 data(BostonHousing2)
 
-(medvRoomsPlot = ggplot() +
+(medv_rooms_plot = ggplot() +
   geom_point(data=BostonHousing2,aes(x = rm, y = medv), alpha = 0.3) +
   labs(   x = "Average number of rooms",
        y = "Median value"))
@@ -89,74 +90,74 @@ data(BostonHousing2)
 Now let's say we want to use 5 piecewise polynomials of degree 2:
 ```{r}
 
-polyDeg = 2
-numBFun = 5
-numData = 1000 # number of points we want to use for plotting
+poly_deg = 2
+num_bfuns = 5
+num_data = 1000 # number of points we want to use for plotting
 
-rmMin = min(BostonHousing2$rm)
-rmMax = max(BostonHousing2$rm)
+rm_min = min(BostonHousing2$rm)
+rm_max = max(BostonHousing2$rm)
 
-rooms = seq(rmMin, rmMax, length.out = numData)
+rooms = seq(rm_min, rm_max, length.out = num_data)
 
-bbasisPlot = bs(rooms, df= numBFun ,degree = polyDeg, intercept=TRUE)
-plotData = melt(data.frame(cbind(bbasisPlot, rooms)), id = "rooms")
+bbasis_plot = bs(rooms, df= num_bfuns ,degree = poly_deg, intercept=TRUE)
+plot_data = melt(data.frame(cbind(bbasis_plot, rooms)), id = "rooms")
 
-medvRoomsPlot + geom_line(data=plotData, aes(x=rooms, y = value, color=variable)) +  theme(legend.position = "none")
+medv_rooms_plot + geom_line(data=plot_data, aes(x=rooms, y = value, color=variable)) +  theme(legend.position = "none")
 ```
 
 Train a linear model but for the transformed features:
 
 ```{r}
 # since we want to use the same transformation, we have to specify the knots and piecewiese polynomial degree, we have used before
-bbasisData = data.frame(bs(x=BostonHousing2$rm,Boundary.knots = attr(bbasisPlot,"Boundary.knots"),
-  knots=attr(bbasisPlot,"knots"), degree = polyDeg, intercept=TRUE)
+bbasis_data = data.frame(bs(x=BostonHousing2$rm,Boundary.knots = attr(bbasis_plot,"Boundary.knots"),
+  knots=attr(bbasis_plot,"knots"), degree = poly_deg, intercept=TRUE)
   )
-bbasisData$medv = BostonHousing2$medv
+bbasis_data$medv = BostonHousing2$medv
 
 # estimate a linear model for transformed features and exclude the intercept term  as it has already been included in the b-splines basis functions
-lmBS = lm(medv ~ . -1, data = bbasisData)
+lm_bs = lm(medv ~ . -1, data = bbasis_data)
 
 # use the solution of the linear model to scale the features
-for(i in 1:ncol(bbasisPlot)){ bbasisPlot[,i] = bbasisPlot[,i]*
-  lmBS$coefficients[i] }
+for(i in 1:ncol(bbasis_plot)){ bbasis_plot[,i] = bbasis_plot[,i]*
+  lm_bs$coefficients[i] }
 
-  plotData = melt(data.frame(cbind(bbasisPlot, rooms)), id = "rooms")
+  plot_data = melt(data.frame(cbind(bbasis_plot, rooms)), id = "rooms")
 
-  medvRoomsPlot + geom_line(data=plotData, aes(x=rooms, y = value, color=variable)) +  theme(legend.position = "none")
+  medv_rooms_plot + geom_line(data=plot_data, aes(x=rooms, y = value, color=variable)) +  theme(legend.position = "none")
 
 ```
 
 We can get our estimate for the functional relationship simply by summing the scaled features:
 
 ```{r}
-functionEstimate = data.frame(x = rooms)
+function_estimate = data.frame(x = rooms)
 
-functionEstimate$y = rowSums(bbasisPlot)
+function_estimate$y = rowSums(bbasis_plot)
 
-    medvRoomsPlot + geom_line(data=functionEstimate, aes(x=rooms, y = y)) +  theme(legend.position = "none")
+    medv_rooms_plot + geom_line(data=function_estimate, aes(x=rooms, y = y)) +  theme(legend.position = "none")
 ```
  Wrap these steps up in one plot function:
 ```{r bspline}
 
-plotBSFit <- function(polyDeg, numBFuns) {
-  numData = 1000
-  bSpline = bs(BostonHousing2$rm,df = numBFuns,degree = polyDeg, intercept = TRUE
+plot_bs_fit <- function(poly_deg, num_bfuns) {
+  num_data = 1000
+  bspline = bs(BostonHousing2$rm,df = num_bfuns,degree = poly_deg, intercept = TRUE
   )
-  bSplineData =  data.frame(bSpline)
-  bSplineData$medv = BostonHousing2$medv
+  bspline_data =  data.frame(bspline)
+  bspline_data$medv = BostonHousing2$medv
   # estimate a linear model for transformed features (without intercept)
-  LmBS = lm("medv ~ . -1", data = bSplineData)
+  lm_bs = lm("medv ~ . -1", data = bspline_data)
 
-  plotData = data.frame(x = seq(min(BostonHousing2$rm),max(BostonHousing2$rm), length.out = numData))
+  plot_data = data.frame(x = seq(min(BostonHousing2$rm),max(BostonHousing2$rm), length.out = num_data))
   # scale and add up (i.e. use matrix product)
-  plotData$y = bs(plotData$x, knots = attr(bSpline,"knots"), degree = polyDeg,
-      Boundary.knots = attr(bSpline,"Boundary.knots"), intercept=TRUE
+  plot_data$y = bs(plot_data$x, knots = attr(bspline,"knots"), degree = poly_deg,
+      Boundary.knots = attr(bspline,"Boundary.knots"), intercept=TRUE
   ) %*%
-    LmBS$coefficients
+    lm_bs$coefficients
   ggplot() +
     geom_point(data=BostonHousing2,aes(x=rm, y = medv), alpha = 0.3) +
-    geom_line(data = plotData, aes(x = x, y = y), color="red") +
-    labs(title = paste(as.character(numBFuns), "basis function(s)"),
+    geom_line(data = plot_data, aes(x = x, y = y), color="red") +
+    labs(title = paste(as.character(num_bfuns), "basis function(s)"),
          x = "Average number of rooms",
          y = "Median value")
 }
@@ -168,10 +169,10 @@ Vary number of basis functions for piecewiese cubic splines:
 library(ggplot2)
 library(gridExtra)
 
-polyDeg = 3
-numBFuns = c(1, 5, 15, 50)
-ggplotList = lapply(numBFuns, function(x) plotBSFit(polyDeg,x))
-do.call(grid.arrange, ggplotList)
+poly_deg = 3
+num_bfuns = c(1, 5, 15, 50)
+ggplot_list = lapply(num_bfuns, function(x) plot_bs_fit(poly_deg,x))
+do.call(grid.arrange, ggplot_list)
 ```
 
 - We only computed a simple linear model, but instead of the original feature we used its transformed features.
