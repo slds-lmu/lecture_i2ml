@@ -47,4 +47,4 @@ Approach us, if you think likewise and want help.
 
 ## Similar Projects
 
-[Data Science in a Box](https://datasciencebox.org/) follows a similar philosophy as this course, with much more emphasis on learning R, doing data visualization and understanding more classsical statistical inference methods (hypothesis tests, linear regression, etc.)
+[Data Science in a Box](https://datasciencebox.org/) follows a similar philosophy as this course, with much more emphasis on learning R, doing data visualization and understanding more classical statistical inference methods (hypothesis tests, linear regression, etc.)
