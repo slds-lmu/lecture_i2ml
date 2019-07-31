@@ -44,3 +44,7 @@ Approach us, if you think likewise and want help.
   even would like to provide a new quiz question or coding example? Please consider providing a pull request. To do so, please check out the *devel* branch of the repo and add your fixes there. Writing an e-mail with suggested improvements is obviously very welcome as well!
 
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
+
+## Similar Projects
+
+[Data Science in a Box](https://datasciencebox.org/) follows a similar philosophy as this course, with much more emphasis on learning R, doing data visualization and understanding more classsical statistical inference methods (hypothesis tests, linear regression, etc.)
