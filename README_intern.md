@@ -11,7 +11,7 @@ This repository contains the slides for the "Introduction to machine learning" c
 - Access to the `master` branch is protected, please make your own, issue-/task-specific branch to work in and do a pull request once you're done.
 - Do many **small, focused, single-issue commits** with **descriptive commit messages**: each commit message should
     - refer the issue it adresses or fixes, i.e. include something like `adresses #<issuenumber>`, `closes #<issuenumber>` or similar
-    - for student helpers, they should always also include the approximate amount of time spent on the work being comitted (i.e. include something like `time spent: <XX> hours`)
+    - for student helpers, could/should also include the approximate amount of time spent on the work being comitted (i.e. include something like `time spent: <XX> hours`) to help with time tracking.
 
 ### Slides:
 
@@ -23,7 +23,7 @@ This repository contains the slides for the "Introduction to machine learning" c
 - We write slides for beginners: keep it simple, keep it short
 
 
-### Code:
+### Code Snippets:
 
 - Please follow this [style guide](https://style.tidyverse.org)
 - We write code that is meant to be read/worked on by beginners: 
