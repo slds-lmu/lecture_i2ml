@@ -28,7 +28,7 @@ Please read and understand the [internal README](https://github.com/compstat-lmu
 
 To contribute to the course, please create issue-specific branches off the **`devel`** branch in the main repo in order to work on your assigned issues. A more detailed explanation of this collaboration model is [here](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow), there you also find the Git commands used to accomplish this.  
 
-Commit early, commit often, take the time to [write informative, well-formatted commit messages](https://juffalow.com/other/write-good-git-commit-message) and [reference the issue(s)]() your commit is addressing in your commit message.  
+Commit early, commit often, take the time to [write informative, well-formatted commit messages](https://juffalow.com/other/write-good-git-commit-message) and [reference the issue(s)](https://guides.github.com/features/issues/#notifications) your commit is addressing in your commit message by including `#<issuenumber>` in your commit.  
 At least once a week, write down how much time you spent on what topics on the *time-tracking card* in your Github project board. This might be easier if you also note the time spent on creating a commit in the body of the respective commit messages. What's important is that you keep the time-tracking card in your project board up-to-date. 
 
 ## Getting help
