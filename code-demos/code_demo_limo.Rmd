@@ -68,7 +68,7 @@ and move in that direction:
 
 ## Implementation
 
-```{r, echo=TRUE}
+```{r grad_desc-def}
 # function that calculates the risk for squared error loss
 risk_quadratic <- function(Y, X, theta) {
   1 / nrow(X) * t(X %*% theta - Y) %*% (X %*% theta - Y)
@@ -143,7 +143,7 @@ $$
 ||\theta^{[t+1]}-\theta^{[t]}||_2 < \epsilon .
 $$
 
-```{r, echo=TRUE}
+```{r grad_desc_trsh-def}
 gradient_descent_threshold <- function(Y, X, theta,
                                      risk = risk_quadratic,
                                      gradient = gradient_quadratic,
@@ -199,13 +199,14 @@ gradient_descent_threshold(Y = Y, X = X, theta = theta_init)
 We notice that our implementation depends on the hyperparameter stepsize $\lambda$. Our implementation could be improved by doing an inner optimization
  for the stepsize $\lambda$, s.t. we follow the direction of the gradient until the function starts to increase again. For this task we can use the `optim` function. This is called a *line search* algorithm, because we're looking for a (local) minimum along the line of steepest descent.
 
-```{r}
+```{r grad_desc_opt-def}
 gradient_descent_opt_stepsize <- function(Y, X, theta,
                                        risk = risk_quadratic,
                                        gradient = gradient_quadratic,
                                        lambda = 0.005,
                                        epsilon = 0.0001,
                                        max_iterations = 2000,
+                                       min_learning_rate = 0,
                                        plot = TRUE) {
   # initialize storage for visualizations below (with maxiter + 1 slots)
   loss_storage <- data.frame(
@@ -224,10 +225,10 @@ gradient_descent_opt_stepsize <- function(Y, X, theta,
       par = lambda, # start value
       fn = function(lambda) risk(Y = Y, X = X, theta = theta - lambda * grad), # to min
       method = "Brent", # 1d minimization
-      lower = 0,
-      upper = 1
+      lower = min_learning_rate,
+      upper = 1000
     )$par
-
+    
     theta <- theta - lambda_opt * grad
     loss_storage[i + 1, "loss"] <- risk(Y = Y, X = X, theta = theta)
     theta_storage[i + 1, ] <- t(theta)
@@ -261,7 +262,7 @@ gradient_descent_opt_stepsize(Y = Y, X = X, theta = theta_init)
 
 There exists -as already mentioned- an analytic solution to the empirical risk minimization with quadratic risk. But note that the gradient descent method is not restricted to minimize risks where this is the case, such as it is for the absolute risk:
 
-```{r}
+```{r grad_desc_abs-def}
 risk_absolute <- function(Y, X, theta) {
   mean(abs(X %*% theta - Y))
 }
@@ -276,27 +277,31 @@ gradient_descent_opt_stepsize(
   Y = Y, X = X, theta = theta_init,
   risk = risk_absolute,
   gradient = gradient_absolute,
-  max_iterations = 3e3
+  epsilon = 0.0005,
+  max_iterations = 4e2,
+  min_learning_rate = 0.01
 )
-# seems weird, this works much better...?
-gradient_descent_threshold(
-  Y = Y, X = X, theta = theta_init,
-  risk = risk_absolute,
-  gradient = gradient_absolute,
-  max_iterations = 3e3
-)
+
+# Further thoughts:
+# Compare the risk we have got with the risk we would get if the minimal learning rate is 
+# set to zero. Set the mininmal learning rate back to 0.01:
+# What happens if you set epsilon to its default value? Does it converge for a higher 
+# number of iterations with this smaller epsilon value?
+# Is the same problem encountered with the quadratic loss function, if a minimal learning 
+# rate is set?
+# Hint: Does the gradient of the quadratic loss function shrink as the minimum is 
+# approached? Does this also hold for the gradient of the absolute loss?
 ```
 
 *Note*: The gradient of the absolute loss is not defined at the minimum (think about why...?), which is often not a problem in practice, but this naive implementation could run into problems in corner cases.
 
 ## Comparison with mlr's lm
 
-```{r, echo=TRUE}
+```{r grad_desc_mlr}
 library(mlr)
 df <- data.frame(Y= Y, X = X[, -1 ])
 sim_task <- makeRegrTask(data = df, target = "Y")
 sim_lm <- makeLearner("regr.lm")
-# ngetParamSet(sim_lm)
 sim_model <- train(learner = sim_lm, task = sim_task)
 sim_model$learner.model
 ```
