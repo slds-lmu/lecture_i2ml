@@ -143,7 +143,8 @@ get_knn <- function(train_labels, train_data, to_classify_data, k,
     class_frequency <- table(train_labels[nearest_neighbors])
     most_frequent_classes <-
       names(class_frequency)[class_frequency == max(class_frequency)]
-    # random tie breaking if more than 1 class has maximal frequency
+    # random tie breaking if more than 1 class has maximal frequency.
+    # (causes the occasionally weird, fuzzy class boundaries in the figs. below)
     pred[i] <- sample(most_frequent_classes, 1)
   }
 
@@ -203,6 +204,7 @@ plot_2D_knn <- function(train_labels, train_data, k, X1, X2,
   )
   grid_data$prediction <- grid_result$prediction
   
+  # assign data to be classified based on k-NN rule & check these "predictions"
   to_check_result <- get_knn(
     train_labels = train_labels,
     train_data = train_data[, c(X1, X2)],
@@ -267,9 +269,7 @@ ggplot_list <- lapply(
 )
 do.call(grid.arrange, ggplot_list)
 ```
-For $k=1$ we only get a single error (see center of the plane) since there are only two observations with identical features, but different labels, in our training data set (and that case is the only way we could ever make an error for $k = 1$).
-
-So why should we use a $k \neq 1$?
+For $k=1$ we can only ever get an if there exist observations with identical feature values but different labels in our training data set. So why should we use a $k \neq 1$?
 
 Let's look how we perform when we apply our $k$-NN classification rules to the entries in the `iris` data set which were not used for training:
 ```{r knn-plot_2D_knn-3}    
@@ -295,7 +295,7 @@ do.call(grid.arrange, ggplot_list)
 Now we observe that, on data we didn't use as training data, the value of $k$ for which we get the best classification accuracy seems to be higher than 1.
 
 Models very often perform much better on the training data than on other data sets, this
-is called **overfitting** and will be discussed in details in the chapters on performance evaluation and tuning. 
+is called **overfitting** and will be discussed in detail in the chapters on performance evaluation and tuning. 
 
 ## Standardization
 
