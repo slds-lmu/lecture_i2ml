@@ -1,7 +1,7 @@
 ---
 output: pdf_document
 params:
-    set_title: "Code demo for Linear model & gradient descent"
+    set_title: "Code demo for linear model & gradient descent"
 ---
 
 ```{r, child = "../style/preamble_code_demos.Rmd", include = FALSE}
@@ -28,8 +28,8 @@ $$\hat \theta = \arg \min_{\theta} R_{emp}(f)$$
 
 ## Solution
 
-- We can solve this kind of minimization problem using an iterative technique termed *Gradient Descent*
-- this is an extremely important technique that is applied - in many variants - to solve the *optimization* problem when finding a learner.
+- we can solve this kind of minimization problem using an iterative technique termed *Gradient Descent*
+- this is an extremely important technique that is applied - in many variants - to solve the *optimization* problem when optimizing many kinds of learners.
 - *Note*: An analytic solution exists for the quadratic loss, s.t. $$\hat \theta = (X^TX)^{-1}X^Ty.$$
 
 ## Gradient Descent
@@ -258,9 +258,20 @@ set.seed(1337)
 gradient_descent_opt_stepsize(Y = Y, X = X, theta = theta_init)
 ```
 
-## L1 Loss
+## Comparison with `mlr` / `stats::lm`
 
-There exists -as already mentioned- an analytic solution to the empirical risk minimization with quadratic risk. But note that the gradient descent method is not restricted to minimize risks where this is the case, such as it is for the absolute risk:
+```{r grad_desc_mlr}
+library(mlr)
+df <- data.frame(Y= Y, X = X[, -1 ])
+sim_task <- makeRegrTask(data = df, target = "Y")
+sim_lm <- makeLearner("regr.lm")
+sim_model <- train(learner = sim_lm, task = sim_task)
+sim_model$learner.model
+```
+
+## Absolute Loss
+
+As already mentioned, there exists an analytic solution to the empirical risk minimization with quadratic risk. Obviously, the gradient descent method is useful primarily in the case where no such easy analytic solution exists, such as for absolute (L1) loss-
 
 ```{r grad_desc_abs-def}
 risk_absolute <- function(Y, X, theta) {
@@ -293,17 +304,8 @@ gradient_descent_opt_stepsize(
 # approached? Does this also hold for the gradient of the absolute loss?
 ```
 
-*Note*: The gradient of the absolute loss is not defined at the minimum (think about why...?), which is often not a problem in practice, but this naive implementation could run into problems in corner cases.
+*Note*: The gradient of the empirical risk for absolute loss is not defined at its minimum, nor at many other configurations of $\theta$  (think about why...?). That is often not a problem in practice, but this naive implementation runs into problems, as you can see if you play around with the settings of the code above...
 
-## Comparison with mlr's lm
 
-```{r grad_desc_mlr}
-library(mlr)
-df <- data.frame(Y= Y, X = X[, -1 ])
-sim_task <- makeRegrTask(data = df, target = "Y")
-sim_lm <- makeLearner("regr.lm")
-sim_model <- train(learner = sim_lm, task = sim_task)
-sim_model$learner.model
-```
 
 
