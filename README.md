@@ -6,13 +6,14 @@
 - Use the pull-request workflow to add changes to this branch.
 
 # Development instructions
-todo see [issue](https://github.com/compstat-lmu/lecture_i2ml/issues/261).
+
+Please see [internal README](https://github.com/compstat-lmu/lecture_i2ml/blob/devel/README_intern.md) and the [documentation for new collaborators](https://github.com/compstat-lmu/lecture_i2ml/blob/devel/attic/onboarding.md).
 
 # Introduction to Machine Learning (I2ML)
 
 Main course site: https://compstat-lmu.github.io/lecture_i2ml/
 
-Devel repo on Github: https://github.com/compstat-lmu/lecture_i2ml
+Devel repo on Github: https://github.com/compstat-lmu/lecture_i2ml/tree/devel
 
 ## Course overview
 
