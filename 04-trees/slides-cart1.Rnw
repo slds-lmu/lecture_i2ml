@@ -22,12 +22,17 @@ library(smoof)
 
 <<results='hide'>>=
 draw_cart_on_iris = function(depth, with_tree_plot = FALSE) {
-  set.seed(123)
   task = makeClassifTask(data = iris[,3:5], target = "Species")
   lrn = makeLearner("classif.rpart", cp = 0, minbucket = 4, maxdepth = depth)
   model = train(lrn, task)
   p = plotLearnerPrediction(lrn, task, gridsize = 100, cv = 0, prob.alpha = FALSE, err.mark = "train")
-  p = p + pers_theme + ggtitle("Iris Data")
+  p = p + 
+    theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_line(colour = "grey80"),
+        panel.grid.minor = element_line(colour = "grey80"),
+        panel.border = element_blank(),
+        panel.background = element_blank()) + 
+    ggtitle("Iris Data")
   print(p)
   if (with_tree_plot)
     # "palettes" should ensure that colors in tree growing in rectangles and tree match
@@ -132,7 +137,6 @@ modForrester = makeSingleObjectiveFunction(
   par.set = makeNumericParamSet(lower = 0, upper = 1, len = 1L),
   noisy = TRUE
 )
-set.seed(9)
 design = generateDesign(7L, getParamSet(modForrester), fun = lhs::maximinLHS)
 design$y = modForrester(design)
 ordered.design = design[order(design$x),]
@@ -211,7 +215,6 @@ $ sin(4x - 4) * (2x - 2)^2 * sin(20x -4) $
 \end{itemize}
 
 <<result='hide', fig.height=2.2>>=
-set.seed(2)
 x = rnorm(20)
 m = mean(x)
 s = var(x)

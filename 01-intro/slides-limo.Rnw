@@ -9,7 +9,7 @@ knitr::set_parent("../style/preamble.Rnw")
 <<setup-r, child="../style/setup.Rnw", include = FALSE>>=
 @
 
-\lecturechapter{5}{Linear regression models}
+\lecturechapter{Linear Regression Models}
 \lecture{Introduction to Machine Learning}
 
 % slides adapted from rcourses/chapters/ml/ml_simple_models/slides_sm_lmXXX.Rmd @ fbce91e4277
@@ -17,13 +17,13 @@ knitr::set_parent("../style/preamble.Rnw")
 \begin{vbframe}{Linear Regression: Representation}
 \lz
 
-We want to predict a numerical target variable by a \emph{linear transformation} of the features $x \in \mathbb{R}^p$.
+We want to predict a numerical target variable by a \emph{linear transformation} of the features $\xv \in \mathbb{R}^p$.
 
 \lz
 
-So with $\theta \in \mathbb{R}^p$ this mapping can be written as:
+So with $\thetab \in \mathbb{R}^p$ this mapping can be written as:
 \begin{align*}
-y &= \fx = \theta_0 + \theta^T x \\
+y &= \fx = \theta_0 + \thetab^T \xv \\
   &= \theta_0 + \theta_1 x_1 + \dots + \theta_p x_p
 \end{align*}
 
@@ -31,7 +31,7 @@ y &= \fx = \theta_0 + \theta^T x \\
 
 This restricts the hypothesis space $\Hspace$ to all linear functions in $\theta$:
 \[
-\Hspace = \{ \theta_0 + \theta^T x\ |\ (\theta_0, \theta) \in \mathbb{R}^{p+1} \}
+\Hspace = \{ \theta_0 + \thetab^T \xv\ |\ (\theta_0, \thetab) \in \mathbb{R}^{p+1} \}
 \]
 
 \framebreak
@@ -57,7 +57,7 @@ y = \theta_0 + \theta \cdot x
 
 \lz
 
-Given observed labeled data $\D$, how to find $(\theta, \theta_0$)?\\
+Given observed labeled data $\D$, how to find $(\theta_0, \thetab)$?\\
 
 \lz
 
@@ -66,7 +66,7 @@ This is \textbf{learning} or parameter estimation, the learner does exactly this
 \lz
 \lz
 
-NB: We assume from now on that $\theta_0$ is included in $\theta$.
+NB: We assume from now on that $\theta_0$ is included in $\thetab$.
 
 \end{vbframe}
 
@@ -74,7 +74,7 @@ NB: We assume from now on that $\theta_0$ is included in $\theta$.
 
 We could measure training error as the sum of squared prediction errors (SSE). This is also called the \textbf{L2 loss}, or L2 risk:
 \[
-\risket = \operatorname{SSE}(\theta) = \sumin \Lxyit = \sumin \left(\yi - \theta^T \xi\right)^2
+\risket = \operatorname{SSE}(\thetab) = \sumin \Lxyit = \sumin \left(\yi - \thetab^T \xi\right)^2
 \]
 
 <<echo=FALSE, out.width="0.4\\textwidth", fig.width=4, fig.height=2.5>>=
@@ -106,7 +106,7 @@ Minimizing the squared error is computationally much simpler than minimizing the
 
 We want to find the parameters $\theta$ of the linear model, i.e., an element of the hypothesis space $\Hspace$ that fits the data optimally.\\
 
-So we evaluate different candidates for $\theta$.\\
+So we evaluate different candidates for $\thetab$.\\
 
 A first (random) try yields a rather large SSE: (\textbf{Evaluation}).
 \lz
@@ -119,7 +119,7 @@ source("figure_man/sse_lm_viz.R")
 \framebreak
 
 We want to find the parameters of the LM / an element of the hypothesis space $\Hspace$ that best suits the data.
-So we evaluate different candidates for $\theta$.\\
+So we evaluate different candidates for $\thetab$.\\
 
 Another line yields an even bigger SSE (\textbf{Evaluation}). Therefore, this one is even worse in
 terms of empirical risk.
@@ -132,7 +132,7 @@ source("figure_man/sse_lm_viz.R")
 \framebreak
 
 We want to find the parameters of the LM / an element of the hypothesis space $\Hspace$ that best suits the data.
-So we evaluate different candidates for $\theta$.\\
+So we evaluate different candidates for $\thetab$.\\
 
 Another line yields an even bigger SSE (\textbf{Evaluation}). Therefore, this one is even worse in
 terms of empirical risk. Let's try again:
@@ -145,11 +145,13 @@ source("figure_man/sse_lm_viz.R")
 
 \framebreak
 
+
 Since every $\theta$ results in a specific value of $\risket$, and we try
 to find $\argmin_{\theta} \risket$, let's look at what we have so far:
+
 \lz
 
-<<echo=FALSE, out.width="\\textwidth", fig.width=7.5, fig.height=3.5>>=
+<<echo=FALSE, out.width="\\textwidth", fig.width=7.5, fig.height=3>>=
 frame = 4
 source("figure_man/sse_lm_viz.R")
 @
@@ -157,17 +159,15 @@ source("figure_man/sse_lm_viz.R")
 \framebreak
 
 Instead of guessing, we use \textbf{optimization} to find the best $\theta$:
-\lz
-<<echo=FALSE, out.width=".6\\textwidth", fig.width=5, fig.height=5>>=
+<<echo=FALSE, out.height=".66\\textheight", fig.width=4, fig.height=5>>=
 frame = 5
 source("figure_man/sse_lm_viz.R")
 @
 
 \framebreak
 
-Instead of guessing, we use \textbf{optimization} to find the best $\theta$:
-\lz
-<<echo=FALSE, out.width=".6\\textwidth", fig.width=5, fig.height=5>>=
+Instead of guessing, we use \textbf{optimization} to find the best $\thetab$:
+<<echo=FALSE, out.height=".66\\textheight", fig.width=4, fig.height=5>>=
 frame = 6
 source("figure_man/sse_lm_viz.R")
 @
@@ -175,8 +175,8 @@ source("figure_man/sse_lm_viz.R")
 \framebreak
 
 Instead of guessing, we use \textbf{optimization} to find the best $\theta$:
-\lz
-<<echo=FALSE, out.width="\\textwidth", fig.width=7.5, fig.height=3.5>>=
+
+<<echo=FALSE, out.width="\\textwidth", fig.width=7.5, fig.height=3>>=
 frame = 7
 source("figure_man/sse_lm_viz.R")
 @
@@ -187,7 +187,7 @@ source("figure_man/sse_lm_viz.R")
 For L2 regression, we can find this optimal value analytically:
 \begin{align*}
 \hat{\theta} &= \argmin_{\theta} \risket = \sumin \left(\yi - \theta^T \xi\right)^2\\
-             &=\argmin_{\theta} \|y - X\theta\|^2_2\
+             &=\argmin_{\theta} \|\yv - X\thetab\|^2_2\
 \end{align*}
 where $X = \left(\begin{smallmatrix}1 & x^{(1)}_1 & \ldots & x^{(1)}_p \\
                               1 & x^{(2)}_1 & \ldots & x^{(2)}_p \\
@@ -199,7 +199,7 @@ is the $n \times (p+1)$-\textbf{design matrix}.
 
 This yields the so called normal equations for the LM:
 \[
-\frac{\delta}{\delta\theta} \risket = 0 \qquad \Rightarrow\ \qquad \hat{\theta} = \left(X^T X\right)^{-1}X^Ty
+\frac{\partial}{\partial\thetab} \risket = 0 \qquad \Rightarrow\ \qquad \hat{\thetab} = \left(X^T X\right)^{-1}X^T\yv
 \]
 
 \end{vbframe}
@@ -271,11 +271,10 @@ Only the representation of the learner changes: it now includes the derived feat
 
  \lz
 
-<<echo=FALSE, out.width="0.9\\textwidth", fig.height = 5>>=
-.h = function(x) 0.5 + 0.4 * sin(2 * pi * x)
+<<echo=FALSE, out.width="0.9\\textwidth", fig.height = 4.5>>=
+.h = function(x) 0.6 + 0.4 * sin(2 * pi * x)
 h = function(x) .h(x) + .1 * arima.sim(list(ar = .7, ma = 0), length(x))
 
-set.seed(12345)
 x = seq(0.4, 2, length = 31L)
 y = h(x)
 
@@ -300,7 +299,7 @@ baseplot()
 
 Models of different \emph{complexity}, i.e. of different polynomial order $d$, are fitted to the data:
 
-<<echo=FALSE, out.width="0.9\\textwidth", fig.height=5>>=
+<<echo=FALSE, out.width="0.9\\textwidth", fig.height=4.5>>=
 baseplot()
 for (i in 1) {
   lines(x.plot, predict(mods[[i]], newdata = data.frame(x = x.plot)),
@@ -316,13 +315,13 @@ legend("topright", paste(sprintf("f(x) for d = %s", c(1, 5, 25)), c("(linear)", 
 
 Models of different \emph{complexity}, i.e. of different polynomial order $d$, are fitted to the data:
 
-<<echo=FALSE, out.width="0.9\\textwidth", fig.height=5>>=
+<<echo=FALSE, out.width="0.9\\textwidth", fig.height=4.5>>=
 baseplot()
 for (i in 1:2) {
   lines(x.plot, predict(mods[[i]], newdata = data.frame(x = x.plot)),
     col = line.palette[i], lwd = 2L)
 }
-legend("topright", paste(sprintf("f(x) for d = %s", c(1, 5, 15)), c("(linear)", "", "")),
+legend("topright", paste(sprintf("f(x) for d = %s", c(1, 5, 25)), c("(linear)", "", "")),
   col = line.palette, lwd = 2L)
 @
 
@@ -332,13 +331,13 @@ legend("topright", paste(sprintf("f(x) for d = %s", c(1, 5, 15)), c("(linear)", 
 
 Models of different \emph{complexity}, i.e. of different polynomial order $d$, are fitted to the data:
 
-<<echo=FALSE, out.width="0.9\\textwidth", fig.height=5>>=
+<<echo=FALSE, out.width="0.9\\textwidth", fig.height=4.5>>=
 baseplot()
 for (i in 1:3) {
   lines(x.plot, predict(mods[[i]], newdata = data.frame(x = x.plot)),
     col = line.palette[i], lwd = 2L)
 }
-legend("topright", paste(sprintf("f(x) with d = %s", c(1, 5, 15)), c("(linear)", "", "")),
+legend("topright", paste(sprintf("f(x) with d = %s", c(1, 5, 25)), c("(linear)", "", "")),
   col = line.palette, lwd = 2L)
 @
 
@@ -366,7 +365,10 @@ for (i in 2:3) {
 }
 
 plot(x.plot,
-     .h(x.plot) + .1 * rnorm(length(x.plot)) + .1, pch = 19, col = rgb(0,0,0,.5),
+
+
+     .h(x.plot) + .1 * rnorm(length(x.plot)), pch = 19, col = rgb(0,0,0,.5),
+
      cex = .8,
      xlab = "x", ylab = "y",
      ylim = c(0, 1.35))
