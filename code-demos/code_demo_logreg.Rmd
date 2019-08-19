@@ -1,0 +1,248 @@
+---
+output: pdf_document
+params:
+    set_title: "Code demo for logistic regression and Newton-Raphson"
+---
+
+```{r, child = "../style/preamble_code_demos.Rmd", include = FALSE}
+
+```
+
+```{r, child = "../style/setup.Rmd", include = FALSE}
+
+```  
+
+```{r, echo=FALSE}
+ read_chunk("general_utilities.R")
+```  
+
+# Logistic regression
+
+In the lecture we learnt that by using the
+
+```{r knn-plot_2D_classif, echo=FALSE}
+```
+
+```{r grad_desc_opt-def, echo=FALSE}
+```
+
+```{r logreg-logistic}
+logistic <- function(X, theta, Xtheta= X%*% theta){
+  1  / (1+ exp(-Xtheta))
+}
+```
+
+```{r logreg-classify}
+classify_logreg <- function(X, theta, Xtheta= X%*% theta){
+  pred <- as.character(2*as.integer(logistic(X, theta,  Xtheta=Xtheta) > 0.5)-1)
+  list(prediction = pred, levels = c("1","-1"))
+}
+```
+
+```{r logreg-ber_risk_grad}
+risk_bernoulli <- function(Y, X, theta, exp_yxt = exp(Y*(X%*%theta))){
+  sum(log(1+1/exp_yxt))
+}
+
+gradient_bernoulli <- function(Y, X, theta, exp_yxt = exp(Y*(X%*%theta))){
+  colSums((1 / (1+exp_yxt)*-Y)[,1]  * X)
+}
+```
+
+```{r logreg-ber_hessian}
+hessian_bernoulli <- function(Y,X,theta, exp_yxt = exp(Y*(X%*%theta))){
+   t(( exp_yxt / (1+ exp_yxt)^2)[,1] * X) %*% X
+}
+```
+
+```{r logreg-newton}
+library(MASS)
+
+newton_opt_stepsize <- function(Y, X, theta,
+                                       risk,
+                                       gradient,
+                                       hessian,
+                                       lambda = 0.005,
+                                       epsilon = 0.0001,
+                                       max_iterations = 2000,
+                                       min_learning_rate = 0,
+                                       max_learning_rate = 1000,
+                                       plot = TRUE) {
+gradient_descent_opt_stepsize(Y, X, theta,
+                                       risk = risk,
+                                       gradient = function(Y,X,theta)
+                                         ginv(hessian(Y,X,theta)) %*%
+                                         gradient(Y,X,theta),
+                                       lambda = lambda,
+                                       epsilon = epsilon,
+                                       max_iterations = max_iterations,
+                                       min_learning_rate = min_learning_rate,
+                                       max_learning_rate = max_learning_rate,
+                                       plot = plot)
+}
+```
+
+
+```{r logreg-dgp}
+set.seed(1337)
+
+n <- 1000
+p <- 2
+
+X <- cbind(rep(1,n),matrix(runif(n*p, -5, 5), nrow = n))
+# what could be a problem if there was no intercept term? 
+# think about the boundary
+normal = c(16,-9)
+normal = normal/sqrt(sum(normal^2))
+
+theta <- c(2, normal)
+
+Y <- as.integer(classify_logreg(X, theta)$pred)
+```
+
+```{r logreg-plot_2D_logreg-def}  
+# function for logistic regression with two features to visualize class 
+# boundaries X1 and X2 are the names of the two features to use. 
+
+plot_2D_logreg <- function(theta, X1="X1",X2="X2",
+                      # by default, we "predict" the class of the training data:
+                      to_classify_labels = as.character(Y),
+                      to_classify_data = data.frame("X1"=X[,2],
+                                                   "X2"=X[,3]),
+                      lengthX1 = 100, lengthX2 = 100) {
+  
+  plot_2D_classify(to_classify_labels = to_classify_labels,
+                   to_classify_data = to_classify_data, 
+                   classify_method = function(to_classify_data) 
+                       classify_logreg(
+                               X = cbind(rep(1,nrow(to_classify_data)),
+                                         as.matrix(to_classify_data)),
+                              theta = theta),
+                   X1, X2,
+                   lengthX1 = lengthX1, lengthX2 = lengthX2,
+                   title = paste0("Logistic regression"))
+  
+}
+
+plot_2D_logreg(theta)
+```
+
+```{r logreg-plot_emp_risk}
+plot2D_emp_risk <- function(min_theta = c(0, 0),
+                            max_theta = c(1, 1),
+                            theta_length = c(100, 100),
+                            emp_risk,
+                            log_emp_risk = FALSE) {
+  grid_thetas <- sapply(1:2, function(i)
+    seq(min_theta[i],
+        max_theta[i],
+        length.out = theta_length[i]))
+  
+  # compute grid coordinates with cartesian product
+  grid_theta <- expand.grid(grid_thetas[, 1], grid_thetas[, 2])
+  
+  emp_risk <- if (log_emp_risk)
+    apply(grid_theta, 1, function(theta)
+      log(emp_risk(theta)))
+  else
+    apply(grid_theta, 1, function(theta)
+      emp_risk(theta))
+  
+  grid_theta$emp_risk <- emp_risk
+  
+  ggplot() +
+    geom_raster(data = grid_theta,
+                aes(x = Var1, y = Var2, fill = emp_risk),) +
+      labs(
+      fill =  if(log_emp_risk) expression(log(R[emp](theta)))
+        else expression(R[emp](theta)),
+      title =  if(log_emp_risk) expression(log(R[emp](theta)))
+        else expression(R[emp](theta)),
+      x = expression(theta[1]),
+      y = expression(theta[2])
+    )
+}
+```
+
+```{r logreg-example_emp_risk_plot}
+plot2D_emp_risk(emp_risk = function(theta) (risk_bernoulli(Y,X,c(2,theta))),
+                max_theta = c(100,100), min_theta = c(-100,-100), 
+                log_emp_risk = TRUE)
+```
+
+```{r logreg-example_grad_desc}
+gradient_descent_opt_stepsize(Y,X,theta,
+                     risk_bernoulli,
+                     gradient_bernoulli,
+                     max_learning_rate = 0.01,
+                     max_iterations = 1000,
+                     epsilon = 0.001)
+```
+
+```{r logreg-example_newton}
+newton_opt_stepsize(Y,X,theta,
+                    risk_bernoulli,
+                    gradient_bernoulli,
+                    hessian_bernoulli,
+                    min_learning_rate = 0.0,
+                    max_learning_rate = 100,
+                    max_iterations = 2
+                    )
+```
+
+
+```{r logreg_penalty}
+risk_penalty_bernoulli <- function(Y, X, theta, exp_yxt = 
+                                      exp(Y*(X%*%theta)), alpha=1){
+  risk_bernoulli(Y, X, theta, exp_yxt) + alpha * 
+    (sum(theta[2:length(theta)]^2)-1)^2
+}
+
+gradient_penalty_bernoulli <- function(Y, X, theta, exp_yxt = 
+                                      exp(Y*(X%*%theta)), alpha=1){
+    gradient_bernoulli(Y,X,theta, exp_yxt) + 
+      c(0,4*alpha*(sum(theta[2:length(theta)]^2)-1)*theta[2:length(theta)])
+}
+
+hessian_penalty_bernoulli <- function(Y, X, theta, exp_yxt = 
+                                      exp(Y*(X%*%theta)), alpha=1){
+    hessian_bernoulli(Y,X,theta,exp_yxt) +
+     rbind(rep(0,length(theta)),cbind(rep(0,length(theta)-1),
+                                      8*alpha*theta[2:length(theta)]%*%
+                                        t(theta[2:length(theta)])+
+                                      4*alpha*(sum(theta[2:length(theta)]^2)-1)
+                                      *diag(length(theta)-1) ))
+}
+```
+```{r logreg-penalty_grad_desc}
+alpha=2000
+res <- gradient_descent_opt_stepsize(Y,X,rep(1.,length(theta)),
+                     function (Y,X, theta) risk_penalty_bernoulli(Y,X,theta,
+                                                                  alpha=alpha),
+                     function (Y,X, theta) gradient_penalty_bernoulli(Y,X,theta,
+                                                                  alpha=alpha),
+                     min_learning_rate = 0,
+                     max_learning_rate = 0.01,
+                     max_iterations = 300,
+                     epsilon = 0.000001)
+res$theta
+plot_2D_logreg(res$theta)
+```
+```{r logreg-penalty_newton}
+alpha=2000
+res <- newton_opt_stepsize(Y,X,rep(1.,length(theta)),
+                     function (Y,X, theta) risk_penalty_bernoulli(Y,X,theta,
+                                                                  alpha=alpha),
+                     function (Y,X, theta) gradient_penalty_bernoulli(Y,X,theta,
+                                                                  alpha=alpha),
+                     function (Y,X, theta) hessian_penalty_bernoulli(Y,X,theta,
+                                                                  alpha=alpha),                    
+                     min_learning_rate = 0,
+                     max_learning_rate = 0.3,
+                     max_iterations = 100,
+                     epsilon = 0.000001)
+
+res$theta
+plot_2D_logreg(res$theta)
+```
+

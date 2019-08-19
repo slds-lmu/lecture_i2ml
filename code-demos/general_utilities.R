@@ -29,7 +29,8 @@ plot_2D_classify <- function(to_classify_labels,
   )
   grid_data$prediction <- grid_result$prediction
   
-  # assign data to be classified based on classification rule & check these "predictions"
+  # assign data to be classified based on classification rule & check these 
+  # "predictions"
   to_check_result <- classify_method(
     to_classify_data = to_classify_data[, c(X1, X2)]
   )
@@ -79,7 +80,7 @@ gradient_descent_opt_stepsize <- function(Y, X, theta,
     iterations = seq_len(max_iterations) - 1,
     loss = NA
   )
-  theta_storage <- matrix(NA, ncol = ncol(X), nrow = max_iterations + 1)
+  theta_storage <- matrix(NA, ncol = length(theta), nrow = max_iterations + 1)
   
   loss_storage[1, "loss"] <- risk(Y, X, theta)
   theta_storage[1, ] <- theta
