@@ -16,7 +16,7 @@ for(file in files){
 # cleanup the packages which were found
 matches <- gsub( "[\'\\\"]", '', matches)
 matches <- unique(matches)
-matches <- matches[which(matches != "" & matches != "x")]
+matches <- matches[which(matches != "")]
 
 # install missing packages 
 for(pkg in matches){
