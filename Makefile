@@ -41,3 +41,6 @@ day4-all:
 sources:
 	cd $(DAY3); make sources
 	cd $(DAY4); make sources
+	
+install:
+	Rscript -e 'source("install.R")'
