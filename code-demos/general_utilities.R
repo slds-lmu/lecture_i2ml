@@ -1,10 +1,10 @@
 ## @knitr knn-plot_2D_classif
 
-# function for a general classification method with two features to visualize 
-# class boundaries X1 and X2 are the names of the two features to use. 
+# function for a general classification method with two features to visualize
+# class boundaries X1 and X2 are the names of the two features to use.
 plot_2D_classify <- function(to_classify_labels,
-                             to_classify_data, 
-                             classify_method, 
+                             to_classify_data,
+                             classify_method,
                              X1, X2,
                              lengthX1 = 100, lengthX2 = 100,
                              title = "") {
@@ -18,39 +18,39 @@ plot_2D_classify <- function(to_classify_labels,
     max(to_classify_data[, X2]),
     length.out = lengthX2
   )
-  
+
   # compute grid coordinates with cartesian product
   grid_data <- expand.grid(gridX1, gridX2)
   names(grid_data) <- c(X1, X2)
-  
+
   # assign grid cells to classes based on classification rule:
   grid_result <- classify_method(
     to_classify_data = grid_data
   )
   grid_data$prediction <- grid_result$prediction
-  
-  # assign data to be classified based on classification rule & check these 
+
+  # assign data to be classified based on classification rule & check these
   # "predictions"
   to_check_result <- classify_method(
     to_classify_data = to_classify_data[, c(X1, X2)]
   )
   to_classify_data$class <- to_classify_labels
   to_classify_data$correct <- (to_check_result$prediction == to_classify_labels)
-  
-  
+
+
   ggplot() +
     geom_raster(
-      data = grid_data, 
-      aes_string(x = X1, y = X2, fill = "prediction"), 
+      data = grid_data,
+      aes_string(x = X1, y = X2, fill = "prediction"),
       alpha = .8
     ) +
     geom_point(
-      data = to_classify_data, 
+      data = to_classify_data,
       aes_string(x = X1, y = X2, shape = "class", color = "correct"),
       alpha = .8
     ) +
     scale_color_manual(
-      values = c("TRUE" = "darkgray", "FALSE" = "white"), 
+      values = c("TRUE" = "darkgray", "FALSE" = "white"),
       guide = FALSE
     ) +
     labs(
@@ -60,8 +60,8 @@ plot_2D_classify <- function(to_classify_labels,
         100 * round(mean(to_classify_data$correct), 4),
         "% correctly classified"
       )
-    ) + 
-    theme(plot.title = element_text(size=16))
+    ) +
+    theme(plot.title = element_text(size = 16))
 }
 
 ## @knitr grad_desc_opt-def
@@ -81,10 +81,10 @@ gradient_descent_opt_stepsize <- function(Y, X, theta,
     loss = NA
   )
   theta_storage <- matrix(NA, ncol = length(theta), nrow = max_iterations + 1)
-  
+
   loss_storage[1, "loss"] <- risk(Y, X, theta)
   theta_storage[1, ] <- theta
-  
+
   #  loop over gradient updates
   for (i in 1:max_iterations) {
     grad <- gradient(Y = Y, X = X, theta = theta)
@@ -95,7 +95,7 @@ gradient_descent_opt_stepsize <- function(Y, X, theta,
       lower = min_learning_rate,
       upper = max_learning_rate,
     )$par
-    
+
     theta <- theta - lambda_opt * grad
     loss_storage[i + 1, "loss"] <- risk(Y = Y, X = X, theta = theta)
     theta_storage[i + 1, ] <- t(theta)
@@ -108,15 +108,15 @@ gradient_descent_opt_stepsize <- function(Y, X, theta,
     layout(t(1:(length(theta) + 1)))
     for (i in 1:length(theta)) {
       plot(theta_storage[, i],
-           ylab = "coefficient value",
-           xlab = "iteration", type = "l", col = "blue",
-           main = bquote(theta[.(i - 1)])
+        ylab = "coefficient value",
+        xlab = "iteration", type = "l", col = "blue",
+        main = bquote(theta[.(i - 1)])
       )
     }
     plot(loss_storage[, "loss"],
-         ylab = "empirical risk",
-         xlab = "iteration", type = "l", col = "red",
-         main = expression(R[emp](theta))
+      ylab = "empirical risk",
+      xlab = "iteration", type = "l", col = "red",
+      main = expression(R[emp](theta))
     )
   }
   list(theta = theta, risk = risk(Y, X, theta))

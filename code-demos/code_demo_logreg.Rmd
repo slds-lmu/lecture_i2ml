@@ -13,7 +13,7 @@ params:
 ```  
 
 ```{r, echo=FALSE}
- read_chunk("general_utilities.R")
+knitr::read_chunk("general_utilities.R")
 ```  
 
 # Logistic regression
@@ -33,9 +33,10 @@ logistic <- function(X, theta, Xtheta= X%*% theta){
 ```
 
 ```{r logreg-classify}
-classify_logreg <- function(X, theta, Xtheta= X%*% theta){
-  pred <- as.character(2*as.integer(logistic(X, theta,  Xtheta=Xtheta) > 0.5)-1)
-  list(prediction = pred, levels = c("1","-1"))
+classify_logreg <- function(X, theta, Xtheta = X %*% theta){
+  probability <- logistic(X, theta,  Xtheta = Xtheta)
+  list(prediction = ifelse(probability > .5, 1, -1), 
+       levels = c("1","-1"))
 }
 ```
 
@@ -89,15 +90,12 @@ set.seed(1337)
 n <- 1000
 p <- 2
 
-X <- cbind(rep(1,n),matrix(runif(n*p, -5, 5), nrow = n))
+X <- matrix(runif(n*p, -5, 5), nrow = n)
 # what could be a problem if there was no intercept term? 
 # think about the boundary
-normal = c(16,-9)
-normal = normal/sqrt(sum(normal^2))
+theta <- c(3, -1)
 
-theta <- c(2, normal)
-
-Y <- as.integer(classify_logreg(X, theta)$pred)
+Y <- 2 * rbinom(n = n, size = 1, prob = logistic(X, theta)) - 1
 ```
 
 ```{r logreg-plot_2D_logreg-def}  
@@ -107,16 +105,15 @@ Y <- as.integer(classify_logreg(X, theta)$pred)
 plot_2D_logreg <- function(theta, X1="X1",X2="X2",
                       # by default, we "predict" the class of the training data:
                       to_classify_labels = as.character(Y),
-                      to_classify_data = data.frame("X1"=X[,2],
-                                                   "X2"=X[,3]),
+                      to_classify_data = data.frame("X1"=X[,1],
+                                                   "X2"=X[,2]),
                       lengthX1 = 100, lengthX2 = 100) {
   
   plot_2D_classify(to_classify_labels = to_classify_labels,
                    to_classify_data = to_classify_data, 
                    classify_method = function(to_classify_data) 
                        classify_logreg(
-                               X = cbind(rep(1,nrow(to_classify_data)),
-                                         as.matrix(to_classify_data)),
+                               X = cbind(as.matrix(to_classify_data)),
                               theta = theta),
                    X1, X2,
                    lengthX1 = lengthX1, lengthX2 = lengthX2,
@@ -165,30 +162,31 @@ plot2D_emp_risk <- function(min_theta = c(0, 0),
 ```
 
 ```{r logreg-example_emp_risk_plot}
-plot2D_emp_risk(emp_risk = function(theta) (risk_bernoulli(Y,X,c(2,theta))),
-                max_theta = c(100,100), min_theta = c(-100,-100), 
+plot2D_emp_risk(emp_risk = function(theta) (risk_bernoulli(Y,X, theta)),
+                max_theta = c(10,10), min_theta = c(-10,-10), 
                 log_emp_risk = TRUE)
 ```
 
-```{r logreg-example_grad_desc}
-gradient_descent_opt_stepsize(Y,X,theta,
+```{r logreg-example_grad_desc_newton}
+gradient_descent_opt_stepsize(Y,X, c(0,0),
                      risk_bernoulli,
                      gradient_bernoulli,
                      max_learning_rate = 0.01,
-                     max_iterations = 1000,
-                     epsilon = 0.001)
-```
-
-```{r logreg-example_newton}
-newton_opt_stepsize(Y,X,theta,
+                     max_iterations = 100,
+                     epsilon = 0.00001)
+title(main = "Gradient Descent", outer = TRUE, line = -1)
+newton_opt_stepsize(Y,X, c(0,0),
                     risk_bernoulli,
                     gradient_bernoulli,
                     hessian_bernoulli,
                     min_learning_rate = 0.0,
                     max_learning_rate = 100,
-                    max_iterations = 2
+                    max_iterations = 4
                     )
+title(main = "Newton Raphson", outer = TRUE, line = -1)
 ```
+
+
 
 
 ```{r logreg_penalty}
