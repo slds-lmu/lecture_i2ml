@@ -1,0 +1,216 @@
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../../style/preamble.Rnw")
+@
+% Load all R packages and set up knitr
+<<setup-r, child="../../style/setup.Rnw", include = FALSE>>=
+@
+
+%! includes: basicS-notation, basics-definition
+
+\lecturechapter{Introduction - Supervised Learning}
+\lecture{Introduction to Machine Learning}
+
+\sloppy
+
+\begin{vbframe}{Data, Target and Input Features}
+
+Imagine you want to investigate how salary and workplace conditions
+affect productivity of employees. Therefore, you collect data about
+their worked minutes per week (productivity), how many people work in the
+same office as the employees in question and the employees' salary.
+
+\framebreak
+
+\scriptsize
+
+% FIGURE SOURCE: https://drive.google.com/open?id=1qIWHJq-iZqfUsLLJD81Z9LhobGTIN3sDHTevnm5dxZ0
+\begin{center}\includegraphics[width=0.8\textwidth]{figure_man/data_table} \end{center}
+
+\normalsize
+
+\vspace{-0.5cm}
+
+The entire \textbf{data set} is expressed by \[
+\D = \Dset
+\] with the \(i\)-th \textbf{observation} \(\xyi\) $\in \mathcal{X}\, \times \,\mathcal{Y}$.
+
+$\mathcal{X}$ is called \textbf{input space} and contains all possible values of the \textbf{features}.
+
+$\mathcal{Y}$ is the \textbf{output space} or \textbf{target space}  and contains all possible values of the \textbf{target variable}.
+
+\end{vbframe}
+
+
+\begin{frame}{Target and Features Relationship}
+
+\begin{itemize}
+
+\item
+  For our observed data we know which outcome is produced:
+\end{itemize}
+
+\vspace{-0.5cm}
+
+\scriptsize
+
+% FIGURE SOURCE: https://drive.google.com/open?id=1WLPubv9vxLL-JIlHAtsvTBBG5pbF4xgRGW_prkOAEnE Page 1
+\begin{center}\includegraphics[width=0.9\textwidth]{figure_man/new_data0_web} \end{center}
+
+\normalsize
+
+\end{frame}
+
+\begin{frame}{Target and Features Relationship}
+
+\begin{itemize}
+\item For new employees we can only observe the features, but not the target:
+\end{itemize}
+
+\vspace{-0.5cm}
+
+\scriptsize
+
+% FIGURE SOURCE: https://drive.google.com/open?id=1WLPubv9vxLL-JIlHAtsvTBBG5pbF4xgRGW_prkOAEnE Page 2
+\begin{center}\includegraphics[width=0.9\textwidth]{figure_man/new_data1_web} \end{center}
+
+\normalsize
+
+\vspace{-0.5cm}
+
+\(\implies\) The goal is to predict the target variable for
+\textbf{unseen new data} by using a \textbf{model} trained on the
+already seen \textbf{training data}.\\
+This is a \textbf{supervised learning} task.
+In this course, we will only deal with ML problems of this kind.
+
+\end{frame}
+
+\begin{frame}{Target and Features Relationship}
+
+\scriptsize
+
+% FIGURE SOURCE: https://drive.google.com/open?id=1WLPubv9vxLL-JIlHAtsvTBBG5pbF4xgRGW_prkOAEnE Page 3
+\begin{center}\includegraphics[width=\textwidth]{figure_man/what_is_a_model_web} \end{center}
+
+\normalsize
+
+\end{frame}
+
+\begin{frame}{Supervised Learning}
+
+\begin{itemize}
+\item
+  In ML, we want to be \enquote{lazy}. We do not want to specify \(f\)
+  manually.
+\item
+  We want to learn \(f\) \textbf{automatically from labeled data}.
+\item
+  Mathematically, we face a problem of function approximation: search
+  for an \(f\), such that, for all points in the training data and also
+  all newly observed points:
+\end{itemize}
+
+\begin{center}
+  \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=1cm,
+      thick,main node/.style={circle,fill=blue!20,draw,font=\sffamily\Large\bfseries}]
+    \node[punkt] (natur) {$y \approx f(x)$};
+    \node[left=of natur] (x) {x};
+    \node[right=of natur] (y) {y};
+    \path[every node/.style={font=\sffamily\small}]
+    (natur) edge node {} (y)
+    (x) edge node  {} (natur)
+    ;
+  \end{tikzpicture}
+\end{center}
+
+\begin{itemize}
+
+\item
+  We call this \textbf{supervised learning}.
+  \item
+  (Later we will see that we need to specify at least \(f\)'s general structure
+  and how to quantify the difference between $y$ and $f(x)$ in order
+  to make this problem feasible.)
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Supervised Learning Tasks}
+
+Supervised Learning comes in two flavours:
+
+\begin{itemize}
+\item \textbf{Regression}: Given features $x$, predict corresponding output from $\mathcal{Y} \in \mathbb{R}^m, 1 \leq m < \infty$.
+\item \textbf{Classification}: Assigning an observation with features $x$ to one class of a finite set of classes $\mathcal{Y} = \{C_1,...,C_g\}, 2 \leq g < \infty$. (Details later.)
+% \item \textbf{Density estimation}: Given an input $x$, predict the probability distribution $p(y|x)$ on $\mathcal{Y}$.
+\end{itemize}
+
+\end{frame}
+
+\begin{vbframe}{Regression Task}
+\lz
+\begin{columns}[T]
+  \begin{column}{0.5\textwidth}
+    \structure{Goal}: Predict a continuous output
+    \begin{itemize}
+      \item $y$ is a metric variable (with values in $\R$)
+      \item Regression models can be constructed by many different methods (e.g. trees or splines), not only statistical (linear) regression!
+    \end{itemize}
+  \end{column}
+  \begin{column}{0.5\textwidth}
+<<regression-task-plot, fig.height=8>>=
+
+f = function(x) 0.5 * x^2 + x + sin(x)
+x = runif(40, min = -3, max = 3)
+y = f(x) + rnorm(40)
+df = data.frame(x = x, y = y)
+ggplot(df, aes(x, y)) + geom_point(size = 3) + stat_function(fun = f, color = "#FF9999", size = 2)
+@
+  \end{column}
+\end{columns}
+
+\framebreak
+
+\textbf{Regression Task - Examples}
+
+\begin{itemize}
+  \item \textbf{Stock Trading:} Predicting the exact stock prices on the basis of company data and insider information
+  \item \textbf{Pricing:} Anticipating the willingness-to-pay of new customers on the basis of purchases of other customers
+  \item \textbf{Medicine:} Calculating the life expectancy for patients with a particular disease and severity (although life time analysis is often better here due to right censoring)
+  \item \textbf{Income:} Predicting future income of a person based on education and skills
+\end{itemize}
+
+\framebreak
+
+\textbf{Regression Task - Income Prediction}
+
+\begin{center}
+  % FIGURE SOURCE: Screnshot from website (https://www.dice.com/salary-calculator)
+  \includegraphics[width=\textwidth]{figure_man/salary_prediction.png}
+\end{center}
+\vspace{-0.5cm}
+\begin{flushright}
+  \tiny https://www.dice.com/salary-calculator
+\end{flushright}
+
+\end{vbframe}
+
+\begin{frame}{Supervised Learning Tasks}
+\begin{itemize}
+  \item Regression
+  \begin{itemize}
+    \item Regression (means, quantiles, ...)
+    \item Forecasting of time series
+    \item Survival prediction
+  \end{itemize}
+  \item Classification
+  \begin{itemize}
+    \item Binary \& Multiclass Classification
+    \item Multilabel classification
+    \item Cost-sensitive classification
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+\endlecture
