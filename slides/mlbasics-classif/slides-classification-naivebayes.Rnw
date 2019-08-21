@@ -1,0 +1,208 @@
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../../style/preamble.Rnw")
+@
+% Load all R packages and set up knitr
+<<setup-r, child="../../style/setup.Rnw", include = FALSE>>=
+@
+
+\lecturechapter{ML Basic for Classification - Naive Bayes}
+\lecture{Introduction to Machine Learning}
+\framebreak
+
+
+
+
+\begin{vbframe}{Naive Bayes classifier}
+
+Another generative technique for categorical response $y \in \gset$ is called \emph{Naive Bayes classifier}.
+Here, we make a \enquote{naive} \emph{conditional independence assumption}: the features given the category $y$ are conditionally independent of each other, so that we can simply write:
+
+% The technique is based on \emph{Bayes theorem}
+% $$
+% \pikx = \postk = \frac{\pdfxyk \cdot \pi_k}{\pdfx} = \frac{\text{likelihood } \cdot \text{ prior}}{ \text{evidence}},
+% $$
+$$
+\pdfxyk = p((x_1, x_2, ..., x_p)|y = k)=\prod_{j=1}^p p(x_j|y = k).
+$$
+
+\lz
+
+Putting this together we get
+$$
+\pikx  \propto \pik \cdot \prod_{j=1}^p p(x_j|y = k)
+$$
+
+\framebreak
+
+
+
+\begin{itemize}
+  \item Covariance matrices can differ over both classes but assumed to be diagonal.
+  \item Assumption of uncorrelated features (!!)
+  \item Often performs well despite this usually wrong assumption
+  \item Easy to deal with mixed features (metric and categorical)
+\end{itemize}
+
+<<echo = FALSE, warning=FALSE, message=FALSE, fig.height=3.5>>=
+library(ggplot2)
+library(MASS)
+library(car)
+
+# fake data
+n = 300
+classa = data.frame(mvrnorm(n = n, mu = c(2,2), Sigma = matrix(c(2, 0, 0, 2), ncol = 2, byrow = TRUE)))
+classb = data.frame(mvrnorm(n = n, mu = c(10,7), Sigma = matrix(c(8, -6, -6, 8), ncol = 2, byrow = TRUE)))
+
+# Target data frame
+df = cbind(classa, rep("a", ncol(classa)))
+colnames(df) = c("x1", "x2", "y")
+foo = cbind(classb, rep("b", ncol(classb)))
+colnames(foo) = c("x1", "x2", "y")
+df = rbind(df, foo)
+
+mu_a = c(mean(df[which(df$y == "a"), 1]), mean(df[which(df$y == "a"), 2]))
+mu_b = c(mean(df[which(df$y == "b"), 1]), mean(df[which(df$y == "b"), 2]))
+
+var_nb_a = matrix(c(2, 0, 0, 2), ncol = 2)
+var_nb_b = matrix(c(4, 0, 0, 4), ncol = 2)
+
+a_ell = as.data.frame(ellipse(center = mu_a, shape = var_nb_a, radius = 2, draw = FALSE))
+colnames(a_ell) = c("x1", "x2")
+b_ell = as.data.frame(ellipse(center = mu_b, shape = var_nb_b, radius = 2, draw = FALSE))
+colnames(b_ell) = c("x1", "x2")
+
+dens_a =
+  dens_b = expand.grid(
+    X1 = seq(min(c(classa$X1, classb$X1)), max(c(classa$X1, classb$X1)), l = 80),
+    X2 = seq(min(c(classa$X2, classb$X2)), max(c(classa$X2, classb$X2)), l = 80))
+dens_a$dens = sqrt(mvtnorm::dmvnorm(dens_a[,1:2], m = mu_a,
+                                    sigma = diag(c(var(classa$X1),var(classa$X2)))))
+dens_b$dens = sqrt(mvtnorm::dmvnorm(dens_b[,1:2], m = mu_b,
+                                    sigma = diag(c(var(classb$X1),var(classb$X2)))))
+
+
+# dens_a$dens <- as.vector((outer(density(classa$X1, n = 80,
+#                                          from = min(c(classa$X1, classb$X1)),
+#                                          to = max(c(classa$X1, classb$X1)))$y,
+#                                  density(classa$X2, n = 80,
+#                                          from = min(c(classa$X2, classb$X2)),
+#                                          to = max(c(classa$X2, classb$X2)))$y)))
+#
+# dens_b$dens <- as.vector((outer(density(classb$X1, n = 80,
+#                                          from = min(c(classa$X1, classb$X1)),
+#                                          to = max(c(classa$X1, classb$X1)))$y,
+#                                  density(classb$X2, n = 80,
+#                                          from = min(c(classa$X2, classb$X2)),
+#                                          to = max(c(classa$X2, classb$X2)))$y)))
+
+plot1 = ggplot(data = classa, aes(x = X1, y = X2, alpha = 0.2)) +
+  geom_contour(data = dens_a, aes(z = dens), col = "blue", alpha = .2, lwd = 1, bins = 5) +
+  geom_contour(data = dens_b, aes(z = dens), col = "red", alpha = .2, lwd = 1, bins = 5) +
+  geom_point(col = "blue", show.legend = FALSE) +
+  geom_point(data = classb, aes(x = X1, y = X2, alpha = 0.2), col = "red", show.legend = FALSE) +
+  coord_fixed()
+plot1
+@
+
+
+
+% The Naive Bayes classifier is then obtained by maximizing the above equation
+% $$
+% \yh = h(x) = \argmax_{k\in \gset}\pi_k\prod_{i=1}^p p(x_i | y = k).
+% $$
+
+\framebreak
+
+Parameters estimation now has become simple, as we only have to estimate $\pdf(x_j | y = k)$, which is univariate (given the class k).
+
+\lz
+
+For numerical $x_j$, often a univariate Gaussian is assumed, and we estimate $(\mu_j, \sigma^2_j)$ in the standard manner. Note, that we now have constructed a QDA model with strictly diagonal covariance structures for each class, hence this leads to quadratic discriminant functions.
+
+\lz
+
+For categorical features $x_j$, we simply use a Bernoulli / categorical distribution model for $p(x_j | y = k)$ and estimate the probabilities for $(j,k)$ by simply counting of relative frequencies in the standard manner.
+The resulting classifier is linear in these frequencies.
+
+% \lz
+% Furthermore, one can show that the Naive Bayes is a linear classifier in a particular feature space if the features are from exponential families (e. g. binomial, multinomial, normal distribution).
+
+\framebreak
+
+<<>>=
+plotLearnerPrediction("classif.naiveBayes",
+                      makeClassifTask(data = iris[,-(1:2)], target = "Species"),
+                      cv = 0) +
+  scale_fill_viridis_d()
+@
+
+
+
+
+
+% In the general categorical case the modeled likelihood for $x_j$ with parameters $p_{kj}$ is:
+% % with $x = (x_1, \ldots \x_p)$
+%
+% $$
+% p(x_j | y = k) = \frac{(\sum x_i)!}{\prod_i x_i!} \prod_j p_{kj}^{[x_j = j]}
+% $$
+%
+% and for the completely observed data this becomes a multinomial distribution
+%
+% $$
+% \frac{(\sum_i x_i)!}{\prod_i x_i!} \prod_j p_{kj}^{v_{kj}},
+% $$
+%
+% with ${v_{kj}} = \sum_{i = 1}^n [x_j^{(i)} = 1]$ the number of times $(j, k)$ occurs.
+
+
+% \framebreak
+%
+%
+% We can now prove that the decision boundaries between klasses k and l are linear:
+%
+% $$
+% \log \frac{\pi_k(x)}{\pi_l(x)} \propto \log\frac{\pi_k}{\pi_l} + \sum_j v_{kj} \ln p_{kj} - \sum_j v_{lj} \ln p_{lj}
+% $$
+%
+% This is a linear function in the parameter vector $v = (v_{11}, \ldots, v_{1p}, \ldots, v_{g1} \ldots v_{gp})$.
+%
+% \framebreak
+%
+% Laplace smoothing: If a given class and feature value never occur together in the training data, then the frequency-based probability estimate will be zero.
+%
+% \lz
+%
+% This is problematic because it will wipe out all information in the other probabilities when they are multiplied.
+%
+% \lz
+%
+% A simple numerical correction, especially needed for smaller sample size, is to set $p_{kj} = \epsilon > 0$ instead of $p_{kj} = 0$.
+
+
+\end{vbframe}
+
+% \begin{vbframe}{Naive Bayes as a linear classifier}
+
+% In general, the \emph{Naive Bayes classifier} is \textbf{not} a \emph{linear} classifier.
+
+% \lz
+
+% However, it can be shown that the \emph{Naive Bayes classifier} is a linear classifier in a particular feature space if the features are from exponential families (e. g. binomial, multinomial, normal distribution) .
+
+% \end{vbframe}
+%
+%
+% \begin{vbframe}{Naive Bayes: application as spam filter}
+% \begin{itemize}
+%   \item In the late 90s, Naive Bayes became popular for email spam-filter programs
+%   \item Word counts were used as features to detect spam mails (e.g. "Viagra" often occurs in spam mail)
+%   \item Independence assumption: occurrence of two words in mail is not correlated
+%   \item Seems naive ("Viagra" more likely to occur in context with "Buy now" than "flower"), but leads to less required parameters and therefore better generalization.
+% \end{itemize}
+% \end{vbframe}
+
+
+\endlecture
+

@@ -1,0 +1,192 @@
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../../style/preamble.Rnw")
+@
+% Load all R packages and set up knitr
+<<setup-r, child="../../style/setup.Rnw", include = FALSE>>=
+@
+
+\lecturechapter{ML Basics for Classification - Logistic and Logistic Regression}
+\lecture{Introduction to Machine Learning}
+\framebreak
+%
+%   \begin{vbframe}{Bin. classif. losses - Logistic loss}
+%   \begin{itemize}
+%     \item $\Lxy = \ln(1+\exp(-y\fx))$, used in logistic regression
+%     \item $y \in \{-1, 1\}$
+%     \item Also called Bernoulli loss
+%   \item Convex, differentiable, not robust
+%   \end{itemize}
+%
+%   <<fig.height=3>>=
+%   x = seq(-2, 2, by = 0.01); y = log(1 + exp(-x))
+%   qplot(x, y, geom = "line", xlab = expression(yf(x)), ylab = expression(L(yf(x))))
+%   @
+%   % the minimizer of $\risk(f)$ for the logistic loss function is
+%
+%   % \begin{eqnarray*}
+%   % \fh(x) &=&  \ln \biggl(\frac{\pix}{1-\pix}\biggr)
+%   % \end{eqnarray*}
+%
+%   % The function is undefined when $\pix = 1$ or $\pix = 0$, but predicts a smooth curve which grows when $\pix$ increases and equals $0$ when $\pix = 0.5$
+%
+%
+%   \end{vbframe}
+
+\begin{vbframe}{Logistic regression}
+
+A \emph{discriminant} approach for directly modeling the posterior probabilities $\pix$ of the labels is \textbf{logistic regression}.\\
+
+For now, let's focus on the binary case $y \in \{0, 1\}$.
+
+A naive approach would be to model
+\[
+\pix = \post = \theta^T x .
+\]
+Obviously this could result in predicted probabilities $\pix \not\in [0,1]$.
+
+\framebreak
+
+To avoid this, logistic regression \enquote{squashes} the estimated linear scores $\theta^T x$ to $[0,1]$ through the \textbf{logistic function} $s$:
+\[
+\pix = \post = \frac{\exp\left(\theta^Tx\right)}{1+\exp\left(\theta^Tx\right)} = \frac{1}{1+\exp\left(-\theta^Tx\right)} = s\left(\theta^T x\right)
+\]
+\lz
+
+Note that we will again usually suppress the intercept in notation, i.e., $\theta^Tx \equiv \theta_0 + \theta^Tx$.
+
+
+\end{vbframe}
+
+\begin{vbframe}{Logistic function}
+
+The logistic function $s(t) = \frac{exp(t)}{1 + exp(t)}$ which we use to model the probability
+$\post = s(\theta^T x)  = \frac{\exp(\theta^Tx)}{1+\exp(\theta^Tx)} $
+\lz
+<<logistic-function, echo=FALSE, fig.height = 3.5>>=
+n = 100
+df = data.frame(x = seq(from = -10, to  = 10, length.out = n))
+df$y = exp(df$x) / (1 + exp(df$x))
+ggplot(df) + geom_line(aes(x = x, y = y)) + scale_x_continuous('t')  + scale_y_continuous('s(t)')
+@
+
+\framebreak
+Changing the intercept shifts the logistic curve in x-axis direction.
+Let's assume $\theta_1 = 1$ for simplicity, so that
+$\post =  \frac{\exp(\theta_0 + x)}{1+\exp(\theta_0 + x)}$
+\lz
+<<logistic-function-par, echo=FALSE, fig.height = 3.5>>=
+n = 100
+df = data.frame(x = rep(seq(from = -10, to  = 10, length.out = n ), times = 3),
+                        intercept = rep(c(-3,0,3), each = n))
+df$y = exp(df$intercept + df$x) / (1 + exp(df$intercept + df$x))
+
+ggplot(df) + geom_line(aes(x = x, y = y, group = intercept, color = factor(intercept))) +
+scale_x_continuous('x')  + scale_y_continuous(expression(s(theta^T*x))) +
+  scale_color_viridis_d(expression(theta[0]))
+@
+
+\framebreak
+Assuming a single feature and no intercept: $\post =  \frac{\exp(\theta_1 x_1)}{1+\exp(\theta_1 x_1)}$:
+Parameter $\theta_1$ controls the slope and direction of the logistic curve.
+\lz
+<<logistic-function-par2, echo=FALSE, fig.height = 3.5>>=
+n = 100
+df = data.frame(x = rep(seq(from = -10, to  = 10, length.out = n ), times = 4),
+                        theta1 = rep(c(-2,-0.3, 1, 6), each = n))
+df$y = exp(df$x * df$theta1) / (1 + exp(df$theta1 * df$x))
+
+ggplot(df) + geom_line(aes(x = x, y = y, group = theta1, color=factor(theta1))) +
+scale_x_continuous('x')  + scale_y_continuous(expression(s(theta^T*x))) +
+  scale_color_viridis_d(expression(theta[1]))
+@
+
+\end{vbframe}
+
+\begin{vbframe}{Classification loss}
+
+In order to find the \enquote{optimal} model represented by $\theta$, we need to define a \emph{loss function}.\lz
+
+For a single observation, it makes sense to simply compare the probability implied by the model to the actually observed target variable:\\
+\begin{align*}
+\text{\enquote{accuracy}}^{(i)} &:=
+  \begin{cases} \pi(x^{(i)}, \theta) & \text{if } \yi = 1 \\
+              1-\pi(x^{(i)}, \theta) & \text{if } \yi = 0 \end{cases} \\
+  & = \pi(\xi, \theta)^{\yi} (1-\pi(\xi, \theta))^{1-\yi}
+\intertext{For the entire data set, we combine these predicted probabilites into a joint probability of observing the
+target vector given the model:}
+  \text{\enquote{global accuracy}} &:= \prod^n_{i=1} \pi(\xi, \theta)^{\yi} (1-\pi(\xi, \theta))^{1-\yi}
+\intertext{We want a \emph{loss} function, so we actually need the inverse of that:}
+  \text{\enquote{global inacccuracy}} &:= \frac{1}{\prod^n_{i=1} \pi(\xi, \theta)^{\yi} (1-\pi(\xi, \theta))^{1-\yi}}
+\intertext{Finally, we want the empirical risk to be a \emph{sum} of loss function values, not a \emph{product}}
+\text{recall: } \riske &= \sum^n_{i=1} \Lxyi
+\intertext{so we turn the product into a sum by taking its log -- the same parameters minimize this, which is all we care about, and we end up with the \textbf{logistic} or \textbf{cross entropy loss function}:}
+ \Lxy &= - y \log[\pix] - (1-y) \log [1 - \pix] \\
+      & = y \theta^T x - \log[1 + \exp(\theta^T x)]
+\end{align*}
+
+\framebreak
+
+Remember that $\log[\pix] = - \log[1 + \exp(-\theta^Tx)]$.
+\lz
+
+For $y=0$ and $y=1$ and $f(x) = \theta^Tx$, this yields:
+\begin{eqnarray*}
+y=0 &:& \log[1 + \exp(\fx] \\
+y=1 &:& \log[1 + \exp(-\fx)]
+\end{eqnarray*}
+
+
+If we encode the labels with $\Yspace = \{-1,+1\}$ instead, we can simplify this as:
+
+$$\Lxy = \log[1 + \exp(-\yf] $$
+
+This is called \textbf{Bernoulli loss}.
+
+Logistic regression minimizes this, and we can use these loss
+functions for any other discriminative classification model which directly models
+$\fx$.
+
+\framebreak
+
+<<bernoulli-loss-plot, fig.height=4, fig.width=6, message=FALSE, echo=FALSE, results = 'none'>>=
+n = 100
+df = data.frame(fx = rep(seq(from = -4, to  = 4, length.out = n), times =2), y = rep(c(-1, 1), each=n))
+df$l = log(1 + exp(- (df$y * df$fx)))
+ggplot(df) + geom_line(aes(x = fx, y = l, col = as.factor(y))) +
+  scale_x_continuous(expression(f(x)))  + scale_y_continuous(expression(L(y, f(x)))) +
+  ggtitle("Bernoulli / Logistic Loss:") + scale_color_viridis_d("", labels = c("y = -1 (or 0)", "y = 1"))
+@
+
+\framebreak
+
+In order to minimize the loss (misclassification), we should predict $y=1$ if
+
+$$
+\pi(x, \theta) = \P(y = 1 | x, \theta) = \frac{\exp(\theta^T x)}{1+\exp(\theta^Tx)} \ge 0.5,
+$$
+
+which is equivalent to
+$$
+\theta^T x \ge 0 \implies y = 1.
+$$
+
+\end{vbframe}
+
+
+\begin{frame}{Logistic and Softmax Regression}
+\lz
+
+\textbf{Representation:} Design matrix $X$, coefficients $\theta$.\\
+
+\lz
+
+\textbf{Evaluation:} Logistic/Bernoulli loss function.
+
+\lz
+
+\textbf{Optimization:} Numerical optimization, typically gradient descent based methods.
+
+\end{frame}
+\endlecture
+
