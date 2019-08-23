@@ -24,6 +24,8 @@ knitr::read_chunk("code_demo_knn.Rmd")
 
 # Logistic regression
 
+## Idea
+
 In the lecture we learnt that logistic regression is a discriminant approach,
 i.e., we are modeling the posterior probabilities $\pi(x)$ of the labels
 directly using the logistic function, s.t.
@@ -100,7 +102,7 @@ risk_bernoulli <- function(Y, X, theta, exp_yxt = exp(Y*(X%*%theta))){
 }
 ```
 
-# Logistic regression - example
+## Logistic regression - example
 
 To investigate how the parameter $\theta$ of
 the logistic regression can be estimated, we create some artificial data:
@@ -118,8 +120,7 @@ theta <- c(3, -1)
 Y <- 2 * rbinom(n = n, size = 1, prob = logistic(X, theta)) - 1
 ```
 
-We use the *plot_2D_classify* function from the
-\href{./code_demo_knn.pdf}{KNN code demo} as we want to plot how well we 
+We use the *plot_2D_classify* function from the [KNN code demo](./code_demo_knn.pdf) as we want to plot how well we 
 can classify the data:
 
 ```{r logreg-plot_2D_logreg-def}  
@@ -157,16 +158,16 @@ risk_bernoulli(Y,X,theta)
 ```
 
 
-We notice that our data is linearly seperated as one would expect, since 
+We notice that our data is linearly separated as one would expect, since 
 our decision boundary is defined by 
 $$\theta^Tx = 0,$$
 which defines a hyperplane. Also we note that $\theta$ represents a vector normal to
 this plane and is pointing to "1"-side. But doesn't that mean that for 
-$\lambda \in \mathbb{R}^+$ $\lambda\cdot\theta$ seperates 
+$\lambda \in \mathbb{R}^+$ $\lambda\cdot\theta$ separates 
 the data equally well? Check for $\lambda \in \{0.5, 2,3\}$ the classification and the 
 empirical risk. Can you conclude what determines the *optimal* length of $\theta$?
-To gain further understanding of this behaviour let's look at a data scenario, where we
-encounter the so-called complete seperation, i.e., the data can be perfectly 
+To gain further understanding of this behavior let's look at a data scenario, where we
+encounter the so-called complete separation, i.e., the data can be perfectly 
 classified by our classification method:
 
 
@@ -187,12 +188,12 @@ ggplot_list <- lapply(
 )
 do.call(grid.arrange, ggplot_list)
 ```
-For complete seperation the empirical risk is monotonely deacreasing,
+For complete separation the empirical risk is monotonously decreasing,
 which means that by only minimizing the empirical risk we can not converge to a 
-solution. In this situation addional artificial constraints -such as regularization- 
+solution. In this situation additional artificial constraints -such as regularization- 
 can be introduced to find a solution. Since in our example we have not to deal
-with complete seperation, we can apply the *gradient_descent_opt_stepsize* function of the 
-\href{./code_demo_limo.pdf}{code demo to the linear model} directly to our 
+with complete separation, we can apply the *gradient_descent_opt_stepsize* function of the 
+[code demo to the linear model](./code_demo_limo.pdf) directly to our 
 empirical risk we derived from the Bernoulli loss. To do so we need the gradient
 of our empirical risk, for which it can be found that
 
@@ -278,13 +279,36 @@ This happens since it can be shown that for gradient descent with exact line sea
 two consecutive search directions are orthogonal to each other. To counter this 
 we look at another approach in the next chapter.
 
-# Newton-Raphson
+## Newton-Raphson
 
-```{r logreg-ber_hessian}
-hessian_bernoulli <- function(Y,X,theta, exp_yxt = exp(Y*(X%*%theta))){
-   t(( exp_yxt / (1+ exp_yxt)^2)[,1] * X) %*% X
-}
-```
+The Newton method follows this algorithm:
+
+0. Initialize $\theta^{[0]}$ (randomly) and calculate the gradient and the Hessian matrix, which is a square matrix of second-order partial derivatives, of the empirical risk with respect to $\theta$, for example for the Bernoulli loss:
+
+$$\frac{\partial R_{emp}(f)}{\partial \theta} = \sum_{i=1}^n \frac{-y^{(i)}}{1+\exp(y^{(i)}\theta^Tx^{(i)})}x^{(i)},$$
+$$
+\frac{\partial^2 R_{emp}(f)}{\partial \theta^2} = \sum_{i=1}^n \frac{\exp(y^{(i)}\theta^Tx^{(i)})}{(1+\exp(y^{(i)}\theta^Tx^{(i)}))^2}x^{(i)}{x^{(i)}}^T.
+$$
+
+
+
+Now iterate these two steps: 
+
+1. Evaluate the gradient and the Hessian matrix at the current value of the parameter vector $\theta^{[t]}$:
+
+$$\frac{\partial R_{emp}(f)}{\partial \theta}\bigg|_{\theta=t}  = \sum_{i=1}^n \frac{-y^{(i)}}{1+\exp(y^{(i)}{\theta^{[t]}}^T x^{(i)})}x^{(i)},$$
+$$\frac{\partial^2 R_{emp}(f)}{\partial \theta^2}\bigg|_{\theta=t}  =  \sum_{i=1}^n \frac{\exp(y^{(i)}{\theta^{[t]}}^T x^{(i)})}{(1+\exp(y^{(i)}{\theta^{[t]}}^T x^{(i)}))^2}x^{(i)}{x^{(i)}}^T.$$
+2. update the estimate for $\theta$ using this formula:
+$$
+\theta^{[t+1]} = \theta^{[t]} - \lambda \bigg[\frac{\partial^2 R_{emp}(f)}{\partial \theta^2}\bigg|_{\theta=t}\bigg]^{-1} \frac{\partial R_{emp}(f)}{\partial \theta}\bigg|_{\theta = \theta^{[t]}}
+$$
+
+- The \emph{stepsize} or \emph{learning rate} parameter $\lambda$ controls the size of the updates per iteration $t$.
+- We stop if the differences between successive updates of $\theta$ are below a certain threshold or once a maximum number of iterations is reached.
+- Note: The classic Newton-Raphson method uses $\lambda=1$, but we can enlarge its radius of convergence by optimizing $\lambda$ in every step.
+
+We can implement this quite easily by realizing that we are principally doing the same as with the gradient descent method - except that
+now we use a "weighted" gradient.
 
 ```{r logreg-newton}
 library(MASS)
@@ -317,6 +341,60 @@ gradient_descent_opt_stepsize(Y, X, theta,
 ```
 
 
+## Idea of Newton-Raphson
+
+```{r logreg_idea_newton, echo=FALSE}
+num_data <- 100
+
+x <- seq(from = 0,to =7,length.out = 100)
+
+f <- function(x) x^2 - 1
+fx <- function(x) 2*x
+
+func_data <- data.frame(x = x, y = f(x))
+
+x0 <- 6.5
+slope <- fx(x0)
+intercept <- f(x0) - slope*x0
+
+x1 <- x0 - slope^-1*f(x0)
+
+ggplot() + 
+  geom_line(data=func_data,aes(x=x,y=y), color="purple") +
+  geom_hline(yintercept = 0) + 
+  geom_vline(xintercept = 6.5, color="yellow") + 
+  geom_abline(slope=slope, intercept = intercept, color="turquoise") + 
+  geom_text(aes(label='x^{~"[1]" }',x=x1, y=-1.5),parse = TRUE) +
+  geom_text(aes(label='x^{~"[0]" }',x=x0, y=-1.5),parse = TRUE) +
+  geom_text(aes(label='"f\'"(x^{~"[0]" })',x=x0+0.3, y=f(x0)),parse = TRUE,
+            color="turquoise") + 
+  geom_text(aes(label='f(x)',x=4, y=20),parse = TRUE,
+            color="purple")
+```
+
+If our scalar function $f$ of interest has a root and we are *near enough* to it, we can 
+find it by iteratively using following procedure:
+$$
+x^{[t]} = x^{[t-1]} - f'(x^{[t-1]})\cdot f(x^{[t-1]}).
+$$
+Applying the multidimensional version of this to our gradient function results in the Newton-Raphson method.
+This makes sense since a necessary condition for a minimum is, that the gradient is zero, i.e., for the empirical risk that
+$$
+\frac{\partial R_{emp}(f)}{\partial \theta} = 0.
+$$
+
+## Example continued with Newton-Raphson
+
+As already mentioned for using Newton-Raphson we need the Hessian matrix:
+
+```{r logreg-ber_hessian}
+hessian_bernoulli <- function(Y,X,theta, exp_yxt = exp(Y*(X%*%theta))){
+   t(( exp_yxt / (1+ exp_yxt)^2)[,1] * X) %*% X
+}
+```
+
+Now we can use the Newton-Raphson for solving our example:
+
 ```{r logreg-example_newton}
 res <- newton_opt_stepsize(Y,X, c(-1,-1),
                     risk_bernoulli,
@@ -324,7 +402,7 @@ res <- newton_opt_stepsize(Y,X, c(-1,-1),
                     hessian_bernoulli,
                     min_learning_rate = 0.0,
                     max_learning_rate = 10,
-                    max_iterations = 4,
+                    max_iterations = 5,
                     include_storage = TRUE
                     )
 title(main = "Newton Raphson", outer = TRUE, line = -1)
@@ -332,13 +410,22 @@ print(paste("Risk: ",res$risk))
 res$theta
 ```
 
+We see that we need less steps to achieve a similar good result as when we used the gradient descent method.
+
 ```{r logreg-plot_emprisk_newton}
 plot2D_emp_risk(emp_risk = function(theta) (risk_bernoulli(Y,X, theta)),
                 max_theta = c(10,10), min_theta = c(-5,-10), 
                 log_emp_risk = TRUE,
                 thetas = res$storage$theta)
 ```
-Note: No intercept, base probabilty
+
+We see that by using Newton-Raphson we are incorporating more knowledge of our function as the Hessian matrix represents the curvature of a function, which allows to make bigger steps in the right direction. Gradient descent is a so-called first-order iterative optimization algorithm, while Newton-Raphson is second-order one since we're computing second derivatives. The behaviors of both algorithms we observed are typical for their order:
+
+- First-order iterative optimization algorithms usually need more steps than second-order one.
+- The computation of step for a first-order one is less *expensive*, since we do not need to compute the Hessian matrix and invert it.
+
+Note: In our toy example we did not use an intercept, s.t. we could visualize the algorithms better. For real data an intercept should definitively be included, since it represents the base-line probability for class "1".
+
 
 
 
