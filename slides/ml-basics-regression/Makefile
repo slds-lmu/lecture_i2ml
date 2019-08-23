@@ -1,9 +1,9 @@
-src = $(shell ls slides-*.Rnw)
-slides = $(src:%.Rnw=%.pdf)
+SLIDES = $(shell ls slides-*.Rnw)
+PDFS = $(SLIDES:%.Rnw=%.pdf)
 
-all: texclean $(slides) 
+all: texclean $(PDFS) 
 
-$(slides): %.pdf: %.Rnw
+$(PDFS): %.pdf: %.Rnw
 	Rscript -e 'knitr::knit2pdf("$<")'
 
 texclean: 
