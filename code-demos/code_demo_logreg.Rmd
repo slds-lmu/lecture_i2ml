@@ -24,20 +24,65 @@ knitr::read_chunk("code_demo_knn.Rmd")
 
 # Logistic regression
 
-In the lecture we learnt that by using the
+In the lecture we learnt that logistic regression is a discriminant approach,
+i.e., we are modeling the posterior probabilities $\pi(x)$ of the labels
+directly using the logistic function, s.t.
 
-```{r knn-plot_2D_classif, echo=FALSE}
-```
+$$\pi(x) = \mathbb{P}(y=1 |x) = \frac{1}{1+\exp(-\theta^Tx)}.$$
+**Note** As in the lecture we suppress the intercept in notation, i.e., 
+$\theta^Tx \equiv \theta_0 + \theta^Tx$.
 
-```{r grad_desc_opt-def, echo=FALSE}
-```
-
+This can be easily implemented as:
 ```{r logreg-logistic}
 logistic <- function(X, theta, Xtheta= X%*% theta){
   1  / (1+ exp(-Xtheta))
 }
 ```
 
+And we can observe that logistic regression “squashes” the estimated linear 
+scores $\theta^Tx$ to $[0, 1]$:
+
+```{r logreg-plot_logistic}
+num_data <- 100
+theta <- c(0, 1)
+
+ggplot(data=data.frame(x = seq(-5,5,length.out = num_data)), aes(x)) +
+ stat_function(fun = function(x) logistic(cbind(rep(1,length(x)),x),theta))
+```
+
+As shown in the lecture from the definition of accuracy and the encoding of the 
+labels to $\{-1, 1\}$ one can derive the Bernoulli loss:
+$$L(y,f(x)) = \log(1 + \exp(-yf(x)))$$
+For the logistic regression it holds, that $f(x) = \theta^Tx$.
+```{r logreg-ber_loss}
+loss_bernoulli <- function(Y, X, theta, exp_yxt = exp(Y*(X%*%theta))){
+  log(1+1/exp_yxt)
+}
+```
+We can plot the loss for $y = 1$ and $y = -1$:
+```{r logreg-ber_loss_plot}
+library(reshape2)
+num_data <- 100
+theta <- c(0, 1)
+y <- c(1, -1)
+
+x =  seq(-4,4,length.out = num_data)
+L = sapply(y, function(y) loss_bernoulli(y,cbind(rep(1,length(x)),x),theta))
+plot_data = melt(data.frame(x = x, L1 = L[,1], L2 = L[,2]),id.vars = "x")
+
+ggplot(plot_data, aes(x = x, y=value, colour = variable)) + 
+  geom_line() +
+ labs(x=expression(f(x)), y=expression(L(y,f(x)))) +
+      scale_color_manual(name="", values=c("purple","yellow"), labels=c("y = 1", "y = -1")) 
+
+
+```
+
+
+
+Which means in order to minimize the loss, we should predict 
+$y = 1$ if 
+$$\theta^Tx \geq 0 \iff \pi(x) = \mathbb{P}(y=1 |x) = \frac{1}{1+\exp(-\theta^Tx)} \geq 0.5.$$ 
 ```{r logreg-classify}
 classify_logreg <- function(X, theta, Xtheta = X %*% theta, conv = as.numeric){
   probability <- logistic(X, theta,  Xtheta = Xtheta)
@@ -46,15 +91,194 @@ classify_logreg <- function(X, theta, Xtheta = X %*% theta, conv = as.numeric){
 }
 ```
 
-```{r logreg-ber_risk_grad}
-risk_bernoulli <- function(Y, X, theta, exp_yxt = exp(Y*(X%*%theta))){
-  sum(log(1+1/exp_yxt))
-}
+With the help of the loss function, we can get the empirical risk as usual:
+$$R_{emp} = \sum_{i=1}^nL(y^{(i)}, f(x^{(i)})$$
 
+```{r logreg-ber_risk}
+risk_bernoulli <- function(Y, X, theta, exp_yxt = exp(Y*(X%*%theta))){
+  sum(loss_bernoulli(Y, X, theta, exp_yxt))
+}
+```
+
+# Logistic regression - example
+
+To investigate how the parameter $\theta$ of
+the logistic regression can be estimated, we create some artificial data:
+
+```{r logreg-dgp}
+set.seed(1337)
+
+n <- 1000
+p <- 2
+
+# model without intercept
+X <- matrix(runif(n*p, -5, 5), nrow = n)
+theta <- c(3, -1)
+
+Y <- 2 * rbinom(n = n, size = 1, prob = logistic(X, theta)) - 1
+```
+
+We use the *plot_2D_classify* function from the
+\href{./code_demo_knn.pdf}{KNN code demo} as we want to plot how well we 
+can classify the data:
+
+```{r logreg-plot_2D_logreg-def}  
+# function for logistic regression with two features to visualize class 
+# boundaries X1 and X2 are the names of the two features to use. 
+
+plot_2D_logreg <- function(theta, X1="X1",X2="X2",
+                      # by default, we "predict" the class of the training data:
+                      to_classify_labels = as.character(Y),
+                      to_classify_data = data.frame("X1"=X[,1],
+                                                   "X2"=X[,2]),
+                      lengthX1 = 100, lengthX2 = 100,
+                      title='"Logistic regression" ~',
+                      plot_class_rate = TRUE) {
+  
+  plot_2D_classify(to_classify_labels = to_classify_labels,
+                   to_classify_data = to_classify_data, 
+                   classify_method = function(to_classify_data) 
+                       classify_logreg(
+                               X = cbind(as.matrix(to_classify_data)),
+                              theta = theta, conv=as.character),
+                   X1, X2,
+                   lengthX1 = lengthX1, lengthX2 = lengthX2,
+                   title = title,
+                   plot_class_rate = plot_class_rate)
+  
+}
+```
+
+Let's classify the data with our *real* parameter $\theta$:
+
+```{r logreg-plot_realtheta}
+plot_2D_logreg(theta)
+risk_bernoulli(Y,X,theta)
+```
+
+
+We notice that our data is linearly seperated as one would expect, since 
+our decision boundary is defined by 
+$$\theta^Tx = 0,$$
+which defines a hyperplane. Also we note that $\theta$ represents a vector normal to
+this plane and is pointing to "1"-side. But doesn't that mean that for 
+$\lambda \in \mathbb{R}^+$ $\lambda\cdot\theta$ seperates 
+the data equally well? Check for $\lambda \in \{0.5, 2,3\}$ the classification and the 
+empirical risk. Can you conclude what determines the *optimal* length of $\theta$?
+To gain further understanding of this behaviour let's look at a data scenario, where we
+encounter the so-called complete seperation, i.e., the data can be perfectly 
+classified by our classification method:
+
+
+```{r logreg-compl_sep}
+Y_compl_sep <- classify_logreg(X, theta)$prediction
+
+thetas <- list(0.5*theta, 1*theta, 2*theta, 10*theta)
+ggplot_list <- lapply(
+  thetas,
+  function(theta) {
+    plot_2D_logreg(theta, to_classify_labels = as.character(Y_compl_sep),
+                   title = paste0('theta ==', 
+                      paste0('~ "(',paste0(theta,collapse = ","),'), " ~ ' ), 
+                      "R[emp] == ", 
+                      risk_bernoulli(Y_compl_sep, X, theta = theta)),
+                   plot_class_rate = FALSE)
+  }
+)
+do.call(grid.arrange, ggplot_list)
+```
+For complete seperation the empirical risk is monotonely deacreasing,
+which means that by only minimizing the empirical risk we can not converge to a 
+solution. In this situation addional artificial constraints -such as regularization- 
+can be introduced to find a solution. Since in our example we have not to deal
+with complete seperation, we can apply the *gradient_descent_opt_stepsize* function of the 
+\href{./code_demo_limo.pdf}{code demo to the linear model} directly to our 
+empirical risk we derived from the Bernoulli loss. To do so we need the gradient
+of our empirical risk, for which it can be found that
+
+$$\frac{\partial R_{emp}(f)}{\partial \theta} = \sum_{i=1}^n \frac{-y^{(i)}}{1+\exp(y^{(i)}\theta^Tx^{(i)})}x^{(i)}.$$
+Which can be implemented as:
+```{r logreg-ber_grad}
 gradient_bernoulli <- function(Y, X, theta, exp_yxt = exp(Y*(X%*%theta))){
   colSums((1 / (1+exp_yxt)*-Y)[,1]  * X)
 }
 ```
+
+Now we can apply the gradient descent method to find a numerical solution:
+
+```{r, logreg_grad_desc}
+res <- gradient_descent_opt_stepsize(Y,X, c(-1,-1),
+                     risk_bernoulli,
+                     gradient_bernoulli,
+                     max_learning_rate = 0.1,
+                     max_iterations = 130,
+                     epsilon = 0.00001,
+                     include_storage = TRUE)
+title(main = "Gradient Descent", outer = TRUE, line = -1)
+print(paste("Risk: ",res$risk))
+res$theta
+```
+To see what happens when we use gradient descent, we write a function which plots
+how we *traverse* through the parameter space as the algorithm converges:
+
+```{r logreg-plot_emp_risk}
+plot2D_emp_risk <- function(min_theta = c(0, 0),
+                            max_theta = c(1, 1),
+                            theta_length = c(100, 100),
+                            emp_risk,
+                            thetas,
+                            log_emp_risk = FALSE) {
+  grid_thetas <- sapply(1:2, function(i)
+    seq(min_theta[i],
+        max_theta[i],
+        length.out = theta_length[i]))
+  
+  # compute grid coordinates with cartesian product
+  grid_theta <- expand.grid(grid_thetas[, 1], grid_thetas[, 2])
+  
+  emp_risk <- if (log_emp_risk)
+    apply(grid_theta, 1, function(theta)
+      log(emp_risk(theta)))
+  else
+    apply(grid_theta, 1, function(theta)
+      emp_risk(theta))
+  
+  grid_theta$emp_risk <- emp_risk
+  
+  
+  
+  ggplot() +
+      geom_raster(data = grid_theta,
+                aes(x = Var1, y = Var2, fill = emp_risk)) +
+      geom_contour(data = grid_theta,colour = "white", 
+                   aes(x = Var1, y = Var2,z=emp_risk)) +
+      geom_line(data = data.frame(thetas), aes(x = X1, y = X2),
+                colour = "red") + 
+      labs(
+      fill =  if(log_emp_risk) expression(log(R[emp](theta)))
+        else expression(R[emp](theta)),
+      title =  if(log_emp_risk) expression(log(R[emp](theta)))
+        else expression(R[emp](theta)),
+      x = expression(theta[1]),
+      y = expression(theta[2])
+    )
+  
+}
+```
+
+```{r logreg-plot_emprisk_grad_desc}
+plot2D_emp_risk(emp_risk = function(theta) (risk_bernoulli(Y,X, theta)),
+                max_theta = c(10,10), min_theta = c(-5,-10), 
+                log_emp_risk = TRUE,
+                thetas = res$storage$theta)
+```
+With gradient descent we are able to find the minimum, but also we note that
+the algorithm needs a lot of steps in the valley of the empirical risk function.
+This happens since it can be shown that for gradient descent with exact line search
+two consecutive search directions are orthogonal to each other. To counter this 
+we look at another approach in the next chapter.
+
+# Newton-Raphson
 
 ```{r logreg-ber_hessian}
 hessian_bernoulli <- function(Y,X,theta, exp_yxt = exp(Y*(X%*%theta))){
@@ -74,7 +298,8 @@ newton_opt_stepsize <- function(Y, X, theta,
                                        max_iterations = 2000,
                                        min_learning_rate = 0,
                                        max_learning_rate = 1000,
-                                       plot = TRUE) {
+                                       plot = TRUE,
+                                       include_storage = FALSE) {
 gradient_descent_opt_stepsize(Y, X, theta,
                                        risk = risk,
                                        gradient = function(Y,X,theta)
@@ -85,170 +310,35 @@ gradient_descent_opt_stepsize(Y, X, theta,
                                        max_iterations = max_iterations,
                                        min_learning_rate = min_learning_rate,
                                        max_learning_rate = max_learning_rate,
-                                       plot = plot)
+                                       plot = plot,
+                                       include_storage = include_storage
+                                      )
 }
 ```
 
 
-```{r logreg-dgp}
-set.seed(1337)
-
-n <- 1000
-p <- 2
-
-X <- matrix(runif(n*p, -5, 5), nrow = n)
-# what could be a problem if there was no intercept term? 
-# think about the boundary
-theta <- c(3, -1)
-
-Y <- 2 * rbinom(n = n, size = 1, prob = logistic(X, theta)) - 1
-```
-
-```{r logreg-plot_2D_logreg-def}  
-# function for logistic regression with two features to visualize class 
-# boundaries X1 and X2 are the names of the two features to use. 
-
-plot_2D_logreg <- function(theta, X1="X1",X2="X2",
-                      # by default, we "predict" the class of the training data:
-                      to_classify_labels = as.character(Y),
-                      to_classify_data = data.frame("X1"=X[,1],
-                                                   "X2"=X[,2]),
-                      lengthX1 = 100, lengthX2 = 100) {
-  
-  plot_2D_classify(to_classify_labels = to_classify_labels,
-                   to_classify_data = to_classify_data, 
-                   classify_method = function(to_classify_data) 
-                       classify_logreg(
-                               X = cbind(as.matrix(to_classify_data)),
-                              theta = theta, conv=as.character),
-                   X1, X2,
-                   lengthX1 = lengthX1, lengthX2 = lengthX2,
-                   title = paste0("Logistic regression"))
-  
-}
-
-plot_2D_logreg(theta)
-```
-
-```{r logreg-plot_emp_risk}
-plot2D_emp_risk <- function(min_theta = c(0, 0),
-                            max_theta = c(1, 1),
-                            theta_length = c(100, 100),
-                            emp_risk,
-                            log_emp_risk = FALSE) {
-  grid_thetas <- sapply(1:2, function(i)
-    seq(min_theta[i],
-        max_theta[i],
-        length.out = theta_length[i]))
-  
-  # compute grid coordinates with cartesian product
-  grid_theta <- expand.grid(grid_thetas[, 1], grid_thetas[, 2])
-  
-  emp_risk <- if (log_emp_risk)
-    apply(grid_theta, 1, function(theta)
-      log(emp_risk(theta)))
-  else
-    apply(grid_theta, 1, function(theta)
-      emp_risk(theta))
-  
-  grid_theta$emp_risk <- emp_risk
-  
-  ggplot(data = grid_theta,
-                aes(x = Var1, y = Var2, fill = emp_risk)) +
-      geom_raster() +
-      geom_contour(colour = "white", aes(z=emp_risk)) +
-      labs(
-      fill =  if(log_emp_risk) expression(log(R[emp](theta)))
-        else expression(R[emp](theta)),
-      title =  if(log_emp_risk) expression(log(R[emp](theta)))
-        else expression(R[emp](theta)),
-      x = expression(theta[1]),
-      y = expression(theta[2])
-    )
-  
-}
-```
-
-```{r logreg-example_emp_risk_plot}
-plot2D_emp_risk(emp_risk = function(theta) (risk_bernoulli(Y,X, theta)),
-                max_theta = c(10,10), min_theta = c(-10,-10), 
-                log_emp_risk = TRUE)
-```
-
-```{r logreg-example_grad_desc_newton}
-gradient_descent_opt_stepsize(Y,X, c(0,0),
-                     risk_bernoulli,
-                     gradient_bernoulli,
-                     max_learning_rate = 0.01,
-                     max_iterations = 100,
-                     epsilon = 0.00001)
-title(main = "Gradient Descent", outer = TRUE, line = -1)
-newton_opt_stepsize(Y,X, c(0,0),
+```{r logreg-example_newton}
+res <- newton_opt_stepsize(Y,X, c(-1,-1),
                     risk_bernoulli,
                     gradient_bernoulli,
                     hessian_bernoulli,
                     min_learning_rate = 0.0,
-                    max_learning_rate = 100,
-                    max_iterations = 4
+                    max_learning_rate = 10,
+                    max_iterations = 4,
+                    include_storage = TRUE
                     )
 title(main = "Newton Raphson", outer = TRUE, line = -1)
-```
-
-
-
-
-```{r logreg_penalty}
-risk_penalty_bernoulli <- function(Y, X, theta, exp_yxt = 
-                                      exp(Y*(X%*%theta)), alpha=1){
-  risk_bernoulli(Y, X, theta, exp_yxt) + alpha * 
-    (sum(theta[2:length(theta)]^2)-1)^2
-}
-
-gradient_penalty_bernoulli <- function(Y, X, theta, exp_yxt = 
-                                      exp(Y*(X%*%theta)), alpha=1){
-    gradient_bernoulli(Y,X,theta, exp_yxt) + 
-      c(0,4*alpha*(sum(theta[2:length(theta)]^2)-1)*theta[2:length(theta)])
-}
-
-hessian_penalty_bernoulli <- function(Y, X, theta, exp_yxt = 
-                                      exp(Y*(X%*%theta)), alpha=1){
-    hessian_bernoulli(Y,X,theta,exp_yxt) +
-     rbind(rep(0,length(theta)),cbind(rep(0,length(theta)-1),
-                                      8*alpha*theta[2:length(theta)]%*%
-                                        t(theta[2:length(theta)])+
-                                      4*alpha*(sum(theta[2:length(theta)]^2)-1)
-                                      *diag(length(theta)-1) ))
-}
-```
-```{r logreg-penalty_grad_desc}
-alpha=2000
-res <- gradient_descent_opt_stepsize(Y,X,rep(1.,length(theta)),
-                     function (Y,X, theta) risk_penalty_bernoulli(Y,X,theta,
-                                                                  alpha=alpha),
-                     function (Y,X, theta) gradient_penalty_bernoulli(Y,X,theta,
-                                                                  alpha=alpha),
-                     min_learning_rate = 0,
-                     max_learning_rate = 0.01,
-                     max_iterations = 300,
-                     epsilon = 0.000001)
+print(paste("Risk: ",res$risk))
 res$theta
-plot_2D_logreg(res$theta)
 ```
-```{r logreg-penalty_newton}
-alpha=2000
-res <- newton_opt_stepsize(Y,X,rep(1.,length(theta)),
-                     function (Y,X, theta) risk_penalty_bernoulli(Y,X,theta,
-                                                                  alpha=alpha),
-                     function (Y,X, theta) gradient_penalty_bernoulli(Y,X,theta,
-                                                                  alpha=alpha),
-                     function (Y,X, theta) hessian_penalty_bernoulli(Y,X,theta,
-                                                                  alpha=alpha),                    
-                     min_learning_rate = 0,
-                     max_learning_rate = 0.3,
-                     max_iterations = 100,
-                     epsilon = 0.000001)
 
-res$theta
-plot_2D_logreg(res$theta)
+```{r logreg-plot_emprisk_newton}
+plot2D_emp_risk(emp_risk = function(theta) (risk_bernoulli(Y,X, theta)),
+                max_theta = c(10,10), min_theta = c(-5,-10), 
+                log_emp_risk = TRUE,
+                thetas = res$storage$theta)
 ```
+Note: No intercept, base probabilty
+
+
 
