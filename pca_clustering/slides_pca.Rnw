@@ -547,6 +547,286 @@ Repeat this maximization step for the other PCs and additionally use the orthogo
 
 \end{frame}
 
+\begin{frame}{Example: The Olympic Heptathlon Data}
+
+The \enquote{heptathlon} data set in the R package \enquote{HSAUR3} contains the competition results of 25 athletes in 7 disciplines for the Olympics held in Seoul in 1988.
+
+<<message=FALSE, out.width="0.5\\textwidth", eval = 2>>=
+install.packages("HSAUR3")
+data(heptathlon, package = "HSAUR3")
+@
+
+\textbf{Aim}: Rank the athletes according to their overall performance in all 7 disciplines.
+
+\lz
+
+\textbf{Idea}: Use PCA to reduce the dimensionality (i.e., reduce the results of the 7 disciplines to one dimension) and compare the scores of the first PC with the official scores.
+
+\end{frame}
+
+\begin{frame}{Example: The Olympic Heptathlon Data}
+
+Variables of the \enquote{heptathlon} data:
+
+
+\begin{itemize}
+
+\item \enquote{hurdles}: results 100m hurdles (in seconds).
+\item \enquote{highjump}: results high jump (in m).
+\item \enquote{shot}: results shot putt (in m).
+\item \enquote{run200m}: results 200m race (in seconds).
+\item \enquote{longjump}: results long jump (in m).
+\item \enquote{javelin}: results javelin (in m).
+\item \enquote{run800m}: results 800m race (in seconds).
+\item \enquote{score}: total score of the official scoring system.
+
+\end{itemize}
+
+\end{frame}
+
+
+\begin{frame}{Example: The Olympic Heptathlon Data}
+
+The variables \enquote{hurdles}, \enquote{run200m} and \enquote{run800m} are time measurements, i.e. low values are better. 
+For all other variables high values are better. 
+
+\lz
+
+Results of the best and worst participant:
+
+<<size='tiny', R.options=list(width = 200), echo = FALSE>>=
+kable(heptathlon[c(1,25),])
+@
+
+We use negative time measurements so that higher values are better and therefore all variables have the same direction:
+
+<<size='tiny', echo = FALSE>>=
+heptathlon$hurdles = -heptathlon$hurdles #with(heptathlon, max(hurdles)-hurdles)
+heptathlon$run200m = -heptathlon$run200m #with(heptathlon, max(run200m)-run200m)
+heptathlon$run800m = -heptathlon$run800m #with(heptathlon, max(run800m)-run800m)
+@
+
+<<size='tiny', R.options=list(width = 200), echo = FALSE>>=
+kable(heptathlon[c(1,25),])
+@
+
+\end{frame}
+
+
+
+\begin{frame}{Scatter Plot Matrix}
+
+<<fig.align="center", out.width = "0.95\\textwidth", echo = FALSE, message=FALSE>>=
+#plot(heptathlon[, -8], pch = 19)
+ggpairs(heptathlon[, -8]) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+@
+
+\end{frame}
+
+\begin{frame}{Correlation Matrix}
+
+We can compute all pairwise correlations of the variables (without the \enquote{score} column):
+
+PROBLEM HERE!
+<<echo=FALSE, out.width = "0.95\\textwidth">>=
+# (cor.mat = cor(heptathlon[, -8]))
+@
+
+\end{frame}
+
+\begin{frame}{Correlogram} 
+
+<<message=FALSE, fig.align="center", fig.height = 5, out.width = "0.75\\textwidth", echo = -c(1, 3)>>=
+#par(mfrow = c(1, 2)) #  tl.srt = 60
+library(corrplot)
+body(corrplot)[[57]] = substitute(oldpar <- par(mar = mar))
+corrplot(cor.mat, type = "upper", addCoef.col = "black")
+@
+
+\end{frame}
+
+\begin{frame}{Perform PCA using \enquote{princomp()}}
+
+
+Remember: The first PC is the linear combination
+  \[
+  \mathbf{pc}_1 = a_{11} \mathbf{x}_1 + a_{12}\mathbf{x}_2+ \dots + a_{1p}\mathbf{x}_p
+  \]
+and has the largest sample variance among all other PCs.
+
+%% <!-- - In R, PCA can be done using the functions `princomp()` and `prcomp()` (both contained in the R package `stats`). -->
+
+\begin{itemize}
+  \item In R, the `princomp()` function carries out a PCA via an eigendecomposition of the sample covariance matrix $\Sigma$.
+
+  \item If variables are on very different scales, PCA should be carried out on the correlation matrix (which is equivalent to the correlation matrix if normalized variables are used).
+
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Perform PCA using \enquote{princomp()}}
+
+As the variables of the heptathlon data are on different scales, we perform the PCA based on the correlation matrix.
+
+<<echo=1, results="hide">>=
+hept.pca = princomp(heptathlon[, -8], cor = TRUE)
+@
+
+\lz 
+
+Alternatively, we could also perform the PCA based on the covariance matrix but on the normalized heptathlon data.
+
+\lz
+
+The resulting object of \enquote{princomp()} contains at least:
+
+\begin{itemize}
+  \item The loadings $\mathbf{a}_{1}, \hdots, \mathbf{a}_{p}$,
+  \item The PC scores $\mathbf{pc}_{1}, \hdots, \mathbf{pc}_{p}$ and
+  \item The variance $\lambda_1, \hdots, \lambda_p$ (or standard deviation) of the PC scores.
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Loadings}
+
+The loadings $\mathbf{a}_{1}, \hdots, \mathbf{a}_{p}$ are contained in
+
+<<eval = FALSE>>=
+hept.pca$loadings
+@
+
+<<echo = FALSE>>=
+kable(unclass(round(hept.pca$loadings, 2)))
+@
+
+\end{frame}
+
+\begin{frame}{Loadings}
+
+Visualize the coefficient weights (loadings) of the linear combinations of the PC scores:
+<<message=FALSE, fig.align="center", fig.height = 5, out.width = "0.6\\textwidth">>=
+corrplot(hept.pca$loadings, is.corr = FALSE)
+@
+
+\end{frame}
+
+\begin{frame}{Loadings}
+
+PROBLEM HERE! 
+Check the normalization constraint of the first PC:
+<<size = "tiny">>=
+# (a1 = hept.pca$loadings[, 1]) # loadings of the first PC
+# a1 %*% a1 # check constraint: is sum of squares equal to 1?
+@
+
+Check the orthogonality constraint of the first two PCs:
+<<size = "tiny">>=
+#(a2 = hept.pca$loadings[, 2]) # loadings of the second PC
+# a1 %*% a2 # check if 1st and 2nd PC are orthogonal
+@
+
+\end{frame}
+
+\begin{frame}{Loadings} 
+If we perform PCA on the covariance matrix (without normalizing the data), each component mainly loads on a single variable:
+
+<<fig.align="center", fig.height = 5, out.width = "0.5\\textwidth">>=
+hept.pca.cov = princomp(heptathlon[, -8], cor = FALSE)
+corrplot(hept.pca.cov$loadings, is.corr = FALSE)
+@
+Reason: Variables have very different scales (e.g., time measurement of 200m and 800m run).
+\end{frame}
+
+
+\begin{frame}{Proportion of Explained Variance}
+
+
+\begin{itemize}
+
+  \item The total variance of the $p$ PC scores is equal the total variance of the original variables, i.e.,
+    $$\textstyle\sum_{j=1}^p \lambda_j = s_1^2 +s_2^2 + \dots + s_p^2,$$
+    where $\lambda_j$ is the variance of the $j$th PC and $s_j^2$ is the sample variance of variable $\mathbf{x}_j$.
+  \item The proportion of explained variance of the $j$-th PC is $$\tfrac{\lambda_j}{\sum_{j=1}^p \lambda_j}.$$ 
+
+  \item The first $k$ PCs account for a proportion $$\tfrac{\sum_{j=1}^k \lambda_j}{\sum_{j=1}^p \lambda_j}.$$
+
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Proportion of Explained Variance}
+
+PROBLEM HERE!
+In R, the proportion of explained variance can be obtained by
+
+<<R.options=list(width = 55)>>=
+# summary(hept.pca)
+@
+
+\textbf{Question}: How do we choose the number of PCs?
+
+
+\end{frame}
+
+
+\begin{frame}{Choosing the Number of PCs}
+
+Two simple rules of thumb for choosing the number of PCs:
+
+\begin{enumerate}
+\item Retain the first $k$ components, which explain a large proportion of the total variation, e.g., 70-80\%.
+   
+\item Use a scree plot: Plot the component variances vs. the component number and look for an \textit{elbow}.
+For components after the \textit{elbow}, the variance decreases more slowly.
+
+\end{enumerate}
+%% <!-- 3. If the correlation matrix was used for the PCA: Retain only the components with variances greater than one. -->
+
+<<fig.align="center", fig.height = 4, out.width = "0.7\\textwidth", echo = FALSE>>=
+fviz_eig(hept.pca, xlab = "principal component")
+@
+
+\end{frame}
+
+
+\begin{frame}{PC Scores vs. Official Scores}
+
+PROBLEM HERE! 
+The first PC explains $63,72\%$ of the variation, the loadings of the first PC are:
+
+<<>>=
+# hept.pca$loadings[,1]
+@
+
+Dimensionality reduction:
+
+\begin{itemize}
+  \item Project all 8 features onto the first PC.
+  \item Compare the scores of the first PC with the official scores used to rank the athletes.
+\end{itemize}
+
+\end{frame}
+
+
+\begin{frame}{PC Scores vs. Official Scores}
+
+The scores of the first PC $\mathbf{pc}_1$ have a similar ranking as the scores of the official scoring system, i.e., we can reduce the dimension to the first PC without losing much information:
+
+<<fig.align="center", fig.width = 8, fig.height = 6, out.width= "0.6\\textwidth", echo = FALSE>>=
+d = data.frame(official.score = heptathlon$score, pca.score = hept.pca$scores[row.names(heptathlon),1], name = row.names(heptathlon))
+ggplot(d, aes(official.score, pca.score, label = name)) +
+    geom_text_repel() +
+    geom_point(color = 'red') + ylab("1st PC scores") + xlab("Official Scores")
+# par(mar = c(4,4,1,1))
+# #cor(heptathlon$score, hept.pca$scores[,1])
+# plot(heptathlon$score, hept.pca$scores[,1], xlab = "Official Scores", ylab = "1st PC scores")
+# text(heptathlon$score, hept.pca$scores[,1], row.names(heptathlon), pos = 4, cex = 0.5)
+@
+
+\end{frame}
 
 
 
