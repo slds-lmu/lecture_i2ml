@@ -5,6 +5,12 @@
 <<set-parent, include = FALSE>>=
 knitr::set_parent("../style/preamble.Rnw")
 library(xtable)
+library(MASS)
+library(GGally)
+library(factoextra)
+library(ggrepel)
+library(rafalib)
+library(colorspace)
 @
 
 % Load all R packages and set up knitr
@@ -325,6 +331,223 @@ cbbPalette = c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
 @
 
 \end{frame}
+
+\begin{frame}{PCA Intuition}
+
+\textit{Motivational example I}:
+
+\begin{itemize}
+  \item Variable $x_1$ explains most of the variation.
+  \item Variable $x_2$ has a lower variance than $x_1$.
+  \item If we disregard $x_2$ and project the points into the 1-dimensional space of $x_1$, we do not lose much information w.r.t. variability. 
+\end{itemize}
+
+\begin{center}
+  \includegraphics[width = \textwidth]{figure_man/pca1.png}
+\end{center}
+
+\end{frame}
+
+\begin{frame}{PCA Intuition}
+
+\textit{Motivational example II}:
+
+\begin{itemize}
+\item $x_1$ and $x_2$ are correlated and have similar variances.
+\item Find a new orthogonal axes (e.g. PC1 and PC2), where PC1 explains most of the variation.
+\item Rotate the points and consider PC1 and PC2 as new coordinate system (situation as in the previous example).
+\item We can now project points onto PC1 and disregard PC2 (hopefully without losing much information).
+\end{itemize}
+
+\vspace{-20pt}
+\begin{center}
+  \includegraphics[width = \textwidth]{figure_man/pca2.png}
+\end{center}
+\vspace{-20pt}
+
+
+%% <!-- [SEE THIS ANIMATION.](https://i.stack.imgur.com/Q7HIP.gif) -->
+
+\end{frame}
+
+\begin{frame}{PCA Intuition}
+
+\textit{General procedure}:
+
+\begin{enumerate}
+  \item Rotate the original $p$-dimensional coordinate system until the first PC that explains most of the variation is found.
+  \item Fix the first PC and proceed with rotating the remaining $p-1$ coordinates until the second PC (which is orthogonal to the first PC) is found that explains most of the *remaining* variation, etc.
+  \item We can reduce the dimensions by projecting the points onto the first, say $k<p$, PC.
+\end{enumerate}
+
+\end{frame}
+
+\begin{frame}{PCA Intuition: Find first PC}
+
+PROBLEM HERE! MULTIPLE SLIDES DOES NOT RENDER! 
+<<echo=FALSE, fig.height=7, fig.width=7>>=
+
+Colors = colorspace::rainbow_hcl(3)
+# code from https://github.com/genomicsclass/labs/blob/master/highdim/PCA.Rmd 
+mypar()
+n = 50
+col = Colors[1]
+set.seed(123)
+
+Y=t(mvrnorm(n,c(0,0), matrix(c(1,0.9,0.9,1),2,2)))
+
+thelim = c(-3,3)
+#par(xaxs='i',yaxs='i',mar=c(1,1,3,3)+0.1)
+plot(Y[1,], Y[2,], xlim=thelim, ylim=thelim, axes=F ,ann=F)
+#box()
+arrows(c(0,thelim[1]),c(thelim[1],0),c(0,thelim[2]),c(thelim[2],0),0.05); ## draw custom axes
+mtext(expression(x[1]),3,-1,at=0,las=1); ## y label
+mtext(expression(x[2]),4,-0.75,at=0,las=1); ## x label
+
+for (rotate in c(0,-0.5,-1, -3, -300, 3, 1)) {
+  # cat("  \n## ", "PCA Intuition: Animation  \n \\addtocounter{framenumber}{-1}  \n")
+  u = matrix(c(1,rotate),ncol=1)
+  u = u/sqrt(sum(u^2))
+  w=t(u)%*%Y
+  mypar(1,1)
+  plot(t(Y), main=paste("Variance of projected points:",round(tcrossprod(w)/(n-1),2) ), 
+    xlim=thelim, ylim=thelim, axes=F, xlab = "", ylab = "")
+  #box()
+  arrows(c(0,thelim[1]),c(thelim[1],0),c(0,thelim[2]),c(thelim[2],0),0.05); ## draw custom axes
+  mtext(expression(x[1]),3,-1,at=0,las=1); ## y label
+  mtext(expression(x[2]),4,-0.75,at=0,las=1); ## x label
+  #abline(h=0,lty=2)
+  #abline(v=0,lty=2)
+  abline(0,rotate,col=col)
+  abline(0,ifelse(rotate == 0, 300, -1/rotate),col=col)
+  Z = u%*%w
+  for(i in seq(along=w))
+    segments(Z[1,i],Z[2,i],Y[1,i],Y[2,i],lty=2)
+  points(t(Z), col=col, pch=16, cex=0.8)  
+  legend("topleft", lty = c(1,2, NA), pch = c(NA,NA,16), legend = c("rotated coordinate system", "original coordinate system", "projected points"), col = c(col, "black", col))
+}
+text(3, 3, labels = "PC1", col = col, pos = 1)
+text(3, -3, labels = "PC2", col = col, pos = 3)
+@
+
+\end{frame}
+
+\begin{frame}{PCA Intuition: Reduce dimensionality}
+
+Rotate the points and use PC1 and PC2 as new coordinate system. 
+\lz
+Here, the PC1 axis explains most of the variance:
+
+\vspace{-10px}
+
+<<echo = FALSE, fig.height=7, fig.width=7, out.width="60%">>=
+a = pi/4
+Yrotated = t(Y) %*% matrix(c(cos(a), -sin(a), sin(a), cos(a)), ncol = 2, byrow = T)
+mypar(1,1)
+plot(Yrotated, 
+  xlim = c(-3,3), ylim = c(-3,3), xlab = "PC1", ylab = "PC2", axes=F ,ann=F)
+#box()
+arrows(c(0,thelim[1]),c(thelim[1],0),c(0,thelim[2]),c(thelim[2],0),0.05, col = col, lwd = 1.5); ## draw custom axes
+mtext("PC2",3,-1,at=0,las=1, col = col, cex = 0.8); ## y label
+mtext("PC1",4,-1,at=0,las=1, col = col, cex = 0.8); ## x label
+@
+
+\end{frame}
+
+\begin{frame}{PCA Intuition: Reduce dimensionality}
+
+Dimensionality can be reduced by projecting the points onto the PC1 (and by disregarding PC2).
+The hope is that we won't lose much information this way.
+
+\vspace{-20px}
+
+<<echo = FALSE, fig.height=7, fig.width=7, out.width="60%">>=
+mypar(1,1)
+plot(Yrotated, 
+  xlim = c(-3,3), ylim = c(-3,3), xlab = "PC1", ylab = "PC2", axes=F ,ann=F)
+#box()
+arrows(c(0,thelim[1]),c(thelim[1],0),c(0,thelim[2]),c(thelim[2],0),0.05, col = col, lwd = 1.5); ## draw custom axes
+mtext("PC2",3,-1,at=0,las=1, col = col, cex = 0.8); ## y label
+mtext("PC1",4,-1,at=0,las=1, col = col, cex = 0.8); ## x label
+#abline(h=0,lty=2, col=col)
+#abline(v=0,lty=2, col=col)
+u = matrix(c(1,0),ncol=1)
+u = u/sqrt(sum(u^2))
+wrotated = t(u)%*%t(Yrotated)
+Zrotated = u%*%wrotated
+for(i in seq(along=w))
+  segments(Zrotated[1,i], Zrotated[2,i], t(Yrotated)[1,i], t(Yrotated)[2,i], lty=2)
+points(t(Zrotated), col=col, pch=16, cex=0.8) 
+
+# plot(t(Zrotated), col=col, pch=16, cex=0.8, xlab = "PC1", ylab = "PC2", axes=F ,ann=F)
+# arrows(c(0,thelim[1]),c(thelim[1],0),c(0,thelim[2]),c(thelim[2],0),0.05, col = col, lwd = 1.5); ## draw custom axes
+# mtext("PC2",3,-1,at=0,las=1, col = col, cex = 0.8); ## y label
+# mtext("PC1",4,-1,at=0,las=1, col = col, cex = 0.8); ## x label
+@
+
+\end{frame}
+
+\begin{frame}{PCA Intuition: Summary}
+
+\textbf{Idea:} Transform an original set of correlated metric variables to a new set of uncorrelated (orthogonal) metric variables, called principal components (PC), that explain the variability in the data.
+
+  \begin{itemize}
+    \item The objective is to investigate if only a few PC account for most of the variability in the original data.
+    \item If the objective is fulfilled, we can use fewer PCs to reduce the dimensionality. 
+    \item The PCs remove collinearity of the input variables as they are orthogonal to each other.
+  \end{itemize}
+
+\end{frame}
+
+\begin{frame}{PCA Intuition: Final Remarks}
+
+  \begin{itemize}
+    \item PCA is used for dimensionality reduction by disregaring dimensions with lower variability.
+    \item There is always an information loss, especially for other criteria. 
+    \item E.g., dimensionality reduciton can worsen the classification accuracy when the task is to classify two groups:
+  \end{itemize}
+\begin{center}
+  \includegraphics[width = \textwidth]{figure_man/pca3.png}
+\end{center}
+
+\end{frame}
+
+\begin{frame}{Deriving the First PC Mathematically}
+
+Aim: Find a new set of variables (PC scores) $\mathbf{pc}_1, \ldots, \mathbf{pc}_p$ based on the original data $\mathbf{X} = [\mathbf{x}_1, \hdots, \mathbf{x}_p]$ so that
+
+\begin{itemize}
+  \item each PC score $\mathbf{pc}_1, \hdots, \mathbf{pc}_p$ is a linear combination of the original metric variables with coefficient weights (so-called **loading vectors**) $\mathbf{a}_1, \hdots, \mathbf{a}_p$, i.e.
+    \[
+    \mathbf{pc}_j = a_{j1}\mathbf{x}_1 + a_{j2}\mathbf{x}_2 + \ldots + a_{jp}\mathbf{x}_p = \mathbf{X} \mathbf{a}_j.
+    \]
+
+  \item the set is mutually uncorrelated: $Cov(\mathbf{pc}_j,\mathbf{pc}_k) = 0, \; \forall j \neq k.$
+
+  \item the variances of the PC scores decrease:
+    \[\lambda_1 > \lambda_2 > \ldots > \lambda_p, \;\;\;  \text{where } \lambda_k := Var(\mathbf{pc}_k). \]
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Deriving the First PC Mathematically}
+
+%% <!-- PCA works on the covariance matrix $\Sigma$ of the data matrix $\mathbf{X} = [\mathbf{x}_1, \hdots, \mathbf{x}_p]$. -->
+We look for the loading vector $\mathbf{a}_1 = (a_{11}, a_{21}, \hdots, a_{p1})^\top$ that maximizes the variance of $\mathbf{pc}_1$:
+  \[
+  \max_{\mathbf{a}_1} \ Var(\mathbf{pc}_1) = Var(\mathbf{X} \mathbf{a}_1) = \mathbf{a}_1^\top \Sigma \mathbf{a}_1
+  \]
+subject to the normalization constraint $\mathbf{a}_1^\top \mathbf{a}_1 = \sum_{k=1}^p a_{k1}^2 = 1$.
+
+\lz 
+The constraint is required for identifiability reasons, otherwise we could maximize the variance by just increasing the values in $\mathbf{a}_1$.
+
+\lz
+Repeat this maximization step for the other PCs and additionally use the orthogonality constraint, i.e. for the second PC: $$\mathbf{a}_2^\top\mathbf{a}_1 = 0.$$
+
+\end{frame}
+
+
 
 
 \endlecture
