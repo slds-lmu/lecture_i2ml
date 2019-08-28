@@ -4,6 +4,7 @@
 % Set style/preamble.Rnw as parent.
 <<set-parent, include = FALSE>>=
 knitr::set_parent("../style/preamble.Rnw")
+library(xtable)
 @
 
 % Load all R packages and set up knitr
@@ -157,5 +158,173 @@ Supervised Methods:
   \item Feature filter methods.
 \end{itemize}      
 \end{frame}
+
+
+\section{Principal Component Analysis}
+
+
+\begin{frame}{Normalizing Data}
+
+A variable $X$ can be normalized by substracting its values with the mean $\bar{X}$ and dividing by the standard deviation $s_X$, e.g. $\tilde{X} = \tfrac{X - \bar{X}}{s_X}.$
+
+\lz
+
+\textbf{Example:}
+<<echo = FALSE, results='hide'>>=
+bh = t(data.frame(body.height = c("Person A" = 180, "Person B" = 172, "Person C" = 175)))
+@
+
+Consider the following body heights measured in different units:
+
+<<echo=FALSE, results='asis'>>=
+bh.m = bh/100
+bh.feet = round(bh/30.48, 4)
+
+options(xtable.comment = FALSE)
+tab = rbind(cbind(bh, "mean" = mean(bh), "sd" = sd(bh)), 
+  cbind(bh.m, "mean" = mean(bh.m), "sd" = sd(bh.m)),
+  cbind(bh.feet, "mean" = mean(bh.feet), "sd" = sd(bh.feet)))
+row.names(tab) = c("body height (cm)", "body height (m)", "body height (feet)")
+
+xtable(tab, align = c("c|", "c", "c", "c", "|c", "c"))
+@
+
+After normalizing, we always obtain the normalized body height (no matter which unit was used):
+
+<<echo = FALSE, results='asis'>>=
+bh.norm = (bh - mean(bh))/sd(bh)
+bh.norm = cbind(bh.norm, "mean" = round(mean(bh.norm), 0), "sd" = sd(bh.norm))
+row.names(bh.norm) = "normalized body height"
+xtable(bh.norm, align = c("c|", "c", "c", "c", "|c", "c"))
+@
+\end{frame}
+
+\begin{frame}{Normalizing Data}
+
+Normalizing all variables in a data set, can have several advantages:
+
+\begin{itemize}
+  \item It puts all variables into *comparable* units, i.e., we make sure that all normalized variables have mean 0 and standard deviation of 1.
+  \item It can avoid numerical instabilites in several algorithms, e.g. if a variable has very low / high values.
+  \item It helps in computing meaningful *distances* between observations.
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Normalizing Data:Distances}
+
+There are many ways to define the distance between two points, e.g., $Z_i = (X_i, Y_i)$ and $Z_j = (X_j, Y_j)$:
+
+<<echo=FALSE, fig.align="center", fig.width=6, fig.height=4, out.width="0.5\\textwidth">>=
+
+Colors = colorspace::rainbow_hcl(3)
+cbbPalette = c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+getCurrentAspect = function() {
+   uy <- diff(grconvertY(1:2,"user","inches"))
+   ux <- diff(grconvertX(1:2,"user","inches"))
+   uy/ux
+}
+
+par(mar = c(4,4,0,0))
+plot(x = c(1L,5L), y = c(1L,4L), ylim = c(0,5), xlim = c(0,6), pch = 19,
+  xlab = "Variable X (Dimension 1)", ylab = "Variable Y (Dimension 2)")
+lines(x = c(1L,5L), y = c(1L,4L))
+text(x = c(1L,5L), y = c(1L,4L), c(expression(Z[i]), expression(Z[j])), adj = c(1.5, 0))
+lines(x = c(1L, 5L, 5L, 5L), y = c(1L, 1L, 1L, 4L), col = Colors[1])
+legend("topleft", lty = 1, legend = c("manhattan", "euclidean"), col = c(Colors[1],1))
+
+text(x = 5, y = 1, expression(d(Z[i],Z[j])~"= |5-1| + |4-1| = 7"), adj = c(1,1), col = Colors[1])
+
+asp = getCurrentAspect()
+text(x = 3, y = 2.5, expression(d(Z[i],Z[j])~"="~sqrt((5-1)^2 + (4-1)^2)~"= 5"),
+  adj = c(0.5,0), col = 1, srt = 180/pi*atan(3/4*asp))
+@
+
+\vspace{-10pt}
+
+- \small manhattan: sum up the absolute distances in each dimension.
+
+- \small euclidean: remember Pythagoras theorem from school?
+
+
+\end{frame}
+
+\begin{frame}{Normalizing Data:Distances}
+
+It is often a good idea to \textit{normalize} the data before computing distances, especially when the scale of variables is different, e.g. the euclidean distance between the point $Z_1$ and $Z_2$:
+
+<<echo=FALSE, fig.align="center", fig.height=4, fig.width=9>>=
+par(mar = c(3.5,3.5,1,1), mfrow = c(1,2), mgp = c(2.5,1,0))
+
+dat = data.frame(shoe.size = c(46, 40, 44), height = c(180, 172, 175))
+plot(x = dat$shoe.size, y = dat$height, xlab = "shoe size", ylab = "body height (in cm)",
+  pch = 19, xlim = range(dat$shoe.size)*c(0.95, 1.05), ylim = range(dat$height)*c(0.98, 1.02))
+lines(x = dat$shoe.size[-3], y = dat$height[-3])
+asp = getCurrentAspect()
+text(x = mean(dat$shoe.size[-3]), y = mean(dat$height[-3]),
+  bquote(paste(d(Z[1],Z[2])~"="~sqrt((46-40)^2 + (180-172)^2)~" = ", .(sqrt((46-40)^2 + (180-172)^2)))),
+  adj = c(0.5,-0.25), col = 1, srt = 180/pi*atan(diff(dat$height[-3])/diff(dat$shoe.size[-3])*asp))
+text(x = dat$shoe.size, y = dat$height, c(expression(Z[2]), expression(Z[1]), expression(Z[3])), adj = c(-1, 0.5))
+
+dat$height = dat$height/100
+plot(x = dat$shoe.size, y = dat$height, xlab = "shoe size", ylab = "body height (in m)",
+  pch = 19, xlim = range(dat$shoe.size)*c(0.95, 1.05), ylim = range(dat$height)*c(0.98, 1.02))
+lines(x = dat$shoe.size[-3], y = dat$height[-3])
+asp = getCurrentAspect()
+text(x = mean(dat$shoe.size[-3]), y = mean(dat$height[-3]),
+  bquote(paste(d(Z[1],Z[2])~"="~sqrt((46-40)^2 + (1.80-1.72)^2)~" = ", .(sqrt((46-40)^2 + (1.80-1.72)^2)))),
+  adj = c(0.5,-0.25), col = 1, srt = 180/pi*atan(diff(dat$height[-3])/diff(dat$shoe.size[-3])*asp))
+text(x = dat$shoe.size, y = dat$height, c(expression(Z[2]), expression(Z[1]), expression(Z[3])), adj = c(-1, 0.5))
+@
+
+On the right plot, the distance is dominated by \enquote{shoe size}.
+
+\end{frame}
+
+\begin{frame}{Normalizing Data: Distances}
+
+\small
+The normalized variable $\tilde{X}_{\texttt{shoe.size}}$ is computed by <!-- Normalization of the \texttt{shoe.size} variable means: -->
+\[\tilde{X}_{\texttt{shoe.size}} = \tfrac{X_{\texttt{shoe.size}}-\bar{X}_{\texttt{shoe.size}}}{s_{X_{\texttt{shoe.size}}}}.\]
+Distances based on normalized data are better comparable and **robust** in terms of linear transformations (e.g., conversion of physical units).
+
+<<echo=FALSE, fig.align="center", fig.height=4, fig.width=6, out.width="0.6\\textwidth">>=
+par(mar = c(3.5,3.5,0.1,0.1), mgp = c(2.5,1,0))
+
+#dat = data.frame(shoe.size = c(45, 40, 42), height = 1000*c(85, 70, 72))
+dat = as.data.frame(scale(dat))
+plot(x = dat$shoe.size, y = dat$height, xlab = "normalized shoe size", ylab = "normalized body height",
+  pch = 19, xlim = range(dat$shoe.size)*c(1.1, 1.2), ylim = range(dat$height)*c(1.1, 1.1))
+lines(x = dat$shoe.size[-3], y = dat$height[-3])
+asp = getCurrentAspect()
+text(x = mean(dat$shoe.size[-3]), y = mean(dat$height[-3]),
+  bquote(paste(d(Z[1],Z[2])~" = ", .(sqrt((dat$shoe.size[1]-dat$shoe.size[2])^2 + (dat$height[1]-dat$height[2])^2)))),
+  adj = c(0.5,0), col = 1, srt = 180/pi*atan(diff(dat$height[-3])/diff(dat$shoe.size[-3])*asp))
+text(x = dat$shoe.size, y = dat$height, c(expression(Z[2]), expression(Z[1]), expression(Z[3])), adj = c(-1, 0.5))
+@
+
+\end{frame}
+
+
+\begin{frame}{Normalizing: Covariance vs. Correlation}
+
+The \textbf{variance} of a normalized variable is always 1, its mean is always 0.
+
+The \textbf{covariance} of two normalized variables $\tilde{X} = \tfrac{X - \bar{X}}{s_X}$ and $\tilde{Y} = \tfrac{Y - \bar{Y}}{s_Y}$ is the same as the \textbf{correlation} of the non-normalized variables $X$ and $Y$. 
+
+One can proof this with the help of
+$$s_{\tilde{X}\tilde{Y}}=\tfrac{1}{n-1}\sum_{i=1}^{n}{(\tilde{x}_i-\bar{\tilde{x}})(\tilde{y}_i-\bar{\tilde{y}})} = \hdots =  \tfrac{1}{n-1}\sum_{i=1}^{n}{\tfrac{(x_i-\bar{x})}{s_{X}}\tfrac{(y_i-\bar{y})}{s_{Y}}} = r_{XY}.$$
+
+<<include=FALSE, echo=FALSE, message=FALSE>>=
+library("knitr")
+set.seed(1)
+options(scipen = 1, digits = 4, width=70)
+Colors = colorspace::rainbow_hcl(3)
+cbbPalette = c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+@
+
+\end{frame}
+
 
 \endlecture
