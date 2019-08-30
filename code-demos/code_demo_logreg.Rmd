@@ -36,8 +36,8 @@ $\theta^Tx \equiv \theta_0 + \theta^Tx$.
 
 This can be easily implemented as:
 ```{r logreg-logistic}
-logistic <- function(X, theta, Xtheta= X%*% theta){
-  1  / (1+ exp(-Xtheta))
+logistic <- function(X, theta){
+  1  / (1+ exp(-X%*% theta))
 }
 ```
 
@@ -57,8 +57,8 @@ labels to $\{-1, 1\}$ one can derive the Bernoulli loss:
 $$L(y,f(x)) = \log(1 + \exp(-yf(x)))$$
 For the logistic regression it holds, that $f(x) = \theta^Tx$.
 ```{r logreg-ber_loss}
-loss_bernoulli <- function(Y, X, theta, exp_yxt = exp(Y*(X%*%theta))){
-  log(1+1/exp_yxt)
+loss_bernoulli <- function(Y, X, theta){
+  log(1+1/exp(Y*(X%*%theta)))
 }
 ```
 We can plot the loss for $y = 1$ and $y = -1$:
@@ -86,8 +86,8 @@ Which means in order to minimize the loss, we should predict
 $y = 1$ if 
 $$\theta^Tx \geq 0 \iff \pi(x) = \mathbb{P}(y=1 |x) = \frac{1}{1+\exp(-\theta^Tx)} \geq 0.5.$$ 
 ```{r logreg-classify}
-classify_logreg <- function(X, theta, Xtheta = X %*% theta, conv = as.numeric){
-  probability <- logistic(X, theta,  Xtheta = Xtheta)
+classify_logreg <- function(X, theta, conv = as.numeric){
+  probability <- logistic(X, theta)
   list(prediction = conv(ifelse(probability > .5, 1, -1)), 
        levels = c("1","-1"))
 }
@@ -97,8 +97,8 @@ With the help of the loss function, we can get the empirical risk as usual:
 $$R_{emp} = \sum_{i=1}^nL(y^{(i)}, f(x^{(i)})$$
 
 ```{r logreg-ber_risk}
-risk_bernoulli <- function(Y, X, theta, exp_yxt = exp(Y*(X%*%theta))){
-  sum(loss_bernoulli(Y, X, theta, exp_yxt))
+risk_bernoulli <- function(Y, X, theta){
+  sum(loss_bernoulli(Y, X, theta))
 }
 ```
 
@@ -200,8 +200,8 @@ of our empirical risk, for which it can be found that
 $$\frac{\partial R_{emp}(f)}{\partial \theta} = \sum_{i=1}^n \frac{-y^{(i)}}{1+\exp(y^{(i)}\theta^Tx^{(i)})}x^{(i)}.$$
 Which can be implemented as:
 ```{r logreg-ber_grad}
-gradient_bernoulli <- function(Y, X, theta, exp_yxt = exp(Y*(X%*%theta))){
-  colSums((1 / (1+exp_yxt)*-Y)[,1]  * X)
+gradient_bernoulli <- function(Y, X, theta){
+  colSums((1 / (1+ exp(Y*(X%*%theta)))*-Y)[,1]  * X)
 }
 ```
 
@@ -388,7 +388,8 @@ $$
 As already mentioned for using Newton-Raphson we need the Hessian matrix:
 
 ```{r logreg-ber_hessian}
-hessian_bernoulli <- function(Y,X,theta, exp_yxt = exp(Y*(X%*%theta))){
+hessian_bernoulli <- function(Y,X,theta){
+   exp_yxt = exp(Y*(X%*%theta))
    t(( exp_yxt / (1+ exp_yxt)^2)[,1] * X) %*% X
 }
 ```
