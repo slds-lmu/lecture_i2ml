@@ -18,8 +18,10 @@ knitr::read_chunk("code_demo_knn.Rmd")
 ```  
 
 ```{r grad_desc_opt-def, echo=FALSE}
+
 ```
 ```{r knn-plot_2D_classif, echo=FALSE}
+
 ```
 
 # Logistic regression
@@ -36,8 +38,8 @@ $\theta^Tx \equiv \theta_0 + \theta^Tx$.
 
 This can be easily implemented as:
 ```{r logreg-logistic}
-logistic <- function(X, theta){
-  1  / (1+ exp(-X%*% theta))
+logistic <- function(X, theta) {
+  1 / (1 + exp(-X %*% theta))
 }
 ```
 
@@ -48,8 +50,8 @@ scores $\theta^Tx$ to $[0, 1]$:
 num_data <- 100
 theta <- c(0, 1)
 
-ggplot(data=data.frame(x = seq(-5,5,length.out = num_data)), aes(x)) +
- stat_function(fun = function(x) logistic(cbind(rep(1,length(x)),x),theta))
+ggplot(data = data.frame(x = seq(-5, 5, length.out = num_data)), aes(x)) +
+  stat_function(fun = function(x) logistic(cbind(rep(1, length(x)), x), theta))
 ```
 
 As shown in the lecture from the definition of accuracy and the encoding of the 
@@ -57,8 +59,8 @@ labels to $\{-1, 1\}$ one can derive the Bernoulli loss:
 $$L(y,f(x)) = \log(1 + \exp(-yf(x)))$$
 For the logistic regression it holds, that $f(x) = \theta^Tx$.
 ```{r logreg-ber_loss}
-loss_bernoulli <- function(Y, X, theta){
-  log(1+1/exp(Y*(X%*%theta)))
+loss_bernoulli <- function(Y, X, theta) {
+  log(1 + 1 / exp(Y * (X %*% theta)))
 }
 ```
 We can plot the loss for $y = 1$ and $y = -1$:
@@ -68,16 +70,15 @@ num_data <- 100
 theta <- c(0, 1)
 y <- c(1, -1)
 
-x =  seq(-4,4,length.out = num_data)
-L = sapply(y, function(y) loss_bernoulli(y,cbind(rep(1,length(x)),x),theta))
-plot_data = melt(data.frame(x = x, L1 = L[,1], L2 = L[,2]),id.vars = "x")
+x <- seq(-4, 4, length.out = num_data)
+L <- sapply(y, function(y) loss_bernoulli(y, cbind(rep(1, length(x)), x), theta))
+plot_data <- melt(data.frame(x = x, L1 = L[, 1], L2 = L[, 2]), id.vars = "x")
 
-ggplot(plot_data, aes(x = x, y=value, colour = variable)) + 
+ggplot(plot_data, aes(x = x, y = value, colour = variable)) +
   geom_line() +
- labs(x=expression(f(x)), y=expression(L(y,f(x)))) +
-      scale_color_manual(name="", values=c("purple","yellow"), labels=c("y = 1", "y = -1")) 
-
-
+  labs(x = expression(f(x)), y = expression(L(y, f(x)))) +
+  scale_color_manual(name = "", values = c("purple", "yellow"), 
+                     labels = c("y = 1", "y = -1"))
 ```
 
 
@@ -86,10 +87,12 @@ Which means in order to minimize the loss, we should predict
 $y = 1$ if 
 $$\theta^Tx \geq 0 \iff \pi(x) = \mathbb{P}(y=1 |x) = \frac{1}{1+\exp(-\theta^Tx)} \geq 0.5.$$ 
 ```{r logreg-classify}
-classify_logreg <- function(X, theta, conv = as.numeric){
+classify_logreg <- function(X, theta, conv = as.numeric) {
   probability <- logistic(X, theta)
-  list(prediction = conv(ifelse(probability > .5, 1, -1)), 
-       levels = c("1","-1"))
+  list(
+    prediction = conv(ifelse(probability > .5, 1, -1)),
+    levels = c("1", "-1")
+  )
 }
 ```
 
@@ -97,7 +100,7 @@ With the help of the loss function, we can get the empirical risk as usual:
 $$R_{emp} = \sum_{i=1}^nL(y^{(i)}, f(x^{(i)})$$
 
 ```{r logreg-ber_risk}
-risk_bernoulli <- function(Y, X, theta){
+risk_bernoulli <- function(Y, X, theta) {
   sum(loss_bernoulli(Y, X, theta))
 }
 ```
@@ -114,7 +117,7 @@ n <- 1000
 p <- 2
 
 # model without intercept
-X <- matrix(runif(n*p, -5, 5), nrow = n)
+X <- matrix(runif(n * p, -5, 5), nrow = n)
 theta <- c(3, -1)
 
 Y <- 2 * rbinom(n = n, size = 1, prob = logistic(X, theta)) - 1
@@ -124,29 +127,32 @@ We use the *plot_2D_classify* function from the [KNN code demo](./code_demo_knn.
 can classify the data:
 
 ```{r logreg-plot_2D_logreg-def}  
-# function for logistic regression with two features to visualize class 
-# boundaries X1 and X2 are the names of the two features to use. 
+# function for logistic regression with two features to visualize class
+# boundaries X1 and X2 are the names of the two features to use.
 
-plot_2D_logreg <- function(theta, X1="X1",X2="X2",
-                      # by default, we "predict" the class of the training data:
-                      to_classify_labels = as.character(Y),
-                      to_classify_data = data.frame("X1"=X[,1],
-                                                   "X2"=X[,2]),
-                      lengthX1 = 100, lengthX2 = 100,
-                      title='"Logistic regression" ~',
-                      plot_class_rate = TRUE) {
-  
-  plot_2D_classify(to_classify_labels = to_classify_labels,
-                   to_classify_data = to_classify_data, 
-                   classify_method = function(to_classify_data) 
-                       classify_logreg(
-                               X = cbind(as.matrix(to_classify_data)),
-                              theta = theta, conv=as.character),
-                   X1, X2,
-                   lengthX1 = lengthX1, lengthX2 = lengthX2,
-                   title = title,
-                   plot_class_rate = plot_class_rate)
-  
+plot_2D_logreg <- function(theta, X1 = "X1", X2 = "X2",
+                           # by default, we "predict" the class of the training data:
+                           to_classify_labels = as.character(Y),
+                           to_classify_data = data.frame(
+                             "X1" = X[, 1],
+                             "X2" = X[, 2]
+                           ),
+                           lengthX1 = 100, lengthX2 = 100,
+                           title = '"Logistic regression" ~',
+                           plot_class_rate = TRUE) {
+  plot_2D_classify(
+    to_classify_labels = to_classify_labels,
+    to_classify_data = to_classify_data,
+    classify_method = function(to_classify_data)
+      classify_logreg(
+        X = cbind(as.matrix(to_classify_data)),
+        theta = theta, conv = as.character
+      ),
+    X1, X2,
+    lengthX1 = lengthX1, lengthX2 = lengthX2,
+    title = title,
+    plot_class_rate = plot_class_rate
+  )
 }
 ```
 
@@ -154,7 +160,7 @@ Let's classify the data with our *real* parameter $\theta$:
 
 ```{r logreg-plot_realtheta}
 plot_2D_logreg(theta)
-risk_bernoulli(Y,X,theta)
+risk_bernoulli(Y, X, theta)
 ```
 
 
@@ -174,16 +180,20 @@ classified by our classification method:
 ```{r logreg-compl_sep}
 Y_compl_sep <- classify_logreg(X, theta)$prediction
 
-thetas <- list(0.5*theta, 1*theta, 2*theta, 10*theta)
+thetas <- list(0.5 * theta, 1 * theta, 2 * theta, 10 * theta)
 ggplot_list <- lapply(
   thetas,
   function(theta) {
-    plot_2D_logreg(theta, to_classify_labels = as.character(Y_compl_sep),
-                   title = paste0('theta ==', 
-                      paste0('~ "(',paste0(theta,collapse = ","),'), " ~ ' ), 
-                      "R[emp] == ", 
-                      risk_bernoulli(Y_compl_sep, X, theta = theta)),
-                   plot_class_rate = FALSE)
+    plot_2D_logreg(theta,
+      to_classify_labels = as.character(Y_compl_sep),
+      title = paste0(
+        "theta ==",
+        paste0('~ "(', paste0(theta, collapse = ","), '), " ~ '),
+        "R[emp] == ",
+        risk_bernoulli(Y_compl_sep, X, theta = theta)
+      ),
+      plot_class_rate = FALSE
+    )
   }
 )
 do.call(grid.arrange, ggplot_list)
@@ -207,23 +217,24 @@ of our empirical risk, for which it can be found that
 $$\frac{\partial R_{emp}(f)}{\partial \theta} = \sum_{i=1}^n \frac{-y^{(i)}}{1+\exp(y^{(i)}\theta^Tx^{(i)})}x^{(i)}.$$
 Which can be implemented as:
 ```{r logreg-ber_grad}
-gradient_bernoulli <- function(Y, X, theta){
-  colSums((1 / (1+ exp(Y*(X%*%theta)))*-Y)[,1]  * X)
+gradient_bernoulli <- function(Y, X, theta) {
+  colSums((1 / (1 + exp(Y * (X %*% theta))) * -Y)[, 1] * X)
 }
 ```
 
 Now we can apply the gradient descent method to find a numerical solution:
 
 ```{r, logreg_grad_desc}
-res <- gradient_descent_opt_stepsize(Y,X, c(-1,-1),
-                     risk_bernoulli,
-                     gradient_bernoulli,
-                     max_learning_rate = 0.1,
-                     max_iterations = 130,
-                     epsilon = 0.00001,
-                     include_storage = TRUE)
+res <- gradient_descent_opt_stepsize(Y, X, c(-1, -1),
+  risk_bernoulli,
+  gradient_bernoulli,
+  max_learning_rate = 0.1,
+  max_iterations = 130,
+  epsilon = 0.00001,
+  include_storage = TRUE
+)
 title(main = "Gradient Descent", outer = TRUE, line = -1)
-print(paste("Risk: ",res$risk))
+print(paste("Risk: ", res$risk))
 res$theta
 ```
 To see what happens when we use gradient descent, we write a function which plots
@@ -238,47 +249,62 @@ plot2D_emp_risk <- function(min_theta = c(0, 0),
                             log_emp_risk = FALSE) {
   grid_thetas <- sapply(1:2, function(i)
     seq(min_theta[i],
-        max_theta[i],
-        length.out = theta_length[i]))
-  
+      max_theta[i],
+      length.out = theta_length[i]
+    ))
+
   # compute grid coordinates with cartesian product
   grid_theta <- expand.grid(grid_thetas[, 1], grid_thetas[, 2])
-  
-  emp_risk <- if (log_emp_risk)
+
+  emp_risk <- if (log_emp_risk) {
     apply(grid_theta, 1, function(theta)
       log(emp_risk(theta)))
-  else
+  } else {
     apply(grid_theta, 1, function(theta)
       emp_risk(theta))
-  
+  }
+
   grid_theta$emp_risk <- emp_risk
-  
-  
-  
+
+
+
   ggplot() +
-      geom_raster(data = grid_theta,
-                aes(x = Var1, y = Var2, fill = emp_risk)) +
-      geom_contour(data = grid_theta,colour = "white", 
-                   aes(x = Var1, y = Var2,z=emp_risk)) +
-      geom_line(data = data.frame(thetas), aes(x = X1, y = X2),
-                colour = "red") + 
-      labs(
-      fill =  if(log_emp_risk) expression(log(R[emp](theta)))
-        else expression(R[emp](theta)),
-      title =  if(log_emp_risk) expression(log(R[emp](theta)))
-        else expression(R[emp](theta)),
+    geom_raster(
+      data = grid_theta,
+      aes(x = Var1, y = Var2, fill = emp_risk)
+    ) +
+    geom_contour(
+      data = grid_theta, colour = "white",
+      aes(x = Var1, y = Var2, z = emp_risk)
+    ) +
+    geom_line(
+      data = data.frame(thetas), aes(x = X1, y = X2),
+      colour = "red"
+    ) +
+    labs(
+      fill = if (log_emp_risk) {
+        expression(log(R[emp](theta)))
+      } else {
+        expression(R[emp](theta))
+      },
+      title = if (log_emp_risk) {
+        expression(log(R[emp](theta)))
+      } else {
+        expression(R[emp](theta))
+      },
       x = expression(theta[1]),
       y = expression(theta[2])
     )
-  
 }
 ```
 
 ```{r logreg-plot_emprisk_grad_desc}
-plot2D_emp_risk(emp_risk = function(theta) (risk_bernoulli(Y,X, theta)),
-                max_theta = c(10,10), min_theta = c(-5,-10), 
-                log_emp_risk = TRUE,
-                thetas = res$storage$theta)
+plot2D_emp_risk(
+  emp_risk = function(theta) (risk_bernoulli(Y, X, theta)),
+  max_theta = c(10, 10), min_theta = c(-5, -10),
+  log_emp_risk = TRUE,
+  thetas = res$storage$theta
+)
 ```
 With gradient descent we are able to find the minimum, but also we note that
 the algorithm needs a lot of steps in the valley of the empirical risk function.
@@ -321,29 +347,29 @@ now we use a gradient which is weighted with the inverse of second derivatives. 
 library(MASS)
 
 newton_opt_stepsize <- function(Y, X, theta,
-                                       risk,
-                                       gradient,
-                                       hessian,
-                                       lambda = 0.005,
-                                       epsilon = 0.0001,
-                                       max_iterations = 2000,
-                                       min_learning_rate = 0,
-                                       max_learning_rate = 1000,
-                                       plot = TRUE,
-                                       include_storage = FALSE) {
-gradient_descent_opt_stepsize(Y, X, theta,
-                                       risk = risk,
-                                       gradient = function(Y,X,theta)
-                                         ginv(hessian(Y,X,theta)) %*%
-                                         gradient(Y,X,theta),
-                                       lambda = lambda,
-                                       epsilon = epsilon,
-                                       max_iterations = max_iterations,
-                                       min_learning_rate = min_learning_rate,
-                                       max_learning_rate = max_learning_rate,
-                                       plot = plot,
-                                       include_storage = include_storage
-                                      )
+                                risk,
+                                gradient,
+                                hessian,
+                                lambda = 0.005,
+                                epsilon = 0.0001,
+                                max_iterations = 2000,
+                                min_learning_rate = 0,
+                                max_learning_rate = 1000,
+                                plot = TRUE,
+                                include_storage = FALSE) {
+  gradient_descent_opt_stepsize(Y, X, theta,
+    risk = risk,
+    gradient = function(Y, X, theta)
+      ginv(hessian(Y, X, theta)) %*%
+        gradient(Y, X, theta),
+    lambda = lambda,
+    epsilon = epsilon,
+    max_iterations = max_iterations,
+    min_learning_rate = min_learning_rate,
+    max_learning_rate = max_learning_rate,
+    plot = plot,
+    include_storage = include_storage
+  )
 }
 ```
 
@@ -356,33 +382,42 @@ this we look at a scalar function $f$, from which we want to find its root:
 ```{r logreg_idea_newton, echo=FALSE}
 num_data <- 100
 
-x <- seq(from = 0,to =7,length.out = 100)
+x <- seq(from = 0, to = 7, length.out = 100)
 
 f <- function(x) x^2 - 1
-fx <- function(x) 2*x
+fx <- function(x) 2 * x
 
 func_data <- data.frame(x = x, y = f(x))
 
 x0 <- 6.5
 slope <- fx(x0)
-intercept <- f(x0) - slope*x0
+intercept <- f(x0) - slope * x0
 
-x1 <- x0 - slope^-1*f(x0)
+x1 <- x0 - slope^-1 * f(x0)
 
-ggplot() + 
-  geom_line(data=func_data,aes(x=x,y=y), color="purple") +
-  geom_hline(yintercept = 0) + 
-  geom_vline(xintercept = x0, color="yellow") + 
-  geom_abline(slope=slope, intercept = intercept, color="turquoise") +
-  geom_curve(data=data.frame(x=x1+0.3, y=0, x_to=x1+0.2, y_to=slope*(x1+0.2)+intercept), aes(x=x,y=y,xend=x_to,yend=y_to),angle = 90,curvature = 0.3, color="black") + 
-  geom_text(aes(label='x^{~"[t+1]" }',x=x1, y=-1.5),parse = TRUE) +
-  geom_text(aes(label='x^{~"[t]" }',x=x0, y=-1.5),parse = TRUE) +
-  geom_text(aes(label='tan^-1 ~ ( ~ "f\'"(x^{~"[t]" }))  ',x=x1+1, y=3),parse = TRUE,
-            color="black") + 
-  geom_text(aes(label='f(x)',x=4, y=20),parse = TRUE,
-            color="purple") +
-   geom_text(aes(label='f(x^{~"[t]" })',x=x0+0.3, y=f(x0)),parse = TRUE,
-            color="black")
+ggplot() +
+  geom_line(data = func_data, aes(x = x, y = y), color = "purple") +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = x0, color = "yellow") +
+  geom_abline(slope = slope, intercept = intercept, color = "turquoise") +
+  geom_curve(data = data.frame(x = x1 + 0.3, y = 0, x_to = x1 + 0.2, y_to = 
+                                 slope * (x1 + 0.2) + intercept), 
+             aes(x = x, y = y, xend = x_to, yend = y_to), angle = 90, 
+             curvature = 0.3, color = "black") +
+  geom_text(aes(label = 'x^{~"[t+1]" }', x = x1, y = -1.5), parse = TRUE) +
+  geom_text(aes(label = 'x^{~"[t]" }', x = x0, y = -1.5), parse = TRUE) +
+  geom_text(aes(label = 'tan^-1 ~ ( ~ "f\'"(x^{~"[t]" }))  ', x = x1 + 1, y = 3),
+    parse = TRUE,
+    color = "black"
+  ) +
+  geom_text(aes(label = "f(x)", x = 4, y = 20),
+    parse = TRUE,
+    color = "purple"
+  ) +
+  geom_text(aes(label = 'f(x^{~"[t]" })', x = x0 + 0.3, y = f(x0)),
+    parse = TRUE,
+    color = "black"
+  )
 ```
 
 The idea for finding a root candidate consists in following the negative gradient from our starting point.
@@ -409,36 +444,38 @@ of the gradient function.
 As already mentioned for using Newton-Raphson we need the Hessian matrix:
 
 ```{r logreg-ber_hessian}
-hessian_bernoulli <- function(Y,X,theta){
-   exp_yxt = exp(Y*(X%*%theta))
-   t(( exp_yxt / (1+ exp_yxt)^2)[,1] * X) %*% X
+hessian_bernoulli <- function(Y, X, theta) {
+  exp_yxt <- exp(Y * (X %*% theta))
+  t((exp_yxt / (1 + exp_yxt)^2)[, 1] * X) %*% X
 }
 ```
 
 Now we can use the Newton-Raphson for solving our example:
 
 ```{r logreg-example_newton}
-res <- newton_opt_stepsize(Y,X, c(-1,-1),
-                    risk_bernoulli,
-                    gradient_bernoulli,
-                    hessian_bernoulli,
-                    min_learning_rate = 0.0,
-                    max_learning_rate = 10,
-                    max_iterations = 5,
-                    include_storage = TRUE
-                    )
+res <- newton_opt_stepsize(Y, X, c(-1, -1),
+  risk_bernoulli,
+  gradient_bernoulli,
+  hessian_bernoulli,
+  min_learning_rate = 0.0,
+  max_learning_rate = 10,
+  max_iterations = 5,
+  include_storage = TRUE
+)
 title(main = "Newton Raphson", outer = TRUE, line = -1)
-print(paste("Risk: ",res$risk))
+print(paste("Risk: ", res$risk))
 res$theta
 ```
 
 We see that we need less steps to achieve a similar good result as when we used the gradient descent method.
 
 ```{r logreg-plot_emprisk_newton}
-plot2D_emp_risk(emp_risk = function(theta) (risk_bernoulli(Y,X, theta)),
-                max_theta = c(10,10), min_theta = c(-5,-10), 
-                log_emp_risk = TRUE,
-                thetas = res$storage$theta)
+plot2D_emp_risk(
+  emp_risk = function(theta) (risk_bernoulli(Y, X, theta)),
+  max_theta = c(10, 10), min_theta = c(-5, -10),
+  log_emp_risk = TRUE,
+  thetas = res$storage$theta
+)
 ```
 
 We see that by using Newton-Raphson we are incorporating more knowledge of our function as the Hessian matrix represents the curvature of a function, which allows to make bigger steps in the right direction. Gradient descent is a so-called first-order iterative optimization algorithm, while Newton-Raphson is second-order one since we're computing second derivatives. The behaviors of both algorithms we observed are typical for their order:
