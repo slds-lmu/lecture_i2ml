@@ -288,7 +288,7 @@ we look at another approach in the next chapter.
 
 ## Newton-Raphson
 
-The Newton method follows this algorithm:
+The Newton-Raphson method follows this algorithm:
 
 0. Initialize $\theta^{[0]}$ (randomly) and calculate the gradient and the Hessian matrix, which is a square matrix of second-order partial derivatives, of the empirical risk with respect to $\theta$, for example for the Bernoulli loss:
 
@@ -315,7 +315,7 @@ $$
 - Note: The classic Newton-Raphson method uses $\lambda=1$, but we can enlarge its radius of convergence by optimizing $\lambda$ in every step.
 
 We can implement this quite easily by realizing that we are principally doing the same as with the gradient descent method - except that
-now we use a "weighted" gradient.
+now we use a gradient which is weighted with the inverse of second derivatives. The second derivatives represent how curved our surface is at our candidate point. Intuitively this means when we are at a point, where the surface is strongly curved, we want to make small steps, since we do not want to *pass* the minimum,  as for a relatively flat surface bigger steps can be made.
 
 ```{r logreg-newton}
 library(MASS)
@@ -350,6 +350,9 @@ gradient_descent_opt_stepsize(Y, X, theta,
 
 ## Idea of Newton-Raphson
 
+In principle Newton-Raphson is a method for finding a root of a function. To understand
+this we look at a scalar function $f$, from which we want to find its root:
+
 ```{r logreg_idea_newton, echo=FALSE}
 num_data <- 100
 
@@ -369,26 +372,37 @@ x1 <- x0 - slope^-1*f(x0)
 ggplot() + 
   geom_line(data=func_data,aes(x=x,y=y), color="purple") +
   geom_hline(yintercept = 0) + 
-  geom_vline(xintercept = 6.5, color="yellow") + 
-  geom_abline(slope=slope, intercept = intercept, color="turquoise") + 
-  geom_text(aes(label='x^{~"[1]" }',x=x1, y=-1.5),parse = TRUE) +
-  geom_text(aes(label='x^{~"[0]" }',x=x0, y=-1.5),parse = TRUE) +
-  geom_text(aes(label='"f\'"(x^{~"[0]" })',x=x0+0.3, y=f(x0)),parse = TRUE,
-            color="turquoise") + 
+  geom_vline(xintercept = x0, color="yellow") + 
+  geom_abline(slope=slope, intercept = intercept, color="turquoise") +
+  geom_curve(data=data.frame(x=x1+0.3, y=0, x_to=x1+0.2, y_to=slope*(x1+0.2)+intercept), aes(x=x,y=y,xend=x_to,yend=y_to),angle = 90,curvature = 0.3, color="black") + 
+  geom_text(aes(label='x^{~"[t+1]" }',x=x1, y=-1.5),parse = TRUE) +
+  geom_text(aes(label='x^{~"[t]" }',x=x0, y=-1.5),parse = TRUE) +
+  geom_text(aes(label='tan^-1 ~ ( ~ "f\'"(x^{~"[t]" }))  ',x=x1+1, y=3),parse = TRUE,
+            color="black") + 
   geom_text(aes(label='f(x)',x=4, y=20),parse = TRUE,
-            color="purple")
+            color="purple") +
+   geom_text(aes(label='f(x^{~"[t]" })',x=x0+0.3, y=f(x0)),parse = TRUE,
+            color="black")
 ```
 
-If our scalar function $f$ of interest has a root and we are *near enough* to it, we can 
-find it by iteratively using following procedure:
+The idea for finding a root candidate consists in following the negative gradient from our starting point.
+By applying simple geometry one derives that
 $$
-x^{[t]} = x^{[t-1]} - f'(x^{[t-1]})\cdot f(x^{[t-1]}).
+f'(x^{[t]}) = \frac{f(x^{[t]})}{x^{[t]}-x^{[t+1]}}.
 $$
-Applying the multidimensional version of this to our gradient function results in the Newton-Raphson method.
-This makes sense since a necessary condition for a minimum is, that the gradient is zero, i.e., for the empirical risk that
+
+By solving for $x^{[t+1]}$ we get that
+$$
+x^{[t+1]} = x^{[t]} - f'(x^{[t]})^{-1}\cdot f(x^{[t]}),
+$$
+which is the one-dimensional Newton-Raphson method. But how does finding the root of a function help in minimizing the empirical risk function?
+Remember that a necessary condition for a minimum is, that the gradient is zero, i.e., for the empirical risk that
 $$
 \frac{\partial R_{emp}(f)}{\partial \theta} = 0.
 $$
+This means by applying the multidimensional version of the Newton-Raphson method to the gradient function, we 
+are minimizing the empirical risk function. This is also the reason why the second derivatives appear, since we are taking the derivative
+of the gradient function.
 
 ## Example continued with Newton-Raphson
 
