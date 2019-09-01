@@ -1,0 +1,234 @@
+---
+output: pdf_document
+params:
+  set_title: "Code demo for generative classification methods"
+---
+  
+```{r, child = "../style/preamble_code_demos.Rmd", include = FALSE}
+
+```
+
+```{r, child = "../style/setup.Rmd", include = FALSE}
+
+```  
+
+```{r, echo=FALSE}
+knitr::read_chunk("code_demo_knn.Rmd")
+```  
+
+```{r knn-plot_2D_classif, echo=FALSE}
+
+```
+
+# Code demo for generative classification methods
+
+not modeling cond density directly
+
+$$
+\pi_k(x) \propto \pi_k \cdot p(y = k | x)
+$$
+
+$$
+\hat{\pi}_k = \frac{n_k}{n}
+$$
+
+$$
+1 = \sum^{g}_{j=1}\alpha \pi_j \cdot p(y = j | x) \iff \alpha = \frac{1}{\sum^{g}_{j=1}\pi_j \cdot p(y = j | x)}
+$$
+
+$$
+\pi_k(x) = \frac{\pi_k \cdot p(y = k | x)}{\sum^{g}_{j=1}\pi_j \cdot p(y = j | x)}
+$$
+
+```{r genclass-plot_data}
+library(mlr)
+
+data(iris)
+iris_train = iris[, c("Species","Sepal.Width","Sepal.Length")]
+iris_task = makeClassifTask(data = iris_train, target = "Species")
+
+ggplot(iris_train, aes(x=Sepal.Width, y=Sepal.Length)) + 
+  geom_point(aes(color=Species))
+```
+
+## Linear discriminant analysis (LDA)
+
+In LDA, we caclulate the posteriori class probabilities like that:
+$$
+p(y = k | x) = \frac{1}{\pi^{\frac{p}{2}} |\Sigma|^{\frac{1}{2}}}\exp(- \frac{1}{2} (x-\mu_k)^T\Sigma^{-1}(x-\mu_k) )
+$$
+
+* $\hat{\mu}_k = \frac{1}{n_k}\sum_{i: y^{(i)} = k} x^{(i)}$  
+* $\hat{\Sigma} = \frac{1}{n - g} \sum_{k=1}^g\sum_{i: y^{(i)} = k} (x^{(i)} - \hat{\mu}_k)(x^{(i)} - \hat{\mu}_k)^T$  
+    
+```{r genclass-lda_plot}
+iris_lda_learner = makeLearner("classif.lda")
+iris_lda_model = train(learner = iris_lda_learner, task = iris_task)
+
+plotLearnerPrediction(iris_lda_learner, iris_task)
+```
+    
+## Quadratic discriminant analysis (QDA)
+
+In QDA, we caclulate the posteriori class probabilities like that:
+$$
+p(y = k | x) = \frac{1}{\pi^{\frac{p}{2}} |\Sigma_k|^{\frac{1}{2}}}\exp(- \frac{1}{2} (x-\mu_k)^T\Sigma_k^{-1}(x-\mu_k) )
+$$
+
+* $\hat{\mu}_k = \frac{1}{n_k}\sum_{i: y^{(i)} = k} x^{(i)}$  
+* $\hat{\Sigma}_k = \frac{1}{n_k - 1} \sum_{i: y^{(i)} = k} (x^{(i)} - \hat{\mu}_k)(x^{(i)} - \hat{\mu}_k)^T$  
+    
+```{r genclass-qda_plot}
+iris_qda_learner = makeLearner("classif.qda")
+iris_qda_model = train(learner = iris_qda_learner, task = iris_task)
+
+plotLearnerPrediction(iris_qda_learner, iris_task)
+```
+  
+## Naive Bayes
+
+Here, we make a “naive” conditional independence assumption.
+
+$$
+p(y = k | x) = \prod^{p}_{j=1}p(x_j | y=k)
+$$
+
+
+```{r genclass-nb_priors}
+get_priors <- function(df, class_var){
+  counts <- count(df[,class_var])
+  priors <- lapply(counts$x, function(level) counts[counts$x == level,"freq"]/nrow(df))
+  names(priors) <- counts$x
+  priors
+}
+```
+
+```{r genclass-nb_lhoods}
+gaussian_est <- function(data) 
+  function(x) dnorm(x = x, mean = mean(data), sd = sd(data))
+
+get_likelihoods <- function(df, class_var, density_funs = 
+    sapply(colnames(df[,!(names(df) %in% class_var)]), 
+           function(cname) gaussian_est)){
+  X <- df[,!(names(df) %in% class_var)]
+  likelihoods <- lapply(
+      levels(df[,class_var]), function(level)
+      sapply(colnames(X),force(function(cname) 
+        density_funs[[cname]](X[df[[class_var]]==level,cname])))
+  )
+  names(likelihoods) <- levels(df[,class_var])
+  likelihoods
+}
+```
+
+```{r genclass-naivebayes}
+library(plyr)
+
+norm1 <- function(x) x / sum(abs(x))
+
+naivebayes <- function(X, priors, likelihoods){
+  res <- matrix(data=NA_real_,nrow=nrow(X),ncol=length(priors))
+  for(i in 1:nrow(X)){
+    res[i,] <-
+      norm1(sapply(names(priors), function(level)
+      prod(sapply(colnames(X), FUN = function(cname) priors[[level]]*likelihoods[[level]][[cname]](X[i,cname])))
+      ))
+   
+  }
+  colnames(res) <- names(priors)
+  res                          
+}
+```
+
+```{r genclass-nb_example}
+class_var <- "Species"
+likelihoods <- get_likelihoods(iris_train, class_var)
+priors <- get_priors(iris_train,class_var)
+
+X <- iris_train[,!(names(iris_train) %in% class_var)]
+head(naivebayes(X, priors, likelihoods))
+```
+
+```{r genclass-classify_naivebayes}
+classify_naivebayes <- function(X, priors, likelihoods){
+  nb <- naivebayes(X, priors, likelihoods)
+  
+  list(
+    prediction =   names(sapply(1:nrow(nb), function(i)
+    which.max(nb[i,])
+  )),
+    levels = names(priors)
+  )
+}
+```
+
+```{r genclass-plot_2D_naivebayes}
+# function for naive bayes with two features to visualize class
+# boundaries X1 and X2 are the names of the two features to use.
+
+plot_2D_naivebayes <- function(priors, likelihoods, X1 = "X1", X2 = "X2",
+                           # by default, we "predict" the class of the training data:
+                           to_classify_labels = as.character(Y),
+                           to_classify_data = data.frame(
+                             "X1" = X[, 1],
+                             "X2" = X[, 2]
+                           ),
+                           lengthX1 = 100, lengthX2 = 100,
+                           title = '"Naive Bayes" ~',
+                           plot_class_rate = TRUE) {
+  plot_2D_classify(
+    to_classify_labels = to_classify_labels,
+    to_classify_data = to_classify_data,
+    classify_method = function(to_classify_data)
+      classify_naivebayes(
+        X = to_classify_data,
+        priors, likelihoods
+      ),
+    X1, X2,
+    lengthX1 = lengthX1, lengthX2 = lengthX2,
+    title = title,
+    plot_class_rate = plot_class_rate
+  )
+}
+```
+```{r}
+
+plot_2D_naivebayes(priors, likelihoods, "Sepal.Width", "Sepal.Length",
+                   iris_train$Species, X)
+```
+
+```{r genclass-naivebayes_plot}
+iris_nb_learner = makeLearner("classif.naiveBayes")
+iris_nb_model = train(learner = iris_nb_learner, task = iris_task)
+
+plotLearnerPrediction(iris_nb_learner, iris_task)
+```
+
+https://en.wikipedia.org/wiki/Kernel_(statistics)#Kernel_functions_in_common_use
+
+```{r genclass-kde_kernels}
+library("kdensity")
+par(mfrow=c(1,2))
+for (kernel in c("gaussian","triangular") )
+  plot(kdensity(iris_train[,"Sepal.Width"], start = "gumbel", kernel = kernel),
+       main=paste0("Kernel: ", kernel))
+```
+
+```{r genclass-kde_bw}
+par(mfrow=c(2,2))
+for (bw in seq(0.1,0.5,length.out = 4) )
+  plot(kdensity(iris_train[,"Sepal.Length"], start = "gumbel", 
+                kernel = "gaussian", bw = bw),
+       main=paste0("KDE of Sepal.Lenght"))
+```
+
+```{r genclass-nb_kde}
+
+likelihoods_kde <- get_likelihoods(iris_train, class_var,
+    sapply(colnames(iris_train[,!(names(iris_train) %in% class_var)]), 
+           function(cname) kdensity))
+    
+plot_2D_naivebayes(priors, likelihoods_kde, "Sepal.Width", "Sepal.Length",
+                   iris_train$Species, X)
+```
+
