@@ -11,6 +11,8 @@ library(factoextra)
 library(ggrepel)
 library(rafalib)
 library(colorspace)
+library(mlr)
+library(ggplot2)
 @
 
 % Load all R packages and set up knitr
@@ -25,7 +27,7 @@ library(colorspace)
 
 \begin{frame}{Suggested Literature}
   \begin{itemize}
-  \item Hastie, T., Tibshirani, R., Friedman, J. (2009): The Elements of Statistical Learning: Data Mining, Inference, and Prediction. Springer. 
+  \item Hastie, T., Tibshirani, R., Friedman, J. (2009): The Elements of Statistical Learning: Data Mining, Inference, and Prediction. Springer.
   \item James, G., Witten, D., Hastie, T., Tibshirani, R. (2013): An Introduction to Statistical Learning with Applications in R. Springer.
   \item Aggarwal, C. C., \& Reddy, C. K. (Eds.). (2013). Data Clustering: Algorithms and Applications. CRC press.
   \end{itemize}
@@ -97,7 +99,7 @@ Example Use Cases:
 \begin{frame}{Clustering: Image Compression}
 An image can be compressed by reducing its color information, i.e., by replacing similar colors of each pixel with, say, $k$ distinct colors.
 
-\textbf{Example}: 
+\textbf{Example}:
 
 <<echo = FALSE, fig.height=5, fig.width=10>>=
 library(jpeg)
@@ -155,14 +157,14 @@ Unsupervised Methods:
   \item Principle Component Analysis (PCA).
   \item Factor Analysis (FA).
   \item Feature filter methods.
-\end{itemize} 
+\end{itemize}
 \lz
 
 Supervised Methods:
 \begin{itemize}
   \item Linear Discriminant Analysis (LDA).
   \item Feature filter methods.
-\end{itemize}      
+\end{itemize}
 \end{frame}
 
 
@@ -187,7 +189,7 @@ bh.m = bh/100
 bh.feet = round(bh/30.48, 4)
 
 options(xtable.comment = FALSE)
-tab = rbind(cbind(bh, "mean" = mean(bh), "sd" = sd(bh)), 
+tab = rbind(cbind(bh, "mean" = mean(bh), "sd" = sd(bh)),
   cbind(bh.m, "mean" = mean(bh.m), "sd" = sd(bh.m)),
   cbind(bh.feet, "mean" = mean(bh.feet), "sd" = sd(bh.feet)))
 row.names(tab) = c("body height (cm)", "body height (m)", "body height (feet)")
@@ -317,7 +319,7 @@ text(x = dat$shoe.size, y = dat$height, c(expression(Z[2]), expression(Z[1]), ex
 
 The \textbf{variance} of a normalized variable is always 1, its mean is always 0.
 
-The \textbf{covariance} of two normalized variables $\tilde{X} = \tfrac{X - \bar{X}}{s_X}$ and $\tilde{Y} = \tfrac{Y - \bar{Y}}{s_Y}$ is the same as the \textbf{correlation} of the non-normalized variables $X$ and $Y$. 
+The \textbf{covariance} of two normalized variables $\tilde{X} = \tfrac{X - \bar{X}}{s_X}$ and $\tilde{Y} = \tfrac{Y - \bar{Y}}{s_Y}$ is the same as the \textbf{correlation} of the non-normalized variables $X$ and $Y$.
 
 One can proof this with the help of
 $$s_{\tilde{X}\tilde{Y}}=\tfrac{1}{n-1}\sum_{i=1}^{n}{(\tilde{x}_i-\bar{\tilde{x}})(\tilde{y}_i-\bar{\tilde{y}})} = \hdots =  \tfrac{1}{n-1}\sum_{i=1}^{n}{\tfrac{(x_i-\bar{x})}{s_{X}}\tfrac{(y_i-\bar{y})}{s_{Y}}} = r_{XY}.$$
@@ -339,7 +341,7 @@ cbbPalette = c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
 \begin{itemize}
   \item Variable $x_1$ explains most of the variation.
   \item Variable $x_2$ has a lower variance than $x_1$.
-  \item If we disregard $x_2$ and project the points into the 1-dimensional space of $x_1$, we do not lose much information w.r.t. variability. 
+  \item If we disregard $x_2$ and project the points into the 1-dimensional space of $x_1$, we do not lose much information w.r.t. variability.
 \end{itemize}
 
 \begin{center}
@@ -384,11 +386,11 @@ cbbPalette = c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
 
 \begin{frame}{PCA Intuition: Find first PC}
 
-PROBLEM HERE! MULTIPLE SLIDES DOES NOT RENDER! 
+PROBLEM HERE! MULTIPLE SLIDES DOES NOT RENDER!
 <<echo=FALSE, fig.height=7, fig.width=7>>=
 
 Colors = colorspace::rainbow_hcl(3)
-# code from https://github.com/genomicsclass/labs/blob/master/highdim/PCA.Rmd 
+# code from https://github.com/genomicsclass/labs/blob/master/highdim/PCA.Rmd
 mypar()
 n = 50
 col = Colors[1]
@@ -410,7 +412,7 @@ for (rotate in c(0,-0.5,-1, -3, -300, 3, 1)) {
   u = u/sqrt(sum(u^2))
   w=t(u)%*%Y
   mypar(1,1)
-  plot(t(Y), main=paste("Variance of projected points:",round(tcrossprod(w)/(n-1),2) ), 
+  plot(t(Y), main=paste("Variance of projected points:",round(tcrossprod(w)/(n-1),2) ),
     xlim=thelim, ylim=thelim, axes=F, xlab = "", ylab = "")
   #box()
   arrows(c(0,thelim[1]),c(thelim[1],0),c(0,thelim[2]),c(thelim[2],0),0.05); ## draw custom axes
@@ -423,7 +425,7 @@ for (rotate in c(0,-0.5,-1, -3, -300, 3, 1)) {
   Z = u%*%w
   for(i in seq(along=w))
     segments(Z[1,i],Z[2,i],Y[1,i],Y[2,i],lty=2)
-  points(t(Z), col=col, pch=16, cex=0.8)  
+  points(t(Z), col=col, pch=16, cex=0.8)
   legend("topleft", lty = c(1,2, NA), pch = c(NA,NA,16), legend = c("rotated coordinate system", "original coordinate system", "projected points"), col = c(col, "black", col))
 }
 text(3, 3, labels = "PC1", col = col, pos = 1)
@@ -434,7 +436,7 @@ text(3, -3, labels = "PC2", col = col, pos = 3)
 
 \begin{frame}{PCA Intuition: Reduce dimensionality}
 
-Rotate the points and use PC1 and PC2 as new coordinate system. 
+Rotate the points and use PC1 and PC2 as new coordinate system.
 \lz
 Here, the PC1 axis explains most of the variance:
 
@@ -444,7 +446,7 @@ Here, the PC1 axis explains most of the variance:
 a = pi/4
 Yrotated = t(Y) %*% matrix(c(cos(a), -sin(a), sin(a), cos(a)), ncol = 2, byrow = T)
 mypar(1,1)
-plot(Yrotated, 
+plot(Yrotated,
   xlim = c(-3,3), ylim = c(-3,3), xlab = "PC1", ylab = "PC2", axes=F ,ann=F)
 #box()
 arrows(c(0,thelim[1]),c(thelim[1],0),c(0,thelim[2]),c(thelim[2],0),0.05, col = col, lwd = 1.5); ## draw custom axes
@@ -463,7 +465,7 @@ The hope is that we won't lose much information this way.
 
 <<echo = FALSE, fig.height=7, fig.width=7, out.width="60%">>=
 mypar(1,1)
-plot(Yrotated, 
+plot(Yrotated,
   xlim = c(-3,3), ylim = c(-3,3), xlab = "PC1", ylab = "PC2", axes=F ,ann=F)
 #box()
 arrows(c(0,thelim[1]),c(thelim[1],0),c(0,thelim[2]),c(thelim[2],0),0.05, col = col, lwd = 1.5); ## draw custom axes
@@ -477,7 +479,7 @@ wrotated = t(u)%*%t(Yrotated)
 Zrotated = u%*%wrotated
 for(i in seq(along=w))
   segments(Zrotated[1,i], Zrotated[2,i], t(Yrotated)[1,i], t(Yrotated)[2,i], lty=2)
-points(t(Zrotated), col=col, pch=16, cex=0.8) 
+points(t(Zrotated), col=col, pch=16, cex=0.8)
 
 # plot(t(Zrotated), col=col, pch=16, cex=0.8, xlab = "PC1", ylab = "PC2", axes=F ,ann=F)
 # arrows(c(0,thelim[1]),c(thelim[1],0),c(0,thelim[2]),c(thelim[2],0),0.05, col = col, lwd = 1.5); ## draw custom axes
@@ -493,7 +495,7 @@ points(t(Zrotated), col=col, pch=16, cex=0.8)
 
   \begin{itemize}
     \item The objective is to investigate if only a few PC account for most of the variability in the original data.
-    \item If the objective is fulfilled, we can use fewer PCs to reduce the dimensionality. 
+    \item If the objective is fulfilled, we can use fewer PCs to reduce the dimensionality.
     \item The PCs remove collinearity of the input variables as they are orthogonal to each other.
   \end{itemize}
 
@@ -503,7 +505,7 @@ points(t(Zrotated), col=col, pch=16, cex=0.8)
 
   \begin{itemize}
     \item PCA is used for dimensionality reduction by disregaring dimensions with lower variability.
-    \item There is always an information loss, especially for other criteria. 
+    \item There is always an information loss, especially for other criteria.
     \item E.g., dimensionality reduciton can worsen the classification accuracy when the task is to classify two groups:
   \end{itemize}
 \begin{center}
@@ -539,7 +541,7 @@ We look for the loading vector $\mathbf{a}_1 = (a_{11}, a_{21}, \hdots, a_{p1})^
   \]
 subject to the normalization constraint $\mathbf{a}_1^\top \mathbf{a}_1 = \sum_{k=1}^p a_{k1}^2 = 1$.
 
-\lz 
+\lz
 The constraint is required for identifiability reasons, otherwise we could maximize the variance by just increasing the values in $\mathbf{a}_1$.
 
 \lz
@@ -587,8 +589,8 @@ Variables of the \enquote{heptathlon} data:
 
 \begin{frame}{Example: The Olympic Heptathlon Data}
 
-The variables \enquote{hurdles}, \enquote{run200m} and \enquote{run800m} are time measurements, i.e. low values are better. 
-For all other variables high values are better. 
+The variables \enquote{hurdles}, \enquote{run200m} and \enquote{run800m} are time measurements, i.e. low values are better.
+For all other variables high values are better.
 
 \lz
 
@@ -618,7 +620,7 @@ kable(heptathlon[c(1,25),])
 
 <<fig.align="center", out.width = "0.95\\textwidth", echo = FALSE, message=FALSE>>=
 #plot(heptathlon[, -8], pch = 19)
-ggpairs(heptathlon[, -8]) + 
+ggpairs(heptathlon[, -8]) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 @
 
@@ -628,14 +630,14 @@ ggpairs(heptathlon[, -8]) +
 
 We can compute all pairwise correlations of the variables (without the \enquote{score} column):
 
-PROBLEM HERE!
+% PROBLEM HERE!
 <<echo=FALSE, out.width = "0.95\\textwidth">>=
-# (cor.mat = cor(heptathlon[, -8]))
+cor.mat = cor(heptathlon[, -8])
 @
 
 \end{frame}
 
-\begin{frame}{Correlogram} 
+\begin{frame}{Correlogram}
 
 <<message=FALSE, fig.align="center", fig.height = 5, out.width = "0.75\\textwidth", echo = -c(1, 3)>>=
 #par(mfrow = c(1, 2)) #  tl.srt = 60
@@ -674,7 +676,7 @@ As the variables of the heptathlon data are on different scales, we perform the 
 hept.pca = princomp(heptathlon[, -8], cor = TRUE)
 @
 
-\lz 
+\lz
 
 Alternatively, we could also perform the PCA based on the covariance matrix but on the normalized heptathlon data.
 
@@ -715,22 +717,22 @@ corrplot(hept.pca$loadings, is.corr = FALSE)
 
 \begin{frame}{Loadings}
 
-PROBLEM HERE! 
+% PROBLEM HERE!
 Check the normalization constraint of the first PC:
 <<size = "tiny">>=
-# (a1 = hept.pca$loadings[, 1]) # loadings of the first PC
-# a1 %*% a1 # check constraint: is sum of squares equal to 1?
+(a1 = hept.pca$loadings[, 1]) # loadings of the first PC
+a1 %*% a1 # check constraint: is sum of squares equal to 1?
 @
 
 Check the orthogonality constraint of the first two PCs:
 <<size = "tiny">>=
-#(a2 = hept.pca$loadings[, 2]) # loadings of the second PC
-# a1 %*% a2 # check if 1st and 2nd PC are orthogonal
+(a2 = hept.pca$loadings[, 2]) # loadings of the second PC
+a1 %*% a2 # check if 1st and 2nd PC are orthogonal
 @
 
 \end{frame}
 
-\begin{frame}{Loadings} 
+\begin{frame}{Loadings}
 If we perform PCA on the covariance matrix (without normalizing the data), each component mainly loads on a single variable:
 
 <<fig.align="center", fig.height = 5, out.width = "0.5\\textwidth">>=
@@ -749,7 +751,7 @@ Reason: Variables have very different scales (e.g., time measurement of 200m and
   \item The total variance of the $p$ PC scores is equal the total variance of the original variables, i.e.,
     $$\textstyle\sum_{j=1}^p \lambda_j = s_1^2 +s_2^2 + \dots + s_p^2,$$
     where $\lambda_j$ is the variance of the $j$th PC and $s_j^2$ is the sample variance of variable $\mathbf{x}_j$.
-  \item The proportion of explained variance of the $j$-th PC is $$\tfrac{\lambda_j}{\sum_{j=1}^p \lambda_j}.$$ 
+  \item The proportion of explained variance of the $j$-th PC is $$\tfrac{\lambda_j}{\sum_{j=1}^p \lambda_j}.$$
 
   \item The first $k$ PCs account for a proportion $$\tfrac{\sum_{j=1}^k \lambda_j}{\sum_{j=1}^p \lambda_j}.$$
 
@@ -778,7 +780,7 @@ Two simple rules of thumb for choosing the number of PCs:
 
 \begin{enumerate}
 \item Retain the first $k$ components, which explain a large proportion of the total variation, e.g., 70-80\%.
-   
+
 \item Use a scree plot: Plot the component variances vs. the component number and look for an \textit{elbow}.
 For components after the \textit{elbow}, the variance decreases more slowly.
 
@@ -794,7 +796,7 @@ fviz_eig(hept.pca, xlab = "principal component")
 
 \begin{frame}{PC Scores vs. Official Scores}
 
-PROBLEM HERE! 
+PROBLEM HERE!
 The first PC explains $63,72\%$ of the variation, the loadings of the first PC are:
 
 <<>>=
