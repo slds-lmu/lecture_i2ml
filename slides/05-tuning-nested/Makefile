@@ -1,15 +1,26 @@
-SLOT1=slides-tuning
-SLOT2=slides-nested-resampling
+SLIDES = $(shell find -iname "slides-*.Rnw")
+PDFS = $(SLIDES:%.Rnw=%.pdf)
 
-all: $(SLOT1).pdf $(SLOT2).pdf 
+all: texclean $(PDFS) 
 
-all_sources: sources $(SLOT1).pdf $(SLOT2).pdf 
+$(PDFS): %.pdf: %.Rnw
+	Rscript -e 'setwd("$(dir $<)"); knitr::knit2pdf("$(notdir $<)")'
 
-$(SLOT1).pdf: $(SLOT1).Rnw
-	Rscript -e 'knitr::knit2pdf("$(SLOT1).Rnw")'
-
-$(SLOT2).pdf: $(SLOT2).Rnw
-	Rscript -e 'knitr::knit2pdf("$(SLOT2).Rnw")'
-
-sources: 
-	cd rsrc/; Rscript overtuning-example.R  # create overtuning-example.RData (used in nested-resampling)
+texclean: 
+	rm -rf *.out
+	rm -rf *.dvi
+	rm -rf *.log
+	rm -rf *.aux
+	rm -rf *.bbl
+	rm -rf *.blg
+	rm -rf *.ind
+	rm -rf *.idx
+	rm -rf *.ilg
+	rm -rf *.lof
+	rm -rf *.lot
+	rm -rf *.toc
+	rm -rf *.nav
+	rm -rf *.snm
+	rm -rf *.vrb
+	rm -rf *.synctex.gz
+	rm -rf *-concordance.tex
