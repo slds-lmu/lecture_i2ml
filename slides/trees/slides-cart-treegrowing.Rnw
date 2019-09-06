@@ -1,0 +1,124 @@
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../../style/preamble.Rnw")
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(rattle)
+library(smoof)
+@
+
+% Load all R packages and set up knitr
+<<setup, child="../../style/setup.Rnw", include = FALSE>>=
+@
+
+
+\lecturechapter{CART 1}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+\begin{vbframe}{Tree Growing}
+In the greedy top-down construction, features and split points are selected by exhaustive search. The training data is distributed to child nodes according to the splits - see below that nodes display the percentage of currently contained data.
+<<result='hide', fig.height=2.2>>=
+draw_cart_on_iris(depth = 1, with_tree_plot = TRUE)
+@
+
+\framebreak
+
+We start with an empty tree, a full root node of all data. We search for a feature and split-point, which makes the label distribution in the resulting left and right child (or sub-rectangles) most pure (defined later). See below that nodes display their current label distribution.
+<<result='hide', fig.height=2.2>>=
+draw_cart_on_iris(depth = 1, with_tree_plot = TRUE)
+@
+
+\framebreak
+
+We proceed then recursively for each child node:
+Iterate over all features, and for each feature over all split points. Select the "best" split, divide training data from parent into left and right child.
+<<result='hide', fig.height=2.2>>=
+draw_cart_on_iris(depth = 2, with_tree_plot = TRUE)
+@
+
+\framebreak
+
+We proceed then recursively for each child node:
+Iterate over all features, and for each feature over all split points. Select the "best" split, divide training data from parent into left and right child.
+<<result='hide', fig.height=2.2>>=
+draw_cart_on_iris(depth = 3, with_tree_plot = TRUE)
+@
+
+\end{vbframe}
+
+\begin{vbframe}{Split placement}
+<<fig.height=4>>=
+task = subsetTask(iris.task, seq(1, 150, by = 20))
+lrn = makeLearner("classif.rpart", cp = 0, minbucket = 1, maxdepth = 1)
+pl = plotLearnerPrediction(lrn, task, gridsize = 100,
+  cv = 0, prob.alpha = FALSE, err.mark = "none")
+pl = pl + theme(legend.position="none")
+print(pl)
+@
+\lz
+Splits are usually placed "in the middle" between the observations they split, so the large margin to the next observations ensures better generalization
+\end{vbframe}
+
+\begin{vbframe}{Regression Example}
+\begin{columns}[T,onlytextwidth]
+\column{0.2\textwidth}
+<<out.width='\\textwidth'>>=
+modForrester = makeSingleObjectiveFunction(
+  name = "Modification Forrester et. all function",
+  fn = function(x) (sin(4*x - 4)) * ((2*x - 2)^2) * (sin(20*x - 4)),
+  par.set = makeNumericParamSet(lower = 0, upper = 1, len = 1L),
+  noisy = TRUE
+)
+design = generateDesign(7L, getParamSet(modForrester), fun = lhs::maximinLHS)
+design$y = modForrester(design)
+ordered.design = design[order(design$x),]
+rownames(ordered.design) = NULL
+kable(ordered.design, digits = 3)
+@
+
+\hspace{0.5cm}
+\column{0.7\textwidth}
+% FIGURE SOURCE: No source
+\includegraphics[height = 0.55\textheight]{figure_man/regression_tree}
+\end{columns}
+\vspace{0.5cm}
+Data points (red) were generated from the underlying function (black):
+
+$ sin(4x - 4) * (2x - 2)^2 * sin(20x -4) $
+
+% \framebreak
+
+% BB: doesnt seem too useful to show this, nothing really new in here
+% <<fig.height=5>>=
+% regr.task = makeRegrTask(data = design, target = "y")
+% regr.rpart = makeLearner("regr.rpart", par.vals = list(minsplit=1, minbucket = 1))
+% regr.model = train(regr.rpart, regr.task)
+% fancyRpartPlot(regr.model$learner.model, sub="")
+% @
+\end{vbframe}
+
+
+\begin{vbframe}{Stopping Criteria}
+  At some point we have to stop the recursive splitting of child nodes and produce a leaf. Multiple simple criteria for stopping can be defined:
+  \begin{itemize}
+    \item Minimal number of observations per node, for a split to be tried
+    \item Minimal number of observations that must be contained in a leaf
+    \item Minimal increase in label distribution purity that must be reached for the best split
+    \item Maximum number of levels for the tree
+  \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Constant predictions in leafs}
+  After growing, for each leaf, we know which training observations are assigned to it. We produce a constant optimal rule here, for the complete associated
+  rectangle $Q_m$
+  \begin{itemize}
+    \item Regression: We usually use the average value of all $\yi$ contained in the leaf. This is the optimal constant prediction under squared loss.
+      We could also fit the median, which would be optimal under L1 loss.
+    \item Classification: We fit the most common label of the data contained in that node. In order to estimate probabilities, we simply count class proportions for the training data contained in that leaf.
+  \end{itemize}
+\end{vbframe}
+
+
+\endlecture

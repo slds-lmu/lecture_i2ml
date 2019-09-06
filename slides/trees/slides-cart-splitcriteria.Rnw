@@ -1,0 +1,254 @@
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../../style/preamble.Rnw")
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(rattle)
+library(smoof)
+@
+
+% Load all R packages and set up knitr
+<<setup, child="../../style/setup.Rnw", include = FALSE>>=
+@
+
+
+
+\lecturechapter{CART: Splitting Criteria}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+\begin{frame}[fragile]{Trees}
+
+\lz 
+
+\begin{columns}
+\begin{column}{0.5\textwidth}
+Classification Tree:
+\lz
+<<results='hide', code = readLines("rsrc/draw-cart-iris.R")>>=
+@
+
+<<result='hide', fig.height=4>>=
+model = draw_cart_on_iris(depth = 2)
+@
+ 
+\end{column}
+\begin{column}{0.5\textwidth}
+Regression Tree:
+
+\includegraphics[height = 0.4\textheight]{figure_man/regression_tree}
+
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Splitting criteria}
+
+ \begin{figure}
+    \centering
+      % FIGURE SOURCE: No source
+      \includegraphics[height = 5.0cm]{figure_man/labelling_of_tree.png}
+    \end{figure}
+
+How to find good splitting rules to define the tree?
+\lz
+
+$\implies$ \textbf{empirical risk minimization}
+
+\end{frame}
+
+\begin{vbframe}{Splitting criteria: Formalization}
+
+\begin{itemize}
+\item Let $\Np \subseteq \D$ be the data that is assigned to a terminal node $\Np$ of a tree.
+\item Let $c$ be the predicted constant value for the data assigned to $\Np$: $\yh \equiv c$ for all $\left(x,y\right) \in \Np$.
+\item Then the risk $\risk(\Np)$ for a leaf is simply the loss for the data contained in that node
+  under a given loss function $L$:
+  $$\risk(\Np) = \frac{1}{|\Np|} \sum\limits_{(x,y) \in \Np} L(y, c)$$
+\item The prediction is given by the optimal constant $c = \argmin_c \risk(\Np)$
+\end{itemize}
+
+\framebreak
+
+\begin{itemize}
+\item A split w.r.t. \textbf{feature $\xj$ at split point $t$} divides a parent node $\Np$ into 
+  \begin{align*}
+    \Nl &= \{ (x,y) \in \Np: \xj \leq t \} \text{ and } \Nr = \{ (x,y) \in \Np: \xj > t \}.
+  \end{align*}
+\item   
+  In order to quantify the quality of the considered split we compute the empirical risks
+  in both child nodes and sum it up
+     \begin{align*}
+      \risk(j, t) &= \frac{|\Nl|}{|\Np|} \risk(\Nl) + \frac{|\Nr|}{|\Np|} \risk(\Nr) \\
+                  &= \frac{1}{|\Np|}\left(\sum\limits_{(x,y) \in \Nl} L(y, c_1) + \sum\limits_{(x,y) \in \Nr} L(y, c_2)\right)
+      \end{align*}
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Splitting criteria: Regression}
+\begin{itemize}
+ \item For regression trees, we usually use $L_2$ loss / the SSE-criterion:
+  $$\risk(\Np) = \frac{1}{|\Np|} \sum\limits_{(x,y) \in \Np} (y - c)^2$$
+ \item The best constant prediction under $L_2$ is the mean
+  $$c = \bar{y}_\Np = \frac{1}{|\Np|} \sum\limits_{(x,y) \in \Np} y$$
+\item This means the best split is the one that minimizes the variance of the target distribution in the child nodes $\Nl$ and $\Nr$. We can also interpret this as a way of measuring the impurity of the distribution / fluctuation around the constant.
+  \item For $L_1$ loss, $c$ is the median of $y \in \Np$.
+\end{itemize}
+
+<<result='hide', fig.height=2.2>>=
+set.seed(1221)
+n <- 50
+data <- data.frame(x = seq(-4 , 2, l = n))
+data$y <- ifelse(data$x < 0, 2.5 + rnorm(n), 
+                 2 - 3 * plogis(data$x) + .5 * rnorm(n))
+p1 <- ggplot(data) + 
+  geom_point(aes(x,y)) + 
+  geom_segment(
+    aes(x = min(x), xend = max(x), y = mean(y), yend = mean(y)), col = "red") +
+  geom_point(aes(x,y), alpha = .5) + 
+  theme_light() + 
+  scale_y_continuous(breaks = mean(data$y), labels = "c") +
+  scale_x_continuous(expression(x[j]), breaks = NULL,
+                     minor_breaks = NULL) + 
+ theme(axis.text.y = element_text(colour = "red"),
+        plot.margin = unit(c(3,1,1,1), "lines")) +
+  annotation_custom(
+    grob = grid::textGrob(label = "\uD835\uDCA9"), 
+    ymin =  max(data$y) + .5,
+    ymax =  max(data$y) + .5,
+    xmin = mean(data$x),
+    xmax = mean(data$x)) +
+  coord_cartesian(clip = 'off')
+
+datal <- subset(data, x < 0)
+datar <- subset(data, x > 0)
+
+p2 <- ggplot(data) + 
+  geom_point(aes(x,y)) + 
+  geom_segment(data = datal, aes(x = min(x), xend = 0, y = mean(y), yend = mean(y)),
+               col = "red") +
+  geom_segment(data = datar, aes(x = max(x), xend = 0, y = mean(y), yend = mean(y)),
+               col = "red") +
+  geom_point(aes(x,y), alpha = .5) + 
+  theme_light() + 
+  scale_y_continuous(breaks = c(mean(datal$y),mean(datar$y)), 
+                     minor_breaks = NULL,
+                     labels = c(expression(c[1]), expression(c[2]))) +
+  scale_x_continuous(expression(x[j]), 
+                     breaks = NULL) + 
+  theme(axis.text.y = element_text(colour = "red"),
+        plot.margin = unit(c(3,1,1,1), "lines")) +
+  annotation_custom(
+    grob = grid::textGrob(label = "\uD835\uDCA9[1]"), 
+    ymin =  max(data$y) + .5,
+    ymax =  max(data$y) + .5,
+    xmin = mean(datal$x),
+    xmax = mean(datal$x)) +
+  annotation_custom(
+    grob = grid::textGrob(label = "\uD835\uDCA9[2]"), 
+    ymin =  max(data$y) + .5,
+    ymax =  max(data$y) + .5,
+    xmin = mean(datar$x),
+    xmax = mean(datar$x)) +
+  geom_vline(xintercept = 0, lty = 3, alpha = .5) +
+  annotation_custom(
+    grob = grid::textGrob(label = "t"), 
+    ymin =  min(data$y) - .5,
+    ymax =  min(data$y) - .5,
+    xmin = 0,
+    xmax = 0) +
+  coord_cartesian(clip = 'off')
+
+gridExtra::grid.arrange(p1, p2, nrow = 1)
+@
+
+\end{vbframe}
+
+\begin{vbframe}{Splitting Criteria: Classification}
+
+\begin{itemize}
+\item We normally use either Brier score (so $L_2$ loss on probabilities) or the Bernoulli loss (from logistic regression) as loss function
+\item We usually model constant predictions in node $\Np$ by simply calculating the class proportions
+$$ \pikN = \frac{1}{|\Np|} \sum\limits_{(x,y) \in \Np} [y = k] $$
+This is the optimal constant under the 2 mentioned losses above
+\end{itemize}
+
+<<fig.height=2.2>>=
+d = data.frame(prob = c(0.1, 0.7, 0.2), label = 1:3)
+pl = ggplot(data = d, aes(x = label, y = prob, fill = label))
+pl = pl + geom_bar(stat = "identity")  + theme(legend.position = "none")
+pl = pl + ylab("Class prob.") + xlab("Label")
+print(pl)
+@
+\end{vbframe}
+
+\begin{vbframe}{Splitting Criteria: Comments}
+
+\begin{itemize}
+\item Tree splitting is usually introduced under the concept of "impurity reduction", but our approach above is simpler and more in line with empirical risk minimization and our previous concepts
+\item Splitting on Brier score is normally called splitting on Gini impurity
+$$I(\Np) = \sum_{k\neq k'} \pikN \hat\pi_{\Np k'} = \sum_{k=1}^g \pikN(1-\pikN)$$
+\item Splitting on Bernoulli loss is normally called splitting on entropy impurity
+$$I(\Np) = -\sum_{k=1}^g \pikN \log \pikN$$
+\item The pairs Brier score / Gini and Bernoulli / entropy are equivalent (which is not hard to prove, but will not be done here)
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Splitting with misclassification loss}
+\begin{itemize}
+\item Why don't we simply split according to the misclassification loss? We could use the majority class in each child
+  as "best constant" and count how many errors we make? Aren't we often interested in minimizing this error, but have to
+  approximate it? We do not have to compute derivatives when we optimize the tree!
+\item Actually, that is possible, but Brier score and Bernoulli loss are more sensitive to changes in the node probabilities, and
+  therefore often preferred
+\end{itemize}
+
+\framebreak
+
+Example: two-class problem with 400 obs in each class and two possible splits:
+\begin{columns}[T,onlytextwidth]
+\column{0.5\textwidth}
+\begin{center}
+\textbf{Split 1:} \\
+\vspace{0.25cm}
+<<split1>>=
+class = as.factor(c(rep(0,400), rep(1,400)))
+x1 = as.factor(c(rep(0,300), rep(1,400), rep(0,100)))
+x2 = as.factor(c(rep(0,600), rep(1,200)))
+tab = table(x1, class)
+tab2 = table(x2, class)
+rownames(tab) = c("Left node", "Right node")
+rownames(tab2) = c("Left node", "Right node")
+kable(tab, row.names = TRUE, col.names = c("class 0", "class 1"))
+@
+\end{center}
+\column{0.5\textwidth}
+\begin{center}
+\textbf{Split 2:} \\
+\vspace{0.25cm}
+<<split2>>=
+kable(tab2, row.names = TRUE, col.names = c("class 0", "class 1"))
+@
+\end{center}
+\end{columns}
+
+\lz
+
+\begin{itemize}
+\item Both splits misclassify 200 observations
+\item Split 2 produces a pure node and is probably preferable.
+\item Brier and Bernoulli loss (slightly) prefer the 2nd split
+% \item The average node impurity for Split 2 is $\frac{1}{3}$ (Gini) or $0.344$ (Entropy)
+ % Gini: 6/8 * 2 * 1/3 * 2/3
+ % entropy: 6/8 * ((1/3 * log(1/3) + 2/3 * log(2/3)) / (2 * log(0.5)))
+\item Calculation for Brier:\\
+$Split1: 300(0-\frac{1}{4})^2 + 100(1-\frac{1}{4})^2 + 100(0-\frac{3}{4})^2+300(1-\frac{3}{4})^2 = 150$\\
+$Split2: 400(0-\frac{1}{3})^2 + 200(1-\frac{1}{3})^2 = 133.3$
+\end{itemize}
+\end{vbframe}
+
+
+
+
+\endlecture
