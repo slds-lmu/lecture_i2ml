@@ -96,45 +96,53 @@ $$
 
 ```{r genclass-nb_priors}
 get_priors <- function(df,target){
-  counts <- count(df[,target_labels])
-  # prop.table(table(df[,target_labels]))?
-  priors <- lapply(counts$x, function(level) counts[counts$x == level,"freq"]/nrow(df))
-  names(priors) <- counts$x
-  priors
+  as.list(prop.table(table(df[,target])))
 }
 ```
 
-```{r genclass-nb_lhoods}
-gaussian_est <- function(data) {#gaussian_dens?
-  m_data <- mean(data, na.rm = TRUE)
-  sd_data <- sd(data, na.rm = TRUE)
-  function(x) {
-    dnorm(x = x, mean = m_data, sd = sd_data)
-  }
-}
-  
 
-get_likelihoods <- function(df,target, density__type = c("gausssian", "kde"), 
-                            bw = NA, kernel = "gaussian") {
-  # function generator vermeiden. 
+```{r genclass-nb_lhoods}
+# this can be written way more elegantly with S3 methods
+
+likelihood <- function(likelihood_def, data) {
+   switch(likelihood_def$type,
+          gaussian = list(mean = mean(data), sd = sd(data), type="gaussian"),
+          categorical = list(freq_table = prop.table(table(data)), type = "categorical")
+   )
+}
+
+predict_likelihood <- function(likelihood, x){
+   switch(likelihood$type,
+          gaussian = dnorm(x, mean = likelihood$mean, sd = likelihood$sd),
+          categorical = likelihood$freq_table[
+            which(x == names(likelihood$freq_table))]
+   )  
+}
+
+get_likelihoods <- function(df,target, likelihood_defs = NULL) {
   X <- df[,!(names(df) %in%target)]
   features <- colnames(X)
-  target_levels <- levels(df[,target_labels])
+  target_levels <- levels(df[,target])
   # default to gaussian density estimates:
-  if (is.null(density_funs)) {
-    density_funs <- sapply(features, 
-                           function(feature) gaussian_est)
-    # TODO: deal with factors?
+  if (is.null(likelihood_defs)) {
+     likelihood_defs  <- sapply(features, function(feature)
+                           list(args = list(), type = 
+                                  ifelse(is.factor(df[,feature]),
+                                                   "categorical",
+                                                   "gaussian")), 
+                           simplify = FALSE,
+                           USE.NAMES = TRUE)
   }
+  
+  
   # loop for all target levels over all features and compute conditional density
   likelihoods <- lapply(
     target_levels, 
     function(level) {
       sapply(features, function(feature) {
-        density_fun_generator <- density_funs[[feature]]
-        feature_data <- X[df[[target_labels]] == level, feature]
-        force(density_fun_generator(feature_data))
-      })
+        feature_data <- X[df[[target]] == level, feature]
+        likelihood(likelihood_defs[[feature]],feature_data)
+      }, simplify = FALSE)
     })
   names(likelihoods) <- target_levels
   likelihoods
@@ -142,13 +150,10 @@ get_likelihoods <- function(df,target, density__type = c("gausssian", "kde"),
 ```
 
 ```{r genclass-naivebayes}
-library(plyr)
-
 norm1 <- function(x) x / sum(abs(x))
 
 naivebayes <- function(X, priors, likelihoods){
-  res <- replicate(length(priors), 
-                   matrix(data=NA_real_,nrow=nrow(X),ncol=length(priors)))
+  res <- matrix(data=NA_real_,nrow=nrow(X),ncol=length(priors))
   features <- colnames(X)
   # for level
   #   for feature
@@ -164,7 +169,7 @@ naivebayes <- function(X, priors, likelihoods){
             sapply(features, 
                    FUN = function(feature) {
                      likelihood <- likelihoods[[level]][[feature]]
-                     likelihood(X[i,feature])
+                     predict_likelihood(likelihood,X[i,feature])
                    }))
       }
       
@@ -178,9 +183,9 @@ naivebayes <- function(X, priors, likelihoods){
 ```
 
 ```{r genclass-nb_example}
-target_labels <- "Species"
+target <- "Species"
 likelihoods <- get_likelihoods(iris_train,target)
-priors <- get_priors(iris_train,target_labels)
+priors <- get_priors(iris_train,target)
 
 X <- iris_train[,!(names(iris_train) %in%target)]
 head(naivebayes(X, priors, likelihoods))
@@ -245,7 +250,7 @@ https://en.wikipedia.org/wiki/Kernel_(statistics)#Kernel_functions_in_common_use
 
 ```{r genclass-kde_kernels}
 library("kdensity")
-library("EQL")
+#library("EQL")
 par(mfrow=c(1,2))
 for (kernel in c("gaussian","triangular") )
   plot(kdensity(iris_train[,"Sepal.Width"], start = "gumbel", kernel = kernel),
@@ -262,10 +267,32 @@ for (bw in seq(0.1,0.5,length.out = 4) )
 
 ```{r genclass-nb_kde}
 
-likelihoods_kde <- get_likelihoods(iris_train,target,
-    sapply(colnames(iris_train[,!(names(iris_train) %in%target)]), 
-           function(cname) kdensity))
-    
+likelihood <- function(likelihood_def, data) {
+   switch(likelihood_def$type,
+          gaussian = list(mean = mean(data), sd = sd(data), type="gaussian"),
+          categorical = list(freq_table = prop.table(table(data)), type = "categorical"),
+          kde = list(kde =
+            do.call(kdensity, append(likelihood_def$args,structure(list(data),names="x"))),
+             type="kde"), 
+   )
+}
+
+predict_likelihood <- function(likelihood, x){
+   switch(likelihood$type,
+          gaussian = dnorm(x, mean = likelihood$mean, sd = likelihood$sd),
+          categorical = likelihood$freq_table[
+            which(x == names(likelihood$freq_table))],
+          kde = likelihood$kde(x)
+   )  
+}
+
+likelihoods_kde <- get_likelihoods(iris_train,target,sapply(colnames(iris_train[,!(names(iris_train) %in% target)]), function(feature)
+                           list(args = list(), type = "kde"), 
+                           simplify = FALSE,
+                           USE.NAMES = TRUE))
+
+predict_likelihood(likelihoods_kde$setosa$Sepal.Width,c(10,20,5))
+
 plot_2D_naivebayes(priors, likelihoods_kde, "Sepal.Width", "Sepal.Length",
                    iris_train$Species, X)
 ```
