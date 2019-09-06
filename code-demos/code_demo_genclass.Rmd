@@ -152,33 +152,25 @@ get_likelihoods <- function(df,target, likelihood_defs = NULL) {
 ```{r genclass-naivebayes}
 norm1 <- function(x) x / sum(abs(x))
 
-naivebayes <- function(X, priors, likelihoods){
-  res <- matrix(data=NA_real_,nrow=nrow(X),ncol=length(priors))
+naivebayes <- function(X, priors, likelihoods, normalize=FALSE){
+
   features <- colnames(X)
-  # for level
-  #   for feature
-  #     compute res[[level]][, feature] <-  f(feature|level)
-  # dann jeweils exp(rowSums(log(res)))
   
-  for (i in 1:nrow(X)){
-    res[i,] <-sapply(
-      names(priors), 
-      function(level) {
-        priors[[level]] * 
-          prod(
-            sapply(features, 
-                   FUN = function(feature) {
-                     likelihood <- likelihoods[[level]][[feature]]
-                     predict_likelihood(likelihood,X[i,feature])
-                   }))
-      }
-      
-    )
-    res[i,] <- norm1(res[i,])
-    
+  lik <- sapply(names(priors), function(level) { 
+    sapply(features, function(feature){
+       likelihood <- likelihoods[[level]][[feature]]
+       predict_likelihood(likelihood,X[,feature])
+    } )
+  }, simplify = FALSE)
+  
+  joint_density <- sapply(names(priors), 
+        function(level) exp(log(priors[[level]]) + rowSums(log(lik[[level]]))))
+  
+  if(normalize){
+    t(apply(joint_density, 1, norm1))
+  } else{
+    joint_density
   }
-  colnames(res) <- names(priors)
-  res                          
 }
 ```
 
@@ -188,7 +180,7 @@ likelihoods <- get_likelihoods(iris_train,target)
 priors <- get_priors(iris_train,target)
 
 X <- iris_train[,!(names(iris_train) %in%target)]
-head(naivebayes(X, priors, likelihoods))
+head(naivebayes(X, priors, likelihoods, normalize = TRUE))
 ```
 
 ```{r genclass-classify_naivebayes}
@@ -291,7 +283,6 @@ likelihoods_kde <- get_likelihoods(iris_train,target,sapply(colnames(iris_train[
                            simplify = FALSE,
                            USE.NAMES = TRUE))
 
-predict_likelihood(likelihoods_kde$setosa$Sepal.Width,c(10,20,5))
 
 plot_2D_naivebayes(priors, likelihoods_kde, "Sepal.Width", "Sepal.Length",
                    iris_train$Species, X)
