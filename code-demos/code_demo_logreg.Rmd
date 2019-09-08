@@ -50,7 +50,7 @@ scores $\theta^Tx$ to $[0, 1]$:
 num_data <- 100
 theta <- c(0, 1)
 
-ggplot(data = data.frame(x = seq(-5, 5, length.out = num_data)), aes(x)) +
+ggplot(data = data.frame(x = seq(-6, 6, length.out = num_data)), aes(x)) +
   stat_function(fun = function(x) logistic(cbind(rep(1, length(x)), x), theta))
 ```
 
@@ -96,7 +96,7 @@ classify_logreg <- function(X, theta, conv = as.numeric) {
 ```
 
 With the help of the loss function, we can get the empirical risk as usual:
-$$R_{emp} = \sum_{i=1}^nL\left(y^{(i)}, f(x^{(i)}\right)$$
+$$R_{emp} = \sum_{i=1}^nL\left(y^{(i)}, f\left(x^{(i)}\right)\right)$$
 
 ```{r logreg-ber_risk}
 risk_bernoulli <- function(Y, X, theta) {
@@ -176,7 +176,7 @@ Check the classification and the empirical risk for $\lambda \in \{0.5, 2, 3\}$ 
 Can you figure out what determines the *optimal* length of $\theta$?  
 To gain further understanding of this behavior, let's look at a data scenario where we
 encounter so-called **complete separation**, i.e., a situation in which the data can be  
-classified without error by our classification method:
+classified without error by our classification method. We can simply use the predictions from our model as if they were the observed labels to create such a dataset:
 
 ```{r logreg-compl_sep}
 Y_compl_sep <- classify_logreg(X, theta)$prediction
@@ -210,11 +210,12 @@ $\theta^Tx > 0$ for $y = 1$.
 This means the empirical risk is monotonously decreasing as the length of theta increases,
 which means that we never converge on a finite solution by minimizing the empirical risk. 
 In this situation, additional artificial constraints – such as [regularization](https://en.wikipedia.org/wiki/Regularization_(mathematics)#Classification) –
-can be introduced to find a solution. Since in our example we don't need to deal
-with complete separation, we can apply the `gradient_descent_opt_stepsize` function of the 
-[code demo to the linear model](./code_demo_limo.pdf) directly to our 
-empirical risk we derived from the Bernoulli loss. To do so we need the gradient
-of our empirical risk, which is
+can be introduced to find a solution. In paractice, complete separation can happen fairly easily in datasets with a small number of observations compared to the number of available features.  
+
+Since we don't need to deal
+with complete separation in our example, we can simply apply the `gradient_descent_opt_stepsize` function of the 
+[code demo to the linear model](./code_demo_limo.pdf) directly to the 
+empirical risk we derived from the Bernoulli loss. This type of gradient descent mimization can be applied to any risk for which we can figure out the gradient, in this case this is^[take a couple of minutes to verify this yourself with pen \& paper. Remember that the derivative of $\exp(f(x))$ for $x$ is $\exp(f(x)) f'(x)$ and that the derivative of $\log(x)$ is $\tfrac{1}{x}$.]
 
 $$\frac{\partial R_{emp}(f)}{\partial \theta} = \sum_{i=1}^n \frac{-y^{(i)}}{1+\exp\left(y^{(i)}\theta^Tx^{(i)}\right)}x^{(i)}.$$
 Which can be implemented as:
@@ -227,11 +228,11 @@ gradient_bernoulli <- function(Y, X, theta) {
 Now we can apply the gradient descent method to find a numerical solution:
 
 ```{r, logreg_grad_desc}
-res <- gradient_descent_opt_stepsize(Y, X, c(-1, -1),
+res <- gradient_descent_opt_stepsize(Y, X, c(-1, -1.5),
   risk_bernoulli,
   gradient_bernoulli,
   max_learning_rate = 0.1,
-  max_iterations = 130,
+  max_iterations = 100,
   epsilon = 0.00001,
   include_storage = TRUE
 )
@@ -303,7 +304,7 @@ plot2D_emp_risk <- function(min_theta = c(0, 0),
 ```{r logreg-plot_emprisk_grad_desc}
 plot2D_emp_risk(
   emp_risk = function(theta) (risk_bernoulli(Y, X, theta)),
-  max_theta = c(10, 10), min_theta = c(-5, -10),
+  max_theta = c(8, 5), min_theta = c(-3, -5),
   log_emp_risk = TRUE,
   thetas = res$storage$theta
 )
@@ -342,7 +343,7 @@ $$
 - We stop if the differences between successive updates of $\theta$ are below a certain threshold or once a maximum number of iterations is reached.
 - Note: The classic Newton-Raphson method uses $\lambda=1$, but we can enlarge its radius of convergence by optimizing $\lambda$ in every step.
 
-We can implement this quite easily by realizing that we are doing something very similar to the gradient descent method. The only difference is that now we use a direction for the update that is given by the gradient vector weighted with the inverse of second derivatives.  
+We can implement this quite easily by realizing that we are doing something very similar to the gradient descent method. The only difference is that now we use a direction for the update that is given by the gradient vector (i.e., the first derivatives) weighted with the inverse of second derivatives.  
 
 Why does this make sense? (very rough intuition building):
 
@@ -350,14 +351,13 @@ a) What does the inverse Hessian $\left(\frac{\partial^2 R_{emp}(f)}{\partial \t
 
 The second derivatives represent how curved the risk surface is at the current point $\theta^{[t]}$.  
 Where the surface is very strongly curved (i.e., has large second derivatives), the direction of steepest descent changes very quickly. Where the surface is barely curved at all (i.e., has small second derivatives), the direction of steepest descent changes very slowly.  
-So, if we are at a point where the surface is very strongly curved (i.e., has large second derivatives), we need to take relatively small steps so that we don't go *past* the minimum. Conversely, if we are at a spot where there is little curvature, we can take bigger steps in the currently steepest direction without overshooting the minimum.  
+So, if we are at a point where the surface is very strongly curved (i.e., has large second derivatives), we need to take relatively small steps in the currently steepest direction so that we don't go *past* the minimum and back uphill. Conversely, if we are at a spot where there is little curvature, we can take bigger steps in the currently steepest direction without overshooting the minimum.  
 That's the reason why we use the *inverse* second derivatives to rescale the gradient.
 
 b) Why multiply the inverse Hessian matrix with the negative gradient?
 
 For vector-valued $\theta$, the second derivative is a matrix. In some sense this matrix tells us, for every possible direction, whether the surface gets more steep (positive gradient becomes more positive, negative gradient becomes more negative) or more flat (gradient becomes smaller in absolute value) as we go into that direction.  
-We can use this information to pick an even better direction "downhill": instead of using the one that's currently the steepest (the negative gradient), we use one that is already steep and that becomes even more steep as we follow it (negative gradient times the inverse hessian).
-
+We can use this information to pick an even better direction "downhill" than simply the negative gradient: instead of using the one that's currently the steepest (i.e, the negative gradient), we use one that is already steep and that becomes even more steep as we follow it (negative gradient times the inverse hessian).
 
 ```{r logreg-newton}
 library(MASS)
@@ -472,7 +472,7 @@ hessian_bernoulli <- function(Y, X, theta) {
 Now we can use the Newton-Raphson for solving our example:
 
 ```{r logreg-example_newton}
-res <- newton_opt_stepsize(Y, X, c(-1, -1),
+res <- newton_opt_stepsize(Y, X, c(-1, -1.5),
   risk_bernoulli,
   gradient_bernoulli,
   hessian_bernoulli,
@@ -491,18 +491,18 @@ We see that we need less steps to achieve a similar good result as when we used 
 ```{r logreg-plot_emprisk_newton}
 plot2D_emp_risk(
   emp_risk = function(theta) (risk_bernoulli(Y, X, theta)),
-  max_theta = c(10, 10), min_theta = c(-5, -10),
+  max_theta = c(8, 5), min_theta = c(-3, -5),
   log_emp_risk = TRUE,
   thetas = res$storage$theta
 )
 ```
 
-We see that by using Newton-Raphson we are incorporating more knowledge of our function as the Hessian matrix represents the curvature of a function, which allows to make bigger steps in the right direction. Gradient descent is a so-called first-order iterative optimization algorithm (because it only uses first derivatives), while Newton-Raphson is a second-order method (it uses second derivatives, duh).  
+We see that by using Newton-Raphson we are incorporating additional knowledge about our objective function, since the Hessian matrix represents the curvature of a function. This enables us to take bigger steps in the right direction. Gradient descent is a so-called first-order iterative optimization algorithm (because it only uses first derivatives), while Newton-Raphson is a second-order method (... it uses second derivatives, duh).  
 The behavior we see here are typical for how these classes of optimization algorithms perform:
 
 - First-order iterative optimization algorithms usually need (many) more steps than second-order ones.
-- The computation of each step for a first-order one is (much) less *expensive*, since there is no need to compute the Hessian matrix and invert it.
+- However, the calculation for each step for a first-order one is (much) less *expensive* than for a second-order method, since there is no need to compute the Hessian matrix and invert it.
 
-Note: In our toy example we did not use an intercept so that we could visualize the algorithms in 2D. For real data sets, an intercept should definitively be included -- it represents something like the base-line probability for class "1"^[i.e, $\pi(x) = \frac{1}{1+\exp(\theta_0 + \theta_1 x)}$, so
+*Note:* In our toy example we did not use an intercept so that we could visualize the algorithms in 2D. For real data sets, an intercept should definitively be included -- it represents something like the base-line probability for class "1"^[i.e, $\pi(x) = \frac{1}{1+\exp(\theta_0 + \theta_1 x)}$, so
 $\pi(0) =  \frac{1}{1+\exp(\theta_0)}$. If we didn't have a $\theta_0$, we would always have 
 $\pi(0) = \frac{1}{1+\exp(0)} = \frac{1}{2}$. That will rarely make sense.].
