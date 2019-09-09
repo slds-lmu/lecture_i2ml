@@ -25,7 +25,7 @@ knitr::read_chunk("code_demo_knn.Rmd")
 not modeling cond density directly
 
 $$
-\pi_k(x) \propto \pi_k \cdot p(y = k | x)
+\pi_k(x) \propto \pi_k \cdot p(x | y = k)
 $$
 
 $$
@@ -33,18 +33,21 @@ $$
 $$
 
 $$
-1 = \sum^{g}_{j=1}\alpha \pi_j \cdot p(y = j | x) \iff \alpha = \frac{1}{\sum^{g}_{j=1}\pi_j \cdot p(y = j | x)}
+1 = \sum^{g}_{j=1}\alpha \pi_j \cdot p(x | y = j) \iff \alpha = \frac{1}{\sum^{g}_{j=1}\pi_j \cdot p (x | y = j)}
 $$
 
 $$
-\pi_k(x) = \frac{\pi_k \cdot p(y = k | x)}{\sum^{g}_{j=1}\pi_j \cdot p(y = j | x)}
+\pi_k(x) = \frac{\pi_k \cdot p(x | y = k)}{\sum^{g}_{j=1}\pi_j \cdot p(x | y = j)}
 $$
 
 ```{r genclass-plot_data}
 library(mlr)
 
 data(iris)
-iris_train = iris[, c("Species","Sepal.Width","Sepal.Length")]
+target <- "Species"
+features <- c("Sepal.Width","Sepal.Length")
+iris_train = iris[, c(target, features)]
+target_levels <- levels(iris_train[,target])
 iris_task = makeClassifTask(data = iris_train, target = "Species")
 
 ggplot(iris_train, aes(x=Sepal.Width, y=Sepal.Length)) + 
@@ -55,7 +58,7 @@ ggplot(iris_train, aes(x=Sepal.Width, y=Sepal.Length)) +
 
 In LDA, we caclulate the posteriori class probabilities like that:
 $$
-p(y = k | x) = \frac{1}{\pi^{\frac{p}{2}} |\Sigma|^{\frac{1}{2}}}\exp(- \frac{1}{2} (x-\mu_k)^T\Sigma^{-1}(x-\mu_k) )
+p(x | y = k) = \frac{1}{\pi^{\frac{p}{2}} |\Sigma|^{\frac{1}{2}}}\exp(- \frac{1}{2} (x-\mu_k)^T\Sigma^{-1}(x-\mu_k) )
 $$
 
 * $\hat{\mu}_k = \frac{1}{n_k}\sum_{i: y^{(i)} = k} x^{(i)}$  
@@ -65,14 +68,101 @@ $$
 iris_lda_learner = makeLearner("classif.lda")
 iris_lda_model = train(learner = iris_lda_learner, task = iris_task)
 
+
 plotLearnerPrediction(iris_lda_learner, iris_task)
+```
+```{r genclass-lda_likelihood}
+library(mvtnorm)
+
+
+get_mvgaussian_lda <- function(data, target, level, features){
+  classif_task = makeClassifTask(data = data[,c(features, target)], target = target)
+  lda_learner = makeLearner("classif.lda")
+  lda_model = train(learner = lda_learner, task = classif_task)  
+  
+  list(mean = lda_model$learner.model$means[level,], 
+       sigma = lda_model$learner.model$scaling %*% t(lda_model$learner.model$scaling), 
+       type="mv_gaussian", 
+       features = features)
+}
+
+# this can be written way more elegantly with S3 methods
+
+
+likelihood <- function(likelihood_def, data) {
+  # will be extended
+   switch(likelihood_def$type,
+          mvgaussian_lda = get_mvgaussian_lda(data, likelihood_def$target,
+                                              likelihood_def$level, 
+                                              likelihood_def$features)
+   )
+}
+
+predict_likelihood <- function(likelihood, x){
+   switch(likelihood$type,
+         mv_gaussian = dmvnorm(x, mean=likelihood$mean, 
+                               sigma = likelihood$sigma)
+   )  
+}
+
+```
+
+```{r genclass-plot2D_lik_mv}
+library(reshape2)
+
+plot_2D_likelihood <- function(likelihoods, data, X1, X2, target, lengthX1 = 100, 
+                               lengthX2 = 100){
+  gridX1 <- seq(
+    min(data[, X1]),
+    max(data[, X1]),
+    length.out = lengthX1
+  )
+  gridX2 <- seq(
+    min(data[, X2]),
+    max(data[, X2]),
+    length.out = lengthX2
+  )
+
+  # compute grid coordinates with cartesian product
+  grid_data <- expand.grid(gridX1, gridX2)  
+  features <-  c(X1, X2)
+  target_levels <- names(likelihoods)
+  names(grid_data) <- features
+  
+  lik <- sapply(target_levels, function(level) { 
+    likelihood <- likelihoods[[level]]
+    predict_likelihood(likelihood, grid_data[,likelihood$features])
+  })#, simplify = FALSE)
+  
+
+  # lik <- sapply(names(likelihoods), 
+  #       function(level) exp(rowSums(log(liks[[level]]))))
+  
+  grid_data <- cbind(grid_data, lik)
+  
+  to_plot <- melt(grid_data, id.vars = features)
+  
+    ggplot() +
+    geom_contour(
+      data = to_plot,
+      aes_string(x = X1, y = X2, z = "value", color = "variable")
+    ) + 
+    geom_point(data=data, aes_string(x=X1,y=X2, color= target))
+}
+
+likelihoods <- sapply(target_levels, function(level) 
+  likelihood(list(type="mvgaussian_lda", target=target,
+                level=level, features = features), iris_train), simplify = FALSE)
+
+plot_2D_likelihood(likelihoods,iris_train, "Sepal.Width", "Sepal.Length", target)
+
 ```
     
 ## Quadratic discriminant analysis (QDA)
 
 In QDA, we caclulate the posteriori class probabilities like that:
 $$
-p(y = k | x) = \frac{1}{\pi^{\frac{p}{2}} |\Sigma_k|^{\frac{1}{2}}}\exp(- \frac{1}{2} (x-\mu_k)^T\Sigma_k^{-1}(x-\mu_k) )
+p(x | y = k) = \frac{1}{\pi^{\frac{p}{2}} |\Sigma_k|^{\frac{1}{2}}}\exp(- \frac{1}{2} (x-\mu_k)^T\Sigma_k^{-1}(x-\mu_k) )
 $$
 
 * $\hat{\mu}_k = \frac{1}{n_k}\sum_{i: y^{(i)} = k} x^{(i)}$  
@@ -82,7 +172,46 @@ $$
 iris_qda_learner = makeLearner("classif.qda")
 iris_qda_model = train(learner = iris_qda_learner, task = iris_task)
 
+iris_qda_model$learner.model$means
+iris_qda_model$learner.model$scaling
+
 plotLearnerPrediction(iris_qda_learner, iris_task)
+```
+
+```{r genclass-qda_likelihood}
+
+get_mvgaussian_qda <- function(data, target, level, features){
+  classif_task = makeClassifTask(data = data[,c(features, target)], target = target)
+  qda_learner = makeLearner("classif.qda")
+  qda_model = train(learner = qda_learner, task = classif_task)  
+  
+  list(mean = qda_model$learner.model$means[level,], 
+       sigma = qda_model$learner.model$scaling[,,level]
+          %*% t(qda_model$learner.model$scaling[,,level]), 
+       type="mv_gaussian", 
+       features = features)
+}
+
+# this can be written way more elegantly with S3 methods
+
+
+likelihood <- function(likelihood_def, data) {
+  # will be extended
+   switch(likelihood_def$type,
+          mvgaussian_lda = get_mvgaussian_lda(data, likelihood_def$target,
+                                              likelihood_def$level, 
+                                              likelihood_def$features),
+          mvgaussian_qda = get_mvgaussian_qda(data, likelihood_def$target,
+                                              likelihood_def$level, 
+                                              likelihood_def$features)          
+   )
+}
+
+likelihoods <- sapply(target_levels, function(level) 
+  likelihood(list(type="mvgaussian_qda", target=target,
+                level=level, features = features), iris_train), simplify = FALSE)
+
+plot_2D_likelihood(likelihoods,iris_train, "Sepal.Width", "Sepal.Length", target)
 ```
   
 ## Naive Bayes
@@ -90,7 +219,7 @@ plotLearnerPrediction(iris_qda_learner, iris_task)
 Here, we make a “naive” conditional independence assumption.
 
 $$
-p(y = k | x) = \prod^{p}_{j=1}p(x_j | y=k)
+p(x | y = k) = \prod^{p}_{j=1}p(x_j | y=k)
 $$
 
 
@@ -149,6 +278,57 @@ get_likelihoods <- function(df,target, likelihood_defs = NULL) {
 }
 ```
 
+```{r genclass-plot2D_lik}
+library(reshape2)
+
+plot_2D_likelihood <- function(likelihoods, data, X1, X2, target, lengthX1 = 100, 
+                               lengthX2 = 100){
+  gridX1 <- seq(
+    min(data[, X1]),
+    max(data[, X1]),
+    length.out = lengthX1
+  )
+  gridX2 <- seq(
+    min(data[, X2]),
+    max(data[, X2]),
+    length.out = lengthX2
+  )
+
+  # compute grid coordinates with cartesian product
+  grid_data <- expand.grid(gridX1, gridX2)  
+  features <-  c(X1, X2)
+  levels <- names(likelihoods)
+  names(grid_data) <- features
+  
+  liks <- sapply(names(likelihoods), function(level) { 
+    sapply(features, function(feature){
+       likelihood <- likelihoods[[level]][[feature]]
+       predict_likelihood(likelihood, grid_data[,feature])
+    } )
+  }, simplify = FALSE)
+  
+  
+  lik <- sapply(names(likelihoods), 
+        function(level) exp(rowSums(log(liks[[level]]))))
+  
+  grid_data <- cbind(grid_data, lik)
+  
+  to_plot <- melt(grid_data, id.vars = features)
+  
+    ggplot() +
+    geom_contour(
+      data = to_plot,
+      aes_string(x = X1, y = X2, z = "value", color = "variable")
+    ) + 
+    geom_point(data=data, aes_string(x=X1,y=X2, color= target))
+}
+
+target <- "Species"
+likelihoods <- get_likelihoods(iris_train,target)
+plot_2D_likelihood(likelihoods,iris_train, "Sepal.Width", "Sepal.Length", target)
+
+```
+
 ```{r genclass-naivebayes}
 norm1 <- function(x) x / sum(abs(x))
 
@@ -175,7 +355,6 @@ naivebayes <- function(X, priors, likelihoods, normalize=FALSE){
 ```
 
 ```{r genclass-nb_example}
-target <- "Species"
 likelihoods <- get_likelihoods(iris_train,target)
 priors <- get_priors(iris_train,target)
 
@@ -278,13 +457,30 @@ predict_likelihood <- function(likelihood, x){
    )  
 }
 
-likelihoods_kde <- get_likelihoods(iris_train,target,sapply(colnames(iris_train[,!(names(iris_train) %in% target)]), function(feature)
-                           list(args = list(), type = "kde"), 
+likelihoods_kde <- get_likelihoods(iris_train,target,sapply(colnames(iris_train[,!(names(iris_train) %in% target)]), function(feature)  list(args = list(), type = "kde"), 
                            simplify = FALSE,
                            USE.NAMES = TRUE))
 
+plot_2D_likelihood(likelihoods_kde,iris_train, "Sepal.Width", "Sepal.Length", target)
 
 plot_2D_naivebayes(priors, likelihoods_kde, "Sepal.Width", "Sepal.Length",
                    iris_train$Species, X)
 ```
 
+
+```{r genclass-nb_kde_bws}
+
+bw_values <- seq(0.05,0.3,length.out = 4)
+ggplot_list <- lapply(
+  bw_values,
+  function(bw) {
+  likelihoods_kde_bw <- get_likelihoods(iris_train,target,sapply(colnames(iris_train[,!(names(iris_train) %in% target)]), 
+                           function(feature)  list(args = list(bw = bw), type = "kde"), 
+                           simplify = FALSE,
+                           USE.NAMES = TRUE))
+  plot_2D_naivebayes(priors, likelihoods_kde_bw, "Sepal.Width", "Sepal.Length",
+                   iris_train$Species, X, title='"NB" ~')
+  }
+)
+do.call(grid.arrange, ggplot_list)
+```
