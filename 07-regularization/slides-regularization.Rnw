@@ -69,10 +69,12 @@ makeSimulatedTask = function(size) {
 \item Assume we want to predict the daily maximum \textbf{ozone level} in LA given a data set containing $50$ observations.
 \item The data set contains $12$ features describing time conditions (e.g., weekday, month),
 the weather (e. g. temperature at different weather stations, humidity, wind speed) or geographic variables (e. g. the pressure gradient).
+
+
 \item We fit a linear regression model using \textbf{all} of the features
 
 $$
-\fxt = \thetab^T\xb = \theta_0 + \theta_1 x_1 + \theta_2 x_2 + ... + \theta_{12} x_{12}
+\fxt = \thetab^\top\xb = \theta_0 + \theta_1 x_1 + \theta_2 x_2 + ... + \theta_{12} x_{12}
 $$
 
 with the $L2$-loss.
@@ -198,8 +200,8 @@ potential feature combinations.
 We have contradictory goals
 
 \begin{itemize}
-\item \textbf{maximizing the fit} (minimize the train loss) $\min_f \frac{1}{n}\sumin \Lxyi$
-\item \textbf{minimizing the complexity} of the model, e.g. $\min \# \text{features}$
+\item \textbf{maximizing the fit} (minimize the empirical risk $\riskef$) 
+\item \textbf{minimizing the complexity} of the model (e.g. $\min \# \text{features}$)
 \end{itemize}
 
 We need to find the \enquote{sweet spot}.
@@ -233,49 +235,55 @@ Let $J(f)$ be a function that measures the \enquote{complexity} of $f$.
 
 \begin{vbframe}{Regularized Empirical Risk Minimization}
 
-  \dlz
-  
-  Recall, empirical risk minimization with a complex hypothesis set tends to overfit. A major tool to handle overfitting is \textbf{regularization}.
-  
-  \lz
-  
-  In the broadest sense, regularization refers to any modification made to a learning algorithm that is intended to reduce its generalization error but not its training error.
-  
-  \lz
-  
-  Explicitly or implicitly, such modifications represent the preferences we have regarding the elements of the hypothesis set, for example the preference of having models with less features
-
-  \framebreak
-  
-  Commonly, regularization takes the following form:
-  
-  $$
-  \riskrf = \riskef + \lambda \cdot J(f) = \sumin \Lxyi + \lambda \cdot J(f)
-  $$
-\begin{itemize}
-
-  \item $J(f)$ is called \textbf{complexity penalty}, \textbf{roughness penalty} or \textbf{regularizer}.
-  \item It measures the \enquote{complexity} of a model and penalizes it in the fit.
-  \item As for $\riske$, often $\riskr$ and $J$ are defined on $\thetab$ instead of $f$, so $\riskrt = \risket + \lambda \cdot J(\thetab)$. 
-\end{itemize}
-
-\framebreak
-
-\textbf{Remark:}
-
-\begin{itemize}
-  \item Note that we now face an optimization problem with two criteria: 
+We are looking for models that 
     \begin{enumerate}
-      \item models should fit well (low empirical risk),
+      \item fit well (low empirical risk $\riskef$),
       \item but not be too complex (low $J(f)$). 
     \end{enumerate}
-  \item We decide to combine the two in a weighted sum and to control
-  the trade-off via the complexity control parameter $\lambda$.
+
+\lz 
+
+We decide to combine the two in a weighted sum called \textbf{regularized risk} and to control the trade-off via the complexity control parameter $\lambda$.
+
+\begin{eqnarray*}
+\riskrf &=& \riskef + \lambda \cdot J(f) \\
+        &=& \sumin \Lxyi + \lambda \cdot J(f)
+\end{eqnarray*}
+
+\vfill
+
+\begin{footnotesize}
+\textbf{Note:} As for $\riske$, often $\riskr$ and $J$ are defined on $\thetab$ instead of $f$, so $\riskrt = \risket + \lambda \cdot J(\thetab)$. 
+\end{footnotesize}
+
+\framebreak 
+
+\begin{itemize}
+  \item $J(f)$ is called \textbf{complexity penalty}, \textbf{roughness penalty} or \textbf{regularizer}.
+  \item $\lambda$ is called \textbf{complexity control parameter}. 
   \item $\lambda$ is hard to set manually and is usually selected via cross-validation (see later).
   \item $\lambda = 0$: the regularized risk $\riskrf$ reduces to the simple empirical $\riskef$.
-
   \item If $\lambda$ goes to infinity, we stop caring about the loss / fit and models become as \enquote{simple} as possible.
 \end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Regularization}
+
+\textbf{Regularization} is a major tool to handle overfitting. 
+
+  \begin{itemize}
+    \item  In the broadest sense, regularization refers to \textbf{any} modification made to a learning algorithm that is intended to reduce its generalization error but not its training error.
+    \item Regularized empirical risk minimization is \textbf{one} common way to perform regularization$^{(*)}$ 
+    \item  Explicitly or implicitly, such modifications represent the preferences we have regarding the elements of the hypothesis set, for example the preference of having models with less features. 
+  \end{itemize}
+
+  \vfill
+
+  \begin{footnotesize}
+  $^{(*)}$ There are other forms of regularization, e.g. by performing less aggressive risk minimization through early stopping iterative optimization algorithms. 
+  \end{footnotesize}
+
 
 \framebreak
 
@@ -292,24 +300,44 @@ Let $J(f)$ be a function that measures the \enquote{complexity} of $f$.
 
 \begin{vbframe}{Regularization in the linear model}
 
+For the (unregularized) linear model we optimize 
+$$
+  \riskt = \sumin \left(\yi - \thetab^\top \xb\right)^2 . 
+$$
+
+Recall that the problem has a closed form solution: 
+
+$$
+  \thetah = (\Xmat^\top \Xmat )^{-1} \Xmat \ydat. 
+$$
+
 \begin{itemize}
-  \item  Coefficient estimates for ordinary least squares with $\fxt = \thetab^\top \xb$ usually require a full rank design matrix.
-  \item When features are highly correlated, the least-squares estimate becomes highly sensitive to random errors in the observed response, producing a large variance in the fit. 
-  \item One can deal with this issue by adding a complexity penalty to the loss:
-  $$
-  \riskrt = \sumin \left(\yi - \fxit\right)^2 + \lambda \cdot J(\thetab). 
-  $$
-  \item In the following we will present two possible choices for $J(\thetab)$.
+  \item  Coefficient estimates for ordinary least squares with $\fxt = \thetab^\top \xb$ usually require a full rank design matrix $\Xmat$, otherwise $\Xmat^\top \Xmat$ is not invertible.
+  \item When features are highly correlated (i.e. $\Xmat$ is close to \enquote{being not a full rank matrix}), the least-squares estimate becomes highly sensitive to random errors in the observed response, producing a large variance in the fit. 
 \end{itemize}
+
+\framebreak 
+
+Regularization counters the risk of being sensitive to random errors. 
+
+\lz 
+
+To favor models with less complexity, we add a complexity penalty to the risk: 
+
+$$
+\riskrt = \sumin \left(\yi - \thetab^\top \xb\right)^2 + \lambda \cdot J(\thetab). 
+$$
+
+In the following we will present two possible choices for $J(\thetab)$.
 
 \end{vbframe}
 
 \begin{vbframe}{Ridge Regression}
 
   \textbf{Ridge regression} is a  \textbf{shrinkage method}, as it shrinks the regression coefficients
-  $\thetab$ towards $0$, by putting an $L_2$-penalty on it:
+  $\thetab$ towards $0$, by putting an $L_2$-penalty ($J(\thetab) = \|\thetab\|^2 = \sqrt{\theta_1^2 + \theta_2^2 + ... + \theta_p^2}$) on it:
   \begin{eqnarray*}  
-  \thetah_{\text{Ridge}} &=& \argmin_{\thetab} \sumin \left(\yi - \fxit \right)^2 + \lambda ||\thetab||_2^2 \\
+  \thetah_{\text{Ridge}} &=& \argmin_{\thetab} \sumin \left(\yi - \thetab^\top \right)^2 + \lambda ||\thetab||_2^2 \\
   &=& \argmin_{\thetab} \left(\ydat - \Xmat \thetab\right)^\top \left(\ydat - \Xmat \thetab\right) + \lambda \thetab^\top \thetab.
   \end{eqnarray*}
 
@@ -323,7 +351,7 @@ $$\thetah_{\text{Ridge}} = (\Xmat^T \Xmat  + \lambda \id)^{-1} \Xmat^T\ydat$$
   \vspace*{-0.5cm}
 
   \begin{eqnarray*}
-     \min_{\thetab} && \sumin \left(\yi - \fxit\right)^2 \\
+     \min_{\thetab} && \sumin \left(\yi - \thetab^\top\right)^2 \\
     \text{subject to: } && \|\thetab\|_2^2  \leq t \\
   \end{eqnarray*}
 
@@ -400,6 +428,11 @@ $$\thetah_{\text{Ridge}} = (\Xmat^T \Xmat  + \lambda \id)^{-1} \Xmat^T\ydat$$
 
 % The converse is also true: The optimal solution to problem \eqref{eq:form2} is also a solution to problem \eqref{eq:form1} if we set $\lambda = \alpha$.
 
+\framebreak 
+
+
+
+
 
 \end{vbframe}
 
@@ -413,6 +446,8 @@ True relationship is \(f(x) = 5 + 2x +10x^2 - 2x^3 + \epsilon\)
 
 Making predictions for \(d = 10\) with linear regression tends to
 overfit:
+
+\vfill
 
 <<echo=FALSE, fig.height=3, warning=FALSE>>=
 source("rsrc/ridge_polynomial_reg.R")
@@ -470,7 +505,7 @@ plotRidge(x, y, lambda.vec, baseTrafo, degree = 10) +
 
 \begin{vbframe}{Lasso Regression}
 
-Another shrinkage method is the so-called \textbf{Lasso regression}, which uses a $L_1$ penalty on $\thetab$:
+Another shrinkage method is the so-called \textbf{Lasso regression}, which uses a $L_1$ penalty on $\thetab$ ($J(\thetab) = \|\thetab\|_1 = |\theta_1| + |\theta_2| + ... + |\theta_p|$$):
 
 \begin{eqnarray*}
 \thetah_{\text{Lasso}} &=&  \argmin_{\thetab} \left\{ \sumin \left(\yi - \fxit\right)^2 + \lambda ||\thetab||_1 \right\} \\
@@ -599,44 +634,44 @@ x = capture.output(print(g))
         \scalebox{1.1}{\includegraphics{figure_man/paths_reg.png}}
     \end{figure}
 
-\framebreak
+% \framebreak
 
-\begin{footnotesize}
-Coefficient histograms for different $\lambda$ values for Ridge and Lasso, on high-dimensional data along with the cross-validated MSE.
-\end{footnotesize}
+% \begin{footnotesize}
+% Coefficient histograms for different $\lambda$ values for Ridge and Lasso, on high-dimensional data along with the cross-validated MSE.
+% \end{footnotesize}
 
-<<echo=FALSE, fig.height=5, message= FALSE>>=
-#```{r, echo=FALSE, fig.height=4, message= FALSE}
-# plot data created by rsrc/regu_example_2.R
-load("rsrc/regu_example_2.RData")
-d_l1 = rbind(
-  data.frame(lam = paste("L1-", lams[1]), coefval = cc_l1_1),
-  data.frame(lam = paste("L1-", lams[2]), coefval = cc_l1_2)
-)
-d_l1$lam = as.factor(d_l1$lam)
-d_l2 = rbind(
-  data.frame(lam = paste("L2-", lams[1]), coefval = cc_l2_1),
-  data.frame(lam = paste("L2-", lams[2]), coefval = cc_l2_2)
-)
-d_l2$lam = as.factor(d_l2$lam)
-plot_coef_hist = function(d) {
-  pl = ggplot(d, aes(x = coefval, fill = lam))
-  pl = pl + geom_histogram(alpha = 0.9, position = "dodge")
-  return(pl)
-}
-plot_cv_path = function(cv_lam, xlab) {
-  pl = ggplot(data = cv_lam, aes(x = lambda, y = mse))
-  pl = pl + geom_line()
-  pl = pl + scale_x_log10()
-  pl = pl + ylim(1, 10)
-  pl = pl + xlab(xlab)
-}
-pl1 = plot_coef_hist(d_l1)
-pl2 = plot_coef_hist(d_l2)
-pl3 = plot_cv_path(cv_l1, "lambda")
-pl4 = plot_cv_path(cv_l2, "lambda")
-grid.arrange(pl1, pl2, pl3, pl4, nrow = 2)
-@
+% <<echo=FALSE, fig.height=5, message= FALSE>>=
+% #```{r, echo=FALSE, fig.height=4, message= FALSE}
+% # plot data created by rsrc/regu_example_2.R
+% load("rsrc/regu_example_2.RData")
+% d_l1 = rbind(
+%   data.frame(lam = paste("L1-", lams[1]), coefval = cc_l1_1),
+%   data.frame(lam = paste("L1-", lams[2]), coefval = cc_l1_2)
+% )
+% d_l1$lam = as.factor(d_l1$lam)
+% d_l2 = rbind(
+%   data.frame(lam = paste("L2-", lams[1]), coefval = cc_l2_1),
+%   data.frame(lam = paste("L2-", lams[2]), coefval = cc_l2_2)
+% )
+% d_l2$lam = as.factor(d_l2$lam)
+% plot_coef_hist = function(d) {
+%   pl = ggplot(d, aes(x = coefval, fill = lam))
+%   pl = pl + geom_histogram(alpha = 0.9, position = "dodge")
+%   return(pl)
+% }
+% plot_cv_path = function(cv_lam, xlab) {
+%   pl = ggplot(data = cv_lam, aes(x = lambda, y = mse))
+%   pl = pl + geom_line()
+%   pl = pl + scale_x_log10()
+%   pl = pl + ylim(1, 10)
+%   pl = pl + xlab(xlab)
+% }
+% pl1 = plot_coef_hist(d_l1)
+% pl2 = plot_coef_hist(d_l2)
+% pl3 = plot_cv_path(cv_l1, "lambda")
+% pl4 = plot_cv_path(cv_l2, "lambda")
+% grid.arrange(pl1, pl2, pl3, pl4, nrow = 2)
+% @
 
 
 \framebreak 
@@ -733,7 +768,11 @@ p
 
 \begin{vbframe}{Regularized Logistic Regression}
 
-We can, of course, also construct $L_1$ or $L_2$ penalized logistic regression to enable coefficient shrinkage and variable selection in this model. 
+We described regularization for the special case of the linear model $\fxt = \thetab^\top \xb$. Of course, regularized risk minimization can be performed for any model $\fx$. 
+
+\lz 
+
+We can, for example, also construct $L_1$ or $L_2$ penalized \textbf{logistic regression} to enable coefficient shrinkage and variable selection in this model. 
 
 \lz 
 
