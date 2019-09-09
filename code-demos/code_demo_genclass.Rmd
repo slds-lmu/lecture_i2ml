@@ -81,8 +81,8 @@ get_mvgaussian_lda <- function(data, target, level, features){
   lda_model = train(learner = lda_learner, task = classif_task)  
   
   list(mean = lda_model$learner.model$means[level,], 
-       sigma = lda_model$learner.model$scaling %*% t(lda_model$learner.model$scaling), 
-       type="mv_gaussian", 
+       sigma = solve(tcrossprod(lda_model$learner.model$scaling)), 
+       type = "mv_gaussian", 
        features = features)
 }
 
@@ -182,9 +182,11 @@ get_mvgaussian_qda <- function(data, target, level, features){
   qda_model = train(learner = qda_learner, task = classif_task)  
   
   list(mean = qda_model$learner.model$means[level,], 
-       sigma = qda_model$learner.model$scaling[,,level]
-          %*% t(qda_model$learner.model$scaling[,,level]), 
-       type="mv_gaussian", 
+       # ?MASS:qda "for each group i, scaling[,,i] is an array which transforms
+       # observations so that within-groups covariance matrix is spherical."
+       # -->so the inverse square root of the covariance
+       sigma = solve(tcrossprod(qda_model$learner.model$scaling[, , level])),
+       type = "mv_gaussian", 
        features = features)
 }
 
@@ -238,7 +240,8 @@ likelihood <- function(likelihood_def, data) {
           mvgaussian_qda = get_mvgaussian_qda(data, likelihood_def$target,
                                               likelihood_def$level, 
                                               likelihood_def$features),
-          gaussian = list(mean = mean(data[,likelihood_def$features]), sd = sd(data[,likelihood_def$features]),
+          gaussian = list(mean = mean(data[,likelihood_def$features]), 
+                          sd = sd(data[,likelihood_def$features]),
                           features = likelihood_def$features, type="gaussian"),
           categorical = list(freq_table = prop.table(table(data)), 
                            features = likelihood_def$features, type = "categorical"),
@@ -250,8 +253,8 @@ likelihood <- function(likelihood_def, data) {
    )
 }
 
-get_naivebayes_likelihoods <- function(df,target, likelihood_defs = NULL) {
-  X <- df[,!(names(df) %in%target)]
+get_naivebayes_likelihoods <- function(df, target, likelihood_defs = NULL) {
+  X <- df[, !(names(df) %in% target)]
   features <- colnames(X)
   target_levels <- levels(df[,target])
   # default to gaussian density estimates:
@@ -270,7 +273,6 @@ get_naivebayes_likelihoods <- function(df,target, likelihood_defs = NULL) {
   naivebayes_def <- list(type= "naivebayes",likelihood_defs = likelihood_defs,
                          features = features)
   # loop for all target levels over all features and compute conditional density
-  print(naivebayes_def)
   sapply(
     target_levels, 
     function(level) {
@@ -287,8 +289,10 @@ predict_likelihood <- function(likelihood, x){
           mv_gaussian = dmvnorm(x, mean=likelihood$mean, 
                                sigma = likelihood$sigma),
           gaussian = dnorm(x, mean = likelihood$mean, sd = likelihood$sd),
-          categorical = likelihood$freq_table[
-            which(x == names(likelihood$freq_table))],
+          categorical = {
+            which_level <- match(x, names(likelihood$freq_table))
+            likelihood$freq_table[which_level]
+          },    
           naivebayes =  exp(rowSums(log(sapply(likelihood$likelihoods, function(likelihood)
             predict_likelihood(likelihood, x)))))
    )  
@@ -388,7 +392,7 @@ https://en.wikipedia.org/wiki/Kernel_(statistics)#Kernel_functions_in_common_use
 
 ```{r genclass-kde_kernels}
 library("kdensity")
-#library("EQL")
+library("EQL")
 par(mfrow=c(1,2))
 for (kernel in c("gaussian","triangular") )
   plot(kdensity(iris_train[,"Sepal.Width"], start = "gumbel", kernel = kernel),
@@ -405,7 +409,7 @@ for (bw in seq(0.1,0.5,length.out = 4) )
 
 ```{r genclass-nb_kde}
 likelihood <- function(likelihood_def, data) {
-  # will be extended
+
    switch(likelihood_def$type,
           mvgaussian_lda = get_mvgaussian_lda(data, likelihood_def$target,
                                               likelihood_def$level, 
@@ -443,7 +447,8 @@ predict_likelihood <- function(likelihood, x){
 }
 
 
-likelihoods_kde <- get_naivebayes_likelihoods(iris_train,target,sapply(features, function(feature)
+likelihoods_kde <- get_naivebayes_likelihoods(iris_train,target,
+                                              sapply(features, function(feature)
                            list(args = list(), 
                                 features = feature,
                                   type = "kde"), 
@@ -468,7 +473,7 @@ ggplot_list <- lapply(
                            simplify = FALSE,
                            USE.NAMES = TRUE))
   plot_2D_naivebayes(priors, likelihoods_kde_bw, "Sepal.Width", "Sepal.Length",
-                   iris_train$Species, X, title='"NB" ~')
+                   iris_train$Species, X, title ='"NB" ~')
   }
 )
 do.call(grid.arrange, ggplot_list)
