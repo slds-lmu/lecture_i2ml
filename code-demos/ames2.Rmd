@@ -1,19 +1,17 @@
 ---
 output: pdf_document
-title: "mlr3 Usecase Day 1 - Ames Housing Dataset"
+title: "mlr3 Usecase Day 2 - Ames Housing Dataset"
 ---
 ```{r, echo = FALSE}
-solution = TRUE
 knitr::opts_chunk$set(echo = solution, eval = solution)
 ```
 
-This usecase is intended to use mlr3 to perform a benchmark analysis on the _Ames Dataset_.
+This usecase is intended to use `mlr3tuning` to improve the results of the benchmark analysis on the _Ames Dataset_ of day 1.
 
-The main objectives of this study are as follows:
+The main objective of this exercise is as follows:
 
-- To apply data preprocessing and preparation techniques in order to obtain clean data
-- To build machine learning models able to predict house price based on house features
-- To analyze and compare models performance in order to choose the best model
+- To apply an appropriate tuning technique to a learning algorithm in order to obtain improve its predictive performance.
+Keep in mind that it takes an appropriate performance measure to evaluate the performance of a tuned algorithm!
 
 ## Accessing the dataset
 
@@ -33,7 +31,6 @@ housing = mlr::impute(obj = housing, target = "SalePrice",
 
 ```{r}
 library(mlr3)
-library(mlr3learners)
 ```
 
 2. Create a regression task object.
@@ -47,19 +44,71 @@ task = TaskRegr$new(id = "ames_housing", backend = as_data_backend(housing), tar
 
 ```{r}
 # get a featureless learner and a regression tree
+library(mlr3learners)
 learners = list(
-  lrn("regr.featureless"),
-  lrn("regr.kknn"),
-  lrn("regr.rpart"),
-  lrn("regr.ranger")
+  featureless = lrn("regr.featureless"),
+  kknn = lrn("regr.kknn"),
+  rpart = lrn("regr.rpart"),
+  ranger = lrn("regr.ranger")
 )
 ```
 
+```{r}
+library(paradox)
+tune_ps = ParamSet$new(list(
+  ParamDbl$new("cp", lower = 0.001, upper = 0.1),
+  ParamInt$new("minsplit", lower = 1, upper = 10)
+))
+tune_ps
+```
 4. Create a resampling object for your benchmark evaluation.
 
 ```{r}
 # compare via 3-fold cross validation
 resamplings = rsmp("cv", folds = 10)
+```
+
+
+```{r}
+library(mlr3tuning)
+
+evals20 = term("evals", 20)
+
+instance = TuningInstance$new(
+  task = task,
+  learner = learners$rpart,
+  resampling = hout,
+  measures = measure,
+  param_set = tune_ps,
+  terminator = evals20
+)
+print(instance)
+```
+
+
+```{r}
+tuner = tnr("grid_search", resolution = 5)
+result = tuner$tune(instance)
+print(result)
+```
+
+
+
+```{r}
+learners$rpart$param_set$values = result$values
+```
+
+
+```{r}
+at = AutoTuner$new(
+  learner = learner,
+  resampling = resampling,
+  measures = measures,
+  tune_ps = tune_ps,
+  terminator = terminator,
+  tuner = tuner
+)
+at
 ```
 
 5. Create a grid corresponding to the planned benchmark including the task, all learners and the resampling strategy.
