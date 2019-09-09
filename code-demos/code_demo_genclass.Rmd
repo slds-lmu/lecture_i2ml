@@ -4,21 +4,24 @@ params:
   set_title: "Code demo for generative classification methods"
 ---
   
-```{r, child = "../style/preamble_code_demos.Rmd", include = FALSE}
+```{r preamble, child = "../style/preamble_code_demos.Rmd", include = FALSE}
 
 ```
 
-```{r, child = "../style/setup.Rmd", include = FALSE}
+```{r setup, child = "../style/setup.Rmd", include = FALSE}
 
 ```  
 
-```{r, echo=FALSE}
+
+```{r run_chunk, echo=FALSE, cache=FALSE}
+# see https://stackoverflow.com/a/28151571
+run_chunk <- function(chunkName,envir=.GlobalEnv) {
+  chunkName <- unlist(lapply(as.list(substitute(.(chunkName)))[-1], as.character))    
+  eval(parse(text=knitr:::knit_code$get(chunkName)),envir=envir) 
+} 
 knitr::read_chunk("code_demo_knn.Rmd")
+run_chunk("knn-plot_2D_classif")
 ```  
-
-```{r knn-plot_2D_classif, echo=FALSE}
-
-```
 
 # Code demo for generative classification methods
 
@@ -42,6 +45,7 @@ $$
 
 ```{r genclass-plot_data}
 library(mlr)
+library(ggplot2)
 
 data(iris)
 target <- "Species"
@@ -145,12 +149,14 @@ plot_2D_likelihood <- function(likelihoods, data, X1, X2, target, lengthX1 = 100
     ) + 
     geom_point(data=data, aes_string(x=X1,y=X2, color= target))
 }
+```
 
-likelihoods <- sapply(target_levels, function(level) 
+```{r genclass-plot_lda_lik}
+liks <- sapply(target_levels, function(level) 
   likelihood(list(type="mvgaussian_lda", target=target,
                 level=level, features = features), iris_train), simplify = FALSE)
 
-plot_2D_likelihood(likelihoods,iris_train, "Sepal.Width", "Sepal.Length", target)
+plot_2D_likelihood(liks,iris_train, "Sepal.Width", "Sepal.Length", target)
 
 ```
     
@@ -205,11 +211,11 @@ likelihood <- function(likelihood_def, data) {
    )
 }
 
-likelihoods <- sapply(target_levels, function(level) 
+liks <- sapply(target_levels, function(level) 
   likelihood(list(type="mvgaussian_qda", target=target,
                 level=level, features = features), iris_train), simplify = FALSE)
 
-plot_2D_likelihood(likelihoods,iris_train, "Sepal.Width", "Sepal.Length", target)
+plot_2D_likelihood(liks,iris_train, "Sepal.Width", "Sepal.Length", target)
 ```
   
 ## Naive Bayes
@@ -298,8 +304,8 @@ predict_likelihood <- function(likelihood, x){
    )  
 }
 
-likelihoods <- get_naivebayes_likelihoods(iris_train, target)
-plot_2D_likelihood(likelihoods,iris_train, "Sepal.Width", "Sepal.Length", target)
+liks <- get_naivebayes_likelihoods(iris_train, target)
+plot_2D_likelihood(liks,iris_train, "Sepal.Width", "Sepal.Length", target)
 
 ```
 
@@ -312,7 +318,7 @@ naivebayes <- function(X, priors, nb_likelihood, normalize=FALSE){
   target_levels <- names(priors)
   
   lik <- sapply(target_levels, function(level) { 
-    likelihood <- likelihoods[[level]]
+    likelihood <- nb_likelihood[[level]]
     predict_likelihood(likelihood, X[,likelihood$features])
   })
   
@@ -330,7 +336,7 @@ naivebayes <- function(X, priors, nb_likelihood, normalize=FALSE){
 priors <- get_priors(iris_train,target)
 
 X <- iris_train[,!(names(iris_train) %in%target)]
-head(naivebayes(X, priors, likelihoods, normalize = TRUE))
+head(naivebayes(X, priors, liks, normalize = TRUE))
 ```
 
 ```{r genclass-classify_naivebayes}
@@ -377,7 +383,7 @@ plot_2D_naivebayes <- function(priors, likelihoods, X1 = "X1", X2 = "X2",
 ```
 ```{r}
 
-plot_2D_naivebayes(priors, likelihoods, "Sepal.Width", "Sepal.Length",
+plot_2D_naivebayes(priors, liks, "Sepal.Width", "Sepal.Length",
                    iris_train$Species, X)
 ```
 
@@ -422,7 +428,7 @@ likelihood <- function(likelihood_def, data) {
           categorical = list(freq_table = prop.table(table(data)), 
                            features = likelihood_def$features, type = "categorical"),
           kde = list(kde =
-            do.call(kdensity, append(likelihood_def$args,structure(list(data),names="x"))),
+            do.call(kdensity, append(likelihood_def$args, structure(list(data[,likelihood_def$features]),names="x"))),
              type="kde", features = likelihood_def$features),           
           naivebayes = list(likelihoods = sapply(likelihood_def$likelihood_defs,
                                                  function(likelihood_def)
@@ -447,7 +453,7 @@ predict_likelihood <- function(likelihood, x){
 }
 
 
-likelihoods_kde <- get_naivebayes_likelihoods(iris_train,target,
+liks_kde <- get_naivebayes_likelihoods(iris_train,target,
                                               sapply(features, function(feature)
                            list(args = list(), 
                                 features = feature,
@@ -455,10 +461,9 @@ likelihoods_kde <- get_naivebayes_likelihoods(iris_train,target,
                            simplify = FALSE,
                            USE.NAMES = TRUE))
 
-plot_2D_likelihood(likelihoods_kde,iris_train, "Sepal.Width", "Sepal.Length", target)
+plot_2D_likelihood(liks_kde,iris_train, "Sepal.Width", "Sepal.Length", target)
 
-plot_2D_naivebayes(priors, likelihoods_kde, "Sepal.Width", "Sepal.Length",
-                   iris_train$Species, X)
+plot_2D_naivebayes(priors, liks_kde, "Sepal.Width", "Sepal.Length", iris_train$Species, X)
 ```
 
 
@@ -468,11 +473,14 @@ bw_values <- seq(0.05,0.3,length.out = 4)
 ggplot_list <- lapply(
   bw_values,
   function(bw) {
-  likelihoods_kde_bw <- get_likelihoods(iris_train,target,sapply(colnames(iris_train[,!(names(iris_train) %in% target)]), 
-                           function(feature)  list(args = list(bw = bw), type = "kde"), 
+  liks_kde_bw <- get_naivebayes_likelihoods(iris_train,target,
+                                              sapply(features, function(feature)
+                           list(args = list(bw = bw), 
+                                features = feature,
+                                  type = "kde"), 
                            simplify = FALSE,
                            USE.NAMES = TRUE))
-  plot_2D_naivebayes(priors, likelihoods_kde_bw, "Sepal.Width", "Sepal.Length",
+  plot_2D_naivebayes(priors, liks_kde_bw, "Sepal.Width", "Sepal.Length",
                    iris_train$Species, X, title ='"NB" ~')
   }
 )
