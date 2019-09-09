@@ -132,11 +132,7 @@ plot_2D_likelihood <- function(likelihoods, data, X1, X2, target, lengthX1 = 100
   lik <- sapply(target_levels, function(level) { 
     likelihood <- likelihoods[[level]]
     predict_likelihood(likelihood, grid_data[,likelihood$features])
-  })#, simplify = FALSE)
-  
-
-  # lik <- sapply(names(likelihoods), 
-  #       function(level) exp(rowSums(log(liks[[level]]))))
+  })
   
   grid_data <- cbind(grid_data, lik)
   
@@ -234,28 +230,36 @@ get_priors <- function(df,target){
 # this can be written way more elegantly with S3 methods
 
 likelihood <- function(likelihood_def, data) {
+  # will be extended
    switch(likelihood_def$type,
-          gaussian = list(mean = mean(data), sd = sd(data), type="gaussian"),
-          categorical = list(freq_table = prop.table(table(data)), type = "categorical")
+          mvgaussian_lda = get_mvgaussian_lda(data, likelihood_def$target,
+                                              likelihood_def$level, 
+                                              likelihood_def$features),
+          mvgaussian_qda = get_mvgaussian_qda(data, likelihood_def$target,
+                                              likelihood_def$level, 
+                                              likelihood_def$features),
+          gaussian = list(mean = mean(data[,likelihood_def$features]), sd = sd(data[,likelihood_def$features]),
+                          features = likelihood_def$features, type="gaussian"),
+          categorical = list(freq_table = prop.table(table(data)), 
+                           features = likelihood_def$features, type = "categorical"),
+          naivebayes = list(likelihoods = sapply(likelihood_def$likelihood_defs,
+                                                 function(likelihood_def)
+                                                   likelihood(likelihood_def, data),
+                                                   simplify = FALSE),
+                            features =  likelihood_def$features, type="naivebayes")
    )
 }
 
-predict_likelihood <- function(likelihood, x){
-   switch(likelihood$type,
-          gaussian = dnorm(x, mean = likelihood$mean, sd = likelihood$sd),
-          categorical = likelihood$freq_table[
-            which(x == names(likelihood$freq_table))]
-   )  
-}
-
-get_likelihoods <- function(df,target, likelihood_defs = NULL) {
+get_naivebayes_likelihoods <- function(df,target, likelihood_defs = NULL) {
   X <- df[,!(names(df) %in%target)]
   features <- colnames(X)
   target_levels <- levels(df[,target])
   # default to gaussian density estimates:
   if (is.null(likelihood_defs)) {
      likelihood_defs  <- sapply(features, function(feature)
-                           list(args = list(), type = 
+                           list(args = list(), 
+                                features = feature,
+                                  type = 
                                   ifelse(is.factor(df[,feature]),
                                                    "categorical",
                                                    "gaussian")), 
@@ -263,68 +267,34 @@ get_likelihoods <- function(df,target, likelihood_defs = NULL) {
                            USE.NAMES = TRUE)
   }
   
-  
+  naivebayes_def <- list(type= "naivebayes",likelihood_defs = likelihood_defs,
+                         features = features)
   # loop for all target levels over all features and compute conditional density
-  likelihoods <- lapply(
+  print(naivebayes_def)
+  sapply(
     target_levels, 
     function(level) {
-      sapply(features, function(feature) {
-        feature_data <- X[df[[target]] == level, feature]
-        likelihood(likelihood_defs[[feature]],feature_data)
-      }, simplify = FALSE)
-    })
-  names(likelihoods) <- target_levels
-  likelihoods
+      likelihood(naivebayes_def , X[df[[target]] == level,features])
+    }, simplify = FALSE)
 }
+
 ```
 
 ```{r genclass-plot2D_lik}
-library(reshape2)
-
-plot_2D_likelihood <- function(likelihoods, data, X1, X2, target, lengthX1 = 100, 
-                               lengthX2 = 100){
-  gridX1 <- seq(
-    min(data[, X1]),
-    max(data[, X1]),
-    length.out = lengthX1
-  )
-  gridX2 <- seq(
-    min(data[, X2]),
-    max(data[, X2]),
-    length.out = lengthX2
-  )
-
-  # compute grid coordinates with cartesian product
-  grid_data <- expand.grid(gridX1, gridX2)  
-  features <-  c(X1, X2)
-  levels <- names(likelihoods)
-  names(grid_data) <- features
-  
-  liks <- sapply(names(likelihoods), function(level) { 
-    sapply(features, function(feature){
-       likelihood <- likelihoods[[level]][[feature]]
-       predict_likelihood(likelihood, grid_data[,feature])
-    } )
-  }, simplify = FALSE)
-  
-  
-  lik <- sapply(names(likelihoods), 
-        function(level) exp(rowSums(log(liks[[level]]))))
-  
-  grid_data <- cbind(grid_data, lik)
-  
-  to_plot <- melt(grid_data, id.vars = features)
-  
-    ggplot() +
-    geom_contour(
-      data = to_plot,
-      aes_string(x = X1, y = X2, z = "value", color = "variable")
-    ) + 
-    geom_point(data=data, aes_string(x=X1,y=X2, color= target))
+predict_likelihood <- function(likelihood, x){
+  if(is.data.frame(x)) x = x[,likelihood$features]
+   switch(likelihood$type,
+          mv_gaussian = dmvnorm(x, mean=likelihood$mean, 
+                               sigma = likelihood$sigma),
+          gaussian = dnorm(x, mean = likelihood$mean, sd = likelihood$sd),
+          categorical = likelihood$freq_table[
+            which(x == names(likelihood$freq_table))],
+          naivebayes =  exp(rowSums(log(sapply(likelihood$likelihoods, function(likelihood)
+            predict_likelihood(likelihood, x)))))
+   )  
 }
 
-target <- "Species"
-likelihoods <- get_likelihoods(iris_train,target)
+likelihoods <- get_naivebayes_likelihoods(iris_train, target)
 plot_2D_likelihood(likelihoods,iris_train, "Sepal.Width", "Sepal.Length", target)
 
 ```
@@ -332,19 +302,17 @@ plot_2D_likelihood(likelihoods,iris_train, "Sepal.Width", "Sepal.Length", target
 ```{r genclass-naivebayes}
 norm1 <- function(x) x / sum(abs(x))
 
-naivebayes <- function(X, priors, likelihoods, normalize=FALSE){
+naivebayes <- function(X, priors, nb_likelihood, normalize=FALSE){
 
   features <- colnames(X)
+  target_levels <- names(priors)
   
-  lik <- sapply(names(priors), function(level) { 
-    sapply(features, function(feature){
-       likelihood <- likelihoods[[level]][[feature]]
-       predict_likelihood(likelihood,X[,feature])
-    } )
-  }, simplify = FALSE)
+  lik <- sapply(target_levels, function(level) { 
+    likelihood <- likelihoods[[level]]
+    predict_likelihood(likelihood, X[,likelihood$features])
+  })
   
-  joint_density <- sapply(names(priors), 
-        function(level) exp(log(priors[[level]]) + rowSums(log(lik[[level]]))))
+  joint_density <- unlist(priors) * lik
   
   if(normalize){
     t(apply(joint_density, 1, norm1))
@@ -355,7 +323,6 @@ naivebayes <- function(X, priors, likelihoods, normalize=FALSE){
 ```
 
 ```{r genclass-nb_example}
-likelihoods <- get_likelihoods(iris_train,target)
 priors <- get_priors(iris_train,target)
 
 X <- iris_train[,!(names(iris_train) %in%target)]
@@ -437,27 +404,49 @@ for (bw in seq(0.1,0.5,length.out = 4) )
 ```
 
 ```{r genclass-nb_kde}
-
 likelihood <- function(likelihood_def, data) {
+  # will be extended
    switch(likelihood_def$type,
-          gaussian = list(mean = mean(data), sd = sd(data), type="gaussian"),
-          categorical = list(freq_table = prop.table(table(data)), type = "categorical"),
+          mvgaussian_lda = get_mvgaussian_lda(data, likelihood_def$target,
+                                              likelihood_def$level, 
+                                              likelihood_def$features),
+          mvgaussian_qda = get_mvgaussian_qda(data, likelihood_def$target,
+                                              likelihood_def$level, 
+                                              likelihood_def$features),
+          gaussian = list(mean = mean(data[,likelihood_def$features]), sd = sd(data[,likelihood_def$features]),
+                          features = likelihood_def$features, type="gaussian"),
+          categorical = list(freq_table = prop.table(table(data)), 
+                           features = likelihood_def$features, type = "categorical"),
           kde = list(kde =
             do.call(kdensity, append(likelihood_def$args,structure(list(data),names="x"))),
-             type="kde"), 
+             type="kde", features = likelihood_def$features),           
+          naivebayes = list(likelihoods = sapply(likelihood_def$likelihood_defs,
+                                                 function(likelihood_def)
+                                                   likelihood(likelihood_def, data),
+                                                   simplify = FALSE),
+                            features =  likelihood_def$features, type="naivebayes")
    )
 }
 
 predict_likelihood <- function(likelihood, x){
+  if(is.data.frame(x)) x = x[,likelihood$features]
    switch(likelihood$type,
+          mv_gaussian = dmvnorm(x, mean=likelihood$mean, 
+                               sigma = likelihood$sigma),
           gaussian = dnorm(x, mean = likelihood$mean, sd = likelihood$sd),
           categorical = likelihood$freq_table[
             which(x == names(likelihood$freq_table))],
-          kde = likelihood$kde(x)
+          kde = likelihood$kde(x),
+          naivebayes =  exp(rowSums(log(sapply(likelihood$likelihoods, function(likelihood)
+            predict_likelihood(likelihood, x)))))
    )  
 }
 
-likelihoods_kde <- get_likelihoods(iris_train,target,sapply(colnames(iris_train[,!(names(iris_train) %in% target)]), function(feature)  list(args = list(), type = "kde"), 
+
+likelihoods_kde <- get_naivebayes_likelihoods(iris_train,target,sapply(features, function(feature)
+                           list(args = list(), 
+                                features = feature,
+                                  type = "kde"), 
                            simplify = FALSE,
                            USE.NAMES = TRUE))
 
