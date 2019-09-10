@@ -15,35 +15,43 @@ library(smoof)
 <<results='hide', code = readLines("rsrc/draw-cart-iris.R")>>=
 @
 
-\lecturechapter{CART 1}
+%! includes: cart-intro, cart-splittingcriteria
+
+\lecturechapter{CART: Growing a Tree}
 \lecture{Introduction to Machine Learning}
 \sloppy
 
 \begin{vbframe}{Tree Growing}
-In the greedy top-down construction, features and split points are selected by exhaustive search. The training data is distributed to child nodes according to the splits - see below that nodes display the percentage of currently contained data.
-<<result='hide', fig.height=2.2>>=
-draw_cart_on_iris(depth = 1, with_tree_plot = TRUE)
-@
+
+We start with an empty tree, a root node that contains all the data.\\
+Trees are then grown by recursively applying \emph{greedy} optimization to each node $\Np$.\\
+\lz
+
+Greedy means we do an \textbf{exhaustive search}: All possible splits of $\Np$ on all possible points $t$ for all features $x_j$ are compared in terms of their empirical risk $\risk(\Np, j, t)$. 
+
+The training data is then distributed to child nodes according to the optimal split and the procedure is repeated in the child nodes.
 
 \framebreak
 
-We start with an empty tree, a full root node of all data. We search for a feature and split-point, which makes the label distribution in the resulting left and right child (or sub-rectangles) most pure (defined later). See below that nodes display their current label distribution.
+Start with a root node of all data, then search for a feature and split-point that minimizes the empirical risk in the child nodes. 
 <<result='hide', fig.height=2.2>>=
 draw_cart_on_iris(depth = 1, with_tree_plot = TRUE)
 @
+Nodes display their current label distribution here for illustration.
+
 
 \framebreak
 
-We proceed then recursively for each child node:
-Iterate over all features, and for each feature over all split points. Select the "best" split, divide training data from parent into left and right child.
+We then proceed recursively for each child node:
+Iterate over all features, and for each feature over all possible split points. Select the best split an divide data in parent node into left and right child nodes:
 <<result='hide', fig.height=2.2>>=
 draw_cart_on_iris(depth = 2, with_tree_plot = TRUE)
 @
 
 \framebreak
 
-We proceed then recursively for each child node:
-Iterate over all features, and for each feature over all split points. Select the "best" split, divide training data from parent into left and right child.
+We then proceed recursively for each child node:
+Iterate over all features, and for each feature over all split points. Select the \enquote{best} split and divide data in parent node into left and right child nodes:
 <<result='hide', fig.height=2.2>>=
 draw_cart_on_iris(depth = 3, with_tree_plot = TRUE)
 @
@@ -60,67 +68,92 @@ pl = pl + theme(legend.position="none")
 print(pl)
 @
 \lz
-Splits are usually placed "in the middle" between the observations they split, so the large margin to the next observations ensures better generalization
+Splits are usually placed at the mid-point of the observations they split: the large margin to the next closest observations makes better generalization on new, unseen data more likely.
 \end{vbframe}
 
-\begin{vbframe}{Regression Example}
-\begin{columns}[T,onlytextwidth]
-\column{0.2\textwidth}
-<<out.width='\\textwidth'>>=
-modForrester = makeSingleObjectiveFunction(
-  name = "Modification Forrester et. all function",
-  fn = function(x) (sin(4*x - 4)) * ((2*x - 2)^2) * (sin(20*x - 4)),
-  par.set = makeNumericParamSet(lower = 0, upper = 1, len = 1L),
-  noisy = TRUE
-)
-design = generateDesign(7L, getParamSet(modForrester), fun = lhs::maximinLHS)
-design$y = modForrester(design)
-ordered.design = design[order(design$x),]
-rownames(ordered.design) = NULL
-kable(ordered.design, digits = 3)
-@
-
-\hspace{0.5cm}
-\column{0.7\textwidth}
-% FIGURE SOURCE: No source
-\includegraphics[height = 0.55\textheight]{figure_man/regression_tree}
-\end{columns}
-\vspace{0.5cm}
-Data points (red) were generated from the underlying function (black):
-
-$ sin(4x - 4) * (2x - 2)^2 * sin(20x -4) $
-
-% \framebreak
-
-% BB: doesnt seem too useful to show this, nothing really new in here
-% <<fig.height=5>>=
-% regr.task = makeRegrTask(data = design, target = "y")
-% regr.rpart = makeLearner("regr.rpart", par.vals = list(minsplit=1, minbucket = 1))
-% regr.model = train(regr.rpart, regr.task)
-% fancyRpartPlot(regr.model$learner.model, sub="")
+% \begin{vbframe}{Regression Example}
+% \begin{columns}[T,onlytextwidth]
+% \column{0.2\textwidth}
+% <<out.width='\\textwidth'>>=
+% modForrester = makeSingleObjectiveFunction(
+%   name = "Modification Forrester et. all function",
+%   fn = function(x) (sin(4*x - 4)) * ((2*x - 2)^2) * (sin(20*x - 4)),
+%   par.set = makeNumericParamSet(lower = 0, upper = 1, len = 1L),
+%   noisy = TRUE
+% )
+% design = generateDesign(7L, getParamSet(modForrester), fun = lhs::maximinLHS)
+% design$y = modForrester(design)
+% ordered.design = design[order(design$x),]
+% rownames(ordered.design) = NULL
+% kable(ordered.design, digits = 3)
 % @
-\end{vbframe}
+% 
+% \hspace{0.5cm}
+% \column{0.7\textwidth}
+% % FIGURE SOURCE: No source
+% \includegraphics[height = 0.55\textheight]{figure_man/regression_tree}
+% \end{columns}
+% \vspace{0.5cm}
+% Data points (red) were generated from the underlying function (black):
+% 
+% $ sin(4x - 4) * (2x - 2)^2 * sin(20x -4) $
+% 
+% % \framebreak
+% 
+% % BB: doesnt seem too useful to show this, nothing really new in here
+% % <<fig.height=5>>=
+% % regr.task = makeRegrTask(data = design, target = "y")
+% % regr.rpart = makeLearner("regr.rpart", par.vals = list(minsplit=1, minbucket = 1))
+% % regr.model = train(regr.rpart, regr.task)
+% % fancyRpartPlot(regr.model$learner.model, sub="")
+% % @
+% \end{vbframe}
 
 
 \begin{vbframe}{Stopping Criteria}
-  At some point we have to stop the recursive splitting of child nodes and produce a leaf. Multiple simple criteria for stopping can be defined:
+
+The recursive procedure defined above would run until every leaf only contains a single observation. At some point before that we have to stop splitting nodes into ever smaller child nodes to avoid overfitting the training data.\\
+Different stopping criteria can be defined:
   \begin{itemize}
-    \item Minimal number of observations per node, for a split to be tried
-    \item Minimal number of observations that must be contained in a leaf
-    \item Minimal increase in label distribution purity that must be reached for the best split
-    \item Maximum number of levels for the tree
+    \item Stop splitting once the tree has reached a certain number of leafs.
+    \item Don't split a node further if it contains too few observations.
+    \item Don't perform a split that results in child nodes with too few observations.
+    \item Don't perform a split unless it achieves a certain minimal improvement of the empirical risk compared to the empirical risk in the parent node.
   \end{itemize}
 \end{vbframe}
 
-\begin{vbframe}{Constant predictions in leafs}
-  After growing, for each leaf, we know which training observations are assigned to it. We produce a constant optimal rule here, for the complete associated
-  rectangle $Q_m$
-  \begin{itemize}
-    \item Regression: We usually use the average value of all $\yi$ contained in the leaf. This is the optimal constant prediction under squared loss.
-      We could also fit the median, which would be optimal under L1 loss.
-    \item Classification: We fit the most common label of the data contained in that node. In order to estimate probabilities, we simply count class proportions for the training data contained in that leaf.
-  \end{itemize}
+\begin{vbframe}{Pruning}
+
+\begin{itemize}
+\item A method to select the optimal size of a tree
+\item Problem 1: while growing the tree, it is hard to tell when we should stop, as we don't know if the addition of further splits down the line will dramatically decrease error (\enquote{horizon effect}).
+\item Problem 2: very complex trees with many branches and leafs will suffer from overfitting
+\item We could use strict stopping criteria (\enquote{pre-pruning}), but there are many different ones and it's hard to find the best combination (see chapter on \textbf{tuning})
+  and you would have to tune over their settings
+\item Better: Grow a large tree, then remove branches so that the resulting smaller tree is optimal w.r.t. cross-validated error
+\item Here: Grow a large tree, then remove the parts so that the resulting smaller tree has a good balance between training error and complexity (as counted by the number of terminal nodes).
+\end{itemize}
+
+\framebreak
+
+<<size='footnotesize'>>=
+lrn = makeLearner("regr.rpart", maxdepth = 2)
+mod = train(lrn, bh.task)
+mod = mod$learner.model
+@
+
+\framebreak
+
+<<results='hide', caption = "Pruning a CART on the Boston Housing dataset">>=
+# Pruning with every cp taken from the cptable
+cps = rev(mod$cptable[, "CP"])
+lapply(cps, function(x) {
+    p = rpart::prune(mod, cp = x)
+    sub_title = sprintf("Pruning with complexity parameter = %.3f.", x)
+    rattle::fancyRpartPlot(p, sub = sub_title)})
+@
 \end{vbframe}
+
 
 
 \endlecture
