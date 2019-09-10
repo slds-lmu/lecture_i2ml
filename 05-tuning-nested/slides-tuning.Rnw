@@ -14,24 +14,45 @@ knitr::set_parent("../style/preamble.Rnw")
 \sloppy
 
 \begin{vbframe}{Hyperparameter tuning}
+Many hyperparameters (HPs) or decisions for an ML algorithm are not decided by the fitting procedure. We distinguish between: 
 \begin{itemize}
-\item Many parameters or decisions for an ML algorithm are not decided by the fitting procedure
-\item \textbf{Model parameters} are optimized during training, by some form of loss minimization. They are an \textbf{output} of the training.
-E.g., the coefficients of a linear model or the optimal splits of a tree learner.
-\item \textbf{Hyperparameters} must be specified before the training phase. They are an \textbf{input} of the training.
-E.g., how small a leaf can become for a tree; $k$ and which distance measure to use for kNN
-\item HPs have to be set either by the user or by (smart) default values
-\item Our goal is to optimize these w.r.t. the estimated prediction error; this implies an independent test set, or cross-validation
-\item The same applies to preprocessing, feature construction and other model-relevant operations. In general we might be interested in optimizing an entire ML \enquote{pipeline}
+\item \textbf{Model parameters} are optimized during training, by some form of loss minimization. They are an \textbf{output} of the training. 
+
+Examples:
+\begin{itemize}
+  \item Coefficients $\thetab$ of a linear model $\fx = \thetab^\top\xb$
+  \item Optimal splits of a tree learner
 \end{itemize}
+\item \textbf{Hyperparameters} must be specified before the training phase. They are an \textbf{input} of the training.
+
+Examples:
+\begin{itemize}
+  \item How small a leaf may become for a tree
+  \item $k$ and which distance measure to use for kNN
+  \item The complexity penalty to be used (e.g. $L_1$, $L_2$ penalization) and the complexity control parameter $\lambda$ for regularization
+\end{itemize}
+\end{itemize}
+
+\framebreak 
+
+\begin{itemize}
+\item HPs have to be set either by the user or by (smart) default values.
+\item Our goal is to optimize these w.r.t. the estimated prediction error; this implies an independent test set, or cross-validation.
+\item The same applies to preprocessing, feature construction and other model-relevant operations. In general we might be interested in optimizing an entire ML \enquote{pipeline}.
+\end{itemize}
+
+\begin{figure}
+  \includegraphics[width = 0.8\textwidth]{figure_man/automl1.png}
+\end{figure}
+
 \end{vbframe}
 
 \begin{vbframe}{Why tuning is important}
 \begin{itemize}
-\item Hyperparameters control the complexity of a model, i.e., how flexible the model is
-\item If a model is too flexible so that it simply \enquote{memorizes} the training data, we will face the dreaded problem of overfitting 
+\item Hyperparameters control the complexity of a model, i.e., how flexible the model is.
+\item If a model is too flexible so that it simply \enquote{memorizes} the training data, we will face the dreaded problem of overfitting. 
 \item Hence, control of capacity, i.e., proper setting of hyperparameters
- can prevent overfitting the model on the training set
+ can prevent overfitting the model on the training set.
 \item Many other factors like optimization control settings, distance functions, scaling, algorithmic variants in the fitting procedure can heavily influence model performance in non-trivial ways. It is extremely hard to guess the correct choices here.
 \end{itemize}
 \end{vbframe}
@@ -56,11 +77,13 @@ E.g., how small a leaf can become for a tree; $k$ and which distance measure to 
     \begin{itemize}
       \item $mtry$ in a random forest
       \item Neighborhood size $k$ for kNN
+      \item The complexity control parameter $\lambda$ for regularization 
     \end{itemize}
     \item Categorical parameters:
     \begin{itemize}
       \item Which split criterion for classification trees?
       \item Which distance measure for kNN?
+      \item Which type of complexity penalization to use for reguarlized empirical risk minimization? 
     \end{itemize}
     \item Ordinal parameters:
     \begin{itemize}
@@ -123,7 +146,13 @@ Tuner proposes configuration, eval by resampling, tuner receives performance, it
 \item Then, we simply search all possible combinations in arbitrary order
 \end{itemize}
 
-<<fig.height=3.7>>=
+\begin{footnotesize}
+\begin{center}
+Grid search over 10x10 points
+\end{center}
+\end{footnotesize}
+
+<<fig.height=3.5, fig.align = "center">>=
 plotTune = function(d) {
   d$TestAccuracy = mvtnorm::dmvnorm(x = d, mean = c(5,5), sigma = 40 * diag(2)) * 120 + 0.4
   pl = ggplot(data = d, aes(x = x, y = y, color = TestAccuracy))
@@ -137,7 +166,8 @@ pl = plotTune(d)
 print(pl)
 @
 
-Grid search over 10x10 points
+
+
 
 \framebreak
 
@@ -162,14 +192,20 @@ Grid search over 10x10 points
 \item Uniformly sample from the region-of-interest
 \end{itemize}
 
-<<fig.height=3.8>>=
+
+\begin{footnotesize}
+\begin{center}
+Random search over 100 points
+\end{center}
+\end{footnotesize}
+
+<<fig.height=3.5>>=
 x = runif(40, -10, 10)
 y = runif(40, -10, 10)
 d = data.frame(x = x, y = y)
 pl = plotTune(d)
 print(pl)
 @
-Random search over 100 points
 
 \framebreak
 
