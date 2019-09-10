@@ -15,7 +15,7 @@ library(smoof)
 <<results='hide', code = readLines("rsrc/draw-cart-iris.R")>>=
 @
 
-%! includes: cart-intro, cart-splittingcriteria
+%! includes: cart-intro, cart-splitcriteria
 
 \lecturechapter{CART: Growing a Tree}
 \lecture{Introduction to Machine Learning}
@@ -110,49 +110,7 @@ Splits are usually placed at the mid-point of the observations they split: the l
 % \end{vbframe}
 
 
-\begin{vbframe}{Stopping Criteria}
 
-The recursive procedure defined above would run until every leaf only contains a single observation. At some point before that we have to stop splitting nodes into ever smaller child nodes to avoid overfitting the training data.\\
-Different stopping criteria can be defined:
-  \begin{itemize}
-    \item Stop splitting once the tree has reached a certain number of leafs.
-    \item Don't split a node further if it contains too few observations.
-    \item Don't perform a split that results in child nodes with too few observations.
-    \item Don't perform a split unless it achieves a certain minimal improvement of the empirical risk compared to the empirical risk in the parent node.
-  \end{itemize}
-\end{vbframe}
-
-\begin{vbframe}{Pruning}
-
-\begin{itemize}
-\item A method to select the optimal size of a tree
-\item Problem 1: while growing the tree, it is hard to tell when we should stop, as we don't know if the addition of further splits down the line will dramatically decrease error (\enquote{horizon effect}).
-\item Problem 2: very complex trees with many branches and leafs will suffer from overfitting
-\item We could use strict stopping criteria (\enquote{pre-pruning}), but there are many different ones and it's hard to find the best combination (see chapter on \textbf{tuning})
-  and you would have to tune over their settings
-\item Better: Grow a large tree, then remove branches so that the resulting smaller tree is optimal w.r.t. cross-validated error
-\item Here: Grow a large tree, then remove the parts so that the resulting smaller tree has a good balance between training error and complexity (as counted by the number of terminal nodes).
-\end{itemize}
-
-\framebreak
-
-<<size='footnotesize'>>=
-lrn = makeLearner("regr.rpart", maxdepth = 2)
-mod = train(lrn, bh.task)
-mod = mod$learner.model
-@
-
-\framebreak
-
-<<results='hide', caption = "Pruning a CART on the Boston Housing dataset">>=
-# Pruning with every cp taken from the cptable
-cps = rev(mod$cptable[, "CP"])
-lapply(cps, function(x) {
-    p = rpart::prune(mod, cp = x)
-    sub_title = sprintf("Pruning with complexity parameter = %.3f.", x)
-    rattle::fancyRpartPlot(p, sub = sub_title)})
-@
-\end{vbframe}
 
 
 
