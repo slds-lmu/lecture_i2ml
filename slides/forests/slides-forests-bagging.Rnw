@@ -1,11 +1,7 @@
 % Set style/preamble.Rnw as parent.
 <<set-parent, include = FALSE>>=
 knitr::set_parent("../../style/preamble.Rnw")
-library(rpart)
-library(rpart.plot)
-library(randomForest)
-library(rattle)
-library(smoof)
+library(ggplot2)
 @
 
 % Load all R packages and set up knitr
@@ -13,7 +9,7 @@ library(smoof)
 @
 
 
-\lecturechapter{Random Forest: Bagging Ensembles}
+\lecturechapter{Random Forests: Bagging Ensembles}
 \lecture{Introduction to Machine Learning}
 \sloppy
 
@@ -22,14 +18,23 @@ library(smoof)
 \begin{vbframe}{Bagging}
 
 \begin{itemize}
-  \item Bagging is based on \textbf{B}ootstrap \textbf{Agg}regation.
-  \item Ensemble that improves instable / high variance learners by variance smoothing
+  \item Bagging is short for \textbf{B}ootstrap \textbf{Agg}regation.
+  \item It's an \textbf{ensemble method}, i.e., it combines many models into one 
+        big \enquote{meta-model}
+  \item Such model ensembles often work much better than their members alone would.
+  \item for reasons, the constituent models of an ensemble are called \textbf{base learners} 
+      % that improves instable / high variance learners by variance smoothing
 \end{itemize}
 
-Train on $B$ \textbf{bootstrap} samples of data $D$:
+\framebreak 
+In a \textbf{bagging} ensemble, all base learners are of the same type. The only difference between the models is the data they are trained on.\\
+
+\lz
+
+Specifically, we train them on $M$ \textbf{bootstrap} samples of training data $\D$:
 \begin{itemize}
-  \item Draw $n$ observations with replacement
-  \item Fit the base learner on each of the $B$ bootstrap samples
+  \item Draw $n$ observations from $\D$ with replacement
+  \item Fit the base learner on each of the $M$ bootstrap samples
 \end{itemize}
 
 \begin{center}
@@ -37,14 +42,12 @@ Train on $B$ \textbf{bootstrap} samples of data $D$:
 \includegraphics[width=0.45\textwidth]{figure_man/bootstrapping.png}
 \end{center}
 
-
-
 \framebreak
 
-\textbf{Aggregate} the predictions of the $B$ estimators:
+\textbf{Aggregate} the predictions of the $M$ fitted base learners:
   \begin{itemize}
     \item Aggregate via averaging (regression) or majority voting (classification)
-    \item Posterior probabilities for $x$ in classification can be estimated by calculating class frequencies over the ensemble
+    \item Posterior class probabilities $\pikxh$ can be estimated by calculating predicted class frequencies over the ensemble
   \end{itemize}
 
 \begin{center}
@@ -71,6 +74,19 @@ Train on $B$ \textbf{bootstrap} samples of data $D$:
 % \end{algorithm}
 
 \framebreak
+
+why/when help?
+let's say our risk is based on squared errors.
+think of model predictions $\hat f(x)$ as random variables with expected value & variance with which we try to approximate the unknown "true" model $f(x) = y$ .
+we can decompose the total error we make into 
+
+a) bias: the difference between f(x) and E(hat f) (systematic error, for example because the true f has a shape that the learner that gives us our model hat f isn't flexible enough to cover). 
+b) Var(hat f) gives us the size of its random fluctuations (unsystematic error): different random selections of training data give us a different fitted model that makes different predictions. 
+taken together, the variance and the bias constitute the size of the prediction error we expect to make. 
+
+let's ignore the bias for now.
+say we have M models.  then the 
+
 
   \begin{itemize}
     \item Reduces variance of the predictor, but (slightly) increases its bias
