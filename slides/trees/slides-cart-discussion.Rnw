@@ -1,0 +1,172 @@
+% Introduction to Machine Learning
+% Day 4
+
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../../style/preamble.Rnw")
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(rattle)
+library(smoof)
+@
+
+% Load all R packages and set up knitr
+<<setup, child="../../style/setup.Rnw", include = FALSE>>=
+@
+
+
+\lecturechapter{CART: Advantages \& Disadvantages}
+\lecture{Introduction to Machine Learning}
+
+\sloppy
+
+\begin{vbframe}{Advantages}
+  \begin{itemize}
+    \item Fairly easy to understand, interpret and visualize.
+    \item Not much preprocessing required:
+    \begin{itemize}
+      \item automatic handling of non-numeric features
+      \item automatic handling of missing values via surrogate splits
+      \item no problems with outliers in features
+      \item monotone transformations of features change nothing so scaling of features is irrelevant
+    \end{itemize}
+    \item Interaction effects between features are easily possible, even of higher orders
+    \item Can model discontinuities and non-linearities (but see "disadvantages")
+    
+    \framebreak
+    
+    \item Performs automatic feature selection
+    \item Quite fast, scales well with larger data
+    \item Flexibility through definition of custom split criteria or leaf-node prediction rules: clustering trees, semi-supervised trees, density estimation, etc.
+  \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Disadvantage: Linear Dependencies}
+<<fig.height=5, align='center'>>=
+n = 100
+data = data.frame(x1 = runif(n), x2 = runif(n))
+data$y = as.factor(with(data, as.integer(x1 > x2)))
+task = makeClassifTask(data = data, target = "y")
+rpart = makeLearner("classif.rpart", cp = 0, minbucket = 2, maxdepth = 6)
+pl = plotLearnerPrediction(rpart, task, gridsize = 300, cv = 0, err.mark = "none",
+  prob.alpha = FALSE)
+pl = pl + geom_abline(slope = 1, linetype = 2)
+print(pl)
+@
+Linear dependencies must be modeled over several splits. Logistic regression would model this easily.
+\end{vbframe}
+
+\begin{vbframe}{Disadvantage: Smooth functions}
+<<fig.height=5, align='center'>>=
+fn = function(x) (sin(4*x - 4)) * ((2*x - 2)^2) * (sin(20*x - 4))
+d = data.frame(x = seq(0.2, 1, length.out = 7))
+d$y = fn(d$x)
+task = makeRegrTask(data = d, target = "y")
+lrn = makeLearner("regr.rpart", minbucket = 1, minsplit = 1)
+pl = plotLearnerPrediction(lrn, task, cv = 0)
+x = seq(0.2, 1, length.out = 500)
+dd = data.frame(x = x, y = fn(x))
+pl = pl + geom_line(data = dd, aes(x, y, color = "red"))
+pl = pl + theme(legend.position = "none")
+print(pl)
+@
+Prediction functions of trees are never smooth as they are always step functions.
+\end{vbframe}
+
+% \begin{vbframe}{Disadvantage: Instability}
+% \begin{itemize}
+% \item High instability (variance) of the trees:
+% \item Small changes in the data could lead to completely different splits / trees
+% \item This leads to a) less trust in interpretability b) is a reason why prediction error of trees is usually not best, compared with other models
+% \end{itemize}
+
+% \framebreak
+
+% High instability of trees will be demonstrated using the Wisconsin Breast Cancer data set.
+% It has 699 observations on 9 features and one target class with values \enquote{benign} and \enquote{malignant}.
+
+% \begin{table}
+% \begin{tabular}{ll}
+% Feature name & Explanation\\
+% \hline
+% \code{Cl.thickness} & Clump Thickness\\
+% \code{Cell.size} & Uniformity of Cell Size\\
+% \code{Cell.shape} & Uniformity of Cell Shape\\
+% \code{Marg.adhesion} & Marginal Adhesion\\
+% \code{Epith.c.size} & Single Epithelial Cell Size\\
+% \code{Bare.nuclei} & Bare Nuclei\\
+% \code{Bl.cromatin} & Bland Chromatin\\
+% \code{Normal.nucleoli} & Normal Nucleoli\\
+% \code{Mitoses} & Mitoses\\
+% \end{tabular}
+% \end{table}
+
+% \framebreak
+
+% Tree fitted on complete Wisconsin Breast Cancer data
+% <<results='hide', fig.height=5>>=
+% # BB: i am using the BC dataset directly from mlbench
+% # and convert features, see issue in i2ml nr 277
+% library(mlbench)
+% data(BreastCancer)
+% d = BreastCancer
+% d$Id = NULL
+% for (i in 1:9)
+%   d[,i] = as.integer(d[,i])
+% print(str(d))
+% lrn = makeLearner("classif.rpart")
+% task1 = makeClassifTask(data = d, target = "Class")
+% mod1 = train(lrn, task1)
+% d2 = d[-13, ]
+% task2 = makeClassifTask(data = d2, target = "Class")
+% mod2 = train(lrn, task2)
+% fancyRpartPlot(mod1$learner.model, sub = "")
+% @
+% \framebreak
+
+% Tree fitted on Wisconsin Breast Cancer data without observation 13
+% <<results='hide', fig.height=5>>=
+% fancyRpartPlot(mod2$learner.model, sub = "")
+% @
+% \end{vbframe}
+
+\begin{vbframe}{Disadvantages}
+\begin{itemize}
+\item Empirically not the best predictor: Combine with bagging (forest) or boosting!
+\item High instability (variance) of the trees.
+  Small changes in the training data can lead to completely different trees. This leads to reduced trust in interpretation and is a reason why prediction error of trees is usually not best.
+\item In regression: Trees define piecewise constant functions, so trees often do not extrapolate well.
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Further tree methodologies}
+
+\begin{itemize}
+\item AID (Sonquist and Morgan, 1964)
+\item CHAID (Kass, 1980)
+\item CART (Breiman et al., 1984)
+\item C4.5 (Quinlan, 1993)
+\item Unbiased Recursive Partitioning (Hothorn et al., 2006)
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{CART: H - R - O}
+\textbf{Hypothesis Space:}\\
+A CART model is a step function over a rectangular partition of $\Xspace$.\\
+Its maximal complexity is controlled by the stopping criteria and the pruning method.
+
+\textbf{Risk:}\\
+Trees can use any kind of loss function for regression or classification.
+
+\textbf{Optimization:}\\
+Exhaustive search over all possible splits in each node to minimize the empirical risk in the child nodes.\\
+{\small
+Most literature on CARTs based on \enquote{impurity reduction}, which is mathematically equivalent to empirical risk minimization:\\
+Gini impurity $\cong$ Brier Score loss, entropy impurity $\cong$  
+Bernoulli loss, variance impurity $\cong$ L2 loss.}
+
+\end{vbframe}
+
+\endlecture
