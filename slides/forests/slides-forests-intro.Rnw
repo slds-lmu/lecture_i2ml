@@ -1,0 +1,210 @@
+% Introduction to Machine Learning
+% Day 4
+
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../../style/preamble.Rnw")
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(rattle)
+library(smoof)
+@
+
+% Load all R packages and set up knitr
+<<setup, child="../../style/setup.Rnw", include = FALSE>>=
+@
+
+
+\lecturechapter{Random Forest: Introduction}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+
+\begin{vbframe}{Random Forests}
+
+
+\begin{itemize}
+  \item Modification of bagging for trees proposed by Breiman (2001)
+  \item Construction of bootstrapped decorrelated trees through randomized splits
+  \item Trees are usually fully expanded, without aggressive early stopping or
+    pruning, to increase variance
+\end{itemize}
+\begin{center}
+\includegraphics[width=0.55\textwidth]{figure_man/forest.png}
+\end{center}
+\end{vbframe}
+
+\begin{vbframe}{Variance of Bagging}
+
+
+  \[ \rho \sigma^2 + \frac{1-\rho}{B} \sigma^2 = \left( \rho + (1 - \rho) \frac{1}{B} \right) \sigma^2 \]
+  $\sigma^2$ is variance of a tree and $\rho$ the correlation between trees
+
+\begin{itemize}
+  \item If trees are highly correlated ($\rho \approx 1$), variance $\rightarrow \sigma^2$
+  \item If trees are uncorrelated ($\rho \approx 0$), variance $\rightarrow \frac{\sigma^2}{B}$
+  \item Variance can be reduced by increasing the number of trees $B$
+\end{itemize}
+
+<<eval=TRUE, echo=FALSE, fig.height= 2.5, fig.align="center">>=
+# artificial graphic, numbers are fictive
+rho = seq(0, 1, by = 0.001)
+B = c(5, 50)
+sigma = 20
+
+grid = expand.grid(rho = rho, B = B)
+
+grid$var = grid$rho * sigma + (1 - grid$rho) / grid$B * sigma
+grid = grid[order(grid$B), ]
+grid$B = as.factor(grid$B)
+
+horizontal = data.frame(
+  B = as.factor(B),
+  intercept = sigma / B,
+  intercept.label = sigma / B + c(0, 0.7))
+
+p1 = ggplot(data = grid, aes(x = rho, y = var)) +
+  geom_line(aes(group = B, colour = B)) +
+  geom_hline(aes(yintercept = 20), colour = "black", lty = 2) +
+  geom_hline(data = horizontal, aes(yintercept = intercept, colour = B), lty = 2) +
+  xlab(expression(paste("Correlation of Trees ", rho))) +
+  ylab("Variance") +
+  labs(colour = "Number of Trees") +
+  annotate("text", x = 1.1, y = sigma, label = "sigma^2", parse = TRUE) +
+  geom_text(data = horizontal, aes(x = rep(1.08, 2), y = intercept.label, color = B,
+    label = paste0("sigma^2 / ", B)), parse = TRUE, show.legend = FALSE, hjust = 0) +
+  coord_cartesian(xlim = c(0, 1), clip = "off") +
+  ylim(c(0, 20))
+
+p1
+@
+\end{vbframe}
+
+\begin{vbframe}{Random feature sampling}
+
+\begin{itemize}
+  \item From our variance analysis we can see that decorrelating trees further
+    might reduce the variance of the predictor
+  \item Simple randomized approach:\\
+    Instead of all $p$ features, draw $\text{mtry} \le p$ random split candidates. Recommended values:
+  \begin{itemize}
+    \item Classification: $\lfloor \sqrt{p} \rfloor$
+    \item Regression: $\lfloor p/3 \rfloor$
+  \end{itemize}
+\end{itemize}
+\end{vbframe}
+
+% \begin{Random Forest Algorithm}
+%   \begin{algorithm}[H]
+%   \caption*{Random Forest algorithm}
+%   \begin{algorithmic}[1]
+%   \State {\bf Input: }A dataset $\D$ of $n$ observations, number $M$ of trees
+%   in the forest, number $\texttt{mtry}$ of variables to draw for each split
+%   \For {$m = 1 \to M$}
+%   \State Draw a bootstrap sample $\D^{[m]}$ from $\D$
+%   \State Grow tree $\blm$ using $\D^{[m]}$
+%   \State For each split only consider $\texttt{mtry}$ randomly selected features
+%   \State Grow tree without early stopping or pruning
+% \EndFor
+% \State Aggregate the predictions of the $M$ estimators (via averaging or majority voting), to predict on new data.
+% \end{algorithmic}
+% \end{algorithm}
+% \end{vbframe}
+
+\begin{vbframe}{Effect of ensemble size}
+With 1 Tree on Iris
+<<echo=FALSE, fig.height= 5.5, fig.align="center">>=
+plotLearnerPrediction("classif.randomForest", iris.task, cv = 0, ntree = 1)
+@
+
+
+\framebreak
+With 10 Trees on Iris
+
+<<echo=FALSE, fig.height= 5.5, fig.align="center">>=
+plotLearnerPrediction("classif.randomForest", iris.task, cv = 0, ntree = 10)
+@
+
+\framebreak
+With 500 Trees on Iris
+
+<<echo=FALSE, fig.height= 5.5, fig.align="center">>=
+plotLearnerPrediction("classif.randomForest", iris.task, cv = 0, ntree = 500)
+@
+\end{vbframe}
+
+\begin{vbframe}{Out-of-Bag Error Estimate}
+With the RF it is possible to obtain unbiased estimates of generalization error directly
+during training:
+
+<<echo=FALSE, fig.height=4.5, message=FALSE, warning=FALSE>>=
+library(tidyr)
+library(kernlab)
+
+data(spam)
+model = randomForest(type ~., data=spam, ntree=150, proximity=TRUE)
+# layout(matrix(c(1,2),nrow=1), width=c(4,1))
+# par(mar=c(5,4,4,0)) #No margin on the right side
+# plot(model, log="y", lwd = 2, main = NULL)
+# par(mar=c(5,0,4,2)) #No margin on the left side
+# plot(c(0,1),type="n", axes=F, xlab="", ylab="")
+# legend("top", colnames(model$err.rate),col=1:4,cex=0.8,fill=1:4)
+
+data.frame(model$err.rate, iter = seq_len(nrow(model$err.rate))) %>%
+  gather(key = "error.type", value = "error.measured", -iter) %>%
+  ggplot(mapping = aes(x = iter, y = error.measured, color = error.type)) +
+  geom_line() +
+  xlab("Number of Trees") +
+  ylab("MCE") +
+  labs(color = "")
+@
+
+\framebreak
+
+\begin{center}
+% FIGURE SOURCE: No source
+\includegraphics[width=0.65\textwidth]{figure_man/rF_oob_error.png}
+\end{center}
+
+\begin{itemize}
+  \item OOB size: $P(\text{not drawn}) = \left(1 - \frac{1}{n}\right)^n \ \stackrel{n \to \infty}{\longrightarrow} \ \frac{1}{e} \approx 0.37$
+  \item Predict all x with trees that didn't see it, average error
+  \item Similar to 3-CV, can be used for a quick model selection
+\end{itemize}
+
+
+\end{vbframe}
+
+
+
+
+% \begin{figure}
+% <<rf-friedman-plot1, echo=FALSE, message=FALSE, warning=FALSE, fig.height=4.5>>=
+% lrn = makeLearner("regr.randomForest", predict.type = "response")
+% # remove this values from title
+% lrn$par.vals$se.boot = NULL
+% lrn$par.vals$ntree.for.se = NULL
+% lrn2 = makeLearner("classif.randomForest")
+% # remove this values from title
+% lrn2$par.vals$se.boot = NULL
+% lrn2$par.vals$ntree.for.se = NULL
+% task = convertMLBenchObjToTask("mlbench.friedman1", n = 500, sd = 0.1)
+% plotLearnerPrediction(lrn, task, cv = 0, ntree = 1) +
+%   scale_f() + scale_c() +
+%   labs(caption = "M = 1")
+% @
+% \caption{randomForest trained on the \enquote{friedman1} regression task
+% from the \pkg{mlbench} \pkg{R}-package with increasing number of trees}
+% \end{figure}
+
+
+
+% <<rf-oob-error-plot, echo=FALSE, out.height = '.8\\textheight'>>=
+% mod = train(lrn, task)$learner.model
+% plot(mod, main = "")
+% @
+% OOB error for different number of trees for regression forest example.
+
+
+\endlecture
