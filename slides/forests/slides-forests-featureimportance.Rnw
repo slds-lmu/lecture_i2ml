@@ -27,12 +27,32 @@ library(smoof)
 
 \begin{itemize}
   \item Single trees are highly interpretable
-  \item Random Forests as combinations of trees loose this feature
-  \item Contributions of features to model are difficult to evaluate
+  \item Random Forests as combinations of trees lose this feature
+  \item Contributions of the different features to the model are difficult to evaluate
   \item Way out: variable importance measures
 \end{itemize}
+
+
+\framebreak
+
+\begin{algorithm}[H]
+  \small
+  \caption*{Measure based on improvement in split criterion}
+  \begin{algorithmic}[0]
+    \For{features $x_j$, $j = 1$ to $p$}
+    \For{tree base learners $\blmh$, $m = 1$ to $M$}
+    \State {Find all nodes $\Np$ in $\blmh$ that use $x_j$.} 
+    \State {Compute improvement in splitting criterion for each.}
+    \State {Sum these up.}
+    \EndFor
+    \State {Sum up the accumulated improvement over all trees.}
+    \State {This is the feature importance for $x_j$.}
+    \EndFor
+  \end{algorithmic}
+\end{algorithm}
+\vskip -2em
 \begin{figure}
-<<size="footnotesize", fig.height=3.5>>=
+<<size="footnotesize", fig.height=2.6>>=
 model = randomForest(Species ~ ., data = iris, importance = TRUE)
 randomForest::varImpPlot(model, main = "")
 @
@@ -44,7 +64,7 @@ randomForest::varImpPlot(model, main = "")
 \begin{algorithm}[H]
   \small
   \caption*{Measure based on permutations of OOB observations}
-  \begin{algorithmic}[1]
+  \begin{algorithmic}[0]
     \State While growing tree, pass down OOB observations and record predictive accuracy.
     \State Permute OOB observations of $j$-th variable.
     \State Pass down the permuted OOB observations and evaluate predictive accuracy again.
@@ -52,16 +72,6 @@ randomForest::varImpPlot(model, main = "")
   is used as a measure for the importance of the $j$-th variable.
   \end{algorithmic}
 \end{algorithm}
-
-\begin{algorithm}[H]
-  \small
-  \caption*{Measure based on improvement in split criterion}
-  \begin{algorithmic}[1]
-    \State At each split in tree $\blmh$ the improvement in the split criterion is attributed as variable importance measure for the splitting variable.
-    \State For each variable, this improvement is accumulated over all trees for the importance measure.
-  \end{algorithmic}
-\end{algorithm}
-
 
 % \framebreak
 
@@ -96,118 +106,5 @@ randomForest::varImpPlot(model, main = "")
 \includegraphics[width = 10.3cm]{figure_man/rF_varImp_permutation.png}
 \end{center}
 \end{vbframe}
-
-% \begin{vbframe}{Variable importance}
-
-% <<size="footnotesize", fig.height=3, eval = FALSE>>=
-% v = generateFilterValuesData(iris.task,
-  % method = c("randomForest.importance", "cforest.importance"))
-% plotFilterValues(v)
-% @
-% \end{vbframe}
-
-% \begin{vbframe}{Random Forest: Proximities}
-% \begin{itemize}
-%   \item the "closeness" or "nearness" between pairs of cases.
-% \item Algorithm
-% \begin{itemize}
-% \item After a tree is grown, put all of the data down the tree.
-% \item If cases $x_1$ and $x_2$ are in the same terminal node through one tree increase their proximity by one.
-% \item At the end of the run of all trees, normalize the proximities by dividing by the number of trees.
-% \end{itemize}
-% \item The proximities originally form a $N \times N$ matrix.
-% \item Proximities are used in replacing missing data, locating outliers, and producing illuminating low-dimensional views of the data.
-
-% \end{itemize}
-% \end{vbframe}
-
-\begin{vbframe}{Random Forest: Advantages}
-
-\begin{itemize}
-\item Bagging is easy to implement
-  \item Can be applied to basically any model
-  \item All advantages of trees propagate to the RF, especially w.r.t. preprocessing
-  \item Easy to parallelize
-  \item Often works well (enough)
-  \item Integrated variable importance
-  \item Integrated estimation of OOB error
-  \item Can work on high-dimensional data
-  \item Often not much tuning necessary
-\end{itemize}
-
-\end{vbframe}
-
-\begin{vbframe}{Random Forest: Disadvantages}
-
-\begin{itemize}
-  \item Often suboptimal for regression
-  \item Same extrapolation problem as for trees
-  \item Harder to interpret than trees, but many extra tools are nowadays
-    available for interpreting RFs
-  \item Does not really optimize loss aggressively in comparison to boosting
-  \item Implementations sometimes memory-hungry
-  \item Prediction can be (slightly) slower, as it is an ensemble
-\end{itemize}
-
-\end{vbframe}
-
-\begin{vbframe}{Benchmark: Random Forest vs. (bagged) CART vs. (bagged) k-NN}
-
-  \begin{itemize}
-    \item Goal: Compare performance of random forest against (bagged) stable and (bagged) unstable methods
-    \item Algorithms:
-    \begin{itemize}
-      \item classification tree (CART, implemented in \code{rpart}, \code{max.depth}: 30, \code{min.split}: 20, \code{cp}: 0.01)
-      \item bagged classification tree using 50 bagging iterations (\code{bagged.rpart})
-      \item k-nearest neighbors (k-NN, implemented in \code{kknn}, $k=7$)
-      \item bagged k-nearest neighbors using 50 bagging iterations (\code{bagged.knn})
-      \item random forest with 50 trees (implemented in \code{randomForest})
-    \end{itemize}
-    \item Method to evaluate performance: 10-fold cross-validation
-    \item Performance measure: mean missclassification error on test sets
-    \end{itemize}
-
-    \framebreak
-
-    \begin{itemize}
-    \item Datasets from \pkg{mlbench}:
-    \end{itemize}
-
-\begin{table}
-\footnotesize
-\begin{tabular}{p{1.5cm}p{2cm}p{0.5cm}p{0.5cm}p{5cm}}
-Name & Kind of data &  n & p & Task\\
-\hline
-Glass & Glass identification data & 214 & 10 & Predict the type of glass (6 levels) on the basis of the chemical analysis of the glasses represented by the 10 features\\
-Ionosphere & Radar data & 351 & 35 & Predict whether the radar returns show evidence of some type of structure in the ionosphere (\enquote{good}) or not (\enquote{bad}) \\
-Sonar & Sonar data & 208 & 61 & Discriminate between sonar signals bounced off a metal cylinder (\enquote{M}) and those bounced off a cylindrical rock (\enquote{R})\\
-Waveform & Artificial data & 100 & 21 & Simulated 3-class problem which is considered to be a difficult pattern recognition problem. Each class is generated by the waveform generator.\\
-\hline
-\end{tabular}
-\end{table}
-
-\framebreak
-
-% FIGURE SOURCE: No source
-\begin{center}\includegraphics[width=0.95\textwidth]{figure_man/bm_stable_vs_unstable.pdf}\end{center}{}
-
-%\framebreak
-
-\end{vbframe}
-
-\begin{vbframe}{Benchmark: Random Forest vs. (bagged) CART vs. (bagged) k-NN}
-
-  Bagging k-NN does not improve performance because:
-
-  \begin{itemize}
-    \item k-NN is stable w.r.t. perturbations
-    \item In a 2-class problem, nearest neighbor based classification only changes under bagging if both
-    \begin{itemize}
-    \item the nearest neighbor in the learning set is \textbf{not} in at least half of the bootstrap samples, but the probability that any given observation is in the bootstrap sample is 63\% which is greater than 50\%,
-    \item and, simultaneously, the \emph{new} nearest neighbor(s) all have a different label than the missing nearest neighbor in those bootstrap samples, which is unlikely for most regions of $\Xspace \times \Yspace$.
-    \end{itemize}
-\end{itemize}
-\end{vbframe}
-
 
 \endlecture
