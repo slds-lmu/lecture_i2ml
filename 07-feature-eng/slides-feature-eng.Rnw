@@ -1,0 +1,1484 @@
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../style/preamble.Rnw")
+@
+% Load all R packages and set up knitr
+<<setup-r, child="../style/setup.Rnw", include = FALSE>>=
+@
+
+\lecturechapter{Feature Engineering}
+\lecture{Introduction to Machine Learning}
+
+<<include=FALSE>>=
+runifCirc <- function(n, radius = 1, d = 2)
+  t(sapply(seq_len(n), function(i) HI::rballunif(d, radius)))
+@
+\sloppy
+
+\section{Introduction}
+
+\begin{vbframe}{Machine Learning Workflow}
+\begin{center}
+\includegraphics[width = 11cm]{figure_man/ml-workflow-big.png}
+\end{center}
+\end{vbframe}
+
+\begin{vbframe}{Machine Learning Pipelines}
+\begin{center}
+\includegraphics[width = 11cm]{figure_man/automl2.png}
+\end{center}
+Choose pipeline structure and optimize pipeline parameters w.r.t. the estimated prediction error, on an independent test set, or measured by cross-validation.
+\end{vbframe}
+
+\begin{vbframe}{Important types of Feature Engineering}
+
+Feature engineering is on the intersection of \textbf{data cleaning}, \textbf{feature creation} and \textbf{feature selection}.
+\medskip
+
+The goal is to solve common difficulties in data science projects, like
+
+\begin{itemize}
+\item skewed/ \textit{weird} feature distributions,
+\item (high cardinality) categorical features,
+\item functional (temporal) features,
+\item missing observations,
+\item high dimensional data,
+\item ...
+\end{itemize}
+
+and \textbf{improve model performance}.
+\end{vbframe}
+
+\begin{vbframe}{Why Feature Engineering is Important}
+<<echo=FALSE, message = FALSE, fig.height=4.5>>=
+library(ggplot2)
+d = data.frame(
+  Method = factor(1:4, labels = c("Linear Regression", "Gradient Boosting", "Linear Regression w. Feat. Eng.", "Gradient Boosting w. Feat. Eng.")),
+  Error = c(25.5, 10, 11, 9.8)
+)
+ggplot(data = d) + geom_bar(aes(x = Method, y = Error), stat = "identity") + theme_minimal() + theme(axis.text.x = element_text(angle = 15, hjust = 1))
+@
+
+Choice between a simple \textbf{interpretable} model with feature engineering or a complex model without.
+\end{vbframe}
+
+\begin{vbframe}{Feature Engineering and Deep Learning}
+One argument for deep learning is often the idea of \enquote{automatic feature engineering}, i.e., that no further preprocessing steps are necessary.
+\medskip
+
+\textbf{This is mainly true for special types of data like}
+
+\begin{itemize}
+\item Images
+\item Texts
+\item Curves/Sequences
+\end{itemize}
+Many feature engineering problems for regular \textbf{tabular} data are not solved by deep learning.
+\medskip
+
+Furthermore, choosing the architecture and learning hyperparameters poses its own new challenges.
+\end{vbframe}
+
+\section{Feature/Target Transformation}
+\begin{vbframe}{Target Transformation}
+
+Sometimes, using the raw target or features is not enough to build an adequate model.
+For example, the linear model requires a normally distributed target variable.
+But the house prices do not seems to be normal distributed.
+A linear model trained on that target overestimates the target variable:
+\vspace{+.4cm}
+
+<<echo=FALSE, message = FALSE, fig.width=8, fig.height=3.5>>=
+library(mlr)
+library(mlrCPO)
+library(ggplot2)
+library(dplyr)
+theme_set(theme_minimal())
+root = rprojroot::find_root(rprojroot::is_git_root)
+#ap = adjust_path(getwd())
+data = readr::read_csv(paste0(root, "/data/ames_housing_extended.csv"))
+data = data[, ! grepl(pattern = "energy_t", x = names(data))]
+
+data_new = data
+names(data_new) = make.names(names(data_new))
+data_new = data_new %>%
+  dplyr::select(-X1, -Fence, -Pool.QC, -Misc.Feature, -Alley) %>%
+  select_if(is.numeric) %>%
+  na.omit()
+
+df_plot = data.frame(x = data_new$SalePrice)
+
+gg1_dist = ggplot(df_plot, aes(x)) +
+  geom_histogram(aes(y = stat(density)), color = "white", bins = 40L) +
+  stat_function(fun = dnorm, col = "red",
+    args = list(mean = mean(df_plot$x), sd = sd(df_plot$x))) +
+  xlab("Sale Price") +
+  ylab("Density")
+
+df_plot = data.frame(x = log(data_new$SalePrice))
+
+gg2_dist = ggplot(df_plot, aes(x)) +
+  geom_histogram(aes(y = stat(density)), color = "white", bins = 40L) +
+  stat_function(fun = dnorm, col = "red", args = list(mean = mean(df_plot$x), sd = sd(df_plot$x))) +
+  xlab("Log Sale Price") +
+  ylab("Density")
+
+task = removeConstantFeatures(makeRegrTask(id = "Ames Housing", data = data_new, target = "SalePrice"))
+lrn = makeLearner("regr.lm")
+lrn$id = "No Trafo"
+lrn_loglm = cpoLogTrafoRegr() %>>% makeLearner("regr.lm")
+lrn_loglm$id = "Log Trafo"
+mod = train(learner = "regr.lm", task = task)
+mod_log = train(learner = lrn_loglm, task = task)
+target = data_new$SalePrice
+
+pred_mod = predict(mod, task)$data$response
+pred_mod_log = predict(mod_log, task)$data$response
+df_plot = data.frame(target, pred_mod, pred_mod_log)
+
+gg1_pred = ggplot(data = df_plot, aes(x = target, y = pred_mod)) +
+  geom_point(alpha = 0.2) +
+  geom_abline(intercept = 0, slope = 1, color = "red") +
+  xlab("Sale Price") +
+  ylab("Predicted Sale Price")
+
+gg2_pred = ggplot(data = df_plot, aes(x = target, y = pred_mod_log)) +
+  geom_point(alpha = 0.2) +
+  geom_abline(intercept = 0, slope = 1, color = "red") +
+  xlab("Sale Price") +
+  ylab("exp(Predicted Log Sale Price)")
+
+gridExtra::grid.arrange(gg1_dist, gg1_pred, ncol = 2)
+
+@
+\framebreak
+
+A common trick for skewed distributions is to model the log-transformation:
+\vspace{+.4cm}
+<<echo=FALSE, message = FALSE, fig.width=8, fig.height=3.5>>=
+gridExtra::grid.arrange(gg2_dist, gg2_pred, ncol = 2)
+@
+\framebreak
+
+Benchmarking the logarithmic transformation against the raw data yields a significant improvement of the mean absolute error:
+\vspace{+.4cm}
+<<echo=FALSE, message = FALSE, fig.width=8, fig.height=3.5>>=
+set.seed(31415)
+rdesc = makeResampleInstance(desc = cv10, task = task)
+bmr = benchmark(learners = list(lrn, lrn_loglm), tasks = task, resamplings = rdesc, measures = mae)
+plotBMRBoxplots(bmr, pretty.names = FALSE)
+@
+\framebreak
+
+Nevertheless, there are also methods that are able to deal with skew data:
+\vspace{+.4cm}
+<<echo=FALSE, message = FALSE, fig.width=8, fig.height=3.5>>=
+lrn_ranger = makeLearner("regr.ranger", num.trees = 200L, mtry = 3L)
+lrn_ranger$id = "RF No Trafo"
+lrn_logranger = cpoLogTrafoRegr() %>>% lrn_ranger
+lrn_logranger$id = "RF Log Trafo"
+bmr = benchmark(learners = list(lrn, lrn_loglm, lrn_ranger, lrn_logranger), tasks = task, resamplings = rdesc, measures = mae)
+plotBMRBoxplots(bmr, pretty.names = FALSE)
+@
+\end{vbframe}
+
+\begin{vbframe}{Feature Transformations}
+\begin{itemize}
+\item \textbf{Normalization}: The feature is transformed to have a mean of 0 and standard deviation of 1
+    $$
+    z^{(i)} = \frac{x^{(i)} - \operatorname{mean}(x)}{\operatorname{sd}(x)}
+    $$
+
+\item \textbf{Box-Cox Transformation}: Stabilizes variance, makes the data more normal distribution-like
+    $$
+    z^{(i)} = \left\{\begin{array}{cc}
+    \frac{\left(x^{(i)}\right)^\lambda - 1}{\lambda} & \ \ \text{if} \ \ \lambda \neq 0 \\
+    \log(x^{(i)}) & \ \ \text{if} \ \ \lambda = 0 \\
+    \end{array}\right.
+    $$
+\end{itemize}
+\framebreak
+
+To illustrate the effect of transforming the features we evaluate a k-NN learner without scaling, with normalization, and with a Box-Cox transformation:
+\vspace{+.4cm}
+<<echo=FALSE, message = FALSE, fig.width=8, fig.height=3.5>>=
+root = rprojroot::find_root(rprojroot::is_git_root)
+#ap = adjust_path(getwd())
+data = readr::read_csv(paste0(root, "/data/ames_housing_extended.csv"))
+data = data[, ! grepl(pattern = "energy_t", x = names(data))]
+
+data_new = data
+names(data_new) = make.names(names(data_new))
+task = data_new %>%
+  dplyr::select(-X1, -Fence, -Pool.QC, -Misc.Feature, -Alley) %>%
+  select_if(is.numeric) %>%
+  na.omit() %>%
+  makeRegrTask(id = "Ames Housing", data = ., target = "SalePrice") %>%
+  removeConstantFeatures()
+
+lrn_kknn_no_scale = makeLearner("regr.kknn", scale = FALSE)
+lrn_kknn_no_scale$id = "No Scaling"
+lrn_kknn_scale = mlrCPO::cpoScale() %>>% makeLearner("regr.kknn", scale = FALSE)
+lrn_kknn_scale$id = "Normalize Features"
+lrn_kknn_boxcox = makePreprocWrapperCaret(lrn_kknn_no_scale, ppc.BoxCox = TRUE)
+lrn_kknn_boxcox$id = "Box-Cox Trafo"
+
+set.seed(31415)
+bmr = benchmark(learners = list(lrn_kknn_no_scale, lrn_kknn_scale, lrn_kknn_boxcox),
+  tasks = task, resamplings = cv10, measures = mae)
+
+plotBMRBoxplots(bmr, pretty.names = FALSE)
+@
+\end{vbframe}
+
+\begin{vbframe}{Other Common Transformations}
+\vspace{+1cm}
+\begin{itemize}
+\item Polynomials: $x_j \longrightarrow x_j, x_j^2, x_j^3, ...$
+
+\item Interactions: $x_j, x_k \longrightarrow x_j, x_k, x_j \times x_k$
+
+\item Basis expansions: BSplines, TPB, ...
+\end{itemize}
+\vspace{+.5cm}
+
+These transformations are used to improve simple model, e.g. linear regression, and most likely will \textbf{not} improve complex machine learning models.
+\end{vbframe}
+
+\begin{vbframe}{Features Extraction vs. Selection}
+\begin{center}
+\includegraphics[width=\textwidth, trim=1cm 3cm 2cm 2cm]{figure_man/feat_extr_vs_selection.pdf}
+\end{center}
+
+Feature extraction / dimensionality reduction:
+\begin{itemize}
+\item PCA, ICA, autoencoder, ...
+\end{itemize}
+
+Feature selection:
+
+\begin{itemize}
+\item Filter, stepwise selection, model-based selection, ...
+\end{itemize}
+\end{vbframe}
+
+
+\section{Categorical Features}
+\begin{vbframe}{Categorical Features}
+
+A categorical feature is a feature with a finite number of discrete (unordered) \textit{levels} $c_1, \dots, c_k$, e.g.,
+\textit{House.Style=2Story}$\stackrel{?}{>}$\textit{SFoyer}.
+
+\begin{itemize}
+\item Categorical features are very common in practical applications.
+
+\item Except for few machine learning algorithms like tree-based methods, categorical features have to be encoded in a preprocessing step.
+\end{itemize}
+\medskip
+
+\textit{Encoding} is the creation of a fully numeric representation from a categorical feature.
+\begin{itemize}
+\item Choosing the optimal encoding can be a challenge, especially when the number of levels $k$ becomes very large.
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{One-Hot Encoding}
+\begin{itemize}
+\item Convert each categorical feature to $k$ binary ($1/0$) features, where $k$ is the number of unique levels.
+\item One-Hot encoding does not loose any information of the feature and many models can correctly handle binary features.
+\item Given a categorical feature $x_j$ with levels $c_1,\dots, c_k$, the new features are
+\end{itemize}
+$$
+  \tilde x_{j,l} = \I(x_j)_{c} \quad c = c_1,\dots,c_k.
+$$
+\textbf{One-Hot encoding is often the go-to choice for the encoding of categorical features!}
+\end{vbframe}
+
+\begin{vbframe}{One-Hot Encoding: Example}
+Original slice of the dataset:
+\vspace{+.4cm}
+<<echo=FALSE, message = FALSE>>=
+library(mlr)
+
+root = rprojroot::find_root(rprojroot::is_git_root)
+data = read.csv(paste0(root, "/data/ames_housing_extended.csv"))
+
+data %>%
+  select(SalePrice, Central.Air, Bldg.Type) %>%
+  slice(5:9) %>%
+  knitr::kable(format = 'latex') %>%
+  kableExtra::kable_styling(latex_options = 'HOLD_position', font_size = 7)
+@
+
+One-Hot Encoded:
+\vspace{+.4cm}
+<<echo=FALSE>>=
+data = read.csv(paste0(root, "/data/ames_housing_extended.csv"))
+data %>%
+  select(SalePrice, Central.Air, Bldg.Type) %>%
+  slice(5:9) %>%
+  createDummyFeatures(target = "SalePrice") %>%
+  knitr::kable(format = 'latex') %>%
+  kableExtra::kable_styling(latex_options = 'HOLD_position', font_size = 4)
+@
+\end{vbframe}
+
+\begin{vbframe}{Dummy Encoding}
+\begin{itemize}
+\item Dummy encoding is very similar to one-hot encoding with the difference that only $k-1$ binary features are created.
+\item A \textit{reference} category is defined as all binary features being $0$, i.e.,
+
+$$
+\tilde x_{j,1} = 0, \dots, \tilde x_{j,k-1} = 0.
+$$
+
+\item Each feature $\tilde x_{j,1}$ represents the \textit{deviation} from the reference category.
+\item While using a reference category is required for stability and interpretability in statistical models like (generalized) linear models, it is not necessary, rarely done in ML and can even have negative influence on the performance.
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Ames Housing - One-Hot vs. Dummy Encoding}
+
+% <<echo=FALSE, message = FALSE, fig.height = 4.5>>=
+% library(tidyverse)
+% library(mlr)
+% library(mlrCPO)
+% 
+% root = rprojroot::find_root(rprojroot::is_git_root)
+% data = read.csv(paste0(root, "/data/ames_housing_extended.csv"))
+% 
+% task = data %>%
+%   select(SalePrice, MS.Zoning, Street, Lot.Shape, Land.Contour, Bldg.Type) %>%
+%   makeRegrTask(id = "None", target = "SalePrice") %>>% cpoFixFactors()
+%   
+% task1 = createDummyFeatures(task, method = "1-of-n")
+% task1$task.desc$id = "One-Hot"
+% 
+% task2 = createDummyFeatures(task, method = "reference")
+% task2$task.desc$id = "Dummy"
+% 
+% lrns =  list(
+%   makeLearner(id = "Linear Regression", "regr.lm"),
+%   makeLearner(id = "Random Forest", "regr.ranger"))
+%   
+% set.seed(1)
+% rin = makeResampleInstance(cv10, task1)
+% 
+% res = benchmark(lrns, list(task1, task2, task), rin, mae)
+% as.data.frame(res) %>%
+%   filter(task.id != "None" | learner.id != "Linear Regression") %>%
+%   ggplot(aes(y = mae, x = task.id)) + 
+%   geom_boxplot() + 
+%   facet_wrap(~learner.id) +
+%   theme_minimal() +
+%   theme(axis.text.x = element_text(angle = 20, hjust = 1)) +
+%   ylab("Mean Absolute Error") +
+%   xlab("") + ggtitle("Ames House Price Prediction")
+%  @
+
+\begin{itemize}
+\item Result of linear model depends on actual implementation, e.g., R's `lm()` produces a \textit{rank-deficient fit} warning and recovers by dropping the intercept.
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{One-Hot Encoding: Limitations}
+\begin{itemize}
+\item One-Hot encoding can become extremely inefficient when number of levels becomes too large, as one additional feature is introduced for every level.
+\item Assume a categorical feature with $k=4000$ levels, by using dummy encoding 4000 new features are added to the dataset.
+\item These additional features are very sparse.
+\item Handling such \textit{high-cardinality categorical features} is a challenge, possible solutions are
+\begin{itemize}
+
+    \item specialized methods such as \textit{factorization machines},
+    \item \textbf{target/impact encoding},
+    \item clustering feature levels or
+    \item feature hashing.
+\end{itemize}
+\end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{Target Encoding}
+\begin{itemize}
+\item Developed to solve limitations of dummy encoding for high cardinality categorical features.
+\end{itemize}
+\medskip
+
+\textbf{Goal}: Each categorical feature $\xb$ should be encoded in a single numeric feature $\tilde \xb$.
+\medskip
+
+\begin{itemize}
+\item Basic definition for regression by Micci-Barreca (2001):
+\end{itemize}
+
+$$
+  \tilde \xb = \frac{\sum_{i:\xb=l}y^{(i)}}{N_l}, \quad l=1,\dots,k,
+$$
+
+where $N_l$ is the number of observations of the $l$'th level of feature $\xb$.
+\end{vbframe}
+
+\begin{vbframe}{Target Encoding - Example}
+\vspace{+.4cm}
+<<echo=FALSE, message = FALSE, fig.height = 4.5>>=
+library(dplyr)
+data = read.csv(paste0(root, "/data/ames_housing_extended.csv"))
+
+data %>%
+  filter(!is.na(Foundation)) %>%
+  select(Foundation) %>%
+  group_by(Foundation) %>%
+  tally() %>%
+  t() %>%
+  knitr::kable(format = 'latex') %>%
+  kableExtra::kable_styling(latex_options = 'HOLD_position', font_size = 7)
+@
+\begin{itemize}
+\item Encoding for wooden foundation:
+\end{itemize}
+\vspace{+.4cm}
+<<echo=FALSE, message = FALSE, fig.height = 4.5>>=
+data %>%
+  mutate(house.id  = row_number()) %>%
+  select(house.id, SalePrice, Foundation) %>%
+  filter(Foundation == "Wood") %>%
+  t() %>%
+  knitr::kable(format = 'latex') %>%
+  kableExtra::kable_styling(latex_options = 'HOLD_position', font_size = 7)
+@
+\vspace{+.4cm}
+$$
+  \frac{164000 + 145500 + 143000 + 250000 + 202000}{5} = 180900
+$$
+\framebreak
+
+\begin{itemize}
+\item For all foundation types:
+\end{itemize}
+\vspace{+.4cm}
+<<echo=FALSE, message = FALSE, fig.height = 4.5>>=
+data %>%
+  select(SalePrice, Foundation) %>%
+  group_by(Foundation) %>%
+  dplyr::summarize(`Foundation(enc)` = mean(SalePrice, na.rm = TRUE)) %>%
+  t() %>%
+  knitr::kable(format = 'latex') %>%
+  kableExtra::kable_styling(latex_options = 'HOLD_position', font_size = 7)
+@
+\vspace{+.4cm}
+This mapping is calculated on training data and later applied to test data.
+\end{vbframe}
+
+\begin{vbframe}{Target Encoding for Classification}
+\begin{itemize}
+\item Extending encoding to binary classification is straightforward, instead of the average target value the relative frequency of the positive class is used
+\item Multi-class classification extends this by creating one feature for each target class in the same way as binary classification.
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Target Encoding - Issues}
+\textbf{Problem:} Target encoding can assign extreme values to rarely occurring levels.
+\textbf{Solution:} Encoding as weighted sum between global average target value and encoding value of level.
+
+$$
+  \tilde \xb = \lambda_l\frac{\sum_{i:\xb=l}y^{(i)}}{N_l} + (1-\lambda_l)\frac{\sum_{i=1}^n y^{(i)}}{n}, \quad l=1,\dots,k.
+$$
+
+\begin{itemize}
+\item $\lambda_l$ can be parameterized and tuned, but optimally, tuning must be done for each feature and level separately (most likely infeasible!).
+\item Simple solution: Set $\lambda_l=\frac{N_l}{N_l+\epsilon}$ with regularization parameter $\epsilon$.
+\item This shrinks small levels stronger to the global mean target value than large classes.
+\end{itemize}
+\framebreak
+
+
+\textbf{Problem:} Label leakage! Information of $y^{(i)}$ is used to calculate $\tilde \xb$. This can cause overfitting issues, especially for rarely occurring classes.
+
+\textbf{Solution:} Use internal cross-validation to calculate $\tilde \xb$.
+\vspace{+.4cm}
+
+\begin{itemize}
+\item It is unclear how serious this problem is in practice.
+\item But: calculation of $\tilde \xb$ is very cheap, so it doesn't hurt.
+\item An alternative is to add some noise $\tilde x_j^{(n)} + N(0,\sigma_\epsilon)$ to the encoded samples.
+\end{itemize}
+\end{vbframe}
+
+\section{Functional Features}
+\begin{vbframe}{What is Functional Data}
+\begin{center}
+\includegraphics[height = 5cm]{figure_man/definition.png}
+\end{center}
+
+Functional or Sequence data has a (temporal) order between (some) features.
+\end{vbframe}
+
+\begin{vbframe}{Functional Data: Example - Energy Usage}
+<<echo=FALSE, message = FALSE, fig.height = 5.5>>=
+library(tidyverse)
+library(stringi)
+
+data = read_csv(paste0(root, "/data/ames_housing_extended.csv"))
+set.seed(2)
+
+data %>%
+  select(matches("energy"), X1) %>%
+  sample_n(8) %>%
+  gather("Minute", "Energy_Consumption", -X1) %>%
+  mutate(Minute = as.numeric(stri_replace(Minute, "", fixed = "energy_t"))) %>%
+  ggplot(aes(x = Minute, y = Energy_Consumption, group = X1)) +
+  geom_line() +
+  facet_grid(X1~.) +
+  theme_minimal() +
+  ylab("Energy Consumption") +
+  xlab("Minute of Day")
+@
+\end{vbframe}
+
+\begin{vbframe}{Handling functional features - 3 Ways}
+
+1. Ignore the structure and let the model figure it out.
+\begin{center}
+\includegraphics[width = 10cm]{figure_man/tree.png}
+\end{center}
+
+\framebreak
+
+1. Ignore the structure and let the model figure it out.
+\begin{itemize}
+\item Can be quite difficult for the model to implicitly learn and utilize the structure.
+\item Requires complex models that can model high-level interactions between features, e.g., (boosted) trees.
+\item No \textit{translation invariance}, i.e., structure has to be learned for every position in the timeseries seperately.
+\end{itemize}
+\framebreak
+
+2. Use specialized machine learning algorithms that can handle functional features.
+\begin{center}
+\includegraphics[width = 10cm]{figure_man/custom.png}
+\end{center}
+
+\framebreak
+
+2. Use specialized machine learning algorithms that can handle functional features.
+\begin{itemize}
+\item Extensions of existing algorithms, e.g., functional k-nearest neighbor using \textit{dynamic time warping} as distance metric.
+\item \textit{Theoretical} correct/optimal way to handle functional features.
+\item \textbf{But:} Less flexibility in model choice and (oftentimes) less efficient implementations.
+\end{itemize}
+
+\textbf{Note:} Deep neural networks (both CNNs and RNNs) can be used for functional data. But depending on the overall data structure not always the best choice.
+\framebreak
+
+3. Use feature engineering to extract information from functional structure.
+\begin{center}
+\includegraphics[width = 10cm]{figure_man/extract.png}
+\end{center}
+
+\framebreak
+
+3. Use feature engineering to extract information from functional structure.
+\begin{itemize}
+\item Large number of possible \textit{extractors}, both simple and complex.
+\item Allows application of any standard machine learning algorithms.
+\item Thus, very flexible approach.
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Feature Extraction vor Functional Data}
+Simple descriptive statistics:
+\begin{itemize}
+\item min, max, mean, variance, ...
+\end{itemize}
+\vspace{+.4cm}
+
+More complex transformations:
+\begin{itemize}
+\item Fourier Transformation
+\item Functional Principal Components
+\item Wavelets
+\item Spline Coefficients
+\item ...
+\end{itemize}
+
+\textbf{Problem:} Often unclear which of these techniques to use.
+
+\textbf{Solution:} Extract a large number of features and use feature selection methods, or include extraction strategies in pipeline definition and use tuning strategies (can get quite expensive!)
+\end{vbframe}
+
+\begin{vbframe}{Example - Ames Housing}
+<<echo=FALSE, message = FALSE>>=
+library(tidyverse)
+
+data = read_csv(paste0(root, "/data/ames_housing_extended.csv"))
+
+data %>%
+  mutate(house.id = X1) %>%
+  select(house.id, matches("energy")) %>%
+  gather(name, value, -house.id) %>%
+  group_by(house.id) %>%
+  dplyr::summarize(mean.energy = mean(value, na.rm = TRUE),
+    var.energy = var(value, na.rm = TRUE),
+    max.energy = max(value, na.rm = TRUE)) %>%
+  sample_n(5) %>%
+  mutate("..." = rep("...", times = 5)) %>%
+  knitr::kable(format = 'latex') %>%
+  kableExtra::kable_styling(latex_options = 'HOLD_position', font_size = 7)
+@
+\vspace{+.4cm}
+\begin{itemize}
+\item Some features are easily interpretable and domain knowledge can help to define meaningful extractions.
+\item More complex features, e.g. wavelets, allow to capture more complex structures, but are not interpretable anymore.
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Comparison}
+<<echo=FALSE, message = FALSE>>=
+library(tidyverse)
+library(stringi)
+library(mlr)
+
+data = read_csv(paste0(root, "/data/ames_housing_extended.csv"))
+
+task = data %>%
+  mutate(lot_area = `Lot Area`) %>%
+  select(SalePrice, lot_area , matches("energy")) %>%
+  na.omit %>%
+  makeFunctionalData(fd.features = list("Energy" = 3:ncol(.))) %>%
+  makeRegrTask(" ", data = ., target = "SalePrice")
+feat.methods = list("Energy" = extractFDAWavelets(filter = "haar"))
+lrns = list(
+  makeLearner(id = "Boosted Linear Model", "regr.glmboost"),
+  makeExtractFDAFeatsWrapper(makeLearner("regr.glmboost"), feat.methods = feat.methods),
+  makeLearner(id = "Boosted Functional Linear Model", "regr.FDboost")
+)
+
+lrns[[2]]$id = "Boosted Linear Model with Wavelets"
+if (FALSE) {
+  set.seed(12)
+  b1 = benchmark(lrns, task, cv10, measure = mae, keep.pred = FALSE, models = FALSE)
+  saveRDS(b1, file = "benchmark_cache/ames.rds")
+} else {
+  b1 = readRDS("benchmark_cache/ames.rds")
+}
+
+plotBMRBoxplots(b1, pretty.names = FALSE) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 20, hjust = 1)) +
+  ylab("Mean Absolute Error") +
+  xlab("") + ggtitle("House Price Prediction")
+@
+\end{vbframe}
+
+\section{Imputation}
+\begin{vbframe}{Motivating Example}
+\begin{itemize}
+\item Assume each feature in your dataset has 2 \% missing values.
+\item The missing values are randomly distributed over the observations.
+\item How many rows can be used if all observations that contain at least a missing value is dropped?
+\end{itemize}
+\vspace{+.4cm}
+<<echo=FALSE, message = FALSE, fig.width=6, fig.height=3, out.width="0.6\\textwidth">>=
+library(ggplot2)
+n_cols = 200L
+# p = 0.02
+# simDF = function (n_feats, n_cols, p) {
+#   cols = list()
+#   for (i in seq_len(n_cols)) {
+#     cols[[i]] = rnorm(n_feats)
+#     cols[[i]][sample(n_feats, size = n_feats * p, replace = FALSE)] = NA
+#   }
+#   df = do.call(cbind, cols)
+#   return (df)
+# }
+# sim = 50L
+# ratios = numeric(sim)
+# for (i in seq_len(sim)) {
+#   ratios[i] = sum(! complete.cases(simDF(n_feats, n_cols, p))) / n_feats
+# }
+# boxplot(ratios)
+# mean(ratios)
+# 1 - pbinom(q = 0, size = n_cols, p = p)
+df_probs = lapply(c(0.01, 0.02, 0.05, 0.1), FUN = function (p) {
+  n_feats = seq_len(n_cols)
+  na_prob = 1 - pbinom(q = 0, size = n_feats, p = p)
+  return (data.frame(n_feats = n_feats, na_prob = na_prob, prob = p))
+})
+
+df_plots = do.call(rbind, df_probs)
+df_plots$prob = paste0(df_plots$prob * 100, " %")
+
+ggplot(data = df_plots, aes(x = n_feats, y = na_prob, color = prob)) +
+  geom_line() +
+  xlab("Number of Features") +
+  ylab("Percentage of\nNon-Usable Observations") +
+  labs(color = "Percentage of missing\nobservations per\nfeature")
+@
+\vspace{+.4cm}
+With 100 features and 2 \% missing values only 13 \% of our data can be used.
+\end{vbframe}
+
+\begin{vbframe}{Visualizing Missing Values}
+<<echo=FALSE, message = FALSE, warning = FALSE, fig.align="center", out.width="\\textwidth">>=
+library(naniar)
+data = read_csv(paste0(root, "/data/ames_housing_extended.csv")) %>% select(-X1, -matches("energy"))
+vis_miss(data) + theme(axis.text.x = element_text(angle = 90, size = 10))
+@
+\end{vbframe}
+
+\begin{vbframe}{Visualizing Missing Values}
+\begin{itemize}
+\item  Remove observations that contains missing values. \\
+    \textbf{But:} Could lead to a very small dataset.
+
+\item Remove features that contain mostly missing values. \\
+    \textbf{But:} Can lose (important) information.
+
+\item Use models that can handle missing values, e.g., (most) tree-based methods \\
+    \textbf{But:} Restriction in model choice.
+
+\item \textbf{Imputation} \\
+    $\rightarrow$ Replace missing values with \textit{plausible} values.
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Simple Imputation Methods}
+A very simple imputation stretegy is to replace missing values with univariate statistics, e.g.m mean or median, of the feature:
+\begin{center}
+\includegraphics[width = 10cm]{figure_man/fe_imputation_simple.pdf}
+\end{center}
+\framebreak
+
+The statistics used to impute the missing values has to match the type of the feature:
+\begin{itemize}
+\item Numeric features: mean, median, quantiles, mode, ...
+\item Categorical features: mode, ...
+\end{itemize}
+\vspace{+.4cm}
+Alternatively missing values can be encoded with new values
+\begin{itemize}
+\item Numeric features: \text{2*max}, ...
+\item Categorical features: \text{MISS}, ...
+\end{itemize}
+\vspace{+.4cm}
+\textbf{Note:} This is especially useful for tree-based methods, as it allows to separate observations with missing values in a feature.
+\textbf{Note:} Encoding numeric values \textit{out-of-range} for models estimation global feature effects is usually a very bad idea.
+\end{vbframe}
+
+\begin{vbframe}{Disadvantage of constant Imputation}
+By imputing a feature with one value we shift the distribution of that feature towards a single value.
+<<echo=FALSE, fig.align="center", fig.width=6, fig.height=4, out.width="0.7\\textwidth", warnings=FALSE>>=
+# impute_var = "Garage Yr Blt"
+impute_var = "Lot Frontage"
+x = data[[impute_var]]
+y_mean = y_med = x
+y_mean[is.na(y_mean)] = mean(x, na.rm = TRUE)
+y_med[is.na(y_med)] = quantile(x, 0.5, na.rm = TRUE)
+
+df_plot = data.frame(value = c(x, y_mean, y_med), technique = rep(c("No imputation", "Imputing with mean", "Imputing with median"), each = length(x)))
+
+ggplot(data = df_plot, aes(x = value, fill = technique)) +
+  geom_histogram(position = position_dodge(), bins = 40) +
+  # geom_rug(aes(color = technique), alpha = 0.1) +
+  xlab(impute_var) +
+  ylab("Density") +
+  labs(fill = "")
+@
+\end{vbframe}
+
+\begin{vbframe}{Imputation by Sampling}
+A way out of this problem is to sample values to replace each missing observation from
+\vspace{+.4cm}
+
+\begin{itemize}
+\item the empirical distribution or histogram, for a numeric feature.
+\item the relative frequencies of levels, for a categorical feature.
+\end{itemize}
+\vspace{+.4cm}
+
+This ensures that the distribution of the features does not change much.
+\vspace{+.4cm}
+
+To ensure that the information which values are missing is not lost, it is important to add binary indicator features.
+\end{vbframe}
+
+\begin{vbframe}{Benchmark of Simple Imputation}
+To illustrate the effect of imputation on the performance we evaluate a linear model on the Ames housing dataset.
+Evaluation is done with a 10-fold cross-validation:
+\vspace{+.4cm}
+
+<<echo=FALSE, warnings=FALSE, message=FALSE, fig.width=6, fig.height=4, out.width="0.7\\textwidth">>=
+# Code to generate df_plot: figure_data/plot_impute.R
+library(mlr)
+library(ggplot2)
+
+root = rprojroot::find_root(rprojroot::is_git_root)
+# ap = adjust_path(getwd())
+data = readr::read_csv(paste0(root, "/data/ames_housing_extended.csv"))
+data = data[, ! grepl(pattern = "energy_t", x = names(data))]
+
+load("figure_data/plot_impute.rds")
+df_plot = df_plot[! df_plot$technique %in% c("CART", "Random Forest"),]
+
+ggplot(data = df_plot, aes(technique, perf)) +
+  geom_boxplot() +
+  xlab("Imputation Technique") +
+  ylab("MAE")
+@
+\end{vbframe}
+
+\begin{vbframe}{Model-Based Imputation}
+Instead of imputing a single value or sampling values it is desirable to take advantage of structure and correlation between features.
+\begin{center}
+\includegraphics[width = 10cm]{figure_man/fe_imputation_models.pdf}
+\end{center}
+\end{vbframe}
+
+\begin{vbframe}{Model-Based Imputation: Drawbacks}
+\begin{itemize}
+\item Choice of surrogate model has high influence on the imputation:
+\end{itemize}
+\vspace{+.4cm}
+
+<<echo=FALSE, fig.width=4, fig.height=3, out.width="0.4\\textwidth">>=
+set.seed(618)
+x = runif(n = 100, min = 0, max = 10)
+y = 2 + 2 * x * sin(x) + 2 * x + rnorm(100, mean = 0, sd = 2)
+
+mod = lm(y ~ x)
+x_new = c(2, 5, 8, 8.5, 9)
+pred_new = predict(mod, newdata = data.frame(x = x_new))
+
+df_plot = data.frame(x = x, y = y)
+df_new_points = data.frame(x = x_new, y = pred_new)
+
+ggplot() +
+  geom_point(data = df_plot, aes(x = x, y  = y)) +
+  geom_smooth(data = df_plot, aes(x = x, y = y), method = "lm", se = FALSE,
+    color = "red") +
+  geom_point(data = df_new_points, aes(x = x, y = y), color = "red", size = 3) +
+  xlab("Feature used for imputation") +
+  ylab("Feature to impute")
+@
+\begin{itemize}
+\item Surrogate model should handle missing values itself, otherwise imputation \textit{loop} may be necessary.
+\item Surrogate model hyperparameter be tuned and can be different for each feature to impute.
+\end{itemize}
+\end{vbframe}
+
+
+\section{Outliers}
+\begin{vbframe}{Example Linear Model}
+The following data has a clear linear dependency:
+\vspace{+.4cm}
+
+<<echo=FALSE, out.width="\\textwidth", fig.width=8, fig.height=4>>=
+set.seed(31415)
+x = runif(n = 100, min = 0, max = 10)
+y = 2 * 0.2 * x + rnorm(100, 0, 1)
+
+df_outlier_feat = df_outlier_target = df_outlier = data.frame(x = x, y = y)
+
+df_outlier$outlier = "Wthout outliers"
+gg1 = ggplot(df_outlier_feat, aes(x = x , y = y)) +
+  geom_point() +
+  xlab("Feature") +
+  ylab("Target")
+
+df_outlier_target$y[2] = 500
+
+gg2 = ggplot(df_outlier_target, aes(x = x, y = y)) +
+  geom_point() +
+  xlab("Feature") +
+  ylab("Target")
+
+gridExtra::grid.arrange(gg1, ncol = 2)
+@
+\framebreak
+
+Adding a single outlier does not change the linear dependency, there is just one wrong value:
+\vspace{+.4cm}
+
+<<echo=FALSE, out.width="\\textwidth", fig.width=8, fig.height=4>>=
+gridExtra::grid.arrange(gg1, gg2, ncol = 2)
+@
+\vspace{+.2cm}
+
+\textbf{But} how does this single value affect a model trained on that data?
+\end{vbframe}
+
+\begin{vbframe}{Example Linear Model: Outlier in Target}
+\vspace{+.4cm}
+
+<<echo=FALSE, out.width="\\textwidth", fig.width=8, fig.height=4>>=
+df_outlier_target$y[2] = 500
+
+df_outlier_target$outlier = "With outliers"
+gg1 = ggplot(rbind(df_outlier, df_outlier_target), aes(x = x , y = y, color = outlier)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  xlab("Feature") +
+  ylab("Target") +
+  ggtitle("Outlier in the Target") +
+  labs(color = "")
+
+gg2 = ggplot() +
+  geom_point(data = df_outlier, aes(x = x, y = y)) +
+  geom_smooth(data = rbind(df_outlier, df_outlier_target), aes(x = x , y = y, color = outlier), method = "lm", se = FALSE) +
+  xlab("Feature") +
+  ylab("Target") +
+  ggtitle("") +
+  labs(color = "") +
+  coord_cartesian(ylim = c(-2, 8))
+
+gridExtra::grid.arrange(gg1, gg2, ncol = 2)
+@
+\end{vbframe}
+
+\begin{vbframe}{Example Linear Model: Outlier in Feature}
+One observations with a feature value of -999 (could be a wrongly coded missing value).
+\vspace{+.4cm}
+
+<<echo=FALSE, out.width="\\textwidth", fig.width=8, fig.height=4>>=
+df_outlier_feat$x[2] = -999
+
+df_outlier_feat$outlier = "With outliers"
+gg1 = ggplot(rbind(df_outlier, df_outlier_feat), aes(x = x , y = y, color = outlier)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  xlab("Feature") +
+  ylab("Target") +
+  ggtitle("Outlier in the Feature") +
+  labs(color = "")
+
+gg2 = ggplot() +
+  geom_point(data = df_outlier, aes(x = x, y = y)) +
+  geom_smooth(data = rbind(df_outlier, df_outlier_feat), aes(x = x , y = y, color = outlier), method = "lm", se = FALSE) +
+  xlab("Feature") +
+  ylab("Target") +
+  ggtitle("") +
+  labs(color = "") +
+  coord_cartesian(xlim=c(0, 10))
+
+gridExtra::grid.arrange(gg1, gg2, ncol = 2)
+@
+\end{vbframe}
+
+\begin{vbframe}{Solutions}
+\vspace{+.4cm}
+
+\begin{itemize}
+\item Make the model less \textit{sensitive} regarding outliers \\
+    \textbf{But:} Errors still need to be measured properly.
+\vspace{+.4cm}
+
+\item Remove observations containing outliers \\
+    \textbf{But:} How to detect these outliers?
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Teach a Model to Handle Outliers}
+\vspace{+.4cm}
+
+Most machine learning models are trained by minimizing a loss function $L(y, f)$.
+\vspace{+.4cm}
+
+For example, a linear model is trained by minimizing quadratic errors, i.e., L2-loss.:
+\vspace{+.4cm}
+
+$$
+\hat{\theta} = \argmin_{\theta \in \Theta}\frac{1}{n}\sum\limits_{i = 1}^n L\left(y^{(i)}, f(x^{(i)})\right) = \argmin_{\theta \in \Theta}\frac{1}{n} \sum\limits_{i = 1}^n \left(y^{(i)} - \theta^T x^{(i)}\right)^2
+$$
+\end{vbframe}
+
+\begin{vbframe}{Quadratic Loss}
+The \textbf{Mean Squared Error} averages the squared distances between the target variable $y$ and the predicted target $f(x)$.
+\vspace{+.4cm}
+
+$$
+MSE = \frac{1}{n} \sumin \left(y^{(i)} - f(x^{(i)}) \right)^2
+$$
+\vspace{+.4cm}
+
+Observations with large residuals heavily influence the MSE:
+\medskip
+
+<<echo=FALSE, out.width="0.7\\textwidth", fig.width = 7, fig.height = 3>>=
+source("figure_code/plot_loss.R")
+
+set.seed(31415)
+
+x = 1:5
+y = 2 + 0.5 * x + rnorm(length(x), 0, 1.5)
+data = data.frame(x = x, y = y)
+model = lm(y ~ x)
+
+plotModQuadraticLoss(data = data, model = model, pt_idx = c(1,4))
+@
+\end{vbframe}
+
+\begin{vbframe}{Absolute Loss}
+An alternative is to optimize the \textbf{Mean Absolute Error:}
+\vspace{+.4cm}
+
+$$
+MAE = \frac{1}{n} \sum\limits_{i = 1}^n \left|y^{(i)} - f(x^{(i)})\right|
+$$
+\vspace{+.4cm}
+
+Observations with large errors do not heavily influence the MAE that much:
+\medskip
+
+<<echo=FALSE, out.width="0.7\\textwidth", fig.width = 7, fig.height = 3>>=
+plotModAbsoluteLoss(data, model = model, pt_idx = c(1,4))
+@
+\end{vbframe}
+
+\begin{vbframe}{Example Linear Model: Target Outlier}
+<<echo=FALSE, out.width="\\textwidth", fig.width=8, fig.height=4>>=
+library(mlr)
+library(ggplot2)
+library(MASS)
+
+df_outlier_target$y[2] = 500
+
+df_outlier_target$method = c("rlm", "lm")
+gg1 = ggplot(data = df_outlier_target, aes(x = x, y = y)) +
+  geom_point() +
+  geom_smooth(aes(color = "Quadratic"), method = "lm", se = FALSE) +
+  geom_smooth(aes(color = "Absolute"), method = "rlm", se = FALSE) +
+  xlab("Feature") +
+  ylab("Target") +
+  ggtitle("Outlier in the Target") +
+  labs(color = "Used Loss") +
+  theme(legend.position = "none")
+
+gg2 = ggplot(data = df_outlier_target, aes(x = x, y = y)) +
+  geom_point() +
+  geom_smooth(aes(color = "Quadratic"), method = "lm", se = FALSE) +
+  geom_smooth(aes(color = "Absolute"), method = "rlm", se = FALSE) +
+  xlab("Feature") +
+  ylab("Target") +
+  ggtitle("") +
+  labs(color = "Used Loss") +
+  coord_cartesian(ylim = c(-2, 8))
+
+gridExtra::grid.arrange(gg1, gg2, ncol = 2)
+@
+\medskip
+
+The model becomes more \textit{robust} in regards to the outlier.
+\end{vbframe}
+
+\begin{vbframe}{Example Linear Model: Feature Outlier}
+<<echo=FALSE, out.width="\\textwidth", fig.width=8, fig.height=4>>=
+df_outlier_feat$x[2] = -999
+
+df_outlier_feat$method = c("rlm", "lm")
+gg1 = ggplot(data = df_outlier_feat, aes(x = x, y = y)) +
+  geom_point() +
+  geom_smooth(aes(color = "Quadratic"), method = "lm", se = FALSE) +
+  geom_smooth(aes(color = "Absolute"), method = "rlm", se = FALSE) +
+  xlab("Feature") +
+  ylab("Target") +
+  ggtitle("Outlier in the Feature") +
+  labs(color = "Used Loss") +
+  theme(legend.position = "none")
+
+gg2 = ggplot(data = df_outlier_feat, aes(x = x, y = y)) +
+  geom_point() +
+  geom_smooth(aes(color = "Quadratic"), method = "lm", se = FALSE) +
+  geom_smooth(aes(color = "Absolute"), method = "rlm", se = FALSE) +
+  xlab("Feature") +
+  ylab("Target") +
+  ggtitle("") +
+  labs(color = "Used Loss") +
+  coord_cartesian(xlim = c(0, 10))
+
+gridExtra::grid.arrange(gg1, gg2, ncol = 2)
+@
+\medskip
+
+\textbf{But:} Using a robust loss function is not always sufficient!
+\end{vbframe}
+
+\begin{vbframe}{Tree-Based-Models}
+Trees are able to isolate outliers in separate terminal nodes:
+\vspace{+.4cm}
+
+<<echo=FALSE, out.width="0.6\\textwidth", fig.width=6, fig.height=3>>=
+set.seed(31415)
+x = runif(n = 100, min = 0, max = 10)
+y = ifelse(x < 6, rnorm(n = sum(x < 6), mean = 3, sd = 0.5), rnorm(n = sum(x >= 6), mean = 6, sd = 0.5))
+
+x[1] = -0.5
+
+df_outlier_target = data.frame(x = x, y = y)
+df_outlier_target$y[which.min(x)] = 15
+
+gg1 = ggplot(data = df_outlier_target, aes(x = x, y = y)) + geom_point()
+mod = rpart::rpart(y ~ x, control = list(minsplit = 1, minbucket = 1))
+gg2 = ggplot(data = df_outlier_target, aes(x = x, y = y)) + geom_point() + geom_vline(xintercept = mod$split[,"index"], col = "red", linetype = "dashed")
+
+gridExtra::grid.arrange(gg1, ncol = 2)
+@
+\framebreak
+
+Trees are able to isolate outliers in separate terminal nodes:
+\vspace{+.4cm}
+
+<<echo=FALSE, out.width="0.6\\textwidth", fig.width=6, fig.height=3>>=
+gridExtra::grid.arrange(gg1, ncol = 2)
+rpart.plot::rpart.plot(mod)
+@
+\framebreak
+
+Trees are able to isolate outliers in separate terminal nodes:
+\vspace{+.4cm}
+
+<<echo=FALSE, out.width="0.6\\textwidth", fig.width=6, fig.height=3>>=
+gridExtra::grid.arrange(gg1, gg2, ncol = 2)
+rpart.plot::rpart.plot(mod)
+@
+\end{vbframe}
+
+\begin{vbframe}{Outlier Detection}
+A different way to handle outliers is to remove them completely. But they must be detected first.
+\vspace{+.4cm}
+
+\begin{itemize}
+\item Different values than most observations, but when is it \textit{different enough} to conclude it is an outlier. \textit{Outlier or extreme value?}
+\item Even when all single feature values are \textit{normal}, an observation still can be an outlier over multiple features.
+\item Difference between wrong value, e.g., missing encoding error, or really occurring outlier.
+\end{itemize}
+\framebreak 
+
+\textbf{First very simple approach:} Remove observations if they are too big or too small.
+\vspace{+.4cm}
+
+\begin{itemize}
+\item Construct a lower bound $l$ and upper bound $u$ to indicate which values are outlier.
+\item Remove values that are outside of the interval $[l, u]$.
+\item $[l, u]$ can be defined by domain knowledge and looking at empirical distributions of features.
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Z-Score}
+Assuming a feature is normally distributed. The transformation
+
+$$
+z^{(i)} = \frac{x^{(i)} - \bar{x}}{\operatorname{sd}(x)}
+$$
+\medskip
+
+is standard normal distributed. Therefore, it is very easy to calculate, how likely it is to observe a value within a given interval.
+\medskip
+
+Remove observation $i$ if:
+
+$$
+z^{(i)} \notin [-3, 3] \ \ \text{or} \ \ x^{(i)} \notin [-3\operatorname{sd}(x) + \bar{x}, 3\operatorname{sd}(x) + \bar{x}]
+$$
+\medskip
+
+The probability of such an observation is 99.7 \%. And therefore, it is very unlikely to observe a value outside of $[-3, 3]$.
+\medskip
+
+\textbf{Problem:} Often, features are not normally distributed.
+\framebreak
+
+<<echo=FALSE, out.width="\\textwidth", fig.width=8, fig.height=4>>=
+# impute_var = "Garage Yr Blt"
+data = readr::read_csv(paste0(root, "/data/ames_housing_extended.csv"))
+data = data[, ! grepl(pattern = "energy_t", x = names(data))]
+
+impute_var = "Lot Frontage"
+x = na.omit(data[[impute_var]])
+z = (x - mean(x)) / sd(x)
+x_removed = x[abs(z) < 3]
+
+df_plot = data.frame(value = c(x, x_removed), technique = rep(c("None", "Z-Score"), times = c(length(x), length(x_removed))))
+
+ggplot(data = df_plot, aes(x = value, fill = technique)) +
+  geom_histogram(position = position_dodge(), bins = 40) +
+  # geom_rug() +
+  geom_vline(xintercept = c(- 3 * sd(x) + mean(x), 3 * sd(x) + mean(x)),
+    color = "red", linetype = "dashed") +
+  xlab(impute_var) +
+  ylab("Density") +
+  labs(fill = "Outlier removal techinque")
+@
+\end{vbframe}
+
+\begin{vbframe}{Remarks}
+\vspace{+.4cm}
+
+\textbf{Advantages}
+\vspace{+.4cm}
+
+\begin{itemize}
+\item Very intuitive and easy to use.
+\item Implementation is very fast.
+\end{itemize}
+\vspace{+.4cm}
+
+\textbf{Disadvantages}
+\vspace{+.4cm}
+
+\begin{itemize}
+\item Only takes single features into account.
+\item Unclear how to choose ranges ($[l, u], ...$).
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Isolation Forest}
+\begin{itemize}
+\item The isolation forest randomly creates splits by sampling from the range of a random feature until we have nodes with just one observation.
+\item Outliers are more likely to be separated since it is more likely to choose a split point between the outlier and its closest neighbor is higher than for other samples.
+\item For example, the probability of splitting the red point is 80 \%:
+    \begin{center}
+    \includegraphics[width=\textwidth, page=3, trim=0cm 12cm 0cm 0cm]{figure_man/isolation_forest.pdf}
+    \end{center}
+\item Therefore, the more distant a point is, the sooner it is separated in a terminal node.
+\end{itemize}
+\framebreak
+
+\begin{center}
+\includegraphics[width=\textwidth, page=1]{figure_man/isolation_forest.pdf}
+\end{center}
+\framebreak
+
+\begin{center}
+\includegraphics[width=\textwidth, page=2, trim=0cm 2cm 0cm 1.5cm]{figure_man/isolation_forest.pdf}
+\end{center}
+\vspace{-0.5cm}
+\begin{itemize}
+\item Score close to $1$ indicates outliers
+\item Score smaller than $0.5$ corresponds to normal a normal observation
+\item The whole dataset seems to have just normal observations if all scores are around $0.5$
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Isolation Forest}
+DBSCAN (Density-Based Spatial Clustering of Applications with Noise) is a clustering algorithm that allows \textit{undecided} observations that do not fit to any cluster.
+\medskip
+
+These \textit{undecided} noise observations can be understood as outliers.
+\medskip
+
+<<echo=FALSE, out.width="0.6\\textwidth", fig.width=6, fig.height=3>>=
+set.seed(31415)
+x1 = c(rnorm(200, mean = c(2, 6), sd = 1), 0.5, 1.7, 2,   3,   2, 2.3, 5.5, 5.6, 5.5, 7.5, 8, 7.6, 9, 9.7, 9.6)
+x2 = c(rnorm(200, mean = c(2, 6), sd = 1), 8.4,   8, 9, 7.6, 8.4, 7.2,   2, 3.1, 1.4,   3, 2, 0.2, 9,   8,   3)
+
+cluster = c(rep(c("A", "B"), times = 100L), rep("Noise", times = 15L))
+
+df_plot = data.frame(x1, x2, cluster)
+ggplot(data = df_plot, aes(x = x1, y = x2, color = cluster)) + geom_point()
+@
+\end{vbframe}
+
+
+\section{Practical Feature Enginerring}
+\begin{vbframe}{Feature Engineering in Practice}
+There are generally two ways of doing feature engineering in practice:
+\medskip
+
+1. Manual Feature Engineering
+\medskip
+
+Trial and error with educated guesses what methods might be important/useful to apply to the data
+\medskip
+
+2. (Semi-)Automatic Feature Engineering
+\medskip
+
+Define a set of feature engineering operations and let an optimizer search for a well working pipeline
+\medskip
+
+\textbf{Important:} For both approaches it is crucial that this process is embedded in a nested cross-validation loop.
+\end{vbframe}
+
+\begin{vbframe}{(Semi-)Automatic Feature Engineering}
+\begin{center}
+\includegraphics[width= 5.5cm, height=5cm]{figure_man/dag.png}
+\end{center}
+
+\begin{itemize}
+\item Define a space of possible operations from the previous chapters and let an optimizer search an optimal pipeline
+\item If model choice and hyperparameters are included in the search this process is called \textbf{Auto}matic \textbf{M}achine \textbf{L}earning (AutoML)
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Stacking and AutoML}
+\begin{itemize}
+\item AutoML approaches create a large number of models while searching for an optimal pipeline
+\item To further boost the pipeline performance, multiple pipelines can be \textit{stacked} in a post-processing step
+\end{itemize}
+\medskip
+
+\begin{center}
+\includegraphics[height=4.5cm]{figure_man/stacking.png}
+\end{center}
+\end{vbframe}
+
+
+\begin{vbframe}{Deployment of Pipelines}
+The complexity of a machine learning pipeline can be restricted due to the field of application after \textit{deployment}.
+\medskip
+
+Questions to answer before any feature engineering and pipeline construction can take place:
+\medskip
+
+\begin{itemize}
+\item In which environment is the pipelines deployed?
+\item How is the data streamed into the pipeline?
+\item How often and how fast is the pipeline triggered?
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Production Environments}
+The environment in which the pipeline is deployed can severely restrict the complexity.
+\medskip
+
+\begin{itemize}
+\item Interpreters (R/Python/...) can be outdated, packages can not be available...
+\item No interpreters are available at all
+\item Specialized data format
+\end{itemize}
+\medskip
+
+\textbf{Solutions:}
+\medskip
+
+\begin{itemize}
+\item Containerization: Model is integrated into a (minimal) virtual machine with correct versions of interpreters and packages.
+\item Services: Create a (rest-)API that can be triggered by sending data and receiving predictions.
+\end{itemize}
+\medskip
+
+This can also solve the problem of scalability since containerized services can easily be scaled
+\end{vbframe}
+
+\begin{vbframe}{Simple Example}
+\begin{center}
+\includegraphics[width=11cm]{figure_man/scaling.pdf}
+\end{center}
+\end{vbframe}
+
+\begin{vbframe}{Feature Engineering and Domain Knowledge}
+\vspace{+.4cm}
+
+\begin{itemize}
+\item Some forms of feature engineering are very hard to automate.
+\item Information that is not present in the data can not be found automatically
+\item This is why we still need humans with domain knowledge to find optimal models.
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Domain Knowledge: Example}
+\vspace{+.4cm}
+
+A simple example can be spatial information hidden in categorical features:
+\vspace{+.4cm}
+
+<<echo=FALSE, message=FALSE, warning = FALSE>>=
+library(dplyr)
+data = read.csv(paste0(root, "/data/ames_housing_extended.csv"))
+data %>%
+  filter(!is.na(Neighborhood)) %>%
+  group_by(Neighborhood) %>%
+  tally() %>%
+  sample_n(6) %>%
+  t() %>%
+  knitr::kable(format = 'latex') %>%
+  kableExtra::kable_styling(latex_options = 'HOLD_position', font_size = 7)
+@
+
+The \textit{Neighborhood} feature does not directly include which houses are close to each other across different neighborhoods.
+\medskip
+
+Some manual preprocessing / feature engineering is still required to enrich this data with actual spatial information.
+\end{vbframe}
+
+\begin{vbframe}{Human-in-the-loop Approaches}
+\vspace{+.4cm}
+
+With better software it becomes easier and easier for humans to integrate such knowledge.
+\medskip
+
+Examples:
+\medskip
+
+\begin{itemize}
+\item Features could be tagged as \textit{spatial} and trigger an automatic GoogleMaps API query, adding longitude and latitude to the data.
+\item Feature groups can be tagged, e.g., revenues of different departments, where adding or averaging multiple features can be beneficial.
+\end{itemize}
+\medskip
+
+Random or exhaustive combination of features quickly becomes infeasible due to exponential growth in possible combinations with more features.
+\end{vbframe}
+
+\begin{vbframe}{Relational Datasets}
+\vspace{+.4cm}
+
+\begin{itemize}
+\item Up until now we assumed that a single dataset exists (usually with i.i.d. observations)
+\item In many application additional data exists that is linked by \textit{keys}, e.g., \text{house\_id} or \text{customer\_id}.
+\item Often \textit{n-to-1} relationship between main dataset and datasets containing additional information
+\item Machine learning algorithms usually cannot automatically run on such linked datasets.
+\end{itemize}
+\medskip
+
+\textbf{Aggregate information from linked dataset and add to main dataset}
+\end{vbframe}
+
+\begin{vbframe}{Example - Ames Housing}
+\begin{itemize}
+\item We can have multiple events of refurbishments of the houses. These should help estimate the selling price:
+\end{itemize}
+\medskip
+
+<<echo=FALSE, message=FALSE, warning = FALSE>>=
+data.frame(
+  "House_id" = c(997, 997, 997, 17, 855),
+  "Refurbishment" = c("bath", "windows", "floor", "windows", "windows"),
+  "Cost" = c(7500, 12000, 800, 700, 1100),
+  "Year" = c(2006, 2006, 2008, 2007, 2007),
+  "..." = rep("...", times = 5)) %>%
+  knitr::kable(format = 'latex') %>%
+  kableExtra::kable_styling(latex_options = 'HOLD_position', font_size = 7)
+@
+\medskip
+
+\begin{itemize}
+\item Different extractions can be performed, e.g., number of refurbishments, overall cost:
+\end{itemize}
+\medskip
+
+<<echo=FALSE, message=FALSE, warning = FALSE>>=
+data.frame(
+  "House_id" = c(997, 17, 855),
+  "n_refurbishment" = c(3, 1, 1),
+  "sum_cost" = c(20300, 700, 1100),
+  "avg_cost" = c(6767, 700, 1100),
+  "last_ref" = c(2008, 2007, 2007),
+  "..." = rep("...", times = 3)) %>%
+  knitr::kable(format = 'latex') %>%
+  kableExtra::kable_styling(latex_options = 'HOLD_position', font_size = 7)
+@
+\end{vbframe}
+
+\begin{vbframe}{Automatic Feature Engineering for Relational Data}
+\medskip
+
+\begin{center}
+\includegraphics[height=3.7cm, width = 6cm]{figure_man/n-to-1.pdf}
+\end{center}
+
+\begin{itemize}
+\item Oftentimes more than 2 datasets exist, linked by multiple keys.
+\item Domain knowledge is a requirement to do meaningful feature engineering if the relations get more complex.
+\item First approaches for automatic feature engineering for relational datasets exist, e.g., \textit{featuretools} by using \textit{Deep Feature Synthesis}.
+\end{itemize}
+\end{vbframe}
+\endlecture
