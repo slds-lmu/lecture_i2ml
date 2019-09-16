@@ -10,6 +10,7 @@ library(rafalib)
 library(colorspace)
 library(mlr)
 library(ggplot2)
+library(magrittr)
 @
 
 % Load all R packages and set up knitr
@@ -22,166 +23,166 @@ library(ggplot2)
 
 \section{Principal Component Analysis}
 
-\begin{vbframe}{Normalizing Data}
-A variable $X$ can be normalized by substracting its values with the mean $\bar{X}$ and dividing by the standard deviation $s_X$, e.g. $\tilde{X} = \tfrac{X - \bar{X}}{s_X}.$
+% \begin{vbframe}{Normalizing Data}
+% A variable $X$ can be normalized by substracting its values with the mean $\bar{X}$ and dividing by the standard deviation $s_X$, e.g. $\tilde{X} = \tfrac{X - \bar{X}}{s_X}.$
 
-\lz
+% \lz
 
-\textbf{Example:}
-<<echo = FALSE, results='hide'>>=
-bh = t(data.frame(body.height = c("Person A" = 180, "Person B" = 172, "Person C" = 175)))
-@
+% \textbf{Example:}
+% <<echo = FALSE, results='hide'>>=
+% bh = t(data.frame(body.height = c("Person A" = 180, "Person B" = 172, "Person C" = 175)))
+% @
 
-Consider the following body heights measured in different units:
+% Consider the following body heights measured in different units:
 
-<<echo=FALSE, results='asis', size='small'>>=
-bh.m = bh/100
-bh.feet = round(bh/30.48, 4)
+% <<echo=FALSE, results='asis', size='small'>>=
+% bh.m = bh/100
+% bh.feet = round(bh/30.48, 4)
 
-options(xtable.comment = FALSE)
-tab = rbind(cbind(bh, "mean" = mean(bh), "sd" = sd(bh)),
-  cbind(bh.m, "mean" = mean(bh.m), "sd" = sd(bh.m)),
-  cbind(bh.feet, "mean" = mean(bh.feet), "sd" = sd(bh.feet)))
-row.names(tab) = c("body height (cm)", "body height (m)", "body height (feet)")
+% options(xtable.comment = FALSE)
+% tab = rbind(cbind(bh, "mean" = mean(bh), "sd" = sd(bh)),
+%   cbind(bh.m, "mean" = mean(bh.m), "sd" = sd(bh.m)),
+%   cbind(bh.feet, "mean" = mean(bh.feet), "sd" = sd(bh.feet)))
+% row.names(tab) = c("body height (cm)", "body height (m)", "body height (feet)")
 
-print(xtable(tab, align = c("c|", "c", "c", "c", "|c", "c")), size="\\fontsize{9pt}{10pt}\\selectfont")
-@
+% print(xtable(tab, align = c("c|", "c", "c", "c", "|c", "c")), size="\\fontsize{9pt}{10pt}\\selectfont")
+% @
 
-After normalizing, we always obtain the normalized body height (no matter which unit was used):
+% After normalizing, we always obtain the normalized body height (no matter which unit was used):
 
-<<echo = FALSE, results='asis'>>=
-bh.norm = (bh - mean(bh))/sd(bh)
-bh.norm = cbind(bh.norm, "mean" = round(mean(bh.norm), 0), "sd" = sd(bh.norm))
-row.names(bh.norm) = "normalized body height"
-print(xtable(bh.norm, align = c("c|", "c", "c", "c", "|c", "c")), size="\\fontsize{9pt}{10pt}\\selectfont")
-@
-\end{vbframe}
+% <<echo = FALSE, results='asis'>>=
+% bh.norm = (bh - mean(bh))/sd(bh)
+% bh.norm = cbind(bh.norm, "mean" = round(mean(bh.norm), 0), "sd" = sd(bh.norm))
+% row.names(bh.norm) = "normalized body height"
+% print(xtable(bh.norm, align = c("c|", "c", "c", "c", "|c", "c")), size="\\fontsize{9pt}{10pt}\\selectfont")
+% @
+% \end{vbframe}
 
-\begin{vbframe}{Normalizing Data}
-Normalizing all variables in a data set, can have several advantages:
+% \begin{vbframe}{Normalizing Data}
+% Normalizing all variables in a data set, can have several advantages:
 
-\begin{itemize}
-  \item It puts all variables into \textit{comparable} units, i.e., we make sure that all normalized variables have mean 0 and standard deviation of 1.
-  \item It can avoid numerical instabilites in several algorithms, e.g. if a variable has very low / high values.
-  \item It helps in computing meaningful \textit{distances} between observations.
-\end{itemize}
-\end{vbframe}
+% \begin{itemize}
+%   \item It puts all variables into \textit{comparable} units, i.e., we make sure that all normalized variables have mean 0 and standard deviation of 1.
+%   \item It can avoid numerical instabilites in several algorithms, e.g. if a variable has very low / high values.
+%   \item It helps in computing meaningful \textit{distances} between observations.
+% \end{itemize}
+% \end{vbframe}
 
-\begin{vbframe}{Normalizing Data:Distances}
-There are many ways to define the distance between two points, e.g., $Z_i = (X_i, Y_i)$ and $Z_j = (X_j, Y_j)$:
+% \begin{vbframe}{Normalizing Data:Distances}
+% There are many ways to define the distance between two points, e.g., $Z_i = (X_i, Y_i)$ and $Z_j = (X_j, Y_j)$:
 
-\vspace{0.5cm}
+% \vspace{0.5cm}
 
-<<echo=FALSE, fig.align="center", fig.width=6, fig.height=4, out.width="0.6\\textwidth">>=
+% <<echo=FALSE, fig.align="center", fig.width=6, fig.height=4, out.width="0.6\\textwidth">>=
 
-Colors = colorspace::rainbow_hcl(3)
-cbbPalette = c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+% Colors = colorspace::rainbow_hcl(3)
+% cbbPalette = c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
-getCurrentAspect = function() {
-   uy <- diff(grconvertY(1:2,"user","inches"))
-   ux <- diff(grconvertX(1:2,"user","inches"))
-   uy/ux
-}
+% getCurrentAspect = function() {
+%    uy <- diff(grconvertY(1:2,"user","inches"))
+%    ux <- diff(grconvertX(1:2,"user","inches"))
+%    uy/ux
+% }
 
-par(mar = c(4,4,0,0))
-plot(x = c(1L,5L), y = c(1L,4L), ylim = c(0,5), xlim = c(0,6), pch = 19,
-  xlab = "Variable X (Dimension 1)", ylab = "Variable Y (Dimension 2)")
-lines(x = c(1L,5L), y = c(1L,4L))
-text(x = c(1L,5L), y = c(1L,4L), c(expression(Z[i]), expression(Z[j])), adj = c(1.5, 0))
-lines(x = c(1L, 5L, 5L, 5L), y = c(1L, 1L, 1L, 4L), col = Colors[1])
-legend("topleft", lty = 1, legend = c("manhattan", "euclidean"), col = c(Colors[1],1))
+% par(mar = c(4,4,0,0))
+% plot(x = c(1L,5L), y = c(1L,4L), ylim = c(0,5), xlim = c(0,6), pch = 19,
+%   xlab = "Variable X (Dimension 1)", ylab = "Variable Y (Dimension 2)")
+% lines(x = c(1L,5L), y = c(1L,4L))
+% text(x = c(1L,5L), y = c(1L,4L), c(expression(Z[i]), expression(Z[j])), adj = c(1.5, 0))
+% lines(x = c(1L, 5L, 5L, 5L), y = c(1L, 1L, 1L, 4L), col = Colors[1])
+% legend("topleft", lty = 1, legend = c("manhattan", "euclidean"), col = c(Colors[1],1))
 
-text(x = 5, y = 1, expression(d(Z[i],Z[j])~"= |5-1| + |4-1| = 7"), adj = c(1,1), col = Colors[1])
+% text(x = 5, y = 1, expression(d(Z[i],Z[j])~"= |5-1| + |4-1| = 7"), adj = c(1,1), col = Colors[1])
 
-asp = getCurrentAspect()
-text(x = 3, y = 2.5, expression(d(Z[i],Z[j])~"="~sqrt((5-1)^2 + (4-1)^2)~"= 5"),
-  adj = c(0.5,0), col = 1, srt = 180/pi*atan(3/4*asp))
-@
+% asp = getCurrentAspect()
+% text(x = 3, y = 2.5, expression(d(Z[i],Z[j])~"="~sqrt((5-1)^2 + (4-1)^2)~"= 5"),
+%   adj = c(0.5,0), col = 1, srt = 180/pi*atan(3/4*asp))
+% @
 
-\vspace{0.5cm}
-\begin{itemize}
-  \item\small manhattan: sum up the absolute distances in each dimension.
-  \item\small euclidean: remember Pythagoras theorem from school?
-\end{itemize}
-\end{vbframe}
+% \vspace{0.5cm}
+% \begin{itemize}
+%   \item\small manhattan: sum up the absolute distances in each dimension.
+%   \item\small euclidean: remember Pythagoras theorem from school?
+% \end{itemize}
+% \end{vbframe}
 
-\begin{vbframe}{Normalizing Data:Distances}
-It is often a good idea to \textit{normalize} the data before computing distances, especially when the scale of variables is different, e.g. the euclidean distance between the point $Z_1$ and $Z_2$:
+% \begin{vbframe}{Normalizing Data:Distances}
+% It is often a good idea to \textit{normalize} the data before computing distances, especially when the scale of variables is different, e.g. the euclidean distance between the point $Z_1$ and $Z_2$:
 
-<<echo=FALSE, fig.align="center", fig.height=4, fig.width=9>>=
-par(mar = c(3.5,3.5,1,1), mfrow = c(1,2), mgp = c(2.5,1,0))
+% <<echo=FALSE, fig.align="center", fig.height=4, fig.width=9>>=
+% par(mar = c(3.5,3.5,1,1), mfrow = c(1,2), mgp = c(2.5,1,0))
 
-dat = data.frame(shoe.size = c(46, 40, 44), height = c(180, 172, 175))
-plot(x = dat$shoe.size, y = dat$height, xlab = "shoe size", ylab = "body height (in cm)",
-  pch = 19, xlim = range(dat$shoe.size)*c(0.95, 1.05), ylim = range(dat$height)*c(0.98, 1.02))
-lines(x = dat$shoe.size[-3], y = dat$height[-3])
-asp = getCurrentAspect()
-text(x = mean(dat$shoe.size[-3]), y = mean(dat$height[-3]),
-  bquote(paste(d(Z[1],Z[2])~"="~sqrt((46-40)^2 + (180-172)^2)~" = ", .(sqrt((46-40)^2 + (180-172)^2)))),
-  adj = c(0.5,-0.25), col = 1, srt = 180/pi*atan(diff(dat$height[-3])/diff(dat$shoe.size[-3])*asp))
-text(x = dat$shoe.size, y = dat$height, c(expression(Z[2]), expression(Z[1]), expression(Z[3])), adj = c(-1, 0.5))
+% dat = data.frame(shoe.size = c(46, 40, 44), height = c(180, 172, 175))
+% plot(x = dat$shoe.size, y = dat$height, xlab = "shoe size", ylab = "body height (in cm)",
+%   pch = 19, xlim = range(dat$shoe.size)*c(0.95, 1.05), ylim = range(dat$height)*c(0.98, 1.02))
+% lines(x = dat$shoe.size[-3], y = dat$height[-3])
+% asp = getCurrentAspect()
+% text(x = mean(dat$shoe.size[-3]), y = mean(dat$height[-3]),
+%   bquote(paste(d(Z[1],Z[2])~"="~sqrt((46-40)^2 + (180-172)^2)~" = ", .(sqrt((46-40)^2 + (180-172)^2)))),
+%   adj = c(0.5,-0.25), col = 1, srt = 180/pi*atan(diff(dat$height[-3])/diff(dat$shoe.size[-3])*asp))
+% text(x = dat$shoe.size, y = dat$height, c(expression(Z[2]), expression(Z[1]), expression(Z[3])), adj = c(-1, 0.5))
 
-dat$height = dat$height/100
-plot(x = dat$shoe.size, y = dat$height, xlab = "shoe size", ylab = "body height (in m)",
-  pch = 19, xlim = range(dat$shoe.size)*c(0.95, 1.05), ylim = range(dat$height)*c(0.98, 1.02))
-lines(x = dat$shoe.size[-3], y = dat$height[-3])
-asp = getCurrentAspect()
-text(x = mean(dat$shoe.size[-3]), y = mean(dat$height[-3]),
-  bquote(paste(d(Z[1],Z[2])~"="~sqrt((46-40)^2 + (1.80-1.72)^2)~" = ", .(sqrt((46-40)^2 + (1.80-1.72)^2)))),
-  adj = c(0.5,-0.25), col = 1, srt = 180/pi*atan(diff(dat$height[-3])/diff(dat$shoe.size[-3])*asp))
-text(x = dat$shoe.size, y = dat$height, c(expression(Z[2]), expression(Z[1]), expression(Z[3])), adj = c(-1, 0.5))
-@
+% dat$height = dat$height/100
+% plot(x = dat$shoe.size, y = dat$height, xlab = "shoe size", ylab = "body height (in m)",
+%   pch = 19, xlim = range(dat$shoe.size)*c(0.95, 1.05), ylim = range(dat$height)*c(0.98, 1.02))
+% lines(x = dat$shoe.size[-3], y = dat$height[-3])
+% asp = getCurrentAspect()
+% text(x = mean(dat$shoe.size[-3]), y = mean(dat$height[-3]),
+%   bquote(paste(d(Z[1],Z[2])~"="~sqrt((46-40)^2 + (1.80-1.72)^2)~" = ", .(sqrt((46-40)^2 + (1.80-1.72)^2)))),
+%   adj = c(0.5,-0.25), col = 1, srt = 180/pi*atan(diff(dat$height[-3])/diff(dat$shoe.size[-3])*asp))
+% text(x = dat$shoe.size, y = dat$height, c(expression(Z[2]), expression(Z[1]), expression(Z[3])), adj = c(-1, 0.5))
+% @
 
-\vspace{0.5cm}
+% \vspace{0.5cm}
 
-On the right plot, the distance is dominated by \code{shoe size}.
-\end{vbframe}
+% On the right plot, the distance is dominated by \code{shoe size}.
+% \end{vbframe}
 
-\begin{vbframe}{Normalizing Data: Distances}
-\small
-The normalized variable $\tilde{X}_{\code{shoe.size}}$ is computed by
-\[\tilde{X}_{\code{shoe.size}} = \tfrac{X_{\code{shoe.size}}-\bar{X}_{\code{shoe.size}}}{s_{X_{\code{shoe.size}}}}.\]
-Distances based on normalized data are better comparable and \textbf{robust} in terms of linear transformations (e.g., conversion of physical units).
+% \begin{vbframe}{Normalizing Data: Distances}
+% \small
+% The normalized variable $\tilde{X}_{\code{shoe.size}}$ is computed by
+% \[\tilde{X}_{\code{shoe.size}} = \tfrac{X_{\code{shoe.size}}-\bar{X}_{\code{shoe.size}}}{s_{X_{\code{shoe.size}}}}.\]
+% Distances based on normalized data are better comparable and \textbf{robust} in terms of linear transformations (e.g., conversion of physical units).
 
 
-\vspace{0.5cm}
+% \vspace{0.5cm}
 
-<<echo=FALSE, fig.align="center", fig.height=4, fig.width=6, out.width="0.6\\textwidth">>=
-par(mar = c(3.5,3.5,0.1,0.1), mgp = c(2.5,1,0))
+% <<echo=FALSE, fig.align="center", fig.height=4, fig.width=6, out.width="0.6\\textwidth">>=
+% par(mar = c(3.5,3.5,0.1,0.1), mgp = c(2.5,1,0))
 
-#dat = data.frame(shoe.size = c(45, 40, 42), height = 1000*c(85, 70, 72))
-dat = as.data.frame(scale(dat))
-plot(x = dat$shoe.size, y = dat$height, xlab = "normalized shoe size", ylab = "normalized body height",
-  pch = 19, xlim = range(dat$shoe.size)*c(1.1, 1.2), ylim = range(dat$height)*c(1.1, 1.1))
-lines(x = dat$shoe.size[-3], y = dat$height[-3])
-asp = getCurrentAspect()
-text(x = mean(dat$shoe.size[-3]), y = mean(dat$height[-3]),
-  bquote(paste(d(Z[1],Z[2])~" = ", .(sqrt((dat$shoe.size[1]-dat$shoe.size[2])^2 + (dat$height[1]-dat$height[2])^2)))),
-  adj = c(0.5,0), col = 1, srt = 180/pi*atan(diff(dat$height[-3])/diff(dat$shoe.size[-3])*asp))
-text(x = dat$shoe.size, y = dat$height, c(expression(Z[2]), expression(Z[1]), expression(Z[3])), adj = c(-1, 0.5))
-@
-\end{vbframe}
+% #dat = data.frame(shoe.size = c(45, 40, 42), height = 1000*c(85, 70, 72))
+% dat = as.data.frame(scale(dat))
+% plot(x = dat$shoe.size, y = dat$height, xlab = "normalized shoe size", ylab = "normalized body height",
+%   pch = 19, xlim = range(dat$shoe.size)*c(1.1, 1.2), ylim = range(dat$height)*c(1.1, 1.1))
+% lines(x = dat$shoe.size[-3], y = dat$height[-3])
+% asp = getCurrentAspect()
+% text(x = mean(dat$shoe.size[-3]), y = mean(dat$height[-3]),
+%   bquote(paste(d(Z[1],Z[2])~" = ", .(sqrt((dat$shoe.size[1]-dat$shoe.size[2])^2 + (dat$height[1]-dat$height[2])^2)))),
+%   adj = c(0.5,0), col = 1, srt = 180/pi*atan(diff(dat$height[-3])/diff(dat$shoe.size[-3])*asp))
+% text(x = dat$shoe.size, y = dat$height, c(expression(Z[2]), expression(Z[1]), expression(Z[3])), adj = c(-1, 0.5))
+% @
+% \end{vbframe}
 
-\begin{vbframe}{Normalizing: Covariance vs. Correlation}
-The \textbf{variance} of a normalized variable is always 1, its mean is always 0.
+% \begin{vbframe}{Normalizing: Covariance vs. Correlation}
+% The \textbf{variance} of a normalized variable is always 1, its mean is always 0.
 
-\vspace{0.5cm}
+% \vspace{0.5cm}
 
-The \textbf{covariance} of two normalized variables $\tilde{X} = \tfrac{X - \bar{X}}{s_X}$ and $\tilde{Y} = \tfrac{Y - \bar{Y}}{s_Y}$ is the same as the \textbf{correlation} of the non-normalized variables $X$ and $Y$.
+% The \textbf{covariance} of two normalized variables $\tilde{X} = \tfrac{X - \bar{X}}{s_X}$ and $\tilde{Y} = \tfrac{Y - \bar{Y}}{s_Y}$ is the same as the \textbf{correlation} of the non-normalized variables $X$ and $Y$.
 
-\vspace{0.5cm}
+% \vspace{0.5cm}
 
-One can proof this with the help of
-$$s_{\tilde{X}\tilde{Y}}=\tfrac{1}{n-1}\sum_{i=1}^{n}{(\tilde{x}_i-\bar{\tilde{x}})(\tilde{y}_i-\bar{\tilde{y}})} = \hdots =  \tfrac{1}{n-1}\sum_{i=1}^{n}{\tfrac{(x_i-\bar{x})}{s_{X}}\tfrac{(y_i-\bar{y})}{s_{Y}}} = r_{XY}.$$
+% One can proof this with the help of
+% $$s_{\tilde{X}\tilde{Y}}=\tfrac{1}{n-1}\sum_{i=1}^{n}{(\tilde{x}_i-\bar{\tilde{x}})(\tilde{y}_i-\bar{\tilde{y}})} = \hdots =  \tfrac{1}{n-1}\sum_{i=1}^{n}{\tfrac{(x_i-\bar{x})}{s_{X}}\tfrac{(y_i-\bar{y})}{s_{Y}}} = r_{XY}.$$
 
-<<include=FALSE, echo=FALSE, message=FALSE>>=
-library("knitr")
-set.seed(1)
-options(scipen = 1, digits = 4, width=70)
-Colors = colorspace::rainbow_hcl(3)
-cbbPalette = c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
-@
-\end{vbframe}
+% <<include=FALSE, echo=FALSE, message=FALSE>>=
+% library("knitr")
+% set.seed(1)
+% options(scipen = 1, digits = 4, width=70)
+% Colors = colorspace::rainbow_hcl(3)
+% cbbPalette = c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+% @
+% \end{vbframe}
 
 \begin{vbframe}{PCA Intuition}
 \textit{Motivational example I}:
@@ -224,11 +225,11 @@ cbbPalette = c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
 \end{vbframe}
 
 \begin{vbframe}{PCA Intuition: Find first PC}
-<<echo=FALSE, fig.height=7, fig.width=7, results="asis", out.width="0.65\\textwidth">>=
-
+<<echo=FALSE, fig.height=6, fig.width=6, results="asis", out.width="0.6\\textwidth">>=
+par(mar=c(0,0,3,0))
 Colors = colorspace::rainbow_hcl(3)
 # code from https://github.com/genomicsclass/labs/blob/master/highdim/PCA.Rmd
-mypar()
+# mypar()
 n = 50
 col = Colors[1]
 set.seed(123)
@@ -251,8 +252,8 @@ for (rotate in c(0,-0.5,-1, -3, -300, 3, 1)) {
   u = matrix(c(1,rotate),ncol=1)
   u = u/sqrt(sum(u^2))
   w=t(u)%*%Y
-  mypar(1,1)
 
+  par(mar=c(0,0,3,0))
   plot(t(Y), main=paste("Variance of projected points:",round(tcrossprod(w)/(n-1),2) ),
     xlim=thelim, ylim=thelim, axes=F, xlab = "", ylab = "")
   #box()
@@ -279,7 +280,7 @@ Rotate the points and use PC1 and PC2 as new coordinate system.
 \lz
 Here, the PC1 axis explains most of the variance:
 
-<<echo = FALSE, fig.height=7, fig.width=7, out.width="0.55\\textwidth">>=
+<<echo = FALSE, fig.height=6, fig.width=6, out.width="0.55\\textwidth">>=
 a = pi/4
 Yrotated = t(Y) %*% matrix(c(cos(a), -sin(a), sin(a), cos(a)), ncol = 2, byrow = T)
 mypar(1,1)
@@ -296,7 +297,7 @@ mtext("PC1",4,-1,at=0,las=1, col = col, cex = 0.8); ## x label
 Dimensionality can be reduced by projecting the points onto the PC1 (and by disregarding PC2).
 The hope is that we won't lose much information this way.
 
-<<echo = FALSE, fig.height=7, fig.width=7, out.width="0.55\\textwidth">>=
+<<echo = FALSE, fig.height=6, fig.width=6, out.width="0.55\\textwidth">>=
 mypar(1,1)
 plot(Yrotated,
   xlim = c(-3,3), ylim = c(-3,3), xlab = "PC1", ylab = "PC2", axes=F ,ann=F)
@@ -375,6 +376,73 @@ The constraint is required for identifiability reasons, otherwise we could maxim
 Repeat this maximization step for the other PCs and additionally use the orthogonality constraint, i.e. for the second PC: $$\mathbf{a}_2^\top\mathbf{a}_1 = 0.$$
 \end{vbframe}
 
+\begin{vbframe}{Exkurs: Hauptkomponentenanalyse (PCA)}
+
+\textbf{Gegeben: } $n$ Datenpunkte mit jeweils $p$ Merkmalen $^{(*)}$
+
+\lz
+
+\textbf{Ziel: } Projektion der $n$ Datenpunkte in einen $k$-dimensionalen Raum ($k < p$) mit möglichst wenig Informationsverlust
+
+\lz
+
+\textbf{Idee: }
+
+\begin{itemize}
+\item Finde eine lineare Abbildung $f: \R^p \to \R^k$, die jeden Datenpunkt $\bm{x}$ auf einen $k$-dimensionalen Punkt $\bm{z}$ abbildet.
+\item Verliere dabei so wenig wie möglich Information.
+\item Möglichst wenig Information geht verloren, wenn wir den Punkt $\bm{z}$ möglichst gut rekonstruieren können, d. h. wir können eine lineare Funktion $h: \R^k \to \R^p$ finden, sodass $\bm{x} \approx h(\bm{z})$.
+\end{itemize}
+
+\vfill
+
+$^{(*)}$ Wir nehmen an, die Datenpunkte sind um $0$ zentriert.
+
+\framebreak
+
+\begin{center}
+  \includegraphics[width = 0.8\textwidth]{figure_man/PCA-as-autoencoder.png}
+\end{center}
+
+\vspace*{-1cm}
+
+Die linearen Abbildungen $f, h$ beschreiben wir durch die Multiplikation mit Matrizen: $f: \bm{x}^T \mapsto \bm{x}^\top \bm{F} =: \bm{z}$ und $h: \bm{z}^\top \mapsto \bm{z}^\top \bm{H}$
+
+\framebreak
+
+\textbf{Ziel: } Minimiere Rekonstruktionsfehler zwischen Daten $\bm{X}$ und den projezierten und rekonstruierten Daten $\bm{XFH}$.
+
+$$
+\min_{\bm{F} \in \R^{m \times k}, \bm{H} \in \R^{k \times n}} \|\mathbf{X} - \bm{X}\bm{F}\bm{H}\|^2_F.
+$$
+
+Definieren wir $\bm{X\bm{F}} =: \bm{W}$, so entspricht das gerade dem Problem der Matrixapproximation. Die Lösung ist somit gegeben durch
+
+\begin{eqnarray*}
+\bm{W} &=& \bm{XF} = \mathbf{U}_k (\boldsymbol{\Sigma}_k)^{1/2} \\
+\bm{H} &=& (\boldsymbol{\Sigma}_k)^{1/2} \mathbf{V}_k^\top,
+\end{eqnarray*}
+
+wobei die Matrizen $\bm{U}_k \boldsymbol{\Sigma}_k \bm{V}_k$ der trunkierten Singulärwertzerlegung von $\bm{X}$ entsprechen.
+
+\framebreak
+
+Die Spalten von $\textbf{W}$ entsprechen den Hauptkomponenten (transformierte Variablen), die Zeilen von $\bm{H}$ sind die Hauptachsen.
+
+\lz
+
+Die Matrix $\bm{F}$, die die Funktion definiert, mithilfe derer die Punkte in den niedrigdimensionalen Raum projeziert werden, lässt sich herleiten
+
+\begin{eqnarray*}
+\bm{W} = \bm{XF} &=& \mathbf{U}_k (\boldsymbol{\Sigma}_k)^{1/2} \\
+\bm{U}_k \boldsymbol{\Sigma}_k \bm{V}_k \bm{F} &\approx& \mathbf{U}_k (\boldsymbol{\Sigma}_k)^{1/2} \qquad |  \bm{V}_k^{-1}\boldsymbol{\Sigma}_k^{-1}\bm{U}_k^{-1} \cdot \\
+\bm{F} &=& \bm{V}_k^T \left(\boldsymbol{\Sigma}_k\right)^{1 / 2}
+\end{eqnarray*}
+
+(was einer Drehung $\bm{V}_k^T$ und einer Skalierung $\left(\boldsymbol{\Sigma}_k\right)^{1 / 2}$ entspricht).
+
+\end{vbframe}
+
 \begin{vbframe}{Example: The Olympic Heptathlon Data}
 The \code{heptathlon} data set in the R package \pkg{HSAUR3} contains the competition results of 25 athletes in 7 disciplines for the Olympics held in Seoul in 1988.
 
@@ -418,7 +486,7 @@ Results of the best and worst participant:
 \vspace{0.5cm}
 
 <<size='tiny', R.options=list(width = 200), echo = FALSE>>=
-kable(heptathlon[c(1,25),])
+kable(heptathlon[c(1,25),], "latex", booktabs = TRUE)
 @
 
 \lz
@@ -434,7 +502,7 @@ heptathlon$run800m = -heptathlon$run800m #with(heptathlon, max(run800m)-run800m)
 @
 
 <<size='tiny', R.options=list(width = 200), echo = FALSE>>=
-kable(heptathlon[c(1,25),])
+kable(heptathlon[c(1,25),], "latex", booktabs = TRUE)
 @
 \end{vbframe}
 
@@ -450,12 +518,14 @@ ggpairs(heptathlon[, -8]) +
 We can compute all pairwise correlations of the variables (without the \code{score} column):
 
 <<echo=FALSE>>=
-(cor.mat = cor(heptathlon[, -8]))
+kable((cor.mat = cor(heptathlon[, -8])), "latex", booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", "scale_down"))
 @
 \end{vbframe}
 
 \begin{vbframe}{Correlogram}
-<<message=FALSE, fig.align="center", fig.height = 5, out.width = "0.75\\textwidth", echo = -c(1, 3)>>=
+\lz
+<<message=FALSE, fig.align="center", fig.height = 5, out.width = "\\textwidth", echo = FALSE>>=
 #par(mfrow = c(1, 2)) #  tl.srt = 60
 library(corrplot)
 body(corrplot)[[57]] = substitute(oldpar <- par(mar = mar))
@@ -463,7 +533,7 @@ corrplot(cor.mat, type = "upper", addCoef.col = "black")
 @
 \end{vbframe}
 
-\begin{vbframe}{Perform PCA using \code{princomp()}}
+\begin{vbframe}{Performing the PCA}
 Remember: The first PC is the linear combination
   \[
   \mathbf{pc}_1 = a_{11} \mathbf{x}_1 + a_{12}\mathbf{x}_2+ \dots + a_{1p}\mathbf{x}_p
@@ -471,38 +541,30 @@ Remember: The first PC is the linear combination
 and has the largest sample variance among all other PCs.
 %% <!-- - In R, PCA can be done using the functions \code{princomp()} and \code{prcomp()} (both contained in the R package \code{stats}). -->
 
-\vspace{0.5cm}
-
 \begin{itemize}
-  \item In R, the \code{princomp()} function carries out a PCA via an eigendecomposition of the sample covariance matrix $\Sigma$.
+  % \item In R, the \code{princomp()} function carries out a PCA via an eigendecomposition of the sample covariance matrix $\Sigma$.
   \item If variables are on very different scales, PCA should be carried out on the correlation matrix (which is equivalent to the correlation matrix if normalized variables are used).
+  \item As the variables of the heptathlon data are on different scales, we perform the PCA based on the correlation matrix.
+  \item Alternatively, we could also perform the PCA based on the covariance matrix but on the normalized heptathlon data.
 \end{itemize}
-\end{vbframe}
 
-\begin{vbframe}{Perform PCA using \code{princomp()}}
-As the variables of the heptathlon data are on different scales, we perform the PCA based on the correlation matrix.
-
-<<echo=1, results="hide">>=
+<<echo=FALSE, results="hide">>=
 hept.pca = princomp(heptathlon[, -8], cor = TRUE)
 @
 
-\lz
+% \lz
 
-Alternatively, we could also perform the PCA based on the covariance matrix but on the normalized heptathlon data.
+% The resulting object of \code{princomp()} contains at least:
 
-\lz
-
-The resulting object of \code{princomp()} contains at least:
-
-\begin{itemize}
-  \item The loadings $\mathbf{a}_{1}, \hdots, \mathbf{a}_{p}$,
-  \item The PC scores $\mathbf{pc}_{1}, \hdots, \mathbf{pc}_{p}$ and
-  \item The variance $\lambda_1, \hdots, \lambda_p$ (or standard deviation) of the PC scores.
-\end{itemize}
+% \begin{itemize}
+%   \item The loadings $\mathbf{a}_{1}, \hdots, \mathbf{a}_{p}$,
+%   \item The PC scores $\mathbf{pc}_{1}, \hdots, \mathbf{pc}_{p}$ and
+%   \item The variance $\lambda_1, \hdots, \lambda_p$ (or standard deviation) of the PC scores.
+% \end{itemize}
 \end{vbframe}
 
 \begin{vbframe}{Loadings}
-The loadings $\mathbf{a}_{1}, \hdots, \mathbf{a}_{p}$ are contained in
+The loadings $\mathbf{a}_{1}, \hdots, \mathbf{a}_{p}$ are given by
 
 % <<eval = FALSE, echo=TRUE>>=
 % hept.pca$loadings
@@ -511,43 +573,47 @@ The loadings $\mathbf{a}_{1}, \hdots, \mathbf{a}_{p}$ are contained in
 \vspace{1cm}
 
 <<echo = FALSE>>=
-kable(unclass(round(hept.pca$loadings, 2)))
+kable(unclass(round(hept.pca$loadings, 2)), "latex", booktabs = TRUE)%>%
+  kable_styling(latex_options = c("striped", "scale_down"))
 @
 \end{vbframe}
 
 \begin{vbframe}{Loadings}
 Visualize the coefficient weights (loadings) of the linear combinations of the PC scores:
 
+\lz
+
 <<message=FALSE, fig.align="center", fig.height = 5, out.width = "0.8\\textwidth", echo=FALSE>>=
 corrplot(hept.pca$loadings, is.corr = FALSE)
 @
 \end{vbframe}
 
+% \begin{vbframe}{Loadings}
+% Check the normalization constraint of the first PC:
+% <<size = "scriptsize", echo = TRUE>>=
+% (a1 = hept.pca$loadings[, 1]) # loadings of the first PC
+% a1 %*% a1 # check constraint: is sum of squares equal to 1?
+% @
+
+% Check the orthogonality constraint of the first two PCs:
+% <<size = "scriptsize", echo = TRUE>>=
+% (a2 = hept.pca$loadings[, 2]) # loadings of the second PC
+% a1 %*% a2 # check if 1st and 2nd PC are orthogonal
+% @
+% \end{vbframe}
+
 \begin{vbframe}{Loadings}
-Check the normalization constraint of the first PC:
-<<size = "scriptsize", echo = TRUE>>=
-(a1 = hept.pca$loadings[, 1]) # loadings of the first PC
-a1 %*% a1 # check constraint: is sum of squares equal to 1?
-@
+If we perform a PCA on the covariance matrix (without normalizing the data), each component mainly loads on a single variable:
 
-Check the orthogonality constraint of the first two PCs:
-<<size = "scriptsize", echo = TRUE>>=
-(a2 = hept.pca$loadings[, 2]) # loadings of the second PC
-a1 %*% a2 # check if 1st and 2nd PC are orthogonal
-@
-\end{vbframe}
+\vspace{0.3cm}
 
-\begin{vbframe}{Loadings}
-If we perform PCA on the covariance matrix (without normalizing the data), each component mainly loads on a single variable:
-
-\lz
-
-<<fig.align="center", fig.height = 5, out.width = "0.5\\textwidth", echo = FALSE>>=
+<<fig.align="center", fig.height = 5, out.width = "0.8\\textwidth", echo = FALSE>>=
+par(mar = c(0,0,1,0))
 hept.pca.cov = princomp(heptathlon[, -8], cor = FALSE)
 corrplot(hept.pca.cov$loadings, is.corr = FALSE)
 @
 
-\lz
+\vspace{-0.2cm}
 
 Reason: Variables have very different scales (e.g., time measurement of 200m and 800m run).
 \end{vbframe}
@@ -564,10 +630,20 @@ Reason: Variables have very different scales (e.g., time measurement of 200m and
 \end{vbframe}
 
 \begin{vbframe}{Proportion of Explained Variance}
-In R, the proportion of explained variance can be obtained by
+In the example above, the proportion of explained variance is given by
 
-<<R.options=list(width = 55), echo=FALSE>>=
-summary(hept.pca)
+<<echo=FALSE>>=
+pca_importance = function(x) {
+  vars = x$sdev^2
+  vars = vars/sum(vars)
+  rbind("Standard deviation" = x$sdev,
+    "Proportion of Variance" = vars,
+    "Cumulative Proportion" = cumsum(vars)
+  )
+}
+
+kable(pca_importance(hept.pca), "latex", booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", "scale_down"))
 @
 
 \textbf{Question}: How do we choose the number of PCs?
@@ -585,7 +661,8 @@ For components after the \textit{elbow}, the variance decreases more slowly.
 
 \lz
 
-<<fig.align="center", fig.height = 4, out.width = "0.7\\textwidth">>=
+<<fig.align="center", fig.height = 3, fig.width = 6, out.width = "0.75\\textwidth">>=
+par(mar = c(0,0,0,0))
 fviz_eig(hept.pca, xlab = "principal component")
 @
 \end{vbframe}
@@ -593,9 +670,14 @@ fviz_eig(hept.pca, xlab = "principal component")
 \begin{vbframe}{PC Scores vs. Official Scores}
 The first PC explains $63,72\%$ of the variation, the loadings of the first PC are:
 
+\lz
+
 <<echo = FALSE>>=
-hept.pca$loadings[,1]
+kable(t(hept.pca$loadings[,1, drop = FALSE]), "latex", booktabs = TRUE)%>%
+  kable_styling(latex_options = c("striped", "scale_down"))
 @
+
+\lz
 
 Dimensionality reduction:
 
@@ -610,7 +692,7 @@ The scores of the first PC $\mathbf{pc}_1$ have a similar ranking as the scores 
 
 \lz
 
-<<fig.align="center", fig.width = 8, fig.height = 6, out.width= "0.65\\textwidth", echo = FALSE>>=
+<<fig.align="center", fig.width = 7, fig.height = 4.5, out.width= "0.75\\textwidth", echo = FALSE>>=
 d = data.frame(official.score = heptathlon$score, pca.score = hept.pca$scores[row.names(heptathlon),1], name = row.names(heptathlon))
 ggplot(d, aes(official.score, pca.score, label = name)) +
     geom_text_repel() +
