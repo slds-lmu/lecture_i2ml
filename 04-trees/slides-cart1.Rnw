@@ -22,12 +22,17 @@ library(smoof)
 
 <<results='hide'>>=
 draw_cart_on_iris = function(depth, with_tree_plot = FALSE) {
-  set.seed(123)
   task = makeClassifTask(data = iris[,3:5], target = "Species")
-  lrn = makeLearner("classif.rpart", cp = 0, minbucket = 4, maxdepth = depth) 
+  lrn = makeLearner("classif.rpart", cp = 0, minbucket = 4, maxdepth = depth)
   model = train(lrn, task)
   p = plotLearnerPrediction(lrn, task, gridsize = 100, cv = 0, prob.alpha = FALSE, err.mark = "train")
-  p = p + pers_theme + ggtitle("Iris Data")
+  p = p + 
+    theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_line(colour = "grey80"),
+        panel.grid.minor = element_line(colour = "grey80"),
+        panel.border = element_blank(),
+        panel.background = element_blank()) + 
+    ggtitle("Iris Data")
   print(p)
   if (with_tree_plot)
     # "palettes" should ensure that colors in tree growing in rectangles and tree match
@@ -45,6 +50,7 @@ draw_cart_on_iris = function(depth, with_tree_plot = FALSE) {
   \end{itemize}
     \begin{figure}
     \centering
+      % FIGURE SOURCE: No source
       \includegraphics[height = 5.0cm]{figure_man/labelling_of_tree.png}
     \end{figure}
 \end{vbframe}
@@ -58,12 +64,13 @@ draw_cart_on_iris = function(depth, with_tree_plot = FALSE) {
   \end{itemize}
     \begin{figure}
     \centering
+      % FIGURE SOURCE: No source
       \includegraphics[height = 5.0cm]{figure_man/labelling_of_tree.png}
     \end{figure}
 \end{vbframe}
 
 \begin{vbframe}{Tress as an additive model}
-Each point in input space is assigned to one leaf node, and each leaf node has a set of input points leading to it, through axis-parallel splits. Hence, trees divide the feature space $\Xspace$ into rectangles. We can write the tree as a additive model over the leaf-rectangles: 
+Each point in input space is assigned to one leaf node, and each leaf node has a set of input points leading to it, through axis-parallel splits. Hence, trees divide the feature space $\Xspace$ into rectangles. We can write the tree as a additive model over the leaf-rectangles:
   \begin{align*}
     \fx = \sum_{m=1}^M c_m \I(x \in Q_m),
   \end{align*}
@@ -75,7 +82,7 @@ model = draw_cart_on_iris(depth = 2)
 @
 
 \end{vbframe}
-  
+
 \begin{vbframe}{Tree Growing}
 In the greedy top-down construction, features and split points are selected by exhaustive search. The training data is distributed to child nodes according to the splits - see below that nodes display the percentage of currently contained data.
 <<result='hide', fig.height=2.2>>=
@@ -91,7 +98,7 @@ draw_cart_on_iris(depth = 1, with_tree_plot = TRUE)
 
 \framebreak
 
-We proceed then recursively for each child node: 
+We proceed then recursively for each child node:
 Iterate over all features, and for each feature over all split points. Select the "best" split, divide training data from parent into left and right child.
 <<result='hide', fig.height=2.2>>=
 draw_cart_on_iris(depth = 2, with_tree_plot = TRUE)
@@ -99,7 +106,7 @@ draw_cart_on_iris(depth = 2, with_tree_plot = TRUE)
 
 \framebreak
 
-We proceed then recursively for each child node: 
+We proceed then recursively for each child node:
 Iterate over all features, and for each feature over all split points. Select the "best" split, divide training data from parent into left and right child.
 <<result='hide', fig.height=2.2>>=
 draw_cart_on_iris(depth = 3, with_tree_plot = TRUE)
@@ -111,7 +118,7 @@ draw_cart_on_iris(depth = 3, with_tree_plot = TRUE)
 <<fig.height=4>>=
 task = subsetTask(iris.task, seq(1, 150, by = 20))
 lrn = makeLearner("classif.rpart", cp = 0, minbucket = 1, maxdepth = 1)
-pl = plotLearnerPrediction(lrn, task, gridsize = 100, 
+pl = plotLearnerPrediction(lrn, task, gridsize = 100,
   cv = 0, prob.alpha = FALSE, err.mark = "none")
 pl = pl + theme(legend.position="none")
 print(pl)
@@ -130,7 +137,6 @@ modForrester = makeSingleObjectiveFunction(
   par.set = makeNumericParamSet(lower = 0, upper = 1, len = 1L),
   noisy = TRUE
 )
-set.seed(9)
 design = generateDesign(7L, getParamSet(modForrester), fun = lhs::maximinLHS)
 design$y = modForrester(design)
 ordered.design = design[order(design$x),]
@@ -140,6 +146,7 @@ kable(ordered.design, digits = 3)
 
 \hspace{0.5cm}
 \column{0.7\textwidth}
+% FIGURE SOURCE: No source
 \includegraphics[height = 0.55\textheight]{figure_man/regression_tree}
 \end{columns}
 \vspace{0.5cm}
@@ -170,12 +177,12 @@ $ sin(4x - 4) * (2x - 2)^2 * sin(20x -4) $
 \end{vbframe}
 
 \begin{vbframe}{Constant predictions in leafs}
-  After growing, for each leaf, we know which training observations are assigned to it. We produce a constant optimal rule here, for the complete associated 
+  After growing, for each leaf, we know which training observations are assigned to it. We produce a constant optimal rule here, for the complete associated
   rectangle $Q_m$
   \begin{itemize}
     \item Regression: We usually use the average value of all $\yi$ contained in the leaf. This is the optimal constant prediction under squared loss.
       We could also fit the median, which would be optimal under L1 loss.
-    \item Classification: We fit the most common label of the data contained in that node. In order to estimate probabilities, we simply count class proportions for the training data contained in that leaf. 
+    \item Classification: We fit the most common label of the data contained in that node. In order to estimate probabilities, we simply count class proportions for the training data contained in that leaf.
   \end{itemize}
 \end{vbframe}
 
@@ -201,14 +208,13 @@ $ sin(4x - 4) * (2x - 2)^2 * sin(20x -4) $
 \begin{itemize}
  \item For regression, we usually use $L_2$ loss / the SSE-criterion
   $$\risk(\Np) = \sum\limits_{(x,y) \in \Np} (y - c)^2$$
- \item The best constant under $L_2$ is the mean 
+ \item The best constant under $L_2$ is the mean
   $c = \bar{y}_\Np = \frac{1}{|\Np|} \sum\limits_{(x,y) \in \Np} y$
-\item Up to a constant, we just computed the variance of the label distribution in $\Np$; we can also interpret this as a way of measuring the impurity of the distribution / fluctuation around the constant. 
+\item Up to a constant, we just computed the variance of the label distribution in $\Np$; we can also interpret this as a way of measuring the impurity of the distribution / fluctuation around the constant.
   \item We could have also used the $L_1$ loss and the median
 \end{itemize}
 
 <<result='hide', fig.height=2.2>>=
-set.seed(2)
 x = rnorm(20)
 m = mean(x)
 s = var(x)
@@ -227,15 +233,15 @@ print(pl)
 \begin{vbframe}{Splitting Criteria: Classification}
 
 \begin{itemize}
-\item We normally use either Brier (so $L_2$ loss on probabilities) or the Bernoulli loss (from logistic regression) as loss function 
-\item We usually model constant predictions in node $\Np$ by simply calculating the class proportions 
+\item We normally use either Brier (so $L_2$ loss on probabilities) or the Bernoulli loss (from logistic regression) as loss function
+\item We usually model constant predictions in node $\Np$ by simply calculating the class proportions
 $$ \pikN = \frac{1}{|\Np|} \sum\limits_{(x,y) \in \Np} [y = k] $$
 This is the optimal constant under the 2 mentioned losses above
 \end{itemize}
 
 <<fig.height=2.2>>=
 d = data.frame(prob = c(0.1, 0.7, 0.2), label = 1:3)
-pl = ggplot(data = d, aes(x = label, y = prob, fill = label)) 
+pl = ggplot(data = d, aes(x = label, y = prob, fill = label))
 pl = pl + geom_bar(stat = "identity")  + theme(legend.position = "none")
 pl = pl + ylab("Class prob.") + xlab("Label")
 print(pl)
@@ -257,7 +263,7 @@ $$I(\Np) = -\sum_{k=1}^g \pikN \log \pikN$$
 \begin{vbframe}{Splitting with misclassification loss}
 \begin{itemize}
 \item Why don't we simply split according to the misclassification loss? We could use the majority class in each child
-  as "best constant" and count how many errors we make? Aren't we often interested in minimizing this error, but have to 
+  as "best constant" and count how many errors we make? Aren't we often interested in minimizing this error, but have to
   approximate it? We do not have to compute derivatives when we optimize the tree!
 \item Actually, that is possible, but Brier score and Bernoulli loss are more sensitive to changes in the node probabilities, and
   therefore often preferred
@@ -309,7 +315,7 @@ $Split2: 400(0-\frac{1}{3})^2 + 200(1-\frac{1}{3})^2 = 133.3$
 
 
 
- 
+
 
 
 % % BB: as we are not really talking too much about impurity anymore, I took this out
@@ -320,7 +326,7 @@ $Split2: 400(0-\frac{1}{3})^2 + 200(1-\frac{1}{3})^2 = 133.3$
 % % entropy = function(p) (p * log(p) + (1 - p) * log(1 - p))/(2 * log(0.5))
 % % gini = function(p) 2 * p * (1 - p)
 % % missclassification = function(p) (1 - max(p, 1 - p))
-% % plot(p, entropy(p), type = "l", col = Colors[1], lwd = 1.5, ylab = "", 
+% % plot(p, entropy(p), type = "l", col = Colors[1], lwd = 1.5, ylab = "",
 % %   ylim = c(0, 0.6), xlab = expression(hat(pi)[Nk]))
 % % lines(p, gini(p), col = Colors[2], lwd = 1.5)
 % % lines(p, sapply(p, missclassification), col = Colors[3], lwd = 1.5)
