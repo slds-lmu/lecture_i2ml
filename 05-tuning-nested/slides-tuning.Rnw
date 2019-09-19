@@ -31,8 +31,12 @@ knitr::set_parent("../style/preamble.Rnw")
 
 \begin{itemize}
 \item Recall, the model's \textbf{generalization performance} $GE(\fh)$ is what we are \textbf{actually} interested in. 
-\item We estimate the generalization performance by evaluating the model on the test set $\Dtest$: $\GEh{\fh} = \frac{1}{|\Dtest|} \sum\limits_{(\xb, y) \in \Dtest} L\left(y, \fxh \right)$
+\item We estimate the generalization performance by evaluating the model $\fh$ on the test set $\Dtest$: $$
+\GEh{\Dtest}\left(\fh\right) = \frac{1}{|\Dtest|} \sum\limits_{(\xb, y) \in \Dtest} L\left(y, \fxh \right)
+$$
 \end{itemize}
+
+\vspace*{-0.5cm}
 
 \begin{center}
 \begin{figure}
@@ -65,17 +69,7 @@ knitr::set_parent("../style/preamble.Rnw")
 \item If a model is too flexible so that it simply \enquote{memorizes} the training data, we will face the dreaded problem of overfitting. 
 \item Hence, control of capacity, i.e., proper setting of hyperparameters
  can prevent overfitting the model on the training set.
-\item Many other factors like optimization control settings, distance functions, scaling, algorithmic variants in the fitting procedure can heavily influence model performance in non-trivial ways. It is extremely hard to guess the correct choices here.
-\item The choice of the learner itself (e.g. logistic regression, decision tree, random forest) can also be seen as a hyperparameter. 
-
-\framebreak 
-
-\item In general, we might be interested in optimizing an entire ML \enquote{pipeline} (including preprocessing, feature construction, and other model-relevant operations). 
 \end{itemize}
-
-\begin{figure}
-  \includegraphics[width = 0.9\textwidth]{figure_man/automl1.png}
-\end{figure}
 
 \end{vbframe}
 
@@ -100,13 +94,11 @@ We face a \textbf{bi-level} optimization problem: The well-known risk minimizati
 We formally state the nested hyperparameter tuning problem as: 
 
 \begin{eqnarray*}  
-\min_{\lambda \in \Lambda} && \GEh~\left(\hat f\right) \\
-s.t. && \hat f = \mathcal{I}(\Dtrain, \lambda)
-\end{eqnarray*}
+\min_{\lambda \in \Lambda} && \GEh{\Dtest}\left(\mathcal{I}(\Dtrain, \lambda)\right) \end{eqnarray*}
 
 \begin{itemize}
 \item The learning algorithm $\mathcal{I}(\Dtrain, \lambda)$ (also: inducer) takes a training dataset as well as hyperparameter settings $\lambda$ (e.g. the desired depth of a classification tree) as an input. 
-\item It internally performs empirical risk minimization, and returns the optimal model $\hat f$. 
+\item $\mathcal{I}(\Dtrain, \lambda)$ internally performs empirical risk minimization, and returns the optimal model $\hat f$. 
 \end{itemize}
 
 \framebreak
@@ -120,6 +112,15 @@ The components of a tuning problem are:
 We could even be interested in multiple measures simultaneously, e.g., accuracy and sparseness of our model, TPR and PPV, etc. 
 \item A (resampling) procedure for estimating the predictive performance: The generalization error can be estimated by holdout, but also by more advanced techniques like cross-validation. 
 \end{itemize}
+
+\framebreak 
+
+\begin{center}
+\begin{figure}
+  \includegraphics[width=0.8\textwidth]{figure_man/tuning_process.png}
+\end{figure}
+\end{center}
+
 
 \end{vbframe}
 
@@ -175,7 +176,20 @@ We summarize all hyperparameters we want to tune over in a vector $\lambda \in \
 
 \end{vbframe}
 
+\begin{vbframe}{Tuning Pipelines}
 
+\begin{itemize}
+\item Many other factors like optimization control settings, distance functions, scaling, algorithmic variants in the fitting procedure can heavily influence model performance in non-trivial ways. It is extremely hard to guess the correct choices here.
+\item The choice of the learner itself (e.g. logistic regression, decision tree, random forest) can also be seen as a hyperparameter. 
+\item In general, we might be interested in optimizing an entire ML \enquote{pipeline} (including preprocessing, feature construction, and other model-relevant operations). 
+\end{itemize}
+
+\begin{figure}
+  \includegraphics[width = 1\textwidth]{figure_man/automl1.png}
+\end{figure}
+
+
+\end{vbframe}
 
 
 
@@ -359,11 +373,41 @@ Model-based optimization (MBO) is a sequential optimization procedure. We start 
 \item The resampling performance of the learner with hyperparameter setting $\lambda^{(\text{new})}$ is evaluated and added to the set of design points.  
 \end{itemize}
 
-We iteratively perform those steps: (1) fit a surrogate model, (2) propose a new configuration, (3) evaluate the learners performance and update the design. 
+ <<mbo, echo = FALSE, results = FALSE, fig.height = 4>>=
+ library(mlrMBO)
+
+ set.seed(1)
+
+  test.fun = makeSingleObjectiveFunction(
+   fn = function(x) x * sin(14 * x),
+   par.set = makeNumericParamSet(lower = 0, upper = 1, len = 1L)
+  )
+
+  ctrl.ei = makeMBOControl()
+  ctrl.ei = setMBOControlTermination(ctrl.ei, iters = 1L)
+  ctrl.ei = setMBOControlInfill(ctrl.ei, crit = makeMBOInfillCritEI())
+
+  lrn.km = makeLearner("regr.km", predict.type = "se")
+  design = data.frame(x = c(0.1, 0.3, 0.65, 1))
+
+  run.ei = exampleRun(test.fun, design = design, learner = lrn.km, control = ctrl.ei, show.info = FALSE)
+
+  renderExampleRunPlot(run.ei, 1)
+ @
+
+ \begin{footnotesize}
+  Upper plot: The surrogate model (black, dashed) models a the \emph{unknown} relationship between input and output (black, solid) based on the initial design (red points). Lower plot: Mean and variance of the surrogate model is used to derive the expected improvement (EI) criterion. The point that maximizes the EI is proposed (blue point). 
+  \end{footnotesize}
 
 \framebreak 
 
+We iteratively perform those steps: (1) fit a surrogate model, (2) propose a new configuration, (3) evaluate the learners performance and update the design. 
+
+\vspace*{0.2cm} 
+
 This guides us more to the \enquote{interesting} areas, and prevents us from searching irrelevant areas:
+
+\vspace*{-0.5cm}
 
 \begin{center}
 \begin{figure}
@@ -382,11 +426,12 @@ This guides us more to the \enquote{interesting} areas, and prevents us from sea
   \item For many configurations, it might be clear early on that further training is not likely to significantly improve the performance
   \item More importantly, the relative ordering of configurations (for a given dataset) can also become evident early on. 
   \item \textbf{Idea:} \enquote{weed out} poor configurations early during training
-  \item One approach is \textbf{successful halving}: Given an initial set of configurations, all trained for a small initial budget, repeat:
+  \item One approach is \textbf{successive halving}: Given an initial set of configurations, all trained for a small initial budget, repeat:
   \begin{itemize}
     \item Remove the half that performed worst, double the budget
     \item Continue until the new budget is exhausted
   \end{itemize}  
+  \item Successful halving is performed several times with different trade-offs between the number of configurations considered and the budget that is spent on them. 
 \end{itemize}
 
 \framebreak 
@@ -415,3 +460,4 @@ Other advanced techniques besides model-based optimization and the hyperband alg
 
 
 \endlecture
+
