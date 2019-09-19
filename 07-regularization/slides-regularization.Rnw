@@ -227,7 +227,7 @@ we might prefer to control the complexity  \textbf{on a continuum} from simple t
 \end{figure}
 \end{center}
 
-Let $J(f)$ be a function that measures the \enquote{complexity} of $f$.
+% Let $J(f)$ be a function that measures the \enquote{complexity} of $f$.
 
 \end{vbframe}
 
@@ -235,55 +235,49 @@ Let $J(f)$ be a function that measures the \enquote{complexity} of $f$.
 
 \begin{vbframe}{Regularized Empirical Risk Minimization}
 
-We are looking for models that 
-    \begin{enumerate}
-      \item fit well (low empirical risk $\riskef$),
-      \item but not be too complex (low $J(f)$). 
-    \end{enumerate}
+  \dlz
+  
+  Recall, empirical risk minimization with a complex hypothesis set tends to overfit. A major tool to handle overfitting is \textbf{regularization}.
+  
+  \lz
+  
+  In the broadest sense, regularization refers to any modification made to a learning algorithm that is intended to reduce its generalization error but not its training error.
+  
+  \lz
+  
+  Explicitly or implicitly, such modifications represent the preferences we have regarding the elements of the hypothesis set. 
 
-\lz 
-
-We decide to combine the two in a weighted sum called \textbf{regularized risk} and to control the trade-off via the complexity control parameter $\lambda$.
-
-\begin{eqnarray*}
-\riskrf &=& \riskef + \lambda \cdot J(f) \\
-        &=& \sumin \Lxyi + \lambda \cdot J(f)
-\end{eqnarray*}
-
-\vfill
-
-\begin{footnotesize}
-\textbf{Note:} As for $\riske$, often $\riskr$ and $J$ are defined on $\thetab$ instead of $f$, so $\riskrt = \risket + \lambda \cdot J(\thetab)$. 
-\end{footnotesize}
-
-\framebreak 
-
+  \framebreak
+  
+  Commonly, regularization takes the following form:
+  
+  $$
+  \riskrf = \riskef + \lambda \cdot J(f) = \sumin \Lxyi + \lambda \cdot J(f)
+  $$
 \begin{itemize}
+
   \item $J(f)$ is called \textbf{complexity penalty}, \textbf{roughness penalty} or \textbf{regularizer}.
-  \item $\lambda$ is called \textbf{complexity control parameter}. 
-  \item $\lambda$ is hard to set manually and is usually selected via cross-validation (see later).
-  \item $\lambda = 0$: the regularized risk $\riskrf$ reduces to the simple empirical $\riskef$.
-  \item If $\lambda$ goes to infinity, we stop caring about the loss / fit and models become as \enquote{simple} as possible.
+  \item It measures the \enquote{complexity} of a model and penalizes it in the fit.
+  \item As for $\riske$, often $\riskr$ and $J$ are defined on $\thetab$ instead of $f$, so $\riskrt = \risket + \lambda \cdot J(\thetab)$. 
 \end{itemize}
 
-\end{vbframe}
+\framebreak
 
-\begin{vbframe}{Regularization}
+\textbf{Remark:}
 
-\textbf{Regularization} is a major tool to handle overfitting. 
+\begin{itemize}
+  \item Note that we now face an optimization problem with two criteria: 
+    \begin{enumerate}
+      \item models should fit well (low empirical risk),
+      \item but not be too complex (low $J(f)$). 
+    \end{enumerate}
+  \item We decide to combine the two in a weighted sum and to control
+  the trade-off via the complexity control parameter $\lambda$.
+  \item $\lambda$ is hard to set manually and is usually selected via cross-validation (see later).
+  \item $\lambda = 0$: the regularized risk $\riskrf$ reduces to the simple empirical $\riskef$.
 
-  \begin{itemize}
-    \item  In the broadest sense, regularization refers to \textbf{any} modification made to a learning algorithm that is intended to reduce its generalization error but not its training error.
-    \item Regularized empirical risk minimization is \textbf{one} common way to perform regularization$^{(*)}$ 
-    \item  Explicitly or implicitly, such modifications represent the preferences we have regarding the elements of the hypothesis set, for example the preference of having models with less features. 
-  \end{itemize}
-
-  \vfill
-
-  \begin{footnotesize}
-  $^{(*)}$ There are other forms of regularization, e.g. by performing less aggressive risk minimization through early stopping iterative optimization algorithms. 
-  \end{footnotesize}
-
+  \item If $\lambda$ goes to infinity, we stop caring about the loss / fit and models become as \enquote{simple} as possible.
+\end{itemize}
 
 \framebreak
 
@@ -296,11 +290,12 @@ We decide to combine the two in a weighted sum called \textbf{regularized risk} 
 
 \end{vbframe}
 
+
 \section{Regularization in Linear Modeling}
 
 \begin{vbframe}{Regularization in the linear model}
 
-For the (unregularized) linear model we optimize 
+Recall, for the (unregularized) linear model we optimize 
 $$
   \riskt = \sumin \left(\yi - \thetab^\top \xb\right)^2 . 
 $$
@@ -316,33 +311,38 @@ $$
   \item When features are highly correlated (i.e. $\Xmat$ is close to \enquote{being not a full rank matrix}), the least-squares estimate becomes highly sensitive to random errors in the observed response, producing a large variance in the fit. 
 \end{itemize}
 
-\framebreak 
+% \framebreak 
 
-Regularization counters the risk of being sensitive to random errors. 
+% Regularization counters the risk of being sensitive to random errors. 
+% \lz 
 
-\lz 
+% To favor models with less complexity, we add a complexity penalty to the risk: 
 
-To favor models with less complexity, we add a complexity penalty to the risk: 
+% $$
+% \riskrt = \sumin \left(\yi - \thetab^\top \xb\right)^2 + \lambda \cdot J(\thetab). 
+% $$
 
-$$
-\riskrt = \sumin \left(\yi - \thetab^\top \xb\right)^2 + \lambda \cdot J(\thetab). 
-$$
-
-In the following we will present two possible choices for $J(\thetab)$.
+% In the following we will present two possible choices for $J(\thetab)$.
 
 \end{vbframe}
 
 \begin{vbframe}{Ridge Regression}
 
   \textbf{Ridge regression} is a  \textbf{shrinkage method}, as it shrinks the regression coefficients
-  $\thetab$ towards $0$, by putting an $L_2$-penalty ($J(\thetab) = \|\thetab\|^2 = \sqrt{\theta_1^2 + \theta_2^2 + ... + \theta_p^2}$) on it:
+  $\thetab$ towards $0$, by putting an $L_2$-penalty$^{(*)}$ on it:
   \begin{eqnarray*}  
   \thetah_{\text{Ridge}} &=& \argmin_{\thetab} \sumin \left(\yi - \thetab^\top \right)^2 + \lambda ||\thetab||_2^2 \\
   &=& \argmin_{\thetab} \left(\ydat - \Xmat \thetab\right)^\top \left(\ydat - \Xmat \thetab\right) + \lambda \thetab^\top \thetab.
   \end{eqnarray*}
 
 Optimization is possible (as in the normal LM) in analytical form:
-$$\thetah_{\text{Ridge}} = (\Xmat^T \Xmat  + \lambda \id)^{-1} \Xmat^T\ydat$$
+$$\thetah_{\text{Ridge}} = (\Xmat^\top \Xmat  + \lambda \id)^{-1} \Xmat^\top\ydat$$
+
+\vfill
+
+\begin{footnotesize}
+$^{(*)}$ $J(\thetab) = \|\thetab\|_2^2 = \theta_1^2 + \theta_2^2 + ... + \theta_p^2$
+\end{footnotesize}
 
 \framebreak 
 
@@ -390,7 +390,7 @@ $$\thetah_{\text{Ridge}} = (\Xmat^T \Xmat  + \lambda \id)^{-1} \Xmat^T\ydat$$
 % \textbf{Sketch of Proof}: Let us consider  \eqref{eq:form1} first. Let $\thetah_{Ridge}$ be the minimum of $g_\lambda(\bm{\theta})$. Necessarily, the gradient of $g_\lambda$ at $\thetah_{Ridge}$ is $0$:
 
 % $$
-% \nabla g_\lambda(\thetah_{Ridge}) = - 2 \bm{y}^T\bm{X} + 2 (\thetah_{Ridge})^\top \bm{X}^T\bm{X} + 2 \lambda (\thetah_{Ridge})^\top = 0.
+% \nabla g_\lambda(\thetah_{Ridge}) = - 2 \bm{y}^\top\bm{X} + 2 (\thetah_{Ridge})^\top \bm{X}^\top\bm{X} + 2 \lambda (\thetah_{Ridge})^\top = 0.
 % $$
 
 % \vspace{0.2cm} 
@@ -409,7 +409,7 @@ $$\thetah_{\text{Ridge}} = (\Xmat^T \Xmat  + \lambda \id)^{-1} \Xmat^T\ydat$$
 % The first KKT condition says: 
 
 % $$
-% \nabla_\theta L(\bm{\theta}, \alpha)= - 2\bm{y}^T\bm{X} + 2 \bm{\theta}^T \bm{X}^T\bm{X} + 2 \alpha \bm{\theta}^T = 0.
+% \nabla_\theta L(\bm{\theta}, \alpha)= - 2\bm{y}^\top\bm{X} + 2 \bm{\theta}^\top \bm{X}^\top\bm{X} + 2 \alpha \bm{\theta}^\top = 0.
 % $$
 
 % Since $\nabla g_\lambda(\thetah_{Ridge}) = 0$, this condition is satisfied if we set $\bm{\theta} = \thetah_{Ridge}$ and $\alpha = \lambda$. 
@@ -505,7 +505,7 @@ plotRidge(x, y, lambda.vec, baseTrafo, degree = 10) +
 
 \begin{vbframe}{Lasso Regression}
 
-Another shrinkage method is the so-called \textbf{Lasso regression}, which uses a $L_1$ penalty on $\thetab$ ($J(\thetab) = \|\thetab\|_1 = |\theta_1| + |\theta_2| + ... + |\theta_p|$$):
+Another shrinkage method is the so-called \textbf{Lasso regression}, which uses a $L_1$ penalty on $\thetab$ $^{(*)}$:
 
 \begin{eqnarray*}
 \thetah_{\text{Lasso}} &=&  \argmin_{\thetab} \left\{ \sumin \left(\yi - \fxit\right)^2 + \lambda ||\thetab||_1 \right\} \\
@@ -513,6 +513,12 @@ Another shrinkage method is the so-called \textbf{Lasso regression}, which uses 
 \end{eqnarray*}
 
 Note that optimization now becomes much harder. $\riskrt$ is still convex, but we have moved from an optimization problem with an analytical solution towards an undifferentiable problem.
+
+\vfill
+
+\begin{footnotesize}
+$^{(*)}$ $J(\thetab) = \|\thetab\|_1 = |\theta_1| + |\theta_2| + ... + |\theta_p|$
+\end{footnotesize}
 
 \framebreak 
 
@@ -741,7 +747,7 @@ Comments on \textbf{Ridge vs. Lasso: }
 Elastic Net combines the $L_1$ and $L_2$ penalty:
 
 $$
-\mathcal{R}_{\text{elnet}}(\thetab) =  \sumin (\yi - \thetab^T \xi)^2 + \lambda_1 ||\thetab||_1 + \lambda_2 \|\thetab\|_2^2.
+\mathcal{R}_{\text{elnet}}(\thetab) =  \sumin (\yi - \thetab^\top \xi)^2 + \lambda_1 ||\thetab||_1 + \lambda_2 \|\thetab\|_2^2.
 $$
 
 <<echo=FALSE, fig.height=3, fig.width=8, warning=FALSE>>=
@@ -770,11 +776,11 @@ p
 
 We described regularization for the special case of the linear model $\fxt = \thetab^\top \xb$. Of course, regularized risk minimization can be performed for any model $\fx$. 
 
-\lz 
+\vspace*{0.2cm} 
 
 We can, for example, also construct $L_1$ or $L_2$ penalized \textbf{logistic regression} to enable coefficient shrinkage and variable selection in this model. 
 
-\lz 
+\vspace*{0.2cm} 
 
 We can add a regularizer to the risk of logistic regression
 
@@ -783,8 +789,11 @@ We can add a regularizer to the risk of logistic regression
 &= \sumin \mathsf{log}\left[1 + \mathsf{exp}\left(-2\yi f\left(\left.\xi~\right|~ \thetab\right)\right)\right] + \lambda \cdot J(\thetab)
 \end{align*}
 
-The other parts of the logistic regression remains exactly the same
-except for the fitting algorithm to find \(\hat{\thetab}_{\text{reg}}\) (no closed-form solution, numerical optimization methods are necessary).
+Instead of $\risket$ we minimize $\riskrt$ (both have no closed-form solution, numerical optimization methods are necessary). 
+
+
+% The other parts of the logistic regression remains exactly the same
+% except for the fitting algorithm to find \(\hat{\thetab}_{\text{reg}}\) (no closed-form solution, numerical optimization methods are necessary).
 
 \end{frame}
 
@@ -882,7 +891,7 @@ source("rsrc/regularized_log_reg.R")
 
 \begin{vbframe}{Summary: Regularized Risk Minimization}
 
-In $\riskr$ one has extreme flexibility to make appropriate choices
+The principle of regularization can be used \textbf{independent} of the model $\fx$ being used. In $\riskr$ one has extreme flexibility to make appropriate choices
 
 $$
 \riskrf= \min_{f \in \Hspace} \sumin \Lxyi + \lambda \cdot J(f)
@@ -941,7 +950,7 @@ By varying these choices one can construct a huge number of different ML models.
 
 % Let us make a quadratic approximation of the unregularized objective $\risket$ in the neighborhood of its minimizer $\thetah$,  
 
-% $$ \mathcal{\tilde R}_{\text{emp}}(\thetab)= \mathcal{R}_{\text{emp}}(\thetah) + \frac{1}{2} (\thetab - \thetah)^T \bm{H} (\thetab - \thetah), $$
+% $$ \mathcal{\tilde R}_{\text{emp}}(\thetab)= \mathcal{R}_{\text{emp}}(\thetah) + \frac{1}{2} (\thetab - \thetah)^\top \bm{H} (\thetab - \thetah), $$
 
 % where $\bm{H}$ is the Hessian matrix of $\risket$ w.r.t. $\thetab$ evaluated at $\thetah$. 
 
