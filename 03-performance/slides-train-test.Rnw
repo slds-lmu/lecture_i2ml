@@ -14,6 +14,7 @@ is estimated by the averaging error over the same data set we fitted on:
 
 \lz
 
+% FIGURE SOURCE: https://drive.google.com/open?id=1Fvan5-o14-b3aK0jfo4maWvXLD1g04nk5_yLaEyEPqA
 \includegraphics[width=\textwidth, height=6cm,page=4]{figure_man/train_error.png}
 
 \vspace{-0.8cm}
@@ -21,7 +22,7 @@ is estimated by the averaging error over the same data set we fitted on:
 \end{vbframe}
 
 \begin{vbframe}{Example: Polynomial Regression}
-  
+
 Assume an (unknown) sinusoidal function that $0.5 + 0.4 \cdot \sin (2 \pi x) + \epsilon$ that we sample from with some measurement error $\epsilon$.
 
 <<echo=FALSE, out.width="0.75\\textwidth", fig.width = 8, fig.height = 4.5, fig.align="center">>=
@@ -31,7 +32,6 @@ source("rsrc/plot_train_test.R")
 .h = function(x) 0.5 + 0.4 * sin(2 * pi * x)
 h = function(x) .h(x) + rnorm(length(x), mean = 0, sd = 0.05)
 
-set.seed(1234)
 x.all = seq(0, 1, length = 26L)
 ind = seq(1, length(x.all), by = 2)
 mydf = data.frame(x = x.all, y = h(x.all))
@@ -67,16 +67,16 @@ Simply using the training error seems to be a bad idea.
 
 \begin{vbframe}{Training Error Problems}
 \begin{itemize}
-  \item The training error is usually a very unreliable and overly optimistic estimator of future performance. 
+  \item The training error is usually a very unreliable and overly optimistic estimator of future performance.
     Modelling the training data is not of interest, but modelling the general structure in it. We do not want to overfit to noise
     or peculiarities.
-  \item The training error of 1-NN is always zero, as each observation is its own NN during test time 
+  \item The training error of 1-NN is always zero, as each observation is its own NN during test time
     (assuming we do not have repeated measurements with conflicting labels).
   \item Extend any ML training in the following way:
     After normal fitting, we also store the training data.
     During prediction, we first check whether $x$ is already stored in this set. If so, we replicate its label.
     The train error of such an (unreasonable) procedure will be 0.
-  \item There are so called interpolators - interpolating splines, interpolating Gaussian processes - whose predictions can always perfectly match the 
+  \item There are so called interpolators - interpolating splines, interpolating Gaussian processes - whose predictions can always perfectly match the
     regression targets, they are not necessarily good as they will interpolate the noise, too
 \end{itemize}
 \end{vbframe}
@@ -96,13 +96,14 @@ Simply using the training error seems to be a bad idea.
 \item That implies that for a given set D , we have to preserve some data for testing that we cannot use for training
 \end{itemize}
 \end{vbframe}
-    
+
 \begin{vbframe}{Test Error and Hold-Out Splitting}
 \begin{itemize}
   \item Split data into 2 parts, e.g. a common setup is 2/3 for training, 1/3 for testing
   \item Evaluate on data not used for model building, no way to \enquote{cheat}
 \end{itemize}
 
+% FIGURE SOURCE: https://drive.google.com/open?id=1NI798MXdADWpUuHo9Mzqz-7nJmKh6o4yoj3edalcSEo
 \includegraphics[height=5.5cm]{figure_man/test_error.png}
 
 \framebreak
@@ -152,31 +153,30 @@ text(6.5, 0.05, "Overfitting,\n\nLow Bias,\nHigh Variance", bg = "white")
 arrows(7.5, 0.05, 5.5, 0.05, code = 1, lty = 2, length = 0.1)
 @
 
-We can also plot error measures for all polynomial degrees. We see the common monotonous decrease in training error, 
+We can also plot error measures for all polynomial degrees. We see the common monotonous decrease in training error,
 if we increase model complexity (we can adapt better to data with more flexibility) and we see the common U-shape of the test error.
 First we underfit, then we over-fit, sweet-spot is in the middle. Numerically best for $d=3$.
 
 \end{vbframe}
 
-\begin{vbframe}{Problems of test error} 
+\begin{vbframe}{Problems of test error}
 \begin{itemize}
   \item In general, the test is a good way to estimate future performance, \textbf{given} that the test data is
     i.i.d. compared to the data we will see when we apply the model.
-  \item The estimator on the will suffer from high variance and be less reliable if the test set is too small. 
-    If the test set contains less than a few hundred observations, you should worry. 
-  \item Small sample size problems can come in different shapes and forms in ML. Maybe your test set (for binary classification) is large, 
+  \item The estimator on the will suffer from high variance and be less reliable if the test set is too small.
+    If the test set contains less than a few hundred observations, you should worry.
+  \item Small sample size problems can come in different shapes and forms in ML. Maybe your test set (for binary classification) is large,
     but one of the two classes is small.
   \item Try out different train-test splits in your own experiments and study error measurement fluctuation.
 \end{itemize}
 \end{vbframe}
 
-\begin{vbframe}{Problems of test error} 
+\begin{vbframe}{Problems of test error}
 Let's produce repeated 2/3 training, 1/3 testing splits on two ML tasks: a) iris (n = 150) b) sonar (n = 208).
-So we have about 50 (iris) and ca 70 (sonar) observations in our respective test sets. 
-The plots below show the strong stochastic fluctuation of test errors (50 repeats). 
+So we have about 50 (iris) and ca 70 (sonar) observations in our respective test sets.
+The plots below show the strong stochastic fluctuation of test errors (50 repeats).
 
 <<echo=FALSE, fig.width = "\\textwidth", fig.height = 3, fig.align="center">>=
-set.seed(123)
 my_ss = function(task) {
   lrn = makeLearner("classif.naiveBayes")
   r1 = subsample(lrn, task, iters = 50, show.info = FALSE)
@@ -195,12 +195,12 @@ print(pl)
 \end{vbframe}
 
 
-\begin{vbframe}{Problems of test error} 
-A major point of confusion: 
+\begin{vbframe}{Problems of test error}
+A major point of confusion:
 \begin{itemize}
 \item In ML we are in a weird situation. We are usually given one data set. At the end of our model selection and evaluation process
-we will likely fit one model on exactly that complete data set. As training error evaluation does not work, 
-we have now nothing left to evaluate exactly that model. 
+we will likely fit one model on exactly that complete data set. As training error evaluation does not work,
+we have now nothing left to evaluate exactly that model.
 \item Holdout splitting (and the soon following resampling) are tools just to estimate that future performance, to put that
 next to our final model. All of the models produced during that phase of evaluation are basically intermediate results.
 \item Keep that already in mind now, it will help to avoid confusion when we move on to cross-validation and nested cross-validation.
@@ -313,4 +313,3 @@ print(pl2)
 
 \end{vbframe}
 \endlecture
-

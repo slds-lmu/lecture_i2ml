@@ -8,7 +8,7 @@ DAY1=01-intro
 DAY2=02-classification
 DAY3=03-performance
 DAY4=04-trees
-DAY5=05-misc-topics
+DAY5=05-tuning-nested
 
 day1:
 	cd $(DAY1); make
@@ -41,3 +41,6 @@ day4-all:
 sources:
 	cd $(DAY3); make sources
 	cd $(DAY4); make sources
+	
+install:
+	Rscript -e 'source("install.R")'
