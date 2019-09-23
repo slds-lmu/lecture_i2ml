@@ -12,110 +12,138 @@ params:
 
 ```  
 
-
-```{r run_chunk, echo=FALSE, cache=FALSE}
-# see https://stackoverflow.com/a/28151571
-run_chunk <- function(chunkName,envir=.GlobalEnv) {
-  chunkName <- unlist(lapply(as.list(substitute(.(chunkName)))[-1], as.character))    
-  eval(parse(text=knitr:::knit_code$get(chunkName)),envir=envir) 
-} 
+```{r load_chunk, echo=FALSE, cache=FALSE}
 knitr::read_chunk("code_demo_knn.Rmd")
 run_chunk("knn-plot_2D_classif")
 ```  
 
 # Code demo for generative classification methods
 
-not modeling cond density directly
+When we are using a generative approach to classification, we are not modeling
+the conditional density $\pi_k(x)$ (class membership for given set of training data) directly. 
+Instead we are modeling the "other" conditional density $p(x | y = k)$ 
+(data for given class membership) - the so-called likelihood function. Following the 
+[Bayes' rule](https://en.wikipedia.org/wiki/Bayes%27_theorem) one gets that
 
 $$
-\pi_k(x) \propto \pi_k \cdot p(x | y = k)
+\pi_k(x) \propto \pi_k \cdot p(x | y = k).
 $$
+The density of the parameter $\pi_k$ is called the prior and can be interpreted as
+the representation of our a priori knowledge. In our setting we can use a straightforward
+approach to modeling the priors, s.t.
 
 $$
-\hat{\pi}_k = \frac{n_k}{n}
+\hat{\pi}_k = \frac{n_k}{n}.
 $$
+With priors and likelihood specified and since the probabilities of all states sum up to one, one gets that
+$$
+1 = \sum^{g}_{j=1}\alpha \pi_j \cdot p(x | y = j) \iff \alpha = \frac{1}{\sum^{g}_{j=1}\pi_j \cdot p (x | y = j)}.
+$$
+From this one derives that $\pi_k(x)$ can be expressed s.t.
 
 $$
-1 = \sum^{g}_{j=1}\alpha \pi_j \cdot p(x | y = j) \iff \alpha = \frac{1}{\sum^{g}_{j=1}\pi_j \cdot p (x | y = j)}
+\pi_k(x) = \frac{\pi_k \cdot p(x | y = k)}{\sum^{g}_{j=1}\pi_j \cdot p(x | y = j)}.
 $$
-
-$$
-\pi_k(x) = \frac{\pi_k \cdot p(x | y = k)}{\sum^{g}_{j=1}\pi_j \cdot p(x | y = j)}
-$$
-
+In this code demo we're looking at the iris data set again:
 ```{r genclass-plot_data}
-library(mlr)
 library(ggplot2)
 
 data(iris)
 target <- "Species"
-features <- c("Sepal.Width","Sepal.Length")
-iris_train = iris[, c(target, features)]
-target_levels <- levels(iris_train[,target])
-iris_task = makeClassifTask(data = iris_train, target = "Species")
+features <- c("Sepal.Width", "Sepal.Length")
+iris_train <- iris[, c(target, features)]
+target_levels <- levels(iris_train[, target])
 
-ggplot(iris_train, aes(x=Sepal.Width, y=Sepal.Length)) + 
-  geom_point(aes(color=Species))
+ggplot(iris_train, aes(x = Sepal.Width, y = Sepal.Length)) +
+  geom_point(aes(color = Species))
+```
+
+For the estimation of the models we will mostly use the mlr-package, s.t.
+we firstly have to define a *task*:
+```{r genclass-mlr}
+library(mlr)
+iris_task <- makeClassifTask(data = iris_train, target = target)
 ```
 
 ## Linear discriminant analysis (LDA)
 
-In LDA, we caclulate the posteriori class probabilities like that:
+In LDA, we model the likelihood as a multivariate normal distribution s.t.
 $$
-p(x | y = k) = \frac{1}{\pi^{\frac{p}{2}} |\Sigma|^{\frac{1}{2}}}\exp(- \frac{1}{2} (x-\mu_k)^T\Sigma^{-1}(x-\mu_k) )
+p(x | y = k) = \frac{1}{\pi^{\frac{p}{2}} |\Sigma|^{\frac{1}{2}}}\exp(- \frac{1}{2} (x-\mu_k)^T\Sigma^{-1}(x-\mu_k) ).
 $$
+With:
 
-* $\hat{\mu}_k = \frac{1}{n_k}\sum_{i: y^{(i)} = k} x^{(i)}$  
-* $\hat{\Sigma} = \frac{1}{n - g} \sum_{k=1}^g\sum_{i: y^{(i)} = k} (x^{(i)} - \hat{\mu}_k)(x^{(i)} - \hat{\mu}_k)^T$  
+* $\hat{\mu}_k = \frac{1}{n_k}\sum_{i: y^{(i)} = k} x^{(i)},$  
+* $\hat{\Sigma} = \frac{1}{n - g} \sum_{k=1}^g\sum_{i: y^{(i)} = k} (x^{(i)} - \hat{\mu}_k)(x^{(i)} - \hat{\mu}_k)^T.$  
     
-```{r genclass-lda_plot}
-iris_lda_learner = makeLearner("classif.lda")
-iris_lda_model = train(learner = iris_lda_learner, task = iris_task)
-
-
-plotLearnerPrediction(iris_lda_learner, iris_task)
+This means for every class it is assumed that data is normally distributed with the same covariance matrix.
+We train the model:
+```{r genclass-lda_train}
+iris_lda_learner <- makeLearner("classif.lda")
+iris_lda_model <- train(learner = iris_lda_learner, task = iris_task)
 ```
+
+We create a general framework for likelihoods, s.t. the we are able to visualize 
+them:
+
 ```{r genclass-lda_likelihood}
 library(mvtnorm)
 
+# function, where lda is trained and the means of the classes and the covariance
+# matrix are returned. This defines the likelihood completely.
+get_mvgaussian_lda <- function(data, target, level, features) {
+  classif_task <- makeClassifTask(data = data[, c(features, target)], target = target)
+  lda_learner <- makeLearner("classif.lda")
+  lda_model <- train(learner = lda_learner, task = classif_task)
 
-get_mvgaussian_lda <- function(data, target, level, features){
-  classif_task = makeClassifTask(data = data[,c(features, target)], target = target)
-  lda_learner = makeLearner("classif.lda")
-  lda_model = train(learner = lda_learner, task = classif_task)  
-  
-  list(mean = lda_model$learner.model$means[level,], 
-       sigma = solve(tcrossprod(lda_model$learner.model$scaling)), 
-       type = "mv_gaussian", 
-       features = features)
+  list(
+    mean = lda_model$learner.model$means[level, ],
+    # ?MASS::lda "a matrix which transforms observations to discriminant functions,
+    # normalized so that within groups covariance matrix is spherical."
+    # -->so the inverse square root of the covariance
+    sigma = solve(tcrossprod(lda_model$learner.model$scaling)),
+    type = "mv_gaussian",
+    features = features
+  )
 }
 
-# this can be written way more elegantly with S3 methods
-
-
+# function, which creates a likelihood object by combining the data with
+# the specification of the likelihood
+# (this can be written way more elegantly with S3 methods)
 likelihood <- function(likelihood_def, data) {
-  # will be extended
-   switch(likelihood_def$type,
-          mvgaussian_lda = get_mvgaussian_lda(data, likelihood_def$target,
-                                              likelihood_def$level, 
-                                              likelihood_def$features)
-   )
+  # will be extended, when we define additional likelihood types
+  switch(likelihood_def$type,
+    mvgaussian_lda = get_mvgaussian_lda(
+      data, likelihood_def$target,
+      likelihood_def$level,
+      likelihood_def$features
+    )
+  )
 }
 
-predict_likelihood <- function(likelihood, x){
-   switch(likelihood$type,
-         mv_gaussian = dmvnorm(x, mean=likelihood$mean, 
-                               sigma = likelihood$sigma)
-   )  
+# function which predicts the likelihood value at given x from a likelihood
+# object
+predict_likelihood <- function(likelihood, x) {
+  # will be extended, when we define additional likelihood types
+  switch(likelihood$type,
+    mv_gaussian = dmvnorm(x,
+      mean = likelihood$mean,
+      sigma = likelihood$sigma
+    )
+  )
 }
-
 ```
+
+We write a plot function for the multivariate likelihood functions with two 
+features:
 
 ```{r genclass-plot2D_lik_mv}
 library(reshape2)
 
-plot_2D_likelihood <- function(likelihoods, data, X1, X2, target, lengthX1 = 100, 
-                               lengthX2 = 100){
+# function for a generative classification method with two features to visualize
+# the likelihoods of the target levels already computed.
+plot_2D_likelihood <- function(likelihoods, data, X1, X2, target, lengthX1 = 100,
+                               lengthX2 = 100) {
   gridX1 <- seq(
     min(data[, X1]),
     max(data[, X1]),
@@ -128,222 +156,301 @@ plot_2D_likelihood <- function(likelihoods, data, X1, X2, target, lengthX1 = 100
   )
 
   # compute grid coordinates with cartesian product
-  grid_data <- expand.grid(gridX1, gridX2)  
-  features <-  c(X1, X2)
+  grid_data <- expand.grid(gridX1, gridX2)
+  features <- c(X1, X2)
   target_levels <- names(likelihoods)
   names(grid_data) <- features
-  
-  lik <- sapply(target_levels, function(level) { 
+
+  # predict likelihood values for every target level on the grid
+  lik <- sapply(target_levels, function(level) {
     likelihood <- likelihoods[[level]]
-    predict_likelihood(likelihood, grid_data[,likelihood$features])
+    predict_likelihood(likelihood, grid_data[, likelihood$features])
   })
-  
+
   grid_data <- cbind(grid_data, lik)
-  
+
   to_plot <- melt(grid_data, id.vars = features)
-  
-    ggplot() +
+
+  ggplot() +
     geom_contour(
       data = to_plot,
       aes_string(x = X1, y = X2, z = "value", color = "variable")
-    ) + 
-    geom_point(data=data, aes_string(x=X1,y=X2, color= target))
+    ) +
+    geom_point(data = data, aes_string(x = X1, y = X2, color = target))
 }
 ```
 
 ```{r genclass-plot_lda_lik}
-liks <- sapply(target_levels, function(level) 
-  likelihood(list(type="mvgaussian_lda", target=target,
-                level=level, features = features), iris_train), simplify = FALSE)
+# compute lda likelihoods for every target level
+liks <- sapply(target_levels, function(level)
+  likelihood(
+    likelihood_def = list(
+      type = "mvgaussian_lda", target = target,
+      level = level, features = features
+    ),
+    iris_train
+  ),
+simplify = FALSE
+)
 
-plot_2D_likelihood(liks,iris_train, "Sepal.Width", "Sepal.Length", target)
-
+plot_2D_likelihood(liks, iris_train, "Sepal.Width", "Sepal.Length", target)
 ```
+   
+We clearly see that all class distribution are modeled with the same 
+covariance matrix.
     
+```{r genclass-plot_lda}
+plotLearnerPrediction(iris_lda_learner, iris_task)
+```
+
+The resulting decision boundary is linear.
+
 ## Quadratic discriminant analysis (QDA)
 
-In QDA, we caclulate the posteriori class probabilities like that:
+In QDA, we model the likelihood as a multivariate normal distribution s.t.
 $$
 p(x | y = k) = \frac{1}{\pi^{\frac{p}{2}} |\Sigma_k|^{\frac{1}{2}}}\exp(- \frac{1}{2} (x-\mu_k)^T\Sigma_k^{-1}(x-\mu_k) )
 $$
+With:
 
-* $\hat{\mu}_k = \frac{1}{n_k}\sum_{i: y^{(i)} = k} x^{(i)}$  
-* $\hat{\Sigma}_k = \frac{1}{n_k - 1} \sum_{i: y^{(i)} = k} (x^{(i)} - \hat{\mu}_k)(x^{(i)} - \hat{\mu}_k)^T$  
+* $\hat{\mu}_k = \frac{1}{n_k}\sum_{i: y^{(i)} = k} x^{(i)},$  
+* $\hat{\Sigma}_k = \frac{1}{n_k - 1} \sum_{i: y^{(i)} = k} (x^{(i)} - \hat{\mu}_k)(x^{(i)} - \hat{\mu}_k)^T.$ 
+
+This means for every class it is assumed that data is normally distributed with its own covariance matrix estimated.
     
 ```{r genclass-qda_plot}
-iris_qda_learner = makeLearner("classif.qda")
-iris_qda_model = train(learner = iris_qda_learner, task = iris_task)
-
-plotLearnerPrediction(iris_qda_learner, iris_task)
+iris_qda_learner <- makeLearner("classif.qda")
+iris_qda_model <- train(learner = iris_qda_learner, task = iris_task)
 ```
+
+We define all what we need for our likelihood framework and plot them:
 
 ```{r genclass-qda_likelihood}
 
-get_mvgaussian_qda <- function(data, target, level, features){
-  classif_task = makeClassifTask(data = data[,c(features, target)], target = target)
-  qda_learner = makeLearner("classif.qda")
-  qda_model = train(learner = qda_learner, task = classif_task)  
-  
-  list(mean = qda_model$learner.model$means[level,], 
-       # ?MASS:qda "for each group i, scaling[,,i] is an array which transforms
-       # observations so that within-groups covariance matrix is spherical."
-       # -->so the inverse square root of the covariance
-       sigma = solve(tcrossprod(qda_model$learner.model$scaling[, , level])),
-       type = "mv_gaussian", 
-       features = features)
+# function, where qda is trained and the class means and the  class covariance
+# matrices are returned. This defines the likelihood completely.
+get_mvgaussian_qda <- function(data, target, level, features) {
+  classif_task <- makeClassifTask(data = data[, c(features, target)], target = target)
+  qda_learner <- makeLearner("classif.qda")
+  qda_model <- train(learner = qda_learner, task = classif_task)
+
+  list(
+    mean = qda_model$learner.model$means[level, ],
+    # ?MASS::qda "for each group i, scaling[,,i] is an array which transforms
+    # observations so that within-groups covariance matrix is spherical."
+    # -->so the inverse square root of the covariance
+    sigma = solve(tcrossprod(qda_model$learner.model$scaling[, , level])),
+    type = "mv_gaussian",
+    features = features
+  )
 }
 
-# this can be written way more elegantly with S3 methods
-
-
+# function, which creates a likelihood object by combining the data with
+# the specification of the likelihood
 likelihood <- function(likelihood_def, data) {
-  # will be extended
-   switch(likelihood_def$type,
-          mvgaussian_lda = get_mvgaussian_lda(data, likelihood_def$target,
-                                              likelihood_def$level, 
-                                              likelihood_def$features),
-          mvgaussian_qda = get_mvgaussian_qda(data, likelihood_def$target,
-                                              likelihood_def$level, 
-                                              likelihood_def$features)          
-   )
+  switch(likelihood_def$type,
+    mvgaussian_lda = get_mvgaussian_lda(
+      data, likelihood_def$target,
+      likelihood_def$level,
+      likelihood_def$features
+    ),
+    mvgaussian_qda = get_mvgaussian_qda(
+      data, likelihood_def$target,
+      likelihood_def$level,
+      likelihood_def$features
+    )
+  )
 }
 
-liks <- sapply(target_levels, function(level) 
-  likelihood(list(type="mvgaussian_qda", target=target,
-                level=level, features = features), iris_train), simplify = FALSE)
+# compute qda likelihoods for every target level
+liks <- sapply(target_levels, function(level)
+  likelihood(list(
+    type = "mvgaussian_qda", target = target,
+    level = level, features = features
+  ), iris_train), simplify = FALSE)
 
-plot_2D_likelihood(liks,iris_train, "Sepal.Width", "Sepal.Length", target)
+plot_2D_likelihood(liks, iris_train, "Sepal.Width", "Sepal.Length", target)
 ```
-  
+
+```{r genclass-plot_qda}
+plotLearnerPrediction(iris_qda_learner, iris_task)
+```
+For the QDA it holds that the decision boundaries are quadratic.
+
 ## Naive Bayes
 
-Here, we make a “naive” conditional independence assumption.
+Here, we make a “naive” conditional independence assumption:
 
 $$
 p(x | y = k) = \prod^{p}_{j=1}p(x_j | y=k)
 $$
 
+As already mentioned we can choose the priors in our case s.t.
+$$
+\hat{\pi}_k = \frac{n_k}{n}.
+$$
 
 ```{r genclass-nb_priors}
-get_priors <- function(df,target){
-  as.list(prop.table(table(df[,target])))
+get_priors <- function(df, target) {
+  as.list(prop.table(table(df[, target])))
 }
 ```
+
+We now add 3 new likelihoods to our likelihood function:
+
+- The one-dimensional Gaussian likelihood for a numerical feature,
+- the multinomial likelihood for a categorical feature,
+- the Naive Bayes likelihood which depends on the likelihoods of its features.
 
 
 ```{r genclass-nb_lhoods}
-# this can be written way more elegantly with S3 methods
-
 likelihood <- function(likelihood_def, data) {
-  # will be extended
-   switch(likelihood_def$type,
-          mvgaussian_lda = get_mvgaussian_lda(data, likelihood_def$target,
-                                              likelihood_def$level, 
-                                              likelihood_def$features),
-          mvgaussian_qda = get_mvgaussian_qda(data, likelihood_def$target,
-                                              likelihood_def$level, 
-                                              likelihood_def$features),
-          gaussian = list(mean = mean(data[,likelihood_def$features]), 
-                          sd = sd(data[,likelihood_def$features]),
-                          features = likelihood_def$features, type="gaussian"),
-          categorical = list(freq_table = prop.table(table(data)), 
-                           features = likelihood_def$features, type = "categorical"),
-          naivebayes = list(likelihoods = sapply(likelihood_def$likelihood_defs,
-                                                 function(likelihood_def)
-                                                   likelihood(likelihood_def, data),
-                                                   simplify = FALSE),
-                            features =  likelihood_def$features, type="naivebayes")
-   )
+  switch(likelihood_def$type,
+    mvgaussian_lda = get_mvgaussian_lda(
+      data, likelihood_def$target,
+      likelihood_def$level,
+      likelihood_def$features
+    ),
+    mvgaussian_qda = get_mvgaussian_qda(
+      data, likelihood_def$target,
+      likelihood_def$level,
+      likelihood_def$features
+    ),
+    gaussian = list(
+      mean = mean(data[, likelihood_def$features]),
+      sd = sd(data[, likelihood_def$features]),
+      features = likelihood_def$features, type = "gaussian"
+    ),
+    # here we simply compute the relative frequencies
+    categorical = list(
+      freq_table = prop.table(table(data[, likelihood_def$features])),
+      features = likelihood_def$features, type = "categorical"
+    ),
+    # the Naive Bayes likelihood is defined by the univariate likelihood
+    # definitions of its features. Hence we need to recursively call the
+    # likelihood function for every feature.
+    naivebayes = list(
+      likelihoods = sapply(likelihood_def$likelihood_defs,
+        function(likelihood_def)
+          likelihood(likelihood_def, data),
+        simplify = FALSE
+      ),
+      features = likelihood_def$features, type = "naivebayes"
+    )
+  )
 }
 
+# helper function for automatic Naive Bayes likelihood computation for every
+# target level
+# - default likelihood for a numerical feature: gaussian
+# - default likelihood for a categorical feature: multinomial
 get_naivebayes_likelihoods <- function(df, target, likelihood_defs = NULL) {
   X <- df[, !(names(df) %in% target)]
   features <- colnames(X)
-  target_levels <- levels(df[,target])
-  # default to gaussian density estimates:
-  if (is.null(likelihood_defs)) {
-     likelihood_defs  <- sapply(features, function(feature)
-                           list(args = list(), 
-                                features = feature,
-                                  type = 
-                                  ifelse(is.factor(df[,feature]),
-                                                   "categorical",
-                                                   "gaussian")), 
-                           simplify = FALSE,
-                           USE.NAMES = TRUE)
-  }
-  
-  naivebayes_def <- list(type= "naivebayes",likelihood_defs = likelihood_defs,
-                         features = features)
-  # loop for all target levels over all features and compute conditional density
-  sapply(
-    target_levels, 
-    function(level) {
-      likelihood(naivebayes_def , X[df[[target]] == level,features])
-    }, simplify = FALSE)
-}
+  target_levels <- levels(df[, target])
 
+  if (is.null(likelihood_defs)) {
+    # determine default likelihood defintions
+    likelihood_defs <- sapply(features, function(feature)
+      list(
+        args = list(),
+        features = feature,
+        type =
+          ifelse(is.factor(df[, feature]),
+            "categorical",
+            "gaussian"
+          )
+      ),
+    simplify = FALSE,
+    USE.NAMES = TRUE
+    )
+  }
+
+  # compute Naive Bayes likelihood
+  naivebayes_def <- list(
+    type = "naivebayes", likelihood_defs = likelihood_defs,
+    features = features
+  )
+  # loop for all target levels and compute conditional density
+  sapply(
+    target_levels,
+    function(level) {
+      likelihood(naivebayes_def, X[df[[target]] == level, features])
+    },
+    simplify = FALSE
+  )
+}
 ```
 
 ```{r genclass-plot2D_lik}
-predict_likelihood <- function(likelihood, x){
-  if(is.data.frame(x)) x = x[,likelihood$features]
-   switch(likelihood$type,
-          mv_gaussian = dmvnorm(x, mean=likelihood$mean, 
-                               sigma = likelihood$sigma),
-          gaussian = dnorm(x, mean = likelihood$mean, sd = likelihood$sd),
-          categorical = {
-            which_level <- match(x, names(likelihood$freq_table))
-            likelihood$freq_table[which_level]
-          },    
-          naivebayes =  exp(rowSums(log(sapply(likelihood$likelihoods, function(likelihood)
-            predict_likelihood(likelihood, x)))))
-   )  
+# predict function extended for the new likelihood types
+predict_likelihood <- function(likelihood, x) {
+  if (is.data.frame(x)) x <- x[, likelihood$features]
+  switch(likelihood$type,
+    mv_gaussian = dmvnorm(x,
+      mean = likelihood$mean,
+      sigma = likelihood$sigma
+    ),
+    gaussian = dnorm(x, mean = likelihood$mean, sd = likelihood$sd),
+    categorical = {
+      which_level <- match(x, names(likelihood$freq_table))
+      likelihood$freq_table[which_level]
+    },
+    # to predict the value of the Naive Bayes likelihood we need to predcict
+    # the likelihood of the every feature. Hence we need to recursively call
+    # the predict function for every feature.
+    # (To improve the numerical stability the product l_1*...*l_n was transformed
+    # to exp(log(l_1)+...+log(l_n))
+    naivebayes = exp(rowSums(log(sapply(likelihood$likelihoods, function(likelihood)
+      predict_likelihood(likelihood, x)))))
+  )
 }
 
 liks <- get_naivebayes_likelihoods(iris_train, target)
-plot_2D_likelihood(liks,iris_train, "Sepal.Width", "Sepal.Length", target)
-
+plot_2D_likelihood(liks, iris_train, "Sepal.Width", "Sepal.Length", target)
 ```
 
 ```{r genclass-naivebayes}
 norm1 <- function(x) x / sum(abs(x))
 
-naivebayes <- function(X, priors, nb_likelihood, normalize=FALSE){
-
+# function to compute posterior class probabilities (if normalize == TRUE)
+# or the joint density (if normalize == FALSE), which can be interpreted
+# as a score function.
+naivebayes <- function(X, priors, nb_likelihood, normalize = FALSE) {
   features <- colnames(X)
   target_levels <- names(priors)
-  
-  lik <- sapply(target_levels, function(level) { 
+
+  # compute likelihood for every target level
+  lik <- sapply(target_levels, function(level) {
     likelihood <- nb_likelihood[[level]]
-    predict_likelihood(likelihood, X[,likelihood$features])
+    predict_likelihood(likelihood, X[, likelihood$features])
   })
-  
+
   joint_density <- unlist(priors) * lik
-  
-  if(normalize){
+
+  if (normalize) {
     t(apply(joint_density, 1, norm1))
-  } else{
+  } else {
     joint_density
   }
 }
 ```
 
 ```{r genclass-nb_example}
-priors <- get_priors(iris_train,target)
+priors <- get_priors(iris_train, target)
 
-X <- iris_train[,!(names(iris_train) %in%target)]
+X <- iris_train[, !(names(iris_train) %in% target)]
 head(naivebayes(X, priors, liks, normalize = TRUE))
 ```
 
 ```{r genclass-classify_naivebayes}
-classify_naivebayes <- function(X, priors, likelihoods){
+# function to classify data with Naive Bayes
+classify_naivebayes <- function(X, priors, likelihoods) {
   nb <- naivebayes(X, priors, likelihoods)
-  
+
   list(
-    prediction =   names(sapply(1:nrow(nb), function(i)
-    which.max(nb[i,])
-  )),
+    prediction = names(sapply(1:nrow(nb), function(i)
+      which.max(nb[i, ]))),
     levels = names(priors)
   )
 }
@@ -354,15 +461,15 @@ classify_naivebayes <- function(X, priors, likelihoods){
 # boundaries X1 and X2 are the names of the two features to use.
 
 plot_2D_naivebayes <- function(priors, likelihoods, X1 = "X1", X2 = "X2",
-                           # by default, we "predict" the class of the training data:
-                           to_classify_labels = as.character(Y),
-                           to_classify_data = data.frame(
-                             "X1" = X[, 1],
-                             "X2" = X[, 2]
-                           ),
-                           lengthX1 = 100, lengthX2 = 100,
-                           title = '"Naive Bayes" ~',
-                           plot_class_rate = TRUE) {
+  # by default, we "predict" the class of the training data:
+                               to_classify_labels = as.character(Y),
+                               to_classify_data = data.frame(
+                                 "X1" = X[, 1],
+                                 "X2" = X[, 2]
+                               ),
+                               lengthX1 = 100, lengthX2 = 100,
+                               title = '"Naive Bayes" ~',
+                               plot_class_rate = TRUE) {
   plot_2D_classify(
     to_classify_labels = to_classify_labels,
     to_classify_data = to_classify_data,
@@ -380,106 +487,209 @@ plot_2D_naivebayes <- function(priors, likelihoods, X1 = "X1", X2 = "X2",
 ```
 ```{r}
 
-plot_2D_naivebayes(priors, liks, "Sepal.Width", "Sepal.Length",
-                   iris_train$Species, X)
+plot_2D_naivebayes(
+  priors, liks, "Sepal.Width", "Sepal.Length",
+  iris_train$Species, X
+)
 ```
 
 ```{r genclass-naivebayes_plot}
-iris_nb_learner = makeLearner("classif.naiveBayes")
-iris_nb_model = train(learner = iris_nb_learner, task = iris_task)
+# compare with mlr
+iris_nb_learner <- makeLearner("classif.naiveBayes")
+iris_nb_model <- train(learner = iris_nb_learner, task = iris_task)
 
 plotLearnerPrediction(iris_nb_learner, iris_task)
 ```
 
-https://en.wikipedia.org/wiki/Kernel_(statistics)#Kernel_functions_in_common_use
+## Additional material: Naive Bayes with kernel densities
+
+Until now we assumed for every numerical feature that it can be modeled sufficiently
+well with a Gaussian density. But what can we do if this does not hold or we generally
+want more flexibility?
+
+One way is to use a kernel density estimation of the empirical density of a feature
+as likelihood. First we look how the kernel density estimate of the *Sepal.Width*
+feature looks with the Gaussian and the Triangular kernel:
 
 ```{r genclass-kde_kernels}
 library("kdensity")
 library("EQL")
-par(mfrow=c(1,2))
-for (kernel in c("gaussian","triangular") )
-  plot(kdensity(iris_train[,"Sepal.Width"], start = "gumbel", kernel = kernel),
-       main=paste0("Kernel: ", kernel))
+par(mfrow = c(1, 2))
+for (kernel in c("gaussian", "triangular")) {
+  plot(kdensity(iris_train[, "Sepal.Width"], start = "gumbel", kernel = kernel),
+    main = paste0("Kernel: ", kernel)
+  )
+}
 ```
 
+Other commonly used kernels can be found [here](https://en.wikipedia.org/wiki/Kernel_(statistics)#Kernel_functions_in_common_use).
+Also the kernel width has clearly an influence on the density estimate:
+
 ```{r genclass-kde_bw}
-par(mfrow=c(2,2))
-for (bw in seq(0.1,0.5,length.out = 4) )
-  plot(kdensity(iris_train[,"Sepal.Length"], start = "gumbel", 
-                kernel = "gaussian", bw = bw),
-       main=paste0("KDE of Sepal.Lenght"))
+par(mfrow = c(2, 2))
+for (bw in seq(0.1, 0.5, length.out = 4)) {
+  plot(kdensity(iris_train[, "Sepal.Length"],
+    start = "gumbel",
+    kernel = "gaussian", bw = bw
+  ),
+  main = paste0("KDE of Sepal.Lenght")
+  )
+}
 ```
+
+We see that with broader kernel width the density estimate becomes smoother, but
+also as a result smaller features are lost.
+
+We extend our Naive Bayes framework for kernel density estimates and see how 
+it performs on our training data:
 
 ```{r genclass-nb_kde}
 likelihood <- function(likelihood_def, data) {
-
-   switch(likelihood_def$type,
-          mvgaussian_lda = get_mvgaussian_lda(data, likelihood_def$target,
-                                              likelihood_def$level, 
-                                              likelihood_def$features),
-          mvgaussian_qda = get_mvgaussian_qda(data, likelihood_def$target,
-                                              likelihood_def$level, 
-                                              likelihood_def$features),
-          gaussian = list(mean = mean(data[,likelihood_def$features]), sd = sd(data[,likelihood_def$features]),
-                          features = likelihood_def$features, type="gaussian"),
-          categorical = list(freq_table = prop.table(table(data)), 
-                           features = likelihood_def$features, type = "categorical"),
-          kde = list(kde =
-            do.call(kdensity, append(likelihood_def$args, structure(list(data[,likelihood_def$features]),names="x"))),
-             type="kde", features = likelihood_def$features),           
-          naivebayes = list(likelihoods = sapply(likelihood_def$likelihood_defs,
-                                                 function(likelihood_def)
-                                                   likelihood(likelihood_def, data),
-                                                   simplify = FALSE),
-                            features =  likelihood_def$features, type="naivebayes")
-   )
+  switch(likelihood_def$type,
+    mvgaussian_lda = get_mvgaussian_lda(
+      data, likelihood_def$target,
+      likelihood_def$level,
+      likelihood_def$features
+    ),
+    mvgaussian_qda = get_mvgaussian_qda(
+      data, likelihood_def$target,
+      likelihood_def$level,
+      likelihood_def$features
+    ),
+    gaussian = list(
+      mean = mean(data[, likelihood_def$features]), sd = 
+        sd(data[, likelihood_def$features]),
+      features = likelihood_def$features, type = "gaussian"
+    ),
+    categorical = list(
+      freq_table = prop.table(table(data[, likelihood_def$features])),
+      features = likelihood_def$features, type = "categorical"
+    ),
+    kde = list(
+      kde =
+        do.call(kdensity, append(likelihood_def$args, 
+                                 structure(list(data[, likelihood_def$features]), 
+                                           names = "x"))),
+      type = "kde", features = likelihood_def$features
+    ),
+    naivebayes = list(
+      likelihoods = sapply(likelihood_def$likelihood_defs,
+        function(likelihood_def)
+          likelihood(likelihood_def, data),
+        simplify = FALSE
+      ),
+      features = likelihood_def$features, type = "naivebayes"
+    )
+  )
 }
 
-predict_likelihood <- function(likelihood, x){
-  if(is.data.frame(x)) x = x[,likelihood$features]
-   switch(likelihood$type,
-          mv_gaussian = dmvnorm(x, mean=likelihood$mean, 
-                               sigma = likelihood$sigma),
-          gaussian = dnorm(x, mean = likelihood$mean, sd = likelihood$sd),
-          categorical = likelihood$freq_table[
-            which(x == names(likelihood$freq_table))],
-          kde = likelihood$kde(x),
-          naivebayes =  exp(rowSums(log(sapply(likelihood$likelihoods, function(likelihood)
-            predict_likelihood(likelihood, x)))))
-   )  
+predict_likelihood <- function(likelihood, x) {
+  if (is.data.frame(x)) x <- x[, likelihood$features]
+  switch(likelihood$type,
+    mv_gaussian = dmvnorm(x,
+      mean = likelihood$mean,
+      sigma = likelihood$sigma
+    ),
+    gaussian = dnorm(x, mean = likelihood$mean, sd = likelihood$sd),
+    categorical = {
+      which_level <- match(x, names(likelihood$freq_table))
+      likelihood$freq_table[which_level]
+    },
+    kde = likelihood$kde(x),
+    naivebayes = exp(rowSums(log(sapply(likelihood$likelihoods, 
+                                        function(likelihood)
+      predict_likelihood(likelihood, x)))))
+  )
 }
 
 
-liks_kde <- get_naivebayes_likelihoods(iris_train,target,
-                                              sapply(features, function(feature)
-                           list(args = list(), 
-                                features = feature,
-                                  type = "kde"), 
-                           simplify = FALSE,
-                           USE.NAMES = TRUE))
+liks_kde <- get_naivebayes_likelihoods(
+  iris_train, target,
+  sapply(features, function(feature)
+    list(
+      args = list(),
+      features = feature,
+      type = "kde"
+    ),
+  simplify = FALSE,
+  USE.NAMES = TRUE
+  )
+)
 
-plot_2D_likelihood(liks_kde,iris_train, "Sepal.Width", "Sepal.Length", target)
+plot_2D_likelihood(liks_kde, iris_train, "Sepal.Width", "Sepal.Length", target)
 
-plot_2D_naivebayes(priors, liks_kde, "Sepal.Width", "Sepal.Length", iris_train$Species, X)
+plot_2D_naivebayes(priors, liks_kde, "Sepal.Width", "Sepal.Length", 
+                   iris_train$Species, X)
 ```
+
+We see that we are now able to model our data more flexible, which can be seen
+by the clearly nonlinear decision boundaries. 
+
+Now we can take a look how different kernel widths influence the classification on 
+our data:
 
 
 ```{r genclass-nb_kde_bws}
+library(gridExtra)
 
-bw_values <- seq(0.05,0.3,length.out = 4)
+bw_values <- seq(0.05, 0.3, length.out = 4)
 ggplot_list <- lapply(
   bw_values,
   function(bw) {
-  liks_kde_bw <- get_naivebayes_likelihoods(iris_train,target,
-                                              sapply(features, function(feature)
-                           list(args = list(bw = bw), 
-                                features = feature,
-                                  type = "kde"), 
-                           simplify = FALSE,
-                           USE.NAMES = TRUE))
-  plot_2D_naivebayes(priors, liks_kde_bw, "Sepal.Width", "Sepal.Length",
-                   iris_train$Species, X, title ='"NB" ~')
+    liks_kde_bw <- get_naivebayes_likelihoods(
+      iris_train, target,
+      sapply(features, function(feature)
+        list(
+          args = list(bw = bw),
+          features = feature,
+          type = "kde"
+        ),
+      simplify = FALSE,
+      USE.NAMES = TRUE
+      )
+    )
+    plot_2D_naivebayes(priors, liks_kde_bw, "Sepal.Width", "Sepal.Length",
+      iris_train$Species, X,
+      title = '"NB" ~'
+    )
   }
 )
 do.call(grid.arrange, ggplot_list)
 ```
+
+We see that we a smaller kernel width, we can even get a better classification
+result on our training data. But we actually observe is a phenomenon called overfitting 
+(take a look at the decision boundaries), 
+where the model fits the observed data very well, but does not generalize well on unseen data, which will be discussed in chapter 3.
+
+## Additional material: Naive Bayes with categorical predictors
+
+When the model includes categorical features we normally have to think about 
+appropriate distance measures. For the Naive Bayes classifier we can use the conditional
+class probabilities as the likelihood - as we have already implemented. 
+
+To see how well this can work, we group the *Sepal.Length* feature and use this
+as a new feature instead:
+
+```{r genclass-nb_cat}
+iris_train$Sepal.Length.Types <- factor("large",
+  levels = c("small", "medium", "large")
+)
+iris_train$Sepal.Length.Types[iris_train$Sepal.Length <=
+  quantile(iris_train$Sepal.Length, probs = 3. / 4)] <- "medium"
+iris_train$Sepal.Length.Types[iris_train$Sepal.Length <=
+  quantile(iris_train$Sepal.Length, probs = 1. / 4)] <- "small"
+
+# visualize discretization
+ggplot(iris_train) +
+  geom_point(aes(y = Sepal.Length.Types, x = Sepal.Width, color = Species))
+
+features <- c("Sepal.Width", "Sepal.Length.Types")
+X <- iris_train[, features]
+liks <- get_naivebayes_likelihoods(iris_train[, c(features, target)], target)
+head(naivebayes(X, priors, liks, normalize = TRUE))
+
+sum(classify_naivebayes(X, priors, liks)$prediction
+== as.character(iris_train$Species)) / nrow(X)
+```
+
