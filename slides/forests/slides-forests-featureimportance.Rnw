@@ -16,20 +16,23 @@ library(smoof)
 <<setup, child="../../style/setup.Rnw", include = FALSE>>=
 @
 
+%! includes: basics-notation, forests-intro
 
-\lecturechapter{Bagging and Random Forest 2}
+
+\lecturechapter{Random Forests: Feature Importance}
 \lecture{Introduction to Machine Learning}
 
 \sloppy
 
 
-\begin{vbframe}{Variable importance}
+\begin{vbframe}{Variable Importance}
 
 \begin{itemize}
   \item Single trees are highly interpretable
-  \item Random Forests as combinations of trees lose this feature
+  \item Random Forests as ensembles of trees lose this feature
   \item Contributions of the different features to the model are difficult to evaluate
   \item Way out: variable importance measures
+  \item Basic idea: by how much would performance of the random forest decrease if a specific feature were removed or rendered useless?
 \end{itemize}
 
 
@@ -42,11 +45,11 @@ library(smoof)
     \For{features $x_j$, $j = 1$ to $p$}
     \For{tree base learners $\blmh$, $m = 1$ to $M$}
     \State {Find all nodes $\Np$ in $\blmh$ that use $x_j$.} 
-    \State {Compute improvement in splitting criterion for each.}
-    \State {Sum these up.}
+    \State {Compute improvement in splitting criterion achieved by them.}
+    \State {Add up these improvements.}
     \EndFor
-    \State {Sum up the accumulated improvement over all trees.}
-    \State {This is the feature importance for $x_j$.}
+    \State {Add up improvements over all trees to get feature importance of $x_j$.}
+    %\State {This is the feature importance for $x_j$.}
     \EndFor
   \end{algorithmic}
 \end{algorithm}
@@ -66,9 +69,9 @@ randomForest::varImpPlot(model, main = "")
   \caption*{Measure based on permutations of OOB observations}
   \begin{algorithmic}[0]
     \State While growing tree, pass down OOB observations and record predictive accuracy.
-    \State Permute OOB observations of $j$-th variable.
+    \State Permute OOB observations of $j$-th feature. This destroys the association between the target and the permuted $j$-th feature.
     \State Pass down the permuted OOB observations and evaluate predictive accuracy again.
-    \State The loss of goodness induced by permutation is averaged over all trees and
+    \State The decrease of performance induced by permutation is averaged over all trees and
   is used as a measure for the importance of the $j$-th variable.
   \end{algorithmic}
 \end{algorithm}
