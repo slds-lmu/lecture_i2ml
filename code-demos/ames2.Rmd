@@ -21,10 +21,7 @@ Kaggle is a platform which provides data science competitions and datasets which
 ## Importing the data
 
 ```{r}
-housing = read.csv("data/AmesHousing.csv")
-housing = mlr::impute(obj = housing, target = "SalePrice",
-  classes = list(numeric = mlr::imputeMean(), factor = mlr::imputeMode(), integer = mlr::imputeMedian())
-)$data
+housing = read.csv("data/AmesHousing_preprocessed.csv")
 ```
 
 1. Load the `mlr3` and `mlr3learners` packages.
@@ -45,12 +42,7 @@ task = TaskRegr$new(id = "ames_housing", backend = as_data_backend(housing), tar
 ```{r}
 # get a featureless learner and a regression tree
 library(mlr3learners)
-learners = list(
-  featureless = lrn("regr.featureless"),
-  kknn = lrn("regr.kknn"),
-  rpart = lrn("regr.rpart"),
-  ranger = lrn("regr.ranger")
-)
+rpart = lrn("regr.rpart")
 ```
 
 ```{r}
@@ -65,19 +57,19 @@ tune_ps
 
 ```{r}
 # compare via 3-fold cross validation
-resamplings = rsmp("cv", folds = 10)
+resampling = rsmp("cv", folds = 10)
 ```
 
 
 ```{r}
 library(mlr3tuning)
 
-evals20 = term("evals", 20)
-
+evals20 = term("evals", n_evals = 20)
+measure = msr("regr.mse")
 instance = TuningInstance$new(
   task = task,
-  learner = learners$rpart,
-  resampling = hout,
+  learner = rpart,
+  resampling = resampling,
   measures = measure,
   param_set = tune_ps,
   terminator = evals20
@@ -88,24 +80,24 @@ print(instance)
 
 ```{r}
 tuner = tnr("grid_search", resolution = 5)
-result = tuner$tune(instance)
-print(result)
+tuner$tune(instance)
+print(tuner)
 ```
 
 
 
 ```{r}
-learners$rpart$param_set$values = result$values
+rpart$param_set$values = result$values
 ```
 
 
 ```{r}
 at = AutoTuner$new(
-  learner = learner,
+  learner = rpart,
   resampling = resampling,
-  measures = measures,
+  measures = measure,
   tune_ps = tune_ps,
-  terminator = terminator,
+  terminator = evals20,
   tuner = tuner
 )
 at
@@ -115,6 +107,10 @@ at
 
 ```{r}
 # create a BenchmarkDesign object
+learners = list(
+  at,
+  lrn("regr.rpart")
+)
 design = benchmark_grid(task, learners, resamplings)
 print(design)
 ```
