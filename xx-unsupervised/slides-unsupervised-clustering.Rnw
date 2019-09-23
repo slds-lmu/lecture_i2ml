@@ -14,6 +14,147 @@ library(pdist)
 \lecture{Introduction to Machine Learning}
 \sloppy
 
+
+\section{Motivation}
+
+\begin{vbframe}{Supervised vs. Unsupervised Learning}
+
+\textbf{Supervised Machine Learning:}
+\begin{itemize}
+  \item Supervised machine learning deals with \textbf{labeled} data, i.e., we have input data $\xb$ and the outcome $y$ of past events.
+  \item Here, the aim is to learn relationships between $\xb$ and $y$.
+\end{itemize}
+
+\textbf{Unsupervised Machine Learning:}
+\begin{itemize}
+  \item Unsupervised machine learning deals with data that is \textbf{unlabeled}, i.e., there is no real output $y$.
+  \item Here, the aim is to search for patterns within the inputs $\xb$.
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Motivation for Clustering}
+Consider multivariate data with $n$ observations (e.g. customers) and $p$
+features (e.g. characteristics of customers).
+
+\vspace*{0.2cm}
+
+\textbf{Task}: divide data into groups (clusters), such that
+
+\begin{itemize}
+  \item the observations in each cluster are as "similar" as possible (homogeneity
+  within each cluster), and
+  \item the clusters are as "far away" as possible from other clusters (heterogeneity
+  between different clusters).
+\end{itemize}
+
+\vspace*{-0.3cm}
+
+<<echo=FALSE, fig.height=3>>=
+  df4 = getTaskData(iris.task)
+  m = as.matrix(cbind(df4$Petal.Length, df4$Petal.Width), ncol = 2)
+  cl = (kmeans(m,3))
+  df4$cluster = factor(cl$cluster)
+  centers = as.data.frame(cl$centers)
+  ggplot(data = df4, aes(x = Petal.Length, y = Petal.Width, color = cluster)) +
+   geom_point(size = 4) +
+   geom_point(data = centers, aes(x = V1, y = V2, color = "red")) +
+   geom_point(data = centers, aes(x = V1,y = V2, color = "red"), size = 90, alpha = .3) +
+   theme(legend.position = "none")
+@
+
+\end{vbframe}
+
+\begin{vbframe}{Clustering vs. Classification}
+\begin{itemize}
+  \item In classification, the groups are known and we try to learn what
+  differentiates these groups (i.e., learn a classification function) to
+  properly classify future data.
+  \item In clustering, we look at data, where groups are unknown and try to find
+  similar groups.
+\end{itemize}
+
+\lz
+
+Why do we need clustering?
+
+\lz
+
+  \begin{itemize}
+    \item Discovery: looking for new insights in the data (e.g. finding groups of customers that buy a similar product).
+    \item Derive a reduced representation of the full data set.
+  \end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{Clustering: Customer Segmentation}
+\begin{itemize}
+  \item In marketing, customer segmentation is an important task to understand customer needs and to meet with customer expectations.
+  \item Customer data is partitioned in terms of similarities and the characteristics of each group are summarized.
+  \item Marketing strategies are designed and prioritized according to the group size.
+\end{itemize}
+
+% \lz
+% Example Use Cases:
+
+% \begin{itemize}
+%   \item Personalized ads (e.g., recommend articles).
+%   \item Music/Movie recommendation systems.
+% \end{itemize}
+% \end{vbframe}
+
+% \begin{vbframe}{Clustering: Image Compression}
+% \begin{itemize}
+%   \item An image consists of pixels arranged in rows and columns.
+%   \item Each pixel contains \textbf{RGB} color information, i.e., a mix of the intensity of 3 \textbf{primary colors}: \textbf{R}ed, \textbf{G}reen and \textbf{B}lue.
+%   \item Each primary color takes intensity values between 0 and 255.
+% \end{itemize}
+
+% \begin{center}
+% \includegraphics[width=0.6\textwidth]{figure_man/rgb-cube.png}
+
+% \tiny Source: By Ferlixwangg \href{https://creativecommons.org/licenses/by-sa/4.0}{CC BY-SA 4.0}, from \href{https://commons.wikimedia.org/wiki/File:Rgb-cube.gif}{Wikimedia Commons}.
+% \end{center}
+% \end{vbframe}
+
+% \begin{vbframe}{Clustering: Image Compression}
+% An image can be compressed by reducing its color information, i.e., by replacing similar colors of each pixel with, say, $k$ distinct colors.
+
+% \vspace{0.2cm}
+
+% \textbf{Example}:
+
+<<echo = FALSE, fig.height=5, fig.width=10, include = FALSE>>=
+library(jpeg)
+
+img = readJPEG("figure_man/colorful_bird.jpg") # Read the image
+imgDm = dim(img)
+# We re-arranged the 3D array into a dataset that has the coordinates of the pixel and the color information (R, G and B)
+imgRGB = data.frame(
+  x = rep(1:imgDm[2], each = imgDm[1]),
+  y = rep(imgDm[1]:1, imgDm[2]),
+  R = as.vector(img[,,1]),
+  G = as.vector(img[,,2]),
+  B = as.vector(img[,,3])
+)
+
+par(mfrow = c(1,2), mar = c(0,0,2,0))
+# We now plot the pixels (pch = 15) with its RGB color info
+plot(imgRGB$x, imgRGB$y, col = rgb(imgRGB[c("R", "G", "B")]), pch = 15, axes = F, main = "Original Image", xlab = "", ylab = "")
+box()
+
+k = 16
+kMeans = kmeans(imgRGB[, c("R", "G", "B")], centers = k)
+predRGB = kMeans$centers[kMeans$cluster,]
+
+plot(imgRGB$x, imgRGB$y, col = rgb(predRGB), pch = 15, axes = F, main = "Image using 16 Colors", xlab = "", ylab = "")
+box()
+@
+\end{vbframe}
+
+
+
+
 \section{Hierarchical Clustering}
 
 \begin{vbframe}{Hierarchical Clustering}
@@ -25,13 +166,13 @@ We distinguish between:
 \begin{enumerate}
   \item Agglomerative (or bottom-up) clustering:
   \begin{itemize}
-    \item Start: Each observations is an \textit{individual cluster}.
+    \item Start: Each observations is an \textbf{individual cluster}.
     \item Repeat: Merge the two closest clusters.
     \item Stop when there is only one cluster left.
   \end{itemize}
   \item Divisive (or top-down) clustering:
   \begin{itemize}
-    \item Start: All observations are within \textit{one} cluster.
+    \item Start: All observations are within \textbf{one} cluster.
     \item Repeat: Divide the cluster that results in two clusters with biggest distance.
     \item Stop when each observation is an individual cluster.
   \end{itemize}
@@ -57,15 +198,16 @@ $\xb^{(n)}$    & $x^{(n)}_1$    &  $\hdots$ & $\hdots$ & $x^{(n)}_p$ \\
 \end{vbframe}
 
 \begin{vbframe}{Hierarchical Clustering}
-For hierarchical clustering, we need a definition for
+
+Hierarchichal clustering requires a definition for
 
 \begin{itemize}
   \item distances $d(\xi, \xb^{(j)})$ between two observations $\xi$ and $\xb^{(j)}$:
   \begin{itemize}
     \item manhattan distance:
-      $$d(\xi,\xb^{(j)})= ||\xi - \xb^{(j)}||_1 = \sum_{k=1}^p|x^{(i)}_k-x^{(j)}_k|$$
+      $$d(\xi,\xb^{(j)})= ||\xi - \xb^{(j)}||_1 = \sum_{k=1}^p\left|x^{(i)}_k-x^{(j)}_k\right|$$
     \item euclidean distance:
-      $$d(\xi,\xb^{(j)})= ||\xi - \xb^{(j)}||_2 = \sqrt{\sum_{k=1}^p(x^{(i)}_k-x^{(j)}_k)^2}$$
+      $$d(\xi,\xb^{(j)})= ||\xi - \xb^{(j)}||_2 = \sqrt{\sum_{k=1}^p\left(x^{(i)}_k-x^{(j)}_k\right)^2}$$
   \end{itemize}
   \item distances between two clusters (called linkage).
 \end{itemize}
@@ -132,7 +274,7 @@ text(x = 3, y = 2.5, expression(d(x^(1),x^(2))~"="~sqrt((5-1)^2 + (4-1)^2)~"= 5"
 % \end{vbframe}
 
 \begin{vbframe}{Distances between Observations}
-It is often a good idea to \textit{normalize} the data before computing distances,
+It is often a good idea to \textbf{normalize} the data before computing distances,
 especially when the scale of features is different, e.g.:
 
 <<echo=FALSE, fig.align="center", fig.height=4, fig.width=8>>=
@@ -195,8 +337,9 @@ text(x = dat$shoe.size, y = dat$height, c(expression(x^(2)), expression(x^(1)), 
 \begin{vbframe}{Distances between Clusters (Linkage)}
 \begin{itemize}
   \item Assume that all observations $\xdat$ belong to $k<n$ different clusters.
-  \item For an arbitrary cluster $j$ define its \textit{index space} by
-  \[C_j\coloneqq\{i\subset\{1,\ldots,k\}|\xi\text{cbelongs to cluster }j\}\]
+  \item For an arbitrary cluster $j$ we define its \textbf{index space} by
+  \[C_j\coloneqq\{i\subset\{1,\ldots,k\}~|~\xi\text{ belongs to cluster }j\}\]
+  Let $n_j = \left|C_j\right|$ be the size of cluster $j$.
   \item The linkage of two clusters $C_r$ and $C_s$ is a \enquote{score} describing their distance.
 \end{itemize}
 
@@ -204,13 +347,13 @@ text(x = dat$shoe.size, y = dat$height, c(expression(x^(2)), expression(x^(1)), 
 
 The most popular and simplest linkages are
 
-\lz
+\vspace*{0.2cm}
 
 \begin{itemize}
-  \item \textit{Single Linkage}
-  \item \textit{Complete Linkage}
-  \item \textit{Average Linkage}
-  \item \textit{Centroid Linkage}
+  \item Single Linkage
+  \item Complete Linkage
+  \item Average Linkage
+  \item Centroid Linkage
 \end{itemize}
 
 <<echo=FALSE, message=FALSE>>=
@@ -240,7 +383,7 @@ text(e1$loc[1], e1$loc[2], label = expression(C[r]), col = 2)
 text(e2$loc[1], e2$loc[2], label = expression(C[s]), col = 3)
 @
 
-Single linkage defines the distance of the \textit{closest point pairs} from different clusters as the distance between two clusters:
+Single linkage defines the distance of the \textbf{closest point pairs} from different clusters as the distance between two clusters:
 
 \[d_{\text{single}}(C_r,C_s) = \min_{i \in C_r, \, j \in C_s} d(\xi,\xb^{(j)})\]
 \end{vbframe}
@@ -260,7 +403,7 @@ text(e1$loc[1], e1$loc[2], label = expression(C[r]), col = 2)
 text(e2$loc[1], e2$loc[2], label = expression(C[s]), col = 3)
 @
 
-Complete linkage defines the distance of the \textit{furthest point pairs} of different clusters as
+Complete linkage defines the distance of the \textbf{furthest point pairs} of different clusters as
 the distance between two clusters:
 
 \[d_{\text{complete}}(C_r,C_s) = \max_{i \in C_r, \, j \in C_s} d(\xi,\xb^{(j)})\]
@@ -283,9 +426,9 @@ text(e2$loc[1], e2$loc[2], label = expression(C[s]), col = 3)
 @
 
 In average linkage, the distance between two clusters is defined as the average
-distance across \textit{all} pairs of two different clusters:
+distance across \textbf{all} pairs of two different clusters:
 
-\[d_{\text{average}}(C_r,C_s) = \frac{1}{n_r n_s} \sum_{i \in C_r} \sum_{i \in C_s} d(\xi,\xb^{(j)})\]
+\[d_{\text{average}}(C_r,C_s) = \frac{1}{n_r n_s} \sum_{i \in C_r} \sum_{j \in C_s} d(\xi,\xb^{(j)})\]
 \end{vbframe}
 
 \begin{vbframe}{Centroid Linkage}
@@ -479,7 +622,7 @@ lines(simple.data[c(1,2,3,5,4,1),], col = "blue")
 \end{vbframe}
 
 \begin{vbframe}{Dendrogram}
-A Dendrogram is a tree showing which clusters / observations are merged after each step.
+A dendrogram is a tree showing which clusters / observations are merged after each step.
 The \enquote{height} is proportional to the distance between the two merged clusters:
 
 \lz
@@ -593,7 +736,7 @@ labs.avg = cutree(tree.avg, k = k)
 labs.cen = cutree(tree.cen, k = k)
 @
 
-Single linkage introduces the \textit{chaining problem}:
+Single linkage introduces the \textbf{chaining problem}:
 
 \begin{itemize}
   \item Only one pair of points needs to be close to merge clusters.
@@ -613,7 +756,7 @@ rect.hclust(tree.sing, k = k)#, border = Colors[1])
 \end{vbframe}
 
 \begin{vbframe}{Properties: Complete Linkage}
-Complete linkage avoids chaining, but suffers from \textit{crowding}:
+Complete linkage avoids chaining, but suffers from \textbf{crowding}:
 \begin{itemize}
   \item Merging is based on the furthest distance of point pairs from different clusters.
   \item Points of two different clusters can thus be closer than points within a cluster.
@@ -698,10 +841,10 @@ plot(as.dendrogram(agglo), main = "Cluster Dendrogram", ylab = "Height", ylim = 
 
 \begin{vbframe}{Summary}
 \begin{itemize}
-  \item \textit{Hierarchical agglomerative clustering methods} iteratively merge observations/clusters until all observations are in one single cluster.
-  \item Results in a hierarchy of clustering assignments which can be visualized in a \textit{dendrogram}.
+  \item \textbf{Hierarchical agglomerative clustering methods} iteratively merge observations/clusters until all observations are in one single cluster.
+  \item Results in a hierarchy of clustering assignments which can be visualized in a \textbf{dendrogram}.
 Each node of the dendrogram represents a cluster and its \enquote{height} is proportional to the distance of its child nodes.
-  \item The most common linkage functions are \textit{single, complete, average} and \textit{centroid} linkage.
+  \item The most common linkage functions are \textbf{single, complete, average} and \textbf{centroid} linkage.
 There is no perfect linkage and each linkage has its own advantages and disadvantages.
 \end{itemize}
 \end{vbframe}
@@ -799,9 +942,9 @@ text(xy[1], xy[2], label = "within-cluster variation", col = "black")
 \begin{vbframe}{$k$-means}
 Idea: Consider every possible partition of $n$ observations into $k$ clusters and select the one with the lowest \textbf{within-cluster variation}.
 
-Problem: Requires trying all possible assignments of $n$ observations into $k$ clusters, which in practice is nearly impossible (Hothorn et al., 2009, p.322):
+\lz 
 
-\lz
+Problem: Requires trying all possible assignments of $n$ observations into $k$ clusters, which in practice is nearly impossible (Hothorn et al., 2009, p. 322):
 
 \begin{table}[]
 \begin{tabular}{rcl}
@@ -982,7 +1125,7 @@ add.alpha <- function(col, alpha=1){
   \item is strongly related to $k$-means and is realized by the \textbf{Partitioning Around Medoids (PAM)} algorithm.
   \item uses cluster medoids as representative clusters, i.e. \textbf{real data points} instead of \textbf{artificial data points} (such as the cluster centers as in $k$-means) are used.
   \item is less sensitive to outliers and more robust than $k$-means.
-  \item can handle categorical features ($k$-means doesn't because it is based on calculating the cluster centers by taking the mean in each dimension).
+  \item can handle categorical features ($k$-means does not because it is based on calculating the cluster centers by taking the mean in each dimension).
 \end{itemize}
 \end{vbframe}
 
@@ -1210,12 +1353,12 @@ for (i in 1:iters) {
 \lz
 
 \begin{itemize}
-  \item Minimizing the \textit{within-cluster variation} exactly is not feasible and can be approximated by the $k$-means algorithm.
+  \item Minimizing the \textbf{within-cluster variation} exactly is not feasible and can be approximated by the $k$-means algorithm.
   \item $k$-means always converges, however, the cluster assignments strongly depend on the initial
   centers. \\
   $\rightarrow$ repeat it several times with different initial centers.
   \item A simple solution for choosing the number of clusters $k$ is to plot the
-  \textit{within-cluster variation} for several $k$ and look for an \textit{"elbow"} which is a good guess for $k$.
+  \textbf{within-cluster variation} for several $k$ and look for an \textbf{"elbow"} which is a good guess for $k$.
 \end{itemize}
 \end{vbframe}
 
