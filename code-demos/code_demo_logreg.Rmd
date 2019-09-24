@@ -4,20 +4,34 @@ params:
     set_title: "Code demo for logistic regression and Newton-Raphson"
 ---
 
-```{r preamble, child = "../style/preamble_code_demos.Rmd", include = FALSE}
+```{r logreg-preamble, child = "../style/preamble_code_demos.Rmd", include = FALSE, purl = FALSE}
 
 ```
 
-```{r setup, child = "../style/setup.Rmd", include = FALSE}
+```{r logreg-setup, child = "../style/setup.Rmd", include = FALSE, purl = FALSE}
 
 ```  
 
-```{r load_chunk, echo=FALSE, cache=FALSE}
-knitr::read_chunk("code_demo_knn.Rmd")
-knitr::read_chunk("code_demo_limo.Rmd")
-run_chunk("knn-plot_2D_classif")
-run_chunk("grad_desc_opt-def")
-```  
+```{r logreg-load_chunk, echo=FALSE, cache=FALSE, purl=FALSE}
+# see https://stackoverflow.com/a/28151571
+run_chunks <- function(chunkNames, envir = .GlobalEnv) {
+  for(chunkName in chunkNames){
+    chunkName <- unlist(lapply(as.list(substitute(.(chunkName)))[-1], as.character))
+    eval(parse(text = knitr:::knit_code$get(chunkName)), envir = envir)
+  }
+}
+
+load_chunks <- function(rmd_files){
+  for(rmd_file in rmd_files){
+    knitr::purl(paste0(rmd_file,".Rmd"), paste0(rmd_file,".R"), documentation=2)
+    knitr::read_chunk(paste0(rmd_file,".R"))
+  }
+}
+
+load_chunks(c("code_demo_knn","code_demo_limo"))
+run_chunks(c("knn-plot_2D_classif","grad_desc_opt-def"))
+```
+
 
 # Logistic regression
 
@@ -42,6 +56,7 @@ And we can observe that logistic regression “squashes” the estimated linear
 scores $\theta^Tx$ to $[0, 1]$:
 
 ```{r logreg-plot_logistic}
+library(ggplot2)
 num_data <- 100
 theta <- c(0, 1)
 
@@ -174,6 +189,7 @@ encounter so-called **complete separation**, i.e., a situation in which the data
 classified without error by our classification method. We can simply use the predictions from our model as if they were the observed labels to create such a dataset:
 
 ```{r logreg-compl_sep}
+library(gridExtra)
 Y_compl_sep <- classify_logreg(X, theta)$prediction
 
 thetas <- list(0.5 * theta, 1 * theta, 2 * theta, 10 * theta)

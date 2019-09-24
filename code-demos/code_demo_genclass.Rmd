@@ -4,17 +4,32 @@ params:
   set_title: "Code demo for generative classification methods"
 ---
   
-```{r preamble, child = "../style/preamble_code_demos.Rmd", include = FALSE}
+```{r genclass-preamble, child = "../style/preamble_code_demos.Rmd", include = FALSE, purl = FALSE}
 
 ```
 
-```{r setup, child = "../style/setup.Rmd", include = FALSE}
+```{r genclass-setup, child = "../style/setup.Rmd", include = FALSE, purl = FALSE}
 
 ```  
 
-```{r load_chunk, echo=FALSE, cache=FALSE}
-knitr::read_chunk("code_demo_knn.Rmd")
-run_chunk("knn-plot_2D_classif")
+```{r genclass-load_chunk, echo=FALSE, cache=FALSE, purl=FALSE}
+# see https://stackoverflow.com/a/28151571
+run_chunks <- function(chunkNames, envir = .GlobalEnv) {
+  for(chunkName in chunkNames){
+    chunkName <- unlist(lapply(as.list(substitute(.(chunkName)))[-1], as.character))
+    eval(parse(text = knitr:::knit_code$get(chunkName)), envir = envir)
+  }
+}
+
+load_chunks <- function(rmd_files){
+  for(rmd_file in rmd_files){
+    knitr::purl(paste0(rmd_file,".Rmd"), paste0(rmd_file,".R"), documentation=2)
+    knitr::read_chunk(paste0(rmd_file,".R"))
+  }
+}
+
+load_chunks("code_demo_knn")
+run_chunks("knn-plot_2D_classif")
 ```  
 
 # Code demo for generative classification methods
@@ -485,7 +500,7 @@ plot_2D_naivebayes <- function(priors, likelihoods, X1 = "X1", X2 = "X2",
   )
 }
 ```
-```{r}
+```{r genclass-naivebayes_plot}
 
 plot_2D_naivebayes(
   priors, liks, "Sepal.Width", "Sepal.Length",
@@ -493,7 +508,7 @@ plot_2D_naivebayes(
 )
 ```
 
-```{r genclass-naivebayes_plot}
+```{r genclass-naivebayes_plot_mlr}
 # compare with mlr
 iris_nb_learner <- makeLearner("classif.naiveBayes")
 iris_nb_model <- train(learner = iris_nb_learner, task = iris_task)
@@ -601,7 +616,9 @@ predict_likelihood <- function(likelihood, x) {
       predict_likelihood(likelihood, x)))))
   )
 }
+```
 
+```{r genclass-nb_kde_plot}
 
 liks_kde <- get_naivebayes_likelihoods(
   iris_train, target,
