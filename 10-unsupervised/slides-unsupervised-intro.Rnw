@@ -1,0 +1,155 @@
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../style/preamble.Rnw")
+library(MASS)
+library(cluster)
+library(pdist)
+@
+
+% Load all R packages and set up knitr
+<<setup, child="../style/setup.Rnw", include = FALSE>>=
+@
+
+\lecturechapter{Unsupervised Learning}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+\section{Motivation}
+
+\begin{vbframe}{Supervised vs. Unsupervised Learning}
+
+\textbf{Supervised Machine Learning:}
+\begin{itemize}
+  \item Supervised machine learning deals with \textit{labeled} data, i.e., we have input data $\xb$ and the outcome $y$ of past events.
+  \item Here, the aim is to learn relationships between $\xb$ and $y$.
+\end{itemize}
+
+\textbf{Unsupervised Machine Learning:}
+\begin{itemize}
+  \item Unsupervised machine learning deals with data that is \textit{unlabeled}, i.e., there is no real output $y$.
+  \item Here, the aim is to search for patterns within the inputs $\xb$.
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Motivation for Clustering}
+Consider multivariate data with $n$ observations (e.g. customers) and $p$
+features (e.g. characteristics of customers).
+
+Task: divide data into groups (clusters), such that
+
+\begin{itemize}
+  \item the observations in each cluster are as "similar" as possible (homogeneity
+  within each cluster), and
+  \item the clusters are as "far away" as possible from other clusters (heterogeneity
+  between different clusters).
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Clustering vs. Classification}
+\begin{itemize}
+  \item In classification, the groups are known and we try to learn what
+  differentiates these groups (i.e., learn a classification function) to
+  properly classify future data.
+  \item In clustering, we look at data, where groups are unknown and try to find
+  similar groups.
+\end{itemize}
+
+\lz
+
+Why do we need clustering?
+
+\lz
+
+  \begin{itemize}
+    \item Discovery: looking for new insights in the data (e.g. finding groups of customers that buy a similar product).
+    \item Derive a reduced representation of the full data set.
+  \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Clustering Task}
+\textbf{Goal:} Group data into similar clusters (or estimate fuzzy membership
+  probabilities)
+
+<<echo=FALSE, fig.height=5>>=
+  df4 = getTaskData(iris.task)
+  m = as.matrix(cbind(df4$Petal.Length, df4$Petal.Width), ncol = 2)
+  cl = (kmeans(m,3))
+  df4$cluster = factor(cl$cluster)
+  centers = as.data.frame(cl$centers)
+  ggplot(data = df4, aes(x = Petal.Length, y = Petal.Width, color = cluster)) +
+   geom_point(size = 4) +
+   geom_point(data = centers, aes(x = V1, y = V2, color = "red")) +
+   geom_point(data = centers, aes(x = V1,y = V2, color = "red"), size = 90, alpha = .3) +
+   theme(legend.position = "none")
+@
+\end{vbframe}
+
+\begin{vbframe}{Clustering: Customer Segmentation}
+\begin{itemize}
+  \item In marketing, customer segmentation is an important task to understand customer needs and to meet with customer expectations.
+  \item Customer data is partitioned in terms of similarities and the characteristics of each group are summarized.
+  \item Marketing strategies are designed and prioritized according to the group size.
+\end{itemize}
+
+\lz
+Example Use Cases:
+
+\begin{itemize}
+  \item Personalized ads (e.g., recommend articles).
+  \item Music/Movie recommendation systems.
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Clustering: Image Compression}
+\begin{itemize}
+  \item An image consists of pixels arranged in rows and columns.
+  \item Each pixel contains \textbf{RGB} color information, i.e., a mix of the intensity of 3 \textbf{primary colors}: \textbf{R}ed, \textbf{G}reen and \textbf{B}lue.
+  \item Each primary color takes intensity values between 0 and 255.
+\end{itemize}
+
+\begin{center}
+\includegraphics[width=0.6\textwidth]{figure_man/rgb-cube.png}
+
+\tiny Source: By Ferlixwangg \href{https://creativecommons.org/licenses/by-sa/4.0}{CC BY-SA 4.0}, from \href{https://commons.wikimedia.org/wiki/File:Rgb-cube.gif}{Wikimedia Commons}.
+\end{center}
+\end{vbframe}
+
+\begin{vbframe}{Clustering: Image Compression}
+An image can be compressed by reducing its color information, i.e., by replacing similar colors of each pixel with, say, $k$ distinct colors.
+
+\vspace{0.2cm}
+
+\textbf{Example}:
+
+<<echo = FALSE, fig.height=5, fig.width=10>>=
+library(jpeg)
+
+img = readJPEG("figure_man/colorful_bird.jpg") # Read the image
+imgDm = dim(img)
+# We re-arranged the 3D array into a dataset that has the coordinates of the pixel and the color information (R, G and B)
+imgRGB = data.frame(
+  x = rep(1:imgDm[2], each = imgDm[1]),
+  y = rep(imgDm[1]:1, imgDm[2]),
+  R = as.vector(img[,,1]),
+  G = as.vector(img[,,2]),
+  B = as.vector(img[,,3])
+)
+
+par(mfrow = c(1,2), mar = c(0,0,2,0))
+# We now plot the pixels (pch = 15) with its RGB color info
+plot(imgRGB$x, imgRGB$y, col = rgb(imgRGB[c("R", "G", "B")]), pch = 15, axes = F, main = "Original Image", xlab = "", ylab = "")
+box()
+
+k = 16
+kMeans = kmeans(imgRGB[, c("R", "G", "B")], centers = k)
+predRGB = kMeans$centers[kMeans$cluster,]
+
+plot(imgRGB$x, imgRGB$y, col = rgb(predRGB), pch = 15, axes = F, main = "Image using 16 Colors", xlab = "", ylab = "")
+box()
+@
+\end{vbframe}
+
+
+
+\endlecture
