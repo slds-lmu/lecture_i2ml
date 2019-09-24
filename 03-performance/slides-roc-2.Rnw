@@ -21,7 +21,7 @@ requireNamespace("ROCR")
       system
 \item We could also use 2 different ROC metrics which define a trade-off, like TPR and PPV!
 \end{itemize}
-<<echo=FALSE, out.height="5cm", fig.align="center">>=
+<<echo=FALSE, out.height = "0.6\\textheight", out.width = "0.6\\textwidth", height = 3, fig.align="center">>=
 plot_roc_space = function(fpr, tpr, label) {
   d = data.frame(FPR = fpr, TPR = tpr, label = label)
   pl = ggplot(d, aes(x = FPR, y = TPR, label = label))
@@ -38,7 +38,7 @@ pl = plot_roc_space(fpr, tpr, label)
 pl = pl + geom_segment(x = fpr[1], y = tpr[1], xend = fpr[2], yend = tpr[2], lty = "dotted")
 pl = pl + geom_text_repel(data = data.frame(FPR = 0.20, TPR = 0.78, label = "unclear winner"))
 pl = pl + geom_segment(x = fpr[1], y = tpr[1], xend = fpr[3], yend = tpr[3], lty = "dotted")
-pl = pl + geom_text_repel(data = data.frame(FPR = 0.25, TPR = 0.65, label = "dominates"))
+pl = pl + geom_text_repel(data = data.frame(FPR = 0.25, TPR = 0.65, label = "dominates")) + theme_bw()
 print(pl)
 @
 \end{vbframe}
@@ -47,13 +47,16 @@ print(pl)
 \begin{vbframe}{ROC Space}
   \begin{itemize}
   \item The best classifier lies on the top-left corner
-  \item The diagonal is worst, where classifiers produce random labels (with different proportions). If each positive $x$ will be randomly classified with 25\% as "pos", $TPR = 0.25$. If we assign each negative $x$ randomly to "pos", $FPR = 0.25$.
+  \item The diagonal is worst, where classifiers produce random labels (with different proportions). If each positive $x$ will be randomly classified with 25\% as "pos", $TPR = 0.25$. If we assign each negative $\xb$ randomly to "pos", $FPR = 0.25$.
 \end{itemize}
-<<echo=FALSE, out.height="5cm", fig.align="center">>=
+
+\vspace*{-0.1cm}
+
+<<echo=FALSE, out.height = "0.55\\textheight", out.width = "0.55\\textwidth", height = 6, fig.align="center">>=
 fpr = c(0, 1, 0, 0.25, 0.75)
 tpr = c(1, 1, 0, 0.25, 0.75)
 label = c("Best", "Pos-100%", "Pos-0%", "Pos-25%", "Pos-75%")
-pl = plot_roc_space(fpr, tpr, label)
+pl = plot_roc_space(fpr, tpr, label) + theme_bw() 
 print(pl)
 @
 \end{vbframe}
@@ -62,12 +65,14 @@ print(pl)
 
 In practice, we should never obtain a classifier below the diagonal, as inverting the predicted labels -- $0 \rightarrow 1$ and $1 \rightarrow 0$ -- will result in a reflection at the diagonal. Because this inverting results in $TPR2 = 1-TPR1$ and $FPR2 = 1-FPR1$
 
+\vspace*{0.3cm}
+
 <<echo=FALSE, out.width="5cm", out.height="5cm", fig.align="center">>=
 fpr = c(0.75, 0.25)
 tpr = c(0.25, 0.75)
 label = c("C1", "C2")
 pl = plot_roc_space(fpr, tpr, label)
-pl = pl + geom_segment(x = fpr[1], y = tpr[1], xend = fpr[2], yend = tpr[2], lty = "dotted")
+pl = pl + geom_segment(x = fpr[1], y = tpr[1], xend = fpr[2], yend = tpr[2], lty = "dotted") + theme_bw()
 print(pl)
 @
 \end{vbframe}
@@ -186,7 +191,7 @@ Set threshold $\tau =$ \Sexpr{thresh} yields TPR \Sexpr{tpr} and FPR \Sexpr{fpr}
 <<echo=FALSE, out.width="0.8\\textwidth", fig.width=6, fig.height=4, fig.align="center">>=
 thresh = 0.85
 tpr = mlr::measureTPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos")
-fpr = mlr::measureFPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos", negative = "Neg")
+fpr = mlr::measureFPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos", negative = "Neg") 
 
 plotROC(df_auc, thresh)
 @
@@ -261,7 +266,7 @@ plot_roc_curves = function(d) {
   pl = ggplot(d, aes(x = FPR, y = TPR, col = label))
   pl = pl + geom_line(size = 2)
   pl = pl + xlim(c(0, 1)) + ylim(c(0,1))
-  pl = pl + geom_abline(slope = 1, lty = "dotted")
+  pl = pl + geom_abline(slope = 1, lty = "dotted") + theme_bw()
 }
 n = 10
 fpr = seq(0, 1, length.out = n)
