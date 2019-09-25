@@ -18,8 +18,7 @@ library(smoof)
 In model selection, we are interested in selecting the best model from a set of potential candidate models (e.g., different model classes, different hyperparameter settings, different feature sets).
 
 \begin{blocki}{Problem}
-    \item We cannot evaluate our finally selected leaner on the same resampling splits that we have used to
-      perform model selection for it, e.g., to tune its hyperparameters.
+    \item We cannot evaluate our finally selected learner on the same resampling splits that we have used to perform model selection for it, e.g., to tune its hyperparameters.
     \item By repeatedly evaluating the learner on the same test set, or the same CV splits, information
       about the test set \enquote{leaks} into our evaluation.
     \item Danger of overfitting to the resampling splits / overtuning!
@@ -54,12 +53,12 @@ ggd$data.size = as.factor(ggd$data.size)
 
 
 pl = ggplot(ggd, aes(x = iter, y = tuneperf, col = data.size))
-pl =  pl + geom_line()
+pl =  pl + geom_line() + ylab("Tuning Error") + xlab("Iteration") + labs(colour = "Data Size")
 print(pl)
 @
 
 \begin{itemize}
-\item Plotted is the best \enquote{tuning error} after $k$ tuning iterations
+\item Plotted is the best \enquote{tuning error} (i.e. the performance of the model with fixed $\lambda$ as evaluated by the cross-validation) after $k$ tuning iterations.
 \item We have performed the experiment for different sizes of learning data
       that where cross-validated.
 \end{itemize}
@@ -84,7 +83,7 @@ plot_dens_with_errs = function(k) {
   # pl = pl + geom_label()
   label = sprintf("n=%i; #runs=%i; best err=%.2f", size, k, minerr)
   pl = pl + ggtitle(label = label)
-  pl = pl + xlab("Test Error") + ylab("density")
+  pl = pl + xlab("Test Error") + ylab("Density") +  theme(plot.title = element_text(size = 12))
   return(pl)
 }
 
@@ -108,8 +107,8 @@ grid.arrange(pl3, pl4, ncol = 2)
 @
 
 \begin{itemize}
-\item But in tuning we take the minimum of those!
-\item The more we sample, the more "biased" this value becomes
+\item But in tuning we take the minimum of those! 
+\item The more we sample, the more "biased" this value becomes. 
 \end{itemize}
 \end{vbframe}
 
@@ -118,9 +117,9 @@ grid.arrange(pl3, pl4, ncol = 2)
 \item Again, simply simulate what happens in model application.
 \item All parts of the model building (including model selection,
   preprocessing) should be embedded in the model-finding process
-  \textbf{on the training data}
+  \textbf{on the training data}.
 \item The test set we should only touch once, so we have no way of \enquote{cheating}. The test dataset is only used once a model is completely trained, after deciding for example on specific hyper-parameters. Performances obtained from the test set are
-  \emph{unbiased estimates} of the true performance.
+  \textbf{unbiased estimates} of the true performance.
 \item For steps that themselves require resampling (e.g., hyperparameter tuning) this results
   in two \textbf{nested resampling} loops, i.e., a resampling strategy for both tuning and outer evaluation.
 \end{itemize}
@@ -128,14 +127,15 @@ grid.arrange(pl3, pl4, ncol = 2)
 
 
 \begin{vbframe}{Tuning as part of model building}
+
 \begin{itemize}
-\item It conceptually helps to see the tuning step as now effectively part of a more complex training procedure
- \item We could see this as removing the hyperparameters from the inputs of the algorithm and making it "self-tuning"
+\item It conceptually helps to see the tuning step as now effectively part of a more complex training procedure.
+ \item We could see this as removing the hyperparameters from the inputs of the algorithm and making it \enquote{self-tuning}.
  \end{itemize}
 
 \begin{center}
 % FIGURE SOURCE: https://drive.google.com/open?id=1vKksRNOzK_iwnYBEBu9iHCUICFUM3f0Y
-\includegraphics[width=0.75\textwidth]{figure_man/autotune_in_model_fit.jpg}
+\includegraphics[width=0.6\textwidth]{figure_man/autotune_in_model_fit.png}
 \end{center}
 \end{vbframe}
 
@@ -151,66 +151,102 @@ grid.arrange(pl3, pl4, ncol = 2)
 
 % FIGURE SOURCE: https://drive.google.com/open?id=1Us-zxKUQtppoFTbogn7KjYae8VCPXn1F
 
-\includegraphics[height=5.5cm]{figure_man/train_valid_test.jpg}
+\includegraphics[width=0.6\textwidth]{figure_man/train_valid_test.png}
 \end{center}
 
 \framebreak
 
-More precisely: the joint train+valid set is actually the training test for the "self-tuning" endowed algorithm
+More precisely: the joint train + valid set is actually the training test for the "self-tuning" endowed algorithm. 
+
 \vspace{1cm}
 \begin{columns}[c, onlytextwidth]
 \column{0.45\textwidth}
 % FIGURE SOURCE: https://drive.google.com/open?id=1Us-zxKUQtppoFTbogn7KjYae8VCPXn1F
-\includegraphics[width=8cm]{figure_man/train_valid_test.jpg}
+\includegraphics[width=1\textwidth]{figure_man/train_valid_test.png}
 \column{0.45\textwidth}
 % FIGURE SOURCE: https://drive.google.com/open?id=1vKksRNOzK_iwnYBEBu9iHCUICFUM3f0Y
-\includegraphics[width=6cm]{figure_man/autotune_in_model_fit.jpg}
+\includegraphics[width=1\textwidth]{figure_man/autotune_in_model_fit.png}
 \end{columns}
 \end{vbframe}
 
 \begin{vbframe}{Nested Resampling}
 As we can generalize holdout splitting to resampling, we can generalize the train+valid+test approach to nested resampling. This results in two nested resampling loops, i.e., a resampling strategy for both tuning and outer evaluation.
 
+
 % FIGURE SOURCE: No source
-\begin{center}\includegraphics[height=5.5cm]{figure_man/Nested_Resampling.png}\end{center}
+\begin{center}\includegraphics[width = 0.7\textwidth]{figure_man/Nested_Resampling.png}\end{center}
 
 \framebreak
 
 Assume we want to tune over a set of candidate HP configurations $\lambda_i; i = 1, \dots$ with 4-fold CV in the inner resampling and 3-fold CV in the outer loop. The outer loop is visualized as the light green and dark green parts.
 
+\vspace*{-0.3cm}
+
 % FIGURE SOURCE: No source
-\begin{center}\includegraphics[height=5.5cm]{figure_man/Nested_Resampling.png}\end{center}
+\begin{center}\includegraphics[width = 0.7\textwidth]{figure_man/Nested_Resampling.png}\end{center}
 
 \framebreak
 
+\begin{footnotesize}
 In each outer loop we do:
 \begin{itemize}
 \item Split off light green testing data
 \item Run the tuner on the dark green part, e.g.,
   evaluate each $\lambda_i$ through 4CV on the dark green part
 \end{itemize}
+\end{footnotesize}
 
 % FIGURE SOURCE: No source
-\begin{center}\includegraphics[height=5.5cm]{figure_man/Nested_Resampling.png}\end{center}
-
+\begin{center}\includegraphics[width = 0.7\textwidth]{figure_man/Nested_Resampling.png}\end{center}
+ 
 \framebreak
 
+\begin{footnotesize}
 In each outer loop we do:
 \begin{itemize}
 \item Return the winning $\lambda^*$
 \item Re-train the model on the full outer dark green train set
 \item Predict on the outer light green test set
 \end{itemize}
+\end{footnotesize}
 
 % FIGURE SOURCE: No source
-\begin{center}\includegraphics[height=5.5cm]{figure_man/Nested_Resampling.png}\end{center}
-
+\begin{center}\includegraphics[width = 0.7\textwidth]{figure_man/Nested_Resampling.png}\end{center}
+  
 \framebreak
 
+\begin{footnotesize}
 The error estimates on the outer samples (light green) are unbiased because this data was strictly excluded from the model-building process of the model that was tested on.
+\end{footnotesize}
 
 % FIGURE SOURCE: No source
-\begin{center}\includegraphics[height=5.5cm]{figure_man/Nested_Resampling.png}\end{center}
+
+\begin{center}\includegraphics[width = 0.7\textwidth]{figure_man/Nested_Resampling.png}\end{center}
+
+\end{vbframe}
+
+\begin{vbframe}{Nested Resampling - Instructive Example}
+
+Taking again a look at the motivating example and adding a nested resampling outer loop, we get the expected behavior:
+
+<<fig.height=3.5, echo = FALSE>>=
+load("rsrc/overtuning_data.rds")
+library(dplyr)
+library(ggplot2)
+
+df_overtuning %>%
+  group_by(data_dim, tuning_method, number_points) %>%
+  dplyr::summarize(performance = mean(performance)) %>%
+  mutate(number_points = as.integer(as.character(number_points))) %>%
+  ggplot(aes(x = number_points, y = performance, color = data_dim, linetype = tuning_method)) +
+    geom_line() +
+    scale_color_brewer(name = "# Observations", palette = "Set1") +
+    ggthemes::theme_tufte() +
+    xlab("Amount of tried hyperparameter configurations") +
+    ylab("Tuned Performance") +
+    scale_linetype_discrete(name = "")
+@
+
 
 \end{vbframe}
 
