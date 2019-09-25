@@ -2,24 +2,27 @@
 output: pdf_document
 title: "mlr3 Usecase Day 2 - Ames Housing Dataset"
 ---
+```{r, echo = FALSE}
+knitr::opts_chunk$set(echo = solution, eval = solution)
+```
 
 This exercise is intended to use `mlr3tuning` to improve the results of the benchmark analysis on the _Ames Housing Dataset_ of day 1.
 
 The main objective of this exercise is as follows:
 
-- To apply an appropriate tuning technique to a learning algorithm in order to improve its predictive performance.
+- To apply an appropriate tuning technique to a learning algorithm in order to obtain improve its predictive performance.
 
-Keep in mind that you are asked to use the Mean Absolute Error (MAE) as a performance measure to evaluate the performance of a tuned algorithm.
+Keep in mind that you are asked to use the Mean Squared Error (MSE) as a performance measure to evaluate the performance of a tuned algorithm.
 
 ## Accessing the dataset
 
-The dataset is available on Kaggle http://www.kaggle.com/c/ames-day2.
+The dataset is available on Kaggle https://bit.ly/2l0uWoz.
 Kaggle is a platform which provides data science competitions and datasets which can be used to get familiar with typical machine learning methods.
 
 ## Importing the data
 
 ```{r}
-housing = read.csv("data/ames_housing_train_numeric.csv")
+housing = read.csv("data/ames_housing_train.csv")
 ```
 
 1. Load the `mlr3` and `mlr3learners` packages.
@@ -36,64 +39,43 @@ task = TaskRegr$new(id = "ames_housing", backend = housing, target = "SalePrice"
 task
 ```
 
-3. Create a list of learning algorithms and their parameter sets which we want to tune.
+3. Create a list of learning algorithms which you want to use in the benchmark.
 
 ```{r}
 # get a featureless learner and a regression tree
 library(mlr3learners)
-knn = lrn("regr.kknn")
 xgboost = lrn("regr.xgboost", nrounds = 100L)
 ```
 
 ```{r}
 library(paradox)
-knn_tune_ps = ParamSet$new(list(
-ParamDbl$new("log_k", log(1), log(100))
+tune_ps = ParamSet$new(list(
+  ParamDbl$new("eta", lower = 0.01, upper = 0.2),
+  ParamDbl$new("gamma", lower = 2^-5, upper = 2^6),
+  ParamInt$new("max_depth", lower = 3, upper = 10)
 ))
-knn_tune_ps$trafo = function(x, param_set) {
-return(list(k = round(exp(x$log_k))))
-}
-knn_tune_ps
-
-xgboost_tune_ps = ParamSet$new(list(
-  ParamDbl$new("eta", lower = -7, upper = 0),
-  ParamDbl$new("gamma", lower = -5, upper = 6)
-))
-xgboost_tune_ps$trafo = function(x, param_set) {
-return(list(eta = 2^(x$eta), gamma = 2^(x$gamma)))
-}
-xgboost_tune_ps
+tune_ps
 ```
 
-4. Define all necessary tuning settings.
+4. Create a resampling object for your benchmark evaluation.
 
 ```{r}
 library(mlr3tuning)
 # we want to use an inner 3-fold cross validation
-inner_resampling = rsmp("cv", folds = 3) # inner resampling
-terminator = term("model_time", secs = 60L) # set terminator to 60 seconds
-measure = msr("regr.mae") # we want to optimize the MAE
-tuner = tnr("grid_search", resolution = 10) # we use grid search here
+inner_resampling = rsmp("cv", folds = 3)
+terminator = term("evals", n_evals = 60L) # set terminator to 360 seconds
+measure = msr("regr.mse") # we want to optimize the MSE
+tuner = tnr("random_search")
 ```
 
-5. Let's use the `autotuner` to use the tuned learner as a regular one within our previous benchmark
+5. Let's use the `autotuner` to use the tuned learner as a regular one within our previouse benchmark
 
 ```{r}
-knn_tuned = AutoTuner$new(
-  learner = knn,
-  resampling = inner_resampling,
-  measures = measure,
-  tune_ps = knn_tune_ps,
-  terminator = terminator,
-  tuner = tuner
-)
-knn_tuned
-
 xgboost_tuned = AutoTuner$new(
   learner = xgboost,
   resampling = inner_resampling,
   measures = measure,
-  tune_ps = xgboost_tune_ps,
+  tune_ps = tune_ps,
   terminator = terminator,
   tuner = tuner
 )
@@ -104,26 +86,26 @@ xgboost_tuned
 
 ```{r}
 # create a BenchmarkDesign object
+library(mlr3pipelines)
+
 learners = list(
   featureless = lrn("regr.featureless"),
-  lm = lrn("regr.lm"),
   knn = lrn("regr.kknn"),
   knn_tuned = knn_tuned,
   tree = lrn("regr.rpart"),
   random_forest = lrn("regr.ranger"),
-  xgboost = xgboost,
-  xgboost_tuned = xgboost_tuned
+  xgboost = po("encode", method = "one-hot") %>>% xgboost,
+  xgboost_tuned = po("encode", method = "one-hot") %>>% xgboost_tuned
 )
-resampling = rsmp("cv", folds = 5)
+resampling = rsmp("cv", folds = 10)
 design = benchmark_grid(task, learners, resampling)
 print(design)
 ```
 
 6. Run the benchmark
 
-```{r, echo = -1}
-lgr::get_logger("mlr3")$set_threshold("error")
-# run the benchmark
+```{r}
+# execute the benchmark
 bmr = benchmark(design)
 ```
 
@@ -131,22 +113,21 @@ bmr = benchmark(design)
 
 ```{r}
 # get some measures: accuracy (acc) and area under the curve (auc)
-measures = mlr_measures$mget(c("regr.mae", "regr.mse"))
+measures = mlr_measures$mget(c("regr.mse", "regr.mae"))
 bmr$aggregate(measures)
 ```
 
 8. Use an appropriate plot to illustrate the benchmark results.
-Here, we use the `mlr3viz` package.
+Have e.g. a look at the `mlr3viz` package.
 
 ```{r}
 library(mlr3viz)
 autoplot(bmr)
 ```
 
-9. We take the best performing algorithm - the xgboost autotuner - as final learner to predict on the test data.
 
 ```{r}
-test_set = read.csv("data/ames_housing_test_numeric.csv")
+test_set = read.csv("data/ames_housing_test.csv")
 final_learner = learners$xgboost_tuned
 final_learner$train(task)
 pred = final_learner$predict_newdata(task, test_set)
@@ -154,5 +135,5 @@ pred = final_learner$predict_newdata(task, test_set)
 # we can save the predictions as data.table and export them for Kaggle
 pred = as.data.table(pred)
 pred$truth = NULL
-write.csv(pred, "data/ames_housing_submission_day2.csv", row.names = FALSE)
+write.csv(pred, "data/ames_housing_submission_day1.csv")
 ```
