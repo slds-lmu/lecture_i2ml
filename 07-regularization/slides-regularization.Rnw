@@ -1,0 +1,1275 @@
+%This file is a child of preamble.Rnw in the style folder
+%if you want to add stuff to the preamble go there to make
+%your changes available to all childs
+
+
+% Load all R packages and set up knitr
+<<setup, child="../style/setup.Rnw", include = FALSE>>=
+@
+
+<<setup,, include = FALSE>>=
+knitr::set_parent("../style/preamble.Rnw")
+library(knitr)
+library(mlr)
+library(mlbench)
+library(ggplot2)
+library(BBmisc)
+library(reshape)
+@
+
+
+<<setup-functions, include = FALSE>>=
+
+plotSVM = function(tsk, par.vals) {
+
+  lrn = makeLearner("classif.ksvm", par.vals = par.vals)
+  set.seed(123L)
+  mod = train(lrn, tsk)
+  sv.index = mod$learner.model@SVindex
+  df = getTaskData(tsk)
+  df = df[ifelse(1:getTaskSize(tsk) %in% sv.index, TRUE, FALSE), ]
+
+  set.seed(123L)
+  par.set = c(list("classif.ksvm", tsk), par.vals)
+  q = do.call("plotLearnerPrediction", par.set) + scale_f_d()
+  #q = q + geom_point(data = df, color = "black",
+  #  size = 6, pch = 21L)
+  q
+}
+set.seed(123L)
+makeSimulatedTask = function(size) {
+  cluster.size = floor(size / 3)
+  x1 = c(rnorm(cluster.size, mean = - 1.5), rnorm(cluster.size/2),
+    rnorm(cluster.size, mean = 1.5))
+  x2 = c(rnorm(cluster.size, mean = - 1), rnorm(cluster.size/2),
+    rnorm(cluster.size, mean = 1))
+  y = factor(c(rep("a", times = cluster.size), sample(c("a", "b"),
+    size = cluster.size/2, replace = TRUE), rep("b", times = cluster.size)))
+  sim.df = data.frame(x1 = x1, x2 = x2, y = y)
+  makeClassifTask("simulated example", data = sim.df, target = "y")
+}
+@
+
+\lecturechapter{Regularization}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+%Blank Lecture
+%This file is a child of preamble.Rnw in the style folder
+%if you want to add stuff to the preamble go there to make
+%your changes available to all childs
+
+
+
+\section{Motivation}
+
+\begin{vbframe}{Example: Overfitting}
+
+\begin{itemize}
+\item Assume we want to predict the daily maximum \textbf{ozone level} in LA given a data set containing $50$ observations.
+\item The data set contains $12$ features describing time conditions (e.g., weekday, month),
+the weather (e. g. temperature at different weather stations, humidity, wind speed) or geographic variables (e. g. the pressure gradient).
+
+
+\item We fit a linear regression model using \textbf{all} of the features
+
+$$
+\fxt = \thetab^\top\xb = \theta_0 + \theta_1 x_1 + \theta_2 x_2 + ... + \theta_{12} x_{12}
+$$
+
+with the $L2$-loss.
+
+\item We evaluate the performance with $10$ times $10$-fold CV.
+
+\end{itemize}
+
+\vfill
+
+\begin{footnotesize} 
+We use (a subset of) the \texttt{Ozone} data set from the \texttt{mlbench} package. This way, we artificially create a \enquote{high-dimensional} dataset by reducing the number of observations drastically while keeping the number of features fixed. 
+\end{footnotesize}
+
+\framebreak 
+
+
+While our model fits the training data almost perfectly (left), it generalizes poorly
+to new test data (right). We overfitted.
+
+\lz 
+
+<<echo=FALSE, fig.height=3, fig.width = 6, warning=FALSE>>=
+load("data/ozone_example.RData")
+
+dfp =df_incdata[nobs == 50, ]
+
+p = ggplot(data = dfp, aes(x = 0, y = value, colour = variable))
+p = p + geom_boxplot() + labs(colour = " ")
+p = p + scale_colour_discrete(labels = c("Train error", "Test error"))
+p = p + xlab(" ") + ylab("Mean Squared Error")
+p = p + ylim(c(0, 400)) + theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+p
+@
+
+\end{vbframe}
+
+\begin{vbframe}{Avoid Overfitting} 
+
+Why can \textbf{overfitting} happen? And how to avoid it?
+
+\begin{enumerate}
+\item Not enough data \\
+$\to$ collect \textbf{more data} 
+\item Data is noisy \\
+$\to$ collect \textbf{better data} (reduce noise) 
+\item Models are too complex \\
+$\to$ use \textbf{less complex models}
+\item Aggressive loss optimization \\
+$\to$ \textbf{optimize less}
+\end{enumerate}
+
+\framebreak 
+
+\textbf{Approach 1: Collect more data}
+
+\vspace*{0.2cm} 
+
+We explore the model's performance for increased data set size by $10$ times $10$-fold CV.
+The fit worsens slightly, but the test error decreases.
+
+<<echo=FALSE, echo=FALSE, fig.height=4, fig.width=7, out.width="0.7\\textwidth", warning=FALSE>>=
+library(data.table)
+
+dfp = setDT(df_incdata)[, .(mean.mse = mean(value)), by = c("nobs", "variable")]
+
+p = ggplot(data = dfp, aes(x = nobs, y = mean.mse, colour = variable))
+p = p + geom_line() + ylim(c(0, 500)) + labs(colour = " ")
+p = p + scale_colour_discrete(labels = c("Train error", "Test error"))
+p = p + xlab("Size of data set") + ylab("MSE")
+p
+@
+
+Good idea, but often not feasible in practice.
+
+
+\begin{footnotesize}
+Note: We initially only used $50$ out of $200$ train observations to simulate the collection of more data. 
+\end{footnotesize}
+
+\framebreak 
+
+\textbf{Approach 2}: Reduce \textbf{complexity}
+
+\lz 
+
+We try the simplest model we can think of: the constant model. For the $L2$-loss, the optimal constant model is mean over all $\yi$:
+
+$$
+\fxt = \frac{1}{n}\sumin \yi =: \bar y
+$$
+
+We then increase the complexity of the model step-by-step by adding one feature at a time.
+
+\framebreak 
+
+We can control the complexity of the model by including/excluding features.
+We can try out all feature combinations and investigate the model fit.
+
+<<echo=FALSE, echo=FALSE, fig.height=4, fig.width=7, out.width="0.7\\textwidth", warning=FALSE>>=
+load("data/ozone_example.RData")
+
+p = ggplot(data = df_incfeatures, aes(x = type, y = mean.mse, colour = variable))
+p = p + geom_line() + labs(colour = " ")
+p = p + scale_colour_discrete(labels = c("Train error", "Test error"))
+p = p + xlab("Number of features") + ylab("Mean Squared Error")
+p = p + ylim(c(0, 200))
+p = p + scale_x_continuous(breaks = 0:12)
+p
+@
+
+\vfill
+
+\begin{footnotesize}
+Note: For simplicity, we added the features in one specific order - but there are $2^{12} = 4096$
+potential feature combinations.
+\end{footnotesize}
+
+\framebreak 
+
+We have contradictory goals
+
+\begin{itemize}
+\item \textbf{maximizing the fit} (minimize the empirical risk $\riskef$) 
+\item \textbf{minimizing the complexity} of the model (e.g. $\min \# \text{features}$)
+\end{itemize}
+
+We need to find the \enquote{sweet spot}.
+
+\begin{center}
+\begin{figure}
+\includegraphics[width=0.6\textwidth]{figure_man/complexity-vs-fit.png}
+\end{figure}
+\end{center}
+
+\framebreak 
+
+Until now, we can either add a feature completely or not at all.
+
+\lz 
+
+Instead of controlling the complexity in a discrete way by specifying the number of features,
+we might prefer to control the complexity  \textbf{on a continuum} from simple to complex.
+
+\begin{center}
+\begin{figure}
+\includegraphics[width=0.6\textwidth]{figure_man/complexity-vs-fit-continuous.png}
+\end{figure}
+\end{center}
+
+% Let $J(f)$ be a function that measures the \enquote{complexity} of $f$.
+
+\end{vbframe}
+
+\section{Regularized Empirical Risk Minimization}
+
+\begin{vbframe}{Regularized Empirical Risk Minimization}
+
+  \dlz
+  
+  Recall, empirical risk minimization with a complex hypothesis set tends to overfit. A major tool to handle overfitting is \textbf{regularization}.
+  
+  \lz
+  
+  In the broadest sense, regularization refers to any modification made to a learning algorithm that is intended to reduce its generalization error but not its training error.
+  
+  \lz
+  
+  Explicitly or implicitly, such modifications represent the preferences we have regarding the elements of the hypothesis set. 
+
+  \framebreak
+  
+  Commonly, regularization takes the following form:
+  
+  $$
+  \riskrf = \riskef + \lambda \cdot J(f) = \sumin \Lxyi + \lambda \cdot J(f)
+  $$
+\begin{itemize}
+
+  \item $J(f)$ is called \textbf{complexity penalty}, \textbf{roughness penalty} or \textbf{regularizer}.
+  \item It measures the \enquote{complexity} of a model and penalizes it in the fit.
+  \item As for $\riske$, often $\riskr$ and $J$ are defined on $\thetab$ instead of $f$, so $\riskrt = \risket + \lambda \cdot J(\thetab)$. 
+\end{itemize}
+
+\framebreak
+
+\textbf{Remark:}
+
+\begin{itemize}
+  \item Note that we now face an optimization problem with two criteria: 
+    \begin{enumerate}
+      \item models should fit well (low empirical risk),
+      \item but not be too complex (low $J(f)$). 
+    \end{enumerate}
+  \item We decide to combine the two in a weighted sum and to control
+  the trade-off via the complexity control parameter $\lambda$.
+  \item $\lambda$ is hard to set manually and is usually selected via cross-validation (see later).
+  \item $\lambda = 0$: the regularized risk $\riskrf$ reduces to the simple empirical $\riskef$.
+
+  \item If $\lambda$ goes to infinity, we stop caring about the loss / fit and models become as \enquote{simple} as possible.
+\end{itemize}
+
+\framebreak
+
+
+\center
+\vspace*{1cm}
+\includegraphics[width=0.5\textwidth]{figure_man/biasvariance_scheme.png} \\
+\footnotesize{Hastie, The Elements of Statistical Learning, 2009}
+
+
+\end{vbframe}
+
+
+\section{Regularization in Linear Modeling}
+
+\begin{vbframe}{Regularization in the linear model}
+
+Recall, for the (unregularized) linear model we optimize 
+$$
+  \riskt = \sumin \left(\yi - \thetab^\top \xb\right)^2 . 
+$$
+
+Recall that the problem has a closed form solution: 
+
+$$
+  \thetah = (\Xmat^\top \Xmat )^{-1} \Xmat \ydat. 
+$$
+
+\begin{itemize}
+  \item  Coefficient estimates for ordinary least squares with $\fxt = \thetab^\top \xb$ usually require a full rank design matrix $\Xmat$, otherwise $\Xmat^\top \Xmat$ is not invertible.
+  \item When features are highly correlated (i.e. $\Xmat$ is close to \enquote{being not a full rank matrix}), the least-squares estimate becomes highly sensitive to random errors in the observed response, producing a large variance in the fit. 
+\end{itemize}
+
+% \framebreak 
+
+% Regularization counters the risk of being sensitive to random errors. 
+% \lz 
+
+% To favor models with less complexity, we add a complexity penalty to the risk: 
+
+% $$
+% \riskrt = \sumin \left(\yi - \thetab^\top \xb\right)^2 + \lambda \cdot J(\thetab). 
+% $$
+
+% In the following we will present two possible choices for $J(\thetab)$.
+
+\end{vbframe}
+
+\begin{vbframe}{Ridge Regression}
+
+  \textbf{Ridge regression} is a  \textbf{shrinkage method}, as it shrinks the regression coefficients
+  $\thetab$ towards $0$, by putting an $L_2$-penalty$^{(*)}$ on it:
+  \begin{eqnarray*}  
+  \thetah_{\text{Ridge}} &=& \argmin_{\thetab} \sumin \left(\yi - \thetab^\top \right)^2 + \lambda ||\thetab||_2^2 \\
+  &=& \argmin_{\thetab} \left(\ydat - \Xmat \thetab\right)^\top \left(\ydat - \Xmat \thetab\right) + \lambda \thetab^\top \thetab.
+  \end{eqnarray*}
+
+Optimization is possible (as in the normal LM) in analytical form:
+$$\thetah_{\text{Ridge}} = (\Xmat^\top \Xmat  + \lambda \id)^{-1} \Xmat^\top\ydat$$
+
+\vfill
+
+\begin{footnotesize}
+$^{(*)}$ $J(\thetab) = \|\thetab\|_2^2 = \theta_1^2 + \theta_2^2 + ... + \theta_p^2$
+\end{footnotesize}
+
+\framebreak 
+
+  The problem can be formulated equivalently as a constrained optimization problem (for an appropriate choice of $t$):
+
+  \vspace*{-0.5cm}
+
+  \begin{eqnarray*}
+     \min_{\thetab} && \sumin \left(\yi - \thetab^\top\right)^2 \\
+    \text{subject to: } && \|\thetab\|_2^2  \leq t \\
+  \end{eqnarray*}
+
+\vspace*{-1cm}
+
+  \begin{figure}
+\includegraphics[width=0.3\textwidth]{figure_man/ridge_hat.png}\\
+\end{figure}
+
+  \vspace*{-0.5cm}
+
+% \begin{footnotesize}
+% \textbf{Remark:} The first formulation is the Lagrangian of the constrained optimization problem. For the proof of the equivalence of the above formulations we refer to CIM1. 
+% \end{footnotesize}
+
+% \framebreak 
+
+
+% \textbf{Claim:} The following formulations are equivalent: 
+
+% \vspace*{-0.5cm}
+
+% \begin{eqnarray}
+%   \min_{\thetab} && g_\lambda(\bm{\theta}) := \|\bm{y} - \bm{X}\bm{\theta}\|^2 + \lambda \|\thetab\|^2 
+% \label{eq:form1}
+% \end{eqnarray}
+
+% \begin{align}
+% \begin{split}
+% \min_{\bm{\theta}} & \quad \|\bm{y} - \bm{X}\bm{\theta}\|^2 \\
+% \text{s.t.} & \quad \|\bm{\theta}\|_2^2 - t \le 0
+% \end{split} 
+% \label{eq:form2}
+% \end{align}
+
+% \textbf{Sketch of Proof}: Let us consider  \eqref{eq:form1} first. Let $\thetah_{Ridge}$ be the minimum of $g_\lambda(\bm{\theta})$. Necessarily, the gradient of $g_\lambda$ at $\thetah_{Ridge}$ is $0$:
+
+% $$
+% \nabla g_\lambda(\thetah_{Ridge}) = - 2 \bm{y}^\top\bm{X} + 2 (\thetah_{Ridge})^\top \bm{X}^\top\bm{X} + 2 \lambda (\thetah_{Ridge})^\top = 0.
+% $$
+
+% \vspace{0.2cm} 
+
+% We show that we can find a value $t$ such that $\thetah_{Ridge}$ is also the optimal solution to problem \eqref{eq:form2}.
+
+% \framebreak 
+
+% We calculate the Lagrangian of \eqref{eq:form2}
+
+% \vspace*{-0.5cm}
+% \begin{eqnarray*}
+%   L(\bm{\theta}, \alpha) &=& \|\bm{y} - \bm{X}\bm{\theta}\|^2 + \alpha (\|\bm{\theta}\|^2_2 - t). 
+% \end{eqnarray*}
+
+% The first KKT condition says: 
+
+% $$
+% \nabla_\theta L(\bm{\theta}, \alpha)= - 2\bm{y}^\top\bm{X} + 2 \bm{\theta}^\top \bm{X}^\top\bm{X} + 2 \alpha \bm{\theta}^\top = 0.
+% $$
+
+% Since $\nabla g_\lambda(\thetah_{Ridge}) = 0$, this condition is satisfied if we set $\bm{\theta} = \thetah_{Ridge}$ and $\alpha = \lambda$. 
+
+% \vspace*{0.2cm}  
+
+% The KKT-conditions also require that complementarity is fulfilled: 
+
+% $$
+% \alpha(\|\bm{\theta}\|^2_2 - t) = 0. 
+% $$
+
+% This is satisfied if we set $t = \|\thetah_{Ridge}\|^2$. 
+
+% \vspace*{0.2cm} 
+
+% The converse is also true: The optimal solution to problem \eqref{eq:form2} is also a solution to problem \eqref{eq:form1} if we set $\lambda = \alpha$.
+
+\framebreak 
+
+
+
+
+
+\end{vbframe}
+
+\begin{vbframe}{Example: Polynomial Ridge Regression}
+
+Again, let us consider a \(d\)th-order polynomial
+
+\[ f(x) = \theta_0 + \theta_1 x + \cdots + \theta_d x^d = \sum_{j = 0}^{d} \theta_j x^j\text{.} \]
+
+True relationship is \(f(x) = 5 + 2x +10x^2 - 2x^3 + \epsilon\)
+
+Making predictions for \(d = 10\) with linear regression tends to
+overfit:
+
+\vfill
+
+<<echo=FALSE, fig.height=3, warning=FALSE>>=
+source("rsrc/ridge_polynomial_reg.R")
+
+set.seed(314259)
+f = function (x) {
+  return (5 + 2 * x + 10 * x^2 - 2 * x^3)
+}
+
+x = runif(40, -2, 5)
+y = f(x) + rnorm(length(x), 0, 10)
+
+x.true = seq(-2, 5, length.out = 400)
+y.true = f(x.true)
+df = data.frame(x = x.true, y = y.true)
+
+lambda.vec = 0
+
+plotRidge(x, y, lambda.vec, baseTrafo, degree = 10) +
+  geom_line(data = df, aes(x = x, y = y), color = "red", size = 1) +
+  xlab("x") + ylab("f(x)") + ggtitle("Predicting Using Linear Regression")
+@
+
+\framebreak
+
+Using Ridge Regression with different penalty terms approximates the
+real data generating process better:
+
+\vfill
+
+<<echo=FALSE, fig.height=4, warning=FALSE>>=
+source("rsrc/ridge_polynomial_reg.R")
+
+f = function (x) {
+  return (5 + 2 * x + 10 * x^2 - 2 * x^3)
+}
+
+set.seed(314259)
+x = runif(40, -2, 5)
+y = f(x) + rnorm(length(x), 0, 10)
+
+x.true = seq(-2, 5, length.out = 400)
+y.true = f(x.true)
+df = data.frame(x = x.true, y = y.true)
+
+lambda.vec = c(0, 10, 100)
+
+plotRidge(x, y, lambda.vec, baseTrafo, degree = 10) +
+  geom_line(data = df, aes(x = x, y = y), color = "red", size = 1) +
+  xlab("x") + ylab("f(x)") + ggtitle("Predicting Using Ridge Regression")
+@
+
+\end{vbframe}
+
+
+\begin{vbframe}{Lasso Regression}
+
+Another shrinkage method is the so-called \textbf{Lasso regression}, which uses a $L_1$ penalty on $\thetab$ $^{(*)}$:
+
+\begin{eqnarray*}
+\thetah_{\text{Lasso}} &=&  \argmin_{\thetab} \left\{ \sumin \left(\yi - \fxit\right)^2 + \lambda ||\thetab||_1 \right\} \\
+  &=& \argmin_{\thetab} \left(\ydat - \Xmat \thetab\right)^\top \left(\ydat - \Xmat \thetab\right) + \lambda \|\thetab\|_1.
+\end{eqnarray*}
+
+Note that optimization now becomes much harder. $\riskrt$ is still convex, but we have moved from an optimization problem with an analytical solution towards an undifferentiable problem.
+
+\vfill
+
+\begin{footnotesize}
+$^{(*)}$ $J(\thetab) = \|\thetab\|_1 = |\theta_1| + |\theta_2| + ... + |\theta_p|$
+\end{footnotesize}
+
+\framebreak 
+
+Analogously, the problem can be formulated equivalently as a constrained optimization problem (for an appropriate choice of $t$):
+
+\begin{eqnarray*}
+\min_{\thetab} && \sumin \left(\yi - \fxit\right)^2\\
+\text{subject to: } && \|\thetab\|_1 \leq t \\
+\end{eqnarray*}
+
+\vspace*{-1cm}
+
+  \begin{figure}
+\includegraphics[width=0.3\textwidth]{figure_man/lasso_hat.png}\\
+\end{figure}
+
+\end{vbframe}
+
+\begin{vbframe}{Lasso vs. Ridge Regression}
+
+  \begin{figure}
+    \centering
+      \scalebox{0.7}{\includegraphics{figure_man/l1_l2_hat.png}}
+  \end{figure}
+
+  \begin{itemize}
+    \item \small{The ellipses are the level curves of the unregularized loss $\risket$ and $\thetah$ is the location of the minimum.
+    \item The regions in cyan represent the values of $\thetab$ that satisfy the inequality constraint.
+    \item As $\lambda$ increases, the area of the region shrinks.}
+    
+  \end{itemize}
+  
+
+\framebreak
+
+
+  \begin{figure}
+    \centering
+      \scalebox{0.7}{\includegraphics{figure_man/l1_l2_hat.png}}
+  \end{figure}
+  
+  \begin{itemize}
+    \item \small{In both cases, the solution which minimizes $\riskrt$ is always a point on the boundary of the feasible region (for sufficiently large $\lambda$).
+    \item In the case of Lasso, the solution is more likely to be one of the vertices of the constraint region. This induces sparsity and is a form of variable selection.
+    \item As expected, $\hat{\thetab}_{\text{Lasso}}$ and $\hat{\thetab}_{\text{Ridge}}$ have smaller parameter norms than $\thetah$.}
+  \end{itemize}
+
+% \framebreak 
+% 
+%   Boston Housing example. 13 predictors. Ridge.
+%   
+%   \begin{figure}
+%     \centering
+%       \scalebox{0.8}{\includegraphics{figure_man/bhexample_l2.png}}
+%   \end{figure}
+%   
+%   Each curve represents the value of the co-efficient for a given predictor. As $\lambda$ increases, the coefficients get larger.
+%   
+%   \framebreak
+%   
+%   Boston Housing example. 13 predictors. Lasso.
+%   
+%   \begin{figure}
+%     \centering
+%       \scalebox{0.8}{\includegraphics{figure_man/bhexample_l1.png}}
+%   \end{figure}
+%   
+%   As $\lambda$ increases, the coefficients of the 13 predictors get larger. (Top : Number of non-zero coefficients for a given of $\lambda$)
+% 
+%   \framebreak
+%   
+%   Boston Housing example. 13 predictors. Lasso.
+%   
+%   \begin{figure}
+%     \centering
+%       \scalebox{0.85}{\includegraphics{figure_man/bhexample_l1cv.png}}
+%   \end{figure}
+%   
+%   (Cross Validation)
+
+\framebreak 
+
+\begin{footnotesize}
+Coefficient paths for different $\lambda$ values for Ridge and Lasso, on Boston Housing (few features removed for readability) along with the cross-validated MSE.
+We cannot really overfit here with an unregularized linear model as the task is so low-dimensional.
+\end{footnotesize}
+
+<<echo=FALSE, fig.height=4, eval = FALSE, message= FALSE>>=
+#```{r, echo=FALSE, fig.height=4, message= FALSE}
+# plot data created by rsrc/regu_example_1.R
+library(ggrepel)
+load("rsrc/regu_example_1.RData")
+plot_coef_paths = function(path, featnames, xlab) {
+  ggd = melt(path, efs, id.var = "lambda", measure = featnames, variable.name = "featname", value.name = "coefval")
+  ggd$label = ifelse(ggd$lambda == min(lambda_seq), as.character(ggd$featname), NA)
+  pl = ggplot(data = ggd, aes(x = lambda, y = coefval, group = featname, col = featname))
+  pl = pl + geom_line()
+  pl = pl + geom_label_repel(aes(label = label), na.rm = TRUE)
+  pl = pl + scale_color_discrete(guide = FALSE)
+  pl = pl + scale_x_log10()
+  pl = pl + xlab(xlab)
+}
+plot_cv_path = function(cv_lam, xlab) {
+  pl = ggplot(data = cv_lam, aes(x = lambda, y = mse))
+  pl = pl + geom_line()
+  pl = pl + scale_x_log10()
+  pl = pl + xlab(xlab)
+}
+pl1 = plot_coef_paths(path_l1$path, featnames, "Lasso / lambda")
+pl2 = plot_coef_paths(path_l2$path, featnames, "Ridge / lambda")
+pl3 = plot_cv_path(path_l1$cv_lam, "Lasso / lambda")
+pl4 = plot_cv_path(path_l2$cv_lam, "Ridge / lambda")
+g = grid.arrange(pl1, pl2, pl3, pl4, nrow = 2)
+x = capture.output(print(g))
+@
+
+  \begin{figure}
+      \centering
+        \scalebox{1.1}{\includegraphics{figure_man/paths_reg.png}}
+    \end{figure}
+
+% \framebreak
+
+% \begin{footnotesize}
+% Coefficient histograms for different $\lambda$ values for Ridge and Lasso, on high-dimensional data along with the cross-validated MSE.
+% \end{footnotesize}
+
+% <<echo=FALSE, fig.height=5, message= FALSE>>=
+% #```{r, echo=FALSE, fig.height=4, message= FALSE}
+% # plot data created by rsrc/regu_example_2.R
+% load("rsrc/regu_example_2.RData")
+% d_l1 = rbind(
+%   data.frame(lam = paste("L1-", lams[1]), coefval = cc_l1_1),
+%   data.frame(lam = paste("L1-", lams[2]), coefval = cc_l1_2)
+% )
+% d_l1$lam = as.factor(d_l1$lam)
+% d_l2 = rbind(
+%   data.frame(lam = paste("L2-", lams[1]), coefval = cc_l2_1),
+%   data.frame(lam = paste("L2-", lams[2]), coefval = cc_l2_2)
+% )
+% d_l2$lam = as.factor(d_l2$lam)
+% plot_coef_hist = function(d) {
+%   pl = ggplot(d, aes(x = coefval, fill = lam))
+%   pl = pl + geom_histogram(alpha = 0.9, position = "dodge")
+%   return(pl)
+% }
+% plot_cv_path = function(cv_lam, xlab) {
+%   pl = ggplot(data = cv_lam, aes(x = lambda, y = mse))
+%   pl = pl + geom_line()
+%   pl = pl + scale_x_log10()
+%   pl = pl + ylim(1, 10)
+%   pl = pl + xlab(xlab)
+% }
+% pl1 = plot_coef_hist(d_l1)
+% pl2 = plot_coef_hist(d_l2)
+% pl3 = plot_cv_path(cv_l1, "lambda")
+% pl4 = plot_cv_path(cv_l2, "lambda")
+% grid.arrange(pl1, pl2, pl3, pl4, nrow = 2)
+% @
+
+
+\framebreak 
+
+Comments regarding Ridge / Lasso implementations:
+
+  \begin{itemize}
+    \item Note that very often we do not include $\theta_0$ in the penalty term $J(\thetab)$ (but this can be implementation-dependent).
+    \item These methods are typically not equivariant under scaling of the inputs, so one usually standardizes the features.
+    % \item While ridge regression usually leads to smaller estimated coefficients, but still dense $\thetab$ vectors,
+    %   the Lasso will usually create a sparse $\thetab$ vector and can therefore be used for variable selection.
+    %\item SVMs combine (usually) hinge loss with L2-regularization. But also for SMVs this concept is generalized to different losses and different penalties.
+  \end{itemize}
+
+\lz 
+
+Comments on \textbf{Ridge vs. Lasso: }
+
+\begin{itemize}
+\item Often neither one is overall better. 
+\item Lasso can set some coefficients to zero, thus performing variable selection, while ridge regression usually leads to smaller estimated coefficients, but still dense $\thetab$ vectors.
+
+\framebreak 
+\item Both methods can handle correlated predictors, but they solve the multicollinearity issue differently:
+\begin{itemize}
+  \item In ridge regression, the coefficients of correlated predictors are similar
+  \item In Lasso, one of the correlated predictors has a larger coefficient, while the rest are (nearly) zeroed. 
+\end{itemize}
+\item Lasso tends to do well if there are a small number of significant parameters and the others are close to zero (ergo: when only a few predictors actually influence the response)
+\item Ridge works well if there are many large parameters of about the same value (ergo: when most predictors impact the response). 
+\end{itemize}
+
+\textbf{Idea:} Combine the two!
+
+% \lz
+
+% \textbf{High-dimensional feature spaces} ($p \gg n$):
+%   \begin{itemize}
+%     \item Lasso selects at most $n$ features (even if more features are associated with the target).
+%     \item Ridge regression performs well in high-dimensional feature spaces.
+%   \end{itemize}
+
+% \lz
+
+% \textbf{Correlated features}: 
+% \begin{itemize}
+%   \item If features are highly correlated, Lasso selects only one of these and ignores the others
+% \end{itemize}
+
+% \framebreak 
+
+
+
+\end{vbframe}
+
+
+
+
+\begin{vbframe} {Elastic Net}
+
+%   ```{r, include=FALSE, cache=FALSE}
+% library(ggplot2)
+% library(reshape)
+% ap = adjust_path(paste0(getwd(), ""))
+% ```
+
+Elastic Net combines the $L_1$ and $L_2$ penalty:
+
+$$
+\mathcal{R}_{\text{elnet}}(\thetab) =  \sumin (\yi - \thetab^\top \xi)^2 + \lambda_1 ||\thetab||_1 + \lambda_2 \|\thetab\|_2^2.
+$$
+
+<<echo=FALSE, fig.height=3, fig.width=8, warning=FALSE>>=
+
+#```{r, echo=FALSE, fig.height=2, fig.width=5.5, out.width="0.7\\textwidth", warning=FALSE}
+x = seq(-5, 5, length.out = 200)
+y = x
+grid = data.frame(expand.grid(x, y))
+
+grid$l1 = apply(grid[, 1:2], 1, function(x) sum(abs(x)))
+grid$l2 = apply(grid[, 1:2], 1, function(x) sum(x^2))
+grid$elasticnet = 0.9 * grid$l1 + 0.1 * grid$l2
+df = melt(grid, id = c("Var1", "Var2"))
+
+p = ggplot(data = df, aes(x = Var1, y = Var2, z = value, colour = variable))
+p = p + geom_contour(bins = 2) + labs(colour = " ")
+p = p + scale_colour_discrete(labels = c("L1 (Lasso)", "L2 (Ridge)", "Elastic Net"))
+p = p + coord_fixed(ratio = 1)
+p = p + xlab(expression(theta[1])) + ylab(expression(theta[2]))
+p
+@
+
+\end{vbframe}
+
+\begin{vbframe}{Regularized Logistic Regression}
+
+We described regularization for the special case of the linear model $\fxt = \thetab^\top \xb$. Of course, regularized risk minimization can be performed for any model $\fx$. 
+
+\vspace*{0.2cm} 
+
+We can, for example, also construct $L_1$ or $L_2$ penalized \textbf{logistic regression} to enable coefficient shrinkage and variable selection in this model. 
+
+\vspace*{0.2cm} 
+
+We can add a regularizer to the risk of logistic regression
+
+\begin{align*}
+\riskrt &= \risket + \lambda \cdot J(\thetab) \\
+&= \sumin \mathsf{log}\left[1 + \mathsf{exp}\left(-2\yi f\left(\left.\xi~\right|~ \thetab\right)\right)\right] + \lambda \cdot J(\thetab)
+\end{align*}
+
+Instead of $\risket$ we minimize $\riskrt$ (both have no closed-form solution, numerical optimization methods are necessary). 
+
+
+% The other parts of the logistic regression remains exactly the same
+% except for the fitting algorithm to find \(\hat{\thetab}_{\text{reg}}\) (no closed-form solution, numerical optimization methods are necessary).
+
+\end{frame}
+
+\begin{frame}{Regularized Logistic Regression}
+
+
+We fit a logistic regression model using polynomial features for \(x_1\)
+and \(x_2\) with maximum degree of \(7\). We add a L2 penalty. We
+see
+
+\begin{itemize}
+
+\item
+  \(\lambda = 0\): the unregularized model seems to overfit
+\item
+  \(\lambda = 0.0001\): regularization helps to learn the underlying
+  mechanism
+\item
+  \(\lambda = 1\) displays the real data generating process very well
+\end{itemize}
+
+\scriptsize
+
+<<echo=FALSE, fig.height=3, fig.width=10, out.height="3cm", out.width="10cm", cache=FALSE, warning=FALSE>>=
+source("rsrc/regularized_log_reg.R")
+@
+
+\normalsize 
+
+\end{vbframe}
+
+% \begin{vbframe} {Regularization for Underconstrained problems}
+
+% Regularization can also be motivated from an optimization perspective: 
+
+%   \begin{itemize}
+%     \item Regularization can sometimes be necessary to make certain ill-posed machine learning problems well defined.
+%     \item Linear models such as (linear) regression and PCA depend on inverting the matrix $\Xmat^\top \Xmat$, where $\Xmat$ is the data matrix.
+%     \item For example, in linear regression, the optimal parameters $\thetah = (\Xmat^\top \Xmat)^{-1}\Xmat^\top\ydat$.    (Normal Equations)
+%     \item Inverting $\Xmat^\top \Xmat$ is not possible if it is singular (exactly or numerically). This happens if some of the features are perfectly correlated or if the number of features is greater than the number of datapoints.
+%     \item In such cases, many forms of regularization correspond to inverting ($\Xmat^\top \Xmat + \lambda I$) instead, which is guaranteed to be invertible.
+%   \end{itemize}
+  
+%   In optimization / numerical analysis Ridge regression is also known as \textbf{Tikhonov} regularization. 
+
+
+%   \framebreak
+  
+
+%   \begin{itemize}
+%     \item It is also possible for a problem with no closed form solution to be underdetermined.
+%     \item Example: Logistic regression applied to a dataset that is linearly separable.
+%     \item If a parameter vector $\thetab$ is able to classify the samples perfectly, the vector $2\thetab$ also classifies the samples perfectly with decreased risk.
+%     \item Therefore, an iterative optimizer such as stochastic gradient descent (SGD) will continually increase $\thetab$ and never halt (in theory).
+%     \item In such cases, regularization can guarantee convergence. % For instance, weight decay will cause gradient descent to quit increasing the magnitude of the parameters when the slope of the likelihood is equal to the weight decay coefficient.
+%   \end{itemize}
+
+% \end{vbframe}
+
+% \begin{vbframe}{LQ-norm Regularization} 
+
+% Besides $L_1$- and $L_2$-norm we could use any $L_q$-norm for regularization.
+
+% \begin{figure}
+%   \scalebox{0.7}{\includegraphics{figure_man/lasso_ridge_hat.png}}\\
+% %\includegraphics[height=2.3cm]{figure_man/contour.pdf}
+% \caption{Top: Ridge and lasso loss contours and feasible regions.
+%   Bottom: Different feasible region shapes for $L_q$ norms $\sum_j |\theta_j|^q$.}
+% \end{figure}
+  
+% \end{vbframe}
+
+
+% \begin{vbframe} {L0 regularization}
+
+%   \begin{itemize}
+%     \item Consider the $L_0$-regularized risk of a model model $\fxt$
+%   $$
+%   \riskrt = \risket + \lambda ||\thetab||_0 := \risket + \lambda \sum_j |\theta_j|^0
+%   $$
+%       \item Unlike the L1 and L2 norm, the L0 "norm" simply counts the number of non-zero parameters in the model.
+%     \begin{figure}
+%       \centering
+%         \scalebox{0.8}{\includegraphics{figure_man/l0_norm.png}}
+%         \tiny{\\ credit: Christos Louizos}
+%         \caption{\footnotesize $L_p$ norm penalties for a parameter $\thetab$ according to different values of $p$.}
+%     \end{figure}
+%     \item For any parameter $\thetab$, the L0 penalty is zero for $\thetab = 0$ (defining $0^0 := 0$) and is constant for any $\thetab \neq 0$, no matter how large or small it is.
+%     \item L0 regularization induces sparsity in the parameter vector more aggressively than L1 regularization.
+%     \item Model selection criteria such as Akaike Information Criterion (AIC) and Bayesian Information Criterion (BIC) are special cases of $L_0$ regularization (corresponding to specific values of $\lambda$).
+%     \item The L0-regularized risk is neither differentiable nor convex. 
+%     \item It is computationally hard to optimize (NP-hard) and can be intractable.
+%   \end{itemize}
+% \end{vbframe}
+
+\begin{vbframe}{Summary: Regularized Risk Minimization}
+
+The principle of regularization can be used \textbf{independent} of the model $\fx$ being used. In $\riskr$ one has extreme flexibility to make appropriate choices
+
+$$
+\riskrf= \min_{f \in \Hspace} \sumin \Lxyi + \lambda \cdot J(f)
+$$
+
+
+for a given ML problem:
+
+\begin{itemize}
+  \item the \textbf{representation} of $f$, which determines how features can influence the predicted $y$
+  \item the \textbf{loss} function, which measures how errors should be treated
+  \item the \textbf{regularization} $J(f)$, which encodes our inductive bias and preference for certain simpler models
+\end{itemize}
+
+By varying these choices one can construct a huge number of different ML models. Many ML models follow this construction principle or can be interpreted through the lens of regularized risk minimization.
+
+\end{vbframe}
+
+
+% \section{Weight Decay}
+
+% \begin{vbframe}{Weight decay: L2-regularization and Gradient Descent}
+
+% Let us optimize the L2-regularized risk of a model $\fxt$
+
+% \[
+% \min_{\thetab} \riskrt = \min_{\thetab} \risket + \frac{\lambda}{2} \|\thetab\|^2_2
+% \]
+
+% by gradient descent. The gradient is
+
+% \[
+% \nabla \riskrt = \nabla \risket + \lambda \thetab.
+% \]
+
+% We iteratively update $\thetab$ by step size \(\alpha\) times the
+% negative gradient
+
+% \[
+% \thetab^{[\text{new}]} = \thetab^{[\text{old}]} - \alpha \left(\nabla \risket + \lambda \thetab^{[\text{old}]}\right) =
+% \thetab^{[\text{old}]} (1 - \alpha \lambda) - \alpha \nabla \risket
+% \]
+
+% Therefore, the addition of \(\lambda \thetab^{[\text{old}]}\) causes the parameter
+% (\textbf{weight}) to \textbf{decay} in proportion to its size. This is a
+% very well-known technique in neural networks - simply L2-regularization
+% in disguise.
+
+% \end{vbframe}
+
+% \begin{vbframe}{Geometric Interpretation of Weight Decay}
+
+% Weight decay can be interpreted \textbf{geometrically}. 
+
+% \lz 
+
+% Let us make a quadratic approximation of the unregularized objective $\risket$ in the neighborhood of its minimizer $\thetah$,  
+
+% $$ \mathcal{\tilde R}_{\text{emp}}(\thetab)= \mathcal{R}_{\text{emp}}(\thetah) + \frac{1}{2} (\thetab - \thetah)^\top \bm{H} (\thetab - \thetah), $$
+
+% where $\bm{H}$ is the Hessian matrix of $\risket$ w.r.t. $\thetab$ evaluated at $\thetah$. 
+
+% \lz
+
+% Because $\thetah = \argmin_{\thetab}\risket$,
+% \begin{itemize}
+%   \item the first order term is absent in the expression above because the gradient is $0$, and,
+%   \item $\bm{H}$ is positive semidefinite.
+% \end{itemize}
+
+% \lz
+
+% \tiny{Source: section 7.1.1 of Goodfellow et al. (2016)}
+
+% \framebreak
+
+% \normalsize
+
+% The minimum of $\mathcal{\tilde R}_{\text{emp}}(\thetab)$ occurs where $\nabla_{\thetab}\mathcal{\tilde R}_{\text{emp}}(\thetab) = \bm{H}(\thetab - \thetah)$ is $0$.
+
+% \lz
+
+% Adding the weight decay gradient $\lambda \thetab$, we get the regularized version of $\mathcal{\tilde R}_{\text{emp}}(\thetab)$. We solve it for the minimizer $\hat{\thetab}_{\text{Ridge}}$:
+% \begin{gather*}
+%   \lambda \thetab + \bm{H}(\thetab - \thetah) = 0\\
+%       (\bm{H} + \lambda \id) \thetab = \bm{H} \thetah \\
+%       \hat{\thetab}_{\text{Ridge}} = (\bm{H} + \lambda \id)^{-1}\bm{H} \thetah
+% \end{gather*}
+
+% where $\id$ is the identity matrix.
+
+% \lz
+
+% As $\lambda$ approaches $0$, the regularized solution $\hat{\thetab}_{\text{Ridge}}$ approaches $\thetah$. What happens as $\lambda$ grows?
+
+% \framebreak
+
+%   \begin{itemize}
+%     \item Because $\bm{H}$ is a real symmetric matrix, it can be decomposed as $\bm{H} = \bm{Q} \bm{\Sigma} \bm{Q}^\top$ where $\bm{\Sigma}$ is a diagonal matrix of eigenvalues and $\bm{Q}$ is an orthonormal basis of eigenvectors.
+%     \item Rewriting the equation on the previous slide using the eigendecomposition above,
+
+%   \begin{equation*}
+%     \begin{aligned} 
+%     \hat{\thetab}_{\text{Ridge}} &=\left(\bm{Q} \bm{\Sigma} \bm{Q}^{\top}+\lambda \id\right)^{-1} \bm{Q} \bm{\Sigma} \bm{Q}^{\top} \thetah \\ 
+%               &=\left[\bm{Q}(\bm{\Sigma}+\lambda \id) \bm{Q}^{\top}\right]^{-1} \bm{Q} \bm{\Sigma} \bm{Q}^{\top} \thetah \\ 
+%               &=\bm{Q}(\bm{\Sigma} + \lambda \id)^{-1} \bm{\Sigma} \bm{Q}^{\top} \thetah 
+%     \end{aligned}
+%   \end{equation*}
+%     \item Therefore, the weight decay rescales $\thetah$ along the axes defined by the eigenvectors of $\bm{H}$. The component of $\thetah$ that is aligned with the $i$-th eigenvector of $\bm{H}$ is rescaled by a factor of $\frac{\sigma_i}{\sigma_i + \lambda}$, where $\sigma_i$ is the corresponding eigenvalue.
+    
+%   \framebreak
+    
+%   \item Along directions where the eigenvalues of $\bm{H}$ are relatively large, for example, where $\sigma_i >> \lambda$, the effect of regularization is quite small.
+%   \item On the other hand, components with $\sigma_i << \lambda$ will be shrunk to have nearly zero magnitude.
+%   \item In other words, only directions along which the parameters contribute significantly to reducing the objective function are preserved relatively intact.
+%   \item In the other directions, a small eigenvalue of the Hessian means that moving in this direction will not significantly increase the gradient. For such unimportant directions, the corresponding components of $\thetab$ are decayed away.
+%   \end{itemize}
+  
+%   \framebreak
+  
+%   \begin{figure}
+%     \centering
+%       \scalebox{0.36}{\includegraphics{figure_man/wt_decay_hat.png}}
+%       \tiny{\\ credit : Goodfellow et al. (2016)}
+%       \caption{\footnotesize The solid ellipses represent the contours of the unregularized objective and the dashed circles represent the contours of the L2 penalty. At $\hat{\thetab}_{\text{Ridge}}$, the competing objectives reach an equilibrium.}
+%   \end{figure}
+%   \small
+  
+%    In the first dimension, the eigenvalue of the Hessian of $\risket$ is small. The objective function does not increase much when moving horizontally away from $\thetah$. Therefore, the regularizer has a strong effect on this axis and $\theta_1$ is pulled close to zero.
+    
+%     \framebreak
+    
+%     \begin{figure}
+%     \centering
+%       \scalebox{0.37}{\includegraphics{figure_man/wt_decay_hat.png}}
+%       \tiny{\\ credit : Goodfellow et al. (2016)}
+%       \caption{\footnotesize The solid ellipses represent the contours of the unregularized objective and the dashed circles represent the contours of the L2 penalty. At $\hat{\thetab}_{\text{Ridge}}$, the competing objectives reach an equilibrium.}
+%   \end{figure}
+  
+%     In the second dimension, the corresponding eigenvalue is large indicating high curvature. The objective function is very sensitive to movement along this axis and, as a result, the position of $\theta_2$ is less affected by the regularization.
+  
+% \end{vbframe}
+
+% \begin{vbframe} {Geometric Interpretation of Lasso}
+  
+
+%   \begin{itemize}
+%     \item The L1-regularized risk of a model $\fxt$ is
+
+%       \[
+%       \min_{\thetab} \riskrt = \risket + \lambda ||\thetab||_1
+%       \] 
+      
+%       and the (sub-)gradient is:
+      
+%       $$\nabla_{\theta} \mathcal{R}_{\text{reg}}(\thetab) = \lambda \sign(\thetab) + \nabla_{\theta} \risket$$
+
+%     \item Note that, unlike in the case of L2, the contribution of the L1 penalty to the gradient doesn't scale linearly with each $\theta_i$. Instead, it is a constant factor with a sign equal to $\sign(\theta_i)$.
+%     \item Let us now make a quadratic approximation of $\mathcal{R}_{\text{emp}}(\thetab)$. To get a clean algebraic expression, we assume the Hessian of $\mathcal{R}_{\text{emp}}(\thetab)$ is diagonal, i.e. $\bm{H} = \text{diag}([H_{1,1}, \ldots , H_{n,n}])$, where each $H_{i,i} > 0$.
+%     \item This assumption holds, for example, if the input features for a linear regression task have been decorrelated using PCA.
+%   \end{itemize}
+  
+%   \framebreak
+  
+%   \begin{itemize}
+%     \item The quadratic approximation of $\mathcal{R}_{\text{reg}}(\thetab)$ decomposes into a sum over the parameters:
+%   $$\mathcal{\tilde R}_{\text{reg}}(\thetab) = \mathcal{R}_{\text{emp}}(\thetah) + \sum_i \left[ \frac{1}{2} H_{i,i} (\theta_i - \hat{\theta}_i)^2 \right] + \sum_i \lambda |\theta_i|$$
+%   where $\thetah$ is the minimizer of the unregularized risk $\risket$.
+%     \item The problem of minimizing this approximate cost function has an analytical solution (for each dimension $i$), with the following form:
+%      $$\hat{\theta}_{\text{Lasso},i} = \sign(\hat{\theta}_i) \max \left\{ |\hat{\theta}_i| - \frac{\lambda}{H_{i,i}},0 \right\}$$
+%     \item If  $0 < \hat{\theta}_i \leq \frac{\lambda}{H_{i,i}}$, the optimal value of $\theta_i$ (for the regularized risk) is $0$ because the contribution of  $\risket$ to $\riskrt$ is overwhelmed by the L1 penalty, which forces it to be $0$.
+%     \item If $0 < \frac{\lambda}{H_{i,i}} < \hat{\theta}_i$, the $L1$ penalty shifts the optimal value of $\theta_i$ toward 0 by the amount $\frac{\lambda}{H_{i,i}}$.
+%     \item A similar argument applies when $\hat{\theta}_i < 0$. 
+%     \item Therefore, the L1 penalty induces sparsity in the parameter vector.
+%   \end{itemize}
+% \end{vbframe}
+
+
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \section{Early Stopping}
+
+% \begin{vbframe}{Early Stopping}
+  
+%   \begin{itemize}
+%     \item When training with an iterative optimizer such as SGD, it is commonly the case that after a certain number of iterations, generalization error begins to increase even though training error continues to decrease.     
+%     \item \textbf{Early stopping} refers to stopping the algorithm early, before the generalization error increases.
+%   \end{itemize}
+%   \begin{figure}
+%     \centering
+%       \scalebox{0.5}{\includegraphics{figure_man/earlystop.png}}
+%       \caption{After a certain number of iterations, the algorithm begins to overfit.}
+%   \end{figure}
+% \framebreak
+%   How early stopping works:
+%   \begin{enumerate}
+%     \item Split training data $\Dtrain$ into $\mathcal{D}_{\text{subtrain}}$ and $\mathcal{D}_{\text{val}}$ (e.g. with a ratio of 2:1).
+%     \item Train on $\mathcal{D}_{\text{subtrain}}$ and evaluate model using the validation set $\mathcal{D}_{\text{val}})$.
+%     \item Stop training when validation error stops decreasing (after a range of \enquote{patience} steps).
+%     \item Use parameters of the previous step for the actual model.
+%   \end{enumerate}
+%   More sophisticated forms also apply cross-validation.
+% \framebreak
+%   \begin{table}
+%     \begin{tabular}{p{4cm}|p{6cm}}
+%     Strengths & Weaknesses \\
+%     \hline
+%     \hline
+%     Effective and simple & Periodical evaluation of validation error\\
+%     \hline
+%     Applicable to almost any model without adjustment \note{of objective function, parameter space, training procedure} & Temporary copy of $\thetab$ (we have to save the whole model each time validation error improves) \\
+%     \hline
+%     Combinable with other regularization methods & Less data for training $\rightarrow$ include $\mathcal{D}_{\text{val}}$ afterwards
+%     \end{tabular}
+%   \end{table}
+%   \begin{itemize}
+%     \item Relation between optimal early stopping iteration $T_{\text{stop}}$ and weight decay penalization parameter $\lambda$ for step-size $\alpha$ (see Goodfellow et al. (2016) page 251-252 for proof):
+%   \end{itemize}
+%     \begin{equation*}
+%       T_{\text{stop}} \approx \frac{1}{\alpha \lambda} 
+%         \Leftrightarrow \lambda \approx \frac{1}{T_{\text{stop}} \alpha}
+%     \end{equation*}
+%   \begin{itemize}
+%     \item Small $\lambda$ (low penalization) $\Rightarrow$ high $T_{\text{stop}}$ (complex model/lots of updates).
+%   \end{itemize}
+% \framebreak
+%   % \begin{itemize}
+%   %   \item[]
+%   % \end{itemize}
+%   % \begin{figure}
+%   %   \centering
+%   %     \includegraphics[width=11cm]{figure_man/early_stopping}
+%   %     \caption{Optimization path of early stopping (left) and weight decay (right) (Goodfellow et al. (2016))}
+%   % \end{figure}
+%   % \framebreak
+%   \begin{figure}
+%     \centering
+%       \scalebox{0.85}{\includegraphics{figure_man/earlystop_int_hat.png}}
+%       \tiny{\\ credit : Goodfellow et al. (2016)}
+%       \caption{\footnotesize An illustration of the effect of early stopping. \textit{Left:} The solid contour lines indicate the contours of the negative log-likelihood. The dashed line indicates the trajectory taken by SGD beginning from the origin. Rather than stopping at the point $\thetah$ that minimizes the risk, early stopping results in the trajectory stopping at an earlier point $\hat{\thetab}_{\text{Ridge}}$ .\textit{Right:} An illustration of the effect of L2 regularization for comparison. The dashed circles indicate the contours of the L2 penalty, which causes the minimum of the total cost to lie nearer the origin than the minimum of the unregularized cost.}
+%   \end{figure}
+% \end{vbframe}
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \section{Regularization from a Bayesian Perspective}
+
+% \begin{vbframe} {Regularized Risk Minimization vs Bayes}
+
+% We have already created a link between maximum likelihood estimation and empirical risk minimization.
+
+% \lz 
+
+% Now we will generalize this for regularized risk minimization.
+
+% \lz
+
+% Assume we have a parameterized distribution $p(\xb | \thetab)$ for our data and a prior $p(\thetab)$ over our
+% parameter space, all in the Bayesian framework.
+
+% \lz 
+
+% With Bayes theorem we know:
+
+% $$
+% p(\theta | \xb) = \frac{p(\xb | \thetab) p(\thetab) }{p(\xb)} \propto p(\xb | \thetab) p(\thetab)
+% $$
+
+% \framebreak
+
+% The maximum a posteriori  (MAP) estimator of $\thetab$ is now the minimizer of
+
+% $$
+% - \sumin \log p\left(\xi ~|~ \thetab\right) - \log p(\thetab).
+% $$
+
+% Again, we identify the loss $\Lxyt$ with $-\log(p(\xb | \thetab))$. If $p(\thetab)$ is constant (i.e., we used a
+%   uniform, non-informative prior), we arrive at empirical risk minimization.
+
+% \lz 
+
+% If not, we can identify $J(\thetab) \propto -\log(p(\thetab))$, i.e., the log-prior corresponds to the regularizer, and the additional control parameter $\lambda$ corresponds to the relative strength of the prior in regularized risk minimization.
+
+% \framebreak
+
+% % Example: Rigde regression with linear model $\fxt$
+% % \begin{itemize}
+% % \item L2 loss = normal distribution of error terms
+% % \item L2 regularizer = Gaussian prior on $\theta$
+% % \item $\lambda$ = inverse variance of the Gaussian prior on $\theta$
+% % \end{itemize}
+% % 
+% % \lz
+% % 
+% % Example : $L_1$ regularization corresponds to a Laplacian prior
+% % \begin{itemize}
+% % \item $p(\theta) \propto \exp(\lambda \sum_i | \theta_i |)$
+% % \item $\log p(\theta) = \alpha \sum_i |\theta_i| + \text{constant}$
+% % \end{itemize}
+
+%   \begin{figure}
+%     \centering
+%       \scalebox{1}{\includegraphics{figure_man/bayes_reg.png}}
+%   \end{figure}
+  
+%   \begin{itemize}
+%     \item L2 regularization corresponds to a zero-centered Gaussian prior, $\theta_i \sim \mathcal{N}(0,\sigma^2)$.
+%     \item L1 regularization corresponds to a zero-centered Laplace prior, $\theta_i \sim \text{Laplace}(0,b) = \frac{1}{2b}\exp(-\frac{|\theta_i|}{b})$, where $b$ is a scale parameter.
+%     \item In both cases, as the regularization strength $\lambda$ increases, the variance of the prior decreases which in turn shrinks the parameters.
+%   \end{itemize}
+% \end{vbframe}
+
+
+
+% % \begin{vbframe} {Minimum Description Length}
+
+% % MDL principle
+
+% % \begin{itemize}
+% %   \item (Compress data using using fewer symbols than literal)
+% %   \item (In the MDL framework, learning is seen as data compression)
+% %   \item (More we compress, more we learn. Therefore, pick the hypothesis which results in the shortest code.)
+% %   \item (Occam's razor, principle of parsimony)
+% %   \item (All else being equal, a simpler explanation is better than a complex one.)
+% % \end{itemize}
+
+% % % \begin{equation}
+% % %     \begin{aligned}
+% % %     H_{\mathrm{mdl}} & :=\underset{H \in \mathcal{H}}{\arg \min }\left(L(H)+L_{H}(D)\right) \\
+% % %     L_{\mathrm{mdl}}(D) & :=\min _{H \in \mathcal{H}}\left(L(H)+L_{H}(D)\right)
+% % %   \end{aligned}
+% % % \end{equation}
+
+% % \framebreak
+
+% % \begin{itemize}
+% %   \item There is a correspondence between the length of a message L(x) and the distribution P(x)
+% %   $$P(x)=2^{-L(x)}, \quad L(x)=-\log _{2} P(x)$$
+% %   \item Two-part code : parameter block and data block
+% %   \item $L(H)$ is the length of a specific hypothesis in the set.
+% %   \item $L(D|H)$ is the length of the data encoded under H.
+% %   \item $L(D,H) = L(H) + L(D|H)$
+% %   \item (Represents a tradeoff between goodness-of-fit and complexity)
+% % \end{itemize}
+
+% % \framebreak
+
+% % Regression example : $Y_{i}=f\left(X_{i}\right)+\epsilon_{i} \text { for } i=1, \ldots, n \text { where } \epsilon_{i} \stackrel{i i d}{\sim} \mathcal{N}\left(0, \sigma^{2}\right)$
+
+% % For a given dataset, the length of the encoding is :
+
+% % $$\log 1 / p_{Y | X}\left(y^{n} | x^{n}\right) = \log \left(\sqrt{2 \pi \sigma^{2}} e^{\frac{1}{2 \sigma^{2}} \sum_{i=1}^{n}\left(y_{i}-f\left(x_{i}\right)\right)^{2}}\right) \propto \sum_{i=1}^{n}\left(y_{i}-f\left(x_{i}\right)\right)^{2}$$
+
+% % \lz
+
+% % The two-stage MDL procedure to pick the best hypothesis is :
+
+% % $$f_{\gamma}=\arg \min _{f \in F_{\gamma}}\left[L(f)+\frac{1}{n} \sum_{i=1}^{n}\left(Y_{i}-f\left(X_{i}\right)\right)^{2}\right]$$
+
+% % This is equivalent to regularized least squares.
+% % \end{vbframe}
+
+
+
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %%%%%%%%%%%%%%%%%%          REFERENCES          %%%%%%%%%%%%%%%%%%
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % \begin{vbframe}
+% % \frametitle{References}
+% % \footnotesize{
+% % \begin{thebibliography}{99}
+
+% % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % \bibitem[Ian Goodfellow et al., 2016]{5} Ian Goodfellow, Yoshua Bengio and Aaron Courville (2016)
+% % \newblock Deep Learning
+% % \newblock \emph{\url{http://www.deeplearningbook.org/}}
+
+% % \end{thebibliography}
+% % }
+% \end{vbframe}
+\endlecture
+
