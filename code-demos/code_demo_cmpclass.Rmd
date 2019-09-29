@@ -1,7 +1,7 @@
 ---
 output: pdf_document
 params:
-  set_title: "Code demo for comparission of classification methods"
+  set_title: "Code demo for comparison of classification methods"
 ---
   
 ```{r cmpclass-preamble, child = "../style/preamble_code_demos.Rmd", include = FALSE, purl = FALSE}
@@ -39,14 +39,14 @@ run_chunks(c("knn-plot_2D_classif",
              ))
 ```
 
-# Code demo for comparission of classification methods
+# Code demo for comparison of classification methods
 
-## Softmax
-
-Generalization of the logistic function
+In this code demo we want to get a general impression how the choice of one of the classifier we learnt about
+influences the classification results. Since every classification methods we encountered in the lecture can be used for the case of more than two target class labels except the logistic regression, we use here the softmax regression, which generalizes the logistic regression. For the Bayes classifier we use Gaussian likelihoods.
 
 ## Data
 
+We create our data sets with the *mlbench* package artificially:
 ```{r cmpclass-data}
 library(mlbench)
 library(mlr)
@@ -54,16 +54,19 @@ library(ggplot2)
 
 set.seed(123L)
 
-spirals <- data.frame(mlbench.spirals(n = 500, sd = 0.1))
-ggplot(spirals, aes(x.1,x.2, color=classes)) + geom_point()
+simplex <- data.frame(mlbench.simplex(n = 500, d=2))
+ggplot(simplex, aes(x.1,x.2, color=classes)) + geom_point()
 
 cassini <- data.frame(mlbench.cassini(500))
 ggplot(cassini, aes(x.1,x.2, color=classes)) + geom_point()
 
-simplex <- data.frame(mlbench.simplex(n = 500, d=2))
-ggplot(simplex, aes(x.1,x.2, color=classes)) + geom_point()
+spirals <- data.frame(mlbench.spirals(n = 500, sd = 0.1))
+ggplot(spirals, aes(x.1,x.2, color=classes)) + geom_point()
 
 ```
+
+For the classification we use the *mlr* package, which means we need
+to create classification tasks:
 ```{r cmpclass-task}
 
 spirals_task = makeClassifTask(data = spirals, target = "classes")
@@ -71,18 +74,29 @@ cassini_task = makeClassifTask(data = cassini, target = "classes")
 simplex_task = makeClassifTask(data = simplex, target = "classes")
 ```
 
+The methods we use for classification are represented by learner objects:
 ```{r cmpclass-learners}
 learners <- list(
 softmax_learner = makeLearner("classif.multinom", trace=FALSE),
-softmax_knn = makeLearner("classif.knn"),
+softmax_knn = makeLearner("classif.knn", k=3),
 lda_learner = makeLearner("classif.lda"),
 qda_learner = makeLearner("classif.qda"),
 nb_learner = makeLearner("classif.naiveBayes")
 )
 ```
 
-## Comparision
+## Comparison
 
+At first we look at our simplex data set which is linearly separable:
+```{r cmpclass-simplex, fig.height=12, fig.width=12}
+ggplot_list <- lapply(
+  learners,
+  function(learner) plotLearnerPrediction(learner, simplex_task)
+)
+do.call(grid.arrange, ggplot_list)
+```
+
+We see that we are able to classify the data correctly with every method. Since both LDA and softmax regression are linear classifier, their decision boundaries are linear as expected. Also we observe that only with softmax regression we clearly see asymmetric boundaries.
 
 ```{r cmpclass-cassini, fig.height=12, fig.width=12}
 library(gridExtra)
@@ -93,14 +107,8 @@ ggplot_list <- lapply(
 )
 do.call(grid.arrange, ggplot_list)
 ```
+By looking at the softmax regression we see that the Cassini data set is also linear separable, but some observations are quite close to its decision boundaries. LDA is the only method which cannot separate the data perfectly. All other methods seem to find a similar shape of the boundaries, which corresponds to data generating process.
 
-```{r cmpclass-simplex, fig.height=12, fig.width=12}
-ggplot_list <- lapply(
-  learners,
-  function(learner) plotLearnerPrediction(learner, simplex_task)
-)
-do.call(grid.arrange, ggplot_list)
-```
 
 ```{r cmpclass-spirals, fig.height=12, fig.width=12}
 ggplot_list <- lapply(
@@ -109,6 +117,12 @@ ggplot_list <- lapply(
 )
 do.call(grid.arrange, ggplot_list)
 ```
+The last data set shows that most of the methods we learnt encounter problems with the spirals which are highly nonlinear separable. Only with the knn classifier we are able to reconstruct the spiral shape of the decision boundaries. 
+The other methods yield only a mean missclassification rate of around 50 percent. But can't we do better with the methods we learnt? Yes, we can do the following:
+
+- We can use the splines idea from [splines code demo](./code_demo_splines.pdf) to transform our features into higher dimensional features and try to find better decision hyperplanes in this higher dimensional space, which often works.
+(For logistic regression we do not even need to transform the features to compute the decision boundaries in this higher dimensional space, which is called the [kernel trick](https://en.wikipedia.org/wiki/Kernel_method#Mathematics:_the_kernel_trick))
+- We can use kernel density estimations for the Bayes classifier, which we learnt in the [generative classifier code demo](./code_demo_genclass.pdf):
 
 ```{r cmpclass-test}
 library("kdensity")
@@ -138,3 +152,5 @@ plot_2D_naivebayes(priors, liks_kde, "x.1", "x.2",
       title = '"NB" ~'
 )
 ```
+
+We are able to improve the classification results, but also we are not able to to find satisfying decision boundaries. Can you think of what could be a problem for the Bayes classifier? *Hint*: Think about its assumptions.
