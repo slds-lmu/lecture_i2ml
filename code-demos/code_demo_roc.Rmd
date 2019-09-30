@@ -1,0 +1,90 @@
+---
+output: pdf_document
+params:
+  set_title: "Code demo for ROC"
+---
+  
+```{r roc-preamble, child = "../style/preamble_code_demos.Rmd", include = FALSE, purl = FALSE}
+
+```
+
+```{r roc-setup, child = "../style/setup.Rmd", include = FALSE, purl = FALSE}
+
+```  
+
+# Code demo for ROC
+
+We use the Breast Cancer data set from [UCI database](https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+(Diagnostic)) which is an __unbalanced data set__ within which we want to predict the class of the cancer. We even manipulate the data set further to make it more unbalanced. 
+
+The data looks like that:
+
+```{r roc-data, message=FALSE, warning=FALSE}
+library("dplyr")
+library("mlbench")
+library("mlr")
+
+data("BreastCancer")
+
+# delete one column with missing values
+bc <- BreastCancer[, -c(1, 7)]
+# mutate all factors to numeric, simlification but ok here
+mut <- bc[, -9] %>%
+  mutate_all(as.character) %>%
+  mutate_all(as.numeric)
+bc_data <- cbind(mut, bc$Class)
+colnames(bc_data) <- c(colnames(mut), "Class")
+# make it more extreme and kill 50% of the malignant data
+bc_data <- bc_data[ -sample(which(bc_data$Class == "malignant"), 150, replace = FALSE), ]
+head(bc_data)
+table(bc_data$Class) / sum(table(bc_data$Class))
+```
+
+We split the data again in train and test and check the performance of two classifiers:
+
+1. Good old knn
+2. A stupid learner that simply predicts the majority of the two classes or each obsveration. 
+
+The problem is now, that even the stupid approach yields a reasonable mmce performance. Thus, we need additional measure such as the AUC and ROC curves to compare the two classifiers.
+
+```{r roc-split_data}
+# Data split
+set.seed(1337)
+train_size <- 3 / 4
+train_indices <- sample(x = seq(1, nrow(bc_data), by = 1), 
+                        size = ceiling(train_size * nrow(bc_data)), replace = FALSE)
+bc_train <- bc_data[ train_indices, ]
+bc_test <- bc_data[ -train_indices, ]
+
+task <- makeClassifTask(data = bc_train, target = "Class")
+```
+
+knn
+
+```{r roc-knn}
+# knn
+learner <- makeLearner("classif.kknn", k = 5, predict.type = "prob")
+model <- mlr::train(learner, task)
+pred_knn <- predict(model, newdata = bc_test)
+performance(pred_knn, measures = list(mmce, auc))
+calculateConfusionMatrix(pred_knn)
+```
+
+Stupid majority vote
+
+```{r roc-maj_vote}
+# learner that uses simple majority vote for classification
+stupidLearner <- makeLearner("classif.featureless", method = "majority", 
+                              predict.type = "prob")
+model <- mlr::train(stupidLearner, task)
+pred_stupid <- predict(model, newdata = bc_test)
+performance(pred_stupid, measures = list(mmce, auc))
+calculateConfusionMatrix(pred_stupid)
+```
+
+Compare the ROC curves:
+
+```{r roc-roc_curves}
+rocs <- generateThreshVsPerfData(list(knn = pred_knn, stupid = pred_stupid), 
+                                 measures = list(fpr, tpr, mmce))
+plotROCCurves(rocs)
+```

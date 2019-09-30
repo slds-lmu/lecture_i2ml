@@ -1,0 +1,92 @@
+---
+output: pdf_document
+params:
+  set_title: "Code demo for resampling"
+---
+  
+```{r resampling-preamble, child = "../style/preamble_code_demos.Rmd", include = FALSE, purl = FALSE}
+
+```
+
+```{r resamplings-setup, child = "../style/setup.Rmd", include = FALSE, purl = FALSE}
+
+```  
+
+# Code demo for resampling
+
+## Self made Cross Validation
+
+We want to assess the performance of our model aka estimate its Generalization error. Why is it a good idea to use Cross-Validation?
+
+
+```{r resampling-knn_cv}
+library(mlr)
+library(mlbench)
+
+set.seed(13)
+spiral <- as.data.frame(mlbench.spirals(n = 500, sd = 0.1))
+
+knn_cv <- function(data, target, folds, k) {
+  storage <- as.numeric(folds)
+
+  set.seed(1337)
+  indices <- sample(x = seq(1, nrow(data), by = 1), size = nrow(data), replace = FALSE)
+
+  # index matrix for folds
+  index_mat <- matrix(data = indices, byrow = TRUE, nrow = folds)
+
+  for (i in 1:folds) {
+
+    # data
+    test_data <- data[index_mat[i, ], ]
+    train_data <- data[-index_mat[i, ], ]
+
+    # model
+    task <- makeClassifTask(data = train_data, target = target)
+    learner <- makeLearner("classif.kknn", k = k)
+    model <- train(learner = learner, task = task)
+    storage[i] <- performance(predict(model, newdata = test_data),
+      measures = mmce
+    )[[1]]
+  }
+
+  return(list(folds = folds, storage = as.data.frame(storage), gen_error = mean(storage)))
+}
+
+result <- knn_cv(data = spiral, target = "classes", folds = 10, k = 3)
+result$storage
+result$gen_error
+```
+
+```{r resampling-knn_cv_plot}
+p <- ggplot(data = result$storage, aes(y = storage, x = 1)) +
+  geom_boxplot() +
+  ggtitle(label = "Generalization error CV") +
+  xlab("") + ylab("mmce") + xlim(c(0, 2))
+p
+```
+
+## mlr's CV implementation
+
+```{r resampling-mlr}
+
+set.seed(1337)
+task <- mlr::makeClassifTask(data = spiral, target = "classes")
+rdesc_cv <- mlr::makeResampleDesc(method = "CV", iters = 10)
+mlr_cv <- resample(
+  learner = "classif.kknn", k = 3, task = task,
+  resampling = rdesc_cv, show.info = FALSE
+)
+mlr_cv
+mlr_cv$measures.test
+```
+
+```{r resampling-mlr_plot}
+library(ggplot2)
+
+p <- ggplot(data = mlr_cv$measures.test, aes(y = mmce, x = 1)) +
+  geom_boxplot() +
+  ggtitle(label = "Generalization error CV mlr") +
+  xlab("") + ylab("mmce") + xlim(c(0, 2))
+p
+```
