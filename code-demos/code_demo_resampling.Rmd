@@ -30,16 +30,17 @@ knn_cv <- function(data, target, folds, k) {
   storage <- as.numeric(folds)
 
   set.seed(1337)
-  indices <- sample(x = seq(1, nrow(data), by = 1), size = nrow(data), replace = FALSE)
+  indices <- c(sample(x = seq(1, nrow(data), by = 1), size = nrow(data), replace = FALSE),
+               rep(NA, (folds - nrow(data) %% folds) %% folds))
 
   # index matrix for folds
-  index_mat <- matrix(data = indices, byrow = TRUE, nrow = folds)
+  index_mat <- matrix(data = indices, byrow = FALSE, nrow = folds)
 
   for (i in 1:folds) {
 
     # data
-    test_data <- data[index_mat[i, ], ]
-    train_data <- data[-index_mat[i, ], ]
+    test_data <- data[na.omit(index_mat[i, ]), ]
+    train_data <- data[-na.omit(index_mat[i, ]), ]
 
     # model
     task <- makeClassifTask(data = train_data, target = target)
@@ -53,7 +54,7 @@ knn_cv <- function(data, target, folds, k) {
   return(list(folds = folds, storage = as.data.frame(storage), gen_error = mean(storage)))
 }
 
-result <- knn_cv(data = spiral, target = "classes", folds = 10, k = 3)
+result <- knn_cv(data = spiral, target = "classes", folds = 11, k = 3)
 result$storage
 result$gen_error
 ```
@@ -64,6 +65,13 @@ p <- ggplot(data = result$storage, aes(y = storage, x = 1)) +
   ggtitle(label = "Generalization error CV") +
   xlab("") + ylab("mmce") + xlim(c(0, 2))
 p
+```
+
+```{r resampling-knn_cv_folds}
+
+sapply(X = 5*(1:10), FUN = function(folds)
+  knn_cv(data = spiral, target = "classes", folds = folds, k = 3)$gen_error)
+
 ```
 
 ## mlr's CV implementation
