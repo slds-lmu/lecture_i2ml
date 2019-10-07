@@ -28,8 +28,7 @@ spiral <- as.data.frame(mlbench.spirals(n = 500, sd = 0.1))
 
 knn_cv <- function(data, target, folds, k) {
   storage <- as.numeric(folds)
-
-  set.seed(1337)
+  
   indices <- c(sample(x = seq(1, nrow(data), by = 1), size = nrow(data), replace = FALSE),
                rep(NA, (folds - nrow(data) %% folds) %% folds))
 
@@ -68,10 +67,25 @@ p
 ```
 
 ```{r resampling-knn_cv_folds}
+results <- lapply(X = c(2,3,4,5*(1:12)), FUN = function(folds)
+  data.frame(folds = as.character(folds), knn_cv(data = spiral, target = "classes", folds = folds, k = 4)$storage))
 
-sapply(X = 5*(1:10), FUN = function(folds)
-  knn_cv(data = spiral, target = "classes", folds = folds, k = 3)$gen_error)
+plot_data <- do.call(rbind, results)
 
+library(ggplot2)
+ggplot(plot_data, aes(x=folds, y=storage)) + geom_boxplot() + xlab("number of folds") +
+  ylab("test error")
+
+results <- lapply(X = c(2:10), FUN = function(times)
+  data.frame(times = as.character(times), 
+             sapply(X = 1:times, FUN = function(x) knn_cv(data = spiral, target = "classes", folds = 5, k = 4)$gen_error)))
+
+plot_data <- do.call(rbind, results)
+
+colnames(plot_data) <- c("times", "storage")
+
+ggplot(plot_data, aes(x=times, y=storage)) + geom_boxplot() + xlab("times 5-CV") +
+  ylab("test error")
 ```
 
 ## mlr's CV implementation
