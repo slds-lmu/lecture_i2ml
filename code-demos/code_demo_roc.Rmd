@@ -33,12 +33,15 @@ bc <- BreastCancer[, -c(1, 7)]
 mut <- bc[, -9] %>%
   mutate_all(as.character) %>%
   mutate_all(as.numeric)
-bc_data <- cbind(mut, bc[,target_label])
+bc_data <- cbind(mut, bc[, target_label])
 colnames(bc_data) <- c(colnames(mut), target_label)
 # make it more extreme and kill 50% of the malignant data
-bc_data <- bc_data[ -sample(which(bc_data[,target_label] == "malignant"), 150, replace = FALSE), ]
+bc_data <- bc_data[ -sample(which(bc_data[, target_label] == "malignant"),
+  150,
+  replace = FALSE
+), ]
 head(bc_data)
-table(bc_data[,target_label]) / sum(table(bc_data[,target_label]))
+table(bc_data[, target_label]) / sum(table(bc_data[, target_label]))
 ```
 
 We split the data again in train and test:
@@ -47,8 +50,10 @@ We split the data again in train and test:
 # Data split
 set.seed(1337)
 train_size <- 3 / 4
-train_indices <- sample(x = seq(1, nrow(bc_data), by = 1), 
-                        size = ceiling(train_size * nrow(bc_data)), replace = FALSE)
+train_indices <- sample(
+  x = seq(1, nrow(bc_data), by = 1),
+  size = ceiling(train_size * nrow(bc_data)), replace = FALSE
+)
 bc_train <- bc_data[ train_indices, ]
 bc_test <- bc_data[ -train_indices, ]
 
@@ -83,8 +88,10 @@ calculateConfusionMatrix(pred_knn)
 
 ```{r roc-maj_vote}
 # learner that uses simple majority vote for classification
-stupidLearner <- makeLearner("classif.featureless", method = "majority", 
-                              predict.type = "prob")
+stupidLearner <- makeLearner("classif.featureless",
+  method = "majority",
+  predict.type = "prob"
+)
 model <- mlr::train(stupidLearner, task)
 pred_stupid <- predict(model, newdata = bc_test)
 performance(pred_stupid, measures = list(mmce, auc))
@@ -100,25 +107,25 @@ By looking at the confusion matrices we see that the problem is now, that even t
 ```{r roc-conf}
 library(caret)
 
-target <- bc_data[,target_label]
+target <- bc_data[, target_label]
 target_levels <- levels(target)
-target_test <- bc_test[,target_label]
+target_test <- bc_test[, target_label]
 
-pred <- function(threshold=0.5) factor(ifelse(pred_logreg$data$prob.benign > 
-                                                threshold, target_levels[1], 
-                                                target_levels[2]))
+pred <- function(threshold = 0.5) factor(ifelse(pred_logreg$data$prob.benign >
+    threshold, target_levels[1],
+  target_levels[2]
+  ))
 
 
-cm <- confusionMatrix(pred(0.5),reference = target_test)
+cm <- confusionMatrix(pred(0.5), reference = target_test)
 cm$table
 cm$byClass[["Sensitivity"]]
 cm$byClass[["Specificity"]]
 
-cm <- confusionMatrix(pred_stupid$data$response,reference = target_test)
+cm <- confusionMatrix(pred_stupid$data$response, reference = target_test)
 cm$table
 cm$byClass[["Sensitivity"]]
 cm$byClass[["Specificity"]]
-
 ```
 
 A specificity of 0 means that all ill persons would be told they are healthy, which is certainly not what the 
@@ -126,16 +133,15 @@ test is intended for. On the other hand can we do better with the logistic regre
 Remember with our classification methods we try to estimate the posterior probabilities. Until now in the case of two classes we classified the observation as the first class if its posterior probability is greater or equal to 50% and otherwise as the second class. So what happens if we move this threshold?
 
 ```{r roc-thrsh}
-cm <- confusionMatrix(pred(0.01),reference = target_test)
+cm <- confusionMatrix(pred(0.01), reference = target_test)
 cm$table
 cm$byClass[["Sensitivity"]]
 cm$byClass[["Specificity"]]
 
-cm <- confusionMatrix(pred(0.7),reference = target_test)
+cm <- confusionMatrix(pred(0.7), reference = target_test)
 cm$table
 cm$byClass[["Sensitivity"]]
 cm$byClass[["Specificity"]]
-
 ```
 
 We see that in our case with a higher threshold value the specificity improves and 
@@ -143,8 +149,11 @@ the sensitivity degrades and vice versa. We can investigate this relationship wi
 ROC curves. Compare the ROC curves:
 
 ```{r roc-roc_curves}
-rocs <- generateThreshVsPerfData(list(logreg = pred_logreg, knn = pred_knn,
-                                      stupid = pred_stupid), 
-                                 measures = list(fpr, tpr, mmce))
+rocs <- generateThreshVsPerfData(list(
+  logreg = pred_logreg, knn = pred_knn,
+  stupid = pred_stupid
+),
+measures = list(fpr, tpr, mmce)
+)
 plotROCCurves(rocs)
 ```

@@ -66,6 +66,8 @@ p <- ggplot(data = result$storage, aes(y = storage, x = 1)) +
 p
 ```
 
+So what happens if we increase the number of folds?
+
 ```{r resampling-knn_cv_folds}
 results <- lapply(X = c(2,3,4,5*(1:12)), FUN = function(folds)
   data.frame(folds = as.character(folds), knn_cv(data = spiral, target = "classes", folds = folds, k = 4)$storage))
@@ -75,18 +77,30 @@ plot_data <- do.call(rbind, results)
 library(ggplot2)
 ggplot(plot_data, aes(x=folds, y=storage)) + geom_boxplot() + xlab("number of folds") +
   ylab("test error")
+```
 
-results <- lapply(X = c(2:10), FUN = function(times)
-  data.frame(times = as.character(times), 
-             sapply(X = 1:times, FUN = function(x) knn_cv(data = spiral, target = "classes", folds = 5, k = 4)$gen_error)))
+The more we increase the number of folds, the larger becomes each training set. Hence our estimation bias gets smaller, but
+since each testset also get smaller as well the variance of the estimation gets bigger. Also with a higher number of folds the computation time rises. Can we get better results with a similar computation amount?
+Let's see what happens if we repeat cv's and collect only their means:
+
+```{r resampling-knn_x_cv}
+
+results <- lapply(X = c(2:10), FUN = function(folds)
+  data.frame(folds = as.character(folds), 
+             sapply(X = 1:10, FUN = function(x) knn_cv(data = spiral, 
+                                                       target = "classes", 
+                                                       folds = folds, 
+                                                       k = 4)$gen_error)))
 
 plot_data <- do.call(rbind, results)
 
-colnames(plot_data) <- c("times", "storage")
+colnames(plot_data) <- c("folds", "storage")
 
-ggplot(plot_data, aes(x=times, y=storage)) + geom_boxplot() + xlab("times 5-CV") +
+ggplot(plot_data, aes(x=folds, y=storage)) + geom_boxplot() + xlab("10 times x-CV") +
   ylab("test error")
 ```
+
+We see that our estimation results stabilize.
 
 ## mlr's CV implementation
 
