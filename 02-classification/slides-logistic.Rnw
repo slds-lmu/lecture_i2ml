@@ -49,31 +49,35 @@ bin.tsk = makeClassifTask(data = bin.data, target = "target")
 
 A \emph{discriminant} approach for directly modeling the posterior probabilities $\pix$ of the labels is \textbf{logistic regression}.\\
 
-For now, let's focus on the binary case $y \in \{0, 1\}$.
+\lz 
+
+For now we focus on the binary case $y \in \{0, 1\}$.
+
+\lz 
 
 A naive approach would be to model
 \[
-\pix = \post = \theta^T x .
+\pix = \post = \thetab^\top \xb.
 \]
 Obviously this could result in predicted probabilities $\pix \not\in [0,1]$.
 
 \framebreak
 
-To avoid this, logistic regression \enquote{squashes} the estimated linear scores $\theta^T x$ to $[0,1]$ through the \textbf{logistic function} $s$:
+To avoid this, logistic regression \enquote{squashes} the estimated linear scores $\thetab^\top \xb$ to $[0,1]$ through the \textbf{logistic function} $s$:
 \[
-\pix = \post = \frac{\exp\left(\theta^Tx\right)}{1+\exp\left(\theta^Tx\right)} = \frac{1}{1+\exp\left(-\theta^Tx\right)} = s\left(\theta^T x\right)
+\pix = \post = \frac{\exp\left(\thetab^\top \xb\right)}{1+\exp\left(\thetab^\top \xb\right)} = \frac{1}{1+\exp\left(-\thetab^\top \xb\right)} = s\left(\thetab^\top \xb\right)
 \]
 \lz
 
-Note that we will again usually suppress the intercept in notation, i.e., $\theta^Tx \equiv \theta_0 + \theta^Tx$.
+Note that we will again usually suppress the intercept in notation, i.e., $\thetab^\top \xb \equiv \theta_0 + \thetab^\top \xb$.
 
 
 \end{vbframe}
 
 \begin{vbframe}{Logistic function}
 
-The logistic function $s(t) = \frac{exp(t)}{1 + exp(t)}$ which we use to model the probability
-$\post = s(\theta^T x)  = \frac{\exp(\theta^Tx)}{1+\exp(\theta^Tx)} $
+The logistic function $s(t) = \frac{\exp(t)}{1 + \exp(t)}$ which we use to model the probability
+$\post = s(\thetab^\top \xb)  = \frac{\exp(\thetab^\top \xb)}{1+\exp(\thetab^\top \xb)} $
 \lz
 <<logistic-function, echo=FALSE, fig.height = 3.5>>=
 n = 100
@@ -83,8 +87,9 @@ ggplot(df) + geom_line(aes(x = x, y = y)) + scale_x_continuous('t')  + scale_y_c
 @
 
 \framebreak
+
 Changing the intercept shifts the logistic curve in x-axis direction.
-Let's assume $\theta_1 = 1$ for simplicity, so that
+Let us assume $\theta_1 = 1$ for simplicity, so that
 $\post =  \frac{\exp(\theta_0 + x)}{1+\exp(\theta_0 + x)}$
 \lz
 <<logistic-function-par, echo=FALSE, fig.height = 3.5>>=
@@ -117,32 +122,32 @@ scale_x_continuous('x')  + scale_y_continuous(expression(s(theta^T*x))) +
 
 \begin{vbframe}{Classification loss}
 
-In order to find the \enquote{optimal} model represented by $\theta$, we need to define a \emph{loss function}.\lz
+In order to find the \enquote{optimal} model represented by $\thetab$, we need to define a \emph{loss function}.\lz
 
 For a single observation, it makes sense to simply compare the probability implied by the model to the actually observed target variable:\\
 \begin{align*}
 \text{\enquote{accuracy}}^{(i)} &:=
-  \begin{cases} \pi(x^{(i)}, \theta) & \text{if } \yi = 1 \\
-              1-\pi(x^{(i)}, \theta) & \text{if } \yi = 0 \end{cases} \\
-  & = \pi(\xi, \theta)^{\yi} (1-\pi(\xi, \theta))^{1-\yi}
+  \begin{cases} \pi(\xi, \thetab) & \text{if } \yi = 1 \\
+              1-\pi(\xi, \thetab) & \text{if } \yi = 0 \end{cases} \\
+  & = \pi(\xi, \thetab)^{\yi} (1-\pi(\xi, \thetab))^{1-\yi}
 \intertext{For the entire data set, we combine these predicted probabilites into a joint probability of observing the
 target vector given the model:}
-  \text{\enquote{global accuracy}} &:= \prod^n_{i=1} \pi(\xi, \theta)^{\yi} (1-\pi(\xi, \theta))^{1-\yi}
+  \text{\enquote{global accuracy}} &:= \prod^n_{i=1} \pi(\xi, \thetab)^{\yi} (1-\pi(\xi, \thetab))^{1-\yi}
 \intertext{We want a \emph{loss} function, so we actually need the inverse of that:}
-  \text{\enquote{global inacccuracy}} &:= \frac{1}{\prod^n_{i=1} \pi(\xi, \theta)^{\yi} (1-\pi(\xi, \theta))^{1-\yi}}
+  \text{\enquote{global inacccuracy}} &:= \frac{1}{\prod^n_{i=1} \pi(\xi, \thetab)^{\yi} (1-\pi(\xi, \thetab))^{1-\yi}}
 \intertext{Finally, we want the empirical risk to be a \emph{sum} of loss function values, not a \emph{product}}
 \text{recall: } \riske &= \sum^n_{i=1} \Lxyi
 \intertext{so we turn the product into a sum by taking its log -- the same parameters minimize this, which is all we care about, and we end up with the \textbf{logistic} or \textbf{cross entropy loss function}:}
  \Lxy &= - y \log[\pix] - (1-y) \log [1 - \pix] \\
-      & = y \theta^T x - \log[1 + \exp(\theta^T x)]
+      & = - y \thetab^\top \xb + \log[1 + \exp(\thetab^\top \xb)]
 \end{align*}
 
 \framebreak
 
-Remember that $\log[\pix] = - \log[1 + \exp(-\theta^Tx)]$.
+Remember that $\log[\pix] = - \log[1 + \exp(-\thetab^\top \xb)]$.
 \lz
 
-For $y=0$ and $y=1$ and $f(x) = \theta^Tx$, this yields:
+For $y=0$ and $y=1$ and $\fx = \thetab^\top \xb$, this yields:
 \begin{eqnarray*}
 y=0 &:& \log[1 + \exp(\fx] \\
 y=1 &:& \log[1 + \exp(-\fx)]
@@ -175,12 +180,12 @@ ggplot(df) + geom_line(aes(x = fx, y = l, col = as.factor(y))) +
 In order to minimize the loss (misclassification), we should predict $y=1$ if
 
 $$
-\pi(x, \theta) = \P(y = 1 | x, \theta) = \frac{\exp(\theta^T x)}{1+\exp(\theta^Tx)} \ge 0.5,
+\pi(\xb, \thetab) = \P(y = 1 | \xb, \thetab) = \frac{\exp(\thetab^\top \xb)}{1+\exp(\thetab^\top \xb)} \ge 0.5,
 $$
 
 which is equivalent to
 $$
-\theta^T x \ge 0 \implies y = 1.
+\thetab^\top \xb \ge 0 \implies y = 1.
 $$
 
 \end{vbframe}
@@ -199,7 +204,7 @@ p + scale_fill_viridis_d()
 For a categorical response variable $y \in \gset$ with $g>2$ the model extends to
 
 $$
-\pikx = \P(y = k | x) = \frac{\exp(\theta_k^Tx)}{\sum_{j=1}^g\exp(\theta_j^Tx)}.
+\pikx = \P(y = k ~|~ \xb) = \frac{\exp(\thetab_k^\top \xb)}{\sum_{j=1}^g\exp(\thetab_j^\top \xb)}.
 $$
 
 The latter function is called the \emph{softmax}, and defined on a numerical vector $z$:
@@ -214,18 +219,18 @@ with every entry in the range [0, 1] and all entries adding up to 1.
 
 \framebreak
 
-By comparing the posterior probabilities of two categories $k$ and $l$ we end up in a linear function (in $x$),
+By comparing the posterior probabilities of two categories $k$ and $l$ we end up in a linear function (in $\xb$),
 
 $$
-\log\frac{\pi_k(x)}{\pi_l(x)} = (\theta_k-\theta_l)^Tx.
+\log\frac{\pi_k(\xb)}{\pi_l(\xb)} = (\thetab_k-\thetab_l)^\top \xb.
 $$
 
 The class boundaries lie where these (linear) functions are zero, i.e., where the predicted class probabilities are equal.
 
 \textbf{Remark:}
 \begin{itemize}
-\item $\theta_j$ are vectors here.
-\item Well-definedness: $\pi_k(x) \in [0, 1]$ and $\sum_k \pi_k(x) = 1$
+\item $\thetab_j$ are vectors here.
+\item Well-definedness: $\pi_k(\xb) \in [0, 1]$ and $\sum_k \pi_k(\xb) = 1$
 
 \end{itemize}
 
@@ -233,11 +238,11 @@ The class boundaries lie where these (linear) functions are zero, i.e., where th
 
 This approach can be extended in exactly the same fashion for other score based models.
 For discrimnating each class $k$ from all others,
-we define a binary score model $f_k(x)$ with parameter vector $\theta_k$.
+we define a binary score model $f_k(\xb)$ with parameter vector $\thetab_k$.
 We then combine these models through the softmax function
 
 $$
-\postk = \pikx = s_k(f_1(x), \ldots f_g(x))
+\postk = \pikx = s_k(f_1(\xb), \ldots f_g(\xb))
 $$
 
 and optimize all parameter vectors of the $f_k$ jointly.
@@ -248,9 +253,9 @@ Further comments:
 
 \begin{itemize}
 %\item We can now, e.g., calculate gradients and optimize this with standard numerical optimization software.
-\item For linear $\fxt = \theta^T x$, this is also called \emph{softmax regression}. (Note that $x$ can include derived features like polynomials or interactions as well.)
+\item For linear $\fxt = \thetab^\top \xb$, this is also called \emph{softmax regression}. (Note that $x$ can include derived features like polynomials or interactions as well.)
 \item One set of parameters is  \enquote{redundant}: If we subtract any fixed vector
-  from all $\theta_k$, the predictions do not change. The model is \enquote{overparameterized}, the minimizer of $\risket$ is not unique. Hence, we set $\theta_g = (0, \dots, 0)$ and only optimize the other $\theta_k$, $k=1,\dots,g-1$.\\ (Compare: logistic regression for binary classification also has only \emph{one} parameter vector for discriminating between two classes...).
+  from all $\thetab_k$, the predictions do not change. The model is \enquote{overparameterized}, the minimizer of $\risket$ is not unique. Hence, we set $\thetab_g = (0, \dots, 0)$ and only optimize the other $\thetab_k$, $k=1,\dots,g-1$.\\ (Compare: logistic regression for binary classification also has only \emph{one} parameter vector for discriminating between two classes...).
 \item A similar approach can be used for many ML models: multiclass LDA, naive Bayes, neural networks and boosting.
 
 \end{itemize}
@@ -260,7 +265,7 @@ Further comments:
 \begin{frame}{Logistic and Softmax Regression}
 \lz
 
-\textbf{Representation:} Design matrix $X$, coefficients $\theta$.\\
+\textbf{Representation:} Design matrix $\Xmat$, coefficients $\thetab$.\\
 
 \lz
 
