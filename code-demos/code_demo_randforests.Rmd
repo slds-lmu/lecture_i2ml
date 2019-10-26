@@ -1,0 +1,255 @@
+---
+output: pdf_document
+params:
+  set_title: "Code demo for Random Forests"
+---
+  
+```{r randforests-preamble, child = "../style/preamble_code_demos.Rmd", include = FALSE, purl = FALSE}
+
+```
+
+```{r randforests-setup, child = "../style/setup.Rmd", include = FALSE, purl = FALSE}
+
+```
+
+# Code demo for Random Forests
+
+## Variable Importance from mlr
+
+```{r randforests-data, message=FALSE}
+library(mlr)
+library(mlbench)
+library(dplyr)
+
+data("Servo")
+
+# transform ordered factors to numeric
+servo <- Servo %>%
+  mutate_at(c("Pgain", "Vgain"), as.character) %>%
+  mutate_at(c("Pgain", "Vgain"), as.numeric)
+rm(Servo)
+str(servo)
+head(servo)
+
+# split in train and test with two different seeds to show data dependency
+train_size <- 3 / 4
+
+set.seed(1333)
+train_indices <- sample(
+  x = seq(1, nrow(servo), by = 1),
+  size = ceiling(train_size * nrow(servo)), replace = FALSE
+)
+train_1 <- servo[ train_indices, ]
+test_1 <- servo[ -train_indices, ]
+```
+
+
+
+```{r randforests-var_imp, message=FALSE}
+library(ggplot2)
+
+task <- makeRegrTask(data = train_1, target = "Class")
+lrn1 <- makeLearner("regr.randomForest")
+mod <- mlr::train(learner = lrn1, task = task)
+
+var_imp <- getFeatureImportance(mod)
+var <- as.data.frame(t(var_imp$res))
+var$names <- names(var_imp$res)
+p <- ggplot(data = var, aes(x = names, y = V1)) + geom_bar(stat = "identity") +
+  ggtitle(label = "Variable Importance from mlr")
+p
+```
+
+## Variable importance from partykit
+
+```{r randforests-var_imp_partykit, message=FALSE}
+library(partykit)
+
+modForest <- cforest(Class ~ Motor + Screw + Pgain + Vgain, data = train_1)
+var <- as.data.frame(varimp(modForest))
+var$names <- rownames(var)
+colnames(var) <- c("var_imp", "names")
+p <- ggplot(data = var, aes(x = names, y = var_imp)) +
+  geom_bar(stat = "identity") +
+  ggtitle(label = "Variable Importance from partykit")
+p
+```
+
+## Proximity measures in Random Forests
+
+One neat feature of random forests is, that they calculate proximity measures (how close is one data point to another) on the fly. Therefore, frequencies of the observations ending up in the same terminal node are being calculated and we can try to interpret them and do fancy stuff such as __multi dimensional scaling__. Check [this blog post](https://www.r-statistics.com/2016/01/multidimensional-scaling-with-r-from-mastering-data-analysis-with-r/) for a wonderful example with European Capital Cities.
+
+We apply this to our spiral data set and try to see, if we could also classify the points based on their proximity. 
+
+First, look a the data:
+
+```{r randforests-prox_data}
+# get data
+spiral <- mlbench::mlbench.spirals(500, cycles = 1, sd = 0.1)
+p <- ggplot(data = as.data.frame(spiral$x), aes(
+  x = V1, y = V2,
+  colour = spiral$classes
+)) +
+  geom_point()
+p
+```
+
+Now we fit a random forest and extract the proximity distance matrix:
+
+```{r randforests-prox}
+library(randomForest)
+# fit forest and extract proximity measure
+set.seed(1337)
+modProx <- randomForest(
+  x = spiral$x, y = spiral$classes, proximity = TRUE,
+  oob.prox = TRUE
+)
+proxMat <- modProx$proximity
+proxMat[1:5, 1:5]
+```
+
+Run mds on it and plot the data based on the two dimensions:
+
+```{r randforests-prox_mds}
+# apply mds on the proximity matrix
+mds <- as.data.frame(cmdscale(proxMat))
+mds$class <- spiral$classes
+
+# plot the result, sweet
+p <- ggplot(data = mds, aes(x = V1, y = V2, colour = class)) +
+  geom_point() +
+  labs(x = "1st dimension", y = "2nd dimension", title = "Multidimensional Scaling of Spiral data based on proximity")
+p
+```
+
+## Decision Regions CART vs. Random Forest
+
+Decision regions for the CART:
+
+```{r randforests-dec_bnd_cart}
+library(mlr)
+# get data
+data("iris")
+# set features that should be inspected within the regions
+features <- c("Petal.Width", "Petal.Length")
+
+task <- mlr::makeClassifTask(data = iris, target = "Species")
+
+mlr::plotLearnerPrediction(
+  learner = "classif.rpart", task = task,
+  features = features
+)
+```
+
+Decision regions for the Random Forest:
+
+```{r randforests-dec_bnd_randforests}
+mlr::plotLearnerPrediction(
+  learner = "classif.randomForest", task = task,
+  features = features
+)
+```
+
+## MNIST example
+
+In this exercise we want to train a random forest classifier, s.t. it can be
+used to identify the handwritten digits 8 and 9.
+
+```{r randforests-mnist_data}
+library(readr)
+library(dplyr)
+
+mnist_raw <- read_csv("https://www.python-course.eu/data/mnist/mnist_train.csv",
+  col_names = FALSE
+)
+```
+Every row of the mnist data set contains the label and the 28*28 = 784 pixels of corresponding image.
+For example:
+```{r randforests-mnist_plot_digit}
+rotate <- function(x) t(apply(x, 2, rev))
+
+# function which plots a 28*28 raster image
+plot_mnist_raster <- function(pixels) {
+  m <- matrix(as.numeric(pixels), nrow = 28, byrow = F)
+  image(rotate(t(m)), axes = FALSE, col = gray.colors(256))
+}
+
+as.numeric(mnist_raw[1, 1])
+plot_mnist_raster(mnist_raw[1, 2:ncol(mnist_raw)])
+```
+
+We are only interested in the digits 8 and 9:
+
+```{r randforests-mnist_data_trafo}
+mnist_8 <- mnist_raw[ mnist_raw[, 1] == 8, ]
+mnist_9 <- mnist_raw[ mnist_raw[, 1] == 9, ]
+
+train_size <- 150
+set.seed(123)
+train_8_indices <- sample(nrow(mnist_8), train_size / 2, replace = FALSE)
+train_9_indices <- sample(nrow(mnist_9), train_size / 2, replace = FALSE)
+
+train_data <- as.data.frame(rbind(
+  mnist_8 [train_8_indices, ],
+  mnist_9 [train_9_indices, ]
+))
+
+train_data$X1 <- as.factor(train_data$X1)
+```
+
+Train a random forest model:
+
+```{r randforests-mnist_learn}
+set.seed(123)
+task <- makeClassifTask(data = train_data, target = "X1")
+lrn1 <- makeLearner("classif.randomForest", proximity = TRUE, oob.prox = TRUE)
+mod <- mlr::train(learner = lrn1, task = task)
+```
+
+With proximities we are able to explore how similar the images of our training 
+set are:
+
+```{r randforests-mnist_prox}
+library(ggrepel)
+
+proxMat <- mod$learner.model$proximity
+
+# apply mds on the proximity matrix
+mds <- as.data.frame(cmdscale(proxMat))
+mds$class <- train_data$X1
+mds$id <- 1:nrow(mds)
+
+# plot the result
+p <- ggplot(data = mds, aes(x = V1, y = V2, colour = class)) +
+  geom_point(alpha = 0.5) +
+  geom_text_repel(
+    data = subset(mds, id == 4 | id == 132 | id == 103),
+    aes(V1, V2, label = id), color = "black",
+    min.segment.length = unit(0, "lines")
+  ) +
+
+  labs(
+    x = "1st dimension", y = "2nd dimension", title =
+      "Multidimensional Scaling of MNIST data based on proximity"
+  )
+p
+
+plot_mnist_raster(train_data[4, 2:ncol(train_data)])
+plot_mnist_raster(train_data[132, 2:ncol(train_data)])
+
+plot_mnist_raster(train_data[103, 2:ncol(train_data)])
+```
+
+With variable importance we can now investigate which pixels are the "most important" when we
+want to tell the digits 8 and 9 apart:
+
+```{r randforests-mnist_var}
+
+var_imp <- getFeatureImportance(mod)
+var <- as.data.frame(t(var_imp$res))
+v <- var$V1 / sum(var$V1) * 256
+
+plot_mnist_raster(v)
+```
+
+Can you think of why these regions are important?

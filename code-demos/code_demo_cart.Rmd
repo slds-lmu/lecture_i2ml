@@ -1,0 +1,378 @@
+---
+output: pdf_document
+params:
+  set_title: "Code demo for CART"
+---
+  
+```{r cart-preamble, child = "../style/preamble_code_demos.Rmd", include = FALSE, purl = FALSE}
+
+```
+
+```{r cart-setup, child = "../style/setup.Rmd", include = FALSE, purl = FALSE}
+
+```  
+
+# Code demo for CART
+
+Classification and decision trees are very powerful but do have on major drawback: they are highly data-dependent. We show this with the following example on the __servo__ data set that offers a regression task and looks like that:
+
+```{r cart-data}
+# load tons of packages
+library(rpart)
+library(dplyr)
+library(rattle)
+library(mlbench)
+library(methods)
+library(devtools)
+library(BBmisc)
+library(rpart.plot)
+library(ggplot2)
+library(mlr)
+
+
+data("Servo")
+
+# transform ordered factors to numeric
+servo <- Servo %>%
+  mutate_at(c("Pgain", "Vgain"), as.character) %>%
+  mutate_at(c("Pgain", "Vgain"), as.numeric)
+rm(Servo)
+str(servo)
+head(servo)
+```
+
+We fit two CART's on our data which we split in train and test at two different seeds, resulting in slightly different train and test data sets. 
+
+Check the differences in the CART architecture that was induced by those differing seeds: 
+
+```{r cart-train_test}
+# split in train and test with two different seeds to show data dependency
+train_size <- 3 / 4
+
+set.seed(1333)
+train_indices <- sample(
+  x = seq(1, nrow(servo), by = 1),
+  size = ceiling(train_size * nrow(servo)), replace = FALSE
+)
+train_1 <- servo[ train_indices, ]
+test_1 <- servo[ -train_indices, ]
+
+set.seed(1)
+train_indices <- sample(
+  x = seq(1, nrow(servo), by = 1),
+  size = ceiling(train_size * nrow(servo)), replace = FALSE
+)
+train_2 <- servo[ train_indices, ]
+test_2 <- servo[ -train_indices, ]
+
+
+model_1 <- rpart(Class ~ ., data = train_1)
+rattle::fancyRpartPlot(model_1,
+  palettes = "Oranges", main =
+    "CART from split 1\n", sub = ""
+)
+
+
+model_2 <- rpart(Class ~ ., data = train_2)
+rattle::fancyRpartPlot(model_2,
+  palettes = "Blues", main =
+    "CART from split 2\n", sub = ""
+)
+```
+
+* Why is that a problem? Don't we want a data dependent algorithm?
+* What can we do to address this issue?
+
+## Understanding the Hyperparameters of CARTS
+
+#### Min split:
+
+```{r cart-min_split}
+task <- makeRegrTask(data = train_1, target = "Class")
+lrn1 <- makeLearner("regr.rpart")
+
+plotParamSequence <- function(learner, task, param, values, plotfun, ...) {
+  for (v in values) {
+    xs <- list(...)
+    xs[[param]] <- v
+    lrn2 <- setHyperPars(learner, par.vals = xs)
+    mod <- mlr::train(lrn2, task)
+    plotfun(mod$learner.model)
+    title(sprintf("%s = %g", param, v))
+    pause()
+  }
+}
+
+plotParamSequenceRPart <- function(...)
+  plotParamSequence(learner = lrn1, plotfun = rpart.plot, ...)
+
+min_splits <- c(3, 10, 20, 40)
+plotParamSequenceRPart(task = task, param = "minsplit", values = min_splits)
+```
+
+Maximum depth of the tree
+
+```{r cart-max_depth}
+task <- makeRegrTask(data = train_1, target = "Class")
+lrn1 <- makeLearner("regr.rpart")
+
+plotParamSequence <- function(learner, task, param, values, plotfun, ...) {
+  for (v in values) {
+    xs <- list(...)
+    xs[[param]] <- v
+    lrn2 <- setHyperPars(learner, par.vals = xs)
+    mod <- mlr::train(lrn2, task)
+    plotfun(mod$learner.model)
+    title(sprintf("%s = %g", param, v))
+    pause()
+  }
+}
+
+plotParamSequenceRPart <- function(...)
+  plotParamSequence(learner = lrn1, plotfun = rpart.plot, ...)
+
+max_depth <- c(1, 4, 10)
+plotParamSequenceRPart(task = task, param = "maxdepth", values = max_depth)
+```
+
+## Invariance to monotonous feature transformation
+
+
+Nice thing about the CARTs is, that they are invariant to scaling and other monotonous feature transformations. 
+
+We grow two trees on two data set, which only differ in the fact, that the numeric features in the second data set are log-transformed. 
+
+Let's see, how the architecture of the two CARTs differs (or not)!
+
+```{r cart-inv_mon}
+train_log <- train_1 %>% mutate_at(c("Pgain", "Vgain"), log)
+head(train_log, 3)
+head(train_1, 3)
+
+model_1 <- rpart(Class ~ ., data = train_1, minsplit = 30)
+rattle::fancyRpartPlot(model_1,
+  palettes =
+    "Oranges", main = "CART with normal data\n", sub = ""
+)
+
+
+model_log <- rpart(Class ~ ., data = train_log, minsplit = 30)
+rattle::fancyRpartPlot(model_log,
+  palettes = "Blues",
+  main = "CART with log transformed data\n", sub = ""
+)
+```
+
+## Write simple regression tree implementation
+
+Now we want to implement a simple regression tree, but only for numerical features:
+
+```{r rt-impl}
+
+# Function which generates the rt which consists of nodes.
+# Every node has 2 subnodes or no subnode:
+#  - true_node: the split citeria is true
+#  - false_node: the split citeria is true
+# A node without subnodes is a leaf. They mark the end of tree branch.
+rt <- function(df, target, cur_depth = 0, max_depth = 30, min_split = 20) {
+  feature_results <- list()
+
+  for (feature in colnames(df)) { # compute minimal loss for every feature
+    if (feature != target) {
+      feature_results[[feature]] <- opt_split(df, feature, target)
+    }
+  }
+
+  df_feature_results <- do.call(rbind, feature_results)
+  # choose feature, with which split the minimal loss can be achieved
+  min_loss_split <- df_feature_results[which.min(df_feature_results[, "loss"]), ]
+
+  # use new feature split
+  split_result <- split_node(df, min_loss_split)
+  if (cur_depth + 1 == max_depth) {
+    # max_depth of the tree is reached
+    true_node <- list(is_leaf = TRUE)
+    false_node <- list(is_leaf = TRUE)
+  } else {
+    if (nrow(split_result$true_split) < min_split) {
+      # not enough observations to split node again
+      true_node <- list(is_leaf = TRUE)
+    }
+    else {
+      # call the rt function recursively again, but with only the splitted data
+      # and with incremented tree depth, s.t. the function will terminate in the
+      # end
+      true_node <- rt(
+        df = split_result$true_split,
+        target = target,
+        cur_depth = cur_depth + 1,
+        max_depth = max_depth,
+        min_split = min_split
+      )
+    }
+
+    if (nrow(split_result$false_split) < min_split) {
+      # not enough observations to split node again
+      false_node <- list(is_leaf = TRUE)
+    }
+    else {
+      # call the rt function recursively again, but with only the splitted data
+      # and with incremented tree depth, s.t. the function will terminate in the
+      # end
+      false_node <- rt(
+        df = split_result$false_split,
+        target = target,
+        cur_depth = cur_depth + 1,
+        max_depth = max_depth,
+        min_split = min_split
+      )
+    }
+  }
+
+  list(
+    is_leaf = FALSE, true_node = true_node, false_node = false_node,
+    loss = min_loss_split$loss,
+    num_rule = min_loss_split$num_rule,
+    num_true = min_loss_split$num_true,
+    num_false = min_loss_split$num_false,
+    feature = min_loss_split$feature
+  )
+}
+
+# function which splits current dataframe according to split rule
+# (if one wants to implement classifiaction and/or support for categorical
+# features this needed to be extended)
+split_node <- function(df, split_rule) {
+  return(list(
+    true_split = df[df[, split_rule$feature] < split_rule$num_rule, ],
+    false_split = df[df[, split_rule$feature] >= split_rule$num_rule, ]
+  ))
+}
+
+# function which finds the optimal split for a given feature
+# (if one wants to implement classifiaction and/or support for categorical
+# features this needed to be extended)
+opt_split <- function(df, feature, target) {
+  cur_losses <- list()
+  df <- df[order(df[, feature]), c(feature, target)]
+
+  split_points <- unique(df[, feature])
+  split_points <- split_points[order(split_points)]
+
+  for (i in 2:length(split_points)) { # compute losses for all split points
+    split_true <- df[df[, feature] < split_points[i], target]
+    split_false <- df[df[, feature] >= split_points[i], target]
+
+    cur_losses[[as.character(i)]] <- data.frame(
+      loss = l2_loss(split_true) + l2_loss(split_false),
+      rule = mean(split_points[(i - 1):i]),
+      num_true = mean(split_true),
+      num_false = mean(split_false)
+    )
+  }
+
+  df_curr_losses <- do.call(rbind, cur_losses)
+  # find split which yields the minimal loss
+  min_loss <- df_curr_losses[which.min(df_curr_losses[, "loss"]), ]
+
+  data.frame(
+    loss = min_loss[1, "loss"], num_rule = min_loss[1, "rule"],
+    num_true = min_loss[1, "num_true"],
+    num_false = min_loss[1, "num_false"],
+    feature = feature
+  )
+}
+
+# l2 loss if target is estimated with l2-optimal constant (mean)
+l2_loss <- function(target_values) {
+  sum(((target_values) - mean(target_values))^2)
+}
+
+# create artifical data to check algorithm
+set.seed(123)
+n <- 200
+x <- rnorm(n, 1, 1)
+y <- rnorm(n, 1, 1)
+z <- x + y + rnorm(n, 0, 0.1)
+
+tree <- rt
+train_data <- data.frame(x, z, y)
+# compute regression tree
+tree <- rt(train_data, "z")
+
+# take a look at the first split:
+tree$feature
+tree$num_rule
+# if the subnodes of the first node were leaves, this would be the
+# output prediction for the splits:
+tree$num_true
+tree$num_false
+
+# function which predicts data with regression tree
+# (if one wants to implement classifiaction and/or support for categorical
+# features this needed to be extended)
+predict_tree <- function(tree, df) {
+  pred_values <- numeric(nrow(df))
+  for (i in 1:nrow(df)) {
+    cur_node <- tree
+    while (TRUE) { # follow the splits until we reach a leaf
+      if (df[i, cur_node$feature] < cur_node$num_rule) {
+        pred_values[i] <- cur_node$num_true
+        cur_node <- cur_node$true_node
+      } else {
+        pred_values[i] <- cur_node$num_false
+        cur_node <- cur_node$false_node
+      }
+      if (cur_node$is_leaf) {
+        break
+      }
+    }
+  }
+  pred_values
+}
+
+# function for cart method with two features to visualize
+# the estimated output X1 and X2 are the names of the two features to use.
+plot_2D_cart <- function(train_data,
+                         tree,
+                         target = "z",
+                         X1 = "x",
+                         X2 = "y",
+                         lengthX1 = 100,
+                         lengthX2 = 100) {
+  gridX1 <- seq(
+    min(train_data[, X1]),
+    max(train_data[, X1]),
+    length.out = lengthX1
+  )
+  gridX2 <- seq(
+    min(train_data[, X2]),
+    max(train_data[, X2]),
+    length.out = lengthX2
+  )
+
+  # compute grid coordinates with cartesian product
+  grid_data <- expand.grid(gridX1, gridX2)
+  colnames(grid_data) <- c(X1, X2)
+
+  # predict grid cells
+  grid_data$z <- predict_tree(tree, grid_data)
+  colnames(grid_data) <- c(X1, X2, target)
+
+  min_z <- min(c(min(grid_data$z), min(train_data$z)))
+  max_z <- max(c(max(grid_data$z), max(train_data$z)))
+
+  ggplot() +
+    geom_raster(
+      data = grid_data,
+      aes_string(x = X1, y = X2, fill = target),
+      alpha = .8
+    ) +
+    geom_point(data = train_data, aes_string(x = X1, y = X2, color = target)) +
+    scale_colour_gradient(limits = c(min_z, max_z)) +
+    scale_fill_gradient(limits = c(min_z, max_z))
+}
+
+
+plot_2D_cart(train_data, tree)
+```
