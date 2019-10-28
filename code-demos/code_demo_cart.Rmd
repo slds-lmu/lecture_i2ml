@@ -165,15 +165,14 @@ rattle::fancyRpartPlot(model_log,
 
 ## Write simple regression tree implementation
 
-Now we want to implement a simple regression tree, but only for numerical features:
+Now we want to implement a simple regression tree (`rt`) for numerical features:
 
 ```{r rt-impl}
-
-# Function which generates the rt which consists of nodes.
+# Function which generates the *r*egression *t*ree which consists of nodes.
 # Every node has 2 subnodes or no subnode:
-#  - true_node: the split citeria is true
-#  - false_node: the split citeria is true
-# A node without subnodes is a leaf. They mark the end of tree branch.
+#  - true_node: the split citerin was TRUE
+#  - false_node: the split citerion was FALSE
+# A node without subnodes is a leaf. They represent the end of a tree branch.
 rt <- function(df, target, cur_depth = 0, max_depth = 30, min_split = 20) {
   feature_results <- list()
 
@@ -230,9 +229,11 @@ rt <- function(df, target, cur_depth = 0, max_depth = 30, min_split = 20) {
   }
 
   list(
-    is_leaf = FALSE, true_node = true_node, false_node = false_node,
+    is_leaf = FALSE, 
+    true_node = true_node, 
+    false_node = false_node,
     loss = min_loss_split$loss,
-    num_rule = min_loss_split$num_rule,
+    threshold = min_loss_split$threshold,
     num_true = min_loss_split$num_true,
     num_false = min_loss_split$num_false,
     feature = min_loss_split$feature
@@ -240,12 +241,12 @@ rt <- function(df, target, cur_depth = 0, max_depth = 30, min_split = 20) {
 }
 
 # function which splits current dataframe according to split rule
-# (if one wants to implement classifiaction and/or support for categorical
-# features this needed to be extended)
+# (if one wants to implement classification trees and/or support for categorical
+# features this would need to be extended)
 split_node <- function(df, split_rule) {
   return(list(
-    true_split = df[df[, split_rule$feature] < split_rule$num_rule, ],
-    false_split = df[df[, split_rule$feature] >= split_rule$num_rule, ]
+    true_split = df[df[, split_rule$feature] < split_rule$threshold, ],
+    false_split = df[df[, split_rule$feature] >= split_rule$threshold, ]
   ))
 }
 
@@ -256,16 +257,16 @@ opt_split <- function(df, feature, target) {
   cur_losses <- list()
   df <- df[order(df[, feature]), c(feature, target)]
 
-  split_points <- unique(df[, feature])
-  split_points <- split_points[order(split_points)]
+  split_points <- sort(unique(df[, feature]))
 
   for (i in 2:length(split_points)) { # compute losses for all split points
-    split_true <- df[df[, feature] < split_points[i], target]
-    split_false <- df[df[, feature] >= split_points[i], target]
+    is_split_true <- df[, feature] < split_points[i]
+    split_true <- df[is_split_true, target]
+    split_false <- df[!is_split_true, target]
 
     cur_losses[[as.character(i)]] <- data.frame(
       loss = l2_loss(split_true) + l2_loss(split_false),
-      rule = mean(split_points[(i - 1):i]),
+      threshold = mean(split_points[(i - 1):i]),
       num_true = mean(split_true),
       num_false = mean(split_false)
     )
@@ -276,7 +277,8 @@ opt_split <- function(df, feature, target) {
   min_loss <- df_curr_losses[which.min(df_curr_losses[, "loss"]), ]
 
   data.frame(
-    loss = min_loss[1, "loss"], num_rule = min_loss[1, "rule"],
+    loss = min_loss[1, "loss"], 
+    threshold = min_loss[1, "threshold"],
     num_true = min_loss[1, "num_true"],
     num_false = min_loss[1, "num_false"],
     feature = feature
@@ -302,29 +304,26 @@ tree <- rt(train_data, "z")
 
 # take a look at the first split:
 tree$feature
-tree$num_rule
+tree$threshold
 # if the subnodes of the first node were leaves, this would be the
 # output prediction for the splits:
 tree$num_true
 tree$num_false
 
 # function which predicts data with regression tree
-# (if one wants to implement classifiaction and/or support for categorical
-# features this needed to be extended)
+# (if one wants to implement classification and/or support for categorical
+# features this would need to be extended)
 predict_tree <- function(tree, df) {
   pred_values <- numeric(nrow(df))
   for (i in 1:nrow(df)) {
     cur_node <- tree
-    while (TRUE) { # follow the splits until we reach a leaf
-      if (df[i, cur_node$feature] < cur_node$num_rule) {
+    while (!cur_node$is_leaf) { # follow the splits until we reach a leaf
+      if (df[i, cur_node$feature] < cur_node$threshold) {
         pred_values[i] <- cur_node$num_true
         cur_node <- cur_node$true_node
       } else {
         pred_values[i] <- cur_node$num_false
         cur_node <- cur_node$false_node
-      }
-      if (cur_node$is_leaf) {
-        break
       }
     }
   }
