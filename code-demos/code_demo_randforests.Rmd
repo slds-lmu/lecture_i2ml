@@ -169,9 +169,25 @@ For example:
 rotate <- function(x) t(apply(x, 2, rev))
 
 # function which plots a 28*28 raster image
-plot_mnist_raster <- function(pixels) {
-  m <- matrix(as.numeric(pixels), nrow = 28, byrow = F)
-  image(rotate(t(m)), axes = FALSE, col = gray.colors(256))
+plot_mnist_raster <- function(pixels, title = "") {
+  m <- rotate(t(matrix(as.numeric(pixels), nrow = 28, byrow = F)))
+  
+  df <- NULL
+  for(i in 1:28){
+    for(j in 1:28){
+      if(is.null(df)){
+        df <- data.frame(value = m[i,j], x=i, y=j)
+      }else{
+        df <- rbind(df, data.frame(value = m[i,j], x=i, y=j))
+      }
+    }
+  }
+  
+  ggplot(df, aes(x,y)) + geom_raster(aes(fill=value)) +
+    scale_fill_gradient(low = "black", high = "white", 
+                        limits = c(0,256)) +
+                        theme(legend.position = "none") +
+    ggtitle(title)
 }
 
 as.numeric(mnist_raw[1, 1])
@@ -211,6 +227,7 @@ set are:
 
 ```{r randforests-mnist_prox}
 library(ggrepel)
+library(gridExtra)
 
 proxMat <- mod$learner.model$proximity
 
@@ -219,35 +236,158 @@ mds <- as.data.frame(cmdscale(proxMat))
 mds$class <- train_data$X1
 mds$id <- 1:nrow(mds)
 
+
 # plot the result
 p <- ggplot(data = mds, aes(x = V1, y = V2, colour = class)) +
   geom_point(alpha = 0.5) +
   geom_text_repel(
-    data = subset(mds, id == 4 | id == 132 | id == 103),
+    data = subset(mds, id %in% c(4,132,48, 137, 144, 80,
+                                 130, 89, 86, 146, 117)),
     aes(V1, V2, label = id), color = "black",
     min.segment.length = unit(0, "lines")
   ) +
 
   labs(
     x = "1st dimension", y = "2nd dimension", title =
-      "Multidimensional Scaling of MNIST data based on proximity"
+      "Multidimensional Scaling based on proximity"
   )
-p
 
-plot_mnist_raster(train_data[4, 2:ncol(train_data)])
-plot_mnist_raster(train_data[132, 2:ncol(train_data)])
+hlay <- rbind(c(NA,8,9,10,NA),
+              c(1,4,4,4,5),
+              c(2,4,4,4,6),
+              c(3,4,4,4,7),
+              c(NA,11,12,13,NA))
 
-plot_mnist_raster(train_data[103, 2:ncol(train_data)])
+grid.arrange(plot_mnist_raster(train_data [130, 2:ncol(mnist_raw)],"130"),
+             plot_mnist_raster(train_data [89, 2:ncol(mnist_raw)],"89"),
+             plot_mnist_raster(train_data [86, 2:ncol(mnist_raw)],"86"),
+             p,
+             plot_mnist_raster(train_data [48, 2:ncol(mnist_raw)],"48"),
+             plot_mnist_raster(train_data [4, 2:ncol(mnist_raw)],"4"),
+             plot_mnist_raster(train_data [132, 2:ncol(mnist_raw)],"132"),
+             plot_mnist_raster(train_data [80, 2:ncol(mnist_raw)],"80"),             
+             plot_mnist_raster(train_data [137, 2:ncol(mnist_raw)],"137"),
+             plot_mnist_raster(train_data [144, 2:ncol(mnist_raw)],"144"),
+             plot_mnist_raster(train_data [86, 2:ncol(mnist_raw)],"86"),               
+             plot_mnist_raster(train_data [146, 2:ncol(mnist_raw)],"146"),
+             plot_mnist_raster(train_data [117, 2:ncol(mnist_raw)],"117"),
+             layout_matrix=hlay)
+
+```
+
+
+```{r randforests-mnist_prox_3d}
+
+proxMat <- mod$learner.model$proximity
+
+# apply mds on the proximity matrix
+mds <- as.data.frame(cmdscale(proxMat, k=3))
+mds$class <- train_data$X1
+mds$id <- 1:nrow(mds)
+
+
+# plot the result
+ggplot(data = mds, aes(x = V1, y = V2, colour = class)) +
+  geom_point(alpha = 0.5) +
+  geom_text_repel(
+    data = subset(mds, id %in% c(4,132,48, 137, 144, 80,
+                                 130, 89, 86, 146, 117)),
+    aes(V1, V2, label = id), color = "black",
+    min.segment.length = unit(0, "lines")
+  ) +
+
+  labs(
+    x = "1st dimension", y = "2nd dimension", title =
+      "Multidimensional Scaling based on proximity"
+  )
+
+ggplot(data = mds, aes(x = V2, y = V3, colour = class)) +
+  geom_point(alpha = 0.5) +
+  geom_text_repel(
+    data = subset(mds, id %in% c(4,132,48, 137, 144, 80,
+                                 130, 89, 86, 146, 117)),
+    aes(V1, V2, label = id), color = "black",
+    min.segment.length = unit(0, "lines")
+  ) +
+
+  labs(
+    x = "2nd dimension", y = "3rd dimension", title =
+      "Multidimensional Scaling based on proximity"
+  )
+
+ggplot(data = mds, aes(x = V1, y = V3, colour = class)) +
+  geom_point(alpha = 0.5) +
+  geom_text_repel(
+    data = subset(mds, id %in% c(4,132,48, 137, 144, 80,
+                                 130, 89, 86, 146, 117)),
+    aes(V1, V2, label = id), color = "black",
+    min.segment.length = unit(0, "lines")
+  ) +
+
+  labs(
+    x = "1st dimension", y = "3rd dimension", title =
+      "Multidimensional Scaling based on proximity"
+  )
+
+```
+
+```{r randforests-mnist_3_digits}
+mnist_splits <- sapply(0:9, function(x)  mnist_raw[ mnist_raw[, 1] == x, ], 
+                       simplify = F)
+set.seed(123)
+mnist_train <- sapply(mnist_splits, function(x) 
+  x[sample(nrow(x), train_size / 2, replace = FALSE),], simplify = F)
+
+
+train_data <-  as.data.frame(do.call(rbind,mnist_train))
+train_data$X1 <- as.factor(train_data$X1)
+
+task <- makeClassifTask(data = train_data, target = "X1")
+lrn1 <- makeLearner("classif.randomForest", proximity = TRUE, oob.prox = TRUE)
+mod <- mlr::train(learner = lrn1, task = task)
+
+proxMat <- mod$learner.model$proximity
+
+# apply mds on the proximity matrix
+mds <- as.data.frame(cmdscale(proxMat, k = 3))
+mds$class <- train_data$X1
+mds$id <- 1:nrow(mds)
+
+
+# plot the result
+ggplot(data = mds[,], aes(x = V1, y = V2, colour = class)) +
+  geom_point(alpha = 0.5) +
+
+  labs(
+    x = "1st dimension", y = "2nd dimension", title =
+      "Multidimensional Scaling based on proximity"
+  )
+
+ggplot(data = mds[,], aes(x = V1, y = V3, colour = class)) +
+  geom_point(alpha = 0.5) +
+
+  labs(
+    x = "1st dimension", y = "3rd dimension", title =
+      "Multidimensional Scaling based on proximity"
+  )
+
+ggplot(data = mds[,], aes(x = V2, y = V3, colour = class)) +
+  geom_point(alpha = 0.5) +
+
+  labs(
+    x = "2nd dimension", y = "3rd dimension", title =
+      "Multidimensional Scaling based on proximity"
+  )
+
 ```
 
 With variable importance we can now investigate which pixels are the "most important" when we
 want to tell the digits 8 and 9 apart:
 
 ```{r randforests-mnist_var}
-
 var_imp <- getFeatureImportance(mod)
 var <- as.data.frame(t(var_imp$res))
-v <- var$V1 / sum(var$V1) * 256
+v <- var$V1  / max(var$V1) * 256
 
 plot_mnist_raster(v)
 ```
