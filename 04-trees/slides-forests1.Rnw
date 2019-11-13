@@ -9,6 +9,7 @@ library(rpart.plot)
 library(randomForest)
 library(rattle)
 library(smoof)
+library(ggplot2)
 @
 
 % Load all R packages and set up knitr
@@ -60,13 +61,17 @@ Train on $B$ \textbf{bootstrap} samples of data $\D$:
 \begin{footnotesize}
 \textbf{Example:}
 \\
-Let's say you have a binary classification task and your submodels are pretty bad ($acc = 0.55$).
+Let's say you have a binary classification task and your submodels are pretty bad ($ACC = 0.55$).
 \\
 If all models would be very similar to each other, then they would all classify the \textbf{same} observations right or wrong.
 \\
-If all submodels are very different, but still have an accuracy-rate of $> 0.5$, then every new observation has a chance to be classified right by each sub-model with approximately this accuracy-rate.
+If all submodels are very different, but still have an accuracy of $> 0.5$, then every new observation has a chance to be classified right by each sub-model with approximately this accuracy.
 \\
-Now, let's say you have 1000 observations and 500 completely different sub-models with an accuracy-rate of $acc = 0.55$ each:
+Now, let's say you have 1000 observations and 500 completely different sub-models with an accuracy of $ACC = 0.55$ each. To be classified right by the ensemble an observation has to be classified right by \textbf{more than 250} of these sub-models. For each observation we draw one binomial random number with $n = 500$ trials and $p = 0.55$ chance of success.
+
+\framebreak
+
+Histogram of $X_i \sim B(500, 0.55)$, for $i = 1, ..., 1000$.
 
 <<echo = FALSE, eval = TRUE>>=
 
@@ -74,13 +79,24 @@ set.seed(25092019)
 
 @
 
-<<echo = TRUE, eval = TRUE>>=
+<<echo = FALSE, eval = TRUE, fig.height = 4>>=
 
-x <- rbinom(1000, 500, 0.55)
-head(x)
-sum(x > 250)
+df <- data.frame(x = rbinom(1000, 500, 0.55))
+df$classified <- ifelse(df$x > 250, "right", "wrong")
+# head(x)
+# sum(x > 250)
+
+ggplot(df, aes(x = x, fill = classified)) +
+  geom_histogram(binwidth = 3) +
+  scale_f_d() +
+  geom_vline(xintercept = 250.5) +
+  xlab("Number of models with right classification") +
+  ylab("Number of observations")
 
 @
+
+All the observations on the right side of the vertical line are classified right by more than 250 of the submodels and with this are classified right by the whole ensemble.
+
 \end{footnotesize}
 
 % \begin{algorithm}[H]
