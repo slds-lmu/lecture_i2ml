@@ -18,7 +18,7 @@ free to add your name to the [team](vignettes/team.Rmd).
 
 ### Slides:
 
-- Notation on the slides uses [`latex-math`](https://github.com/compstat-lmu/latex-math). Please do read the accompanying ReadMe.
+- Notation on the slides uses [`latex-math`](https://github.com/compstat-lmu/latex-math). Please do read the accompanying ReadMe and clone [`latex-math`](https://github.com/compstat-lmu/latex-math) into this repo (otherwise you will not be able to render the slides).
 - Use the commands defined there, don't define your own. 
 - If you have to introduce new notation/symbols you should add it to `latex-math`, after doublechecking that  
    - it is consistent with what we already have 
