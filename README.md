@@ -7,7 +7,7 @@
 
 # Development instructions
 
-Please see [internal README](https://github.com/compstat-lmu/lecture_i2ml/blob/devel/README_intern.md) and the [documentation for new collaborators](https://github.com/compstat-lmu/lecture_i2ml/blob/devel/attic/onboarding.md).
+Please see [contributing guidelines](https://github.com/compstat-lmu/lecture_i2ml/blob/devel/CONTRIBUTING.md) and the [documentation for new collaborators](https://github.com/compstat-lmu/lecture_i2ml/blob/devel/attic/onboarding.md).
 
 # Introduction to Machine Learning (I2ML)
 

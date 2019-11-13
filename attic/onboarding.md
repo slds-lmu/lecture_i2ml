@@ -22,7 +22,7 @@ Knowing how a `Makefile` works would be good as well, but is not strictly necess
 
 ## Getting started
 
-Please read and understand the [internal README](https://github.com/compstat-lmu/lecture_i2ml/blob/master/README_intern.md) and set up your local copy of the `i2ml` repo accordingly. To be able to contribute quality content, it's probably also a good idea to first have a look at the material we already have, so please do take the time to read through the slides and have a look at the code demos and exercises if you haven't taken the course already.
+Please read and understand the [contributing guidelines](https://github.com/compstat-lmu/lecture_i2ml/blob/devel/CONTRIBUTING.md) and set up your local copy of the `i2ml` repo accordingly. To be able to contribute quality content, it's probably also a good idea to first have a look at the material we already have, so please do take the time to read through the slides and have a look at the code demos and exercises if you haven't taken the course already.
 
 ## Using Git and Github the right way
 
