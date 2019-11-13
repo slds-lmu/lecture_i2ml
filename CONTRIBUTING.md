@@ -7,6 +7,9 @@ This repository contains the slides for the "Introduction to machine learning" c
 
 ## Contributing
 
+We are happy about new contributors. If you contribute something, please feel
+free to add your name to the [team](vignettes/team.Rmd).
+
 ### Git-Workflow
 - Access to the `master` branch is protected, please make your own, issue-/task-specific branch **off the  `devel` branch** to work in and do a pull request once you're done. 
 - Do many **small, focused, single-issue commits** with **descriptive commit messages**: each commit message should
@@ -46,5 +49,7 @@ now in `/code-demos`. Originals at [this link](https://github.com/compstat-lmu/l
 - Audiocodec: MPEG-1 Layer 3 (MP3) (in vokoscreen: libmp3lame)  
   (Day 1/2: MPEG Audio Layer 1/2 (mp4a) from kazam)
 - Resolution: 1920 x 1080 (Day 1/2: 1280 x 760 from kazam)
+
+
 
 
