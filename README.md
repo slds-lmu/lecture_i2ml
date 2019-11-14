@@ -7,7 +7,7 @@
 
 # Development instructions
 
-Please see [internal README](https://github.com/compstat-lmu/lecture_i2ml/blob/devel/README_intern.md) and the [documentation for new collaborators](https://github.com/compstat-lmu/lecture_i2ml/blob/devel/attic/onboarding.md).
+Please see our [contributing guidelines](CONTRIBUTING.md) and the [documentation for student assistants](attic/onboarding.md).
 
 # Introduction to Machine Learning (I2ML)
 
@@ -44,10 +44,10 @@ The course is targeted at *ML beginners* with a basic, university level, educati
 
 ## Help is appreciated and welcome!
 
-We hope to continously improve and expand this course over the coming years. We strongly believe in open source and collaborative work. Please contact us if you think likewise and would like to contribute.
+We hope to continously improve and expand this course over the coming years. We strongly believe in open source and collaborative work. Please contact us if you think likewise and would like to contribute. See also our [contributing guidelines](CONTRIBUTING.md)
 
 - Are you an ML expert and like the course, but have some feedback or consider extending it? 
-  Write an email to Bernd and Fabian (see *Team* page).
+  Write an email to Bernd and Fabian (see [Team page](vignettes/team.Rnw)).
 - Are you a student taking the lecture - either at the LMU or online - and you spotted a typo, think we should rephrase something be or
   even would like to provide a new quiz question or coding example? Please consider providing a pull request. To do so, please check out the *devel* branch of the repo and add your fixes there. Writing an e-mail with suggested improvements is obviously very welcome as well!
 
