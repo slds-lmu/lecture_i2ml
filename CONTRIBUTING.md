@@ -24,6 +24,9 @@ free to add your name to the [team](vignettes/team.Rmd).
    - it is consistent with what we already have 
    - you do not use symbols we have already defined differently
 - We write slides for beginners: keep it simple, keep it short
+- We recommend usage of tinytex (install via `tinytex::install_tinytex()`)
+
+
 
 
 ### Code Snippets:
