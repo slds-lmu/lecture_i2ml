@@ -1,15 +1,14 @@
-library("tm")
-library("igraph")
-library("plyr")
+library("tidygraph")
+library("ggraph")
+library("purrr")
 
 ## Get all slide Rnws
 slidedir <- "./slides/"
 topics <- fs::dir_ls(path = slidedir, type = "directory")
-slides <- purrr::map(topics, 
-                     ~ list.files(path = .x, pattern = "*.Rnw", full.names = TRUE))
+slides <- map(topics, 
+              ~ list.files(path = .x, pattern = "*.Rnw", full.names = TRUE))
 
-## get includes
-get_dependencies <- function(slideset) {
+get_includes <- function(slideset) {
     inc <- grep("%! includes:*", readLines(slideset), value = TRUE) 
     if (length(inc)) {
         slides <- gsub(pattern = "^slides-(.+)\\.Rnw$", 
@@ -17,14 +16,14 @@ get_dependencies <- function(slideset) {
                        basename(slideset))
         data.frame(
             slides = slides,
-            includes = included_dependencies(inc),
+            includes = process_includes(inc),
             stringsAsFactors = FALSE
         )
     }
 }
 
-## get dependencies from include statement
-included_dependencies <- function(inc) {
+## extract dependencies from include statement:
+process_includes <- function(inc) {
     inc <- gsub(pattern = "%! includes: ", replacement = "", inc)
     deps <- unlist(strsplit(x = inc, split = ", "))
     ## split into single strings
@@ -35,46 +34,68 @@ included_dependencies <- function(inc) {
 }
 
 
-includes <- purrr::map_depth(slides, 2, get_dependencies) %>% 
-    purrr::map(~ purrr::discard(., is.null)) %>% 
-    purrr::map(~ do.call(rbind, .)) %>% 
-    purrr::discard(., is.null) %>% 
-    purrr::imap(~ cbind(.x, topic = basename(.y), 
-                        stringsAsFactors = FALSE)) %>% 
+includes <- map_depth(slides, 2, get_includes) %>% 
+    map(~ discard(., is.null)) %>% 
+    map(~ do.call(rbind, .)) %>% 
+    discard(., is.null) %>% 
+    imap(~ cbind(.x, 
+                 topic = rep(basename(.y), nrow(.x)), 
+                 stringsAsFactors = FALSE)) %>% 
     { 
         do.call(rbind, .) 
     }
 
 includes$slides_short <- gsub("^[a-z]+-", "", includes$slides)
 includes$includes_short <- gsub("^[a-z]+-", "", includes$includes)   
-with(includes) {
-    for (slide in unique(slides)) {
-        slide_short <- slides_short[[]] # ?!?!?!
+
+# check if all files define proper dependencies: 
+# (should only contain basics-notation (?), eventually:)
+setdiff(includes$includes, includes$slides)
+
+# start with rare slides
+slidenames <- names(sort(table(c(includes$slides, includes$includes))))
+for (slide in slidenames) {
+    longs <- which(includes$slides == slide)
+    # get shorter name
+    slide_short <- includes$slides_short[longs[1]]
+    # if not all identical, replace with longer names
+    shorts <- which(includes$slides_short == slide_short)
+    if (!identical(longs, shorts)) {
+        includes$slides_short[shorts] <- includes$slides[shorts]
+        shorts <- which(includes$includes_short == slide_short)
+        includes$includes_short[shorts] <- includes$includes[shorts]
     }
 }
 
+topics <- includes %>% select(topic, slides) %>% 
+    filter(!duplicated(slides)) %>% rename(name = "slides")
+topics_short <- includes %>% select(topic, slides_short) %>% 
+    filter(!duplicated(slides_short)) %>% rename(name = "slides_short")
 
-# 
-# depends <- ldply(names(includes), get_dependencies)
-# dependencymat <- na.omit(depends)
-# 
-# dependencymat_simple <- dependencymat
-# 
-# simplify_dp <- function(x) {
-#     nams <- gsub(".*([^-]*-[^-]*)-*$", "\\1", x)
-#     gsub("-", "", nams)
-# }
-# 
-# dependencymat_simple$target <- simplify_dp(dependencymat_simple$target)
-# dependencymat_simple$depends <- simplify_dp(dependencymat_simple$depends)
-# 
-# 
-# ## Create a dependency matrix (using igraph package)
-# graph_simple <- graph.data.frame(dependencymat_simple)
-# graph <- graph.data.frame(dependencymat)
-# 
-# ## ... and plot
-# plot(graph, vertex.shape = "none", edge.arrow.size = 0.1)
-# plot(graph_simple, vertex.shape = "none", edge.arrow.size = 0.1)
-# plot(graph_simple, vertex.shape = "none", edge.arrow.size = 0.1, 
-#      layout = layout_with_sugiyama(graph_simple)$)
+graph <- includes %>% select(slides, includes) %>% as_tbl_graph() %>% 
+    left_join(topics)
+graph_short <- includes %>% select(c("slides_short", "includes_short")) %>% 
+    as_tbl_graph() %>% 
+    left_join(topics_short)
+
+#sugiyama layout seems useful to group the topics:
+topic_layers <- graph_short %>% pull(topic) %>% factor %>% as.numeric
+topic_layers[is.na(topic_layers)] <- max(topic_layers) + 1
+graph_short %>%  
+    ggraph(layout = 'sugiyama', layers = topic_layers) + 
+    geom_edge_fan0(
+        arrow = grid::arrow(angle = 10, length = unit(.2, "inches"))) + 
+    geom_node_point(aes(col = topic)) + 
+    geom_node_text(aes(label = name, col = topic), repel = TRUE, 
+                   show.legend = FALSE)
+
+# other ideas: maybe weigh up edges within the same topic to force other layout
+# algs to keep topics closer together?
+set.seed(1211)
+graph_short %>%  
+    ggraph(layout = 'gem') + 
+    geom_edge_fan0(
+        arrow = grid::arrow(angle = 10, length = unit(.2, "inches"))) + 
+    geom_node_point(aes(col = topic)) + 
+    geom_node_text(aes(label = name, col = topic), repel = TRUE, 
+                   show.legend = FALSE)
