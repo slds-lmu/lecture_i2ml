@@ -11,10 +11,9 @@ We are happy about new contributors. If you contribute something, please feel
 free to add your name to the [team](vignettes/team.Rmd).
 
 ### Git-Workflow
+
 - Access to the `master` branch is protected, please make your own, issue-/task-specific branch **off the  `devel` branch** to work in and do a pull request once you're done. 
-- Do many **small, focused, single-issue commits** with **descriptive commit messages**: each commit message should
-    - refer the issue it adresses or fixes, i.e. include something like `adresses #<issuenumber>`, `closes #<issuenumber>` or similar
-    - for student helpers, could/should also include the approximate amount of time spent on the work being comitted (i.e. include something like `time spent: <XX> hours`) to help with time tracking.
+- Do many **small, focused, single-issue commits** with **descriptive commit messages**: each commit message should refer the issue it adresses or fixes, i.e. include something like `adresses #<issuenumber>`, `closes #<issuenumber>` or similar, where applicable.
 
 ### Slides:
 
@@ -24,10 +23,9 @@ free to add your name to the [team](vignettes/team.Rmd).
    - it is consistent with what we already have 
    - you do not use symbols we have already defined differently
 - We write slides for beginners: keep it simple, keep it short
+- Never put code on the slides, we want them to be orthogonal to issues of implementation. These are for the exercises/ practice sessions. 
 - We recommend usage of tinytex (install via `tinytex::install_tinytex()`)
-
-
-
+- Compiling the slides is easiest by using the Makefile: just type `make` in the specific folder and it will render all slidesets in the folder, or `make <SLIDES>.pdf` to render `<SLIDES>.Rnw`
 
 ### Code Snippets:
 
@@ -38,20 +36,23 @@ free to add your name to the [team](vignettes/team.Rmd).
    - use base-R as much as possible
    - choose variable names and code designs to maximize legibility and comprehension
 
-## Code Demos
+### Code Demos
 
 now in `/code-demos`. Originals at [this link](https://github.com/compstat-lmu/lecture_intro_to_ml_notebooks)
 
-## Creating Lecture Videos
+### Creating Lecture Videos
 
-- Software: vokoscreen (Linux)
-- Format: mkv
-- Frames:25
-- Videocodec: H.264 (High Profile)    (in vokoscreen: libx264)  
-  (Day 1/2: H264 MPEG-4 AVC)
-- Audiocodec: MPEG-1 Layer 3 (MP3) (in vokoscreen: libmp3lame)  
-  (Day 1/2: MPEG Audio Layer 1/2 (mp4a) from kazam)
-- Resolution: 1920 x 1080 (Day 1/2: 1280 x 760 from kazam)
+- Video files should have the same name as the slide set they are narrating.
+- Our videos show the lecturer's head in the bottom right corner
+- Make sure you minimize background noise, have good lighting and do remember to switch off your phone and to sedate or expell your pets / spouses / flatmates / office co-inhabitants for distraction-free recording.
+- Make sure you record in a resolution that's high enough to easily read the slides (at least 1280 x 760, higher is better).
+- We have excellent USB-Microphones to borrow in Bernd's office
+- Many possible workflows, Fabian uses :
+    - `mpv /dev/video0 --framedrop=no --speed=1.01 --window-scale=0.35 --no-border --ontop`
+    for a borderless, low latency webcam window and `kazam` for screen capture.
+   - In `kazam`, don't forget to  
+      - set preferences to "USB microphone" & set loudness fairly high
+      - set the frame rate to 30
 
 
 
