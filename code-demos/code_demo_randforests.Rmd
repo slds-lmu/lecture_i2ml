@@ -211,6 +211,13 @@ train_data <- as.data.frame(rbind(
 ))
 
 train_data$X1 <- as.factor(train_data$X1)
+
+test_data <- as.data.frame(rbind(
+  mnist_8 [-train_8_indices, ],
+  mnist_9 [-train_9_indices, ]
+))
+
+test_data$X1 <- as.factor(test_data$X1)
 ```
 
 Train a random forest model:
@@ -220,6 +227,10 @@ set.seed(123)
 task <- makeClassifTask(data = train_data, target = "X1")
 lrn1 <- makeLearner("classif.randomForest", proximity = TRUE, oob.prox = TRUE)
 mod <- mlr::train(learner = lrn1, task = task)
+
+# evaluate performance on test data
+p <- predict(mod, newdata = test_data)
+performance(p)
 ```
 
 With proximities we are able to explore how similar the images of our training 
@@ -275,111 +286,9 @@ grid.arrange(plot_mnist_raster(train_data [130, 2:ncol(mnist_raw)],"130"),
 
 ```
 
-
-```{r randforests-mnist_prox_3d}
-
-proxMat <- mod$learner.model$proximity
-
-# apply mds on the proximity matrix
-mds <- as.data.frame(cmdscale(proxMat, k=3))
-mds$class <- train_data$X1
-mds$id <- 1:nrow(mds)
-
-
-# plot the result
-ggplot(data = mds, aes(x = V1, y = V2, colour = class)) +
-  geom_point(alpha = 0.5) +
-  geom_text_repel(
-    data = subset(mds, id %in% c(4,132,48, 137, 144, 80,
-                                 130, 89, 86, 146, 117)),
-    aes(V1, V2, label = id), color = "black",
-    min.segment.length = unit(0, "lines")
-  ) +
-
-  labs(
-    x = "1st dimension", y = "2nd dimension", title =
-      "Multidimensional Scaling based on proximity"
-  )
-
-ggplot(data = mds, aes(x = V2, y = V3, colour = class)) +
-  geom_point(alpha = 0.5) +
-  geom_text_repel(
-    data = subset(mds, id %in% c(4,132,48, 137, 144, 80,
-                                 130, 89, 86, 146, 117)),
-    aes(V1, V2, label = id), color = "black",
-    min.segment.length = unit(0, "lines")
-  ) +
-
-  labs(
-    x = "2nd dimension", y = "3rd dimension", title =
-      "Multidimensional Scaling based on proximity"
-  )
-
-ggplot(data = mds, aes(x = V1, y = V3, colour = class)) +
-  geom_point(alpha = 0.5) +
-  geom_text_repel(
-    data = subset(mds, id %in% c(4,132,48, 137, 144, 80,
-                                 130, 89, 86, 146, 117)),
-    aes(V1, V2, label = id), color = "black",
-    min.segment.length = unit(0, "lines")
-  ) +
-
-  labs(
-    x = "1st dimension", y = "3rd dimension", title =
-      "Multidimensional Scaling based on proximity"
-  )
-
-```
-
-```{r randforests-mnist_3_digits}
-mnist_splits <- sapply(0:9, function(x)  mnist_raw[ mnist_raw[, 1] == x, ], 
-                       simplify = F)
-set.seed(123)
-mnist_train <- sapply(mnist_splits, function(x) 
-  x[sample(nrow(x), train_size / 2, replace = FALSE),], simplify = F)
-
-
-train_data <-  as.data.frame(do.call(rbind,mnist_train))
-train_data$X1 <- as.factor(train_data$X1)
-
-task <- makeClassifTask(data = train_data, target = "X1")
-lrn1 <- makeLearner("classif.randomForest", proximity = TRUE, oob.prox = TRUE)
-mod <- mlr::train(learner = lrn1, task = task)
-
-proxMat <- mod$learner.model$proximity
-
-# apply mds on the proximity matrix
-mds <- as.data.frame(cmdscale(proxMat, k = 3))
-mds$class <- train_data$X1
-mds$id <- 1:nrow(mds)
-
-
-# plot the result
-ggplot(data = mds[,], aes(x = V1, y = V2, colour = class)) +
-  geom_point(alpha = 0.5) +
-
-  labs(
-    x = "1st dimension", y = "2nd dimension", title =
-      "Multidimensional Scaling based on proximity"
-  )
-
-ggplot(data = mds[,], aes(x = V1, y = V3, colour = class)) +
-  geom_point(alpha = 0.5) +
-
-  labs(
-    x = "1st dimension", y = "3rd dimension", title =
-      "Multidimensional Scaling based on proximity"
-  )
-
-ggplot(data = mds[,], aes(x = V2, y = V3, colour = class)) +
-  geom_point(alpha = 0.5) +
-
-  labs(
-    x = "2nd dimension", y = "3rd dimension", title =
-      "Multidimensional Scaling based on proximity"
-  )
-
-```
+We observe that even for these two numbers the axes does not seem to represent an obvious pattern.
+(A discussion of the problems of visualizing the MNIST data set and possible solutions can be found 
+[here](https://colah.github.io/posts/2014-10-Visualizing-MNIST/))
 
 With variable importance we can now investigate which pixels are the "most important" when we
 want to tell the digits 8 and 9 apart:
