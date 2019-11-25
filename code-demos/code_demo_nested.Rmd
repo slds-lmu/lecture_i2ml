@@ -49,7 +49,8 @@ library(mlr)
 library(mlbench)
 
 set.seed(13)
-spiral <- as.data.frame(mlbench.spirals(n = 500, sd = 0.1))
+num_data <- 1000
+spiral <- as.data.frame(mlbench.spirals(n = num_data, sd = 0.1))
 plot(x = spiral$x.1, y = spiral$x.2, col = spiral$classes)
 ```
 
@@ -160,14 +161,17 @@ knn_nr <- function(data, target, outer_folds = 3, inner_folds = 4, k_candidates,
 Run it and check the results of the outer CV:
   
 ```{r nested-results_knn_nr}
+k_candidates <-  c(5, 10:20, 25, 30:40 ,70, 100)
+
 # let's run it
 set.seed(1337)
 result_nr <- knn_nr(
   data = spiral, target = "classes", outer_folds = 10, inner_folds = 10,
-  k_candidates = c(1, 3, 5, 10, 20, 30, 40, 100), inform = FALSE
+  k_candidates = k_candidates, inform = FALSE
 )
 # order results by gen_error
 result_nr
+mean(result_nr$gen_error)
 ```
 
 ### Use only CV for Hyperparameter Selection:
@@ -190,11 +194,11 @@ cv_tune_knn <- function(data, target, folds, k_candidates) {
   return(candidatesgen_error[order(candidatesgen_error$gen_error), ])
 }
 
-
 result_cv <- cv_tune_knn(data = spiral, target = "classes", 
                         folds = 10, 
-                        k_candidates = c(1, 3, 5, 10, 20, 30, 40, 100))
+                        k_candidates = k_candidates )
 result_cv
+mean(result_cv$gen_error)
 ```
 
 ### Test the hyperparameters on completely unseen data
@@ -225,23 +229,24 @@ print(paste0(
 
 ```{r nested-cv_hparam}
 set.seed(1337)
-unseen_spiral <- as.data.frame(mlbench.spirals(n = 200, sd = 0.1))
+unseen_spiral <- as.data.frame(mlbench.spirals(n = 200000, sd = 0.1))
 
 task <- makeClassifTask(data = spiral, target = "classes")
-learner <- makeLearner("classif.kknn", k = 5)
+learner <- makeLearner("classif.kknn", k = 37)
 model <- train(learner = learner, task = task)
 print(paste0(
   "CV tuned k = 5: ", 
   performance(predict(model, newdata = unseen_spiral), measures = mmce)[[1]],
-  " with CV gen_error estimate: ", result_cv[2, 2]
+  " with CV gen_error estimate: ", result_cv[1, 2]
 ))
 ```
+
 
 ## mlr implementation
 
 ```{r nested-mlr_impl}
 ps <- makeParamSet(
-  makeDiscreteParam("k", values = c(1, 3, 5, 10, 20, 30, 40))
+  makeDiscreteParam("k", values = k_candidates)
 )
 
 # inner loop
