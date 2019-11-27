@@ -1,0 +1,111 @@
+<<setup-child, include = FALSE>>=
+knitr::set_parent("../../style/preamble.Rnw")
+@
+% Load all R packages and set up knitr
+<<setup, child="../../style/setup.Rnw", include = FALSE>>=
+@
+
+%! includes: tuning-tuningtechniques
+
+\lecturechapter{Hyperparameter Tuning - Techniques}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+
+\section{Advanced Tuning Techniques}
+
+
+\begin{vbframe}{Model-based Optimization}
+
+Model-based optimization (MBO) is a sequential optimization procedure. We start with an initial design, i.e. a set of configurations $\lambda_i$ where we have evaluated the corresponding (resampling) performance. 
+
+\begin{enumerate}
+\item From the already available performance measurements, we build a \textbf{surrogate model} that models the relationship between model-hyperparameters and estimated generalization error. It serves as a cheap approximation of the expensive objective. 
+\item Based on information provided by the surrogate model, a new configuration $\lambda^{(\text{new})}$ is proposed: we pick a value for which the surrogate model predicts a large improvement over the already evaluated configurations.
+\item The resampling performance of the learner with hyperparameter setting $\lambda^{(\text{new})}$ is evaluated and added to the set of design points, the surrogate model is updated.  
+\end{itemize}
+
+<<mbo, echo = FALSE, results = FALSE, fig.height = 4>>=
+library(mlrMBO)
+library(DiceKriging) #regr.km
+set.seed(1)
+
+test.fun = makeSingleObjectiveFunction(
+  fn = function(x) x * sin(14 * x),
+  par.set = makeNumericParamSet(lower = 0, upper = 1, len = 1L)
+)
+
+ctrl.ei = makeMBOControl()
+ctrl.ei = setMBOControlTermination(ctrl.ei, iters = 1L)
+ctrl.ei = setMBOControlInfill(ctrl.ei, crit = makeMBOInfillCritEI())
+
+lrn.km = makeLearner("regr.km", predict.type = "se")
+design = data.frame(x = c(0.1, 0.3, 0.65, 1))
+
+run.ei = exampleRun(test.fun, design = design, learner = lrn.km, control = ctrl.ei, show.info = FALSE)
+
+renderExampleRunPlot(run.ei, 1)
+@
+
+\begin{footnotesize}
+Upper plot: The surrogate model (black, dashed) models a the \emph{unknown} relationship between input and output (black, solid) based on the initial design (red points). Lower plot: Mean and variance of the surrogate model is used to derive the expected improvement (EI) criterion. The point that maximizes the EI is proposed (blue point). 
+\end{footnotesize}
+
+\framebreak 
+
+We iteratively perform those steps: (1) fit a surrogate model, (2) propose a new configuration, (3) evaluate the learners performance and update the design. 
+
+\vspace*{0.2cm} 
+
+This guides us more to the \enquote{interesting} areas, and prevents us from searching irrelevant areas:
+
+\vspace*{-0.5cm}
+
+\begin{center}
+\begin{figure}
+\includegraphics[width=0.8\textwidth]{figure_man/res1.png}
+\end{figure}
+\end{center}
+
+
+\end{vbframe}
+
+
+\begin{vbframe}{Hyperband}
+
+\begin{itemize}
+\item It is extremely expensive to train complex models on large datasets
+\item For many configurations, it might be clear early on that further training is not likely to significantly improve the performance
+\item More importantly, the relative ordering of configurations (for a given dataset) can also become evident early on. 
+\item \textbf{Idea:} \enquote{weed out} poor configurations early during training
+\item One approach is \textbf{successive halving}: Given an initial set of configurations, all trained for a small initial budget, repeat:
+\begin{itemize}
+\item Remove the half that performed worst, double the budget
+\item Continue until the new budget is exhausted
+\end{itemize}  
+\item Successful halving is performed several times with different trade-offs between the number of configurations considered and the budget that is spent on them. 
+\end{itemize}
+
+\framebreak 
+
+Only the most promising configuration(s) are trained to completion: 
+
+\begin{center}
+\begin{figure}
+\includegraphics[width=0.8\textwidth]{figure_man/hyperband3.png}
+\end{figure}
+\end{center}
+
+\framebreak
+
+Other advanced techniques besides model-based optimization and the hyperband algorithm are: 
+
+\begin{itemize}
+\item Stochastic local search, e.g. simulated annealing
+\item Genetic algorithms / CMAES
+\item Iterated F-Racing
+\item $\ldots$
+\end{itemize}
+
+
+\end{vbframe}
