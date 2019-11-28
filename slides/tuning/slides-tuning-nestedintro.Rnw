@@ -1,0 +1,136 @@
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../../style/preamble.Rnw")
+@
+
+% Load all R packages and set up knitr
+<<setup, child="../../style/setup.Rnw", include = FALSE>>=
+@
+
+%! includes: tuning-tuningproblem, performance-resampling
+
+\lecturechapter{Nested Resampling for Tuning: Intro}
+\lecture{Introduction to Machine Learning}
+
+\begin{vbframe}{Motivation}
+Selecting the best model from a set of potential candidates (e.g., different classes of learners, different hyperparameter settings, different feature sets, different preprocessing, ....) is an important part of most  machine learning problems.
+
+\begin{blocki}{Problem}
+    \item We cannot evaluate our finally selected learner on the same resampling splits that we have used to perform model selection for it, e.g., to tune its hyperparameters.
+    \item By repeatedly evaluating the learner on the same test set, or the same CV splits, information
+      about the test set \enquote{leaks} into our evaluation.
+    \item Danger of overfitting to the resampling splits / overtuning!
+    \item The final performance estimate will be optimistically biased.
+    \item One could also see this as a problem similar to multiple testing.
+\end{blocki}
+\end{vbframe}
+
+\begin{vbframe}{Instructive and problematic example}
+\begin{itemize}
+    \item Assume a binary classification problem with equal class sizes.
+    \item Assume a learner with hyperparameter $\lambda$.
+    \item Here, the learner is a (nonsense) feature-independent classifier,
+          where $\lambda$ has no effect. The learner simply
+          predicts random labels with equal probability.
+    \item Of course, it's true generalization error is 50\%.
+    \item A cross-validation of the learner (with any fixed $\lambda$) will easily show this
+      (given that the partitioned data set for CV is not too small).
+    \item Now lets \enquote{tune} it, by trying out 100 different $\lambda$ values.
+    \item We repeat this experiment 50 times and average results.
+\end{itemize}
+
+\framebreak
+
+<<fig.height=3.5, echo = FALSE>>=
+# rsrc data from rsrc/overtuning-example.R
+ggd = BBmisc::load2("rsrc/overtuning-example.RData", "res2.mean")
+ggd = reshape2::melt(ggd, measure.vars = colnames(res2), value.name = "tuneperf");
+colnames(ggd)[1:2] = c("data.size", "iter")
+ggd = BBmisc::sortByCol(ggd, c("data.size", "iter"))
+ggd$data.size = as.factor(ggd$data.size)
+
+
+pl = ggplot(ggd, aes(x = iter, y = tuneperf, col = data.size))
+pl =  pl + geom_line() + ylab("Tuning Error") + xlab("Iteration") + labs(colour = "Data Size")
+print(pl)
+@
+
+\begin{itemize}
+\item Plotted is the best \enquote{tuning error} (i.e. the performance of the model with fixed $\lambda$ as evaluated by the cross-validation) after $k$ tuning iterations.
+\item We have performed the experiment for different sizes of learning data
+      that where cross-validated.
+\end{itemize}
+
+<<fig.height=3.5, echo = FALSE>>=
+
+size = 200
+p = 0.5
+dens.x = seq(0, 1, length.out = 100)
+myd = function(x, size, p) dbinom(round(x*size), p = p, size = size)
+dens.y = myd(dens.x, p = p, size = size)
+d.dens = data.frame(x = dens.x, y = dens.y)
+sample_some_errs = function(k) rbinom(k, size = size, p = p) / size
+errs = sample_some_errs(1000)
+d.errs = data.frame(x = errs, y = 0.0)
+
+plot_dens_with_errs = function(k) {
+  pl = ggplot(mapping = aes(x = x, y = y)) + geom_line(data = d.dens)
+  pl = pl + geom_point(data = d.errs[1:k,])
+  minerr = min(d.errs[1:k, "x"])
+  pl = pl + geom_vline(xintercept = minerr, col = "red")
+  # pl = pl + geom_label()
+  label = sprintf("n=%i; #runs=%i; best err=%.2f", size, k, minerr)
+  pl = pl + ggtitle(label = label)
+  pl = pl + xlab("Test Error") + ylab("Density") +  theme(plot.title = element_text(size = 12))
+  return(pl)
+}
+
+pl1 = plot_dens_with_errs(k = 1)
+pl2 = plot_dens_with_errs(k = 10)
+grid.arrange(pl1, pl2, ncol = 2)
+@
+
+\begin{itemize}
+\item For 1 experiment, the CV score will be nearly 0.5, as expected
+\item We basically sample from a (rescaled) binomial distribution when we calculate error rates
+\item And multiple experiment scores are also nicely arranged around the expected mean 0.5
+\end{itemize}
+
+\framebreak
+
+<<fig.height=3.5, echo = FALSE>>=
+pl3 = plot_dens_with_errs(k = 100)
+pl4 = plot_dens_with_errs(k = 1000)
+grid.arrange(pl3, pl4, ncol = 2)
+@
+
+\begin{itemize}
+\item But in tuning we take the minimum of those! So we don't really estimate the "average performance" anymore, we get an estimate of "best case" performance instead.
+\item The more we sample, the more "biased" this value becomes. 
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Untouched Test Set Principle}
+Countermeasure: simulate what actually happens in model application.
+
+\begin{itemize}
+\item All parts of the model building (including model selection,
+  preprocessing) should be embedded in the model-finding process
+  \textbf{on the training data}.
+\item The test set should only be touched once, so we have no way of \enquote{cheating}. The test dataset is only used once \emph{after} a model is completely trained, after deciding for example on specific hyper-parameters. 
+
+Only if we do this are the performance estimates we obtained from the test set  \textbf{unbiased estimates} of the true performance.
+
+\framebreak
+
+\item For steps that themselves require resampling (e.g., hyperparameter tuning) this results
+  in \textbf{nested resampling}, i.e., resampling strategies for both
+  \begin{itemize} 
+  \item tuning: an inner resampling loop to find what works best based on training data 
+  \item outer evaluation on data not used for tuning to get honest estimates of the expected performance on new data
+  \end{itemize}
+\end{itemize}
+\end{vbframe}
+
+\endlecture
+
+
