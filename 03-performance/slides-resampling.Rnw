@@ -26,6 +26,7 @@ knitr::set_parent("../style/preamble.Rnw")
 \end{itemize}
 
 \begin{center}
+% FIGURE SOURCE: No source
 \includegraphics[width=5.5cm]{figure_man/ml_abstraction-crop.pdf}
 \end{center}
 
@@ -44,6 +45,7 @@ knitr::set_parent("../style/preamble.Rnw")
 Example: 3-fold cross-validation:
 
 \begin{center}
+% FIGURE SOURCE: https://drive.google.com/open?id=1sKtnj5nIQrcOGU7rTisMsppUGOk7UX2gbjKhtQmTX7g
 \includegraphics[width=8cm]{figure_man/crossvalidation.png}
 \end{center}
 \end{vbframe}
@@ -242,8 +244,8 @@ $\Dtest^b = \Dtrain \setminus \Dtrain^b$.
   \item Repeated hold-out with averaging, a.k.a. monte-carlo CV
   \item Similar to bootstrap, but draws without replacement, similar comments hold
   \item Typical choices for splitting: $4/5$ or $9/10$ for training
-  \item The smaller the subsampling rate, the larger the pessimistic bias.
-  \item The more subsampling iterations, the smaller the variance.
+  \item The smaller the subsampling rate, the larger the pessimistic bias
+  \item The more subsampling iterations, the smaller the variance
 \end{itemize}
 
 \end{vbframe}
@@ -251,10 +253,10 @@ $\Dtest^b = \Dtrain \setminus \Dtrain^b$.
 \begin{vbframe}{Bias-Variance Analysis for Subsampling}
 
   \begin{itemize}
-    \item Let's reconsider our hold-out experiment on the spiral data from the train-test unit (maybe re-read it again)
+    \item Let's reconsider our hold-out experiment on the spiral data from the train-test unit (maybe re-read it again).
     \item Again, we use split-rates $s \in \{0.05, 0.1, ..., 0.95\}$ for training with $|\Dtrain| = s \cdot 500$.
-    \item But now we perform 50 subsampling experiments instead of 50 hold-out experiments,
-      so each performance estimate is much more reliable (but also more expensive)
+    \item But now we compare 50 subsampling experiments with $50 \cdot 50$ hold-out experiments per split.
+    \item Every subsampling experiment is the result of averaging 50 hold-out experiments, so each performance estimate is much more reliable (but also more expensive) than one computed by a hold-out experiment.
   \end{itemize}
 
 \framebreak
@@ -290,7 +292,7 @@ ggd$type = as.factor(ggd$type)
 pl1 = ggplot(ggd, aes(x = split, y = mmce, col = type))
 pl1 = pl1 + geom_boxplot()
 pl1 = pl1 + geom_hline(yintercept = realperf)
-pl1 = pl1 + theme(axis.text.x = element_text(angle = 45))
+pl1 = pl1 + theme(axis.text.x = element_text(angle = 45)) + theme_bw()
 print(pl1)
 
 gmse$split = as.numeric(as.character(gmse$split))
@@ -298,8 +300,9 @@ gmse$type = as.factor(gmse$type)
 @
 
 \begin{itemize}
-  \item Subsampling has the same pessimistic bias for small split rates, but much less variance overall
-  \item This allows to use much smaller test sets with good results
+  \item Both experiments are compared to the "real" mmce (black line).
+  \item Subsampling has the same pessimistic bias for small split rates, but much less variance overall.
+  \item This allows to use much smaller test sets with good results.
 \end{itemize}
 
 \framebreak
@@ -310,6 +313,7 @@ pl2 = pl2 + geom_line()
 pl2 = pl2 + scale_y_log10()
 pl2 = pl2 + scale_x_continuous(breaks = gmse$split)
 pl2 = pl2 + theme(axis.text.x = element_text(angle = 45))
+pl2 = pl2 + ylab("MSE of the mmce") + theme_bw()
 print(pl2)
 @
 
@@ -339,9 +343,9 @@ print(pl2)
 \framebreak
 
 \begin{itemize}
-  \item 5CV or 10CV have become standard 
+  \item 5CV or 10CV have become standard
   \item Do not use Hold-Out, CV with few iterations, or subsampling with a low subsampling rate for small samples, since this can cause the estimator to be extremely biased, with large variance.
-  \item For small data situation with less than 500 or 200 observations, use LOO or probably better repeated CV 
+  \item For small data situation with less than 500 or 200 observations, use LOO or probably better repeated CV
   \item A $\D$ with $|\D| = 100.000$ can have small sample size properties if one class has only 100 observations \ldots
   \item For some models, computationally fast calculations or approximations for the LOO exist
   \item Modern results seem to indicate that subsampling has somewhat better properties than

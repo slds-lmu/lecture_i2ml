@@ -34,7 +34,7 @@ y = c(1,1,0.5,10,11)
 data = t(data.frame(x = x, y = y))
 kable(data)
 @
-% use picture created in rsrc/monotone_trafo.R
+% FIGURE SOURCE: Use picture created in rsrc/monotone_trafo.R
 \includegraphics[width = \textwidth]{figure_man/monotone_trafo1.png}
 \column{0.49\textwidth}
 Data with log-transformed $x$
@@ -44,7 +44,7 @@ data = t(data.frame(log.x, y))
 rownames(data) = c("log(x)", "y")
 kable(data,digits = 1)
 @
-% use picture created in rsrc/monotone_trafo.R
+% FIGURE SOURCE: Use picture created in rsrc/monotone_trafo.R
 \includegraphics[width = \textwidth]{figure_man/monotone_trafo2.png}
 \end{columns}
 \vspace{0.5cm}
@@ -75,7 +75,6 @@ For $0-1$ responses, in each node:
 <<fig.height=3.4>>=
 library(gridExtra)
 
-set.seed(1234)
 # generate data (one categorcal variable with 4 categories, 0-1 response)
 data = data.frame(category = sample(c("A", "B", "C", "D"), size = 150,
   replace = TRUE, prob = c(0.2, 0.1, 0.4, 0.3)),
@@ -87,13 +86,13 @@ plot.data = data.frame(prop.table(table(subset.data$category)))
 colnames(plot.data) = c("Category", "Frequency")
 p1 = ggplot(data = plot.data, aes(x = Category, y = Frequency, fill = Category)) +
   geom_bar(stat = "identity")  + theme(legend.position = "none") +
-  ggtitle("1)") + ylab("Frequency of class 1") + xlab("Category of feature")
+  ggtitle("1)") + ylab("Frequency of class 1") + xlab("Category of feature") + theme_bw()
 
 # sort by proportions
 p2.pre = ggplot(data = plot.data, aes(x = reorder(Category, Frequency), y = Frequency, fill = Category)) +
   geom_bar(stat = "identity")  + theme(legend.position = "none") +
   ylab("Frequency of class 1") + xlab("Category of feature")
-p2 = p2.pre + ggtitle("2)")
+p2 = p2.pre + ggtitle("2)") + theme_bw()
 
 
 # decision tree to draw a vertical line where the spit is being made
@@ -101,7 +100,7 @@ mod = rpart::rpart(y ~., data = data)
 lvls = levels(reorder(plot.data$Category, plot.data$Frequency))
 vline.level = 'C'
 p3 = p2.pre +  geom_vline(xintercept = which(lvls == vline.level) - 0.5, col = 'red', lwd = 1, linetype = "dashed") +
-  ggtitle("3)")
+  ggtitle("3)") + theme_bw()
 grid.arrange(p1, p2, p3, ncol = 3)
 @
 
@@ -140,7 +139,6 @@ For continuous responses, in each node:
 <<fig.height=3.5>>=
 library(gridExtra)
 
-set.seed(1234)
 # generate data (one categorcal variable with 4 categories, 0-1 response)
 data = rbind(data.frame(category = "A", y = runif(30, 5, 7.5)),
   data.frame(category = "B", y = runif(15, 6, 12)),
@@ -154,20 +152,20 @@ colnames(plot.data) = c("Category", "Mean")
 # plot the categories wrt the mean of the outcome in each category
 p1 = ggplot(data = plot.data, aes(x = Category, y = Mean, fill = Category)) +
   geom_bar(stat = "identity")  + theme(legend.position = "none") +
-  ggtitle("1)") + ylab("Mean of outcome") + xlab("Category of feature")
+  ggtitle("1)") + ylab("Mean of outcome") + xlab("Category of feature") + theme_bw()
 
 # sort by increasing mean of the outcome
 p2.pre = ggplot(data = plot.data, aes(x = reorder(Category, Mean), y = Mean, fill = Category)) +
   geom_bar(stat = "identity")  + theme(legend.position = "none") +
   ylab("Mean of outcome") + xlab("Category of feature")
-p2 = p2.pre + ggtitle("2)")
+p2 = p2.pre + ggtitle("2)") + theme_bw()
 
 # decision tree to draw a vertical line where the spit is being made
 mod = rpart::rpart(y ~., data = data)
 lvls = levels(reorder(plot.data$Category, plot.data$Mean))
 vline.level = 'B'
 p3 = p2.pre +  geom_vline(xintercept = which(lvls == vline.level) - 0.5, col = 'red', lwd = 1, linetype = "dashed") +
-  ggtitle("3)")
+  ggtitle("3)") + theme_bw()
 grid.arrange(p1, p2, p3, ncol = 3)
 @
 \end{vbframe}
@@ -176,16 +174,16 @@ grid.arrange(p1, p2, p3, ncol = 3)
 \begin{vbframe}{Pruning}
 \begin{itemize}
 \item Method to select optimal size of the tree, to avoid overfitting
-\item During tree growing, it is hard to tell when we should stop, as we don't know if the addition 
+\item During tree growing, it is hard to tell when we should stop, as we do not know if the addition
   of further splits down the line will dramatically decrease error (called horizon effect).
-\item Aggressive (early) stopping criteria can be used, sometimes this is called pre-pruning, 
+\item Aggressive (early) stopping criteria can be used, sometimes this is called pre-pruning,
   and you would have to tune over their settings
-\item Or post-pruning: Grow a deep tree, then remove parts, so that the resulting smaller tree is optimal 
+\item Or post-pruning: Grow a deep tree, then remove parts, so that the resulting smaller tree is optimal
   w.r.t. cross-validated error
 \end{itemize}
 
 \framebreak
- 
+
 <<size='footnotesize'>>=
 lrn = makeLearner("regr.rpart", maxdepth = 2)
 mod = train(lrn, bh.task)
@@ -211,7 +209,7 @@ lapply(cps, function(x) {
   \item CART often uses the so-called surrogate split principle to natively deal with
     missing values in features
   \item When splits are evaluated, only observations for which the feature is not missing are used
-   \item When observations are passed down the tree (in training or prediction), and the feature value needed at a split is missing, we use a "surrogate split" to send the data down. 
+   \item When observations are passed down the tree (in training or prediction), and the feature value needed at a split is missing, we use a "surrogate split" to send the data down.
      These surrogate splits are created during training and resemble as close as possible the actual splitting rule.
   \end{enumerate}
 \end{vbframe}
@@ -219,8 +217,8 @@ lapply(cps, function(x) {
 \begin{vbframe}{Advantages}
   \begin{itemize}
     \item Model is easy to comprehend, graphical representation
-    \item Not much preprocessing required: 
-      a) native handling of categorical features and missing values 
+    \item Not much preprocessing required:
+      a) native handling of categorical features and missing values
       b) noproblems with outliers in features
       c) Monotone transformations of features change nothing, so no feature scaling
     \item Interaction effects between features are easily possible
@@ -234,15 +232,14 @@ lapply(cps, function(x) {
 
 \begin{vbframe}{Disadvantage: Linear Dependencies}
 <<fig.height=5, align='center'>>=
-set.seed(123)
 n = 100
 data = data.frame(x1 = runif(n), x2 = runif(n))
 data$y = as.factor(with(data, as.integer(x1 > x2)))
 task = makeClassifTask(data = data, target = "y")
 rpart = makeLearner("classif.rpart", cp = 0, minbucket = 2, maxdepth = 6)
-pl = plotLearnerPrediction(rpart, task, gridsize = 300, cv = 0, err.mark = "none", 
-  prob.alpha = FALSE) 
-pl = pl + geom_abline(slope = 1, linetype = 2)
+pl = plotLearnerPrediction(rpart, task, gridsize = 300, cv = 0, err.mark = "none",
+  prob.alpha = FALSE)
+pl = pl + geom_abline(slope = 1, linetype = 2) + theme_bw()
 print(pl)
 @
 Linear dependencies must be modeled over several splits. Logistic regression would model this easily.
@@ -250,7 +247,6 @@ Linear dependencies must be modeled over several splits. Logistic regression wou
 
 \begin{vbframe}{Disadvantage: Smooth functions}
 <<fig.height=5, align='center'>>=
-set.seed(9)
 fn = function(x) (sin(4*x - 4)) * ((2*x - 2)^2) * (sin(20*x - 4))
 d = data.frame(x = seq(0.2, 1, length.out = 7))
 d$y = fn(d$x)
@@ -260,16 +256,16 @@ pl = plotLearnerPrediction(lrn, task, cv = 0)
 x = seq(0.2, 1, length.out = 500)
 dd = data.frame(x = x, y = fn(x))
 pl = pl + geom_line(data = dd, aes(x, y, color = "red"))
-pl = pl + theme(legend.position = "none")
+pl = pl + theme(legend.position = "none") + theme_bw()
 print(pl)
 @
-Prediction function isn't smooth because a step function is fitted.
+Prediction function is not smooth because a step function is fitted.
 \end{vbframe}
 
 % \begin{vbframe}{Disadvantage: Instability}
 % \begin{itemize}
-% \item High instability (variance) of the trees: 
-% \item Small changes in the data could lead to completely different splits / trees 
+% \item High instability (variance) of the trees:
+% \item Small changes in the data could lead to completely different splits / trees
 % \item This leads to a) less trust in interpretability b) is a reason why prediction error of trees is usually not best, compared with other models
 % \end{itemize}
 
@@ -299,13 +295,13 @@ Prediction function isn't smooth because a step function is fitted.
 % Tree fitted on complete Wisconsin Breast Cancer data
 % <<results='hide', fig.height=5>>=
 % # BB: i am using the BC dataset directly from mlbench
-% # and convert features, see issue in i2ml nr 277 
+% # and convert features, see issue in i2ml nr 277
 % library(mlbench)
 % data(BreastCancer)
 % d = BreastCancer
 % d$Id = NULL
 % for (i in 1:9)
-%   d[,i] = as.integer(d[,i]) 
+%   d[,i] = as.integer(d[,i])
 % print(str(d))
 % lrn = makeLearner("classif.rpart")
 % task1 = makeClassifTask(data = d, target = "Class")
@@ -326,7 +322,7 @@ Prediction function isn't smooth because a step function is fitted.
 \begin{vbframe}{Disadvantages}
 \begin{itemize}
 \item Really not the best predictor: Combine with bagging (forest) or boosting!
-\item High instability (variance) of the trees. 
+\item High instability (variance) of the trees.
   Small changes in the data could lead to very different trees. This leads to a) less trust in interpretability b) is a reason why prediction error of trees is usually not best.
 \item In regression, due to fitting piecewise constant models, trees often do not extrapolate well
 \end{itemize}
@@ -346,7 +342,3 @@ Prediction function isn't smooth because a step function is fitted.
 
 
 \endlecture
-
-
-
-

@@ -1,0 +1,121 @@
+% Introduction to Machine Learning
+% Day 4
+
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../style/preamble.Rnw")
+library(methods)
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(rattle)
+library(smoof)
+@
+
+% Load all R packages and set up knitr
+<<setup, child="../style/setup.Rnw", include = FALSE>>=
+@
+
+
+\lecturechapter{Bagging and Random Forest 2}
+\lecture{Introduction to Machine Learning}
+
+\sloppy
+
+% \begin{vbframe}{Variable importance}
+
+% <<size="footnotesize", fig.height=3, eval = FALSE>>=
+% v = generateFilterValuesData(iris.task,
+% method = c("randomForest.importance", "cforest.importance"))
+% plotFilterValues(v)
+% @
+% \end{vbframe}
+
+\begin{vbframe}{Random Forest: Proximities}
+\begin{itemize}
+\item One of the most useful tools in random forests
+\item A measurement of similarity ("closeness" or "nearness")
+\item Calculated for each pair of cases, observations or sample points
+\item Definition
+\begin{itemize}
+\item The proximity between two cases $x_1$ and $x_2$ is calculated by measuring the number of times that these two cases are placed in the same terminal node of the same tree of random forest, divided by the number of trees in the forest
+\item The proximity of cases $x_1$ and $x_2$ can be written as \textbf{prox}($x_1$, $x_2$)
+\item The proximities form an intrinsic similarity measure between pairs of cases
+\end{itemize}
+\item The proximities originally form a $N \times N$ matrix.
+\item Proximity matrix is a symmetric matrix
+
+\framebreak 
+
+\item With large datasets, it is not possible to fit a $N \times N$ matrix into fast memory
+\begin{itemize}
+\item A modification is needed - reduce the required memory size to $N \times T$
+\item Here, $T$ is number of trees in the forest
+\end{itemize}
+
+\item Algorithm
+\begin{itemize}
+\item When a tree is fully developed, all of the data is put down the tree (both training and out of bag).
+\item If cases $x_1$ and $x_2$ are in the same terminal node of one tree, their proximity is increased by one. 
+\item At the end of the run of all trees, the proximities are normalized by dividing them by the number of trees.
+\end{itemize}
+
+\framebreak
+
+\begin{center}
+\includegraphics[width=0.75\textwidth]{figure_man/Proximity_plot.png}
+\end{center}
+\tiny Picture taken from Understanding Random Forests from theory to practice by Gilles Louppe
+
+\framebreak
+
+\item \normalsize The figure depicts the proximity matrix learned for a 10-class handwritten digit classification task
+\begin{itemize}
+\item Projected on a plane using Multidimensional scaling
+\item It is visible from the figure that, samples from the same class form identifiable clusters, which suggests that they share similar structure %they end up in the same leaves
+\item It also shows the fact for which classes errors are made
+\item Digits 1 and 8 have high withing class variance and have overlaps with other classes %this indicates that the random forest fails to identify the true class for these samples.
+\end{itemize}
+
+\framebreak
+
+\item \normalsize Proximities are used in:
+\begin{itemize}
+\item Replacing missing data
+\begin{itemize}
+\item Step 1: Replace missing values for a given variable using the median of the non-missing values
+\item Step 2: Get proximities
+\item Step 3: Replace missing values in case $x_1$ by a weighted average of non-missing values, with weights proportional to the proximity between case $x_1$ and the cases with the non-missing values
+\item Repeat steps 2 and 3 few times %(5 to 6 times)
+\end{itemize}
+
+\item Identifying mislabeled data
+\begin{itemize}
+\item Often instances in the training dataset are labeled "by hand". These labels can be ambiguous or incorrect.
+\item Proximities help in finding them as outliers
+\end{itemize}
+
+\framebreak
+
+\item Locating outliers 
+\begin{itemize}
+\item An outlier is a case whose proximities to all other cases are small
+\item Measure of outlyingness can be computed for each case in the training sample
+\item If the measure is unusually large (greater than 10), the case should be carefully inspected
+\end{itemize}
+
+\item Visualizing the forest 
+\begin{itemize}
+\item The values 1-prox($x_1$, $x_2$) are squared distances in a high-dimensional Euclidean space
+\item They can be projected onto a low-dimensional space using metric multidimensional scaling (MDS)
+\item Metric multidimensional scaling uses eigenvectors of a modified version of the proximity matrix to get scaling coordinates
+\end{itemize}
+
+\end{itemize}
+
+\end{itemize}
+\end{vbframe}
+
+
+
+\endlecture

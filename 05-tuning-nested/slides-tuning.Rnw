@@ -13,28 +13,191 @@ knitr::set_parent("../style/preamble.Rnw")
 \lecture{Introduction to Machine Learning}
 \sloppy
 
-\begin{vbframe}{Hyperparameter tuning}
+\begin{vbframe}{Motivating Example} 
+
 \begin{itemize}
-\item Many parameters or decisions for an ML algorithm are not decided by the fitting procedure
-\item \textbf{Model parameters} are optimized during training, by some form of loss minimization. They are an \textbf{output} of the training.
-E.g., the coefficients of a linear model or the optimal splits of a tree learner.
-\item \textbf{Hyperparameters} must be specified before the training phase. They are an \textbf{input} of the training.
-E.g., how small a leaf can become for a tree; $k$ and which distance measure to use for kNN
-\item HPs have to be set either by the user or by (smart) default values
-\item Our goal is to optimize these w.r.t. the estimated prediction error; this implies an independent test set, or cross-validation
-\item The same applies to preprocessing, feature construction and other model-relevant operations. In general we might be interested in optimizing an entire ML \enquote{pipeline}
+  \item Given a dataset, we decided to train a classification tree. 
+  \item We experienced that a maximum tree depth of $4$ usually works well, so we decide to set this hyperparameter to $4$. 
+  \item The learning algorithm (or inducer) $\mathcal{I}$ takes the input data, internally performs \textbf{empirical risk minimization}, and returns that tree (of depth $4$) $\fxh = f(\xb, \thetah)$ that minimizes the empirical risk.
 \end{itemize}
+
+% FIGURE SOURCE: https://docs.google.com/presentation/d/14xwcs5zncTjFL4hIHAprjZMmyGIPqk5vs8DS32vEAvQ/edit#slide=id.g60af4020e8_0_15
+\begin{center}
+\begin{figure}
+  \includegraphics[width=0.6\textwidth]{figure_man/riskmin_bilevel1.png}
+\end{figure}
+\end{center}
+
+\framebreak 
+
+\begin{itemize}
+\item Recall, the model's \textbf{generalization performance} $GE(\fh)$ is what we are \textbf{actually} interested in. 
+\item We estimate the generalization performance by evaluating the model $\fh$ on the test set $\Dtest$: $$
+\GEh{\Dtest}\left(\fh\right) = \frac{1}{|\Dtest|} \sum\limits_{(\xb, y) \in \Dtest} L\left(y, \fxh \right)
+$$
+\end{itemize}
+
+\vspace*{-0.5cm}
+
+% FIGURE SOURCE: https://docs.google.com/presentation/d/14xwcs5zncTjFL4hIHAprjZMmyGIPqk5vs8DS32vEAvQ/edit#slide=id.g60af4020e8_0_15
+\begin{center}
+\begin{figure}
+  \includegraphics[width=0.75\textwidth]{figure_man/riskmin_bilevel2.png}
+\end{figure}
+\end{center}
+
+\framebreak 
+
+\begin{itemize}
+\item For some reason the trained model does not show a good generalization performance. 
+\item One of the most likely reasons is that hyperparameters are suboptimal:
+\begin{itemize}
+  \item The data may be too complex to be modeled by a tree of depth $4$ 
+  \item The data may be much simpler than we thought, and a tree of depth $4$ overfits
+\end{itemize}
+\item We try out different values for the tree depth. For each value of $\lambda$, we have to train the model \textbf{to completion}, and evaluate its performance on the holdout set. 
+\item We choose the tree depth $\lambda$ that is \textbf{optimal} w.r.t. the generalization error of the model. 
+\end{itemize}
+
+% $\to$ Finding the hyperparameter $\lambda$ that is optimal w.r.t. the generalization performance constitutes an optimization problem. 
+
 \end{vbframe}
 
-\begin{vbframe}{Why tuning is important}
+
+\begin{vbframe}{The role of hyperparameters}
+
 \begin{itemize}
-\item Hyperparameters control the complexity of a model, i.e., how flexible the model is
-\item If a model is too flexible so that it simply \enquote{memorizes} the training data, we will face the dreaded problem of overfitting 
+\item Hyperparameters control the complexity of a model, i.e., how flexible the model is.
+\item If a model is too flexible so that it simply \enquote{memorizes} the training data, we will face the dreaded problem of overfitting. 
 \item Hence, control of capacity, i.e., proper setting of hyperparameters
- can prevent overfitting the model on the training set
-\item Many other factors like optimization control settings, distance functions, scaling, algorithmic variants in the fitting procedure can heavily influence model performance in non-trivial ways. It is extremely hard to guess the correct choices here.
+ can prevent overfitting the model on the training set.
 \end{itemize}
+
 \end{vbframe}
+
+
+\begin{vbframe}{Tuning: A bi-level optimization problem} 
+
+The process of finding good model hyperparameters $\lambda$ is called \textbf{(hyperparameter) tuning}. 
+
+\vspace{0.2cm} 
+
+We face a \textbf{bi-level} optimization problem: The well-known risk minimization problem to find $\hat f$ is \textbf{nested} within the outer hyperparameter optimization (also called second-level problem).
+
+
+% FIGURE SOURCE: https://docs.google.com/presentation/d/14xwcs5zncTjFL4hIHAprjZMmyGIPqk5vs8DS32vEAvQ/edit#slide=id.g60af4020e8_0_15
+\begin{center}
+\begin{figure}
+  \includegraphics[width=0.8\textwidth]{figure_man/riskmin_bilevel3.png}
+\end{figure}
+\end{center}
+
+\framebreak 
+
+We formally state the nested hyperparameter tuning problem as: 
+
+\begin{eqnarray*}  
+\min_{\lambda \in \Lambda} && \GEh{\Dtest}\left(\mathcal{I}(\Dtrain, \lambda)\right) \end{eqnarray*}
+
+\begin{itemize}
+\item The learning algorithm $\mathcal{I}(\Dtrain, \lambda)$ (also: inducer) takes a training dataset as well as hyperparameter settings $\lambda$ (e.g. the desired depth of a classification tree) as an input. 
+\item $\mathcal{I}(\Dtrain, \lambda)$ internally performs empirical risk minimization, and returns the optimal model $\hat f$. 
+\end{itemize}
+
+\framebreak
+
+The components of a tuning problem are: 
+
+\begin{itemize}
+\item The dataset
+\item The learner (possibly: several competing learners?) that is tuned %(e.g. a decision tree classifier)
+\item The learner's hyperparameters and their respective regions-of-interest over which we optimize % (e.g. $\texttt{tree depth} \in \{1, 2, ..., 20\}$)
+\item The performance measure. Determined by the application. Not necessarily identical to the loss function that the learner tries to minimize.
+We could even be interested in multiple measures simultaneously, e.g., accuracy and sparseness of our model, TPR and PPV, etc. 
+\item A (resampling) procedure for estimating the predictive performance: The generalization error can be estimated by holdout, but also by more advanced techniques like cross-validation. 
+\end{itemize}
+
+\framebreak 
+
+\begin{center}
+\begin{figure}
+  \includegraphics[width=1.2\textwidth]{figure_man/tuning_process.pdf}
+\end{figure}
+\end{center}
+
+
+\end{vbframe}
+
+\begin{vbframe}{Model Parameters vs. Hyperparameters}
+
+It is critical to understand the difference between model parameters and hyperparameters. 
+
+\lz
+
+\textbf{Model parameters} are optimized during training, by some form of loss minimization. They are an \textbf{output} of the training. Examples:
+\begin{itemize}
+  \item Optimal splits of a tree learner
+  \item Coefficients $\thetab$ of a linear model $\fx = \thetab^\top\xb$
+\end{itemize}
+
+In contrast, \textbf{Hyperparameters} (HPs) are not decided during training. They must be specified before the training, they are an \textbf{input} of the training. Examples:
+
+\begin{itemize}
+  \item The maximum depth of a tree 
+  \item $k$ and which distance measure to use for kNN
+  \item The complexity penalty to be used (e.g. $L_1$, $L_2$ penalization) and the complexity control parameter $\lambda$ for regularization
+\end{itemize}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Types of hyperparameters}
+
+We summarize all hyperparameters we want to tune over in a vector $\lambda \in \Lambda$ of (possibly) mixed type. HPs can have different types: 
+
+\begin{itemize}
+\item Numerical parameters (real valued / integers)
+  \begin{itemize}
+    \item $mtry$ in a random forest
+    \item Neighborhood size $k$ for kNN
+    \item The complexity control parameter $\lambda$ for regularization 
+  \end{itemize}
+\item Categorical parameters:
+  \begin{itemize}
+    \item Which split criterion for classification trees?
+    \item Which distance measure for kNN?
+    \item Which type of complexity penalization to use for reguarlized empirical risk minimization? 
+  \end{itemize}
+\item Ordinal parameters:
+  \begin{itemize}
+    \item $\{$\texttt{low}, \texttt{medium}, \texttt{high}$\}$
+  \end{itemize}
+\item Dependent parameters:
+  \begin{itemize}
+    \item If we use the Gaussian kernel for the SVM, what is its width?
+  \end{itemize}
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Tuning Pipelines}
+
+\begin{itemize}
+\item Many other factors like optimization control settings, distance functions, scaling, algorithmic variants in the fitting procedure can heavily influence model performance in non-trivial ways. It is extremely hard to guess the correct choices here.
+\item The choice of the learner itself (e.g. logistic regression, decision tree, random forest) can also be seen as a hyperparameter. 
+\item In general, we might be interested in optimizing an entire ML \enquote{pipeline} (including preprocessing, feature construction, and other model-relevant operations). 
+\end{itemize}
+
+\begin{figure}
+  \includegraphics[width = 1\textwidth]{figure_man/automl1.png}
+\end{figure}
+
+
+\end{vbframe}
+
+
+
+
 
 % \framebreak
 
@@ -50,55 +213,25 @@ E.g., how small a leaf can become for a tree; $k$ and which distance measure to 
   % \end{itemize}
 % \end{vbframe}
 
-\begin{vbframe}{Types of hyperparameters}
-    \begin{itemize}
-    \item Numerical parameters (real valued / integers)
-    \begin{itemize}
-      \item $mtry$ in a random forest
-      \item Neighborhood size $k$ for kNN
-    \end{itemize}
-    \item Categorical parameters:
-    \begin{itemize}
-      \item Which split criterion for classification trees?
-      \item Which distance measure for kNN?
-    \end{itemize}
-    \item Ordinal parameters:
-    \begin{itemize}
-      \item $\{$\texttt{low}, \texttt{medium}, \texttt{high}$\}$
-    \end{itemize}
-    \item Dependent parameters:
-    \begin{itemize}
-      \item If we use the Gaussian kernel for the SVM, what is its width?
-    \end{itemize}
-  \end{itemize}
-\end{vbframe}
-
-\begin{vbframe}{Components of tuning problem}
-\begin{itemize}
-\item The learner (possibly: several competing learners?)
-\item The performance measure. Determined by the application. Not necessarily identical to the loss function that the learner tries to minimize.
-  We could even be interested in multiple measures simultaneously, 
-  e.g., accuracy and sparseness of our model, TPR and PPV, etc. 
-\item A (resampling) procedure for estimating the predictive performance 
-\item The learner's hyperparameters and their respective regions-of-interest over which we optimize
-\end{itemize}
-\end{vbframe}
 
 
 
-\begin{vbframe}{Hyperparameter Tuning}
-% \begin{itemize}
-% \item Optimize hyperparameters for learner w.r.t. prediction error
-Tuner proposes configuration, eval by resampling, tuner receives performance, iterate
-% \end{itemize}
-\begin{columns}[c, onlytextwidth]
-\column{0.45\textwidth}
-  \includegraphics[trim={0cm 0cm 0cm 0cm}, clip, width=1.2\textwidth]{figure_man/chain.jpg}
-\column{0.45\textwidth}
-\includegraphics[trim={1cm 0cm 1cm 0cm}, clip, width=1.2\textwidth]{figure_man/tuning_process.jpg}
-\end{columns}
+% \begin{vbframe}{Hyperparameter Tuning}
+% % \begin{itemize}
+% % \item Optimize hyperparameters for learner w.r.t. prediction error
+% Tuner proposes configuration, eval by resampling, tuner receives performance, iterate
+% % \end{itemize}
+% \begin{columns}[c, onlytextwidth]
+% \column{0.45\textwidth}
+% % FIGURE SOURCE: No source
+%   \includegraphics[trim={0cm 0cm 0cm 0cm}, clip, width=1.2\textwidth]{figure_man/chain.jpg}
+% \column{0.45\textwidth}
+%   FIGURE SOURCE: https://drive.google.com/open?id=1wY3aUZxIMZPje3vR0t2yWiDMx_osXRCi
+% \includegraphics[trim={1cm 0cm 1cm 0cm}, clip, width=1.2\textwidth]{figure_man/tuning_process.jpg}
+% \end{columns}
 
-\end{vbframe}
+
+% \end{vbframe}
 
 
 \begin{vbframe}{Why is tuning so hard?}
@@ -114,16 +247,24 @@ Tuner proposes configuration, eval by resampling, tuner receives performance, it
 \end{vbframe}
 
 
+\section{Tuning Techniques}
+
 \begin{vbframe}{Grid search}
 
 \begin{itemize}
-\item Simple technique which is still quite popular, tries all 
+\item Simple technique which is still quite popular, tries all
   HP combinations on a multi-dimensional discretized grid
 \item For each hyperparameter a finite set of candidates is predefined
 \item Then, we simply search all possible combinations in arbitrary order
 \end{itemize}
 
-<<fig.height=3.7>>=
+\begin{footnotesize}
+\begin{center}
+Grid search over 10x10 points
+\end{center}
+\end{footnotesize}
+
+<<fig.height=3.5, fig.align = "center">>=
 plotTune = function(d) {
   d$TestAccuracy = mvtnorm::dmvnorm(x = d, mean = c(5,5), sigma = 40 * diag(2)) * 120 + 0.4
   pl = ggplot(data = d, aes(x = x, y = y, color = TestAccuracy))
@@ -137,7 +278,6 @@ pl = plotTune(d)
 print(pl)
 @
 
-Grid search over 10x10 points
 
 \framebreak
 
@@ -162,14 +302,20 @@ Grid search over 10x10 points
 \item Uniformly sample from the region-of-interest
 \end{itemize}
 
-<<fig.height=3.8>>=
+
+\begin{footnotesize}
+\begin{center}
+Random search over 100 points
+\end{center}
+\end{footnotesize}
+
+<<fig.height=3.5>>=
 x = runif(40, -10, 10)
 y = runif(40, -10, 10)
 d = data.frame(x = x, y = y)
 pl = plotTune(d)
 print(pl)
 @
-Random search over 100 points
 
 \framebreak
 
@@ -186,15 +332,136 @@ Random search over 100 points
 \end{blocki}
 \end{vbframe}
 
-\begin{vbframe}{Advanced Tuning Techniques}
+\begin{vbframe}{Tuning Example}
+
+Tuning gradient boosting with random search and 5CV on the spam data set for AUC.
+
+\begin{footnotesize}
+\begin{center}
+\begin{tabular}{|l|l|l|l}
+Parameter          &  Type     & Min & Max \\
+\hline
+n.trees            &  integer  &   3   & 500 \\
+shrinkage          &  numeric  &   0   &   1 \\
+interaction        &  integer  &   1   &   5 \\
+bag.fraction       &  numeric  & 0.2   & 0.9 \\
+\end{tabular}
+\end{center}
+\end{footnotesize}
+
+<<fig.height=3>>=
+tr = load2("rsrc/tune_example.RData")
+df = as.data.frame(tr$opt.path)
+ggd = df[, c("dob", "auc.test.mean")]
+colnames(ggd) = c("iter", "auc")
+ggd$auc = cummax(ggd$auc)
+pl = ggplot(ggd, aes(x = iter, y = auc))
+pl = pl + geom_line() 
+pl = pl + theme_bw()
+pl = pl + theme(axis.text=element_text(size=18), axis.title=element_text(size=22))
+print(pl)
+@
+
+\end{vbframe}
+
+\section{Advanced Tuning Techniques}
+
+
+\begin{vbframe}{Model-based Optimization}
+
+Model-based optimization (MBO) is a sequential optimization procedure. We start with an initial design, i.e. a set of configurations $\lambda_i$ where we have evaluated the corresponding resampling performance. 
+
+\begin{itemize}
+\item Given the initial design, we build a \textbf{surrogate model} that models the relationship between model-hyperparameters and estimated generalization error. It serves as a cheap approximation of the expensive objective. 
+\item Based on information provided by the surrogate model, a new configuration $\lambda^{(\text{new})}$ is proposed. 
+\item The resampling performance of the learner with hyperparameter setting $\lambda^{(\text{new})}$ is evaluated and added to the set of design points.  
+\end{itemize}
+
+ <<mbo, echo = FALSE, results = FALSE, fig.height = 4>>=
+ library(mlrMBO)
+
+ set.seed(1)
+
+  test.fun = makeSingleObjectiveFunction(
+   fn = function(x) x * sin(14 * x),
+   par.set = makeNumericParamSet(lower = 0, upper = 1, len = 1L)
+  )
+
+  ctrl.ei = makeMBOControl()
+  ctrl.ei = setMBOControlTermination(ctrl.ei, iters = 1L)
+  ctrl.ei = setMBOControlInfill(ctrl.ei, crit = makeMBOInfillCritEI())
+
+  lrn.km = makeLearner("regr.km", predict.type = "se")
+  design = data.frame(x = c(0.1, 0.3, 0.65, 1))
+
+  run.ei = exampleRun(test.fun, design = design, learner = lrn.km, control = ctrl.ei, show.info = FALSE)
+
+  renderExampleRunPlot(run.ei, 1)
+ @
+
+ \begin{footnotesize}
+  Upper plot: The surrogate model (black, dashed) models a the \emph{unknown} relationship between input and output (black, solid) based on the initial design (red points). Lower plot: Mean and variance of the surrogate model is used to derive the expected improvement (EI) criterion. The point that maximizes the EI is proposed (blue point). 
+  \end{footnotesize}
+
+\framebreak 
+
+We iteratively perform those steps: (1) fit a surrogate model, (2) propose a new configuration, (3) evaluate the learners performance and update the design. 
+
+\vspace*{0.2cm} 
+
+This guides us more to the \enquote{interesting} areas, and prevents us from searching irrelevant areas:
+
+\vspace*{-0.5cm}
+
+\begin{center}
+\begin{figure}
+  \includegraphics[width=0.8\textwidth]{figure_man/res1.png}
+\end{figure}
+\end{center}
+
+
+\end{vbframe}
+
+
+\begin{vbframe}{Hyperband}
+
+\begin{itemize}
+  \item It is extremely expensive to train complex models on large datasets
+  \item For many configurations, it might be clear early on that further training is not likely to significantly improve the performance
+  \item More importantly, the relative ordering of configurations (for a given dataset) can also become evident early on. 
+  \item \textbf{Idea:} \enquote{weed out} poor configurations early during training
+  \item One approach is \textbf{successive halving}: Given an initial set of configurations, all trained for a small initial budget, repeat:
+  \begin{itemize}
+    \item Remove the half that performed worst, double the budget
+    \item Continue until the new budget is exhausted
+  \end{itemize}  
+  \item Successful halving is performed several times with different trade-offs between the number of configurations considered and the budget that is spent on them. 
+\end{itemize}
+
+\framebreak 
+
+Only the most promising configuration(s) are trained to completion: 
+
+\begin{center}
+\begin{figure}
+  \includegraphics[width=0.8\textwidth]{figure_man/hyperband3.png}
+\end{figure}
+\end{center}
+
+\framebreak
+
+Other advanced techniques besides model-based optimization and the hyperband algorithm are: 
+
 \begin{itemize}
 \item Stochastic local search, e.g. simulated annealing
 \item Genetic algorithms / CMAES
 \item Iterated F-Racing
-\item Model-based Optimization / Bayesian Optimization
-\item Hyperband
 \item $\ldots$
 \end{itemize}
+
+
 \end{vbframe}
 
+
 \endlecture
+
