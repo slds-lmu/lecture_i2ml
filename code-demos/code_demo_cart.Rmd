@@ -14,10 +14,9 @@ params:
 
 # Code demo for CART
 
-Classification and decision trees are very powerful but do have on major drawback: they are highly data-dependent. We show this with the following example on the __servo__ data set that offers a regression task and looks like that:
+Classification and decision trees are very powerful, but they do have one major drawback: they are highly unstable. We show this with the following example on the __servo__ data set that offers a regression task and looks like that:
 
 ```{r cart-data}
-# load tons of packages
 library(rpart)
 library(dplyr)
 library(rattle)
@@ -41,7 +40,8 @@ str(servo)
 head(servo)
 ```
 
-We fit two CART's on our data which we split in train and test at two different seeds, resulting in slightly different train and test data sets. 
+We'll fit two CART's on our data, which we split in train and test with two different seeds, 
+resulting in slightly different train and test data sets. 
 
 Check the differences in the CART architecture that was induced by those differing seeds: 
 
@@ -80,7 +80,7 @@ rattle::fancyRpartPlot(model_2,
 )
 ```
 
-* Why is that a problem? Don't we want a data dependent algorithm?
+* Why is that a problem? Don't we want an algorithm that is sensitive to changes in the data?
 * What can we do to address this issue?
 
 ## Understanding the Hyperparameters of CARTS
@@ -110,7 +110,7 @@ min_splits <- c(3, 10, 20, 40)
 plotParamSequenceRPart(task = task, param = "minsplit", values = min_splits)
 ```
 
-Maximum depth of the tree
+### Maximum depth of the tree
 
 ```{r cart-max_depth}
 task <- makeRegrTask(data = train_1, target = "Class")
@@ -138,11 +138,11 @@ plotParamSequenceRPart(task = task, param = "maxdepth", values = max_depth)
 ## Invariance to monotonous feature transformation
 
 
-Nice thing about the CARTs is, that they are invariant to scaling and other monotonous feature transformations. 
+The nice thing about CARTs is that they are invariant to scaling and other monotonous feature transformations. 
 
-We grow two trees on two data set, which only differ in the fact, that the numeric features in the second data set are log-transformed. 
+We grow two trees on two data set, which only differ in the fact that the numeric features in the second data set are log-transformed. 
 
-Let's see, how the architecture of the two CARTs differs (or not)!
+Let's see how the architecture of the two CARTs differs (or not):
 
 ```{r cart-inv_mon}
 train_log <- train_1 %>% mutate_at(c("Pgain", "Vgain"), log)
@@ -165,28 +165,30 @@ rattle::fancyRpartPlot(model_log,
 
 ## Write simple regression tree implementation
 
-Now we want to implement a simple regression tree (`rt`) for numerical features:
+Now we want to implement a simple regression tree learner (`rt`) for numerical features:
 
 ```{r rt-impl}
-# Function which generates the *r*egression *t*ree which consists of nodes.
-# Every node has 2 subnodes or no subnode:
-#  - true_node: the split citerin was TRUE
-#  - false_node: the split citerion was FALSE
-# A node without subnodes is a leaf. They represent the end of a tree branch.
+# Function which generates a *r*egression *t*ree, which consists of nodes.
+# Every node has either 2 subnodes (if it's a split) or no subnode (if it's a leaf/terminal node).
+# The two subnodes for each split are:
+#  - true_node: the split (i.e. feature < treshold) was TRUE
+#  - false_node: the split was FALSE
+# A node without subnodes is a leaf and represents the end of a tree branch.
 rt <- function(df, target, cur_depth = 0, max_depth = 30, min_split = 20) {
   feature_results <- list()
 
-  for (feature in colnames(df)) { # compute minimal loss for every feature
+  # compute optimal split with minimal loss for every feature:
+  for (feature in colnames(df)) { 
     if (feature != target) {
-      feature_results[[feature]] <- opt_split(df, feature, target)
+      feature_results[[feature]] <- optimal_split(df, feature, target)
     }
   }
 
   df_feature_results <- do.call(rbind, feature_results)
-  # choose feature, with which split the minimal loss can be achieved
+  # choose the feature whose optimal split minimizes the loss:
   min_loss_split <- df_feature_results[which.min(df_feature_results[, "loss"]), ]
 
-  # use new feature split
+  # use this feature's split:
   split_result <- split_node(df, min_loss_split)
   if (cur_depth + 1 == max_depth) {
     # max_depth of the tree is reached
@@ -198,7 +200,8 @@ rt <- function(df, target, cur_depth = 0, max_depth = 30, min_split = 20) {
       true_node <- list(is_leaf = TRUE)
     }
     else {
-      # call the rt function recursively again, but with only the splitted data
+      # call the rt function recursively again, using only the subset of data
+      # for which the current split was TRUE,
       # and with incremented tree depth, s.t. the function will terminate in the
       # end
       true_node <- rt(
@@ -209,7 +212,7 @@ rt <- function(df, target, cur_depth = 0, max_depth = 30, min_split = 20) {
         min_split = min_split
       )
     }
-
+    #.. now do the same things on the other node:
     if (nrow(split_result$false_split) < min_split) {
       # not enough observations to split node again
       false_node <- list(is_leaf = TRUE)
@@ -229,20 +232,20 @@ rt <- function(df, target, cur_depth = 0, max_depth = 30, min_split = 20) {
   }
 
   list(
-    is_leaf = FALSE, 
-    true_node = true_node, 
-    false_node = false_node,
-    loss = min_loss_split$loss,
-    threshold = min_loss_split$threshold,
-    num_true = min_loss_split$num_true,
-    num_false = min_loss_split$num_false,
-    feature = min_loss_split$feature
+    is_leaf = FALSE,  #terminal node=
+    true_node = true_node,  # the tree branch for which split was TRUE
+    false_node = false_node, # the tree branch for which split was FALSE
+    loss = min_loss_split$loss, # the achieved loss in this split
+    feature = min_loss_split$feature, #the feature used for this split
+    threshold = min_loss_split$threshold, #the threshold of the feature used for the split
+    num_true = min_loss_split$num_true, # the predicted value for observations if split is TRUE
+    num_false = min_loss_split$num_false # the predicted value for observations in split is FALSE
   )
 }
 
 # function which splits current dataframe according to split rule
 # (if one wants to implement classification trees and/or support for categorical
-# features this would need to be extended)
+# features this would have to be extended -- think about how?)
 split_node <- function(df, split_rule) {
   return(list(
     true_split = df[df[, split_rule$feature] < split_rule$threshold, ],
@@ -252,14 +255,16 @@ split_node <- function(df, split_rule) {
 
 # function which finds the optimal split for a given feature
 # (if one wants to implement classifiaction and/or support for categorical
-# features this needed to be extended)
-opt_split <- function(df, feature, target) {
+# features this would have to be extended -- think about how?)
+optimal_split <- function(df, feature, target) {
   cur_losses <- list()
+  #sort data according to the feature, only keep feature and target
   df <- df[order(df[, feature]), c(feature, target)]
 
   split_points <- sort(unique(df[, feature]))
 
-  for (i in 2:length(split_points)) { # compute losses for all split points
+  # compute losses for all split points
+  for (i in 2:length(split_points)) { 
     is_split_true <- df[, feature] < split_points[i]
     split_true <- df[is_split_true, target]
     split_false <- df[!is_split_true, target]
@@ -287,7 +292,7 @@ opt_split <- function(df, feature, target) {
 
 # l2 loss if target is estimated with l2-optimal constant (mean)
 l2_loss <- function(target_values) {
-  sum(((target_values) - mean(target_values))^2)
+  sum((target_values - mean(target_values))^2)
 }
 
 # create artifical data to check algorithm
@@ -315,9 +320,11 @@ tree$num_false
 # features this would need to be extended)
 predict_tree <- function(tree, df) {
   pred_values <- numeric(nrow(df))
-  for (i in 1:nrow(df)) {
+  # loop over all observations in df
+  for (i in seq_len(nrow(df))) {
     cur_node <- tree
-    while (!cur_node$is_leaf) { # follow the splits until we reach a leaf
+    # follow the splits until we reach a leaf
+    while (!cur_node$is_leaf) { 
       if (df[i, cur_node$feature] < cur_node$threshold) {
         pred_values[i] <- cur_node$num_true
         cur_node <- cur_node$true_node
