@@ -168,12 +168,18 @@ rattle::fancyRpartPlot(model_log,
 Now we want to implement a simple regression tree learner (`rt`) for numerical features:
 
 ```{r rt-impl}
-# Function which generates a *r*egression *t*ree, which consists of nodes.
-# Every node has either 2 subnodes (if it's a split) or no subnode (if it's a leaf/terminal node).
+# Estimate a *r*egression *t*ree, which consists of nodes.
+# Every node is either a splitting node with 2 subnodes 
+# or a leaf / terminal node without subnodes (end of a tree branch). 
 # The two subnodes for each split are:
 #  - true_node: the split (i.e. feature < treshold) was TRUE
 #  - false_node: the split was FALSE
-# A node without subnodes is a leaf and represents the end of a tree branch.
+# The tree is built recursively by calling rt on the subset of data in each 
+# tree branch again.
+# The final tree is then represented as a nested list of splitting nodes 
+# containing splitting nodes containing further  splitting nodes and leaf nodes.
+# Every node itself is also simply represented as a list, see the very end of 
+# this function for the definition.
 rt <- function(df, target, cur_depth = 0, max_depth = 30, min_split = 20) {
   feature_results <- list()
 
@@ -201,9 +207,8 @@ rt <- function(df, target, cur_depth = 0, max_depth = 30, min_split = 20) {
     }
     else {
       # call the rt function recursively again, using only the subset of data
-      # for which the current split was TRUE,
-      # and with incremented tree depth, s.t. the function will terminate in the
-      # end
+      # for which the current split was TRUE, and with incremented tree depth,
+      #  s.t. the function will terminate if the maximal depth is reached
       true_node <- rt(
         df = split_result$true_split,
         target = target,
@@ -218,9 +223,9 @@ rt <- function(df, target, cur_depth = 0, max_depth = 30, min_split = 20) {
       false_node <- list(is_leaf = TRUE)
     }
     else {
-      # call the rt function recursively again, but with only the splitted data
-      # and with incremented tree depth, s.t. the function will terminate in the
-      # end
+      # call the rt function recursively again, using only the subset of data
+      # for which the current split was FALSE, and with incremented tree depth,
+      # s.t. the function will terminate if the maximal depth is reached
       false_node <- rt(
         df = split_result$false_split,
         target = target,
@@ -230,7 +235,7 @@ rt <- function(df, target, cur_depth = 0, max_depth = 30, min_split = 20) {
       )
     }
   }
-
+  
   list(
     is_leaf = FALSE,  #terminal node=
     true_node = true_node,  # the tree branch for which split was TRUE
@@ -295,26 +300,6 @@ l2_loss <- function(target_values) {
   sum((target_values - mean(target_values))^2)
 }
 
-# create artifical data to check algorithm
-set.seed(123)
-n <- 200
-x <- rnorm(n, 1, 1)
-y <- rnorm(n, 1, 1)
-z <- x + y + rnorm(n, 0, 0.1)
-
-tree <- rt
-train_data <- data.frame(x, z, y)
-# compute regression tree
-tree <- rt(train_data, "z")
-
-# take a look at the first split:
-tree$feature
-tree$threshold
-# if the subnodes of the first node were leaves, this would be the
-# output prediction for the splits:
-tree$num_true
-tree$num_false
-
 # function which predicts data with regression tree
 # (if one wants to implement classification and/or support for categorical
 # features this would need to be extended)
@@ -336,16 +321,55 @@ predict_tree <- function(tree, df) {
   }
   pred_values
 }
+```
 
+
+Compare with CART implementation from `rpart`:
+
+```{r, rt-example}
+# create artifical data to check algorithm
+set.seed(123)
+n <- 300
+x1 <- runif(n, -2, 3)
+x2 <- runif(n, -2, 3)
+y <- ifelse(x1 > 1.5, -1, 1) + 
+     ifelse(x2 > 1.5, .5, -.5) + 
+     ifelse(x1 < .5 & x2 < .5, -1, 1) +
+     rnorm(n, 0, 0.1)
+
+train_data <- data.frame(x1, x2, y)
+# compute regression tree
+tree <- rt(train_data, "y", max_depth = 4)
+
+# compare with rpart CART implementation:
+rpart_tree <- rpart::rpart(y ~ x1 + x2, data = train_data, maxdepth = 4)
+rattle::fancyRpartPlot(rpart_tree, sub = "")
+
+# compare first split:
+tree$feature
+tree$threshold
+# if the subnodes of the first node were leaves, this would be the
+# output prediction for the splits:
+tree$num_true #if feature < threshold
+tree$num_false #if feature > threshold 
+# --> first split identical
+
+# first splitting node on "FALSE" branch:
+tree$false_node$feature 
+tree$false_node$threshold
+# -->  same as for rpart as well
+```
+
+```{r rt-viz}
 # function for cart method with two features to visualize
 # the estimated output X1 and X2 are the names of the two features to use.
 plot_2D_cart <- function(train_data,
                          tree,
-                         target = "z",
-                         X1 = "x",
-                         X2 = "y",
-                         lengthX1 = 100,
-                         lengthX2 = 100) {
+                         target = "y",
+                         X1 = "x1",
+                         X2 = "x2",
+                         lengthX1 = 40,
+                         lengthX2 = 40) {
   gridX1 <- seq(
     min(train_data[, X1]),
     max(train_data[, X1]),
@@ -362,11 +386,11 @@ plot_2D_cart <- function(train_data,
   colnames(grid_data) <- c(X1, X2)
 
   # predict grid cells
-  grid_data$z <- predict_tree(tree, grid_data)
+  grid_data <- cbind(grid_data, target = predict_tree(tree, grid_data))
   colnames(grid_data) <- c(X1, X2, target)
 
-  min_z <- min(c(min(grid_data$z), min(train_data$z)))
-  max_z <- max(c(max(grid_data$z), max(train_data$z)))
+  min_z <- min(c(min(grid_data[, target]), min(train_data[, target])))
+  max_z <- max(c(max(grid_data[, target]), max(train_data[, target])))
 
   ggplot() +
     geom_raster(
@@ -374,6 +398,7 @@ plot_2D_cart <- function(train_data,
       aes_string(x = X1, y = X2, fill = target),
       alpha = .8
     ) +
+    geom_point(data = train_data, aes_string(x = X1, y = X2), color = "white", size = 2, alpha=.5) +
     geom_point(data = train_data, aes_string(x = X1, y = X2, color = target)) +
     scale_colour_gradient(limits = c(min_z, max_z)) +
     scale_fill_gradient(limits = c(min_z, max_z))
@@ -382,3 +407,4 @@ plot_2D_cart <- function(train_data,
 
 plot_2D_cart(train_data, tree)
 ```
+
