@@ -77,15 +77,16 @@ p
 
 ## Proximity measures in Random Forests
 
-One neat feature of random forests is, that they calculate proximity measures (how close is one data point to another) on the fly. Therefore, frequencies of the observations ending up in the same terminal node are being calculated and we can try to interpret them and do fancy stuff such as __multi dimensional scaling__. Check [this blog post](https://www.r-statistics.com/2016/01/multidimensional-scaling-with-r-from-mastering-data-analysis-with-r/) for a wonderful example with European Capital Cities.
+One neat feature of random forests is, that they calculate a proximity measure (how close is one data point to another) on the fly:  frequencies of how often two (OOB-)observations end up in the same terminal node are calculated during the fit -- if two observations are "close" in terms of the features that matter for the random forest, they will have a high proximity.
+We can try to interpret them and do fancy stuff such as __multi dimensional scaling__. Check [this blog post](https://www.r-statistics.com/2016/01/multidimensional-scaling-with-r-from-mastering-data-analysis-with-r/) for a wonderful example of MDS for European capital cities.
 
-We apply this to our spiral data set and try to see, if we could also classify the points based on their proximity. 
+We apply this to the spiral data set and try to see, if we could also classify the points based on their proximity. 
 
 First, look a the data:
 
 ```{r randforests-prox_data}
 # get data
-spiral <- mlbench::mlbench.spirals(500, cycles = 1, sd = 0.1)
+spiral <- mlbench::mlbench.spirals(500, cycles = 1, sd = 0.2)
 p <- ggplot(data = as.data.frame(spiral$x), aes(
   x = V1, y = V2,
   colour = spiral$classes
@@ -100,27 +101,41 @@ Now we fit a random forest and extract the proximity distance matrix:
 library(randomForest)
 # fit forest and extract proximity measure
 set.seed(1337)
-modProx <- randomForest(
-  x = spiral$x, y = spiral$classes, proximity = TRUE,
-  oob.prox = TRUE
+spiral_rf <- randomForest(
+  x = spiral$x, y = spiral$classes, 
+  ntree = 1000,
+  proximity = TRUE, oob.prox = TRUE, 
 )
-proxMat <- modProx$proximity
-proxMat[1:5, 1:5]
+spiral_proximity <- spiral_rf$proximity
+spiral_proximity[1:5, 1:5]
 ```
 
-Run mds on it and plot the data based on the two dimensions:
-
+Run MDS on the distance matrix derived from the (inverse) proximities and plot the data based on the two dimensions, 
+this won't work *that* well here because so many data points have mutual proximities of 0, i.e.,
+an *"infinite"* distance -- they never ended up in the same leaf of any tree, ever...
 ```{r randforests-prox_mds}
-# apply mds on the proximity matrix
-mds <- as.data.frame(cmdscale(proxMat))
-mds$class <- spiral$classes
+# convert proximities into distances
+# (proximities of 0 get turned into a very small value before inverting)
+proximity_to_dist <- function(proximity, almost_zero = 0.0001) {
+  proximity[proximity == 0] <- almost_zero
+  (1 / proximity) - 1 # -1 so that self-distances are 0, not 1...
+}
+ 
+spiral_dist <- proximity_to_dist(spiral_proximity)
+spiral_dist[1:5, 1:5]
+
+spiral_mds <- as.data.frame(cmdscale(spiral_dist))
+spiral_mds$class <- spiral$classes
 
 # plot the result, sweet
-p <- ggplot(data = mds, aes(x = V1, y = V2, colour = class)) +
+p <- ggplot(data = spiral_mds, aes(x = V1, y = V2, colour = class)) +
   geom_point() +
-  labs(x = "1st dimension", y = "2nd dimension", title = "Multidimensional Scaling of Spiral data based on proximity")
+  labs(x = "1st dimension", y = "2nd dimension", 
+       title = "Multidimensional scaling based on inverse proximity (spirals data)")
 p
 ```
+Some structure seems visible, but this is really most useful for high-dimensional problems where
+we have much more than just 2 features...
 
 ## Decision Regions CART vs. Random Forest
 
@@ -128,15 +143,14 @@ Decision regions for the CART:
 
 ```{r randforests-dec_bnd_cart}
 library(mlr)
-# get data
-data("iris")
+spiral_data <- data.frame(spiral$x, y = factor(spiral$classes))
+colnames(spiral_data) <- c("x1", "x2", "y")
 # set features that should be inspected within the regions
-features <- c("Petal.Width", "Petal.Length")
-
-task <- mlr::makeClassifTask(data = iris, target = "Species")
+features <- c("x1", "x2")
+spiral_task <- mlr::makeClassifTask(data = spiral_data, target = "y")
 
 mlr::plotLearnerPrediction(
-  learner = "classif.rpart", task = task,
+  learner = "classif.rpart", task = spiral_task,
   features = features
 )
 ```
@@ -145,7 +159,7 @@ Decision regions for the Random Forest:
 
 ```{r randforests-dec_bnd_randforests}
 mlr::plotLearnerPrediction(
-  learner = "classif.randomForest", task = task,
+  learner = "classif.randomForest", task = spiral_task,
   features = features
 )
 ```
@@ -153,7 +167,9 @@ mlr::plotLearnerPrediction(
 ## MNIST example
 
 In this exercise we want to train a random forest classifier, s.t. it can be
-used to identify the handwritten digits 8 and 9.
+used to identify the handwritten digits 8 and 9. For that, we'll use the iconic
+MNIST data set that contains $28 \times 28$ greyscale pixel images of handwritten
+digits. 
 
 ```{r randforests-mnist_data}
 library(readr)
@@ -163,31 +179,25 @@ mnist_raw <- read_csv("https://www.python-course.eu/data/mnist/mnist_train.csv",
   col_names = FALSE
 )
 ```
-Every row of the mnist data set contains the label and the 28*28 = 784 pixels of corresponding image.
+Every row of the MNIST data set contains the label (0-9) and the 
+grayscale of the 28*28 = 784 pixels of the corresponding image.
 For example:
 ```{r randforests-mnist_plot_digit}
 rotate <- function(x) t(apply(x, 2, rev))
 
 # function which plots a 28*28 raster image
 plot_mnist_raster <- function(pixels, title = "") {
-  m <- rotate(t(matrix(as.numeric(pixels), nrow = 28, byrow = F)))
+  pixels <- rotate(t(matrix(as.numeric(pixels), nrow = 28, byrow = F)))
   
-  df <- NULL
-  for(i in 1:28){
-    for(j in 1:28){
-      if(is.null(df)){
-        df <- data.frame(value = m[i,j], x=i, y=j)
-      }else{
-        df <- rbind(df, data.frame(value = m[i,j], x=i, y=j))
-      }
-    }
-  }
-  
+  #transform matrix m[i.j] into a data.frame with rows (x = i, y = j, value = m[i,j])
+  df <- data.frame(x = as.vector(row(pixels)),
+                   y = as.vector(col(pixels)),
+                   value  = as.vector(pixels))
+
   ggplot(df, aes(x,y)) + geom_raster(aes(fill=value)) +
-    scale_fill_gradient(low = "black", high = "white", 
-                        limits = c(0,256)) +
-                        theme(legend.position = "none") +
-    ggtitle(title)
+    scale_fill_gradient(low = "white", high = "black", 
+                        limits = c(0,256), guide = "none") +
+    ggtitle(title) + theme_void()
 }
 
 as.numeric(mnist_raw[1, 1])
@@ -205,32 +215,32 @@ set.seed(123)
 train_8_indices <- sample(nrow(mnist_8), train_size / 2, replace = FALSE)
 train_9_indices <- sample(nrow(mnist_9), train_size / 2, replace = FALSE)
 
-train_data <- as.data.frame(rbind(
+mnist_89_train <- as.data.frame(rbind(
   mnist_8 [train_8_indices, ],
   mnist_9 [train_9_indices, ]
 ))
 
-train_data$X1 <- as.factor(train_data$X1)
+mnist_89_train$X1 <- as.factor(mnist_89_train$X1)
 
-test_data <- as.data.frame(rbind(
+mnist_89_test <- as.data.frame(rbind(
   mnist_8 [-train_8_indices, ],
   mnist_9 [-train_9_indices, ]
 ))
 
-test_data$X1 <- as.factor(test_data$X1)
+mnist_89_test$X1 <- as.factor(mnist_89_test$X1)
 ```
 
 Train a random forest model:
 
 ```{r randforests-mnist_learn}
 set.seed(123)
-task <- makeClassifTask(data = train_data, target = "X1")
-lrn1 <- makeLearner("classif.randomForest", proximity = TRUE, oob.prox = TRUE)
-mod <- mlr::train(learner = lrn1, task = task)
+mnist_89_task <- makeClassifTask(data = mnist_89_train, target = "X1")
+mnist_89_learner <- makeLearner("classif.randomForest", proximity = TRUE, oob.prox = TRUE)
+mnist_89_rf <- mlr::train(learner = mnist_89_learner, task = mnist_89_task)
 
 # evaluate performance on test data
-p <- predict(mod, newdata = test_data)
-performance(p)
+mnist_89_pred <- predict(mnist_89_rf, newdata = mnist_89_test)
+performance(mnist_89_pred)
 ```
 
 With proximities we are able to explore how similar the images of our training 
@@ -240,19 +250,21 @@ set are:
 library(ggrepel)
 library(gridExtra)
 
-proxMat <- mod$learner.model$proximity
+# turn proximity matrix into dissimilarity matrix
+# (proximity of 0 gets turned into a very small value)
+mnist_89_dist <- proximity_to_dist(mnist_89_rf$learner.model$proximity)
 
 # apply mds on the proximity matrix
-mds <- as.data.frame(cmdscale(proxMat))
-mds$class <- train_data$X1
-mds$id <- 1:nrow(mds)
+mnist_89_mds <- as.data.frame(cmdscale(mnist_89_dist))
+mnist_89_mds$class <- mnist_89_train$X1
+mnist_89_mds$id <- 1:nrow(mnist_89_mds)
 
 
 # plot the result
-p <- ggplot(data = mds, aes(x = V1, y = V2, colour = class)) +
+p <- ggplot(data = mnist_89_mds, aes(x = V1, y = V2, colour = class)) +
   geom_point(alpha = 0.5) +
   geom_text_repel(
-    data = subset(mds, id %in% c(4,132,48, 137, 144, 80,
+    data = subset(mnist_89_mds, id %in% c(4,132,48, 137, 144, 80,
                                  130, 89, 86, 146, 117)),
     aes(V1, V2, label = id), color = "black",
     min.segment.length = unit(0, "lines")
@@ -260,7 +272,7 @@ p <- ggplot(data = mds, aes(x = V1, y = V2, colour = class)) +
 
   labs(
     x = "1st dimension", y = "2nd dimension", title =
-      "Multidimensional Scaling based on proximity"
+      "Multidimensional Scaling based on inverse proximity\n(MNIST: '8' vs '9')"
   )
 
 hlay <- rbind(c(NA,8,9,10,NA),
@@ -269,24 +281,26 @@ hlay <- rbind(c(NA,8,9,10,NA),
               c(3,4,4,4,7),
               c(NA,11,12,13,NA))
 
-grid.arrange(plot_mnist_raster(train_data [130, 2:ncol(mnist_raw)],"130"),
-             plot_mnist_raster(train_data [89, 2:ncol(mnist_raw)],"89"),
-             plot_mnist_raster(train_data [86, 2:ncol(mnist_raw)],"86"),
+grid.arrange(plot_mnist_raster(mnist_89_train[130, 2:ncol(mnist_raw)],"130"),
+             plot_mnist_raster(mnist_89_train[89, 2:ncol(mnist_raw)],"89"),
+             plot_mnist_raster(mnist_89_train[86, 2:ncol(mnist_raw)],"86"),
              p,
-             plot_mnist_raster(train_data [48, 2:ncol(mnist_raw)],"48"),
-             plot_mnist_raster(train_data [4, 2:ncol(mnist_raw)],"4"),
-             plot_mnist_raster(train_data [132, 2:ncol(mnist_raw)],"132"),
-             plot_mnist_raster(train_data [80, 2:ncol(mnist_raw)],"80"),             
-             plot_mnist_raster(train_data [137, 2:ncol(mnist_raw)],"137"),
-             plot_mnist_raster(train_data [144, 2:ncol(mnist_raw)],"144"),
-             plot_mnist_raster(train_data [86, 2:ncol(mnist_raw)],"86"),               
-             plot_mnist_raster(train_data [146, 2:ncol(mnist_raw)],"146"),
-             plot_mnist_raster(train_data [117, 2:ncol(mnist_raw)],"117"),
+             plot_mnist_raster(mnist_89_train[48, 2:ncol(mnist_raw)],"48"),
+             plot_mnist_raster(mnist_89_train[4, 2:ncol(mnist_raw)],"4"),
+             plot_mnist_raster(mnist_89_train[132, 2:ncol(mnist_raw)],"132"),
+             plot_mnist_raster(mnist_89_train[80, 2:ncol(mnist_raw)],"80"),             
+             plot_mnist_raster(mnist_89_train[137, 2:ncol(mnist_raw)],"137"),
+             plot_mnist_raster(mnist_89_train[144, 2:ncol(mnist_raw)],"144"),
+             plot_mnist_raster(mnist_89_train[86, 2:ncol(mnist_raw)],"86"),               
+             plot_mnist_raster(mnist_89_train[146, 2:ncol(mnist_raw)],"146"),
+             plot_mnist_raster(mnist_89_train[117, 2:ncol(mnist_raw)],"117"),
              layout_matrix=hlay)
 
 ```
 
-We observe that even for these two numbers the axes does not seem to represent an obvious pattern.
+**FIXME: add interpretation/further questions here**
+
+
 (A discussion of the problems of visualizing the MNIST data set and possible solutions can be found 
 [here](https://colah.github.io/posts/2014-10-Visualizing-MNIST/))
 
@@ -294,11 +308,13 @@ With variable importance we can now investigate which pixels are the "most impor
 want to tell the digits 8 and 9 apart:
 
 ```{r randforests-mnist_var}
-var_imp <- getFeatureImportance(mod)
-var <- as.data.frame(t(var_imp$res))
-v <- var$V1  / max(var$V1) * 256
+mnist_89_var_imp <- getFeatureImportance(mnist_89_rf)$res
+mnist_89_var_imp <- as.data.frame(t(mnist_89_var_imp))
 
-plot_mnist_raster(v)
+# rescale importance to [0, 256] so they can be used as grayscale-image pixels:
+mnist_89_var_imp_rescaled <- 256 - mnist_89_var_imp$V1  / max(mnist_89_var_imp$V1) * 256
+plot_mnist_raster(mnist_89_var_imp_rescaled)
 ```
+(white means high importance, black means low importance)
 
 Can you think of why these regions are important?
