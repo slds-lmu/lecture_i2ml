@@ -42,23 +42,53 @@ In this code demo we
 
 ## Setup
 
-We take a look at the spirals data again:
+Firstly we generate stairs-like data:
 
 ```{r nested-data}
 library(mlr)
 library(mlbench)
 library(ggplot2)
 
-set.seed(13)
-num_data <- 1000
-spiral <- as.data.frame(mlbench::mlbench.spirals(num_data,3,0.2))
-ggplot(spiral) + geom_point(aes(x=x.1,y=x.2, color=classes))
+# function to simulate stairs data
+stairs <- function(n, steps){
+  xs <- as.data.frame(matrix(runif(2*n, max = 1/steps, min=0), ncol=2))
+  num_blocks <- steps*(steps-1)/2
+  xs$block <- sample(1:num_blocks, n, replace = T)
+
+  block <- 1
+  for(i in 1:(steps-1)){
+    for(j in 1:i){
+      xs[xs$block == block,1:2] <- t(t(xs[xs$block == block,1:2]) + c(i/steps, 
+                                                    j/steps))
+      
+      block <- block + 1
+    }
+  }
+  return(xs[,1:2])
+}
+
+# function to generate two stairs which share an overlap
+two_stairs <- function(n, steps, overlap){
+  v1 <- stairs(n/2,steps)
+  v1$V2 <- v1$V2 - 1/steps + overlap
+  v1$V1 <- v1$V1 - overlap
+  v1[,c(1,2)] <- v1[,c(2,1)] # "mirror" the stairs
+  v1$classes <- "1"
+  v2 <- stairs(n/2,steps)
+  v2$classes <- "2"
+  
+  return(rbind(v1,v2))
+}
+
+set.seed(123)
+sim_stairs <- two_stairs(2000, 6, 0.03)
+ggplot(sim_stairs, aes(x=V1, y=V2)) + geom_point(aes(color=classes), alpha=0.5)
 
 ```
 
+Now we want to find the optimal hyperparameter k from  a set of candidates for a knn model. As we have already learned we can use CV for this task (We use the *knn_cv* function from the [resampling code demo](./code_demo_resampling.pdf)):
 
-```{r}
-
+```{r nested-hyperparam_cv_knn}
 
 k_candidates <- seq(1,30,3)
 mmces <- NULL
@@ -66,27 +96,39 @@ for(k in k_candidates){
   set.seed(10)
   
   if(is.null(mmces)){
-    mmces <- knn_cv(spiral, "classes", 10, k)$storage   
+    mmces <- knn_cv(sim_stairs, "classes", 10, k)$storage   
   }else{
-    mmces <- cbind(mmces,  knn_cv(spiral, "classes", 10, k)$storage)
+    mmces <- cbind(mmces,  knn_cv(sim_stairs, "classes", 10, k)$storage)
   }
 
 }
 
-apply(mmces,2,mean)
-apply(mmces,1,min)
-mean(apply(mmces,1,min))
+results <- 
+  as.data.frame(t(apply(mmces,2,mean)))
+colnames(results) <- as.character(k_candidates)
+results
 ```
 
-No we want to find the optimal hyperparameter k for a knn model. Therefore we use nested resampling with the following options:
+So from this we would choose $k = 28$, since it has the smallest MSE. But how can we estimate the 
+generalization error? A naive approach would be to average the minimal MSE of all folds:
+
+```{r nested-bias_ge}
+
+apply(mmces,1,min)
+mean(apply(mmces,1,min))
+
+```
+
+From the lecture we know that this gives us a biased estimate.
+Therefore we use nested resampling with the following options:
   
 * 10 outer CV loops
 * 10 inner CV loops
-* 7 Candidates 
+* 10 Candidates 
 
 Basically, we want to do two things: find the optimal hyperparameter and estimate its generalization error. We can not do two operations in one CV and therefore use two nested CVs, thus we apply __nested resampling__.
 
-```{r nested-cart_nr}
+```{r nested-knn_nr}
 
 
 kknn_nr <- function(data, target, outer_folds = 3, inner_folds = 4, k_candidates,
@@ -186,12 +228,14 @@ kknn_nr <- function(data, target, outer_folds = 3, inner_folds = 4, k_candidates
 
 ```
 
-```{r}
+Run it and check the results of the outer CV:
+
+```{r nested-knn_nr_ge}
 
 # let's run it
 set.seed(1337)
 result_nr <- kknn_nr(
-  data = spiral, target = "classes", outer_folds = 10, inner_folds = 10,
+  data = sim_stairs, target = "classes", outer_folds = 10, inner_folds = 10,
   k_candidates = k_candidates, inform = FALSE
 )
 # order results by gen_error
@@ -199,259 +243,39 @@ result_nr
 mean(result_nr$gen_error)
 ```
 
-```{r nested-nr_hparam}
-set.seed(133777)
-unseen_spiral <- as.data.frame(mlbench.spirals(n = 100000, cycles =  3, sd =  0.2))
+So we get a bigger generalization error than the one we got for the simple CV.
+So how can we check what the real generalization error for our best candidate 
+k is? 
+Neat thing about the stairs data: we can simulate arbitrarily many new unseen data points, s.t
+we can assess the real generalization error.
 
-task <- makeClassifTask(data = spiral, target = "classes")
-learner <- makeLearner("classif.kknn", k = 7)
-model <- train(learner = learner, task = task)
- 
-performance(predict(model, newdata = unseen_spiral), measures = mmce)[[1]]
-```
-
-```{r}
-cart_cv <- function(data, target, folds, maxdepth) {
-  storage <- as.numeric(folds)
-  
-  indices <- c(sample(x = seq(1, nrow(data), by = 1), size = nrow(data), replace = FALSE),
-               rep(NA, (folds - nrow(data) %% folds) %% folds))
-
-  # index matrix for folds
-  index_mat <- matrix(data = indices, byrow = FALSE, nrow = folds)
-
-  for (i in 1:folds) {
-
-    # data
-    test_data <- data[na.omit(index_mat[i, ]), ]
-    train_data <- data[-na.omit(index_mat[i, ]), ]
-
-    # model
-    task <- makeClassifTask(data = train_data, target = target)
-    learner <- makeLearner("classif.rpart", maxdepth = maxdepth)
-    model <- train(learner = learner, task = task)
-    storage[i] <- performance(predict(model, newdata = test_data),
-      measures = mmce
-    )[[1]]
-  }
-
-  return(list(folds = folds, storage = as.data.frame(storage), gen_error = mean(storage)))
-}
-
-cv_tune_cart <- function(data, target, folds, max_dephts) {
-  candidatesgen_error <- 
-    as.data.frame(matrix(data = 0, nrow = length(max_dephts), ncol = 2))
-  colnames(candidatesgen_error) <- c("k", "gen_error")
-
-  for (l in 1:length(max_dephts)) {
-    candidatesgen_error[l, "k"] <- k_candidates[l]
-    candidatesgen_error[l, "gen_error"] <- cart_cv(
-      data = data, target = target, folds = folds,
-      maxdepth = max_dephts[l]
-    )$gen_error
-  }
-  return(candidatesgen_error[order(candidatesgen_error$gen_error), ])
-}
-
-result_cv <- cv_tune_cart(data = spiral, target = "classes", 
-                        folds = 10, 
-                        max_dephts = max_dephts )
-result_cv
-mean(result_cv$gen_error)
-```
-
-
-```{r nested-knn_nr}
-
-knn_nr <- function(data, target, outer_folds = 3, inner_folds = 4, k_candidates,
-                   inform = FALSE) {
-  # data: whole data set including the target variable
-  # target: string indicating the target variable of the task
-  # outer_folds: the amount of folds in the outer loop of the nested resampling
-  # inner_folds: the amount of folds in the inner loop of the nested resampling
-  # k_candidates: the potential values for k from which we want to select
-  #              the optimal
-  # inform: boolean controling if the user is getting informed about the
-  #         progress of the procedure or not
-
-
-  # counter for inform functionality
-  counter <- 0
-
-  # indices for the outer loops
-  outer_indices <- sample(x = seq(1, nrow(data), by = 1), 
-                          size = nrow(data), replace = FALSE)
-  index_outer_mat <- matrix(data = outer_indices, byrow = TRUE, 
-                            nrow = outer_folds)
-
-  # frame to store the winner and its test-gen_error from all outer folds
-  winner_cv <- as.data.frame(matrix(0, nrow = outer_folds, ncol = 2))
-  colnames(winner_cv) <- c("k", "gen_error")
-
-  for (i in 1:outer_folds) {
-
-    # split in validation and data for the inner loop
-    test_data <- data[index_outer_mat[i, ], ]
-    inner_data <- data[ -index_outer_mat[i, ], ]
-
-    # frame to store the CV-gen_errors for each candidate
-    candidate_gen_error <- 
-      as.data.frame(matrix(0, nrow = length(k_candidates), ncol = 2))
-    colnames(candidate_gen_error) <- c("k", "gen_error")
-
-    # calculate gen_error for each of the candidates via CV
-    for (l in 1:length(k_candidates)) {
-      inner_indices <- 
-        sample(x = seq(1, nrow(inner_data), by = 1), 
-               size = nrow(inner_data), replace = FALSE)
-
-      # index matrix for inner folds
-      index_inner_mat <- matrix(data = inner_indices, 
-                                byrow = TRUE, nrow = inner_folds)
-
-      # storage for CV errors for one candidate
-      storage_inner_cv <- numeric(inner_folds)
-
-      for (j in 1:inner_folds) {
-
-        # data split in validation and train data
-        eval_data <- inner_data[index_inner_mat[j, ], ]
-        train_data <- inner_data[ -index_inner_mat[j, ], ]
-
-        # model
-        task <- makeClassifTask(data = train_data, target = target)
-        learner <- makeLearner("classif.kknn", k = k_candidates[l])
-        model <- train(learner = learner, task = task)
-        # inform user about progress
-        counter <- counter + 1
-        if (inform) print(paste0("model: ", counter, 
-                                 " inner fold: ", j, " outer fold: ", i))
-        # store gen_error estimates from test on validation data
-        storage_inner_cv[j] <- performance(predict(model, newdata = eval_data),
-          measures = mmce)[[1]]
-      }
-
-      # CV gen_error for candidate l
-      candidate_gen_error[l, "gen_error"] <- mean(storage_inner_cv)
-      candidate_gen_error[l, "k"] <- k_candidates[l]
-    }
-
-    # get gen_error for best candidate in this outer_fold
-    # in case of equally good Candidates, choose the first one
-    best_candidate <- candidate_gen_error[
-      which(candidate_gen_error$gen_error ==
-        min(candidate_gen_error$gen_error)), "k"][1]
-    winner_cv[i, "k"] <- best_candidate
-
-
-    # model
-    task <- makeClassifTask(data = inner_data, target = target)
-    learner <- makeLearner("classif.kknn", k = k_candidates[l])
-    model <- train(learner = learner, task = task)
-    # store gen_error estimates from test on test data
-    winner_cv[i, "gen_error"] <- performance(predict(model, newdata = test_data),
-      measures = mmce
-    )[[1]]
-  }
-  return(winner_cv[order(winner_cv$gen_error), ])
-}
-```
-
-Run it and check the results of the outer CV:
-  
-```{r nested-results_knn_nr}
-k_candidates <-  c(5, 10:20, 25, 30:40 ,70, 100)
-
-# let's run it
+```{r nested-real_ge_est}
 set.seed(1337)
-result_nr <- knn_nr(
-  data = spiral, target = "classes", outer_folds = 10, inner_folds = 10,
-  k_candidates = k_candidates, inform = FALSE
-)
-# order results by gen_error
-result_nr
-mean(result_nr$gen_error)
-```
+unseen_data <- two_stairs(100000, 6, 0.03)
 
-### Use only CV for Hyperparameter Selection:
-
-We use the *knn_cv* function from the [resampling code demo](./code_demo_resampling.pdf)
-
-```{r nested-cv_tune_knn}
-cv_tune_knn <- function(data, target, folds, k_candidates) {
-  candidatesgen_error <- 
-    as.data.frame(matrix(data = 0, nrow = length(k_candidates), ncol = 2))
-  colnames(candidatesgen_error) <- c("k", "gen_error")
-
-  for (l in 1:length(k_candidates)) {
-    candidatesgen_error[l, "k"] <- k_candidates[l]
-    candidatesgen_error[l, "gen_error"] <- knn_cv(
-      data = data, target = target, folds = folds,
-      k = k_candidates[l]
-    )$gen_error
-  }
-  return(candidatesgen_error[order(candidatesgen_error$gen_error), ])
-}
-
-result_cv <- cv_tune_knn(data = spiral, target = "classes", 
-                        folds = 10, 
-                        k_candidates = k_candidates )
-result_cv
-mean(result_cv$gen_error)
-```
-
-### Test the hyperparameters on completely unseen data
-
-Test the hyperparameters proposed by nested resampling and cross-validation on completely new data, that none of the two algorithms have seen before. Neat thing about the spiral data: we can simulate new data points whenever we want!
-  
-  What would we expect based on the lecture?
-  
-  An overly optimistic estimate for the perfect hyperparameter by simple CV (overtuning effect) and a more realistic estimate from the nested resampling algorithm. 
-
-### Nested Resampling Hyperparameter
-
-```{r nested-nr_hparam}
-set.seed(133777)
-unseen_spiral <- as.data.frame(mlbench.spirals(n = 100000, cycles =  3, sd =  0.1))
-
-task <- makeClassifTask(data = spiral, target = "classes")
-learner <- makeLearner("classif.kknn", k = 4)
+task <- makeClassifTask(data = sim_stairs, target = "classes")
+learner <- makeLearner("classif.kknn", k = 28)
 model <- train(learner = learner, task = task)
-print(paste0(
-  "nested RS k = 20: ", 
-  performance(predict(model, newdata = unseen_spiral), measures = mmce)[[1]],
-  " with NR gen_error estimate: ", result_nr[2, 2]
-))
+performance(predict(model, newdata = unseen_data), measures = mmce)[[1]]
+
 ```
 
-### Simple Cross-Validation Hyperparameter
-
-```{r nested-cv_hparam}
-set.seed(1337)
-unseen_spiral <- as.data.frame(mlbench.spirals(n = 200000, sd = 0.1))
-
-task <- makeClassifTask(data = spiral, target = "classes")
-learner <- makeLearner("classif.kknn", k = 37)
-model <- train(learner = learner, task = task)
-print(paste0(
-  "CV tuned k = 5: ", 
-  performance(predict(model, newdata = unseen_spiral), measures = mmce)[[1]],
-  " with CV gen_error estimate: ", result_cv[1, 2]
-))
-```
-
+As we see with the simple CV we arrived to an overly optimistic estimate (overtuning effect), while 
+a more realistic estimate could be achieved with the nested resampling algorithm. 
 
 ## mlr implementation
 
 ```{r nested-mlr_impl}
 ps <- makeParamSet(
-  makeDiscreteParam("maxdepth", values = max_dephts)
+  makeDiscreteParam("k", values = k_candidates)
 )
+
+task <- makeClassifTask(data = sim_stairs, target = "classes")
 
 # inner loop
 ctrl <- makeTuneControlGrid()
 inner <- makeResampleDesc("CV", iters = 10L)
-learner <- makeTuneWrapper("classif.rcart", 
+learner <- makeTuneWrapper("classif.kknn", 
                            resampling = inner, 
                            par.set = ps, control = ctrl, show.info = FALSE)
 
@@ -472,3 +296,4 @@ r$extract
 ```{r nested-mlr_res2}
 getNestedTuneResultsX(r)
 ```
+
