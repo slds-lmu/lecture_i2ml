@@ -1,4 +1,4 @@
----
+  ---
 output: pdf_document
 params:
   set_title: "Code demo for Random Forests"
@@ -257,23 +257,37 @@ mnist_89_mds <- as.data.frame(cmdscale(mnist_89_dist))
 mnist_89_mds$class <- mnist_89_train$X1
 mnist_89_mds$id <- 1:nrow(mnist_89_mds)
 
+# pick points on the outside of the point cloud for viz
+library(dplyr)
+mnist_89_mds <- mnist_89_mds %>% 
+  mutate(
+    dist = sqrt(V1^2 + V2^2),
+    sector = cut(atan2(V1, V2), seq(-pi, pi, l = 13)), ordered = TRUE) %>%
+  group_by(sector) %>% arrange(dist) %>% 
+  mutate(example = (dist == max(dist)))
+
+mnist_89_examples <- filter(mnist_89_mds, example)
+
+
 
 # plot the result
 p <- ggplot(data = mnist_89_mds, aes(x = V1, y = V2, colour = class)) +
   geom_point(alpha = 0.5) +
   geom_text_repel(
-    data =
-            subset(mnist_89_mds, id %in% c(2,11,16, 130, 126, 129,
-                                 123, 133, 17, 11, 24)),
+    data = mnist_89_examples,
     aes(V1, V2, label = id), color = "black",
     min.segment.length = unit(0, "lines")
   ) +
 
   labs(
     x = "1st dimension", y = "2nd dimension", title =
-      "Multidimensional Scaling based on \ninverse proximity(MNIST: '8' vs '9')"
+      "MDS (1 - RF proximity)\nMNIST: '8' vs '9'"
   )
 
+p_examples <- lapply(mnist_89_examples$id, function(i) {
+  plot_mnist_raster(mnist_89_train[as.numeric(i), -1])
+})
+  
 hlay <- rbind(c(NA,8,9,10,NA),
               c(1,4,4,4,5),
               c(2,4,4,4,6),
