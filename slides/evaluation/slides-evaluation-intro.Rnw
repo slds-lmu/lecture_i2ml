@@ -7,24 +7,76 @@ knitr::set_parent("../../style/preamble.Rnw")
 \lecturechapter{Evaluation: Introduction and Remarks}
 \lecture{Introduction to Machine Learning}
 
-\begin{vbframe}{Introduction}
+\begin{vbframe}{Goals of performance evaluation}
 
-In predictive modeling, performance estimation can have different goals:
+
+\textbf{Model evaluation}\\
+<<out.width = "0.2\\textwidth", fig.height=5>>=
+set.seed(31415)
+
+x = 1:5
+y = 2 + 0.5 * x + rnorm(length(x), 0, 1.5)
+dat = data.frame(x = x, y = y)
+model = lm(y ~ x)
+dat$y_hat <- predict(model)
+
+ggplot(data = dat, aes(x = x, y = y)) +
+    geom_abline(intercept = coef(model)[1], slope = coef(model)[2]) +
+    geom_segment(aes(xend = x, yend = y_hat), color = "red") +
+    geom_point() +
+    theme_void()
+@
+     
+     
+
+\textbf{Algorithm evaluation}\\
+\begin{center}
+    { \Huge \checkmark }
+\end{center}
+
+
+\textbf{Model selection}
+\begin{center}
+    \begin{tikzpicture}
+    \draw [thick] (0,0) rectangle (.5,.5);
+    \draw [fill=green, thick] (0.5,0) rectangle (1,1);
+    \draw [thick] (1,0) rectangle (1.5,.75);
+    \end{tikzpicture}
+\end{center}
+
+\textbf{Learning curve estimation}
+<<fig.height=2, fig.width=5, out.width="0.2\\textwidth">>=
+# rsrc data from rsrc/learning_curve.R
+load("rsrc/learning_curve.RData")
+
+opt = res.rpart
+opt$mmce = opt$mmce - mean(opt$mmce) + 0.08
+
+ggplot(data = opt, aes(x = percentage, y = mmce)) + 
+    geom_line(aes(colour = measure), size = 3) + 
+    theme_void() + theme(legend.position = "none")
+@
+    
+\end{vbframe}
+
+
+
+\begin{vbframe}{Goals of performance evaluation}
 
 \begin{itemize}
-  \item \textbf{Performance estimation of a model:}
+  \item \textbf{Model evaluation:}
     Estimate \emph{generalization} error of a model on new (unseen) data, drawn from the same data generating process that training data came from.
-  \item \textbf{Performance estimation of an algorithm:}
+  \item \textbf{Algorithm evaluation:}
     Estimate \emph{generalization} error of a learning algorithm, trained on a data set
     of a certain size, on new (unseen) data, all drawn from the same data generating process.
   \item \textbf{Model selection:}
     Select the best model from a set of potential candidate models (e.g., different model classes, different
     hyperparameter settings, different features)
-  \item \textbf{Learning curves:}
+  \item \textbf{Learning curve estimation:}
     How does the generalization error scale when an algorithm is trained on training sets of different sizes?
 \end{itemize}
 
-Obviously, all goals are quite related, i.e., reliable estimation of (predictive) performance is the foundation for all of them.
+All goals are related, i.e., reliable estimation of (predictive) performance is the foundation for all of them.
 
 \end{vbframe}
 
