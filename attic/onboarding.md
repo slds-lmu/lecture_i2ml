@@ -22,14 +22,15 @@ Knowing how a `Makefile` works would be good as well, but is not strictly necess
 
 ## Getting started
 
-Please read and understand the [internal README](https://github.com/compstat-lmu/lecture_i2ml/blob/master/README_intern.md) and set up your local copy of the `i2ml` repo accordingly. To be able to contribute quality content, it's probably also a good idea to first have a look at the material we already have, so please do take the time to read through the slides and have a look at the code demos and exercises if you haven't taken the course already.
+Please read and understand the [contributing guidelines](https://github.com/compstat-lmu/lecture_i2ml/blob/devel/CONTRIBUTING.md) and set up your local copy of the `i2ml` repo accordingly. To be able to contribute quality content, it's probably also a good idea to first have a look at the material we already have, so please do take the time to read through the slides and have a look at the code demos and exercises if you haven't taken the course already.
 
 ## Using Git and Github the right way
 
 To contribute to the course, please create issue-specific branches off the **`devel`** branch in the main repo in order to work on your assigned issues. A more detailed explanation of this collaboration model is [here](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow), there you also find the Git commands used to accomplish this.  
 
 Commit early, commit often, take the time to [write informative, well-formatted commit messages](https://juffalow.com/other/write-good-git-commit-message) and [reference the issue(s)](https://guides.github.com/features/issues/#notifications) your commit is addressing in your commit message by including `#<issuenumber>` in your commit.  
-At least once a week, write down how much time you spent on what topics on the *time-tracking card* in your Github project board. This might be easier if you also note the time spent on creating a commit in the body of the respective commit messages. What's important is that you keep the time-tracking card in your project board up-to-date. 
+At least once a week, write down how much time you spent on what topics on the *time-tracking card* in your Github project board. This might be easier if you also note the time spent on creating a commit in the body of the respective commit messages --   i.e., include the approximate amount of time spent on the work being comitted (i.e. include something like `time spent: <XX> hours`) in your commit message.
+*At the least, please do keep the time-tracking card in your project board up-to-date.* 
 
 ## Getting help
 
@@ -39,7 +40,7 @@ Some of the Github issues we assign to you may not include a very detailed descr
 
 ## Getting it done 
 
-Once your feel you're done, [open a pull request](https://help.github.com/en/articles/creating-a-pull-request) (PR) and we'll review your changes, give feedback and eventually merge it into the main branches. If you don't get any feedback from us within a couple of days, please remind us via Slack or via the discussion section of the PR (ping one of us by including `@fabian-s` or `@bbischl` in your message).  
+Once your feel you're done, [open a pull request](https://help.github.com/en/articles/creating-a-pull-request) (PR) and we'll review your changes, give feedback and eventually merge it into the main branches. If you don't get any feedback from us within a couple of days, please remind us via Slack or via the discussion section of the PR (ping one of us by including `@fabian-s` or `@bbischl` or `@HeidiSeibold` in your message).  
 You can include PDF files and images in the description of your pull request, and doing so makes it a little easier for us to give you feedback on your work -- if you add them to your PR directly, we don't have to make a local copy of your work and re-create these files ourselves.  
 
 Before you open a pull request, please do check that 
@@ -56,7 +57,7 @@ If your PR contains modified slides, please check that
 
 If your PR contains modified code, please check that
 
--  the code is structured well (see ["Code Smells & Feels"](https://github.com/jennybc/code-smells-and-feels) by Jenny Bryant for bad patterns to avoid)
+-  the code is structured well (see ["Code Smells & Feels"](https://github.com/jennybc/code-smells-and-feels) by Jenny Bryan for bad patterns to avoid)
 -  the code follows the style guide (easiest to do by using `lintr` and `styler`)
--  code that is meant to be read/worked on by students is well documented
--  code that is meant to be read/worked on by students is as simple, legible and clear as possible
+-  code is well documented (especially if it is meant to be read/worked on by students)
+-  code is as simple, legible and clear as possible (especially if it is meant to be read/worked on by students)

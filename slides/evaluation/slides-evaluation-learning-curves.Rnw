@@ -1,0 +1,119 @@
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../../style/preamble.Rnw")
+@
+<<setup, child="../../style/setup.Rnw", include = FALSE>>=
+@
+
+\lecturechapter{Evaluation: Learning Curves}
+\lecture{Introduction to Machine Learning}
+
+\begin{vbframe}{Learning Curves}
+
+\begin{itemize}
+\item The \textit{Learning Curve} compares the performance of a model on training and test data over a varying number of training instances.\\
+$\rightarrow$ How fast can learner learn the given relationship in the data?
+\item Learning usually fast in the beginning %and saturate after data becomes larger an larger
+% \item We should generally see performance improve as the number of training points increases When we separate training and testing sets and graph them individually
+% \item We can get an idea of how well the model can generalize to new data
+\item Visualizes when a learner has learned as much as it can:
+\begin{itemize}
+\item when performance on training and test set reach a plateau.
+\item when gap between training and test error remains the same.
+\end{itemize}
+\end{itemize}
+
+<<echo = FALSE>>=
+# rsrc data from rsrc/learning_curve.R
+load("rsrc/learning_curve.RData")
+@
+
+<<>>=
+opt = res.rpart
+opt$mmce = opt$mmce - mean(opt$mmce) + 0.08
+
+eline = 0.08
+xlab_lc = "Number of training instances"
+
+p = ggplot(data = opt, aes(x = percentage, y = mmce))
+p1 = p + geom_line(aes(colour = measure)) +
+  theme_minimal() +
+  ylim(0, 0.15) +
+  ylab(expression(widehat(GE))) +
+  xlab(xlab_lc) +
+  scale_color_discrete(name = NULL, labels = c("1" = expression(D[test]), 
+      "2" = expression(D[train]))) 
+p_ideal = p1 + geom_hline((aes(yintercept = eline))) +
+  geom_text(aes(0.1, eline - 0.003, label = "desired error", vjust = 1, hjust = 0)) +
+  geom_errorbar(aes(ymin = mmce - sd, ymax = mmce + sd, colour = measure), width = 0.025) +
+  geom_point(aes(colour = measure))
+@
+
+<<fig.height=2, fig.width=5, out.width="0.9\\textwidth">>=
+p1 
+@
+
+\framebreak
+
+An ideal learning curve looks like:
+
+<<fig.height=3, fig.width=5>>=
+p_ideal
+@
+
+
+\framebreak
+
+In general, there are two reasons for a bad looking learning curve:
+
+\begin{enumerate}
+\item High bias in model / underfitting
+\begin{itemize}
+\item training and test errors converge at a high value.
+\item model can't learn underlying relationship and has high systematic errors, no matter how big the training set.
+\item poor fit, which also translates into high test error.
+\end{itemize}
+
+<<echo = FALSE, eval = TRUE, fig.height=2, fig.width=5>>=
+p = ggplot(data = res.rpart, aes(x = percentage, y = mmce))
+p + geom_hline((aes(yintercept = eline))) +
+  geom_text(aes(0.1, eline - 0.003, label = "desired error", vjust = 1, hjust = 0)) +
+  geom_errorbar(aes(ymin = mmce - sd, ymax = mmce + sd, colour = measure), width = 0.025) +
+  geom_line(aes(colour = measure)) +
+  geom_point(aes(colour = measure)) +
+  ylim(0, 0.2) +
+  ylab(expression(widehat(GE))) +
+  xlab(xlab_lc) +
+  scale_color_discrete(name = NULL, labels = c("1" = expression(D[test]), 
+      "2" = expression(D[train]))) +
+  theme_minimal()
+@
+
+\framebreak
+
+\item High variance in model / Overfitting
+\begin{itemize}
+\item large gap between training and test errors.
+\item model requires more training data to improve.
+\item model has a poor fit and does not generalize well.
+%\item Can simplify the model with fewer or less complex features
+\end{itemize}
+
+<<echo = FALSE, eval = TRUE, fig.height=2, fig.width=5>>=
+p = ggplot(data = res.ranger, aes(x = percentage, y = mmce))
+p + geom_hline((aes(yintercept = eline))) +
+  geom_text(aes(0.1, eline - 0.003, label = "desired error", vjust = 1, hjust = 0)) +
+  geom_errorbar(aes(ymin = mmce - sd, ymax = mmce + sd, colour = measure), width = 0.025) +
+  geom_line(aes(colour = measure)) +
+  geom_point(aes(colour = measure)) +
+  ylim(0, 0.2) +
+  ylab(expression(widehat(GE))) +
+  xlab(xlab_lc) +
+  scale_color_discrete(name = NULL, labels = c("1" = expression(D[test]), 
+      "2" = expression(D[train]))) +
+  theme_minimal()
+@
+\end{enumerate}
+\end{vbframe}
+
+\endlecture
+
