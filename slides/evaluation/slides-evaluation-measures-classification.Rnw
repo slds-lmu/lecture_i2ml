@@ -12,12 +12,17 @@ knitr::set_parent("../../style/preamble.Rnw")
 
 
 \begin{vbframe}{Labels vs Probabilities}
+
+\lz
 In classification we predict:
+
+\lz
 \begin{enumerate}
-\item Class labels
-\item Class probabilites
+\item Class labels $\rightarrow \hh(\xb) = \hat{y}$
+\item Class probabilites $\rightarrow \pikxh$
 \end{enumerate}
 
+\lz
 $\rightarrow$ We evaluate based on those
 
 
@@ -25,36 +30,40 @@ $\rightarrow$ We evaluate based on those
 
 \begin{vbframe}{Labels: Accuracy / MCE}
 
-The misclassification error rate (MCE) simply counts the number of incorrect predictions and presents them as a rate, accuracy
-is defined in a similar fashion for correct classifications
+The misclassification error rate (MCE) counts the number of incorrect predictions and presents them as a rate:
 
 \[
 MCE = \frac{1}{n} \sumin [\yi \neq \yih] \in [0;1]
 \]
+
+Accuracy is defined in a similar fashion for correct classifications:
 \[
 ACC = \frac{1}{n} \sumin [\yi = \yih] \in [0;1]
 \]
 
 \begin{itemize}
-\item If the data set is small this can be quite a brittle measure
-\item The MCE says nothing about how good or skewed predicted probabilities are
-\item Errors on all classes are weighed equally, that is often inappropriate
+\item If the data set is small this can be brittle
+\item The MCE says nothing about how good/skewed predicted probabilities are
+\item Errors on all classes are weighed equally (often inappropriate)
 \end{itemize}
 \end{vbframe}
 
 \begin{vbframe}{Labels: Confusion Matrix}
 
-Much better than simply reducing prediction errors to a simple number we can tabulate them
-in a confusion matrix, tabulating true classes in rows and predicted classes in columns.
-We can nicely see class sizes (predicted and true) and where errors occur.
+True classes in rows.\\
+Predicted classes in columns.\\
 
 \lz
 
-<<echo=FALSE>>=
+<<echo=FALSE, comment=NA>>=
 r = crossval("classif.naiveBayes", iris.task, show.info = FALSE)
 m = calculateConfusionMatrix(r$pred, sums = TRUE)
+# kable(m$result, booktabs = TRUE)
 print(m)
 @
+
+\lz
+We can see class sizes (predicted and true) and where errors occur.
 \end{vbframe}
 
 \begin{vbframe}{Labels: Costs}
@@ -63,21 +72,117 @@ We can also assign different costs to different errors via a cost matrix.
   Costs = \meanin C[\yi, \yih]
 \]
 \vspace{-0.8cm}
-<<echo=FALSE>>=
+<<echo=FALSE, comment=NA>>=
 r = crossval("classif.naiveBayes", iris.task, show.info = FALSE)
 m = calculateConfusionMatrix(r$pred)
 catf("Confusion matrix")
 cc = m$result[-4,-4]
 print(cc)
+cat(" ")
 cc[] = c(0,2,1,1,0,1,1,5,0)
 catf("Cost matrix C")
 print(cc)
 @
 \begin{itemize}
-  \item Here, we penalize errors on class \textit{versicolor} more heavily
+  \item Here: penalize errors on class \textit{versicolor} more heavily
   \item $Costs = (3 \cdot 5 + 4 \cdot 1) / 150 $
 \end{itemize}
 \end{vbframe}
+
+
+\begin{vbframe}{Labels: Costs}
+We can also assign different costs to different errors via a cost matrix.
+\[
+  Costs = \meanin C[\yi, \yih]
+\]
+
+\underline{Example}:\\ 
+
+
+
+Predict if person has a ticket (yes / no).\\ 
+Should train conductor check ticket of a person?\\
+
+\begin{columns}
+\begin{column}{0.5\textwidth}
+
+
+  \begin{tabular}{ll}
+    \textbf{Costs:} & \\
+    Ticket checking:& 3 EUR\\
+    Fee for fare-dodging:& 40 EUR\\
+    Ticket price:& 10 EUR\\
+  \end{tabular}
+  
+\end{column}
+\begin{column}{0.5\textwidth} 
+
+   \includegraphics[width=0.8\textwidth]{figure_man/conductor.jpg}
+    {\tiny \url{http://www.oslobilder.no/OMU/OB.%C3%9864/2902}}
+   
+\end{column}
+\end{columns}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Labels: Costs}
+
+Predict if person has a ticket (yes / no).\\ 
+
+\begin{columns}
+\begin{column}{0.5\textwidth}
+
+
+  \begin{tabular}{ll}
+    \textbf{Costs:} & \\
+    Ticket checking:& 3 EUR\\
+    Fee for fare-dodging:& 40 EUR\\
+    Ticket price:& 10 EUR\\
+  \end{tabular}
+  \lz
+  
+  Our model says that we should not trust anyone and check the tickets of 
+  all passengers.
+  
+\end{column}
+\begin{column}{0.5\textwidth} 
+
+<<echo=FALSE, comment=NA>>=
+
+set.seed(123)
+n <- 100
+y <- sample(c("yes", "no"), size = n, replace = TRUE, prob = c(0.9, 0.1))
+dat <- data.frame(true = y, predicted = factor("no", levels = c("no", "yes")))
+confmat <- as.matrix(ftable(predicted ~ true, data = dat))
+costmat <- confmat
+costmat[] <- c(-40+3, 3, 10, -10)
+
+
+catf("Cost matrix C")
+print(costmat)
+cat(" ")
+catf("Confusion matrix")
+print(confmat)
+
+cst_all <- sum(costmat * confmat)
+@
+
+   
+\end{column}
+\end{columns}
+
+\begin{align*}
+  Costs &= \meanin C[\yi, \yih] = \frac{1}{\Sexpr{n}} \left( 
+  \Sexpr{costmat[1,1]} \cdot \Sexpr{confmat[1,1]} + 
+  \Sexpr{costmat[1,2]} \cdot \Sexpr{confmat[1,2]} + 
+  \Sexpr{costmat[2,1]} \cdot \Sexpr{confmat[2,1]} 
+  \Sexpr{costmat[2,2]} \cdot \Sexpr{confmat[2,2]} 
+  \right) \\
+  &= \frac{\Sexpr{cst_all}}{\Sexpr{n}}
+\end{align*}
+\end{vbframe}
+
 
 \begin{vbframe}{Probabilities: Brier Score}
 Measures squared distances of probabilities from the true class labels:
@@ -111,10 +216,10 @@ print(pl)
 BS2 = \meanin \sum_{k=1}^g \left( \pikxih - o_k^{(i)} \right)^2
 \]
 \begin{itemize}
-  \item Original one by Brier, works also for multiple classes
+  \item Original by Brier, works also for multiple classes
   \item $ o_k^{(i)} = [ \yih = k ] $ is a 0-1-one-hot coding for labels
   \item For the binary case, BS2 is twice as large as BS1, because in BS2 we sum the squared
-    difference for each observation regarding class 0 AND class 1, not only the true class.
+    difference for each observation regarding class 0 \textbf{and} class 1, not only the true class.
 \end{itemize}
 
 
@@ -127,7 +232,7 @@ LL = \meanin \left( - \yi \log(\pixih) - (1-\yi) \log(1-\pixih) \right)
 \]
 <<echo=FALSE, fig.width="0.8\\textwidth", fig.height=2.5>>=
 library(grid)
-phat = seq(0.01, 0.99, by = 0.02)
+phat = seq(0.01, 0.99, by = 0.01)
 d = rbind(
   data.frame(phat = phat, LL = -log(phat), true.label = "1"),
   data.frame(phat = phat, LL = -log(1-phat), true.label = "0")
