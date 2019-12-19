@@ -1,0 +1,194 @@
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../../style/preamble.Rnw")
+@
+% Load all R packages and set up knitr
+<<setup-r, child="../../style/setup.Rnw", include = FALSE>>=
+@
+
+\lecturechapter{Classification: Formalization}
+\lecture{Introduction to Machine Learning}
+
+\begin{vbframe}{Classification Tasks}
+
+In classification, we aim at predicting a discrete output 
+
+$$
+y \in \Yspace = \{C_1, ..., C_g\}
+$$
+
+with $2 \le g < \infty$ given data $\D$.  
+
+\lz 
+
+In this course, we assume the classes to be encoded as
+
+\begin{itemize}
+  \item $\Yspace = \{0, 1\}$ or $\Yspace = \{-1, 1\}$ (in the binary case $g = 2$)
+  \item $\Yspace = \{1, 2, ..., g\}$  (in the multiclass case $g \ge 3$)
+\end{itemize}
+
+\vfill
+
+% $^1$\textbf{Remark}: We will see later, that for probability / likelihood-based model derivations a 0/1-Coding and for geometric / loss-based models the -1/+1-coding is preffered. 
+
+\end{vbframe}
+
+
+\begin{vbframe}{Classification Models} 
+We defined models $f: \Xspace \to \R^g$ as functions that output (continuous) \textbf{scores} / \textbf{probabilities} and \textbf{not} (discrete) classes. Why? 
+
+\begin{itemize}
+  \item From an optimization perspective, it is \textbf{much} (!) easier to optimize costs for continuous-valued functions 
+  \item Scores / probabilities (for classes) contain more information than the class labels alone
+  \item As we will see later, scores can easily be transformed into class labels; but class labels cannot be transformed into scores
+\end{itemize}
+
+We distinguish \textbf{scoring} and \textbf{probabilistic} classifiers.
+\end{vbframe}
+
+
+\begin{vbframe}{Scoring Classifiers}
+\begin{itemize}
+% \item Scoring classifiers assume the output variable to be -1/+1-encoded, i. e. $\Yspace = \{-1, 1\}$
+\item Construct $g$ \textbf{discriminant} / \textbf{scoring functions} $f_1, ..., f_g: \Xspace \to \R$
+\item Scores $f_1(\xb), ..., f_g(\xb)$ are transformed into classes by choosing the class with the maximum score 
+$$
+h(\xb) = \argmax_{k \in \{1, 2, ..., g\}} f_k(\xb). 
+$$ 
+
+\item For $g = 2$, a single discriminant function $f(\xb) = f_{1}(\xb) - f_{-1}(\xb)$ is sufficient (note that it would be natural here to label the classes with $\{+1, -1\}$)  
+
+% \begin{eqnarray*}
+ % \qquad h(\bm{x}) &=& 1 \\
+ % f_1(\xb) &>&  f_{-1}(\xb) \\
+ % f_1(\xb) - f_{-1}(\xb) &>& 0 \\
+% f(\xb) &>& 0 
+% \end{eqnarray*}
+
+\item Class labels are constructed by $h(\xb) = \text{sgn}(f(\xb))$
+\item $|\fx|$ is called \enquote{confidence}
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Probabilistic Classifiers}
+\begin{itemize}
+% \item Probabilistic classifiers assume the output variable to be 0/1-encoded, i. e. $\Yspace = \{0, 1\}$
+\item Construct $g$ \textbf{probability functions} $\pi_1, ..., \pi_g: \Xspace \to [0, 1],~\sum_i \pi_i = 1$ 
+\item Probabilities $\pi_1(\xb), ..., \pi_g(\xb)$ are transformed into a labels by predicting the class with the maximum probability
+$$
+h(x) = \argmax_{\{k \in 1, 2, ..., g\}} \pi_k(\xb)
+$$ 
+\item For $g = 2$ one $\pi(x)$ is constructed, (note that it would be natural here to label the classes with $\{0, 1\}$)
+
+\item Probabilistic classifiers can also be seen as scoring classifiers
+
+\item If we want to emphasize that our model outputs probabilities we denote the model as $\pi: \Xspace \to [0, 1]^g$; if we are talking about models in a general sense, we write $f$ comprising both probabilistic and scoring classifiers (context will make this clear!) 
+\end{itemize}
+
+\framebreak 
+
+
+\begin{itemize}
+\item Both scoring and probabilistic classifiers can output classes by thresholding (binary case) / selecting the class with the maximum score (multiclass)
+\item Thresholding: $\hxv:= [\pi(\xv) \ge c]$ or $\hxv = [\fx \ge c]$ for some threshhold $c$.
+\item Usually $c = 0.5$ for probabilistic, $c = 0$ for scoring classifiers.
+\item There are also versions of thresholding for the multi-class case
+
+\end{itemize}
+
+\begin{center}
+  \includegraphics{figure_man/classifiers.png}
+\end{center}
+
+\end{vbframe} 
+
+\begin{vbframe}{Decision regions boundaries}
+\begin{itemize}
+\item A decision boundary is defined as a hypersurface that partitions the input space $\Yspace$ into $g$ (the number of classes) \textbf{decision regions}
+$$
+\Xspace_k = \{x \in \Xspace : h(x) = k\}
+$$
+
+\item Points in space where the classes with maximal score are tied and the corresponding hypersurfaces are called \textbf{decision boundaries}
+\begin{eqnarray*}  
+\{ \xb \in \Xspace: && \exists~i \ne j \text{ s.t. } f_i(\xb) = f_j(\xb) \\ && \text{and } f_i(\xb), f_j(\xb) \ge f_k(\xb) ~ \forall k \ne i, j\}
+\end{eqnarray*}  
+
+In the binary case we can simplify and generalize to the decision bound for general threshold $c$:
+
+$$
+f(x) = c
+$$
+
+If we set $c=0$ for scores and $c=0.5$ for probabilities this is consistent with the definition above.
+
+\end{itemize}
+
+\framebreak
+
+<<echo=FALSE, fig.height=4.7>>=
+
+library(mlr)
+library(gridExtra)
+
+data("iris", package = "datasets")
+df = iris 
+clTask = makeClassifTask( data = df, target = "Species")
+
+lrnqdat = makeLearner("classif.qda")
+lrnRpart = makeLearner("classif.rpart")
+lrnL1 = makeLearner("classif.ksvm")
+lrnAda = makeLearner("classif.naiveBayes")
+
+plotQDA = plotLearnerPrediction(lrnqdat, task = clTask, features = c("Sepal.Length", "Sepal.Width"), cv = 0)
+plotRpart = plotLearnerPrediction(lrnRpart, task = clTask, features = c("Sepal.Length", "Sepal.Width"), cv = 0)
+plotLrnL1 = plotLearnerPrediction(lrnL1, task = clTask, features = c("Sepal.Length", "Sepal.Width"), cv = 0)
+plotlrnAda = plotLearnerPrediction(lrnAda, task = clTask, features = c("Sepal.Length", "Sepal.Width"), cv = 0)
+
+grid.arrange(plotQDA, plotRpart, plotLrnL1, plotlrnAda, ncol = 2, nrow = 2)
+@
+
+
+
+
+\footnotesize{Different shapes of decision boundaries. Classifiers (QDA, decision tree, nonlinear SVM, Naive-Bayes)}
+
+\end{vbframe}
+
+\begin{vbframe}{Linear Classifiers}
+
+If the discriminant functions $f_k(\xb)$ can be specified as linear functions (possibly through a rank-preserving,
+monotone transformation $g: \R \to \R$), i. e. 
+
+$$
+  g(f_k(\xb)) = \bm{w}_k^\top \bm{x} + b_k,
+$$
+
+we will call the classifier a \textbf{linear classifier}. 
+
+\lz 
+
+% We can then write a ties between scores as  
+
+% \begin{eqnarray*}
+  % f_i(\xb) &=& f_j(\xb) \\
+  % g(f_i(\xb)) &=& g(f_j(\xb)) \\
+  % \bm{w}_i^\top \xb + b_i &=& \bm{w}_j^\top \bm{x} + b_j \\
+  % \left(\bm{w}_i - \bm{w}_j\right)^\top \xb + \left(b_i - b_j\right) &=& 0 \\
+  % \bm{w}_{ij}^\top \xb + b_{ij} &=& 0 
+% \end{eqnarray*}
+
+with $\bm{w}_{ij} := \bm{w}_i - \bm{w}_j$ and $b_{ij} = b_i - b_j$. This is a \textbf{hyperplane} separating two classes. 
+
+\lz
+
+Note that linear classifiers can represent non-linear decision boundaries in the original input space if we use derived features like higher order interactions, polynomial features, basis function expansions, etc.
+
+
+\end{vbframe}
+
+
+\endlecture
+
+
