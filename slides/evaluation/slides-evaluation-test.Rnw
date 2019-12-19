@@ -4,89 +4,11 @@ knitr::set_parent("../../style/preamble.Rnw")
 <<setup, child="../../style/setup.Rnw", include = FALSE>>=
 @
 
-\lecturechapter{Evaluation: Train and Test Error}
+%! includes: evaluation-intro evaluation-train
+
+\lecturechapter{Evaluation: Test Error}
 \lecture{Introduction to Machine Learning}
 
-\begin{vbframe}{Training Error}
-
-The \emph{training error} (also called apparent error or resubstitution error)
-is estimated by the averaging error over the same data set we fitted on:
-
-\lz
-
-% FIGURE SOURCE: https://docs.google.com/presentation/d/1Fvan5-o14-b3aK0jfo4maWvXLD1g04nk5_yLaEyEPqA/edit?usp=sharing
-\includegraphics[width=\textwidth, height=6cm,page=4]{figure_man/train_error.png}
-
-\vspace{-0.8cm}
-
-\end{vbframe}
-
-\begin{vbframe}{Example: Polynomial Regression}
-
-Assume an (unknown) sinusoidal function that $0.5 + 0.4 \cdot \sin (2 \pi x) + \epsilon$ that we sample from with some measurement error $\epsilon$.
-
-<<echo=FALSE, out.width="0.75\\textwidth", fig.width = 8, fig.height = 4.5, fig.align="center">>=
-library(ggplot2)
-source("rsrc/plot_train_test.R")
-
-.h = function(x) 0.5 + 0.4 * sin(2 * pi * x)
-h = function(x) .h(x) + rnorm(length(x), mean = 0, sd = 0.05)
-
-x.all = seq(0, 1, length = 26L)
-ind = seq(1, length(x.all), by = 2)
-mydf = data.frame(x = x.all, y = h(x.all))
-
-
-ggTrainTestPlot(data = mydf, truth.fun = .h, truth.min = 0, truth.max = 1, test.plot = FALSE,
-  test.ind = ind)[["plot"]] + ylim(0, 1)
-@
-
-We try to approximate it with a $d$th-degree polynomial
-\[ \fxt = \theta_0 + \theta_1 x + \cdots + \theta_d x^d = \sum_{j = 0}^{d} \theta_j x^j\text{.} \]
-
-\framebreak
-
-Models of different \textit{complexity}, i.e., of different orders of the polynomial
-are fitted. How should we choose $d$?
-
-<<echo=FALSE, fig.width = 9, fig.height = 4, fig.align="center">>=
-out = ggTrainTestPlot(data = mydf, truth.fun = .h, truth.min = 0, truth.max = 1, test.plot = FALSE,
-  test.ind = ind, degree = c(1, 3, 9))
-out[["plot"]] + ylim(0, 1)
-@
-
-\begin{itemize}
-\item d=1: \Sexpr{sprintf("%.03f", out$train.test$degree1[1])}: Clear underfitting
-\item d=3: \Sexpr{sprintf("%.03f", out$train.test$degree3[1])}: Pretty OK?
-\item d=9: \Sexpr{sprintf("%.03f", out$train.test$degree9[1])}: Clear overfitting
-\end{itemize}
-
-Simply using the training error seems to be a bad idea.
-
-\end{vbframe}
-
-\begin{vbframe}{Training Error Problems}
-\begin{itemize}
-  \item The training error is usually a very unreliable and overly optimistic estimator of future performance.
-    Modelling the training data is not of interest, but modelling the general structure in it. We do not want to overfit to noise
-    or peculiarities.
-  \item The training error of 1-NN is always zero, as each observation is its own NN during test time
-    (assuming we do not have repeated measurements with conflicting labels).
-  \item Extend any ML training in the following way:
-    After normal fitting, we also store the training data.
-    During prediction, we first check whether $x$ is already stored in this set. If so, we replicate its label.
-    The train error of such an (unreasonable) procedure will be 0.
-  \item There are so called interpolators - interpolating splines, interpolating Gaussian processes - whose predictions can always perfectly match the
-    regression targets, they are not necessarily good as they will interpolate the noise, too
-\end{itemize}
-\end{vbframe}
-
-\begin{vbframe}{Training Error Problems}
-\begin{itemize}
-  \item Goodness-of-fit measures like (classical) $R^2$, likelihood, AIC, BIC, deviance are all based on the training error.
-  \item For models of severely restricted capacity, and given enough data, the training error might provide reliable information. E.g. consider a linear model with $p = 5$ features, with $10^6$ training points. But: What happens if we have less data or as $p$ increases? Not possible to determine when training error becomes unreliable.
-\end{itemize}
-\end{vbframe}
 
 \begin{vbframe}{Test Error and Hold-Out Splitting}
 \begin{itemize}
