@@ -1,4 +1,14 @@
-ggTrainTestPlot = function (data, truth.fun, truth.min, truth.max, test.plot, test.ind, degrees = NULL)
+## data for example
+.h = function(x) 0.5 + 0.4 * sin(2 * pi * x)
+h = function(x) .h(x) + rnorm(length(x), mean = 0, sd = 0.05)
+
+x.all = seq(0, 1, length = 26L)
+ind = seq(1, length(x.all), by = 2)
+mydf = data.frame(x = x.all, y = h(x.all))
+
+## function
+ggTrainTestPlot = function (data, truth.fun, truth.min, truth.max, test.plot, 
+    test.ind, degrees = NULL)
 {
 	out = list()
 	train.test.errors = list()
@@ -9,15 +19,13 @@ ggTrainTestPlot = function (data, truth.fun, truth.min, truth.max, test.plot, te
 	temp = rep("Train set", nrow(data))
 	temp[test.ind] = "Test set"
 	data$dummy = factor(temp, levels = c("Train set", "Test set"))
-	# browser()
 
 	gg = ggplot() + 
-	  geom_line(data = line.data, aes(x = x, y = y, size = "True function"), linetype = "longdash", colour = "grey") +
-    scale_size_manual("", values = 0.5, guide = guide_legend(override.aes = list(colour = "grey"))) +
-	  # geom_point(data = data[-ind, ], aes(x = x, y = y, fill = dummy)) +
-	  # scale_color_identity(name = "", guide = "legend", labels = c("True relationship f(x)")) +
-	  # scale_fill_identity(name = "", guide = "legend", labels = c("True relationship f(x)", "Training set")) +
-	  xlab("") + ylab("")
+	    geom_line(data = line.data, aes(x = x, y = y, size = "True function"), 
+	        linetype = "longdash", colour = "grey") +
+	    scale_size_manual("", values = 0.5, 
+	        guide = guide_legend(override.aes = list(colour = "grey"))) +
+	    xlab("") + ylab("")
 
 	if (test.plot) {
 		gg = gg + geom_point(data = data, aes(x = x, y = y, shape = dummy)) +
@@ -59,3 +67,7 @@ ggTrainTestPlot = function (data, truth.fun, truth.min, truth.max, test.plot, te
 
 	return (out)
 }
+
+## example
+out = ggTrainTestPlot(data = mydf, truth.fun = .h, truth.min = 0, truth.max = 1, 
+    test.plot = FALSE, test.ind = ind, degree = c(1, 3, 9))
