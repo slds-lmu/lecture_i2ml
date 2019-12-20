@@ -10,7 +10,7 @@ knitr::set_parent("../../style/preamble.Rnw")
 <<setup, child="../../style/setup.Rnw", include = FALSE>>=
 @
 
-\lecturechapter{Evaluation: Resampling and Cross-Validation}
+\lecturechapter{Evaluation: Resampling}
 \lecture{Introduction to Machine Learning}
 
 
@@ -211,104 +211,109 @@ $\Dtest^b = \Dtrain \setminus \Dtrain^b$.
 
 \end{vbframe}
 
-\begin{vbframe}{Bias-Variance Analysis for Subsampling}
-
-  \begin{itemize}
-    \item Let's reconsider our hold-out experiment on the spiral data from the train-test unit (maybe re-read it again)
-    \item Again, we use split-rates $s \in \{0.05, 0.1, ..., 0.95\}$ for training with $|\Dtrain| = s \cdot 500$.
-    \item But now we compare 50 subsampling experiments with $50 \cdot 50$ hold-out experiments per split.
-    \item Every subsampling experiment is the result of averaging 50 hold-out experiments, so each performance estimate is much more reliable (but also more expensive) than one computed by a hold-out experiment.
-  \end{itemize}
-
-\framebreak
-
-<<>>=
-# rsrc data from rsrc/holdout-biasvar.R
-load("rsrc/holdout-biasvar.RData")
-@
-
-<<echo=FALSE, fig.height=4>>=
-library(plyr)
-library(gridExtra)
-
-ggd1 = melt(res)
-colnames(ggd1) = c("split", "rep", "ssiter", "mmce")
-ggd1$split = as.factor(ggd1$split)
-ggd1$mse = (ggd1$mmce -  realperf)^2
-ggd1$type = "holdout"
-ggd1$ssiter = NULL
-mse1 = ddply(ggd1, "split", summarize, mse = mean(mse))
-mse1$type = "holdout"
-
-ggd2 = ddply(ggd1, c("split", "rep"), summarize, mmce = mean(mmce))
-ggd2$mse = (ggd2$mmce -  realperf)^2
-ggd2$type = "subsampling"
-mse2 = ddply(ggd2, "split", summarize, mse = mean(mse))
-mse2$type = "subsampling"
-
-ggd = rbind(ggd1, ggd2)
-gmse = rbind(mse1, mse2)
-
-ggd$type = as.factor(ggd$type)
-pl1 = ggplot(ggd, aes(x = split, y = mmce, col = type))
-pl1 = pl1 + geom_boxplot()
-pl1 = pl1 + geom_hline(yintercept = realperf)
-pl1 = pl1 + theme(axis.text.x = element_text(angle = 45))
-print(pl1)
-
-gmse$split = as.numeric(as.character(gmse$split))
-gmse$type = as.factor(gmse$type)
-@
-
-\begin{itemize}
-  \item Both experiments are compared to the "real" mmce (black line).
-  \item Subsampling has the same pessimistic bias for small split rates, but much less variance overall.
-  \item This allows to use much smaller test sets with good results.
-\end{itemize}
-
-\framebreak
-
-<<echo=FALSE, fig.height=4>>=
-pl2 = ggplot(gmse, aes(x = split, y = mse, col = type))
-pl2 = pl2 + geom_line()
-pl2 = pl2 + scale_y_log10()
-pl2 = pl2 + scale_x_continuous(breaks = gmse$split)
-pl2 = pl2 + theme(axis.text.x = element_text(angle = 45))
-pl2 = pl2 + ylab("MSE of the mmce")
-print(pl2)
-@
-
-\begin{itemize}
-  \item The MSE is overall better for subsampling compared to hold-out
-  \item The optimal split rate now is a higher $s \approx 0.9$
-  \item We see an increase in variance at the end because the training sets become more overlapping and not independent
-\end{itemize}
-\end{vbframe}
+% \begin{vbframe}{Bias-Variance Analysis for Subsampling}
+% 
+%   \begin{itemize}
+%     \item Let's reconsider our hold-out experiment on the spiral data from the train-test unit (maybe re-read it again)
+%     \item Again, we use split-rates $s \in \{0.05, 0.1, ..., 0.95\}$ for training with $|\Dtrain| = s \cdot 500$.
+%     \item But now we compare 50 subsampling experiments with $50 \cdot 50$ hold-out experiments per split.
+%     \item Every subsampling experiment is the result of averaging 50 hold-out experiments, so each performance estimate is much more reliable (but also more expensive) than one computed by a hold-out experiment.
+%   \end{itemize}
+% 
+% \framebreak
+% 
+% <<>>=
+% # rsrc data from rsrc/holdout-biasvar.R
+% load("rsrc/holdout-biasvar.RData")
+% @
+% 
+% <<echo=FALSE, fig.height=4>>=
+% library(plyr)
+% library(gridExtra)
+% 
+% ggd1 = melt(res)
+% colnames(ggd1) = c("split", "rep", "ssiter", "mmce")
+% ggd1$split = as.factor(ggd1$split)
+% ggd1$mse = (ggd1$mmce -  realperf)^2
+% ggd1$type = "holdout"
+% ggd1$ssiter = NULL
+% mse1 = ddply(ggd1, "split", summarize, mse = mean(mse))
+% mse1$type = "holdout"
+% 
+% ggd2 = ddply(ggd1, c("split", "rep"), summarize, mmce = mean(mmce))
+% ggd2$mse = (ggd2$mmce -  realperf)^2
+% ggd2$type = "subsampling"
+% mse2 = ddply(ggd2, "split", summarize, mse = mean(mse))
+% mse2$type = "subsampling"
+% 
+% ggd = rbind(ggd1, ggd2)
+% gmse = rbind(mse1, mse2)
+% 
+% ggd$type = as.factor(ggd$type)
+% pl1 = ggplot(ggd, aes(x = split, y = mmce, col = type))
+% pl1 = pl1 + geom_boxplot()
+% pl1 = pl1 + geom_hline(yintercept = realperf)
+% pl1 = pl1 + theme(axis.text.x = element_text(angle = 45))
+% print(pl1)
+% 
+% gmse$split = as.numeric(as.character(gmse$split))
+% gmse$type = as.factor(gmse$type)
+% @
+% 
+% \begin{itemize}
+%   \item Both experiments are compared to the "real" mmce (black line).
+%   \item Subsampling has the same pessimistic bias for small split rates, but much less variance overall.
+%   \item This allows to use much smaller test sets with good results.
+% \end{itemize}
+% 
+% \framebreak
+% 
+% <<echo=FALSE, fig.height=4>>=
+% pl2 = ggplot(gmse, aes(x = split, y = mse, col = type))
+% pl2 = pl2 + geom_line()
+% pl2 = pl2 + scale_y_log10()
+% pl2 = pl2 + scale_x_continuous(breaks = gmse$split)
+% pl2 = pl2 + theme(axis.text.x = element_text(angle = 45))
+% pl2 = pl2 + ylab("MSE of the mmce")
+% print(pl2)
+% @
+% 
+% \begin{itemize}
+%   \item The MSE is overall better for subsampling compared to hold-out
+%   \item The optimal split rate now is a higher $s \approx 0.9$
+%   \item We see an increase in variance at the end because the training sets become more overlapping and not independent
+% \end{itemize}
+% \end{vbframe}
 
 \begin{vbframe}{Resampling discussion}
 
-\begin{itemize}
-  \item In ML we fit, at the end, a model on all our given data.
-  \item Problem: We need to know how well this model performs in the future.
-  But no data is left to reliably do this.
-  \item In order to approximate this, we do the next best thing. We estimate how well
-  the learner works when it sees nearly $n$  points from the same data distribution.
-  \item Holdout, CV, resampling estimate exactly this number. The "pessimistic bias" refers to
-  when use much less data in fitting than $n$. Then we "hurt" our learner unfairly.
-  \item Strictly speaking, resampling only produces one number, the performance estimator.
-  It does NOT produce models, paramaters, etc. These are intermediate results and discarded.
-  \item The model and parameters are obtained when we fit the learner finally on the complete data.
-  \item This is a bit weird and complicated, but we have to live with this.
-\end{itemize}
+In ML we fit, at the end, a model on all our given data.\\
+
+\lz
+
+\textbf{Problem:} We need to know how well this model performs in the future, 
+but no data is left to reliably do this.\\
+
+$\Rightarrow$ Approximate using holdout / CV / bootstrap / resampling estimate\\ 
+
+\lz
+
+\textbf{But:} pessimistic bias because we don't use all data points\\
+
+\lz 
+
+Final model is (usually) computed on all data points.
+
 
 \framebreak
 
 \begin{itemize}
   \item 5CV or 10CV have become standard
   \item Do not use Hold-Out, CV with few iterations, or subsampling with a low subsampling rate for small samples, since this can cause the estimator to be extremely biased, with large variance.
-  \item For small data situation with less than 500 or 200 observations, use LOO or probably better repeated CV
-  \item A $\D$ with $|\D| = 100.000$ can have small sample size properties if one class has only 100 observations \ldots
-  \item For some models, computationally fast calculations or approximations for the LOO exist
+  \item For small data situation with less than 500 or 200 observations, use 
+  repeated CV
+  \item A $\D$ with $|\D| = 100.000$ can have small sample size properties if one class has only 100 observations 
+  % \item For some models, computationally fast calculations or approximations for the LOO exist
   \item Modern results seem to indicate that subsampling has somewhat better properties than
     bootstrapping. The repeated observations can can cause problems in training algorithms,
     especially in nested setups where the \enquote{training} set is split up again.
