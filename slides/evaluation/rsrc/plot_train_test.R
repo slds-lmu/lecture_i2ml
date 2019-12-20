@@ -69,5 +69,5 @@ ggTrainTestPlot = function (data, truth.fun, truth.min, truth.max, test.plot,
 }
 
 ## example
-out = ggTrainTestPlot(data = mydf, truth.fun = .h, truth.min = 0, truth.max = 1, 
-    test.plot = FALSE, test.ind = ind, degree = c(1, 3, 9))
+# out = ggTrainTestPlot(data = mydf, truth.fun = .h, truth.min = 0, truth.max = 1, 
+#     test.plot = FALSE, test.ind = ind, degree = c(1, 3, 9))
