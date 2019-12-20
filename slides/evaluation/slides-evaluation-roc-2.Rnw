@@ -4,7 +4,7 @@ knitr::set_parent("../../style/preamble.Rnw")
 <<setup, child="../../style/setup.Rnw", include = FALSE>>=
 requireNamespace("ROCR")
 @
-\lecturechapter{Evaluation: ROC Analysis 2}
+\lecturechapter{Evaluation: Measures for Binary Classification: ROC Measures and ROC curve}
 \lecture{Introduction to Machine Learning}
 
 % \begin{vbframe}{ROC Space}
@@ -15,13 +15,19 @@ requireNamespace("ROCR")
 % \end{vbframe}
 
 
-\begin{vbframe}{ROC Space}
-\begin{itemize}
-\item We characterize a classifier by its TPR and FPR values and plot them in a coordinate
-      system
-\item We could also use 2 different ROC metrics which define a trade-off, like TPR and PPV!
-\end{itemize}
-<<echo=FALSE, out.height="5cm", fig.align="center">>=
+\begin{vbframe}{Labels: ROC Space}
+% \begin{itemize}
+% \item We characterize a classifier by its TPR and FPR values and plot them in a coordinate
+%       system
+% \item We could also use 2 different ROC metrics which define a trade-off, like TPR and PPV!
+% \end{itemize}
+
+
+Plot True Positive Rate and False Positive Rate:
+\begin{columns}
+\begin{column}{0.5\textwidth}
+
+<<echo=FALSE, out.width="\\textwidth", fig.height=4, fig.width=4, fig.align="center">>=
 plot_roc_space = function(fpr, tpr, label) {
   d = data.frame(FPR = fpr, TPR = tpr, label = label)
   pl = ggplot(d, aes(x = FPR, y = TPR, label = label))
@@ -36,20 +42,52 @@ tpr = c(0.7, 0.85, 0.6)
 label = c("C1", "C2", "C3")
 pl = plot_roc_space(fpr, tpr, label)
 pl = pl + geom_segment(x = fpr[1], y = tpr[1], xend = fpr[2], yend = tpr[2], lty = "dotted")
-pl = pl + geom_text_repel(data = data.frame(FPR = 0.20, TPR = 0.78, label = "unclear winner"))
+pl = pl + geom_text_repel(data = data.frame(FPR = 0.20, TPR = 0.83, label = "unclear winner"))
 pl = pl + geom_segment(x = fpr[1], y = tpr[1], xend = fpr[3], yend = tpr[3], lty = "dotted")
 pl = pl + geom_text_repel(data = data.frame(FPR = 0.25, TPR = 0.65, label = "dominates"))
 print(pl)
 @
+
+\end{column}
+\begin{column}{0.5\textwidth} 
+
+% \includegraphics[width=\textwidth]{figure_man/roc-confmatrix2.png}
+\begin{center}
+\small
+\begin{tabular}{cc|cc}
+    & & \multicolumn{2}{c}{\bfseries True Class $y$} \\
+    & & $+$ & $-$ \\
+    \hline
+    \bfseries Pred.     & $+$ & TP & FP \\
+              $\hat{y}$ & $-$ & FN & TN \\
+\end{tabular}
+
+\lz\lz
+
+TPR = $\frac{\text{TP}}{\text{TP} + \text{FN}}$
+
+\lz
+
+FPR = $\frac{\text{FP}}{\text{TN} + \text{FN}}$
+\end{center}
+
+
+\end{column}
+\end{columns}
+
 \end{vbframe}
 
 
-\begin{vbframe}{ROC Space}
+\begin{vbframe}{Labels: ROC Space}
   \begin{itemize}
   \item The best classifier lies on the top-left corner
-  \item The diagonal is worst, where classifiers produce random labels (with different proportions). If each positive $x$ will be randomly classified with 25\% as "pos", $TPR = 0.25$. If we assign each negative $x$ randomly to "pos", $FPR = 0.25$.
+  \item The diagonal $\approx$ random labels (with different proportions).\\ 
+  Assign positive $x$ as "pos" with 25\% probability $\rightarrow$ $TPR = 0.25$.\\ 
+  Assign negative $x$ as "pos" with 25\% probability $\rightarrow$ $FPR = 0.25$.
 \end{itemize}
-<<echo=FALSE, out.height="5cm", fig.align="center">>=
+
+\lz
+<<echo=FALSE, out.width="0.4\\textwidth", fig.height = 4, fig.width=4, fig.align="center">>=
 fpr = c(0, 1, 0, 0.25, 0.75)
 tpr = c(1, 1, 0, 0.25, 0.75)
 label = c("Best", "Pos-100%", "Pos-0%", "Pos-25%", "Pos-75%")
@@ -58,11 +96,17 @@ print(pl)
 @
 \end{vbframe}
 
-\begin{vbframe}{ROC Space}
+\begin{vbframe}{Labels: ROC Space}
 
-In practice, we should never obtain a classifier below the diagonal, as inverting the predicted labels -- $0 \rightarrow 1$ and $1 \rightarrow 0$ -- will result in a reflection at the diagonal. Because this inverting results in $TPR2 = 1-TPR1$ and $FPR2 = 1-FPR1$
+In practice, we should never obtain a classifier below the diagonal.\\
 
-<<echo=FALSE, out.width="5cm", out.height="5cm", fig.align="center">>=
+\lz
+
+Inverting the predicted labels ($0 \rightarrow 1$ and $1 \rightarrow 0$) will result in a reflection at the diagonal. 
+
+\lz
+
+<<echo=FALSE, out.width="0.4\\textwidth", fig.height = 4, fig.width=4, fig.align="center">>=
 fpr = c(0.75, 0.25)
 tpr = c(0.25, 0.75)
 label = c("C1", "C2")
@@ -72,11 +116,22 @@ print(pl)
 @
 \end{vbframe}
 
-\begin{vbframe}{ROC and Label Distribution}
-ROC curves are insensitive to class distributions
-ROC curves are insensitive to the class distribution in the sense that
-they are not affected by changes in the ratio $n_+/n_-$ (at prediction).
-\begin{table}[]
+
+
+\begin{vbframe}{Label Distribution in TPR and FPR}
+TPR and FPR are insensitive to the class distribution:\\
+Not affected by changes in the ratio $n_+/n_-$ (at prediction).\\
+
+\begin{columns}
+\begin{column}{0.45\textwidth}
+
+\underline{Example 1}:\\
+Proportion $n_+/n_- = 1$\\
+
+\lz
+
+{
+\tiny
 \centering
 \tiny
 \begin{tabular}{|l|c|c|}
@@ -85,13 +140,23 @@ they are not affected by changes in the ratio $n_+/n_-$ (at prediction).
 Pred. Positive & 40            & 25            \\ \hline
 Pred. Negative & 10            & 25           \\ \hline
 \end{tabular}
-\end{table}
+}
+ 
+\lz 
 
-Here we have we have a proportion $n_+/n_- = 1$. MCE = 35/100.
-Now we double the size of the positive class and change the proportion to $n_+/n_- = 2$. MCE = 45/150 = 30/100.
+MCE = 35/100\\
+$TPR = 0.8$\\ 
+$FPR = 0.5$ 
 
-\begin{table}[]
-\centering
+\end{column}
+\begin{column}{0.45\textwidth} 
+
+\underline{Example 2}:\\
+Proportion $n_+/n_- = 2$\\
+
+\lz
+
+{
 \tiny
 \begin{tabular}{|l|c|c|}
                 \hline
@@ -99,9 +164,17 @@ Now we double the size of the positive class and change the proportion to $n_+/n
 Pred. Positive & 80            & 25            \\ \hline
 Pred. Negative & 20            & 25           \\ \hline
 \end{tabular}
-\end{table}
+}
+ 
+\lz 
+ 
+MCE = 45/150 = 30/100\\
+$TPR = 0.8$\\ 
+$FPR = 0.5$ 
+\end{column}
+\end{columns}
 
-$TPR = 0.8$ and $FPR = 0.5$ do not change.
+
 
 \lz
 
@@ -112,21 +185,26 @@ drastically change!
 
 
 
-\begin{vbframe}{Scoring Classifiers}
-\begin{itemize}
-\item A scoring classifier is a model which outputs scores or probabilities, instead of discrete labels, and nearly all modern classifiers can do that.
-\item Thresholding flexibly converts measured probabilities to labels.
-  Predict $1$ (positive class) if $\fxh > \tau$ else predict $0$.
-\item Normally we could use $\tau = 0.5$ to convert, but for imbalanced or cost-sensitive situations another threshold could be much better.
-\item After thresholding, any metric defined on labels can be used.
-\end{itemize}
-\begin{centering}
-% FIGURE SOURCE: https://docs.google.com/presentation/d/1GmlgtjSCTHgSAveVGf-x1ojAjGP2llPhFKjn_6M4Sig/edit?usp=sharing
-\includegraphics[height=3.5cm,page=2]{figure_man/confusion_matrix_measures}
-\end{centering}
-\end{vbframe}
+% \begin{vbframe}{Scoring Classifiers}
+% \begin{itemize}
+% \item A scoring classifier is a model which outputs scores or probabilities, instead of discrete labels, and nearly all modern classifiers can do that.
+% \item Thresholding flexibly converts measured probabilities to labels.
+%   Predict $1$ (positive class) if $\fxh > \tau$ else predict $0$.
+% \item Normally we could use $\tau = 0.5$ to convert, but for imbalanced or cost-sensitive situations another threshold could be much better.
+% \item After thresholding, any metric defined on labels can be used.
+% \end{itemize}
+% \begin{center}
+% % FIGURE SOURCE: https://docs.google.com/presentation/d/1GmlgtjSCTHgSAveVGf-x1ojAjGP2llPhFKjn_6M4Sig/edit?usp=sharing
+% \includegraphics[width=0.5\textwidth]{figure_man/confusion_matrix_measures}
+% \end{center}
+% \end{vbframe}
 
-\begin{vbframe}{ROC Curve}
+\begin{vbframe}{From Probabilities to Labels: ROC Curve}
+
+\begin{center}
+% FIGURE SOURCE: https://docs.google.com/presentation/d/1GmlgtjSCTHgSAveVGf-x1ojAjGP2llPhFKjn_6M4Sig/edit?usp=sharing
+\includegraphics[width=0.7\textwidth]{figure_man/confusion_matrix_measures}
+\end{center}
 
 \begin{itemize}
   \item Are based on thresholding classifiers
