@@ -201,40 +201,28 @@ drastically change!
 
 \begin{vbframe}{From Probabilities to Labels: ROC Curve}
 
-\begin{itemize}
-  \item Are based on thresholding classifiers
-  \item We iterate through all possible threshold, and draw a point in the ROC space (FPR, TPR) for the resulting classifier
-  \item The resulting plot is called an ROC curve
-  \item Small thresholds will very liberally predict class 1, and result in a potentially higher FPR, but also higher TPR
-  \item High thresholds will very conservatively predict class 1, and result in a lower FPR and TPR
-  \item As we have not defined the trade-off between false postives and false negative costs,
-    we cannot easily select the "best" threshold; but a visual inspection of all possible results seems useful
-\end{itemize}
-\end{vbframe}
-
-% \begin{vbframe}{ROC Curve}
+Remember: Both scoring and probabilistic classifiers can output classes by thresholding.\\
+$$\hx:= [\pix) \ge c] \quad \text{ or } \quad \hx = [\fx \ge c]$$
 % \begin{center}
-% \includegraphics[width=\textwidth]{figure_man/roc-curves2.png}
+%   \includegraphics{../supervised-classification/figure_man/classifiers.png}
 % \end{center}
-% \end{vbframe}
 
-\begin{vbframe}{ROC Curve}
-\begin{itemize}
-  \item Rank test observations on decreasing score
-  \item Set $\alpha=1$, so we start in $(0, 0)$; we predict everything as "neg"
-  \item For each observation $x$ (in the decreasing order).
-  \begin{itemize}
-    \item Reduce threshold, so prediction for next observation changes
-    \item If $x$ is "pos", move TPR $1/n_+$ up, as we have one TP more
-    \item If $x$ is "neg", move FPR $1/n_-$ right, as we have one FP more
-  \end{itemize}
-\end{itemize}
-\end{vbframe}
+\begin{columns}
+\begin{column}{0.45\textwidth}
+
+\textbf{To draw a ROC curve}:\\
+
+Iterate through all possible thresholds $c$
+
+\lz 
 
 
-\begin{vbframe}{ROC Curve}
+$\rightarrow$ Visual inspection of all possible thresholds / results
 
-<<echo=FALSE, out.width="0.8\\textwidth", fig.width=6, fig.height=4, fig.align="center">>=
+\end{column}
+\begin{column}{0.45\textwidth} 
+
+<<echo=FALSE, out.width="\\textwidth", fig.width=4, fig.height=4, fig.align="center">>=
 source("rsrc/plot_roc.R")
 
 df_auc = data.frame(
@@ -244,6 +232,41 @@ df_auc = data.frame(
 )
 names(df_auc) = c("#", "Truth", "Score")
 
+
+plotROC(df_auc, 0, highlight = FALSE, table = FALSE)
+@
+
+
+\end{column}
+\end{columns}
+
+\end{vbframe}
+
+
+
+% \begin{vbframe}{ROC Curve}
+% \begin{center}
+% \includegraphics[width=\textwidth]{figure_man/roc-curves2.png}
+% \end{center}
+% \end{vbframe}
+
+% \begin{vbframe}{ROC Curve}
+% \begin{itemize}
+%   \item Rank test observations on decreasing score
+%   \item Set $\alpha=1$, so we start in $(0, 0)$; we predict everything as "neg"
+%   \item For each observation $x$ (in the decreasing order).
+%   \begin{itemize}
+%     \item Reduce threshold, so prediction for next observation changes
+%     \item If $x$ is "pos", move TPR $1/n_+$ up, as we have one TP more
+%     \item If $x$ is "neg", move FPR $1/n_-$ right, as we have one FP more
+%   \end{itemize}
+% \end{itemize}
+% \end{vbframe}
+
+
+\begin{vbframe}{ROC Curve}
+
+<<echo=FALSE, out.width="0.8\\textwidth", fig.width=6, fig.height=4, fig.align="center">>=
 thresh = 0.9
 tpr = mlr::measureTPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos")
 fpr = mlr::measureFPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos", negative = "Neg")
@@ -360,7 +383,7 @@ print(pl)
   \item The AUC (in [0,1]) is a single metric to evaluate scoring classifiers
   \item AUC = 1: Perfect classifier
   \item AUC = 0.5: Randomly ordered
-  \item AUC = 0: Perfect, with inverted labels
+  % \item AUC = 0: Perfect, with inverted labels
 \end{itemize}
 <<echo=FALSE, fig.height=4, fig.align="center">>=
 plotROC(df_auc, 0, table = FALSE, auc = TRUE, highlight = FALSE)
