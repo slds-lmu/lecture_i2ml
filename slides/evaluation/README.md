@@ -5,7 +5,8 @@ Slide order:
 - measures-classification
 - measures-classification-roc
 - measures-classification-roc-space
-- train-test
+- train
+- test
 - overfitting
 - resampling
 - learning-curves
