@@ -64,6 +64,72 @@ pitfalls.
   need to think again about loss functions.
 - The expected loss tells us the expected performance of our
   model.
+- We call this expected loss "generalization error"
+- Since we can't compute the gerenalization error directly, we
+  have to estimate it. We do that by computing the average loss.
+- We can do that using the training data or new, independent
+  data.
+- If we use training data this will result in a too optimistic
+  estimate.
+- This is why we actually want to use separate, independent test
+  data.
+- One example for a common estimate of the generalization error
+  is the mean squared error, which is just the L2-loss.
+- We will get back to that again later and also learn about all
+  kinds of other generalization error estimates.
+- These estimates we call performance measures or evaluation
+  measures.
 
 
+## MEASURES: INNER VS. OUTER LOSS
+
+- When we discussed losses in previous units we talke about how
+  to set up a learner and how to compute a model.
+- We used the loss as something to optimize over.
+- Of course we can not only use the loss for training a model,
+  but also for evaluating a model.
+- In an optimal scenario, we know exactly what we want.
+- We know which loss should be used.
+- We use this loss both for learning and for evaluating.
+- The loss used for learning is called "inner loss".
+- The loss used for evaluating is called "outer loss".
+- Think of a student. We want our student to learn how to
+  program.
+- We teach this student in programming and later the exam is
+  also about programming.
+- The student *learns* exactly the what she is *evaluated* for.
+- Imagine that the student would learn maths and then still get
+  evaluated in programming. That would be weird, right?
+
+
+## MEASURES: INNER VS. OUTER LOSS
+
+- In reality we do not always have the possibility, however, to
+  teach our student in programming.
+- Sometimes maths is all we have.
+- And teaching her in maths will give her a better ability to
+  understand programming than not teaching her anything.
+- Now in machine learning our learner ist the student and the
+  inner loss can not allways be the same as the outer loss.
+- This is because some losses are hard to optimize.
+- In other scenarios we have learners where the loss is not
+  specified directly.
+- Let's look at two examples: logistic regression and
+  k-Nearest-Neighbours.
+- Logistic regeression is often used because it is easy to
+  compute and easy to interpret.
+- With kNN we have an algorithm whithout explicit loss
+  minimization. So we don't really know the loss here.
+- Now when we want to compare models computet via logistic
+  regression and kNN, we need to think about: "what is actually
+the evaluation measure?"
+- Maybe we are interested in a classification error?
+- Maybe we are interested in a cost-weighted classification
+  error?
+- Maybe we need something more advanced for evaluation? Like ROC
+  or AUC?
+- Understanding these questions and how to answer them is the
+  topic of the upcoming units. 
+- So stay tuned to learn what a cost-weighted classification
+  error or an AUC is.
 
