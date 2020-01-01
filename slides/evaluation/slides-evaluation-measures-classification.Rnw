@@ -7,7 +7,7 @@ knitr::set_parent("../../style/preamble.Rnw")
 
 %! includes: evaluation-intro classification-*
 
-\lecturechapter{Evaluation: Measures for Classification 1}
+\lecturechapter{Evaluation: Simple Measures for Classification}
 \lecture{Introduction to Machine Learning}
 
 
@@ -28,7 +28,7 @@ $\rightarrow$ We evaluate based on those
 
 \end{vbframe}
 
-\begin{vbframe}{Labels: Accuracy / MCE}
+\begin{vbframe}{Labels: MCE}
 
 The misclassification error rate (MCE) counts the number of incorrect predictions and presents them as a rate:
 
@@ -54,8 +54,8 @@ ACC = \frac{1}{n} \sumin [\yi = \yih] \in [0;1]
 
 \begin{vbframe}{Labels: Confusion Matrix}
 
-True classes in rows.\\
-Predicted classes in columns.\\
+True classes in columns.\\
+Predicted classes in rows.\\
 
 \lz
 
@@ -114,7 +114,7 @@ Should train conductor check ticket of a person?\\
     \textbf{Costs:} & \\
     Ticket checking:& 3 EUR\\
     Fee for fare-dodging:& 40 EUR\\
-    Ticket price:& 10 EUR\\
+    % Ticket price:& 10 EUR\\
   \end{tabular}
   
 \end{column}
@@ -134,22 +134,7 @@ Should train conductor check ticket of a person?\\
 Predict if person has a ticket (yes / no).\\ 
 
 \begin{columns}
-\begin{column}{0.5\textwidth}
-
-
-  \begin{tabular}{ll}
-    \textbf{Costs:} & \\
-    Ticket checking:& 3 EUR\\
-    Fee for fare-dodging:& 40 EUR\\
-    Ticket price:& 10 EUR\\
-  \end{tabular}
-  \lz
-  
-  Our model says that we should not trust anyone and check the tickets of 
-  all passengers.
-  
-\end{column}
-\begin{column}{0.5\textwidth} 
+\begin{column}{0.3\textwidth} 
 
 <<echo=FALSE, comment=NA>>=
 
@@ -159,7 +144,7 @@ y <- sample(c("yes", "no"), size = n, replace = TRUE, prob = c(0.9, 0.1))
 dat <- data.frame(true = y, predicted = factor("no", levels = c("no", "yes")))
 confmat <- as.matrix(ftable(predicted ~ true, data = dat))
 costmat <- confmat
-costmat[] <- c(-40+3, 3, 10, -10)
+costmat[] <- c(-40+3, 3, 40, 0)
 
 
 catf("Cost matrix C")
@@ -167,23 +152,44 @@ print(costmat)
 cat(" ")
 catf("Confusion matrix")
 print(confmat)
+cat(" ")
+catf("Confusion matrix * C")
+print(costmat * confmat)
 
 cst_all <- sum(costmat * confmat)
 @
 
-   
 \end{column}
+\begin{column}{0.65\textwidth}
+
+
+  \begin{tabular}{ll}
+    \textbf{Costs:} & \\
+    Ticket checking:& 3 EUR\\
+    Fee for fare-dodging:& 40 EUR\\
+    % Ticket price:& 10 EUR\\
+  \end{tabular}
+  \lz
+  
+  Our model says that we should not trust anyone and check the tickets of 
+  all passengers.
+  
+  
+  \begin{align*}
+      Costs &= \meanin C[\yi, \yih] \\
+      &= \frac{1}{\Sexpr{n}} \left( 
+      \Sexpr{costmat[1,1]} \cdot \Sexpr{confmat[1,1]} + 
+      \Sexpr{costmat[1,2]} \cdot \Sexpr{confmat[1,2]} + 
+      \Sexpr{costmat[2,1]} \cdot \Sexpr{confmat[2,1]} +
+      \Sexpr{costmat[2,2]} \cdot \Sexpr{confmat[2,2]} 
+      \right) \\
+      &= \frac{\Sexpr{cst_all}}{\Sexpr{n}} = \Sexpr{cst_all/n}
+    \end{align*}
+\end{column}
+
 \end{columns}
 
-\begin{align*}
-  Costs &= \meanin C[\yi, \yih] = \frac{1}{\Sexpr{n}} \left( 
-  \Sexpr{costmat[1,1]} \cdot \Sexpr{confmat[1,1]} + 
-  \Sexpr{costmat[1,2]} \cdot \Sexpr{confmat[1,2]} + 
-  \Sexpr{costmat[2,1]} \cdot \Sexpr{confmat[2,1]} 
-  \Sexpr{costmat[2,2]} \cdot \Sexpr{confmat[2,2]} 
-  \right) \\
-  &= \frac{\Sexpr{cst_all}}{\Sexpr{n}}
-\end{align*}
+
 \end{vbframe}
 
 
@@ -192,6 +198,12 @@ Measures squared distances of probabilities from the true class labels:
 \[
 BS1 = \meanin \left( \pixih - \yi \right)^2
 \]
+
+
+\begin{itemize}
+  \item Fancy name for MSE on probabilities
+  \item Usual definition for binary case, $\yi$ must be coded as 0 and 1.
+\end{itemize}
 
 <<echo=FALSE, fig.width="0.8\\textwidth", fig.height=2.5>>=
 phat = seq(0, 1, by = 0.02)
@@ -208,10 +220,7 @@ pl = pl + annotate(geom = "text", label = "wrong", x=0.9, y=1.0, col = pal_2[2])
 pl = pl + annotate(geom = "text", label = "right", x=0.9, y=0.1, col = pal_2[1])
 print(pl)
 @
-\begin{itemize}
-  \item Usual definition for binary case, $\yi$ must be coded as 0 and 1.
-  \item Fancy name for MSE on probabilities
-\end{itemize}
+
 
 \framebreak
 
@@ -220,7 +229,7 @@ BS2 = \meanin \sum_{k=1}^g \left( \pikxih - o_k^{(i)} \right)^2
 \]
 \begin{itemize}
   \item Original by Brier, works also for multiple classes
-  \item $ o_k^{(i)} = [ \yih = k ] $ is a 0-1-one-hot coding for labels
+  \item $ o_k^{(i)} = [ \yi = k ] $ is a 0-1-one-hot coding for labels
   \item For the binary case, BS2 is twice as large as BS1, because in BS2 we sum the squared
     difference for each observation regarding class 0 \textbf{and} class 1, not only the true class.
 \end{itemize}
