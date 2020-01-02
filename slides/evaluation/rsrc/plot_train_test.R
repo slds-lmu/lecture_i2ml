@@ -63,7 +63,7 @@ ggTrainTestPlot = function (data, truth.fun, truth.min, truth.max, test.plot,
 		out[["train.test"]] = train.test.errors
 	}
 
-	out[["plot"]] = gg
+	out[["plot"]] = gg + labs(x = "x", y = "y")
 
 	return (out)
 }
