@@ -8,6 +8,109 @@ knitr::set_parent("../../style/preamble.Rnw")
 
 \lecturechapter{Classification: K-Nearest Neighbors}
 \lecture{Introduction to Machine Learning}
+
+
+\begin{vbframe}{k-Nearest-Neighbors}
+
+For each point to predict:  
+\begin{itemize}
+\item Compute k-nearest neighbours in training data $N_k(\xv)$
+\item Average output $y$ of these k neighbors 
+% \end{itemize}
+
+% \begin{itemize}
+\item For regression: \\
+$$
+\fxh = \frac{1}{k} \sum_{i: \xi \in N_k(x)} \yi
+$$
+\item For classification in $g$ groups, a majority vote is used: \\
+$$
+\hxh = \argmax_{\ell \in \gset} \sum_{i: \xi \in N_k(x)} \I(\yi = \ell)
+$$
+And posterior probabilities can be estimated with:
+$$
+\hat{\pi}_{\ell}(\xv)= \frac{1}{k} \sum_{i: \xi \in N_k(x)} \I(\yi = \ell)
+$$
+\end{itemize}
+
 \framebreak
 
+Example with subset of iris data (k = 3): \\
+\begin{columns}[T]
+  \begin{column}{0.5\textwidth}
+<<out.width="\\textwidth">>=
+dd = subset(iris, Sepal.Length > 6.1 & Sepal.Length < 6.7 & Sepal.Width > 2.8 & Sepal.Width < 3.3)[,c(1,2,5)]
+xnew = c(6.4, 3)
+circleFun2 = function(center = c(0,0), diameter = 1, npoints = 100){
+  r = diameter / 2
+  tt = seq(0,2*pi,length.out = npoints)
+  xx = center[1L] + r * cos(tt)
+  yy = center[2L] + r * sin(tt)
+  return(data.frame(Sepal.Length = xx, Sepal.Width = yy, Species = NA))
+}
+circle.dat2 = circleFun2(c(6.4,3), 0.24, npoints = 100)
+q = ggplot(dd, aes(x = Sepal.Length, y = Sepal.Width, color = Species)) +
+geom_point(size = 10) + scale_color_viridis_d()
+q = q + geom_polygon(data = circle.dat2, alpha = 0.2, fill = "#619CFF")
+q = q + theme(legend.position = c(0.14, 0.82), text = element_text(size = 25))
+q = q  + annotate("text", x = xnew[1], y = xnew[2], label = "x[new]", size = 10, parse = TRUE)
+q
+@
+  \end{column}
+  \begin{column}{0.5\textwidth}
+<<>>=
+library(kableExtra)
+dd$dist = sapply(1:nrow(dd), function(i)  sqrt(sum((dd[i,1:2] - xnew)^2))) 
+colnames(dd) = c("SL", "SW", "Species", "dist")
+kable(dd, "latex", booktabs = F) %>%
+  row_spec(c(3,7,10), color = "black", background = "#DFECFF")
+@
+  \end{column}
+\end{columns}
+\vspace{0.6cm}
+$ \hat{\pi}_{setosa}(\xv_{new}) = \frac{0}{3} = 0\% $ \\
+$ \hat{\pi}_{versicolor}(\xv_{new}) = \frac{1}{3} = 33\% $ \\
+$ \hat{\pi}_{virginica}(\xv_{new}) = \frac{2}{3} = 67\% $ \\
+$ \hh(\xv_{new}) = \textit{virginica}$
 
+\end{vbframe}
+
+\begin{vbframe}{KNN: From small to large k}
+
+<<out.height="7cm">>=
+f = function(k, leg) { 
+  pl = plot_lp("classif.kknn", iris.task, cv = 0, k = k) +
+    ggtitle(sprintf("k = %i", k))
+  if (!leg)
+    pl = pl + theme(legend.position = "none")
+  return(pl)
+}
+grid.arrange(f(1, F), f(5, F), f(10, F), f(50, F))
+@
+Complex, local model vs smoother, more global model
+
+\end{vbframe}
+
+\begin{vbframe}{KNN as non-parametric model}
+\begin{itemize}
+\item KNN has no real training step, it simply stores the complete data 
+  - which are needed during prediction 
+\item Hence, its parameters are the training data, there is no real compression of information
+\item As number of parameters are growing with the number of training points, we call 
+  KNN a non-parametric model
+\item Hence, KNN is not based on any distributional or strong functional assumption,
+  and can, in theory, model data situations of arbitrary complexity
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Summary}
+\begin{itemize}
+\item Accuracy of k-NN can be severely degraded by the presence of noisy or irrelevant features,
+  or if the feature scales are not consistent with their importance.
+\item For $\yh$, we might inversely weigh neighbors with their distance to $x$, e.g., $w_i = 1/d(\xi, x)$
+\end{itemize}
+
+
+\end{vbframe}
+
+\endlecture
