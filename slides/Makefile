@@ -24,3 +24,8 @@ texclean:
 	rm -rf *.vrb
 	rm -rf *.synctex.gz
 	rm -rf *-concordance.tex
+
+.PHONY: copypdfs
+
+copypdfs: all
+	cp $(PDFS) ../slides-pdf/
