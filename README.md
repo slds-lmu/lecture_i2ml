@@ -1,21 +1,11 @@
 [![Build Status](https://travis-ci.com/compstat-lmu/lecture_i2ml.svg?token=yiXTK7TFAHiwv8cwsQus&branch=master)](https://travis-ci.com/compstat-lmu/lecture_i2ml)
 
-# THIS IS THE DEVELOPMENT BRANCH!
-- All changes for the next iteration will be accumulated here.
-- At the end of the iteration all changes will be merged to the master branch.
-- Use the pull-request workflow to add changes to this branch.
-
-
-# Development instructions
-
-Please see our [contributing guidelines](CONTRIBUTING.md) and the [documentation for student assistants](attic/onboarding.md).
-
 
 # Introduction to Machine Learning (I2ML)
 
-Main course site: https://compstat-lmu.github.io/lecture_i2ml/
+Main course site: https://compstat-lmu.github.io/lecture_i2ml
 
-Devel repo on Github: https://github.com/compstat-lmu/lecture_i2ml/tree/devel
+Repository on Github: https://github.com/compstat-lmu/lecture_i2ml
 
 
 ## Content
