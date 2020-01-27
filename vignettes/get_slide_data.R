@@ -8,11 +8,11 @@ library("Hmisc")
 slidedirs <- c(
     "ml-basics", 
     "supervised-regression", 
-    # "supervised-classification",
+    "supervised-classification",
     "evaluation", 
     "trees", 
-    "forests"#, 
-    # "tuning"
+    "forests", 
+    "tuning"
 )
 
 # ## Get names of all Rnw files
@@ -31,6 +31,9 @@ sldir_order <- data.frame(dir = slidedirs, dirorder = seq_along(slidedirs),
 ## Slide order
 get_slide_order <- function(sd) {
     sof <- list.files(path = paste0("../slides/", sd), pattern = "*-order.txt", full.names = TRUE)
+    
+    if(length(sof) == 0) return(data.frame(dir = sd, order = 1, deck = NA))
+    
     so <- read.table(sof, sep = " ", skip = 1, stringsAsFactors = FALSE)$V2
     so <- so[grep(pattern = "slides-", so)]
     so <- unique(so)
@@ -58,11 +61,19 @@ linkdat <- rbind(
     c("slides-regression-polynomials", "Polynomial Regression Models", "https://youtu.be/q1ETfSxEfSg"),
     c("slides-regression-knn", "k-NN", "https://youtu.be/g8H6-MkN_q0"),
     
+    c("slides-classification-tasks", "Classification Tasks", NA),
+    c("slides-classification-basicsdefs", "Basic Definitions", NA),
+    c("slides-classification-linear", "Linear Classifiers", NA),
+    c("slides-classification-logistic", "Logistic Regression", NA),
+    c("slides-classification-discranalysis", "Discriminant Ananlysis", NA),
+    c("slides-classification-naivebayes", "Naive Bayes", NA),
+    c("slides-classification-knn", "K-Nearest Neighbors", NA),
+    
     c("slides-evaluation-intro", "Introduction", "https://youtu.be/B5PAwfDYt30"),
-    c("slides-evaluation-regression", "Measures Regression", "https://youtu.be/_OHCatRSc08"),
-    c("slides-evaluation-classification", "Measures Classification", "https://youtu.be/bHwUwrbCHEU"),
-    c("slides-evaluation-classification-roc", "Measures Classification ROC", "https://youtu.be/BH4oCliBzZI"),
-    c("slides-evaluation-classification-roc-space", "Measures Classification ROC Visualisation", "https://youtu.be/m5We8ITYEVk"),
+    c("slides-evaluation-measures-regression", "Measures Regression", "https://youtu.be/_OHCatRSc08"),
+    c("slides-evaluation-measures-classification", "Measures Classification", "https://youtu.be/bHwUwrbCHEU"),
+    c("slides-evaluation-measures-classification-roc", "Measures Classification ROC", "https://youtu.be/BH4oCliBzZI"),
+    c("slides-evaluation-measures-classification-roc-space", "Measures Classification ROC Visualisation", "https://youtu.be/m5We8ITYEVk"),
     c("slides-evaluation-overfitting", "Overfitting", "https://youtu.be/zSlrfST8bEg"),
     c("slides-evaluation-train", "Training Error", "https://youtu.be/dpZLGIf97m0"),
     c("slides-evaluation-test", "Test Error", "https://youtu.be/GOTPjCXhiS8"),
@@ -80,13 +91,16 @@ linkdat <- rbind(
     c("slides-forests-benchmark", "Benchmarking Trees, Forests, and Bagging K-NN", "https://youtu.be/uOamholBaZ0"),
     c("slides-forests-proximities", "Proximities", "https://youtu.be/RGa0Uc6ZbX4"),
     c("slides-forests-featureimportance", "Feature Importance", "https://youtu.be/cw4qG9ePZ9Y"),
-    c("slides-forests-discussion", "Discussion", "https://youtu.be/9bqNhq6OUUk")
+    c("slides-forests-discussion", "Discussion", "https://youtu.be/9bqNhq6OUUk"),
+    
+    c("slides-tuning-basics", "Introduction", NA),
+    c("slides-tuning-algorithms", "Tuing Algorithms", NA)
 )
 colnames(linkdat) <- c("deck", "description", "youtube")
 
 
 ## Combine all data
-sldat1 <- merge(sldat0, linkdat, by = "deck")
+sldat1 <- merge(sldat0, linkdat, by = "deck", all = TRUE)
 sldat <- sldat1[with(sldat1, order(dirorder, order)), ]
 
 
@@ -105,7 +119,12 @@ names(sldat) <- capitalize(names(sldat))
 
 # Create links
 sldat$PDF <- paste0("[pdf](https://github.com/compstat-lmu/lecture_i2ml/blob/master/slides-pdf/", sldat$deck, ".pdf)")
-sldat$YouTube <- paste0("[link](", sldat$youtube, ")")
+sldat$PDF[is.na(sldat$Youtube)] <- "Coming soon"
+sldat$YouTube <- paste0("[link](", sldat$Youtube, ")")
+sldat$YouTube[is.na(sldat$Youtube)] <- "Coming soon"
+
+# Lesson ID
+sldat$Lesson <- paste(sldat$Dirorder, sldat$Order, sep = ".")
 
 
 # write.csv(sldat, "slide_data.csv")
