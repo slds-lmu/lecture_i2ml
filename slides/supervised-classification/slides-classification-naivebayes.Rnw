@@ -1,0 +1,143 @@
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../../style/preamble.Rnw")
+@
+% Load all R packages and set up knitr
+<<setup-r, child="../../style/setup.Rnw", include = FALSE>>=
+@
+
+\lecturechapter{Classification: Naive Bayes}
+\lecture{Introduction to Machine Learning}
+\framebreak
+
+\begin{vbframe}{Naive Bayes classifier}
+
+NB is a generative technique multiclass technique. Remember: We use Bayes' theorem and only need $\pdfxyk$ to compute the posterior as:
+$$\pikx = \postk = \frac{\P(\xv | y = k) \P(y = k)}{\P(\xv)} = \frac{\pdfxyk \pik}{\sumjg \pdfxyj} $$
+
+
+NB is based on a simple \textbf{conditional independence assumption}: the features are conditionally independent given class $y$.
+$$
+\pdfxyk = p((x_1, x_2, ..., x_p)|y = k)=\prod_{j=1}^p p(x_j|y = k).
+$$
+So we only need to specify and estimate the univariate distribution $p(x_j|y = k)$, which is considerably simpler as this is univariate.
+
+\end{vbframe}
+
+
+\begin{vbframe}{NB: Numerical Features}
+
+We use a univariate Gaussian for $p(x_j, | y=k)$, and estimate $(\mu_j, \sigma^2_j)$ in the standard manner. Because $\pdfxyk = \prodjp p(x_j|y = k)$, The joint conditional density is Gaussian, per class. With diagonal, but non-isotropic covariance structure, and potentially different per class. Hence, NB is a (specific) QDA model, with quadratic decision boundary.
+
+<<fig.height=3.5>>=
+library(mvtnorm)
+
+# fake data
+n = 300
+classa = data.frame(mvrnorm(n = n, mu = c(2,2), Sigma = matrix(c(2, 0, 0, 2), ncol = 2, byrow = TRUE)))
+classb = data.frame(mvrnorm(n = n, mu = c(10,7), Sigma = matrix(c(8, -6, -6, 8), ncol = 2, byrow = TRUE)))
+df = cbind(classa, rep("a", ncol(classa)))
+colnames(df) = c("x1", "x2", "y")
+foo = cbind(classb, rep("b", ncol(classb)))
+colnames(foo) = c("x1", "x2", "y")
+df = rbind(df, foo)
+
+task = makeClassifTask(data = df, target = "y")
+lrn = makeLearner("classif.naiveBayes")
+m = train(lrn, task)
+mm = m$learner.model
+
+tab = mm$tables
+mus = data.frame(x1 = tab$x1[, 1], x2 = tab$x2[, 1])
+mu1 = as.numeric(mus[1,])
+mu2 = as.numeric(mus[2,])
+sds = data.frame(x1 = tab$x1[, 2], x2 = tab$x2[, 2])
+S1 = diag(sds[1,]) 
+S2 = diag(sds[2,]) 
+
+x1seq = seq(min(df$x1), max(df$x1), length.out = 100)
+x2seq = seq(min(df$x2), max(df$x2), length.out = 100)
+grid_dens1 = grid_dens2 = expand.grid(x1 = x1seq, x2 = x2seq)
+grid_dens1$dens = dmvnorm(grid_dens1, mean = mu1, sigma = S1)
+grid_dens2$dens = dmvnorm(grid_dens2, mean = mu2, sigma = S2)
+
+pl = plot_lp("classif.naiveBayes", task, cv = 0L)
+# pl = pl + geom_point(data = mu, size = 5)
+pl = pl + geom_contour(data = grid_dens1, aes(z = dens), alpha = .6, lwd = 1.5, bins = 10) 
+pl = pl + geom_contour(data = grid_dens2, aes(z = dens), alpha = .6, lwd = 1.4, bins = 10) 
+print(pl)
+@
+\end{vbframe}
+
+\begin{vbframe}{NB: Categorical Features}
+
+  We use a categorical distribution for $p(x_j | y = k)$ and estimate the probabilities $p_{kjm}$ that in class in $k$ $x_j = m$ by frequencies.
+
+$$
+% p(x_j | y = k) = \frac{(\sum x_i)!}{\prod_i x_i!} \prod_m p_{kjm}^{[x_j = m]}
+p(x_j = m| y = k) = \prod_m p_{kjm}^{[x_j = m]}
+$$
+%
+and for the completely observed data this becomes a multinomial distribution
+%
+$$
+\frac{(\sum_i x_i)!}{\prod_i x_i!} \prod_j p_{kj}^{v_{kj}},
+$$
+
+with ${v_{kj}} = \sum_{i = 1}^n [x_j^{(i)} = 1]$ the number of times $(j, k)$ occurs.
+
+Because of the simple conditional independence structure, it is also very easy to deal with mixed numerical / categorical feature spaces.
+
+\end{vbframe}
+
+
+\begin{vbframe}{NB is linear in frequencies}
+We can now prove that the decision boundaries between klasses k and l are linear:
+
+$$
+\log \frac{\pi_k(x)}{\pi_l(x)} \propto \log\frac{\pi_k}{\pi_l} + \sum_j v_{kj} \ln p_{kj} - \sum_j v_{lj} \ln p_{lj}
+$$
+
+This is a linear function in the parameter vector $v = (v_{11}, \ldots, v_{1p}, \ldots, v_{g1} \ldots v_{gp})$.
+
+\end{vbframe}
+
+\begin{vbframe}{Laplace Smoothing}
+If a given class and feature value never occur together in the training data, then the frequency-based probability estimate will be zero.
+
+\lz
+
+This is problematic because it will wipe out all information in the other probabilities when they are multiplied.
+
+\lz
+%
+A simple numerical correction, especially needed for smaller sample size, is to set $p_{kj} = \epsilon > 0$ instead of $p_{kj} = 0$.
+
+
+\end{vbframe}
+
+% \begin{vbframe}{Naive Bayes as a linear classifier}
+
+% In general, the \emph{Naive Bayes classifier} is \textbf{not} a \emph{linear} classifier.
+
+% Furthermore, one can show that the Naive Bayes is a linear classifier in a particular feature space if the features are from exponential families (e. g. binomial, multinomial, normal distribution).
+
+% \lz
+
+% However, it can be shown that the \emph{Naive Bayes classifier} is a linear classifier in a particular feature space if the features are from exponential families (e. g. binomial, multinomial, normal distribution) .
+
+% \end{vbframe}
+
+
+\begin{vbframe}{Naive Bayes: application as spam filter}
+\begin{itemize}
+  \item In the late 90s, Naive Bayes became popular for email spam-filter programs
+  \item Word counts were used as features to detect spam mails (e.g. "Viagra" often occurs in spam mail)
+  \item Independence assumption implies: Occurrence of two words in mail is not correlated
+  \item Seems naive ("Viagra" more likely to occur in context with "Buy now" than "flower"), but leads to less required parameters and therefore better generalization, of works well in practice.
+\end{itemize}
+\end{vbframe}
+
+
+\endlecture
+

@@ -1,0 +1,119 @@
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../../style/preamble.Rnw")
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(rattle)
+library(smoof)
+@
+
+% Load all R packages and set up knitr
+<<setup, child="../../style/setup.Rnw", include = FALSE>>=
+@
+
+%! includes: cart-* , forests-bagging
+\lecturechapter{Random Forest: Introduction}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+\begin{vbframe}{Random Forests}
+
+Modification of bagging for trees proposed by Breiman (2001):
+
+\begin{itemize}
+  \item Tree baselearners on bootstrap samples of the data
+  \item Uses \textbf{decorrelated} trees by randomizing splits (see below)
+  \item Tree baselearners are usually fully expanded, without aggressive early stopping or
+    pruning, to \textbf{increase variance of the ensemble}
+\end{itemize}
+\begin{center}
+% FIGURE SOURCE: https://docs.google.com/presentation/d/1lU1qPlY-NQkvWCDrrV6PdDYkloF3eFudM9v2NFYg1rY/edit?usp=sharing
+\includegraphics[width=0.55\textwidth]{figure_man/forest.png}
+\end{center}
+\end{vbframe}
+
+
+
+\begin{vbframe}{Random feature sampling}
+
+\begin{itemize}
+  \item From our analysis of bagging risk we can see that decorrelating trees improves the ensemble
+  \item Simple randomized approach:\\
+    At each node of each tree, randomly draw $\text{mtry} \le p$ candidate features to consider for splitting. Recommended values:
+  \begin{itemize}
+    \item Classification: mtry $ = \lfloor \sqrt{p} \rfloor$
+    \item Regression: mtry $ = \lfloor p/3 \rfloor$
+  \end{itemize}
+\end{itemize}
+\end{vbframe}
+
+% \begin{Random Forest Algorithm}
+%   \begin{algorithm}[H]
+%   \caption*{Random Forest algorithm}
+%   \begin{algorithmic}[1]
+%   \State {\bf Input: }A dataset $\D$ of $n$ observations, number $M$ of trees
+%   in the forest, number $\texttt{mtry}$ of variables to draw for each split
+%   \For {$m = 1 \to M$}
+%   \State Draw a bootstrap sample $\D^{[m]}$ from $\D$
+%   \State Grow tree $\blm$ using $\D^{[m]}$
+%   \State For each split only consider $\texttt{mtry}$ randomly selected features
+%   \State Grow tree without early stopping or pruning
+% \EndFor
+% \State Aggregate the predictions of the $M$ estimators (via averaging or majority voting), to predict on new data.
+% \end{algorithmic}
+% \end{algorithm}
+% \end{vbframe}
+
+\begin{vbframe}{Effect of ensemble size}
+<<echo=FALSE, fig.height= 5.5, fig.align="center">>=
+plotLearnerPrediction("classif.randomForest", iris.task, cv = 0, ntree = 1) + 
+  ggtitle("1 Tree for Iris Dataset")
+@
+<<echo=FALSE, fig.height= 5.5, fig.align="center">>=
+plotLearnerPrediction("classif.randomForest", iris.task, cv = 0, ntree = 10) + 
+  ggtitle("10 Trees for Iris Dataset")
+@
+<<echo=FALSE, fig.height= 5.5, fig.align="center">>=
+plotLearnerPrediction("classif.randomForest", iris.task, cv = 0, ntree = 500) + 
+  ggtitle("500 Trees for Iris Dataset")
+@
+\end{vbframe}
+
+\begin{vbframe}{Out-of-Bag Error Estimate}
+With the RF it is possible to obtain unbiased estimates of generalization error directly
+during training, based on the out-of-bag observations for each tree:
+
+<<echo=FALSE, fig.height=4.5, message=FALSE, warning=FALSE>>=
+library(tidyr)
+library(kernlab)
+
+data(spam)
+model = randomForest(type ~., data=spam, ntree=150, proximity=TRUE)
+
+data.frame(model$err.rate, iter = seq_len(nrow(model$err.rate))) %>%
+  gather(key = "error.type", value = "error.measured", -iter) %>%
+  ggplot(mapping = aes(x = iter, y = error.measured, color = error.type)) +
+  geom_line() +
+  xlab("Number of Trees") +
+  ylab("MCE") +
+  labs(color = "")
+@
+
+\framebreak
+
+\begin{center}
+%https://docs.google.com/presentation/d/16gg9PqtEV_Ii_ZBw0zA9GdUIled-6OVkoqArX1ouTmo/edit#slide=id.g4193e2316a_0_68
+\includegraphics[width=0.65\textwidth]{figure_man/rF_oob_error_new.pdf}
+\end{center}
+
+\begin{itemize}
+  \item OOB size: $P(\text{not drawn}) = \left(1 - \frac{1}{n}\right)^n \ \stackrel{n \to \infty}{\longrightarrow} \ \frac{1}{e} \approx 0.37$
+  \item Predict all observations with trees that didn't use it for training and compute average loss of these predictions
+  \item Similar to 3-CV, can be used for a quick model selection
+\end{itemize}
+
+
+\end{vbframe}
+
+\endlecture

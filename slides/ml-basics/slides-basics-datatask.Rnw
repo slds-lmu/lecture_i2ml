@@ -1,0 +1,161 @@
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../../style/preamble.Rnw")
+@
+% Load all R packages and set up knitr
+<<setup-r, child="../../style/setup.Rnw", include = FALSE>>=
+@
+
+%! includes: basics-supervised
+
+\lecturechapter{Introduction: Tasks \& Data}
+
+\lecture{Introduction to Machine Learning}
+
+\begin{frame}{Supervised Tasks and Data}
+
+Supervised Learning comes in two flavours:
+
+\begin{itemize}
+\item \textbf{Regression}: Given features $x$, predict corresponding output from $\mathcal{Y} \in \mathbb{R}^m$.
+\item \textbf{Classification}: Assigning an observation with features $x$ to one class of a finite set of classes $\mathcal{Y} = \{C_1,...,C_g\}, g \geq 2$. (Details later.)
+% \item \textbf{Density estimation}: Given an input $x$, predict the probability distribution $p(y|x)$ on $\mathcal{Y}$.
+\end{itemize}
+
+\end{frame}
+
+\begin{vbframe}{Regression Task - Income Prediction} 
+\begin{center}
+  % FIGURE SOURCE: Screnshot from website (https://www.dice.com/salary-calculator)
+  \includegraphics[width=\textwidth]{figure_man/salary_prediction.png}
+\end{center}
+\vspace{-0.5cm}
+\begin{flushright}
+  \tiny https://www.dice.com/salary-calculator
+\end{flushright}
+
+\end{vbframe}
+
+\begin{vbframe}{More Regression Tasks}
+\begin{enumerate}
+\item \textbf{Predict house prices}
+\medskip
+\begin{itemize}
+\item \textbf{Aim}: Predict the price for a house in a certain area
+\item \textbf{Features}: e. g.
+\begin{itemize}
+\item square footage
+\item number of bedrooms
+\item swimming pool yes/no
+\end{itemize}
+\end{itemize}
+\item \textbf{Predict the length-of-stay in a hospital at the time of admission}
+\begin{itemize}
+\item \textbf{Aim}: Predict the number of days a single patient has to stay in hospital
+\item \textbf{Features}: e. g.
+\begin{itemize}
+\item diagnosis category (heart disease, injury,...)
+\item admission type (urgent, emergency, newborn,...)
+\item age
+\item gender
+\end{itemize}
+\end{itemize}
+\end{enumerate}
+\end{vbframe}
+
+
+\begin{vbframe}{Data}
+
+Imagine you want to investigate how salary and workplace conditions
+affect productivity of employees. Therefore, you collect data about
+their worked minutes per week (productivity), how many people work in the
+same office as the employees in question and the employees' salary.
+
+% FIGURE SOURCE: https://docs.google.com/presentation/d/1qIWHJq-iZqfUsLLJD81Z9LhobGTIN3sDHTevnm5dxZ0/edit?usp=sharing
+\begin{center}\includegraphics[width=0.6\textwidth]{figure_man/data_table} \end{center}
+
+\end{vbframe}
+
+\begin{frame}{Target and Features Relationship}
+
+\begin{itemize}
+\item For our observed data we know which outcome is produced
+\item For new employees we can only observe the features, but not the target
+\end{itemize}
+
+\vspace{-0.5cm}
+
+\scriptsize
+
+% FIGURE SOURCE: https://drive.google.com/open?id=1WLPubv9vxLL-JIlHAtsvTBBG5pbF4xgRGW_prkOAEnE Page 2
+\begin{center}\includegraphics[width=0.9\textwidth]{figure_man/new_data1_web} \end{center}
+
+\normalsize
+
+\vspace{-0.5cm}
+
+\(\implies\) The goal is to predict the target variable for
+\textbf{unseen new data} by using a \textbf{model} trained on the
+already seen \textbf{training data}.\\
+
+\end{frame}
+
+
+\begin{vbframe}{Notation for Data}
+
+\scriptsize
+
+% FIGURE SOURCE: https://docs.google.com/presentation/d/1qIWHJq-iZqfUsLLJD81Z9LhobGTIN3sDHTevnm5dxZ0/edit?usp=sharing
+\begin{center}\includegraphics[width=0.6\textwidth]{figure_man/data_table} \end{center}
+
+\normalsize
+
+\vspace{-0.5cm}
+
+In supervised machine learning, we are given a dataset
+\[
+\D = \Dset \subset \left(\Xspace \times \Yspace\right)^n.
+\]
+
+We call
+
+\begin{itemize}
+  \item $\Xspace$  the input space with $p = \text{dim}(\Xspace)$ (for now: $\Xspace \subset \R^p$),
+  \item $\Yspace$ the output / target space (e.g. $\Yspace = \R$ for regression or $\Yspace = \{C_1, ..., C_g\}$, $g \ge 2$, for classification),
+  \item the tuple \(\xyi\) $\in \Xspace\times \Yspace$ the \(i\)-th observation,
+  \item $\bm{x}_j = \left(x^{(1)}_j, ..., x^{(n)}_j\right)$ the j-th feature vector
+\end{itemize}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Data Generating Process}
+
+\begin{itemize}
+\item We assume that a probability distribution
+$$
+\P_{xy}
+$$
+is defined on $\Xspace \times \Yspace$ that characterizes the process that generates the observed data $\D$.
+\item Depending on the context, we denote the random variables following this distribution by $\bm{x}$ and $y$.
+\item Usually, we assume that the data is drawn i.i.d. from the joint probability density function (pdf) / probability mass function (pmf) $\pdfxy$.
+\end{itemize}
+
+\framebreak
+
+\textbf{Remarks:}
+\begin{itemize}
+\item With a slight abuse of notation we write random variables, e.g., $\bm{x}$ and $y$, in lowercase, as normal
+variables or function arguments. The context will make clear what is meant.
+\item Often, distributions are characterized by a parameter vector $\theta \in \Theta$. We then write $\pdfxyt$.
+\item This lecture mostly takes a frequentist perspective. Distribution parameters $\theta$ appear behind the | for improved legibility, not to imply that we condition on them in a probabilistic Bayesian sense.
+So, strictly speaking, $p(\bm{x} | \theta)$ should usually be understood to mean $p_\theta(\bm{x})$ or $p(\bm{x}, \theta)$ or $p(\bm{x}; \theta)$.
+\end{itemize}
+
+\end{vbframe}
+
+
+
+
+\endlecture
+
