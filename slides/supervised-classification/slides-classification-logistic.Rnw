@@ -1,0 +1,309 @@
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../../style/preamble.Rnw")
+@
+% Load all R packages and set up knitr
+<<setup-r, child="../../style/setup.Rnw", include = FALSE>>=
+@
+
+\lecturechapter{Classification: Logistic Regression}
+\lecture{Introduction to Machine Learning}
+\framebreak
+
+
+\begin{vbframe}{Motivation}
+
+A \textbf{discriminant} approach for directly modeling the posterior probabilities $\pixt$ of the labels is \textbf{logistic regression}. 
+
+For now, let's focus on the binary case $y \in \setzo$ and use empirical risk minimization.
+  
+$$ \argmin_{\thetab \in \Theta} \risket = \argmin_{\thetab \in \Theta} \sumin \Lpixyit.$$
+
+\lz
+A naive approach would be to model
+\[
+\pixt = \thx .
+\]
+
+NB: We will often suppress the intercept in notation.
+
+\lz
+
+Obviously this could result in predicted probabilities $\pixt \not\in [0,1]$.
+
+\end{vbframe}
+
+\begin{vbframe}{Logistic Function}
+
+To avoid this, logistic regression \enquote{squashes} the estimated linear scores $\thx$ to $[0,1]$ through the \textbf{logistic function} $s$:
+\[
+\pixt = \frac{\exp\left( \thx \right)}{1+\exp\left(\thx \right)} = \frac{1}{1+\exp\left( -\thx \right)} = s\left( \thetab^T \xv \right)
+\]
+
+<<logistic-function, echo=FALSE, fig.height = 3.5>>=
+n = 100
+df = data.frame(x = seq(from = -10, to  = 10, length.out = n))
+df$y = exp(df$x) / (1 + exp(df$x))
+ggplot(df) + geom_line(aes(x = x, y = y)) + scale_x_continuous('f')  + scale_y_continuous('s(f)')
+@
+
+\framebreak
+The intercept shifts $s(f)$ horizontally $s(\theta_0 + f) = \frac{\exp(\theta_0 + f)}{1+\exp(\theta_0 + f)}$
+<<logistic-function-par, echo=FALSE, fig.height = 2.2>>=
+n = 100
+df = data.frame(x = rep(seq(from = -10, to  = 10, length.out = n ), times = 3),
+                        intercept = rep(c(-3,0,3), each = n))
+df$y = exp(df$intercept + df$x) / (1 + exp(df$intercept + df$x))
+
+ggplot(df) + geom_line(aes(x = x, y = y, group = intercept, color = factor(intercept))) +
+xlab("f")  + ylab("s") +
+  scale_color_viridis_d(expression(theta[0]))
+@
+
+Scaling $f$ like $s(\alpha f) = \frac{\exp(\alpha f)}{1+\exp(\alpha f)}$: controls the slope and direction.
+\lz
+<<logistic-function-par2, echo=FALSE, fig.height = 2.2>>=
+n = 100
+df = data.frame(x = rep(seq(from = -10, to  = 10, length.out = n ), times = 4),
+                        theta1 = rep(c(-2,-0.3, 1, 6), each = n))
+df$y = exp(df$x * df$theta1) / (1 + exp(df$theta1 * df$x))
+
+ggplot(df) + geom_line(aes(x = x, y = y, group = theta1, color=factor(theta1))) +
+xlab("f")  + ylab("s") +
+  scale_color_viridis_d(expression(alpha))
+@
+
+\end{vbframe}
+
+\begin{vbframe}{Bernoulli / Log loss}
+
+We need to define a loss function for the ERM approach:
+
+\begin{itemize}
+  \item $\Lpixy = -y\ln(\pix)-(1-y)\ln(1-\pix)$
+  \item Penalizes confidently wrong predictions heavily
+  \item Called Bernoulli, log or cross-entropy loss 
+  \item We can derive it from the negative log-likelihood of Bernoulli / Logistic regression model in statistics
+  \item Used for many other classifiers, e.g., in NNs or boosting 
+\end{itemize}
+
+<<bernoulli-plot, fig.height=3>>=
+bernoulli = function(y, pix) -y * log(pix) - (1 - y) * log(1 - pix)
+
+x = seq(0, 1, by = 0.001)
+df = data.frame(x = x, y = 1, pi = bernoulli(1, x))
+df = rbind(df, data.frame(x = x, y = 0, pi = bernoulli(0, x)))
+df$y = as.factor(df$y)
+ggplot(data = df, aes(x = x, y = pi, color = y)) + geom_line() + xlab(expression(pi(x))) + ylab(expression(L(y, pi(x))))
+
+@
+
+
+\end{vbframe}
+
+\begin{vbframe}{Logistic Regression in 1D}
+With one feature $\xv \in \R$. The figure shows data and $\xv \mapsto \pix$.
+
+<<fig.height=5>>=
+set.seed(1234)
+n = 20
+x = runif(n, min = 0, max = 7)
+y = x + rnorm(n) > 3.5
+df = data.frame(x = x, y = y)
+
+model = glm(y ~ x,family = binomial(link = 'logit'), data = df)
+df$score = predict(model)
+df$prob = predict(model, type = "response")
+x = seq(0, 7, by = 0.01)
+dfn = data.frame(x = x)
+dfn$prob = predict(model, newdata = dfn, type = "response")
+dfn$score = predict(model, newdata = dfn)
+
+p2 = ggplot() + geom_line(data = dfn, aes(x = x, y = prob))
+p2 = p2 + geom_point(data = df, aes(x = x, y = prob, colour = y), size = 2)
+p2 = p2 + xlab("x") + ylab(expression(pi(x)))
+p2 = p2 + theme(legend.position = "none")
+p2
+@
+\end{vbframe}
+\begin{vbframe}{Logistic Regression in 2D}
+
+<<>>=
+set.seed(1)
+n = 40
+x = runif(2 * n, min = 0, max = 7)
+x1 = x[1:n]
+x2 = x[(n + 1):(2 * n)]
+y = x1 + x2 + rnorm(n) > 7
+df = data.frame(x1 = x1, x2 = x2, y = y)
+task = makeClassifTask(data = df, target = "y", positive = "FALSE")
+lrn = makeLearner("classif.logreg", predict.type = "prob")
+m = train(lrn, task)
+mm = m$learner.model
+df$score = -predict(mm)
+df$prob = getPredictionProbabilities(predict(m, task = task))
+@ 
+
+\begin{columns}[T]
+\begin{column}{0.5\textwidth}
+<<fig.width=4, fig.height=4>>=
+plot_lp(lrn, task = task)
+@ 
+\end{column}
+\begin{column}{0.5\textwidth}
+\end{column}
+\end{columns}
+
+<<fig.width=4, fig.height=4>>=
+x1 = seq(-1, 8, by = 0.1)
+dfn = expand.grid(x1, x1)
+names(dfn) = c("x1", "x2")
+dfn$prob = predict(m, newdata = dfn)
+dfn$score = predict(mm, newdata = dfn)
+z = matrix(dfn$prob, nrow = length(x1))
+#res = persp(x1, x1, z, phi = 30, theta = 30,
+#  xlab = "x1", ylab = "x2",
+#  main = expression(pi(x)), border = "grey"
+#)
+#cols = viridisLite::viridis(2, end = .9)
+#mypoints = trans3d(df$x1, df$x2, df$prob, pmat = res)
+#points(mypoints, pch = 19, col = cols[as.numeric(df$y) + 1])
+@ 
+
+<<fig.width=4, fig.height=4>>=
+p2 = ggplot(df, aes(x = score, y = prob)) + geom_line() + geom_point(aes(colour = y), size = 2)
+p2 = p2 + theme(legend.position = "none") + xlim(c(-10, 10))
+plot(p2)
+@ 
+
+
+\framebreak 
+
+% \begin{center}
+  % \includegraphics[width=0.4\textwidth]{figure_man/logreg-2vars-surface.png}
+% \end{center}
+
+
+\end{vbframe}
+
+
+\begin{vbframe}{Logistic Regression}
+
+\textbf{Multivariate logistic regression} combines the hypothesis space of linear functions 
+
+\vspace*{-0.3cm}
+
+\begin{eqnarray*}
+  \Hspace = \left\{f: \Xspace \to \R ~|~\fx = \thx \right\}
+\end{eqnarray*}
+
+with the \textbf{logistic loss}
+
+\vspace*{-0.2cm}
+
+\begin{eqnarray*}
+  \Lxy = \log \left[1 + \exp \left(-y\fx\right)\right].
+\end{eqnarray*}
+
+We transform scores into probabilities by 
+
+$$
+\pix = \P(y = 1 ~|~\xv) = s(\fx) = \frac{1}{1 + \exp(- \fx)},
+$$
+
+with $s(.)$ being the logistic sigmoid function as introduced in chapter 2.
+
+\framebreak 
+
+As already shown before, an equivalent approach that directly outputs probabilities $\pix$ is minimizing the \textbf{Bernoulli loss} 
+
+\begin{eqnarray*}
+\Lpixy = -y \log \left(\pix\right) - (1 - y) \log \left(1 - \pix\right)
+\end{eqnarray*}
+
+for $\pix$ in the hypothesis space
+
+\begin{eqnarray*}
+  \Hspace = \left\{\pi: \Xspace \to [0, 1] ~|~\pix = s(\thx)\right\}
+\end{eqnarray*}
+
+with $s(.)$ again being the logistic function. 
+
+\end{vbframe}
+
+\begin{vbframe}{Logistic Regression: Discriminant functions and decision boundary}
+
+Logistic regression gives us a \textbf{linear classifier}. 
+
+In order to minimize the loss (misclassification), we should predict $y=1$ if
+
+$$
+\pixt = \frac{\exp(\thx)}{1+\exp(\thx)} \ge 0.5,
+$$
+
+which is equivalent to
+$$
+\thx \ge 0 \implies y = 1.
+$$
+
+
+\lz 
+
+If we apply $g(y) = \log \left(\frac{y}{1 - y}\right)$ (which is a monotone, rank preserving function) on $\pix = \frac{1}{1 + \exp(-\thetab^\top \xv)}$, we get
+
+\begin{footnotesize}
+\begin{eqnarray*}
+  g(\pix) &=& g\left(\pix\right)\\
+  &=& \log\left(\pix)\right) - \log \left(1 - \pix\right) \\ &=& - \log (1 + \exp(- \fx)) - \log \left(1 - \frac{1}{1 + \exp(-\fx)}\right)\\
+  &=& - \log (1 + \exp(- \fx)) - \log \left(\frac{\exp(-\fx)}{1 + \exp(-\fx)}\right) \\
+  &=& - \log (1 + \exp(- \fx)) - \log \left(\exp(-\fx)\right) + \log\left(1 + \exp(-\fx)\right)\\
+   &=& \fx = \thx.
+\end{eqnarray*}
+\end{footnotesize}
+
+$\fx = \thx$ is the discriminant function of logistic regression and $\fx = \thx = 0$ represents the decision boundary, which is a \textbf{hyperplane} in the $p$ dimensional space. 
+
+\lz  
+
+The discriminant function can be interpreted as \textbf{log-odds ratio}: 
+
+  $$ \log \dfrac{\pix}{1-\pix} = \log \dfrac{\P(y = 1 ~|~ \xv)} {\P(y = 0 ~|~ \xv)} = \thx
+  = \fx.
+  $$
+
+ 
+
+% \framebreak 
+
+<<logreg-plot, echo=FALSE, eval = FALSE, include = FALSE>>=
+n = 30
+set.seed(1234L)
+tar = factor(c(rep(1L, times = n), rep(2L, times = n)))
+feat1 = c(rnorm(n, sd = 1.5), rnorm(n, mean = 2, sd = 1.5))
+feat2 = c(rnorm(n, sd = 1.5), rnorm(n, mean = 2, sd = 1.5))
+bin.data = data.frame(feat1, feat2, tar)
+bin.tsk = makeClassifTask(data = bin.data, target = "tar")
+plotLearnerPrediction("classif.logreg", bin.tsk) + 
+  scale_f_d()
+@
+
+\end{vbframe}
+
+
+\begin{frame}{Logistic and Softmax Regression}
+\lz
+
+\textbf{Representation:} Design matrix $X$, coefficients $\thetab$.\\
+
+\lz
+
+\textbf{Evaluation:} Logistic/Bernoulli loss function.
+
+\lz
+
+\textbf{Optimization:} Numerical optimization, typically gradient descent based methods.
+
+\end{frame}
+
+\endlecture
+
