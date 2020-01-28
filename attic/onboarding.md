@@ -15,8 +15,8 @@ You'll need to work with
 
 - Latex
 - **Git**, including Git branches and Github pull requests. 
-- **`R`**, and specifically `mlr` and `knitr`
-- **`draw.io`** (... maybe)
+- **`R`**, and specifically `mlr` and `knitr`/`Rmarkdown`
+- **Google Slides** (... maybe)
 
 Knowing how a `Makefile` works would be good as well, but is not strictly necessary.
 
