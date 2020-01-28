@@ -63,7 +63,7 @@ See also our [contributing guidelines](CONTRIBUTING.md)
 
 - Are you an ML expert and like the course, but have some feedback or consider 
   extending it? 
-  Write an email to Bernd and Fabian (see [Team page](vignettes/team.Rnw)) or
+  Write an email to Bernd and Fabian (see [Team page](vignettes/team.Rmd)) or
   Open an [issue](https://github.com/compstat-lmu/lecture_i2ml/issues).
 - Are you a student taking the lecture - either at the LMU or online - and you 
   spotted a typo, think we should rephrase something be or even would like to 
