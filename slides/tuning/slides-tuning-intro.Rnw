@@ -1,0 +1,124 @@
+<<setup-child, include = FALSE>>=
+knitr::set_parent("../../style/preamble.Rnw")
+@
+% Load all R packages and set up knitr
+<<setup, child="../../style/setup.Rnw", include = FALSE>>=
+@
+
+%! includes: basics-riskmiminization, performance-overfitting
+
+\lecturechapter{Hyperparameter Tuning - Introduction}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+\begin{vbframe}{Motivating Example} 
+
+\begin{itemize}
+\item Given a dataset, we want to train a classification tree. 
+\item We feel that a maximum tree depth of $4$ has worked out well for us previously, so we decide to set this hyperparameter to $4$. 
+\item The learner ("inducer") $\mathcal{I}$ takes the input data, internally performs \textbf{empirical risk minimization}, and returns a fitted tree model $\fxh = f(\xv, \thetah)$ of at most depth $\lambda = 4$ that minimizes the empirical risk.
+\end{itemize}
+
+% FIGURE SOURCE: https://docs.google.com/presentation/d/14xwcs5zncTjFL4hIHAprjZMmyGIPqk5vs8DS32vEAvQ/edit?usp=sharing
+\begin{center}
+\begin{figure}
+\includegraphics[width=0.6\textwidth]{figure_man/riskmin_bilevel1.png}
+\end{figure}
+\end{center}
+
+\framebreak 
+
+\begin{itemize}
+\item We are \textbf{actually} interested in the \textbf{generalization performance} $\GEf$ of the estimated model on new, previously unseen data. 
+\item We estimate the generalization performance by evaluating the model $\fh$ on a test set $\Dtest$: $$
+\GEh{\Dtest}\left(\fh\right) = \frac{1}{|\Dtest|} \sum\limits_{(\xv, y) \in \Dtest} L\left(y, \fxh \right)
+$$
+\end{itemize}
+\vspace*{-0.6cm}
+% FIGURE SOURCE: https://docs.google.com/presentation/d/14xwcs5zncTjFL4hIHAprjZMmyGIPqk5vs8DS32vEAvQ/edit?usp=sharing
+\begin{center}
+\begin{figure}
+\includegraphics[width=0.75\textwidth]{figure_man/riskmin_bilevel2.png}
+\end{figure}
+\end{center}
+
+\framebreak 
+
+\begin{itemize}
+\item Trained models often do not have a good generalization performance, however. 
+\item One of the most likely reasons is that hyperparameters are suboptimal:
+\begin{itemize}
+\item The data may be too complex to be modeled by a tree of depth $4$ 
+\item The data may be much simpler than we thought, and a tree of depth $4$ overfits
+\end{itemize}
+\item[$\implies$] try out different values for the tree depth. For each maximal depth $\lambda$, we have to train the model \textbf{to completion} and evaluate its performance on the test set. 
+\item We choose the tree depth $\lambda$ that is \textbf{optimal} w.r.t. the generalization error of the model. 
+\end{itemize}
+
+% $\to$ Finding the hyperparameter $\lambda$ that is optimal w.r.t. the generalization performance constitutes an optimization problem. 
+
+\end{vbframe}
+
+
+\begin{vbframe}{The role of hyperparameters}
+
+\begin{itemize}
+\item Hyperparameters control the complexity of a model, i.e., how flexible the model is, as well as other structural properties of a model.
+\item If a model is not flexible enough, it cannot approximate the relationship between the features and the output well and will underfit.
+\item If a model is too flexible so that it simply \enquote{memorizes} the training data, we will face the dreaded problem of overfitting.
+\item[$\implies$] Hence, controlling the model's capacity, i.e., finding suitable hyperparameters,
+can prevent overfitting the model on the training set.
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Model Parameters vs. Hyperparameters}
+
+It is critical to understand the difference between model parameters and hyperparameters. 
+
+\lz
+
+\textbf{Model parameters} are optimized during training, typically via loss minimization. They are an \textbf{output} of the training. Examples:
+\begin{itemize}
+\item The splits and terminal node predictions of a tree learner 
+\item Coefficients $\thetab$ of a linear model $\fx = \thetab^\top\xv$
+\end{itemize}
+
+In contrast, \textbf{hyperparameters} (HPs) are not decided during training. They must be specified before the training, they are an \textbf{input} of the training. Examples:
+
+\begin{itemize}
+\item The maximum depth of a tree 
+\item $k$ and which distance measure to use for $k$-NN
+\item the number and maximal order of interactions to be included in a linear regression model
+\end{itemize}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Types of hyperparameters}
+
+We summarize all hyperparameters we want to tune over in a vector $\lambda \in \Lambda$ of (possibly) mixed type. HPs can have different types: 
+
+\begin{itemize}
+\item Numerical parameters (real valued / integers), e.g.:
+\begin{itemize}
+\item $mtry$ in a random forest
+\item Neighborhood size $k$ for $k$-NN
+\item Bandwidths of the kernel density estimates for Naive Bayes 
+\end{itemize}
+\item Categorical parameters, e.g.:
+\begin{itemize}
+\item Which split criterion for classification trees?
+\item Which distance measure for $k$-NN?
+\end{itemize}
+\end{itemize}
+
+Hyperparameters are often \textbf{hierarchically dependent} on each other, e.g., \emph{if} we use 
+a "linear" model with polynomials of the features up to a certain maximal degree $d$, then 
+we must specify whether to also include polynomial interaction terms like e.g. $x_j^{d-d'}x_m^{d'}$ or not 
+and up to which degree $d' \leq d$.
+\end{vbframe}
+
+
+\endlecture
+

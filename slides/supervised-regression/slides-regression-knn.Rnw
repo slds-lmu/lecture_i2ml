@@ -1,0 +1,274 @@
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../../style/preamble.Rnw")
+@
+% Load all R packages and set up knitr
+<<setup-r, child="../../style/setup.Rnw", include = FALSE>>=
+@
+
+
+%! includes: basics-learnercomponents-hro
+%
+\lecturechapter{$k$-Nearest Neighbors Regression}
+\lecture{Introduction to Machine Learning}
+
+\begin{vbframe}{Nearest Neighbors: Intuition}
+
+\begin{itemize}
+ \item Say we know locations of cities in 2 different countries.
+ \item Say we know which city is in which country.
+ \item Say we don't know where the countries' border is.
+ \item For a given location, we want to figure out which country it belongs to.
+ \item Nearest neighbor rule: every location belongs to the same country as the closest city.
+ \item K-nearest neighbor rule: vote over the $k$ closest cities (smoother)
+\end{itemize}
+%\begin{center}
+%  \includegraphics[width=.5\textwidth]{figure_man/nn.png}
+%\end{center}
+\end{vbframe}
+
+
+
+\begin{vbframe}{$k$-Nearest-Neighbors}
+
+\begin{itemize}
+\item \textbf{k-NN} can be used for regression and classification
+\item It generates predictions $\yh$ for a given $x$ by comparing the $k$ observations that are closest to $x$
+\item "Closeness" requires a distance or similarity measure (usually: Euclidean).
+\item The set containing the $k$ closest points $\xi$ to $x$ in the training data is called  the \textbf{k-neighborhood} $N_k(x)$ of $x$.
+\end{itemize}
+
+
+<<echo=FALSE, fig.height = 3>>=
+circleFun = function(center = c(0,0), diameter = 1, npoints = 100){
+    r = diameter / 2
+    tt = seq(0,2*pi,length.out = npoints)
+    xx = center[1L] + r * cos(tt)
+    yy = center[2L] + r * sin(tt)
+    return(data.frame(x1 = xx, x2 = yy, class = NA))
+}
+knn_plot = function(mat, k) {
+  n = nrow(mat) - 1
+  dists = sort(as.matrix(dist(mat))[n + 1L, ])
+  neighbs = as.numeric(names(dists[1:(k + 1)]))
+  mat$class = ifelse(1:(n+1) %in% neighbs, 1L, 0L)
+  mat[n + 1L, "class"] = 2L
+  mat$class = as.factor(mat$class)
+  circle.dat = circleFun(c(0, 0), 2.01 * dists[k+1], npoints = 100)
+  q = ggplot(mat, aes(x = x1, y = x2, color = class)) + geom_point(size = 2)
+  q = q + geom_polygon(data = circle.dat, alpha = 0.2, fill = "#619CFF")
+  q + theme(legend.position = "none") + labs(subtitle = bquote(k == .(k)))
+}
+
+n = 30L
+x1 = rnorm(n)
+x2 = rnorm(n)
+mat = as.data.frame(cbind(x1, x2))
+mat = rbind(mat, c(0, 0))
+
+gridExtra::grid.arrange(knn_plot(mat, 15), knn_plot(mat, 7), knn_plot(mat, 3),
+                        nrow = 1)
+@
+
+\end{vbframe}
+
+\begin{vbframe}{Distance Measures}
+
+\textbf{How to calculate distances?}
+  \begin{itemize}
+    \item Most popular distance measure for numerical features: \textbf{Euclidean distance}
+    \item Imagine two data points $x = (x_1, ..., x_p)$ and $\tilde{x} = (\tilde{x}_1, ..., \tilde{x}_p)$ with $p$ features $\in \R$
+    \item The Euclidean distance:
+    \begin{equation*}
+      d_{Euclidean}\left(x, \tilde{x}\right) = \sqrt{\sum_{j=1}^p(x_j- \tilde{x}_j)^2}
+    \end{equation*}
+    %\item It is based on a special case of the $L_p$-norm: $||x||_p = (|x_1|^p + ... + |x_q|^p)^\frac{1}{p}$ with $p = 2$
+\framebreak
+
+\item Example:
+\begin{itemize}
+  \item Three data points with two metric features each: $a = (1, 3),
+  b = (4, 5)$ and $c = (7, 8)$
+  \item Which is the nearest neighbor of $b$ in terms of the Euclidean distance?
+  \item $d(b, a) = \sqrt{(4 - 1)^2 + (5 - 3)^2} = 3.61$
+  \item $d(b, c) = \sqrt{(4 - 7)^2 + (5 - 8)^2} = 4.24$
+  \item $\Rightarrow a$ is the nearest neighbor for $b$.
+\end{itemize}
+    \item Alternative distance measures are:
+    \begin{itemize}
+      \item Manhattan distance% based on the $L_1$-norm:
+        \begin{equation*}
+          d_{manhattan}(x, \tilde{x}) = \sum_{j=1}^p |x_j - \tilde{x}_j|
+        \end{equation*}
+      \item Mahalanobis distance (takes covariances in $\mathcal{X}$ into account)
+    \end{itemize}
+  \end{itemize}
+
+\framebreak
+
+Comparison between Euclidean and Manhattan distance measures:\\
+\vskip 1em
+<<dist-comparison, echo=FALSE, out.height = ".75\\textheight">>=
+getCurrentAspect = function() {
+   uy <- diff(grconvertY(1:2,"user","inches"))
+   ux <- diff(grconvertX(1:2,"user","inches"))
+   uy/ux
+}
+par(mar = c(4,4,0,0)+.1)
+cex = 1.5
+plot(x = c(1L,5L), y = c(1L,4L), ylim = c(0,5), xlim = c(0,6), pch = 19, las=1,
+  panel.first=grid(col = "lightgray", lty = "solid"),
+  xlab = "Dimension 1", ylab = "Dimension 2", cex.lab = cex, cex.axis = cex, bty='l')
+lines(x = c(1L,5L), y = c(1L,4L))
+text(x = c(1L,5L), y = c(1L,4L), c(expression(x), expression(tilde(x))), adj = c(1.5, 0), cex = cex)
+lines(x = c(1L, 5L, 5L, 5L), y = c(1L, 1L, 1L, 4L), col = 2)
+legend(x = -0.1, y = 5.1, lty = 1, legend = c("Manhattan", "Euclidean"), col = c(2,1), cex = cex,
+  box.lwd = 0, box.col = "white", bg = "white")
+text(x = 5, y = 0.9, expression(d(x,tilde(x))~"= |5-1| + |4-1| = 7"), adj = c(1,1), col = 2, cex = cex)
+asp = getCurrentAspect()
+text(x = 3, y = 2.5, expression(d(x,tilde(x))~"="~sqrt((5-1)^2 + (4-1)^2)~"= 5"),
+  adj = c(0.5,0), col = 1, srt = 180/pi*atan(3/4*asp), cex=cex)
+@
+
+\framebreak
+
+\textbf{Categorical variables, missing data and mixed space:}
+
+The Gower distance \(d_{gower}(x,\tilde{x})\) is a weighted mean of \(d_{gower}(x_j,\tilde{x}_j)\):
+
+$$d_{gower}(x,\tilde{x}) = \frac{\sum_{j=1}^p \delta_{x_j,\tilde{x}_j} \cdot d_{gower}(x_j,\tilde{x}_j)}{
+\sum_{j=1}^p \delta_{x_j,\tilde{x}_j}}.
+$$
+
+\begin{itemize}
+
+  \item \(\delta_{x_j,\tilde{x}_j}\) is 0 or 1. It becomes 0
+  when the $j$-th variable is \textbf{\textit{missing}} in at least one of the observations ($x$ or $\tilde{x}$),
+  or when the variable is asymmetric binary (where \enquote{1} is more
+  important/distinctive than \enquote{0}, e.~g. \enquote{1} means \enquote{color-blind}) and both values are zero. Otherwise it is 1.
+  \item \(d_{gower}(x_j,\tilde{x}_j)\), the $j$-th variable contribution to the
+  total distance, is a distance between the values of $x_j$ and $\tilde{x}_j$.
+  For nominal variables the distance is 0 if both values are equal and 1 otherwise.
+  The contribution of other variables is the absolute difference of
+  both values, divided by the total range of that variable.
+
+\end{itemize}
+
+\framebreak
+
+Example of Gower Distance with data on sex and income:
+
+\begin{columns}[T]
+  \begin{column}{0.4\textwidth}
+    <<>>=
+    library(kableExtra)
+    sex <- c('m','w','NA')
+    salary <- c(2340, 2100, 2680)
+    index <- c('1','2','3')
+    example.data <- data.frame(index, sex, salary)
+    kable(example.data, "latex", booktabs = F) %>%
+      kable_styling(font_size = 10) %>%
+      column_spec(c(1,2,3), color='black')
+    @
+  \end{column}
+  \begin{column}{0.5\textwidth}
+    \vspace{0.6cm}
+    \fbox{
+      $d_{gower}(x,\tilde{x}) = \frac{\sum_{j=1}^p \delta_{x_j,\tilde{x}_j} \cdot d_{gower}(x_j,\tilde{x}_j)}{
+      \sum_{j=1}^p \delta_{x_j,\tilde{x}_j}}
+      $}
+  \end{column}
+\end{columns}
+
+\vfill
+
+$d_{gower}(x^{(1)},x^{(2)}) = \frac{ 1 \cdot 1 + 1 \cdot \frac{\left| 2340 - 2100 \right|}
+{\left| 2680 - 2100 \right|}}{1 + 1} = \frac{1 + \frac{240}{580}}{2} = \frac{1 + 0.414}{2} = 0.707
+$
+
+\vfill
+
+$d_{gower}(x^{(1)},x^{(3)}) = \frac{ 0 \cdot 1 + 1 \cdot \frac{\left| 2340 - 2680 \right|}
+{\left| 2680 - 2100 \right|}}{0 + 1} = \frac{0 + \frac{340}{580}}{1} = \frac{0 + 0.586}{1} = 0.586
+$
+
+\vfill
+
+$d_{gower}(x^{(2)},x^{(3)}) = \frac{0 \cdot 1 + 1 \cdot \frac{\left| 2100 - 2680 \right|}
+{\left| 2680 - 2100 \right|}}{0 + 1} = \frac{0 + \frac{580}{580}}{1} = \frac{0 + 1.000}{1} = 1
+$
+
+\vfill
+
+%For categorical variables distances are often not easily comparible
+%(Is male closer to female than 2340\$ to 2100\$?). Hence, adding weights for variables
+%can be especially useful here.
+\framebreak
+
+\textbf{Weights:}
+\vfill
+
+Weights can be used to address two problems in distance calculation:
+
+\begin{itemize}
+  \item \textbf{Standardization:} Two features may have values with a different scale. Many distance formulas (not Gower) would place a higher importance on a feature with higher values leading to an imbalance. Assigning a higher weight for the lower valued feature can combat this effect.
+  \item \textbf{Importance:} Sometimes one feature has a higher importance (e.~g. more recent measurement). Assigning weights according to the importance of the feature can align the distance measure with known feature importance.
+\end{itemize}
+
+\begin{columns}[T]
+  \begin{column}{0.2\textwidth}
+    For example:
+  \end{column}
+  \begin{column}{0.8\textwidth}
+     $d^{weighted}_{Euclidean}\left(x, \tilde{x}\right) = \sqrt{\sum_{j=1}^pw_{j}(x_j- \tilde{x}_j)^2}$
+  \end{column}
+\end{columns}
+
+\vfill
+
+\end{vbframe}
+
+\begin{frame}{$k$-NN Regression}
+
+Predictions for regression:
+\begin{align*}
+\yh &= \frac{1}{k} \sum_{i: \xi \in N_k(x)} \yi\\
+\yh &= \frac{1}{\sum_{i: \xi \in N_k(x)} w_i} \sum_{i: \xi \in N_k(x)} w_i \yi
+\end{align*}
+with neighbors weighted according to their distance to $x$: $w_i = \frac{1}{d(\xi, x)}$
+
+\end{frame}
+
+\begin{vbframe}{$k$-NN Summary}
+
+\begin{itemize}
+\item $k$-NN has no optimization step and is a very local model.
+\item We cannot simply use least-squares loss on the training data for picking $k$,
+  because we would always pick $k=1$.
+\item $k$-NN makes no assumptions about the underlying data distribution.
+\item The smaller $k$, the less stable, less smooth and more \enquote{wiggly} the decision
+  boundary becomes.
+\item Accuracy of $k$-NN can be severely degraded by the presence of noisy or irrelevant features,
+  or if the feature scales are not consistent with their importance.
+%\item In binary classification, we might choose an odd k to avoid ties.
+\end{itemize}
+
+
+\framebreak
+
+\lz
+
+\textbf{Hypothesis Space:} Step functions over tesselations of $\Xspace$.\\
+Hyperparameters: distance measure $d(\cdot,\cdot)$ on $\mathcal X$; size of neighborhod $k$.
+
+\lz
+
+\textbf{Risk:} Use any loss function for regression or classification.
+
+\lz
+
+\textbf{Optimization:} Not applicable/necessary.\\ But: clever look-up methods \& data structures to avoid computing all $n$ distances for generating predictions.
+
+\end{vbframe}
+
+\endlecture

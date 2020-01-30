@@ -1,0 +1,100 @@
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../../style/preamble.Rnw")
+@
+
+% Load all R packages and set up knitr
+<<setup, child="../../style/setup.Rnw", include = FALSE>>=
+@
+
+
+%! includes: forests-intro
+
+\lecturechapter{Random Forests: Proximities}
+\lecture{Introduction to Machine Learning}
+
+\sloppy
+
+\begin{vbframe}{Random Forest Proximities}
+\begin{itemize}
+\item One of the most useful tools in random forests
+\item A measure of similarity ("closeness" or "nearness") of observations derived from random forests
+\item can be calculated for each pair of observations
+\item Definition:
+\begin{itemize}
+\item The proximity between two observations $\xi$ and $\xi[j]$ is calculated by measuring the number of times that these two observations are placed in the same terminal node of the same tree of random forest, divided by the number of trees in the forest
+\item The proximity of observations $\xi$ and $\xi[j]$ can be written as $\operatorname{prox}\left(\xi, \xi[j]\right)$
+\item The proximities form an intrinsic similarity measure between pairs of observations
+\end{itemize}
+\item The proximities of all observations form a symmetric $n \times n$ matrix.
+\framebreak 
+% 
+% \item With large datasets, it is not possible to fit a $n \times n$ matrix into fast memory
+% \begin{itemize}
+% \item A modification is needed - reduce the required memory size to $n \times M$, where $M$ is the number of trees in the forest
+% \end{itemize}
+
+\item Algorithm:
+\begin{itemize}
+\item Once a random forest has been trained, all of the training data is put through each tree (both in- and out-of-bag).
+\item Every time two observations $\xi$ and $\xi[j]$ end up in the same terminal node of a tree, their proximity is increased by one. 
+\item Once all data has been put through all trees and the proximities have been counted, the proximities are normalized by dividing them by the number of trees.
+\end{itemize}
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Using Random Forest Proximities}
+
+\begin{itemize}
+\item Imputing missing data:
+\begin{enumerate}
+\item Replace missing values for a given variable using the median of the non-missing values
+\item Get proximities
+\item Replace missing values in observation $\xi$ by a weighted average of non-missing values, with weights proportional to the proximity between observation $\xi$ and the observations with the non-missing values
+\end{enumerate}
+Steps 2 and 3 are then iterated a few times. %(5 to 6 times)
+
+\item Locating outliers: 
+\begin{itemize}
+\item An outlier is an observation whose proximities to all other observations are small
+\item Measure of outlyingness can be computed for each observation in the training sample
+\item If the measure is unusually large, the observation should be carefully inspected
+\end{itemize}
+
+\framebreak
+
+\item Identifying mislabeled data:
+\begin{itemize}
+\item Instances in the training dataset are sometimes labeled ambiguously or incorrectly, especially in \enquote{manually} created data sets.
+\item Proximities can help in finding them: they often show up as outliers in terms of their proximity values. 
+\end{itemize}
+
+
+\item Visualizing the forest 
+\begin{itemize}
+\item The values $1 - \operatorname{prox}\left(\xi, \xi[j]\right)$ can be thought of as distances in a high-dimensional space
+\item They can be projected onto a low-dimensional space using metric multidimensional scaling (MDS)
+\item Metric multidimensional scaling uses eigenvectors of a modified version of the proximity matrix to get scaling coordinates
+\end{itemize}
+\end{itemize}
+
+\framebreak
+
+\begin{center}
+\includegraphics[width=0.75\textwidth]{figure_man/Proximity_plot.png}
+\end{center}
+\tiny image from G. Louppe (2014) \emph{Understanding Random Forests} \texttt{arXiv:1407.7502}. 
+\framebreak
+
+\begin{itemize}
+\item \normalsize The figure depicts the proximity matrix learnt for a 10-class handwritten digit classification task
+\begin{itemize}
+\item proximity matrix distances projected onto the plane using multidimensional scaling
+\item samples from the same class form identifiable clusters, which suggests that they share similar structure
+\item also shows the fact for which classes errors are made, e.g.  digits 1 and 8 have high within class variance and have overlaps with other classes 
+\end{itemize}
+\end{itemize}
+\end{vbframe}
+
+\endlecture

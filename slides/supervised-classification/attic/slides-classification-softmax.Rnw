@@ -1,0 +1,85 @@
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../../style/preamble.Rnw")
+@
+% Load all R packages and set up knitr
+<<setup-r, child="../../style/setup.Rnw", include = FALSE>>=
+@
+
+\lecturechapter{Classification - Softmax Regression}
+\lecture{Introduction to Machine Learning}
+\framebreak
+\begin{vbframe}{Estimating Probabilities - Multinomial Regression and Softmax}
+
+<<multi-classification-task-plot, fig.height=4, fig.width=6, message=FALSE, echo=FALSE, results = 'none'>>=
+p = plotLearnerPrediction(makeLearner("classif.multinom", trace = FALSE),
+                          iris.task, c("Petal.Length", "Petal.Width")) +
+  ggtitle("")
+p + scale_fill_viridis_d()
+@
+
+
+\framebreak
+For a categorical response variable $y \in \gset$ with $g>2$ the model extends to
+
+$$
+\pikx = \P(y = k | x) = \frac{\exp(\theta_k^Tx)}{\sum_{j=1}^g\exp(\theta_j^Tx)}.
+$$
+
+The latter function is called the \emph{softmax}, and defined on a numerical vector $z$:
+$$
+s(z)_k = \frac{\exp(z_k)}{\sum_{j}\exp(z_j)}
+$$
+
+
+This is a generalization of the logistic function (check for g=2).\\
+It \enquote{squashes} a g-dimensional real-valued vector $z$ to a vector of the same dimension,
+with every entry in the range [0, 1] and all entries adding up to 1.
+
+\framebreak
+
+By comparing the posterior probabilities of two categories $k$ and $l$ we end up in a linear function (in $x$),
+
+$$
+\log\frac{\pi_k(x)}{\pi_l(x)} = (\theta_k-\theta_l)^Tx.
+$$
+
+The class boundaries lie where these (linear) functions are zero, i.e., where the predicted class probabilities are equal.
+
+\textbf{Remark:}
+\begin{itemize}
+\item $\theta_j$ are vectors here.
+\item Well-definedness: $\pi_k(x) \in [0, 1]$ and $\sum_k \pi_k(x) = 1$
+
+\end{itemize}
+
+\framebreak
+
+This approach can be extended in exactly the same fashion for other score based models.
+For discrimnating each class $k$ from all others,
+we define a binary score model $f_k(x)$ with parameter vector $\theta_k$.
+We then combine these models through the softmax function
+
+$$
+\postk = \pikx = s_k(f_1(x), \ldots f_g(x))
+$$
+
+and optimize all parameter vectors of the $f_k$ jointly.
+
+\framebreak
+
+Further comments:
+
+\begin{itemize}
+%\item We can now, e.g., calculate gradients and optimize this with standard numerical optimization software.
+\item For linear $\fxt = \theta^T x$, this is also called \emph{softmax regression}. (Note that $x$ can include derived features like polynomials or interactions as well.)
+\item One set of parameters is  \enquote{redundant}: If we subtract any fixed vector
+  from all $\theta_k$, the predictions do not change. The model is \enquote{overparameterized}, the minimizer of $\risket$ is not unique. Hence, we set $\theta_g = (0, \dots, 0)$ and only optimize the other $\theta_k$, $k=1,\dots,g-1$.\\ (Compare: logistic regression for binary classification also has only \emph{one} parameter vector for discriminating between two classes...).
+\item A similar approach can be used for many ML models: multiclass LDA, naive Bayes, neural networks and boosting.
+
+\end{itemize}
+
+\end{vbframe}
+
+\endlecture
+

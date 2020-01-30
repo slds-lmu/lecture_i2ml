@@ -1,0 +1,133 @@
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../../style/preamble.Rnw")
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(rattle)
+library(smoof)
+@
+
+
+%! includes: basics-*, supervised-*
+
+% Load all R packages and set up knitr
+<<setup, child="../../style/setup.Rnw", include = FALSE>>=
+@
+
+
+\lecturechapter{Classification and Regression Trees (CART): Basics}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+<<results='hide', code = readLines("rsrc/draw-cart-iris.R")>>=
+@
+
+\begin{vbframe}{Tree Model and Prediction}
+    \begin{figure}
+    \centering
+      % FIGURE SOURCE: No source
+      \includegraphics[height = 5.0cm]{figure_man/labelling_of_tree.png}
+    \end{figure}
+  \begin{itemize}
+    \item Classification and Regression Trees, introduced by Breiman
+    \item Binary splits are constructed top-down
+    \item Constant prediction in each terminal node (leaf): either a numerical value,
+  a class label or a probability vector over class labels.
+  \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Tree Model and Prediction}
+  \begin{itemize}
+    \item For predictions, observations are passed down the tree, according to the splitting rules
+      in each node
+    \item An observation will end up in exactly one leaf node
+    \item All observations in a leaf node are assigned the same prediction for the target
+  \end{itemize}
+    \begin{figure}
+    \centering
+      % FIGURE SOURCE: No source
+      \includegraphics[height = 5.0cm]{figure_man/labelling_of_tree.png}
+    \end{figure}
+\end{vbframe}
+
+\begin{vbframe}{Tree Model and Prediction}
+  \begin{itemize}
+    \item For predictions, observations are passed down the tree, according to the splitting rules
+      in each node
+    \item An observation will end up in exactly one leaf node
+    \item All observations in a leaf node are assigned the same prediction for the target
+  \end{itemize}
+    \begin{figure}
+    \centering
+      % FIGURE SOURCE: No source
+      \includegraphics[height = 5.0cm]{figure_man/CART_reg_example.pdf}
+    \end{figure}
+\end{vbframe}
+
+
+\begin{vbframe}{Trees as an additive model}
+Each point in $\Xspace$ is assigned to exactly one leaf, and each leaf has a set of input points leading to it, through axis-parallel splits.\\
+Hence, trees divide the feature space $\Xspace$ into \textbf{rectangular regions}: 
+  \begin{align*}
+    \fx = \sum_{m=1}^M c_m \I(x \in Q_m),
+  \end{align*}
+  where a tree with $M$ leaf nodes defines $M$ \enquote{rectangles} $Q_m$.\\
+  $c_m$ is the predicted numerical response, class label or class
+  distribution in the respective leaf node.
+
+<<result='hide', fig.height=2.2>>=
+model = draw_cart_on_iris(depth = 2)
+@
+\end{vbframe}
+
+\begin{frame}[fragile]{Trees}
+
+The hypothesis space of a CART is the set of all step functions over rectangular partitions of $\Xspace$:
+\begin{align*}
+    \fx = \sum_{m=1}^M c_m \I(x \in Q_m),
+\end{align*}
+
+\begin{columns}
+\begin{column}{0.5\textwidth}
+Classification:
+\lz
+<<result='hide', fig.height=4>>=
+model = draw_cart_on_iris(depth = 2)
+@
+ 
+\end{column}
+\begin{column}{0.5\textwidth}
+Regression:
+
+\includegraphics[height = 0.4\textheight]{figure_man/CART_reg_example.pdf}
+
+\end{column}
+\end{columns}
+\end{frame}
+
+
+
+
+
+
+
+
+% % BB: as we are not really talking too much about impurity anymore, I took this out
+% % <<splitcriteria-plot, results='hide', fig.height=5>>=
+% % Colors = pal_3
+% % par(mar = c(5.1, 4.1, 0.1, 0.1))
+% % p = seq(1e-6, 1-1e-6, length.out = 200)
+% % entropy = function(p) (p * log(p) + (1 - p) * log(1 - p))/(2 * log(0.5))
+% % gini = function(p) 2 * p * (1 - p)
+% % missclassification = function(p) (1 - max(p, 1 - p))
+% % plot(p, entropy(p), type = "l", col = Colors[1], lwd = 1.5, ylab = "",
+% %   ylim = c(0, 0.6), xlab = expression(hat(pi)[Nk]))
+% % lines(p, gini(p), col = Colors[2], lwd = 1.5)
+% % lines(p, sapply(p, missclassification), col = Colors[3], lwd = 1.5)
+% % legend("topright", c("Gini Index", "Entropy", "Misclassification Error"),
+% %        col = Colors[1:3], lty = 1)
+% % @
+
+
+\endlecture
