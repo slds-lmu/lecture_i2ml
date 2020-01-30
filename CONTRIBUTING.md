@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.com/compstat-lmu/lecture_i2ml.svg?token=yiXTK7TFAHiwv8cwsQus&branch=master)](https://travis-ci.com/compstat-lmu/lecture_i2ml)
-
 ## Introduction to Machine Learning
 
 This repository contains the slides for the "Introduction to machine learning" course.
