@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/compstat-lmu/lecture_i2ml.svg?token=yiXTK7TFAHiwv8cwsQus&branch=master)](https://travis-ci.com/compstat-lmu/lecture_i2ml)
+![R-CMD-check](https://github.com/compstat-lmu/lecture_i2ml/workflows/R-CMD-check/badge.svg)
 
 
 # Introduction to Machine Learning (I2ML)
