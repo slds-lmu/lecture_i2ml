@@ -54,6 +54,10 @@ now in `/code-demos`. Originals at [this link](https://github.com/compstat-lmu/l
       - set preferences to "USB microphone" & set loudness fairly high
       - set the frame rate to 30
 
+### Website
 
-
+The website is updated whenever the master branch is pushed, via the [Github action Pkgdown](https://github.com/compstat-lmu/lecture_i2ml/actions). 
+The website uses `pkgdown` via `_pkgdown.yml`, its pages are in `\vignettes`.
+The automatic deployment uses a "secret" (see repository settings on Github),
+which is a PAT called `DEPLOY_PAT` (created by Fabian Scheipl, Jan 30 2020).
 
