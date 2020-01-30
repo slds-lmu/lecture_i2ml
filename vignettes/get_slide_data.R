@@ -1,6 +1,3 @@
-# library("tidyr")
-# library("tibble")
-
 library("Hmisc")
 
 ## Get slide directories
@@ -15,14 +12,6 @@ slidedirs <- c(
     "tuning"
 )
 
-# ## Get names of all Rnw files
-# rnw_list <- sapply(slidedirs, list.files, pattern = "*.Rnw")
-# rnw_c <- do.call(c, rnw_list)
-# 
-# ## Create a data set
-# sldat <- rnw_list %>% 
-#     enframe(., name = "slidedirs", value = "rnws") %>% 
-#     unnest()
 
 ## Directory order
 sldir_order <- data.frame(dir = slidedirs, dirorder = seq_along(slidedirs), 
@@ -118,7 +107,8 @@ sldat$topic <- sapply(sldat$dir, generate_topic)
 names(sldat) <- capitalize(names(sldat))
 
 # Create links
-sldat$PDF <- paste0("[pdf](https://github.com/compstat-lmu/lecture_i2ml/blob/master/slides-pdf/", sldat$Deck, ".pdf)")
+# sldat$PDF <- paste0("[pdf](https://github.com/compstat-lmu/lecture_i2ml/blob/master/slides-pdf/", sldat$Deck, ".pdf)")
+sldat$PDF <- paste0("[pdf](../../slides-pdf/", sldat$Deck, ".pdf)")
 sldat$PDF[is.na(sldat$Youtube)] <- "Coming soon"
 sldat$YouTube <- paste0("[link](", sldat$Youtube, ")")
 sldat$YouTube[is.na(sldat$Youtube)] <- "Coming soon"
