@@ -1,14 +1,16 @@
 <<echo=FALSE, message=FALSE, results='hide', warning=FALSE>>=
-library(mlr)
-# Example from ?predict:
-training.set = seq(1, nrow(iris), by = 2)
-test.set = seq(2, nrow(iris), by = 2)
+library(mlr3)
+library(mlr3learners)
+library(mlr3measures)
 
-task = makeClassifTask(data = iris, target = "Species")
-lrn = makeLearner("classif.lda")
-mod = train(lrn, task, subset = training.set)
-pred = predict(mod, newdata = iris[test.set, ])
-performance(pred, measures = mmce)
+training_set = seq(1, nrow(iris), by = 2)
+test_set <- seq(2, nrow(iris), by = 2)
+
+task <- tsk("iris")
+learner <- lrn("classif.lda")
+learner$train(task, row_ids = training_set)
+pred <- learner$predict(task, row_ids = test_set)
+pred$score()
 @
 
 \begin{enumerate}
@@ -30,69 +32,71 @@ performance(pred, measures = mmce)
     \item $L_1$-loss (= mean absolute error), ...
   \end{itemize}
 
-  To get a list of all measures you can use \texttt{listLearners()}.
+  To get a list of all measures you can use \texttt{mlr\_measures}.
 
   \item[b)]
 
   <<message=FALSE>>=
   # look at the task
-  bh.task
-  n = getTaskSize(bh.task)
+  task <- tsk("boston_housing")
+  task
+  n <- task$nrow
 
   # select index vectors to subset the data randomly
   set.seed(123)
-  train.ind = sample(seq_len(n), 0.5*n)
-  test.ind = setdiff(seq_len(n), train.ind)
+  train_ind <- sample(seq_len(n), 0.5*n)
+  test_ind <- setdiff(seq_len(n), train_ind)
 
   # specify learner
-  lrn = makeLearner("regr.kknn", k = 3)
+  learner <- lrn("regr.kknn", k = 3)
 
   # train model to the training set
-  mod = train(lrn, bh.task, subset = train.ind)
+  learner$train(task, row_ids = train_ind)
 
   # predict on the test set
-  pred = predict(mod, bh.task, subset = test.ind)
+  pred <- learner$predict(task, row_ids = test_ind)
   pred
   @
   \item[c)]
   <<message=FALSE>>=
+  # predict on the train set
+  pred_train <- learner$predict(task, row_ids = train_ind)
+  pred_train$score(list(msr("regr.mse"), msr("regr.mae")))
+  
   # predict on the test set
-  pred.test = predict(mod, bh.task, subset = test.ind)
-  performance(pred.test, measures = list(mlr::mae, mlr::mse))
-
-  # predict on the test set
-  pred.train = predict(mod, bh.task, subset = train.ind)
-  performance(pred.train, measures = list(mlr::mae, mlr::mse))
+  pred_test <- learner$predict(task, row_ids = test_ind)
+  pred_test$score(list(msr("regr.mse"), msr("regr.mae")))
   @
-  The generalization error estimate is much higher on the training data.
+  Unsurprisingly the model performs better on the training data (smaller loss) then on the
+  test data.
 
   \item[d)]
 
   <<message=FALSE>>=
   # select different index vectors to subset the data randomly
   set.seed(321)
-  train.ind = sort(sample(seq_len(n), 0.5*n))
-  test.ind = setdiff(seq_len(n), train.ind)
+  train_ind <- sample(seq_len(n), 0.5*n)
+  test_ind <- setdiff(seq_len(n), train_ind)
 
   # specify learner
-  lrn = makeLearner("regr.rpart")
+  learner <- lrn("regr.kknn", k = 3)
 
   # train model to the training set
-  mod = train(lrn, bh.task, subset = train.ind)
+  learner$train(task, row_ids = train_ind)
 
   # predict on the test set
-  pred = predict(mod, bh.task, subset = test.ind)
-  pred
-  pred.test = predict(mod, bh.task, subset = test.ind)
-  performance(pred.test, measures = list(mlr::mae, mlr::mse))
+  pred_test <- learner$predict(task, row_ids = test_ind)
+  pred_test
+  pred_test$score(list(msr("regr.mse"), msr("regr.mae")))
   @
 
   Effect: We will predict different observations since the test set is different. The same observations get a slightly different prediction (e.g. observation with id 2). This affects the final error estimation.
 
   \item[e)]
   <<message=FALSE>>=
-  rdesc = makeResampleDesc("CV", iters = 10)
-  r = resample(lrn, bh.task, rdesc, measures = list(mlr::mae, mlr::mse))
+  rdesc <- rsmp("cv", folds = 10)
+  r <- resample(task, learner, rdesc)
+  r$aggregate(list(msr("regr.mse"), msr("regr.mae")))
   @
 
   % \item[f)]
