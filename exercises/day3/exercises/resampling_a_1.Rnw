@@ -1,33 +1,41 @@
-We fit a k-NN model to predict the pixel classes in the Satellite dataset. The performance is evaluated with the kappa coefficient, which measures the agreement between two scorers: The higher the kappa, the better the agreement (max 1) between predicted and actual classes. \\
+The Satellite dataset consists of pixels in 3x3 neighbourhoods in a satellite image, where each pixel is described by 4 spectral values, and the classification label of the central pixel. (for further information see  \texttt{?Sattelite}) We fit a k-NN model to predict the class of the middle pixel. The performance is evaluated with the mmce. \\
 Look at the following R code and output: The performance is estimated in different ways: using training data, test data and then with cross validation. How do the estimates differ and why? Which one should be used?
-
+  
 <<message=FALSE, warning=FALSE>>=
-library(mlr)
+library(mlr3)
+library(mlr3learners)
 library(mlbench)
 
 data(Satellite)
-Satellite.task = makeClassifTask(data = Satellite, target = "classes")
-knn.learner = makeLearner("classif.kknn", k = 3)
+satellite_task <-
+  TaskClassif$new(id = "satellite_task",
+                  backend = Satellite,
+                  target = "classes")
+knn_learner <- lrn("classif.kknn", k = 3)
 
 # Train and test subsets:
 set.seed(42)
-train_indices = sample.int(nrow(Satellite), size = 0.8 * nrow(Satellite))
-test_indices = setdiff(1:nrow(Satellite), train_indices)
+train_indices <-
+  sample.int(nrow(Satellite), size = 0.8 * nrow(Satellite))
+test_indices <- setdiff(1:nrow(Satellite), train_indices)
 
 # Training data performance estimate
-mod = train(knn.learner, task = Satellite.task, subset = train_indices)
-pred = predict(mod, task = Satellite.task, subset = train_indices)
-performance(pred, measure = mlr::kappa)
+knn_learner$train(task = satellite_task, row_ids = train_indices)
+pred <-
+  knn_learner$predict(task = satellite_task, row_ids = train_indices)
+pred$score()
 
 # Test data performance estimate
-pred = predict(mod, task = Satellite.task, subset = test_indices)
-performance(pred, measure = mlr::kappa)
+pred <-
+  knn_learner$predict(task = satellite_task, row_ids = test_indices)
+pred$score()
 
 # CV performance estimate
-rdesc = makeResampleDesc(method = "CV", iters = 10)
-res = resample(knn.learner, Satellite.task, rdesc, measures = list(mlr::kappa))
-res$measures.test
-mean(res$measures.test$kappa)
+rdesc <- rsmp("cv", folds = 10)
+res <- resample(satellite_task, knn_learner, rdesc)
+res$score()
+res$aggregate()
 @
-
-
+    
+    
+    
