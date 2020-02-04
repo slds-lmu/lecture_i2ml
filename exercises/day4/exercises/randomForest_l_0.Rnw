@@ -3,31 +3,33 @@
   The spam data is a binary classification task where the aim is to classify an email as spam or no-spam.
 
   <<warning=FALSE, message=FALSE>>=
-  library(mlr)
-  spam.task
+  library(mlr3)
+  library(mlr3learners)
+  library(mlr3filters)
+  
+  tsk("spam")
   @
   \item[b)]
 
   <<fig.height=5, cache = FALSE>>=
   library(rpart.plot)
-
-  lrn = makeLearner("classif.rpart")
-  model = train(lrn, spam.task)
-  mod = getLearnerModel(model)
-  rpart.plot(mod)
+  task_spam <- tsk("spam")
+  
+  learner <- lrn("classif.rpart")
+  learner$train(task_spam)
+  
+  rpart.plot(learner$model, roundint=FALSE)
 
   set.seed(42)
-  subset1 = sample.int(getTaskSize(spam.task), size = 0.8 * getTaskSize(spam.task))
-  subset2 = sample.int(getTaskSize(spam.task), size = 0.8 * getTaskSize(spam.task))
+  
+  subset1 <- sample.int(task_spam$nrow, size = 0.8 * task_spam$nrow)
+  subset2 <- sample.int(task_spam$nrow, size = 0.8 * task_spam$nrow)
 
-  model = train(lrn, spam.task, subset = subset1)
-  mod = getLearnerModel(model)
-  rpart.plot(mod)
+  learner$train(task_spam, row_ids = subset1)
+  rpart.plot(learner$model, roundint=FALSE)
 
-
-  model = train(lrn, spam.task, subset = subset2)
-  mod = getLearnerModel(model)
-  rpart.plot(mod)
+  learner$train(task_spam, row_ids = subset2)
+  rpart.plot(learner$model, roundint=FALSE)
 
   @
   Observation: Trees with different sample find different split points and variables, leading to different trees!
@@ -35,21 +37,25 @@
   \item[c)]
 
   <<fig.height=5, cache = FALSE>>=
-  lrn = makeLearner("classif.randomForest")
-  model = train(lrn, spam.task)
-  mod = getLearnerModel(model)
-  mod
-  plot(mod)
+  learner <- lrn("classif.ranger", "oob.error" = TRUE)
+  learner$train(tsk("spam"))
+  
+  model <- learner$model
+  
+  model$prediction.error
   @
 
   \item[d)]
 
-  <<fig.height=5>>=
-  imp = getFeatureImportance(model)
-  sort(imp$res, decreasing = TRUE)
+Variable importance in general measures the contributions of features to a model.
+One way of computing the variable importance of the j-th variable is based on permutations of the OOB observations of the j-th variable, which measures the mean deacrease of the predictive accuracy induced by this permutation. To determine the $n$ variables with the biggest influence on the prediction quality, one can choose the $n$ variables with the highest variable importance based on permutations of the OOB,
+e.g. for $n=5$:
 
-  # as alternative, the randomForest package provides a plotting function
-  randomForest::varImpPlot(getLearnerModel(model))
+  <<fig.height=5>>=
+  learner <- lrn("classif.ranger", importance = "permutation", "oob.error" = TRUE)  
+  filter <- flt("importance", learner = learner)
+  filter$calculate(tsk("spam"))
+  head(as.data.table(filter), 5)
   @
 
 \end{enumerate}
