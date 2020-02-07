@@ -1,7 +1,7 @@
-\begin{enumerate}
-  \item[a)]
+\begin{itemize}
+  \item 
 
-  Proceed as follows:
+  Proceed as follows, when solving manually:
 
   \begin{enumerate}
     \item Split $x$ in two groups using the following split points.
@@ -73,38 +73,40 @@
   Minimal empirical risk is obtained by choosing the split point $2.1$.
 
 
-  \item[b)]
-
+  \item Code example:
+  
   <<>>=
   x = c(1,2,7,10,20)
   y = c(1,1,0.5,10,11)
 
-  calculateMSE = function (y) mean((y - mean(y))^2)
-  calculateTotalMSE = function (yleft, yright) {
-    n_left = length(yleft)
-    n_right = length(yright)
+  calculate_mse <- function (y) mean((y - mean(y))^2)
+  calculate_total_mse <- function (yleft, yright) {
+    num_left <- length(yleft)
+    num_right <- length(yright)
 
-    w_mse_left = n_left / (n_left + n_right) * calculateMSE(yleft)
-    w_mse_right = n_right / (n_left + n_right) * calculateMSE(yright)
+    w_mse_left <- num_left / (num_left + num_right) * calculate_mse(yleft)
+    w_mse_right <- num_right / (num_left + num_right) * calculate_mse(yright)
 
     return(w_mse_left + w_mse_right)
   }
 
-  split = function(x, y) {
-    # try out all points as potential split points and ...
-    split_points = 0.5 * diff(sort(x)) + x[-length(x)]
-    node_mses = lapply(split_points, function(i) {
-      y_left = y[x <= i]
-      y_right = y[x > i]
+  split <- function(x, y) {
+    # try out all unique points as potential split points and ...
+    unique_sorted_x <- sort(unique(x))
+    split_points <- unique_sorted_x[1:(length(unique_sorted_x) - 1)] + 
+      0.5 * diff(unique_sorted_x)
+    node_mses <- lapply(split_points, function(i) {
+      y_left <- y[x <= i]
+      y_right <- y[x > i]
 
       # ... compute SS in both groups
-      mse_split = calculateTotalMSE(y_left, y_right)
+      mse_split <- calculate_total_mse(y_left, y_right)
       print(sprintf("Split at %.1f: empirical Risk = %.2f", i, mse_split))
 
       return(mse_split)
     })
     # select the split point yielding the maximum impurity reduction
-    best = which.min(node_mses)
+    best <- which.min(node_mses)
     split_points[best]
   }
 
@@ -116,4 +118,4 @@
   @
 
 
-\end{enumerate}
+\end{itemize}
