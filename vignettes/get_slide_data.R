@@ -127,7 +127,7 @@ names(sldat) <- capitalize(names(sldat))
 
 # Create links
 # sldat$PDF <- paste0("[pdf](https://github.com/compstat-lmu/lecture_i2ml/blob/master/slides-pdf/", sldat$Deck, ".pdf)")
-sldat$PDF <- paste0("[pdf](../../slides-pdf/", sldat$Deck, ".pdf)")
+sldat$PDF <- paste0("[pdf](https://github.com/compstat-lmu/lecture_i2ml/blob/master/slides-pdf/", sldat$Deck, ".pdf)")
 # sldat$PDF <- paste0("[pdf](https://nbviewer.jupyter.org/github/compstat-lmu/lecture_i2ml/blob/master/slides-pdf/", sldat$Deck, ".pdf)")
 # sldat$PDF[is.na(sldat$Youtube)] <- "Coming soon"
 sldat$YouTube <- paste0("[link](", sldat$Youtube, ") / [playlist ", sldat$Dirorder,"](", sldat$Playlist, ")")
@@ -138,5 +138,4 @@ sldat$Lesson <- paste(sldat$Dirorder, sldat$Order, sep = ".")
 
 
 # write.csv(sldat, "slide_data.csv")
-
 
