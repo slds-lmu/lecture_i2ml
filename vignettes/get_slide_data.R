@@ -82,7 +82,7 @@ linkdat <- rbind(
     c("slides-forests-featureimportance", "Feature Importance", "https://youtu.be/cw4qG9ePZ9Y"),
     c("slides-forests-discussion", "Discussion", "https://youtu.be/9bqNhq6OUUk"),
     
-    c("slides-tuning-intro", "Introduction", "https://youtu.be/tu_XGcRcpcU"),
+    c("slides-tuning-intro", "Introduction", "https://youtu.be/lG4Ul1Liq-U"),
     c("slides-tuning-tuningproblem", "Problem Definition", "https://youtu.be/Eo7iqMOeILY"),
     c("slides-tuning-basicalgos", "Basic Techniques", "https://youtu.be/A1cx4FkS0lw"),
     c("slides-tuning-nestedintro", "Nested Resampling Motivation", "https://youtu.be/_GVysctg5sY"),
