@@ -12,8 +12,8 @@ knitr::set_parent("../../style/preamble.Rnw")
 
 \begin{vbframe}{Naive Bayes classifier}
 
-NB is a generative technique multiclass technique. Remember: We use Bayes' theorem and only need $\pdfxyk$ to compute the posterior as:
-$$\pikx = \postk = \frac{\P(\xv | y = k) \P(y = k)}{\P(\xv)} = \frac{\pdfxyk \pik}{\sumjg \pdfxyj} $$
+NB is a generative multiclass technique. Remember: We use Bayes' theorem and only need $\pdfxyk$ to compute the posterior as:
+$$\pikx = \postk = \frac{\P(\xv | y = k) \P(y = k)}{\P(\xv)} = \frac{\pdfxyk \pik}{\sumjg \pdfxyj \pi_j} $$
 
 
 NB is based on a simple \textbf{conditional independence assumption}: the features are conditionally independent given class $y$.
@@ -71,36 +71,36 @@ print(pl)
 
 \begin{vbframe}{NB: Categorical Features}
 
-  We use a categorical distribution for $p(x_j | y = k)$ and estimate the probabilities $p_{kjm}$ that in class in $k$ $x_j = m$ by frequencies.
+  We use a categorical distribution for $p(x_j | y = k)$ and estimate the probabilities $p_{kjm}$ that in class in $k$ our j-th feature has value m, $x_j = m$, simply by counting the frequencies.
 
 $$
 % p(x_j | y = k) = \frac{(\sum x_i)!}{\prod_i x_i!} \prod_m p_{kjm}^{[x_j = m]}
-p(x_j = m| y = k) = \prod_m p_{kjm}^{[x_j = m]}
+p(x_j | y = k) = \prod_m p_{kjm}^{[x_j = m]}
 $$
 %
-and for the completely observed data this becomes a multinomial distribution
+% and for the completely observed data this becomes a multinomial distribution
 %
-$$
-\frac{(\sum_i x_i)!}{\prod_i x_i!} \prod_j p_{kj}^{v_{kj}},
-$$
+% $$
+% \frac{(\sum_i x_i)!}{\prod_i x_i!} \prod_j p_{kj}^{v_{kj}},
+% $$
 
-with ${v_{kj}} = \sum_{i = 1}^n [x_j^{(i)} = 1]$ the number of times $(j, k)$ occurs.
+% with ${v_{kj}} = \sum_{i = 1}^n [x_j^{(i)} = 1]$ the number of times $(j, k)$ occurs.
 
 Because of the simple conditional independence structure, it is also very easy to deal with mixed numerical / categorical feature spaces.
 
 \end{vbframe}
 
 
-\begin{vbframe}{NB is linear in frequencies}
-We can now prove that the decision boundaries between klasses k and l are linear:
+% \begin{vbframe}{Categorical NB is linear in frequencies}
+% We can now prove that the decision boundaries between klasses k and l are linear:
 
-$$
-\log \frac{\pi_k(x)}{\pi_l(x)} \propto \log\frac{\pi_k}{\pi_l} + \sum_j v_{kj} \ln p_{kj} - \sum_j v_{lj} \ln p_{lj}
-$$
+% $$
+% \log \frac{\pi_k(x)}{\pi_l(x)} \propto \log\frac{\pi_k}{\pi_l} + \sum_j v_{kj} \ln p_{kj} - \sum_j v_{lj} \ln p_{lj}
+% $$
 
-This is a linear function in the parameter vector $v = (v_{11}, \ldots, v_{1p}, \ldots, v_{g1} \ldots v_{gp})$.
+% This is a linear function in the parameter vector $v = (v_{11}, \ldots, v_{1p}, \ldots, v_{g1} \ldots v_{gp})$.
 
-\end{vbframe}
+% \end{vbframe}
 
 \begin{vbframe}{Laplace Smoothing}
 If a given class and feature value never occur together in the training data, then the frequency-based probability estimate will be zero.
@@ -111,7 +111,7 @@ This is problematic because it will wipe out all information in the other probab
 
 \lz
 %
-A simple numerical correction, especially needed for smaller sample size, is to set $p_{kj} = \epsilon > 0$ instead of $p_{kj} = 0$.
+A simple numerical correction is to set these zero probabilities to a small value to regularize against this case.
 
 
 \end{vbframe}
