@@ -1,6 +1,3 @@
-![R-CMD-check](https://github.com/compstat-lmu/lecture_i2ml/workflows/R-CMD-check/badge.svg)
-
-
 # Introduction to Machine Learning (I2ML)
 
 Main course site: https://compstat-lmu.github.io/lecture_i2ml
