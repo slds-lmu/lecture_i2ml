@@ -9,8 +9,10 @@ cddat <- data.frame(ID = seq_along(demos), demo_file = demos)
 ## Get names of all code demo Rmd files
 # rmds_link <- list.files(path = "../code-demos", pattern = "code_demo.*.Rmd$", full.names = TRUE)
 # rmds <- list.files(path = "../code-demos", pattern = "code_demo.*.Rmd$", full.names = FALSE)
-rmds_link <- paste0("https://github.com/compstat-lmu/lecture_i2ml/tree/master/code-demos/", demos, ".Rmd")
-cddat$Rmd <- paste0("[Rmd](../", rmds_link, ")")
+rmds_link <- paste0("../code-demos/", demos, ".Rmd")
+cddat$Rmd <- paste0(
+  "[Rmd](https://github.com/compstat-lmu/lecture_i2ml/tree/master/code-demos/", 
+  demos, ".Rmd)")
 
 
 ## Read the title lines from the files
