@@ -4,13 +4,14 @@ params:
   set_title: Code demo for KNN
 ---
 
-```{r, child = "../style/preamble_code_demos.Rmd", include = FALSE}
+```{r knn-preamble, child = "../style/preamble_code_demos.Rmd", include = FALSE, purl = FALSE}
 
 ```
 
-```{r, child = "../style/setup.Rmd", include = FALSE}
+```{r knn-setup, child = "../style/setup.Rmd", include = FALSE, purl = FALSE}
 
 ```  
+
 
 # Code demo for KNN
 
@@ -171,15 +172,16 @@ print(paste(
 Since the model above is based on a $p = 4$ dimensional feature vector, it's hard to visualize what $k$-NN actually does. 
 
 To get a better understanding how $k$-NN works, at least for just two features, we can write a simple plot function, where we divide the two dimensional feature space into a grid and color all grid cells according to the class that $k$-NN would assign to their midpoint based on a given training data set. Data points that are misclassified are shown in white, the others in gray.
-```{r knn-plot_2D_knn-def}  
-# function for simple k-NN with two features to visualize class boundaries
-# X1 and X2 are the names of the two features to use. 
-plot_2D_knn <- function(train_labels, train_data, k, X1, X2,
-                      distance = distance_euclidean, standardize = FALSE,
-                      # by default, we "predict" the class of the training data:_
-                      to_classify_labels = train_labels,
-                      to_classify_data = train_data,
-                      lengthX1 = 100, lengthX2 = 100) {
+```{r knn-plot_2D_classif} 
+# function for a general classification method with two features to visualize
+# class boundaries X1 and X2 are the names of the two features to use.
+plot_2D_classify <- function(to_classify_labels,
+                             to_classify_data,
+                             classify_method,
+                             X1, X2,
+                             lengthX1 = 100, lengthX2 = 100,
+                             title = "", 
+                             plot_class_rate = TRUE) {
   gridX1 <- seq(
     min(to_classify_data[, X1]),
     max(to_classify_data[, X1]),
@@ -194,22 +196,17 @@ plot_2D_knn <- function(train_labels, train_data, k, X1, X2,
   # compute grid coordinates with cartesian product
   grid_data <- expand.grid(gridX1, gridX2)
   names(grid_data) <- c(X1, X2)
-  
-  # assign grid cells to classes based on k-NN rule:
-  grid_result <- get_knn(
-    train_labels = train_labels,
-    train_data = train_data[, c(X1, X2)],
-    to_classify_data = grid_data,
-    k = k, distance = distance, standardize = standardize
+
+  # assign grid cells to classes based on classification rule:
+  grid_result <- classify_method(
+    to_classify_data = grid_data
   )
   grid_data$prediction <- grid_result$prediction
-  
-  # assign data to be classified based on k-NN rule & check these "predictions"
-  to_check_result <- get_knn(
-    train_labels = train_labels,
-    train_data = train_data[, c(X1, X2)],
-    to_classify_data = to_classify_data[, c(X1, X2)],
-    k = k, distance = distance, standardize = standardize
+
+  # assign data to be classified based on classification rule & check these
+  # "predictions"
+  to_check_result <- classify_method(
+    to_classify_data = to_classify_data[, c(X1, X2)]
   )
   to_classify_data$class <- to_classify_labels
   to_classify_data$correct <- (to_check_result$prediction == to_classify_labels)
@@ -217,28 +214,59 @@ plot_2D_knn <- function(train_labels, train_data, k, X1, X2,
 
   ggplot() +
     geom_raster(
-      data = grid_data, 
-      aes_string(x = X1, y = X2, fill = "prediction"), 
+      data = grid_data,
+      aes_string(x = X1, y = X2, fill = "prediction"),
       alpha = .8
     ) +
     geom_point(
-      data = to_classify_data, 
+      data = to_classify_data,
       aes_string(x = X1, y = X2, shape = "class", color = "correct"),
       alpha = .8
     ) +
     scale_color_manual(
-      values = c("TRUE" = "darkgray", "FALSE" = "white"), 
+      values = c("TRUE" = "darkgray", "FALSE" = "white"),
       guide = FALSE
     ) +
     labs(
       fill = "Class", shape = "Class",
-      title = paste0(
-        "k = ", as.character(k), ": ",
+      title =  parse(text = if(plot_class_rate) paste0(
+        
+        title, '~ ": " ~',
         100 * round(mean(to_classify_data$correct), 4),
-        "% correctly classified"
+        '~ "% correctly classified"'
       )
-    ) + 
-    theme(plot.title = element_text(size=16))
+        else title
+      )
+    ) +
+    theme(plot.title = element_text(size = 16))
+}
+```
+
+
+```{r knn-plot_2D_knn-def}  
+# function for simple k-NN with two features to visualize class boundaries
+# X1 and X2 are the names of the two features to use. 
+plot_2D_knn <- function(train_labels, train_data, k, X1, X2,
+                      distance = distance_euclidean, standardize = FALSE,
+                      # by default, we "predict" the class of the training data:_
+                      to_classify_labels = train_labels,
+                      to_classify_data = train_data,
+                      lengthX1 = 100, lengthX2 = 100,
+                      plot_class_rate = TRUE) {
+  
+  plot_2D_classify(to_classify_labels = to_classify_labels,
+                   to_classify_data = to_classify_data, 
+                   classify_method = function(to_classify_data) 
+                       get_knn(train_labels = train_labels,
+                               train_data = train_data[, c(X1, X2)],
+                               to_classify_data = to_classify_data,
+                               k = k, distance = distance, 
+                               standardize = standardize),
+                   X1, X2,
+                   lengthX1 = lengthX1, lengthX2 = lengthX2,
+                   title = paste0("k == ", k),
+                   plot_class_rate = plot_class_rate) 
+  
 }
 ```
 
@@ -249,7 +277,7 @@ plot_2D_knn(
   train_labels = iris_train$Species,
   train_data = iris_train[, -5],
   k = 3,
-  X1 = "Petal.Width", X2 = "Sepal.Length"
+  X1 = "Petal.Width", X2 = "Sepal.Length",
 )
 ```
 

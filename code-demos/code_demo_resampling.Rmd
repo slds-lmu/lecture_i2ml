@@ -1,0 +1,131 @@
+---
+output: pdf_document
+params:
+  set_title: "Code demo for resampling"
+---
+  
+```{r resampling-preamble, child = "../style/preamble_code_demos.Rmd", include = FALSE, purl = FALSE}
+
+```
+
+```{r resamplings-setup, child = "../style/setup.Rmd", include = FALSE, purl = FALSE}
+
+```  
+
+# Code demo for resampling
+
+## Self made Cross Validation
+
+We want to assess the performance of our model, i.e., estimate its generalization error. 
+Why is it a good idea to use cross-validation?
+
+
+```{r resampling-knn_cv}
+library(mlr)
+library(mlbench)
+
+set.seed(13)
+spiral <- as.data.frame(mlbench.spirals(n = 500, sd = 0.1))
+
+knn_cv <- function(data, target, folds, k) {
+  storage <- as.numeric(folds)
+  
+  indices <- c(sample(x = seq(1, nrow(data), by = 1), size = nrow(data), replace = FALSE),
+               rep(NA, (folds - nrow(data) %% folds) %% folds))
+
+  # index matrix for folds
+  index_mat <- matrix(data = indices, byrow = FALSE, nrow = folds)
+
+  for (i in 1:folds) {
+
+    # data
+    test_data <- data[na.omit(index_mat[i, ]), ]
+    train_data <- data[-na.omit(index_mat[i, ]), ]
+
+    # model
+    task <- makeClassifTask(data = train_data, target = target)
+    learner <- makeLearner("classif.kknn", k = k)
+    model <- train(learner = learner, task = task)
+    storage[i] <- performance(predict(model, newdata = test_data),
+      measures = mmce
+    )[[1]]
+  }
+
+  return(list(folds = folds, storage = as.data.frame(storage), gen_error = mean(storage)))
+}
+
+result <- knn_cv(data = spiral, target = "classes", folds = 11, k = 3)
+result$storage
+result$gen_error
+```
+
+```{r resampling-knn_cv_plot}
+p <- ggplot(data = result$storage, aes(y = storage, x = 1)) +
+  geom_boxplot() +
+  ggtitle(label = "Generalization error CV") +
+  xlab("") + ylab("mmce") + xlim(c(0, 2))
+p
+```
+
+So what happens if we increase the number of folds?
+
+```{r resampling-knn_cv_folds}
+results <- lapply(X = c(2,3,4,5*(1:12)), FUN = function(folds)
+  data.frame(folds = as.character(folds), knn_cv(data = spiral, target = "classes", folds = folds, k = 4)$storage))
+
+plot_data <- do.call(rbind, results)
+
+library(ggplot2)
+ggplot(plot_data, aes(x=folds, y=storage)) + geom_boxplot() + xlab("number of folds") +
+  ylab("test error")
+```
+
+The more we increase the number of folds, the larger each training set becomes. Hence the *pessimistic estimation bias* for model accuracy becomes smaller. But
+since the test sets also become smaller, the *variance* of the resulting accuracy estimate increases. 
+Also, with a higher number of folds, the computation time increases. Can we get better results with a similar amount of computation?
+Let's see what happens if we repeat CV's and collect only their means:
+
+```{r resampling-knn_x_cv}
+
+results <- lapply(X = c(2:10), FUN = function(folds)
+  data.frame(folds = as.character(folds), 
+             sapply(X = 1:10, FUN = function(x) knn_cv(data = spiral, 
+                                                       target = "classes", 
+                                                       folds = folds, 
+                                                       k = 4)$gen_error)))
+
+plot_data <- do.call(rbind, results)
+
+colnames(plot_data) <- c("folds", "storage")
+
+ggplot(plot_data, aes(x = folds, y = storage)) + 
+  geom_boxplot() + 
+  xlab("10 times x-CV") +  ylab("test error")
+```
+
+We see that our estimation results stabilize.
+
+## `mlr`'s CV implementation
+
+```{r resampling-mlr}
+
+set.seed(1337)
+task <- mlr::makeClassifTask(data = spiral, target = "classes")
+rdesc_cv <- mlr::makeResampleDesc(method = "CV", iters = 10)
+mlr_cv <- resample(
+  learner = "classif.kknn", k = 3, task = task,
+  resampling = rdesc_cv, show.info = FALSE
+)
+mlr_cv
+mlr_cv$measures.test
+```
+
+```{r resampling-mlr_plot}
+library(ggplot2)
+
+p <- ggplot(data = mlr_cv$measures.test, aes(y = mmce, x = 1)) +
+  geom_boxplot() +
+  ggtitle(label = "Generalization error CV mlr") +
+  xlab("") + ylab("mmce") + xlim(c(0, 2))
+p
+```

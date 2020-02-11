@@ -1,4 +1,4 @@
-SLIDES = $(shell find -iname "slides-*.Rnw")
+SLIDES = $(shell find . -maxdepth 2 -iname "slides-*.Rnw")
 PDFS = $(SLIDES:%.Rnw=%.pdf)
 
 all: texclean $(PDFS) 
@@ -24,3 +24,8 @@ texclean:
 	rm -rf *.vrb
 	rm -rf *.synctex.gz
 	rm -rf *-concordance.tex
+
+.PHONY: copypdfs
+
+copypdfs: all
+	cp $(PDFS) ../slides-pdf/

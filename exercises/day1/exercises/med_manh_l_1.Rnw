@@ -1,35 +1,20 @@
-\begin{align*}
-L(c) &= \sum_{i=1}^n|y^{(i)} - c|\\
-&= \sum_{i=1}^n (y^{(i)} - c) \mathds{1}_{\{y^{(i)}>c\}}+\sum_{i=1}^n (c - y^{(i)}) \mathds{1}_{\{y^{(i)} \leq c\}}
-\\
-&= \sum_{i=1}^n  y^{(i)}  \left( \mathds{1}_{ \{ y^{(i)}>c \} } - \mathds{1}_{ \{ y^{(i)} \leq c \} } \right) + c\sum_{i=1}^n   \left( \mathds{1}_{ \{ y^{(i)} \leq c \} } - \mathds{1}_{ \{ y^{(i)} > c \} } \right)
-\end{align*}
-
-
-$L(c)$ is piecewise linear, so $L'(c)$ is piecewise continuous with jumps at $\{y^{(1)},...,y^{(n)}\}$. So for $c \in \mathds{R}_{\verb|\| \{y^{(1)},..,y^{(n)}\}}$
-
-\begin{align*}
-L'(c) &=  \sum_{i=1}^n   \left( \mathds{1}_{ \{ y^{(i)} \leq c \} } - \mathds{1}_{ \{ y^{(i)} > c \} } \right) \\
-&= \left\{\begin{array}{ll}
-        < 0, & \text{ when more than half of the y's are bigger then c}\\
-        > 0, & \text{ when more than half of the y's are smaller then c}
-        \end{array}\right\} \\  &= \left\{\begin{array}{ll}
-        < 0, & \text{ for } c \leq y^{(\frac{n}{2})} \text{for n even or c} < y^{(\frac{n+1}{2})} \text{for n odd} \\
-        > 0, & \text{ for } c \geq y^{(\frac{n}{2} + 1 )} \text{for n even or c} > y^{(\frac{n+1}{2})} \text{for n odd}
-        \end{array}\right\} 
-\end{align*}
-
-
-Minimum for $L(c)$ is for the point at which $L'(c)=0$. So we can conclude, that
-
-for even n \[ \begin{cases}
-L'(c) < 0, \text{ for } c \leq y^{ ( \frac{n}{2} ) } \\
-L'(c) > 0, \text{ for } c \geq y^{ ( \frac{n}{2} + 1 ) }
-\end{cases} \]
-so c $\in \left(  y^{(\frac{n}{2})} , y^{(\frac{n}{2} + 1 )} \right)$.
-  
-for odd n \[ \begin{cases}
-L'(c)<0, \text{ for } c < y^{(\frac{n+1}{2})} \\
-L'(c)>0, \text{ for } c > y^{(\frac{n+1}{2})}
-\end{cases} \]
-so c = $y^{(\frac{n+1}{2})}$.
+Firstly note that for $n = 1$ the median $y_\text{med} = y^{(1)}$ obviously minimizes the empirical risk $\riske$ associated to the L1 loss $L$. Hence let $n > 1$ in the following: \\
+Since for $a,b \in \mathbb{R}, S_{a,b}:\mathbb{R} \rightarrow \mathbb{R}^+_0, c \mapsto |a-c| + |b-c|$ it holds that
+$$S_{a,b}(c) = \begin{cases}|a-b| ,& \text{ for } c \in [a,b]\\ |a-b| + 2\cdot\min\{|a-c|,|b-c|\}
+,& \text{ otherwise }\end{cases}$$
+$c^* \in [a,b]$ minimizes $S_{a,b}$. \\
+With this $\riske$ can be expressed for a constant $c \in \mathbb{R}$, s.t.
+$$n \cdot \riske(c) =\sum_{i=1}^n L(y^{(i)},c) =\sum_{i=1}^n|y^{(i)} - c| = \begin{cases}
+\sum^{\overbrace{n/2}^{=:i_{\max}}}_{i=1} \overbrace{S_{y^{(i)},y^{(n+1-i)}}(c)}^{=:S_i(c)},&  \text{ for } n \text{ is even}\\
+(\sum^{\overbrace{(n-1)/2}^{=:i_{\max}}}_{i=1} \underbrace{S_{y^{(i)},y^{(n+1-i)}}(c)}_{=:S_i(c)}) + \underbrace{|y^{(n+1)/2}-c|}_{=:S_0(c)},& \text{ for } n \text{ is odd}
+\end{cases}.$$
+Now we define for $i \in \{1,\dots,i_{\max}\} \; \mathcal{I}_i := [y^{(i)},y^{(n+1-i)}].$ \\
+From construction it follows that for  $j \in \{1,\dots,i_{\max}-1\}$
+$$\mathcal{I}_{j+1} \subseteq \mathcal{I}_j \Rightarrow \forall i \in \{1,\dots,i_{\max}\}:  \mathcal{I}_{i_{\max}} \subseteq \mathcal{I}_i.$$
+From this it follows, that
+\begin{itemize}
+\item for "$n$ is even": $c^* \in  \mathcal{I}_{i_{\max}} = [y^{(n/2)},y^{(n/2+1)}]$ minimizes $S_i$ for all $i \in \{1,\dots, i_{\max}\} \; \Rightarrow  \riske$ reaches its global minimum at $c^*$,
+\item for "$n$ is odd": $c^* = y^{(n+1)/2} \in \mathcal{I}_{i_{\max}}$ minimizes $S_i$ for all $i \in \{0,1,\dots, i_{\max}\} \; \Rightarrow  \riske$ reaches its global minimum at $c^*$.
+\end{itemize}
+Since the median fulfills these conditions, we can conclude that it minimizes 
+the L1 loss.

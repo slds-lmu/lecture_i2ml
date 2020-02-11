@@ -7,19 +7,36 @@ knitr::set_parent("../../style/preamble.Rnw")
 
 %! includes: tuning-intro
 
-\lecturechapter{Hyperparameter Tuning - How does it work \& why is it hard?}
+\lecturechapter{Hyperparameter Tuning - Problem Definition }
 \lecture{Introduction to Machine Learning}
 \sloppy
 
 \begin{frame}{Tuning}
 
 \vskip 3em
-Recall: \textbf{Hyperparameters} $\lambda$ are parameters that are \emph{inputs} to the 
-training problem, in which an inducer $\inducer$ mimizes the empirical risk on a training data set in order
+Recall: \textbf{Hyperparameters} $\lambdav$ are parameters that are \emph{inputs} to the 
+training problem, in which a learner $\inducer$ minimizes the empirical risk on a training data set in order
 to find optimal \textbf{model parameters} $\theta$ which define the fitted model $\fh$.
 \vskip 2em
 
-\textbf{(Hyperparameter) Tuning} is the process of finding good model hyperparameters $\lambda$. 
+\textbf{(Hyperparameter) Tuning} is the process of finding good model hyperparameters $\lambdav$. 
+
+% \begin{vbframe}{Hyperparameter Tuning}
+% \begin{itemize}
+% \item Optimize hyperparameters for learner w.r.t. prediction error
+% Tuner proposes configuration, eval by resampling, tuner receives performance, iterate
+% \end{itemize}
+% \begin{columns}[c, onlytextwidth]
+% \column{0.45\textwidth}
+% FIGURE SOURCE: No source
+  % \includegraphics[trim={0cm 0cm 0cm 0cm}, clip, width=1.2\textwidth]{figure_man/chain.jpg}
+% \column{0.45\textwidth}
+  % FIGURE SOURCE: https://drive.google.com/open?id=1wY3aUZxIMZPje3vR0t2yWiDMx_osXRCi
+% \includegraphics[trim={1cm 0cm 1cm 0cm}, clip, width=1.2\textwidth]{figure_man/tuning_process.jpg}
+% \end{columns}
+
+% \end{vbframe}
+
 \end{frame}
 
 
@@ -36,17 +53,81 @@ We face a \textbf{bi-level} optimization problem: The well-known risk minimizati
 \end{figure}
 \end{center}
 
-\framebreak 
+\framebreak
+  
+  \begin{itemize}
+    \item For a learning algorithm $\inducer$ (also inducer) with $d$ hyperparameters, the hyperparameter \textbf{configuration space} is:
+      $$\bm{\Lambda}=\Lambda_{1} \times \Lambda_{2} \times \ldots \Lambda_{d}$$
+      where $\Lambda_{i}$ is the domain of the $i$-th hyperparameter.
+    \item The domains can be continuous, discrete or categorical.
+    \item For practical reasons, the domain of a continuous or integer-valued hyperparameter is typically bounded.
+    \item A vector in this configuration space is denoted as $\bm{\lambda} \in \bm{\Lambda}$.
+    \item A learning algorithm $\inducer$ takes a (training) dataset $\D$ and a hyperparameter configuration $\lambdav \in \Lambda$ and returns a trained model (through risk minimization)
 
+    \vspace*{-0.2cm}
+  \begin{eqnarray*}
+    \inducer: \left(\Xspace \times \Yspace\right)^n \times \Lambda &\to& \Hspace \\
+    (\D, \lambdav) &\mapsto& \inducer(\D, \lambdav) = \hat f_{\D, \lambdav}
+  \end{eqnarray*}
+    % \item Additionally, some hyperparameters may only need to be specified if another hyperparameter (or combination of hyperparameters) takes on a certain value.
+  \end{itemize}
+
+  % \lz 
+
+  % Note that 
+
+  %   In contrast to the first-level (empirical) risk minimization problem, hyperparameter optimization is also referred to as \textbf{second-level} optimization. The first-level problem can be seen as a subroutine called by the second-level problem: Each evaluation of $\lambdav$ requires to solve the first-level optimization problem.  
+
+
+%   \framebreak 
+
+%   \begin{itemize}
+%     \item search for the \textbf{inducer} hyperparameter $\lambdav$
+%     \item that minimizes the \textbf{generalization error}
+%       $$
+%         \min_{\lambdav} \E_{\D_n \sim \Pxy, (\xv, y) \sim \Pxy} \left(V\left(y, \hat f_{\D, \lambdav}(\xv)\right)\right). 
+%       $$
+%   \end{itemize}
+
+% We compare: In empirical risk minimization, we 
+  
+%   \begin{itemize}
+%     \item search for the \textbf{model} parameter $\thetab$
+%     \item that minimizes the \textbf{empirical risk}
+%       $$
+%         \min_{\thetab} \sum_{(\xi, \yi) \in \Dtrain} L\left(\yi, \fxi\right). 
+%       $$
+%   \end{itemize}
+
+%   In hyperparameter optimization, we
+
+%   \begin{itemize}
+%     \item search for the \textbf{inducer} hyperparameter $\lambdav$
+%     \item that minimizes the \textbf{test error}
+%       $$
+%         \min_{\lambdav \in \Lambda} \sum_{(\xi, \yi) \in \Dtest} V\left(\inducer(\Dtrain, \lambdav)(\xi), \yi\right). 
+%       $$
+%   \end{itemize}
+
+%   \framebreak 
+
+    % \framebreak
+  
+  % The hyperparameter optimization problem is difficult in many ways: 
+  \end{vbframe}
+
+
+\begin{vbframe}{Tuning: A bi-level optimization problem} 
 We formally state the nested hyperparameter tuning problem as: 
 
 $$
-\min_{\lambda \in \Lambda} \GEh{\Dtest}\left(\inducer(\Dtrain, \lambda)\right) 
+\min_{\lambdav \in \Lambda} \GEh{\Dtest}\left(\inducer(\Dtrain, \lambdav)\right) 
 $$
 
 \begin{itemize}
-\item The inducer $\inducer(\Dtrain, \lambda)$ takes a training dataset as well as hyperparameter settings $\lambda$ (e.g. the maximal depth of a classification tree) as an input. 
-\item $\inducer(\Dtrain, \lambda)$ performs empirical risk minimization on the training data and returns the optimal model $\hat f$ for the given hyperparameters. 
+\item The learner $\inducer(\Dtrain, \lambda)$ takes a training dataset as well as hyperparameter settings $\lambdav$ (e.g. the maximal depth of a classification tree) as an input. 
+\item $\inducer(\Dtrain, \lambdav)$ performs empirical risk minimization on the training data and returns the optimal model $\hat f$ for the given hyperparameters. 
+\item Note that for the estimation of the generalization error, more sophisticated resampling strategies like cross-validation can be used.
 \end{itemize}
 
 \framebreak
@@ -57,48 +138,25 @@ The components of a tuning problem are:
 \item The dataset
 \item The learner (possibly: several competing learners?) that is tuned %(e.g. a decision tree classifier)
 \item The learner's hyperparameters and their respective regions-of-interest over which we optimize % (e.g. $\texttt{tree depth} \in \{1, 2, ..., 20\}$)
-\item The performance measure, as determined by the application.\\ Not necessarily identical to the loss function that defines the risk minimization problem for the inducer!\\ 
-We could even be interested in multiple measures simultaneously, e.g., accuracy and computation time of our model, TPR and PPV, etc. 
-\item A (resampling) procedure for estimating the predictive performance: The expected performance on unseen data can be estimated by holdout (i.e., a single train-test-split) or more advanced techniques like cross-validation.
-More on this later.
+\item The performance measure, as determined by the application.\\ Not necessarily identical to the loss function that defines the risk minimization problem for the learner!\\ 
+% We could even be interested in multiple measures simultaneously, e.g., accuracy and computation time of our model, TPR and PPV, etc. 
+\item A (resampling) procedure for estimating the predictive performance. 
+   % The expected performance on unseen data can be estimated by holdout (i.e., a single train-test-split) or more advanced techniques like cross-validation.
+% More on this later.
 \end{itemize}
 
-\framebreak 
+% \framebreak 
 
-\begin{center}
-\begin{figure}
+% \begin{center}
+% \begin{figure}
 % FIGURE SOURCE: https://docs.google.com/presentation/d/1JUtguuVBgidcqD0IdFFIiKH9zqYzM6YRjCqC53V90dA/edit?usp=sharing
-\includegraphics[width=1.2\textwidth]{figure_man/autotune_in_model_fit.pdf}
-\end{figure}
-\end{center}
+% \includegraphics[width=1.2\textwidth]{figure_man/autotune_in_model_fit.pdf}
+% \end{figure}
+% \end{center}
 
 \end{vbframe}
 
 
-\begin{vbframe}{Tuning Pipelines}
-
-\begin{itemize}
-\item Many other factors like 
-\begin{itemize}
-\item optimization control settings, 
-\item preprocesssing like scaling or centering of features
-\item algorithmic variants in the fitting procedure 
-\end{itemize}
-can influence model performance in non-trivial ways. It is extremely hard to guess 
-the correct choices here.
-\item Even \textbf{model selection}, i.e., the choice of the learner itself (e.g. logistic regression, decision tree, random forest) can be seen as a hyperparameter tuning problem. 
-\item In general, we might be interested in optimizing an entire ML \enquote{pipeline} (including preprocessing, feature engineering, model selection and all other model-relevant operations). 
-\end{itemize}
-
-
-\vskip 6em
-\begin{figure}
-%source?
-\includegraphics[width = 1\textwidth]{figure_man/automl1.png}
-\end{figure}
-
-
-\end{vbframe}
 
 
 % \framebreak
@@ -118,35 +176,20 @@ the correct choices here.
 
 
 
-% \begin{vbframe}{Hyperparameter Tuning}
-% % \begin{itemize}
-% % \item Optimize hyperparameters for learner w.r.t. prediction error
-% Tuner proposes configuration, eval by resampling, tuner receives performance, iterate
-% % \end{itemize}
-% \begin{columns}[c, onlytextwidth]
-% \column{0.45\textwidth}
-% % FIGURE SOURCE: No source
-%   \includegraphics[trim={0cm 0cm 0cm 0cm}, clip, width=1.2\textwidth]{figure_man/chain.jpg}
-% \column{0.45\textwidth}
-%   FIGURE SOURCE: https://drive.google.com/open?id=1wY3aUZxIMZPje3vR0t2yWiDMx_osXRCi
-% \includegraphics[trim={1cm 0cm 1cm 0cm}, clip, width=1.2\textwidth]{figure_man/tuning_process.jpg}
-% \end{columns}
 
 
-% \end{vbframe}
+
 
 
 \begin{vbframe}{Why is tuning so hard?}
-\begin{itemize}
-%\item Lots of literature exists for models, far less on efficient tuning.
+  \begin{itemize}
 \item Tuning is derivative-free (\enquote{black box problem}): It is usually impossible to compute derivatives of the objective (i.e., the resampled performance measure) that we optimize with regard to the HPs. All we can do is evaluate the performance for a given hyperparameter configuration.
 \item Every evaluation requires one or multiple train and predict steps of the learner. I.e., every evaluation is very \textbf{expensive}.
 \item Even worse: the answer we get from that evaluation is \textbf{not exact, but stochastic} in most settings, as we use resampling.
-% \item Even worse: the function value we get from that evaluation is \textbf{likely also biased} -- it is difficult to evaluate the tested hyperparameter settings \emph{honestly}, i.e., in such a way that we neither over- nor underestimate their performance if we only have a limited amount of data available. (Remember resampling-based performance evaluation \& its problems -- this gets worse where tuning comes into play.)
 \item Categorical and dependent hyperparameters aggravate our difficulties: the space of hyperparameters we optimize over has a non-metric, complicated structure.
-\item For large and difficult problems parallelizing the computation seems relevant, to evaluate multiple HP configurations in parallel or to speed up the resampling-based performance evaluation
-\end{itemize}
-\end{vbframe}
+  \end{itemize}
+
+  \end{vbframe}
 
 \endlecture
 
