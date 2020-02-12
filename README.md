@@ -1,6 +1,3 @@
-[![Build Status](https://travis-ci.com/compstat-lmu/lecture_i2ml.svg?token=yiXTK7TFAHiwv8cwsQus&branch=master)](https://travis-ci.com/compstat-lmu/lecture_i2ml)
-
-
 # Introduction to Machine Learning (I2ML)
 
 Main course site: https://compstat-lmu.github.io/lecture_i2ml
