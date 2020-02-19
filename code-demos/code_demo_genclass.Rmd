@@ -75,11 +75,14 @@ ggplot(iris_train, aes(x = Sepal.Width, y = Sepal.Length)) +
   geom_point(aes(color = Species))
 ```
 
-For the estimation of the models we will mostly use the mlr-package, s.t.
+For the estimation of the models we will mostly use the `mlr3`-package, s.t.
 we firstly have to define a *task*:
 ```{r genclass-mlr}
-library(mlr)
-iris_task <- makeClassifTask(data = iris_train, target = target)
+library(mlr3)
+library(mlr3learners)
+
+iris_task <- TaskClassif$new(id = "iris_train", backend = iris_train, 
+                             target = target)
 ```
 
 
@@ -100,8 +103,8 @@ For every class, it is assumed that data is normally distributed with the same c
 
 We train the model:
 ```{r genclass-lda_train}
-iris_lda_learner <- makeLearner("classif.lda")
-iris_lda_model <- train(learner = iris_lda_learner, task = iris_task)
+iris_lda_learner <- lrn("classif.lda", predict_type = "prob")
+iris_lda_learner$train(task = iris_task)
 ```
 
 We create a general framework for likelihoods, s.t. the we are able to visualize 
@@ -113,20 +116,20 @@ library(mvtnorm)
 # Train lda and return means of the classes and covariance.
 # This defines the likelihood completely.
 get_mvgaussian_lda <- function(data, target, level, features) {
-  classif_task <- makeClassifTask(
-    data = data[, c(features, target)], 
+  classif_task <- TaskClassif$new(id = "mvg_task",
+    backend = data[, c(features, target)], 
     target = target
   )
-  lda_learner <- makeLearner("classif.lda")
-  lda_model <- train(learner = lda_learner, task = classif_task)
-
+  lda_learner <- lrn("classif.lda")
+  lda_learner$train(task = classif_task)
+   
   list(
-    mean = lda_model$learner.model$means[level, ],
+    mean = lda_learner$model$means[level, features],
     # ?MASS::lda defines 'scaling' as 
     # "a matrix which transforms observations to discriminant functions,
     # normalized so that within groups covariance matrix is spherical."
     # -->so the inverse square root of the covariance:
-    sigma = solve(tcrossprod(lda_model$learner.model$scaling)),
+    sigma = solve(tcrossprod(lda_learner$model$scaling[features, ])),
     type = "mv_gaussian",
     features = features
   )
@@ -223,7 +226,10 @@ We clearly see that all class distributions are modeled with the same
 covariance matrix - the shape and orientation of the contour lines of all 3 class distributions is the same.
     
 ```{r genclass-plot_lda}
-plotLearnerPrediction(iris_lda_learner, iris_task)
+library(mlr3viz)
+
+plot_learner_prediction(iris_lda_learner, iris_task) +
+  guides(alpha = "none", shape = "none")
 ```
 The resulting decision boundaries are linear -- even though we can't really clearly see that in the contour plot above.
 
@@ -242,8 +248,8 @@ This means we estimate a different mean vector and covariance matrix for
 for every class.
     
 ```{r genclass-qda_train}
-iris_qda_learner <- makeLearner("classif.qda")
-iris_qda_model <- train(learner = iris_qda_learner, task = iris_task)
+iris_qda_learner <- lrn("classif.qda", predict_type = "prob")
+iris_qda_learner$train(task = iris_task)
 ```
 
 We define all we need for our likelihood framework and plot them:
@@ -251,16 +257,20 @@ We define all we need for our likelihood framework and plot them:
 # train QDA and return  class means and class covariance matrices. 
 # This defines the likelihood completely.
 get_mvgaussian_qda <- function(data, target, level, features) {
-  classif_task <- makeClassifTask(data = data[, c(features, target)], target = target)
-  qda_learner <- makeLearner("classif.qda")
-  qda_model <- train(learner = qda_learner, task = classif_task)
-
+  classif_task <- TaskClassif$new(id = "mvg_task",
+    backend = data[, c(features, target)], 
+    target = target
+  )
+  qda_learner <- lrn("classif.qda")
+  qda_learner$train(task = classif_task)
+  
   list(
-    mean = qda_model$learner.model$means[level, ],
+    mean = qda_learner$model$means[level, features],
     # ?MASS::qda "for each group i, scaling[,,i] is an array which transforms
     # observations so that within-groups covariance matrix is spherical."
     # -->so the inverse square root of the covariance
-    sigma = solve(tcrossprod(qda_model$learner.model$scaling[, , level])),
+    sigma = solve(tcrossprod(qda_learner$model$scaling[features, ,
+                                                             level])),
     type = "mv_gaussian",
     features = features
   )
@@ -296,7 +306,8 @@ plot_2D_likelihood(liks, iris_train, "Sepal.Width", "Sepal.Length", target)
 As we can see, the covariance is now different in each class.
 
 ```{r genclass-plot_qda}
-plotLearnerPrediction(iris_qda_learner, iris_task)
+plot_learner_prediction(iris_qda_learner, iris_task) +
+  guides(alpha = "none", shape = "none")
 ```
 Decision boundaries of QDA learners are quadratic (but can of course also look very linear as you can see here....).
 
@@ -525,10 +536,11 @@ plot_2D_naivebayes(
 Compare with `mlr` implementation:
 ```{r genclass-naivebayes_plot_mlr}
 # compare with mlr
-iris_nb_learner <- makeLearner("classif.naiveBayes")
-iris_nb_model <- train(learner = iris_nb_learner, task = iris_task)
+iris_nb_learner <- lrn("classif.naive_bayes", predict_type = "prob")
+iris_nb_learner$train(task = iris_task)
 
-plotLearnerPrediction(iris_nb_learner, iris_task)
+plot_learner_prediction(iris_nb_learner, iris_task) +
+  guides(alpha = "none", shape = "none")
 ```
 
 ## Additional material: Naive Bayes with kernel densities
