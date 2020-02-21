@@ -21,7 +21,8 @@ Why is it a good idea to use cross-validation?
 
 
 ```{r resampling-knn_cv}
-library(mlr)
+library(mlr3)
+library(mlr3learners)
 library(mlbench)
 
 set.seed(13)
@@ -43,12 +44,11 @@ knn_cv <- function(data, target, folds, k) {
     train_data <- data[-na.omit(index_mat[i, ]), ]
 
     # model
-    task <- makeClassifTask(data = train_data, target = target)
-    learner <- makeLearner("classif.kknn", k = k)
-    model <- train(learner = learner, task = task)
-    storage[i] <- performance(predict(model, newdata = test_data),
-      measures = mmce
-    )[[1]]
+    task <- TaskClassif$new(id = "spirals_train", 
+                            backend = train_data, target = target)
+    learner <- lrn("classif.kknn", k = k)
+    learner$train(task = task)
+    storage[i] <- learner$predict_newdata(test_data)$score()
   }
 
   return(list(folds = folds, storage = as.data.frame(storage), gen_error = mean(storage)))
@@ -105,25 +105,26 @@ ggplot(plot_data, aes(x = folds, y = storage)) +
 
 We see that our estimation results stabilize.
 
-## `mlr`'s CV implementation
+## `mlr3`'s CV implementation
 
 ```{r resampling-mlr}
 
 set.seed(1337)
-task <- mlr::makeClassifTask(data = spiral, target = "classes")
-rdesc_cv <- mlr::makeResampleDesc(method = "CV", iters = 10)
-mlr_cv <- resample(
-  learner = "classif.kknn", k = 3, task = task,
-  resampling = rdesc_cv, show.info = FALSE
-)
-mlr_cv
-mlr_cv$measures.test
+task <- TaskClassif$new(id = "spirals_task", 
+                        backend = spiral, target = "classes")
+rdesc_cv <- rsmp("cv", folds = 10)
+
+mlr_cv <- resample(resampling = rdesc_cv, learner = lrn("classif.kknn", k = 3),
+         task = task)
+
+mlr_cv$score()[,c("iteration", "classif.ce")]
+mlr_cv$aggregate()
 ```
 
 ```{r resampling-mlr_plot}
 library(ggplot2)
 
-p <- ggplot(data = mlr_cv$measures.test, aes(y = mmce, x = 1)) +
+p <- ggplot(data = mlr_cv$score()[,"classif.ce"], aes(y = classif.ce, x = 1)) +
   geom_boxplot() +
   ggtitle(label = "Generalization error CV mlr") +
   xlab("") + ylab("mmce") + xlim(c(0, 2))
