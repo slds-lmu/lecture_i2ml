@@ -26,8 +26,8 @@ library(devtools)
 library(BBmisc)
 library(rpart.plot)
 library(ggplot2)
-library(mlr)
-
+library(mlr3)
+library(mlr3learners)
 
 data("Servo")
 
@@ -88,51 +88,35 @@ rattle::fancyRpartPlot(model_2,
 #### Min split:
 
 ```{r cart-min_split}
-task <- makeRegrTask(data = train_1, target = "Class")
-lrn1 <- makeLearner("regr.rpart")
+task <- TaskRegr$new(id = "train_1", backend = train_1, target = "Class")
+lrn1 <- lrn("regr.rpart")
 
-plotParamSequence <- function(learner, task, param, values, plotfun, ...) {
+plot_param_sequence <- function(learner, task, param, values, plotfun, ...) {
   for (v in values) {
     xs <- list(...)
     xs[[param]] <- v
-    lrn2 <- setHyperPars(learner, par.vals = xs)
-    mod <- mlr::train(lrn2, task)
-    plotfun(mod$learner.model)
+    lrn2 <- learner$clone()
+    lrn2$param_set$values <- xs
+    mod <- lrn2$train(task)$model
+    plotfun(mod)
     title(sprintf("%s = %g", param, v))
     pause()
   }
 }
 
-plotParamSequenceRPart <- function(...)
-  plotParamSequence(learner = lrn1, plotfun = rpart.plot, ...)
+plot_param_sequence_rpart <- function(...)
+  plot_param_sequence(learner = lrn1, plotfun = function(x)
+    rpart.plot(x, roundint=FALSE), ...)
 
 min_splits <- c(3, 10, 20, 40)
-plotParamSequenceRPart(task = task, param = "minsplit", values = min_splits)
+plot_param_sequence_rpart(task = task, param = "minsplit", values = min_splits)
 ```
 
 ### Maximum depth of the tree
 
 ```{r cart-max_depth}
-task <- makeRegrTask(data = train_1, target = "Class")
-lrn1 <- makeLearner("regr.rpart")
-
-plotParamSequence <- function(learner, task, param, values, plotfun, ...) {
-  for (v in values) {
-    xs <- list(...)
-    xs[[param]] <- v
-    lrn2 <- setHyperPars(learner, par.vals = xs)
-    mod <- mlr::train(lrn2, task)
-    plotfun(mod$learner.model)
-    title(sprintf("%s = %g", param, v))
-    pause()
-  }
-}
-
-plotParamSequenceRPart <- function(...)
-  plotParamSequence(learner = lrn1, plotfun = rpart.plot, ...)
-
 max_depth <- c(1, 4, 10)
-plotParamSequenceRPart(task = task, param = "maxdepth", values = max_depth)
+plot_param_sequence_rpart(task = task, param = "maxdepth", values = max_depth)
 ```
 
 ## Invariance to monotonous feature transformation
