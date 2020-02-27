@@ -16,9 +16,9 @@ params:
 
 ##  Overfitting kNN
 
-Why do we have to split in train and test?
+Why do we have to split the data into **training sets** and **test sets**?
 
-Check the performance of our knn-classifier on the test and train set depending on the hyperparameter k:
+Check the performance of the $k$NN classifier on the test and train set depending on the hyperparameter $k$:
 
 ```{r overfitting-knn, message=FALSE, warning=FALSE}
 library(mlr3)
@@ -29,6 +29,7 @@ set.seed(13)
 spiral <- as.data.frame(mlbench.spirals(n = 500, sd = 0.1))
 plot(x = spiral$x.1, y = spiral$x.2, col = spiral$classes)
 
+# split: 75 % for training, 25 % for test:
 train_size <- 3 / 4
 train_indices <- sample(x = seq(1, nrow(spiral), by = 1), size = 
                           ceiling(train_size * nrow(spiral)), replace = FALSE)
@@ -38,7 +39,7 @@ spiral_test <- spiral[ -train_indices, ]
 
 
 # run experiment
-k_values <- rev(c(1, 2, 3, 4, 5, 7, 8, 9, 10, 15, 20, 25, 30, 35, 45, 50, 60, 70, 80, 90, 100))
+k_values <- rev(c(1:10, 15, 20, 25, 30, 35, 45, 50, 60, 70, 80, 90, 100))
 storage <- data.frame(matrix(NA, ncol = 3, nrow = length(k_values)))
 colnames(storage) <- c("mmce_train", "mmce_test", "k")
 
@@ -76,13 +77,16 @@ lines(x = storage$k, y = storage$mmce_test, col = "orange")
 legend("bottomleft", c("test", "train"), col = c("orange", "blue"), lty = 1)
 ```
 
+$\Rightarrow$ The more complex our model (small $k$), the higher is the chance that the performance of the model on the training data (in blue) is much better than the performance on new *test data* (in orange).
+
+
 ## How not to split: the good, the bad, the ugly
 
-How does the choice of the split in train and test data affect our estimation of the model performance?
+(How) Does the specific choice of splitting the data into train and test sets affect our estimation of the model performance?
 
-### The good split
+### The "good" split
 
-We train on the first 30 data points and test on the next 20. Remember that `iris` is an ordered data set with the first 50 observations being setosa, the next 50 versicolor and the last 50 virginica. 
+We train on the first 30 data points and test on the next 20. Remember that `iris` is an ordered data set with the first 50 observations being "setosa", the next 50 "versicolor" and the last 50 "virginica". 
 
 ```{r overfitting-good_split}
 library(mlr3)
@@ -99,7 +103,7 @@ pred$confusion
 
 We get a MMCE of 0. Why should this not surprise us?
 
-### The bad split
+### The "bad" split
 
 We train on the first 100 data points and test on the next 50.
 
@@ -113,10 +117,13 @@ pred$score()
 pred$confusion
 ```
 
-Although we trained the learner on the training data, we get a MMCE of 1. 
+Although we trained the learner, we get a test set MMCE of 1. 
 The problem is that we never showed the learner training data with the
-"virginica" label. The training data does not represent the actual population we 
-want to classify, which is called a *selection bias*.
+"virginica" label, so the training data does not represent the actual population we 
+want to classify.
+Try to formalize this in terms of the theory for supervised learners we have defined so far -- which assumption about the (training and test) data is not fulfilled here? 
+
+In statistics, we would call this a particularly severe example of *selection bias*. 
 
 ### The ugly split
 
