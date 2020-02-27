@@ -17,9 +17,10 @@ params:
 ## Data
 
 
-We use the Breast Cancer data set from [UCI database](https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+(Diagnostic)) which is an __unbalanced data set__ within which we want to predict the class of the cancer. We even manipulate the data set further to make it more unbalanced. 
-
-The data looks like that:
+We use the Breast Cancer data set from [UCI database](https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+(Diagnostic))
+and try to predict the class of the cancer.  
+This is an **unbalanced data set**, and we manipulate the data set further to make it 
+even more unbalanced. The data looks like that:
 
 ```{r roc-data, message=FALSE, warning=FALSE}
 library("dplyr")
@@ -34,17 +35,25 @@ target_label <- "Class"
 
 # delete one column with missing values
 bc <- BreastCancer[, -c(1, 7)]
-# mutate all factors to numeric, simlification but ok here
+
+table(BreastCancer$Class) / nrow(BreastCancer)
+
+# transform all factors to numeric, dangerous simplification but ok here
+# (don't tell the stats profs...!)
 mut <- bc[, -9] %>%
   mutate_all(as.character) %>%
   mutate_all(as.numeric)
 bc_data <- cbind(mut, bc[, target_label])
 colnames(bc_data) <- c(colnames(mut), target_label)
-# make it more extreme and kill 50% of the malignant data
-bc_data <- bc_data[ -sample(which(bc_data[, target_label] == "malignant"),
-  150,
-  replace = FALSE
-), ]
+# make it more unbalanced and remove 60% of the "malignant" class instances
+bc_data <- bc_data %>%
+  filter(
+    # always keep non-malignant
+    (Class != "malignant") |
+      # randomly discard non-malignant with probability .6
+      ((Class == "malignant") & (runif(nrow(bc_data)) < .4))
+  )
+
 head(bc_data)
 table(bc_data[, target_label]) / sum(table(bc_data[, target_label]))
 ```
@@ -62,8 +71,10 @@ train_indices <- sample(
 bc_train <- bc_data[ train_indices, ]
 bc_test <- bc_data[ -train_indices, ]
 
-task <- TaskClassif$new(id = "bc_task", backend = bc_train, 
-                        target = target_label)
+task <- TaskClassif$new(
+  id = "bc_task", backend = bc_train,
+  target = target_label
+)
 ```
 
 ## Models
@@ -99,8 +110,9 @@ pred_knn$confusion
 ```{r roc-maj_vote}
 
 # learner that uses simple majority vote for classification
-learner_stupid <- lrn("classif.featureless",  
-                     method = "mode",  predict_type = "prob")
+learner_stupid <- lrn("classif.featureless",
+  method = "mode", predict_type = "prob"
+)
 
 learner_stupid$train(task)
 pred_stupid <- learner_stupid$predict_newdata(newdata = bc_test)
@@ -143,14 +155,17 @@ the sensitivity degrades and vice versa. We can investigate this relationship wi
 ROC curves. Compare the ROC curves:
 
 ```{r roc-roc_curves}
-task <- TaskClassif$new(id = "bc_all_task", backend = bc_data, 
-                        target = target_label)
+task <- TaskClassif$new(
+  id = "bc_all_task", backend = bc_data,
+  target = target_label
+)
 learners <- list(learner_logreg, learner_knn, learner_stupid)
 
-design <- benchmark_grid(tasks = task,
-                         learners = learners,
-                         resamplings = rsmp("cv", folds = 3)
-                         )
+design <- benchmark_grid(
+  tasks = task,
+  learners = learners,
+  resamplings = rsmp("cv", folds = 3)
+)
 bmr <- benchmark(design)
 autoplot(bmr, type = "roc")
 ```

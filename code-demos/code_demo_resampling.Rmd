@@ -16,10 +16,10 @@ params:
 
 ## Self made Cross Validation
 
-We want to assess the performance of our model, i.e., estimate its generalization error. 
-Why is it a good idea to use cross-validation?
+We want to assess the performance of our model, i.e., try to estimate its generalization error. 
+Why is it a good idea to use cross-validation (CV)?
 
-
+Let's write our very own CV function for a $k$-NN learner to experiment with....
 ```{r resampling-knn_cv}
 library(mlr3)
 library(mlr3learners)
@@ -28,79 +28,116 @@ library(mlbench)
 set.seed(13)
 spiral <- as.data.frame(mlbench.spirals(n = 500, sd = 0.1))
 
+# Cross validation for kNN
+# inputs:
+#   data a data set to use
+#   target name of the column in <data>to classify
+#   folds number of CV folds
+#   k neighborhood size for kNN
+# returns vector of test set errors for the different folds
 knn_cv <- function(data, target, folds, k) {
-  storage <- as.numeric(folds)
-  
-  indices <- c(sample(x = seq(1, nrow(data), by = 1), size = nrow(data), replace = FALSE),
-               rep(NA, (folds - nrow(data) %% folds) %% folds))
+  cv_errors <- as.numeric(folds)
+
+  indices <- c(
+    sample(x = seq(1, nrow(data), by = 1), size = nrow(data), replace = FALSE),
+    rep(NA, (folds - nrow(data) %% folds) %% folds)
+  )
 
   # index matrix for folds
   index_mat <- matrix(data = indices, byrow = FALSE, nrow = folds)
 
   for (i in 1:folds) {
-
     # data
     test_data <- data[na.omit(index_mat[i, ]), ]
     train_data <- data[-na.omit(index_mat[i, ]), ]
-
+    task <- TaskClassif$new(
+      id = "spirals_train",
+      backend = train_data, target = target
+    )
     # model
-    task <- TaskClassif$new(id = "spirals_train", 
-                            backend = train_data, target = target)
     learner <- lrn("classif.kknn", k = k)
+    # train on training set
     learner$train(task = task)
-    storage[i] <- learner$predict_newdata(test_data)$score()
+    # evaluate on test data
+    cv_errors[i] <- learner$predict_newdata(test_data)$score()
   }
 
-  return(list(folds = folds, storage = as.data.frame(storage), gen_error = mean(storage)))
+  cv_errors
 }
 
-result <- knn_cv(data = spiral, target = "classes", folds = 11, k = 3)
-result$storage
-result$gen_error
+result <- knn_cv(data = spiral, target = "classes", folds = 11, k = 4)
+result
+mean(result)
 ```
 
 ```{r resampling-knn_cv_plot}
-p <- ggplot(data = result$storage, aes(y = storage, x = 1)) +
-  geom_boxplot() +
-  ggtitle(label = "Generalization error CV") +
-  xlab("") + ylab("mmce") + xlim(c(0, 2))
+p <- ggplot(data = as.data.frame(result), aes(y = result)) +
+  geom_point(x = 0) +
+  ggtitle(label = "CV error") +
+  xlab("") + ylab("test error") + xlim(c(0, 0))
 p
 ```
 
 So what happens if we increase the number of folds?
 
 ```{r resampling-knn_cv_folds}
-results <- lapply(X = c(2,3,4,5*(1:12)), FUN = function(folds)
-  data.frame(folds = as.character(folds), knn_cv(data = spiral, target = "classes", folds = folds, k = 4)$storage))
+# run CV with 2, 3, 4, 5, 10, 15, ...., 60 folds and record the test set errors.
+cv_results <- lapply(
+  X = c(2, 3, 4, 5 * (1:12)),
+  FUN = function(folds) {
+    data.frame(
+      folds = as.character(folds),
+      cv_errors = knn_cv(
+        data = spiral, target = "classes",
+        folds = folds, k = 4
+      )
+    )
+  }
+)
+cv_data <- do.call(rbind, cv_results)
 
-plot_data <- do.call(rbind, results)
 
-library(ggplot2)
-ggplot(plot_data, aes(x=folds, y=storage)) + geom_boxplot() + xlab("number of folds") +
-  ylab("test error")
+cv_plot <-
+  ggplot(cv_data, aes(x = folds, y = cv_errors)) + geom_boxplot() +
+  ggtitle(label = "CV with different no. of folds") +
+  xlab("number of folds") + ylab("test error")
+cv_plot
 ```
 
-The more we increase the number of folds, the larger each training set becomes. Hence the *pessimistic estimation bias* for model accuracy becomes smaller. But
-since the test sets also become smaller, the *variance* of the resulting accuracy estimate increases. 
-Also, with a higher number of folds, the computation time increases. Can we get better results with a similar amount of computation?
-Let's see what happens if we repeat CV's and collect only their means:
+The more we increase the number of folds, the larger each training set becomes. Hence the *pessimistic bias* for the estimated model performance becomes smaller.  
+But since the test sets also become smaller, the *variance* of the resulting performance estimate increases.  
+In addition, with a higher number of folds, the computation time increases. 
+(Think about that: by how much? is the  increase linear in the number of folds? why or why not?) 
+
+Can we get better results with a smaller amount of computation?
+Let's see what happens if we do repeated CV and collect only their means:
 
 ```{r resampling-knn_x_cv}
+# do reps = 10 repetitions each of 5, 10, 15, 20-fold CV
+rep_cv_results <- lapply(
+  X = c(5, 10, 15, 20),
+  FUN = function(folds, reps = 10) {
+    mean_cv_errors <- replicate(
+      reps,
+      mean(knn_cv(
+        data = spiral, target = "classes",
+        folds = folds, k = 4
+      ))
+    )
+    data.frame(
+      folds = as.character(folds),
+      mean_cv_errors = mean_cv_errors
+    )
+  }
+)
 
-results <- lapply(X = c(2:10), FUN = function(folds)
-  data.frame(folds = as.character(folds), 
-             sapply(X = 1:10, FUN = function(x) knn_cv(data = spiral, 
-                                                       target = "classes", 
-                                                       folds = folds, 
-                                                       k = 4)$gen_error)))
+rep_cv_data <- do.call(rbind, rep_cv_results)
 
-plot_data <- do.call(rbind, results)
-
-colnames(plot_data) <- c("folds", "storage")
-
-ggplot(plot_data, aes(x = folds, y = storage)) + 
-  geom_boxplot() + 
-  xlab("10 times x-CV") +  ylab("test error")
+ggplot(rep_cv_data, aes(x = folds, y = mean_cv_errors)) +
+  geom_boxplot() +
+  xlab("10 times repeated x-CV") + ylab("test error") +
+  ggtitle(label = "Repeated CV (10 reps) with different no. of folds") +
+  ylim(range(cv_data$cv_errors))
 ```
 
 We see that our estimation results stabilize.
@@ -108,25 +145,27 @@ We see that our estimation results stabilize.
 ## `mlr3`'s CV implementation
 
 ```{r resampling-mlr}
-
 set.seed(1337)
-task <- TaskClassif$new(id = "spirals_task", 
-                        backend = spiral, target = "classes")
-rdesc_cv <- rsmp("cv", folds = 10)
+task <- TaskClassif$new(
+  id = "spirals_task",
+  backend = spiral, target = "classes"
+)
+rdesc_cv <- rsmp("repeated_cv", folds = 10, repeats = 10)
 
-mlr_cv <- resample(resampling = rdesc_cv, learner = lrn("classif.kknn", k = 3),
-         task = task)
+mlr_cv <- resample(
+  resampling = rdesc_cv, learner = lrn("classif.kknn", k = 4),
+  task = task
+)
 
-mlr_cv$score()[,c("iteration", "classif.ce")]
+mlr_cv$score()[, c("iteration", "classif.ce")]
 mlr_cv$aggregate()
 ```
 
 ```{r resampling-mlr_plot}
 library(ggplot2)
 
-p <- ggplot(data = mlr_cv$score()[,"classif.ce"], aes(y = classif.ce, x = 1)) +
+ggplot(data = mlr_cv$score()[, "classif.ce"], aes(y = classif.ce, x = 1)) +
   geom_boxplot() +
-  ggtitle(label = "Generalization error CV mlr") +
-  xlab("") + ylab("mmce") + xlim(c(0, 2))
-p
+  ggtitle(label = "Repeated CV (10-10) with mlr") +
+  xlab("") + ylab("test error") + xlim(c(0, 2))
 ```

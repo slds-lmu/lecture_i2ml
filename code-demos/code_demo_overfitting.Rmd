@@ -31,8 +31,10 @@ plot(x = spiral$x.1, y = spiral$x.2, col = spiral$classes)
 
 # split: 75 % for training, 25 % for test:
 train_size <- 3 / 4
-train_indices <- sample(x = seq(1, nrow(spiral), by = 1), size = 
-                          ceiling(train_size * nrow(spiral)), replace = FALSE)
+train_indices <- sample(
+  x = seq(1, nrow(spiral), by = 1), size =
+    ceiling(train_size * nrow(spiral)), replace = FALSE
+)
 spiral_train <- spiral[ train_indices, ]
 spiral_test <- spiral[ -train_indices, ]
 
@@ -43,8 +45,10 @@ k_values <- rev(c(1:10, 15, 20, 25, 30, 35, 45, 50, 60, 70, 80, 90, 100))
 storage <- data.frame(matrix(NA, ncol = 3, nrow = length(k_values)))
 colnames(storage) <- c("mmce_train", "mmce_test", "k")
 
-spiral_task <- TaskClassif$new(id = "spirals", backend = spiral_train, 
-                               target = "classes")
+spiral_task <- TaskClassif$new(
+  id = "spirals", backend = spiral_train,
+  target = "classes"
+)
 for (i in 1:length(k_values)) {
   spiral_learner <- lrn("classif.kknn", k = k_values[i])
   spiral_learner$train(task = spiral_task)
@@ -56,7 +60,7 @@ for (i in 1:length(k_values)) {
 
   # train data
   spiral_pred <- spiral_learner$predict_newdata(newdata = spiral_train)
-  storage[i, "mmce_train"]  <- spiral_pred$score(msr("classif.ce"))
+  storage[i, "mmce_train"] <- spiral_pred$score(msr("classif.ce"))
 
   storage[i, "k"] <- k_values[i]
 }
@@ -71,7 +75,7 @@ plot(
     min(storage$mmce_train, storage$mmce_test),
     max(storage$mmce_train, storage$mmce_test)
   ),
-  log="x"
+  log = "x"
 )
 lines(x = storage$k, y = storage$mmce_test, col = "orange")
 legend("bottomleft", c("test", "train"), col = c("orange", "blue"), lty = 1)
@@ -95,7 +99,7 @@ library(mlr3learners)
 task <- tsk("iris")
 learner <- lrn("classif.kknn", k = 3)
 learner$train(task = task, row_ids = 1:30)
-pred <- learner$predict(task, row_ids =  31:50)
+pred <- learner$predict(task, row_ids = 31:50)
 
 pred$score()
 pred$confusion
@@ -111,7 +115,7 @@ We train on the first 100 data points and test on the next 50.
 task <- tsk("iris")
 learner <- lrn("classif.kknn", k = 3)
 learner$train(task = task, row_ids = 1:100)
-pred <- learner$predict(task, row_ids =  101:150)
+pred <- learner$predict(task, row_ids = 101:150)
 
 pred$score()
 pred$confusion
@@ -131,7 +135,7 @@ In statistics, we would call this a particularly severe example of *selection bi
 task <- tsk("iris")
 learner <- lrn("classif.kknn", k = 3)
 learner$train(task = task, row_ids = c(1:45, 51:95, 101:110))
-pred <- learner$predict(task, row_ids =  c(46:50, 96:100, 111:150))
+pred <- learner$predict(task, row_ids = c(46:50, 96:100, 111:150))
 
 pred$score()
 pred$confusion
