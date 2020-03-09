@@ -1,56 +1,21 @@
-The fractions of the classes $k=1,\ldots,g$ in node $\mathcal{N}$ of a decision tree are $p(1|\mathcal{N}),\ldots,p(g|\mathcal{N})$.
-Assume we replace the classification rule in node $t$
+According to the lecture for a target $y$ with target space $\mathcal{Y} = \{1, \dots, g\}$ the target class proportion $\pikN$  of class $k \in \mathcal{Y}$ in a node can be computed, s.t.
+$$ \pikN = \frac{1}{|\Np|} \sum\limits_{(x^{(i)},y^{(i)}) \in \Np} [y^{(i)} = k].$$
+Now for any $n \in \mathbb{N}$ let $Y^{(1)},\dots,Y^{(n)},\hat{Y}^{(1)},\dots,\hat{Y}^{(n)}$ be i.i.d. random variables, where $Y^{(i)}$ and $\hat{Y}^{(i)}$ are categorically distributed with
+$$\mathbb{P}(Y^{(i)} = k| \mathcal{N}) = \mathbb{P}(\hat{Y}^{(i)} = k| \mathcal{N}) = \pikN \quad \forall i \in \{1,\dots,n\},\quad k \in \mathcal{Y}.$$
+The random variables $Y^{(1)},\dots,Y^{(n)}$ represent data distributed like the training data\footnote{under the independence assumption} of size $n$ and the random variables $\hat{Y}^{(1)},\dots,\hat{Y}^{(n)}$ the corresponding estimators using the randomizing rule.
+With these we can define the misclassification rate $\mathsf{err}_{\mathcal{N}}$ of node $\mathcal{N}$ for data distributed like the training data, s.t
+$$\mathsf{err}_{\mathcal{N}} = \frac{1}{n}\sum^n_{i=1}[Y^{(i)} \neq \hat{Y}^{(i)}].$$
+We're interested in the expected misclassification rate $\mathsf{err}_{\mathcal{N}}$ of node $\mathcal{N}$ for data distributed like the training data, i.e.,
+\begin{align*}
+\mathbb{E}_{Y^{(1)},\dots,Y^{(n)},\hat{Y}^{(1)},\dots,\hat{Y}^{(n)}} \left(\mathsf{err}_{\mathcal{N}}\right) &= \mathbb{E}_{Y^{(1)},\dots,Y^{(n)},\hat{Y}^{(1)},\dots,\hat{Y}^{(n)}}\left(\frac{1}{n}\sum^n_{i=1}[Y^{(i)} \neq \hat{Y}^{(i)}] \right)\\
+& = \frac{1}{n}\sum^n_{i=1}\mathbb{E}_{Y^{(i)},\hat{Y}^{(i)}}\left([Y^{(i)} \neq \hat{Y}^{(i)}]\right) \\
+& = \frac{1}{n}\sum^n_{i=1}\mathbb{E}_{Y^{(i)}}\left(\mathbb{E}_{\hat{Y}^{(i)}}\left([Y^{(i)} \neq \hat{Y}^{(i)}]\right)\right) \\
+& = \frac{1}{n}\sum^n_{i=1}\mathbb{E}_{Y^{(i)}} \left( \sum^g_{k=1} [Y^{(i)} \neq k] \pikN\right) \\
+& = \frac{1}{n}\sum^n_{i=1}\mathbb{E}_{Y^{(i)}} \left( \sum_{k \in \mathcal{Y} \setminus \{Y^{(i)}\}} \pikN\right) \\
+& = \frac{1}{n}\sum^n_{i=1}\mathbb{E}_{Y^{(i)}} \left( 1 - \pi^{\mathcal{(N)}}_{Y^{(i)}}\right) \\
+& = \frac{1}{n}\sum^n_{i=1} \sum^g_{k=1} (1 - \pikN)\pikN \\
+& = \frac{n}{n} \sum^g_{k=1} (1 - \pikN)\pikN \\
+& = 1 -  \sum^g_{k=1} \left(\pikN \right)^2.
+\end{align*}
 
-\begin{eqnarray*}
-\hat{k}|\mathcal{N}=\arg\max_k p(k|\mathcal{N})
-\end{eqnarray*}
-with a randomizing rule, in which we draw the classes in one node from their estimated probabilities.
-
-Derive an estimator for the misclassification rate in node $\mathcal{N}$.
-What do you (hopefully) recognize?
-
-\textbf{Solution:} \\
-
-\begin{itemize}
-
-  \item
-    For the target space $\mathcal{Y} = \{1, \dots, g\}$ we assume the distribution $P_Y$. The distribution $P_{\hat{Y}}$ of our classifier $\hat{Y} = h(x)$ is defined as the individual class frequencies in a node $\mathcal{N}$ (estimated probability, that an object of class $k$ is in node $\mathcal{N}$):
-    $$P(\hat{Y} = k\ |\ \mathcal{N}) = p(k|\mathcal{N})$$
-
-  \item
-    As estimate of the target distribution $P_Y$ we use the distribution of the classifier $h(x)$ which we assume to be independent of $P_{\hat{Y}}$:
-    $$P_Y \overset{\text{ind.}}{\sim} P_{\hat{Y}}$$
-
-  \item
-    The individual error rate of wrongly predicting a true label $k$ in node $\mathcal{N}$ ($\mathsf{err}_{k|\mathcal{N}}$) can be written as probability that $Y = k$ and $\hat{Y} \neq k$:
-    \begin{align*}
-    P(\mathsf{err}_{k|\mathcal{N}}) &= P(Y = k, \hat{Y} \neq k\ |\ \mathcal{N}) \\
-                      &= P(Y = k\ |\ \mathcal{N})P(\hat{Y} \neq k\ |\ \mathcal{N}) \\
-                      &= p(k|\mathcal{N})(1 - p(k|\mathcal{N}))
-    \end{align*}
-
-  \item
-    The error rate is the combination of all individual error rates:
-    $$\mathsf{err}_\mathcal{N} = \bigcup\limits_{k = 1}^g \mathsf{err}_{k|\mathcal{N}}$$
-
-  \item
-    Finally, we are interested in the probability of the error rate $\mathsf{err}_\mathcal{N}$ as estimator for the missclassification rate:
-    \begin{align*}
-    P(\mathsf{err}_\mathcal{N}) &= P\left(\bigcup\limits_{k = 1}^g \mathsf{err}_{k|\mathcal{N}}\right) \\
-                                &= \sum\limits_{k = 1}^g P\left(\mathsf{err}_{k|\mathcal{N}}\right) \\
-                                &= \sum\limits_{k = 1}^g p(k|\mathcal{N})(1 - p(k|\mathcal{N})) \\
-                                &= \sum\limits_{k = 1}^g p(k|\mathcal{N}) - \sum\limits_{k = 1}^g p(k|\mathcal{N})^2 \\
-                                &= 1 - \sum\limits_{k = 1}^g p(k|\mathcal{N})^2
-    \end{align*}
-\end{itemize}
-
-% The estimated probability, that an object of class $k$ is in node $\mathcal{N}$ is $p(k|\mathcal{N})$.
-% The estimated proportion, that an object from class $k$ and is predicted as a different class is:
-% $$p(k|\mathcal{N})\sum_{j \neq k} p(j|\mathcal{N}) = p(k|\mathcal{N}) (1 - p(k|\mathcal{N}))$$
-
-% Summing over all classes we get an estimator for probability of misclassifying
-% in node $\mathcal{N}$:
-
-% $$\widehat{\text{err}}_\mathcal{N}= \sum_{k=1}^g p(k|\mathcal{N}) (1 - p(k|\mathcal{N})) = \sum_{k=1}^g p(k|\mathcal{N}) - \sum_{k=1}^g p(k|\mathcal{N})^2 = 1  - \sum_{k=1}^g p(k|\mathcal{N})^2 $$
-
-This is exactly the Gini-Index that CART uses for splitting the tree.
+This is exactly the Gini-Index which CART uses for splitting the tree.

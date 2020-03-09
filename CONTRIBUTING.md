@@ -19,11 +19,14 @@ free to add your name to the [team](vignettes/team.Rmd).
 - Use the commands defined there, don't define your own. 
 - If you have to introduce new notation/symbols you should add it to `latex-math`, after doublechecking that  
    - it is consistent with what we already have 
-   - you do not use symbols we have already defined differently
+   - you do not overwrite symbols we have already defined differently
 - We write slides for beginners: keep it simple, keep it short
-- Never put code on the slides, we want them to be orthogonal to issues of implementation. These are for the exercises/ practice sessions. 
-- We recommend usage of tinytex (install via `tinytex::install_tinytex()`)
-- Compiling the slides is easiest by using the Makefile: just type `make` in the specific folder and it will render all slidesets in the folder, or `make <SLIDES>.pdf` to render `<SLIDES>.Rnw`
+- We try to keep slides modular: slidesets should represent about 15-20 minutes of material and be moderately self-contained.
+- Don't put code on the slides, the theory is orthogonal to issues of implementation (... in theory..). Code is strictly for exercises/ practice sessions. 
+- Compiling the slides should be done via the Makefile: just type `make` in the specific folder and it will render all slidesets in the folder, or `make <SLIDES>.pdf` to render a specific file `<SLIDES>.Rnw`.
+- We try to keep a "dependency graph" between slide sets up to date so that it's easier to keep track of
+what material needs to be understood before what else. Please do add appropriate `%! includes:`-comments in your slides to keep this up-to-date, see also `attic/slide-dependencies.R` and `slides/slide-dependencies.pdf`.
+- We recommend usage of `{tinytex}` (install via `tinytex::install_tinytex()`)
 
 ### Code Snippets:
 
