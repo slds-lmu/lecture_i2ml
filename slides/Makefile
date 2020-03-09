@@ -1,7 +1,7 @@
 SLIDES = $(shell find . -maxdepth 2 -iname "slides-*.Rnw")
 PDFS = $(SLIDES:%.Rnw=%.pdf)
 
-all: texclean $(PDFS) 
+all: texclean $(PDFS) slide-dependencies.pdf
 
 $(PDFS): %.pdf: %.Rnw
 	Rscript -e 'setwd("$(dir $<)"); knitr::knit2pdf("$(notdir $<)")'
@@ -24,6 +24,9 @@ texclean:
 	rm -rf *.vrb
 	rm -rf *.synctex.gz
 	rm -rf *-concordance.tex
+
+slide-dependencies.pdf: $(SLIDES) ../attic/slide-dependencies.R
+	Rscript -e 'source("../attic/slide-dependencies.R")'
 
 .PHONY: copypdfs
 
