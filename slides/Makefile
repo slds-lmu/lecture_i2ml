@@ -25,8 +25,8 @@ texclean:
 	rm -rf *.synctex.gz
 	rm -rf *-concordance.tex
 
-slide-dependencies.pdf: $(SLIDES) ../attic/slide_dependencies.R
-	Rscript -e 'source("../attic/slide_dependencies.R")'
+slide-dependencies.pdf: $(SLIDES) ../attic/slide-dependencies.R
+	Rscript -e 'source("../attic/slide-dependencies.R")'
 
 .PHONY: copypdfs
 
