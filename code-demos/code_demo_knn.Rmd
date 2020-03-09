@@ -297,7 +297,7 @@ ggplot_list <- lapply(
 )
 do.call(grid.arrange, ggplot_list)
 ```
-For $k=1$ we can only ever get an if there exist observations with identical feature values but different labels in our training data set. So why should we use a $k \neq 1$?
+For $k=1$ we can only ever get a misclassification if there exist observations with identical feature values but different labels in our training data set. So why should we use a $k \neq 1$?
 
 Let's look how we perform when we apply our $k$-NN classification rules to the entries in the `iris` data set which were not used for training:
 ```{r knn-plot_2D_knn-3}    
@@ -359,28 +359,32 @@ ggplot_list <- lapply(
 do.call(grid.arrange, ggplot_list)
 ```
 
-### `mlr` implementation
+### `mlr3` implementation
 
-The `mlr` package offers a unified interface to many different machine learning algorithms making complicated, inefficient and error-prone implementations as above unnecessary.  
-Check the [tutorial](https://mlr-org.github.io/mlr-tutorial/devel/html/learner/index.html#modifying-a-learner) and the [list of integrated learners](https://mlr-org.github.io/mlr-tutorial/release/html/integrated_learners/). It uses a simple syntax, as used below:
+The `mlr3` package offers a unified interface to many different machine learning algorithms making complicated, inefficient and error-prone implementations as above unnecessary.  
+Check the [tutorial](https://mlr3book.mlr-org.com/learners.html). It uses a simple syntax, as used below:
 
 ```{r knn-mlr-1}
-library(mlr)
+library(mlr3)
+library(mlr3learners)
+
 # define task
-iris_task <- makeClassifTask(data = iris_train, target = "Species")
-# define learner and check possible models on mlr homepage
-iris_learner <- makeLearner("classif.kknn", k = 5)
+iris_task <- TaskClassif$new(id = "iris_train", backend = iris_train, 
+                             target = "Species")
+# define learner and check possible models on mlr3 homepage
+knn_learner <- lrn("classif.kknn", k = 5)
 # check available parameter settings
-getParamSet(iris_learner)
+knn_learner$param_set
 ```
 
 ```{r knn-mlr-2}
-# train the model
-iris_model <- train(learner = iris_learner, task = iris_task)
-# predict on test data
-iris_pred <- predict(iris_model, newdata = iris_to_check[, -5])
-# check "confusion" matrix
-print(table(actual = iris_to_check$Species, predicted = iris_pred$data$response))
 
-round(mean(iris_pred$data$response == iris_to_check$Species), 5)
+# train the model
+knn_learner$train(iris_task)
+# predict on test data
+iris_pred <- knn_learner$predict_newdata(newdata = iris_to_check)
+# check "confusion" matrix
+iris_pred$confusion
+
+iris_pred$score()
 ```

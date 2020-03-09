@@ -54,6 +54,7 @@ If your PR contains modified slides, please check that
 -  the files you have modified are formatted well 
 -  the slides you have modified do not contain typos (please use a spell checker!) or bad grammar
 -  the slides you have modified use notation that is consistent with the rest of the slides, preferably commands/terms already defined in `latex-math`.
+-  the slides you have modified still declare appropriate dependencies via `%! includes:`
 
 If your PR contains modified code, please check that
 
