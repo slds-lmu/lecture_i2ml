@@ -6,7 +6,9 @@ knitr::set_parent("../../style/preamble.Rnw")
 <<setup-r, child="../../style/setup.Rnw", include = FALSE>>=
 @
 
-\lecturechapter{ML Basic for Classification - Discriminant Analysis}
+%! includes: classification-basicdefs
+
+\lecturechapter{Classification: Discriminant Analysis}
 \lecture{Introduction to Machine Learning}
 \framebreak
 
@@ -17,32 +19,31 @@ knitr::set_parent("../../style/preamble.Rnw")
 % Linear discriminant follows a similar idea. As before, we want to classify a categorical target $y \in \Yspace = \gset$ on basis of $x$.
 
 % \lz
+LDA follows a generative approach
 
-LDA follows a generative approach, each class density is modeled as a \emph{multivariate Gaussian}
-with equal covariance, i. e. $\Sigma_k = \Sigma \quad \forall k$. \\
-$$
-\pdfxyk = \frac{1}{(2\pi)^{\frac{p}{2}}|\Sigma|^{\frac{1}{2}}} \exp\left(-\frac{1}{2}(x - \mu_k)^T \Sigma^{-1} (x - \mu_k)\right)
-$$
-
-\lz
-% \framebreak
-
-Parameters $\theta$ are estimated in a straight-forward manner by estimating
-\begin{eqnarray*}
-\hat{\pi}_k &=& n_k / n,\text{ where $n_k$ is the number of class $k$ observations} \\
-\hat{\mu}_k &=& \frac{1}{n_k}\sum_{i: \yi = k} \xi \\
-\hat{\Sigma} &=& \frac{1}{n - g} \sum_{k=1}^g \sum_{i: \yi = k} (\xi - \hat{\mu}_k) (\xi - \hat{\mu}_k) ^T
-\end{eqnarray*}
+$$\pikx = \postk = \frac{\P(x | y = k) \P(y = k)}{\P(x)} = \frac{\pdfxyk \pik}{\sumjg \pdfxyj \pi_j}$$
+  
+where we now have to pick a distributional form for $\pdfxyk$.
 
 \framebreak
 
-\begin{itemize}
-  \item Each class fit as a Gaussian distribution over the feature space
-  \item Different means but same covariance for all classes
-  \item Rather restrictive model assumption.
-\end{itemize}
+LDA assumes that each class density is modeled as a \emph{multivariate Gaussian}:
 
-<<echo = FALSE, warning=FALSE, message=FALSE, fig.height=4>>=
+$$
+\pdfxyk = \frac{1}{(2\pi)^{\frac{p}{2}}|\Sigma|^{\frac{1}{2}}} \exp\left(-\frac{1}{2}(\xv - \muk)^T \Sigma^{-1} (\xv - \muk)\right)
+$$
+
+with equal covariance, i. e. $\Sigma_k = \Sigma \quad \forall k$. \\
+  % \item Each class fit as a Gaussian distribution over the feature space
+  % \item Different means but same covariance for all classes
+  % \item Rather restrictive model assumption
+% \end{itemize}
+
+% \framebreak
+
+% Generative approach, each class as \emph{multivariate Gaussian}
+% with equal covariance, i. e. $\Sigma_k = \Sigma \quad \forall k$. \\
+<<echo = FALSE, warning=FALSE, message=FALSE, fig.height=3.5>>=
 library(ggplot2)
 library(MASS)
 library(car)
@@ -102,66 +103,70 @@ plot1
 
 
 \framebreak
-
-For the posterior probability of class $k$ it follows:
+Parameters $\theta$ are estimated in a straight-forward manner by estimating
 \begin{eqnarray*}
-\pikx &\propto& \pi_k \cdot \pdfxyk \\
-&\propto& \pi_k \exp\left(- \frac{1}{2} x^T\Sigma^{-1}x - \frac{1}{2} \mu_k^T \Sigma^{-1} \mu_k + x^T \Sigma^{-1} \mu_k \right) \\
-&=& \exp\left(\log \pi_k  - \frac{1}{2} \mu_k^T \Sigma^{-1} \mu_k + x^T \Sigma^{-1} \mu_k \right) \exp\left(- \frac{1}{2} x^T\Sigma^{-1}x\right) \\
-&=& \exp\left(\theta_{0k} + x^T \theta_k\right) \exp\left(- \frac{1}{2} x^T\Sigma^{-1}x\right)
+\hat{\pi}_k &=& n_k / n,\text{ where $n_k$ is the number of class $k$ observations} \\
+\hat{\mu}_k &=& \frac{1}{n_k}\sum_{i: \yi = k} \xi \\
+\hat{\Sigma} &=& \frac{1}{n - g} \sum_{k=1}^g \sum_{i: \yi = k} (\xi - \hat{\mu}_k) (\xi - \hat{\mu}_k) ^T
 \end{eqnarray*}
 
-by defining
-$\theta_{0k} := \log \pi_k  - \frac{1}{2} \mu_k^T \Sigma^{-1} \mu_k$ and $\theta_k := \Sigma^{-1} \mu_k$.
+<<echo = FALSE, warning=FALSE, message=FALSE, fig.height=2.5>>=
+plot1
+@
+\end{vbframe}
 
-\framebreak
+\begin{vbframe}{LDA as linear classifier}
 
-Finally, the posterior probability becomes
+  Because of the equal covariance structure of all class-specific Gaussian, the decision boundaries
+  of LDA are linear.
 
-$$
-\pikx = \frac{\pi_k \cdot \pdfxyk }{\pdfx} = \frac{\exp(\theta_{0k} + x^T \theta_k)}{\sum_j \exp(\theta_{0j} + x^T \theta_j)}
-$$
-
-(the term $\exp(- \frac{1}{2} x^T\Sigma^{-1}x)$ will cancel out in numerator and denominator).
-
-\lz
-
-And (simplified) discriminant functions can be defined as
-$$ f_k(x) =  \theta_{0k} + x^T \theta_k $$
-Hence, LDA defines a \emph{linear classifier} with linear decision boundaries.
-
-% \lz
-
-% \framebreak
-
-% If we compare the likelihood of two classes $k, l \in \gset$ via the log-odds, we end up in a linear function of x
-
-% \small
-% \begin{eqnarray*}
-% \log \frac{\pikx}{\pi_l(x)}&=& \log\exp(\theta_{0k} + x^T \theta_k)-\log\exp(\theta_{0l} + x^T \theta_l) \\
-% &=& (\theta_{0k} - \theta_{0l}) + x^T(\theta_k-\theta_l)
-% \end{eqnarray*}
-
-% \normalsize
-% This equation is linear in $x$, so the decision boundary between the classes can
-% only be linear. Linear discriminant analysis provides a linear classifier.
-
-
-
-% Finally we will predict the most probable category given $x$
-
-% $$
-% \yh = h(x) = \argmax_{k \in \gset} \pikx.
-% $$
-
-\framebreak
-
-<<echo = FALSE, warning=FALSE, message=FALSE>>=
+<<echo = FALSE, warning=FALSE, message=FALSE, fig.height=5>>=
 plotLearnerPrediction("classif.lda",
                       makeClassifTask(data = iris[,-(1:2)], target = "Species"),
                       cv = 0) +
   scale_fill_viridis_d()
 @
+
+\framebreak
+
+
+We can formally show that LDA is a linear classifier, by showing that the posterior probabilities
+can be written as linear scoring functions - up to any isotonic / rank-preserving transformation.
+
+$$
+  \pikx = \frac{\pi_k \cdot \pdfxyk }{\pdfx} = \frac{\pi_k \cdot \pdfxyk}{\sumjg \pi_j \cdot \pdfxyj}
+$$
+
+As the denominator is the same for all classes we only need to consider 
+$$\pi_k \cdot \pdfxyk$$ 
+and show that this can be written as a linear function of $\xv$.
+
+\framebreak
+
+
+% For the posterior probability of class $k$ it follows:
+\begin{eqnarray*}
+& \pi_k \cdot \pdfxyk \\
+  \propto& \pi_k \exp\left(- \frac{1}{2} \xv^T\Sigma^{-1}x - \frac{1}{2} \muk^T \Sigma^{-1} \muk + \xv^T \Sigma^{-1} \muk \right) \\
+=& \exp\left(\log \pi_k  - \frac{1}{2} \muk^T \Sigma^{-1} \muk + \xv^T \Sigma^{-1} \muk \right) \exp\left(- \frac{1}{2} \xv^T\Sigma^{-1}\xv\right) \\
+=& \exp\left(\thetab_{0k} + \xv^T \thetab_k\right) \exp\left(- \frac{1}{2} \xv^T\Sigma^{-1}\xv\right)\\
+\propto& \exp\left(\thetab_{0k} + x^T \thetab_k\right) 
+\end{eqnarray*}
+
+by defining
+$\thetab_{0k} := \log \pi_k  - \frac{1}{2} \muk^T \Sigma^{-1} \muk$ and $\thetab_k := \Sigma^{-1} \muk$.
+
+\lz
+
+We have again left-out all constants which are the same for all classes $k$, 
+  so the normalizing constant of our Gaussians and 
+  $\exp\left(- \frac{1}{2} \xv^T\Sigma^{-1}\xv\right)$)
+
+\lz
+
+By finally taking the log, we can write our transformed scores as linear:  
+
+$$ f_k(x) =  \thetab_{0k} + x^T \thetab_k $$
 
 \end{vbframe}
 
@@ -170,7 +175,7 @@ plotLearnerPrediction("classif.lda",
 
 QDA is a direct generalization of LDA, where the class densities are now Gaussians with unequal covariances $\Sigma_k$.
 $$
-\pdfxyk = \frac{1}{(2\pi)^{\frac{p}{2}}|\Sigma_k|^{\frac{1}{2}}} \exp\left(-\frac{1}{2}(x - \mu_k)^T \Sigma_k^{-1} (x - \mu_k)\right)
+\pdfxyk = \frac{1}{(2\pi)^{\frac{p}{2}}|\Sigma_k|^{\frac{1}{2}}} \exp\left(-\frac{1}{2}(\xv - \muk)^T \Sigma_k^{-1} (\xv - \muk)\right)
 $$
 
 \lz
@@ -235,14 +240,13 @@ plot1
 
 \begin{eqnarray*}
 \pikx &\propto& \pi_k \cdot \pdfxyk \\
-&=& \pi_k |\Sigma_k|^{-\frac{1}{2}}\exp(- \frac{1}{2} x^T\Sigma_k^{-1}x - \frac{1}{2} \mu_k^T \Sigma_k^{-1} \mu_k + x^T \Sigma_k^{-1} \mu_k )
+&\propto& \pi_k |\Sigma_k|^{-\frac{1}{2}}\exp(- \frac{1}{2} \xv^T\Sigma_k^{-1}\xv - \frac{1}{2} \muk^T \Sigma_k^{-1} \muk + \xv^T \Sigma_k^{-1} \muk )
 \end{eqnarray*}
 
 Taking the log of the above, we can define a discriminant function that is quadratic in $x$.
 
 $$
-\log \pi_k - \frac{1}{2} \log |\Sigma_k| - \frac{1}{2} x^T\Sigma_k^{-1}x - \frac{1}{2} \mu_k^T \Sigma_k^{-1} \mu_k + x^T \Sigma_k^{-1} \mu_k
-$$
+\log \pi_k - \frac{1}{2} \log |\Sigma_k| - \frac{1}{2} \muk^T \Sigma_k^{-1} \muk + \xv^T \Sigma_k^{-1} \muk - \frac{1}{2} \xv^T\Sigma_k^{-1}\xv $$
 
 
 % Let's look at the log-odds now. \\
@@ -250,9 +254,9 @@ $$
 % \begin{eqnarray*}
 % \log \frac{\pikx}{\pi_g(x)}&=& \log \frac{\pi_k}{\pi_g}
 % - \frac{1}{2} \log \frac{|\Sigma_k|}{|\Sigma_g|}
-% + x^T(\Sigma_k^{-1}\mu_k - \Sigma_g^{-1}\mu_g) \\
+% + x^T(\Sigma_k^{-1}\muk - \Sigma_g^{-1}\mu_g) \\
 % &-& \frac{1}{2} x^T (\Sigma_k^{-1} - \Sigma_g^{-1})x
-% - \frac{1}{2} x^T (\mu_k^T\Sigma_k^{-1}\mu_k - \mu_g^T\Sigma_g^{-1}\mu_g)
+% - \frac{1}{2} x^T (\muk^T\Sigma_k^{-1}\muk - \mu_g^T\Sigma_g^{-1}\mu_g)
 % \end{eqnarray*}
 
 % We see that this function is quadratic in $x$, hence we obtain a quadratic decision boundary.

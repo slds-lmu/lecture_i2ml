@@ -1,0 +1,166 @@
+% Set style/preamble.Rnw as parent.
+<<set-parent, include = FALSE>>=
+knitr::set_parent("../../style/preamble.Rnw")
+@
+% Load all R packages and set up knitr
+<<setup-r, child="../../style/setup.Rnw", include = FALSE>>=
+@
+
+%! includes: basics-supervised, basics-tasks 
+
+\lecturechapter{Classification: Tasks}
+\lecture{Introduction to Machine Learning}
+
+% <<include=FALSE>>=
+%   library(datasets)
+% df <- as.data.frame(Titanic)
+% titanic.raw <- NULL
+% for (i in 1:4)
+% {
+%   titanic.raw <- cbind(titanic.raw,
+%                        rep(as.character(df[,i]),df$Freq))
+% }
+% titanic.raw <- as.data.frame(titanic.raw)
+% names(titanic.raw) <- names(df)[1:4]
+% @
+%
+\begin{vbframe}{Classification}
+% The Titanic dataset is a famous beginner's problem for binary classification (see for example \href{https://www.kaggle.com/c/titanic}{the Titanic competition on kaggle.com}).
+% The goal is to classify the passengers of the Titanic into Survived $\in$ $\{Yes, No\}$ given information about the class they traveled in, the sex and the age.
+%
+%
+%  % \column{0.5\textwidth}
+% \begin{center}
+% \textbf{Titanic Passengers} \\
+% \vspace{0.25cm}
+% <<>>=
+%   kable(unique(titanic.raw)[c(1:8,12:15),], row.names = FALSE)
+% @
+%   \end{center}
+%
+%  \framebreak
+
+ % \begin{vbframe}{Classification}
+Learn functions that assign class labels to observation / feature vectors. Each observation belongs to exactly one class. The main difference to regression is the scale of the output / label.
+  % \begin{eqnarray*}
+  % &\D = \Dset & \text{observations of $x$ and $y$}\\
+  % & y \in \Yspace = \gset \quad & \text{\emph{categorical} output variable (label)}
+  % \end{eqnarray*}
+{\centering \includegraphics[width= .7\textwidth]{figure_man/classifier.pdf}}
+
+\end{vbframe}
+
+\begin{vbframe}{Binary and Multiclass Tasks}
+The task can contain 2 classes (binary) or multiple (multiclass).
+\begin{columns}[T]
+  \begin{column}{0.5\textwidth}
+<<classification-task-plot, fig.height=6, fig.width=6>>=
+ plot_lp(makeLearner("classif.logreg"), sonar.task) + xlim(0,0.05) + 
+   ggtitle("Sonar") 
+@
+  \end{column}
+  \begin{column}{0.5\textwidth}
+<<multi-classification-task-plot, fig.height=6, fig.width=6>>=
+plot_lp(makeLearner("classif.svm"), iris.task, c("Petal.Length", "Petal.Width")) +
+  ggtitle("Iris") 
+@
+  \end{column}
+\end{columns}
+\end{vbframe}
+
+
+\begin{vbframe}{Binary Classification Task - Examples}
+
+  \begin{itemize}
+  \item Credit risk prediction, based on personal data and transactions 
+  \item Spam detection based on textual features 
+  \item Churn prediction based on customer behavior
+  \item Predisposition for specific illness based on genetic data
+  % \item $\ldots$
+\end{itemize}
+
+\begin{center}
+  % FIGURE SOURCE: https://www.bendbulletin.com/localstate/deschutescounty/3430324-151/fact-or-fiction-polygraphs-just-an-investigative-tool
+  \includegraphics[width=0.6\textwidth]{figure_man/lie-detector-polygraph.jpg}
+\end{center}
+\vspace{-0.6cm}
+\begin{flushright}
+  \tiny https://www.bendbulletin.com/localstate/deschutescounty/3430324-151/fact-or-fiction-polygraphs-just-an-investigative-tool
+\end{flushright}
+\end{vbframe}
+
+
+
+\begin{vbframe}{Multiclass Task - Medical Diagnosis}
+\begin{center}
+  % FIGURE SOURCE: https://symptoms.webmd.com
+  \includegraphics[width=0.8\textwidth]{figure_man/webmd.png}
+\end{center}
+\vspace{-0.5cm}
+\begin{flushright}
+  \tiny https://symptoms.webmd.com
+\end{flushright}
+\end{vbframe}
+
+\begin{vbframe}{Multiclass Task - Iris}
+
+The iris dataset was introduced by the statistician Ronald Fisher and is one
+of the most frequent used datasets. Originally it was designed for linear
+discriminant analysis.
+
+\begin{center}
+\parbox{0.3\textwidth}{
+\centering
+  \begin{tabular}{@{}c@{}}
+    \includegraphics[width=0.25\textwidth]{figure_man/iris_setosa.jpg} \\[\abovecaptionskip]
+    \small Setosa
+  \end{tabular}
+}
+\parbox{0.3\textwidth}{
+\centering
+  \begin{tabular}{@{}c@{}}
+    \includegraphics[width=0.25\textwidth]{figure_man/iris_versicolor.jpg} \\[\abovecaptionskip]
+    \small Versicolor
+  \end{tabular}
+}
+\parbox{0.3\textwidth}{
+\centering
+  \begin{tabular}{@{}c@{}}
+    \includegraphics[width=0.25\textwidth]{figure_man/iris_virginica.jpg} \\[\abovecaptionskip]
+    \small Virginica
+  \end{tabular}
+}
+\end{center}
+  Source: \url{https://en.wikipedia.org/wiki/Iris\_flower\_data\_set}
+\end{vbframe}
+
+\begin{vbframe}{Multiclass Task - Iris}
+
+\begin{columns}[T]
+\begin{column}{0.5\textwidth}
+\begin{itemize}
+\item 150 iris flowers 
+\item Predict subspecies
+\item Based on sepal and petal length / width in [cm]
+\end{itemize}
+\end{column}
+\begin{column}{0.5\textwidth}
+\includegraphics[width=0.4\textwidth]{figure_man/iris_petal_sepal.png} 
+\end{column}
+\end{columns}
+<<>>=
+data("iris", package = "datasets")
+as.data.table(iris)
+@
+\end{vbframe}
+
+\begin{vbframe}{Multiclass Task - Iris}
+<<>>=
+library(GGally)
+ggpairs(iris, mapping = aes(col = Species))
+@
+\end{vbframe}
+
+
+\endlecture
+

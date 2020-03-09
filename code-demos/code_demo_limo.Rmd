@@ -4,11 +4,11 @@ params:
     set_title: "Code demo for linear model & gradient descent"
 ---
 
-```{r, child = "../style/preamble_code_demos.Rmd", include = FALSE}
+```{r limo-preamble, child = "../style/preamble_code_demos.Rmd", include = FALSE, purl = FALSE}
 
 ```
 
-```{r, child = "../style/setup.Rmd", include = FALSE}
+```{r limo-setup, child = "../style/setup.Rmd", include = FALSE, purl = FALSE}
 
 ```  
 
@@ -103,13 +103,13 @@ gradient_descent <- function(Y, X, theta,
   if (plot) {
     layout(t(1:(length(theta) + 1)))
     for (i in 1:length(theta)) {
-      plot(theta_storage[, i],
+      plot(x = seq_along(theta_storage[, i]) - 1, y = theta_storage[, i],
         ylab = "coefficient value",
         xlab = "iteration", type = "l", col = "blue",
         main = bquote(theta[.(i - 1)])
       )
     }
-    plot(loss_storage[, "loss"],
+    plot(x = seq_along(loss_storage[, "loss"]) - 1, y = loss_storage[, "loss"],
       ylab = "empirical risk",
       xlab = "iteration", type = "l", col = "red",
       main = expression(R[emp](theta))
@@ -174,13 +174,13 @@ gradient_descent_threshold <- function(Y, X, theta,
   if (plot) {
     layout(t(1:(length(theta) + 1)))
     for (i in 1:length(theta)) {
-      plot(theta_storage[, i],
+      plot(x = seq_along(theta_storage[, i]) - 1, y = theta_storage[, i],
         ylab = "coefficient value",
         xlab = "iteration", type = "l", col = "blue",
         main = bquote(theta[.(i - 1)])
       )
     }
-    plot(loss_storage[, "loss"],
+    plot(x = seq_along(loss_storage[, "loss"]) - 1, y = loss_storage[, "loss"],
       ylab = "empirical risk",
       xlab = "iteration", type = "l", col = "red",
       main = expression(R[emp](theta))
@@ -201,19 +201,21 @@ We notice that our implementation depends on the hyperparameter stepsize $\lambd
 
 ```{r grad_desc_opt-def}
 gradient_descent_opt_stepsize <- function(Y, X, theta,
-                                       risk = risk_quadratic,
-                                       gradient = gradient_quadratic,
-                                       lambda = 0.005,
-                                       epsilon = 0.0001,
-                                       max_iterations = 2000,
-                                       min_learning_rate = 0,
-                                       plot = TRUE) {
+                                          risk = risk_quadratic,
+                                          gradient = gradient_quadratic,
+                                          lambda = 0.005,
+                                          epsilon = 0.0001,
+                                          max_iterations = 2000,
+                                          min_learning_rate = 0,
+                                          max_learning_rate = 1000,
+                                          plot = TRUE,
+                                          include_storage = FALSE) {
   # initialize storage for visualizations below (with maxiter + 1 slots)
   loss_storage <- data.frame(
     iterations = seq_len(max_iterations) - 1,
     loss = NA
   )
-  theta_storage <- matrix(NA, ncol = ncol(X), nrow = max_iterations + 1)
+  theta_storage <- matrix(NA, ncol = length(theta), nrow = max_iterations + 1)
 
   loss_storage[1, "loss"] <- risk(Y, X, theta)
   theta_storage[1, ] <- theta
@@ -226,9 +228,9 @@ gradient_descent_opt_stepsize <- function(Y, X, theta,
       fn = function(lambda) risk(Y = Y, X = X, theta = theta - lambda * grad), # to min
       method = "Brent", # 1d minimization
       lower = min_learning_rate,
-      upper = 1000
+      upper = max_learning_rate,
     )$par
-    
+
     theta <- theta - lambda_opt * grad
     loss_storage[i + 1, "loss"] <- risk(Y = Y, X = X, theta = theta)
     theta_storage[i + 1, ] <- t(theta)
@@ -240,20 +242,27 @@ gradient_descent_opt_stepsize <- function(Y, X, theta,
   if (plot) {
     layout(t(1:(length(theta) + 1)))
     for (i in 1:length(theta)) {
-      plot(theta_storage[, i],
+      plot(x = seq_along(theta_storage[, i]) - 1, y = theta_storage[, i],
         ylab = "coefficient value",
         xlab = "iteration", type = "l", col = "blue",
         main = bquote(theta[.(i - 1)])
       )
     }
-    plot(loss_storage[, "loss"],
+    plot(x = seq_along(loss_storage[, "loss"]) - 1, y = loss_storage[, "loss"],
       ylab = "empirical risk",
       xlab = "iteration", type = "l", col = "red",
       main = expression(R[emp](theta))
     )
   }
-  list(theta = theta, risk = risk(Y, X, theta))
+  if(include_storage)
+     list(theta = theta, risk = risk(Y, X, theta), 
+          storage = list(loss = loss_storage, theta = theta_storage))
+  else
+    list(theta = theta, risk = risk(Y, X, theta))
 }
+```
+
+```{r grad_desc_opt-example}
 set.seed(1337)
 gradient_descent_opt_stepsize(Y = Y, X = X, theta = theta_init)
 ```
@@ -304,7 +313,7 @@ gradient_descent_opt_stepsize(
 # approached? Does this also hold for the gradient of the absolute loss?
 ```
 
-*Note*: The gradient of the empirical risk for absolute loss is not defined at its minimum, nor at many other configurations of $\theta$  (think about why...?). That is often not a problem in practice, but this naive implementation runs into problems, as you can see if you play around with the settings of the code above...
+*Note*: The gradient of the empirical risk for absolute loss is not defined at its minimum, nor at many other configurations of $\theta$  (think about why...?). That is often not a problem in practice, but this naive implementation runs into problems, as you can see if you play around with the settings of the code above (and in the rather wild looking optimization traces in the figure above)...
 
 
 

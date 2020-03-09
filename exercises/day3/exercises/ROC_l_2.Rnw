@@ -57,30 +57,52 @@
 
   $$\text{Negative Predictive Value} = \frac{\text{TN}}{\text{TN} + \text{FN}} =\frac{3}{7} $$
 
-  \item[c)] The ROC plot (slightly different then our approach), drawn by using the package \texttt{pROC}:
-
-  <<message=FALSE, fig.height=4, fig.width=4, fig.align='center'>>=
-  library(pROC)
-  cdata = data.frame(
+  \item[c)] 
+First we sort the results by the score: \\
+  <<message=FALSE, echo=FALSE>>=
+  cdata <- data.frame(
     true_labels = c(0,0,1,1,1,0,1,1,0,0),
     scores = c(0.33,0.27,0.1,0.38,0.17,0.63,0.62,0.33,0.15,0.57)
   )
-  roc_res = roc(true_labels ~ scores, cdata)
-  plot(roc_res)
+  
+  cdata <- cdata[order(cdata$scores, decreasing = T),]
+  kable(cdata)
+  @
+Here we see that $\frac{1}{n_+} = \frac{1}{5} = 0.2$ and $\frac{1}{n_-} = \frac{1}{5} = 0.2$. Now we follow the algorithm as described in the lecture slides:
+\begin{enumerate}
+\item Set $\alpha = 1$, so we start in $(0,0)$; we predict everything as 1.
+\item Set threshold $\tau = 0.625$ yields TPR 0 and FPR  $0 + \frac{1}{n_-} = 0.2$. (Obs. 6 is "0")
+\item Set threshold $\tau = 0.6$ yields TPR $0 + \frac{1}{n_+} = 0.2$ and FPR  $0.2$. (Obs. 7 is "1")
+\item Set threshold $\tau = 0.5$ yields TPR 0.2 and FPR  $0.2 + \frac{1}{n_-} = 0.4$. (Obs. 10 is "0")
+\item Set threshold $\tau = 0.35$ yields TPR $0.2 + \frac{1}{n_+} = 0.4$ and FPR  $0.4$. (Obs. 4 is "1")
+\item Set threshold $\tau = 0.3$ yields TPR $0.4 + \frac{1}{n_+} = 0.6$ and FPR  $0.4 + \frac{1}{n_-} = 0.6$. (Obs. 1/8 is "0"/"1")
+\item Set threshold $\tau = 0.2$ yields TPR $0.6$ and FPR  $0.6 + \frac{1}{n_-} = 0.8$. (Obs. 2 is "0")
+\item Set threshold $\tau = 0.16$ yields TPR $0.6 + \frac{1}{n_+} = 0.8$ and FPR  $0.8$. (Obs. 5 is "1")
+\item Set threshold $\tau = 0.14$ yields TPR $0.8$ and FPR  $0.8 + \frac{1}{n_-} = 1$. (Obs. 9 is "0")
+\item Set threshold $\tau = 0.09$ yields TPR $0.8 + \frac{1}{n_+} = 1$ and FPR  $1$. (Obs. 3 is "1")
+\end{enumerate}
+
+Therefore we get the polygonal path consisting of the ordered list of vertices \[(0,0), (0,0.2), (0.2,0.2),
+(0.2,0.4), (0.4,0.4), (0.6,0.6), (0.6,0.8), (0.8, 0.8), (0.8, 1), (1,1).\]
+
+  <<message=FALSE, fig.height=4, fig.width=4, fig.align='center'>>=
+  
+  library(ggplot2)
+  roc_data <- data.frame(TPR = c(0, 0,   0.2, 0.2, 0.4, 0.6, 0.6, 0.8, 0.8, 1),
+                         FPR = c(0, 0.2, 0.2, 0.4, 0.4, 0.6, 0.8, 0.8,  1,  1)) 
+
+  ggplot(roc_data, aes(x = FPR, y = TPR)) + geom_line() + 
+    geom_abline(slope = 1, intercept = 0, linetype = 'dashed')
   @
 
-  \item[d)] The AUC:
-  $$
-  AUC = 0.2 \cdot 0.2 + 0.4 \cdot 0.4 + 0.2 \cdot 0.2 + 0.2 \cdot 0.8 = 0.4
-  $$
-  or by using the plot given from \texttt{R}:
-  $$
-  AUC = 0.2 \cdot 0.2 + 0.4 \cdot 0.4 + 0.2 \cdot 0.2 \cdot 1.5 + 0.2 \cdot 0.8 = 0.42
-  $$
-  or by using \texttt{R}:
-  <<>>=
-  roc_res$auc
-  @
+We see that the resulting ROC lies below the line from the origin with a slope of 1, which represents
+a random classifier, i.e., the scoring algorithm performs worse than a random classifier.
+If this happens while evaluating the training data, the labels of the scoring algorithm should be inverted.
 
+  \item[d)] 
+  We can compute the AUC (\textit{area under the curve}) by looking at the ROC, s.t.
+  $$
+  AUC = 0.5 - 4 \cdot (0.2 \cdot 0.2 \cdot 0.5) = 0.42.
+  $$
 
 \end{enumerate}
