@@ -15,28 +15,29 @@ params:
 ```{r knn-load_chunk, echo=FALSE, cache=FALSE, purl=FALSE}
 # see https://stackoverflow.com/a/28151571
 run_chunks <- function(chunkNames, envir = .GlobalEnv) {
-  for(chunkName in chunkNames){
+  for (chunkName in chunkNames) {
     chunkName <- unlist(lapply(as.list(substitute(.(chunkName)))[-1], as.character))
     eval(parse(text = knitr:::knit_code$get(chunkName)), envir = envir)
   }
 }
 
-load_chunks <- function(rmd_files){
-  for(rmd_file in rmd_files){
-    knitr::purl(paste0(rmd_file,".Rmd"), paste0(rmd_file,".R"), documentation=2)
-    knitr::read_chunk(paste0(rmd_file,".R"))
+load_chunks <- function(rmd_files) {
+  for (rmd_file in rmd_files) {
+    knitr::purl(paste0(rmd_file, ".Rmd"), paste0(rmd_file, ".R"), documentation = 2)
+    knitr::read_chunk(paste0(rmd_file, ".R"))
   }
 }
 
-load_chunks(c("code_demo_genclass","code_demo_knn"))
-run_chunks(c("knn-plot_2D_classif", 
-             "genclass-nb_priors",
-             "genclass-nb_lhoods",
-             "genclass-naivebayes",
-             "genclass-classify_naivebayes",
-             "genclass-plot_2D_naivebayes",
-             "genclass-nb_kde"
-             ))
+load_chunks(c("code_demo_genclass", "code_demo_knn"))
+run_chunks(c(
+  "knn-plot_2D_classif",
+  "genclass-nb_priors",
+  "genclass-nb_lhoods",
+  "genclass-naivebayes",
+  "genclass-classify_naivebayes",
+  "genclass-plot_2D_naivebayes",
+  "genclass-nb_kde"
+))
 ```
 
 # Code demo for comparison of classification methods
@@ -59,42 +60,49 @@ library(ggplot2)
 
 set.seed(123L)
 
-simplex <- data.frame(mlbench.simplex(n = 500, d=2))
-ggplot(simplex, aes(x.1,x.2, color=classes)) + geom_point()
+simplex <- data.frame(mlbench.simplex(n = 500, d = 2))
+ggplot(simplex, aes(x.1, x.2, color = classes)) + geom_point()
 
 cassini <- data.frame(mlbench.cassini(500))
-ggplot(cassini, aes(x.1,x.2, color=classes)) + geom_point()
+ggplot(cassini, aes(x.1, x.2, color = classes)) + geom_point()
 
 spirals <- data.frame(mlbench.spirals(n = 500, sd = 0.1))
-ggplot(spirals, aes(x.1,x.2, color=classes)) + geom_point()
-
+ggplot(spirals, aes(x.1, x.2, color = classes)) + geom_point()
 ```
 
 For the classification, we use the *mlr3* package, which means we need
 to create classification tasks:
 ```{r cmpclass-task}
 
-spirals_task = TaskClassif$new(id = "spirals", backend = spirals, target = "classes")
-cassini_task = TaskClassif$new(id = "cassini", backend = cassini, target = "classes")
-simplex_task = TaskClassif$new(id = "simplex", backend = simplex, target = "classes")
+spirals_task <- TaskClassif$new(id = "spirals", backend = spirals, target = "classes")
+cassini_task <- TaskClassif$new(id = "cassini", backend = cassini, target = "classes")
+simplex_task <- TaskClassif$new(id = "simplex", backend = simplex, target = "classes")
 ```
 
 The methods we use for classification are represented by learner objects:
 ```{r cmpclass-learners}
 learners <- list(
-# Softmax regression (glmnet with no penalization)
-softmax_learner = lrn("classif.glmnet", lambda = c(1, 0.1, 0), 
-                      predict_type = "prob"),
-knn_learner = lrn("classif.kknn", k=3, 
-                      predict_type = "prob"),
-# Linear discriminant analysis
-lda_learner = lrn("classif.lda", 
-                      predict_type = "prob"),
-# Quadratic discriminant analysis
-qda_learner = lrn("classif.qda", 
-                      predict_type = "prob"),
-nb_learner = lrn("classif.naive_bayes", 
-                      predict_type = "prob")
+  # Softmax regression
+  softmax_learner = lrn("classif.multinom",
+    trace = FALSE,
+    predict_type = "prob"
+  ),
+  # K-nearest neighbors
+  knn_learner = lrn("classif.kknn",
+    k = 3,
+    predict_type = "prob"
+  ),
+  # Linear discriminant analysis
+  lda_learner = lrn("classif.lda",
+    predict_type = "prob"
+  ),
+  # Quadratic discriminant analysis
+  qda_learner = lrn("classif.qda",
+    predict_type = "prob"
+  ),
+  nb_learner = lrn("classif.naive_bayes",
+    predict_type = "prob"
+  )
 )
 ```
 
@@ -104,33 +112,33 @@ We start by looking at the `simplex` data set which is linearly separable:
 ```{r cmpclass-simplex, fig.height=12, fig.width=12}
 ggplot_list <- lapply(
   learners,
-  function(learner) plot_learner_prediction(learner, simplex_task) + 
-    theme_minimal(base_size = 10) + guides(alpha = "none", shape = "none") +
-    ggtitle(learner$id)
+  function(learner) plot_learner_prediction(learner, simplex_task) +
+      theme_minimal(base_size = 10) + guides(alpha = "none", shape = "none") +
+      ggtitle(learner$id)
 )
 do.call(grid.arrange, ggplot_list)
 ```
 
-We see that we are able to classify the data correctly with every method. Since both LDA and softmax regression are linear classifiers, their decision boundaries are linear as expected. 
+We see that we are able to classify the data correctly with every method. Since both LDA and softmax regression are linear classifiers, their decision boundaries are linear as expected. We also observe that only softmax regression has clearly asymmetric boundaries.
 
 ```{r cmpclass-cassini, fig.height=12, fig.width=12}
 ggplot_list <- lapply(
   learners,
-  function(learner) plot_learner_prediction(learner, cassini_task) + 
-    theme_minimal(base_size = 10) + guides(alpha = "none", shape = "none") +
-    ggtitle(learner$id)
+  function(learner) plot_learner_prediction(learner, cassini_task) +
+      theme_minimal(base_size = 10) + guides(alpha = "none", shape = "none") +
+      ggtitle(learner$id)
 )
 do.call(grid.arrange, ggplot_list)
 ```
-The softmax result (`classif.glmnet`) shows that the Cassini data set is also linear separable, but some observations are quite close to its decision boundaries. LDA is the only method which doesn't separate the data perfectly here. The four other methods identify a similar shape of the boundaries.
+The softmax result (`classif.multinom`) shows that the Cassini data set is also linear separable, but some observations are quite close to its decision boundaries. LDA is the only method which doesn't separate the data perfectly here. The four other methods identify a similar shape of the boundaries.
 
 
 ```{r cmpclass-spirals, fig.height=12, fig.width=12}
 ggplot_list <- lapply(
   learners,
-  function(learner) plot_learner_prediction(learner, spirals_task) + 
-    theme_minimal(base_size = 10) + guides(alpha = "none", shape = "none") +
-    ggtitle(learner$id)
+  function(learner) plot_learner_prediction(learner, spirals_task) +
+      theme_minimal(base_size = 10) + guides(alpha = "none", shape = "none") +
+      ggtitle(learner$id)
 )
 do.call(grid.arrange, ggplot_list)
 ```
@@ -147,7 +155,7 @@ But can't we do better with the methods we learnt? Yes, we can do the following:
 library("kdensity")
 library("EQL")
 
-features <- c("x.1","x.2")
+features <- c("x.1", "x.2")
 target <- "classes"
 X <- spirals[, features]
 liks_kde <- get_naivebayes_likelihoods(
@@ -167,8 +175,8 @@ liks_kde <- get_naivebayes_likelihoods(
 priors <- get_priors(spirals, target)
 
 plot_2D_naivebayes(priors, liks_kde, "x.1", "x.2",
-      spirals$classes, X,
-      title = '"NB" ~'
+  spirals$classes, X,
+  title = '"NB" ~'
 )
 ```
 
