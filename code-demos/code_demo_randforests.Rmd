@@ -14,12 +14,16 @@ params:
 
 # Code demo for Random Forests
 
-## Variable Importance from mlr
+## Variable Importance from mlr3
 
 ```{r randforests-data, message=FALSE}
-library(mlr)
+library(mlr3)
+library(mlr3learners)
+library(mlr3filters)
+library(mlr3viz)
 library(mlbench)
 library(dplyr)
+library(partykit)
 
 data("Servo")
 
@@ -43,44 +47,48 @@ train_1 <- servo[ train_indices, ]
 test_1 <- servo[ -train_indices, ]
 ```
 
-
+To access the variable importance we need to use a filter in mlr3. You can read more about this 
+[here](https://mlr3book.mlr-org.com/fs.html#fs-var-imp-filters).
 
 ```{r randforests-var_imp, message=FALSE}
 library(ggplot2)
 
-task <- makeRegrTask(data = train_1, target = "Class")
-lrn1 <- makeLearner("regr.randomForest")
-mod <- mlr::train(learner = lrn1, task = task)
+task <- TaskRegr$new(id = "servo", backend = train_1, target = "Class")
+lrn1 <- lrn("regr.ranger", importance = "impurity")
+lrn1$train(task = task)
 
-var_imp <- getFeatureImportance(mod)
-var <- as.data.frame(t(var_imp$res))
-var$names <- names(var_imp$res)
-p <- ggplot(data = var, aes(x = names, y = V1)) + geom_bar(stat = "identity") +
-  ggtitle(label = "Variable Importance from mlr")
-p
+filter <- flt("importance", learner = lrn1)
+filter$calculate(task)
+var <- as.data.table(filter)
+
+ggplot(data = var, aes(x = feature, y = score)) + geom_bar(stat = "identity") +
+  ggtitle(label = "Variable Importance from mlr3") +
+  labs(x = "Features", y = "Variable Importance")
 ```
 
 ## Variable importance from partykit
 
 ```{r randforests-var_imp_partykit, message=FALSE}
-library(partykit)
-
-modForest <- cforest(Class ~ Motor + Screw + Pgain + Vgain, data = train_1)
+modForest <- partykit::cforest(Class ~ Motor + Screw + Pgain + Vgain, data = train_1)
 var <- as.data.frame(varimp(modForest))
 var$names <- rownames(var)
 colnames(var) <- c("var_imp", "names")
-p <- ggplot(data = var, aes(x = names, y = var_imp)) +
+ggplot(data = var, aes(x = names, y = var_imp)) +
   geom_bar(stat = "identity") +
   ggtitle(label = "Variable Importance from partykit")
-p
 ```
 
-## Proximity measures in Random Forests
+Note that `{partykit}`'s `cforest` implementation of random forest is built on "conditional inference trees", which use a slightly different algorithm for finding optimal splits and deciding when to stop splitting the data than the CARTs we discussed in the lecture:
 
-One neat feature of random forests is, that they calculate a proximity measure (how close is one data point to another) on the fly:  frequencies of how often two (OOB-)observations end up in the same terminal node are calculated during the fit -- if two observations are "close" in terms of the features that matter for the random forest, they will have a high proximity.
-We can try to interpret them and do fancy stuff such as __multi dimensional scaling__. Check [this blog post](https://www.r-statistics.com/2016/01/multidimensional-scaling-with-r-from-mastering-data-analysis-with-r/) for a wonderful example of MDS for European capital cities.
+> Roughly, the algorithm works as follows: 1) Test the global null hypothesis of independence between any of the input variables and the response (which may be multivariate as well). Stop if this hypothesis cannot be rejected. Otherwise select the input variable with strongest association to the response. This association is measured by a p-value corresponding to a test for the partial null hypothesis of a single input variable and the response. 2) Implement a binary split in the selected input variable. 3) Recursively repeate steps 1) and 2)  
 
-We apply this to the spiral data set and try to see, if we could also classify the points based on their proximity. 
+(quoted from `?ctree`)
+
+
+## Decision Regions CART vs. Random Forest
+
+Let's look at a simpler problem with just two features to visualize the way that
+CARTs and Random Forests divide the feature space into decision regions.
 
 First, look a the data:
 
@@ -95,30 +103,70 @@ p <- ggplot(data = as.data.frame(spiral$x), aes(
 p
 ```
 
-Now we fit a random forest and extract the proximity distance matrix:
+Decision regions for the CART:
 
+```{r randforests-dec_bnd_cart}
+spiral_data <- data.frame(spiral$x, y = factor(spiral$classes))
+colnames(spiral_data) <- c("x1", "x2", "y")
+# set features that should be inspected within the regions
+features <- c("x1", "x2")
+spiral_task <- TaskClassif$new(
+  id = "spirals", backend = spiral_data,
+  target = "y"
+)
+
+plot_learner_prediction(
+  lrn("classif.rpart", predict_type = "prob"),
+  spiral_task
+)
+```
+
+Decision regions for the Random Forest:
+
+```{r randforests-dec_bnd_randforests}
+plot_learner_prediction(
+  lrn("classif.ranger", predict_type = "prob"),
+  spiral_task
+)
+```
+
+## Proximity measures in Random Forests
+
+One neat feature of random forests is that they implicitly calculate a proximity measure (how close a data point is to another): relative frequencies of how often two (OOB-)observations end up in the same terminal node are easily calculated during the fit. If two observations are "close" in terms of the features that matter for the random forest, they have a "high proximity" in the sense that they will frequently be sorted into the same terminal node.
+
+We apply this to the spiral data set and try to see, if we could also classify the points based on their proximity.
+
+We fit a random forest and extract the proximity distance matrix:
 ```{r randforests-prox}
 library(randomForest)
 # fit forest and extract proximity measure
 set.seed(1337)
 spiral_rf <- randomForest(
-  x = spiral$x, y = spiral$classes, 
+  x = spiral$x, y = spiral$classes,
   ntree = 1000,
-  proximity = TRUE, oob.prox = TRUE, 
+  proximity = TRUE, oob.prox = TRUE,
 )
 spiral_proximity <- spiral_rf$proximity
 spiral_proximity[1:5, 1:5]
 ```
 
-Run MDS on the distance matrix derived from the (inverse) proximities and plot the data based on the two dimensions, 
-this won't work *that* well here because so many data points have mutual proximities of 0, i.e.,
+[MDS (Multidimensional Scaling)](https://en.wikipedia.org/wiki/Multidimensional_scaling) is a method that takes a matrix containing distances between objects and
+tries to create a low-dimensional configuration of points (each corresponding to one of these objects) 
+that has the same pairwise distances.  
+This low-dimensional configuration (typically in 2D) can be very useful to visualize the strcuture of similarity and dissimilarity  implied by the distances between high-dimensional vectors or other complex objects. Check [this blog post](https://www.r-statistics.com/2016/01/multidimensional-scaling-with-r-from-mastering-data-analysis-with-r/) for a nice example of MDS for European capital cities.
+
+
+
+
+We run MDS on the distance matrix derived from the (inverse) proximities and plot the data based on the two dimensions, 
+this won't work all that well here because so many data points have mutual proximities of 0, i.e.,
 an *"infinite"* distance -- they never ended up in the same leaf of any tree, ever...
 ```{r randforests-prox_mds}
 # convert proximities into distances
 proximity_to_dist <- function(proximity) {
   1 - proximity
 }
- 
+
 spiral_dist <- proximity_to_dist(spiral_proximity)
 spiral_dist[1:5, 1:5]
 
@@ -128,39 +176,15 @@ spiral_mds$class <- spiral$classes
 # plot the result, sweet
 p <- ggplot(data = spiral_mds, aes(x = V1, y = V2, colour = class)) +
   geom_point() +
-  labs(x = "1st dimension", y = "2nd dimension", 
-       title = "Multidimensional scaling based on inverse proximity (spirals data)")
+  labs(
+    x = "1st dimension", y = "2nd dimension",
+    title = "Multidimensional scaling based on inverse proximity (spirals data)"
+  )
 p
 ```
-Some structure seems visible, but this is really most useful for high-dimensional problems where
-we have much more than just 2 features...
 
-## Decision Regions CART vs. Random Forest
+Some structure seems visible, but this is really most useful for very high-dimensional feature vectors, so let's look at such a problem next...
 
-Decision regions for the CART:
-
-```{r randforests-dec_bnd_cart}
-library(mlr)
-spiral_data <- data.frame(spiral$x, y = factor(spiral$classes))
-colnames(spiral_data) <- c("x1", "x2", "y")
-# set features that should be inspected within the regions
-features <- c("x1", "x2")
-spiral_task <- mlr::makeClassifTask(data = spiral_data, target = "y")
-
-mlr::plotLearnerPrediction(
-  learner = "classif.rpart", task = spiral_task,
-  features = features
-)
-```
-
-Decision regions for the Random Forest:
-
-```{r randforests-dec_bnd_randforests}
-mlr::plotLearnerPrediction(
-  learner = "classif.randomForest", task = spiral_task,
-  features = features
-)
-```
 
 ## MNIST example
 
@@ -178,7 +202,7 @@ mnist_raw <- read_csv("https://www.python-course.eu/data/mnist/mnist_train.csv",
 )
 ```
 Every row of the MNIST data set contains the label (0-9) and the 
-grayscale of the 28*28 = 784 pixels of the corresponding image.
+grayscale of the $28^2 = 784$ pixels of the corresponding image.
 For example:
 ```{r randforests-mnist_plot_digit}
 rotate <- function(x) t(apply(x, 2, rev))
@@ -186,15 +210,19 @@ rotate <- function(x) t(apply(x, 2, rev))
 # function which plots a 28*28 raster image
 plot_mnist_raster <- function(pixels, title = "") {
   pixels <- rotate(t(matrix(as.numeric(pixels), nrow = 28, byrow = F)))
-  
-  #transform matrix m[i.j] into a data.frame with rows (x = i, y = j, value = m[i,j])
-  df <- data.frame(x = as.vector(row(pixels)),
-                   y = as.vector(col(pixels)),
-                   value  = as.vector(pixels))
 
-  ggplot(df, aes(x,y)) + geom_raster(aes(fill=value)) +
-    scale_fill_gradient(low = "white", high = "black", 
-                        limits = c(0,256), guide = "none") +
+  # transform matrix m[i.j] into a data.frame with rows (x = i, y = j, value = m[i,j])
+  df <- data.frame(
+    x = as.vector(row(pixels)),
+    y = as.vector(col(pixels)),
+    value = as.vector(pixels)
+  )
+
+  ggplot(df, aes(x, y)) + geom_raster(aes(fill = value)) +
+    scale_fill_gradient(
+      low = "white", high = "black",
+      limits = c(0, 256), guide = "none"
+    ) +
     ggtitle(title) + theme_void()
 }
 
@@ -214,31 +242,33 @@ train_8_indices <- sample(nrow(mnist_8), train_size / 2, replace = FALSE)
 train_9_indices <- sample(nrow(mnist_9), train_size / 2, replace = FALSE)
 
 mnist_89_train <- as.data.frame(rbind(
-  mnist_8 [train_8_indices, ],
-  mnist_9 [train_9_indices, ]
+  mnist_8[train_8_indices, ],
+  mnist_9[train_9_indices, ]
 ))
 
 mnist_89_train$X1 <- as.factor(mnist_89_train$X1)
 
 mnist_89_test <- as.data.frame(rbind(
-  mnist_8 [-train_8_indices, ],
-  mnist_9 [-train_9_indices, ]
+  mnist_8[-train_8_indices, ],
+  mnist_9[-train_9_indices, ]
 ))
 
 mnist_89_test$X1 <- as.factor(mnist_89_test$X1)
 ```
 
-Train a random forest model:
+Train a random forest model on the $28^2 = 784$ pixel intensity features to
+classify "8" versus "9":
 
 ```{r randforests-mnist_learn}
 set.seed(123)
-mnist_89_task <- makeClassifTask(data = mnist_89_train, target = "X1")
-mnist_89_learner <- makeLearner("classif.randomForest", proximity = TRUE, oob.prox = TRUE)
-mnist_89_rf <- mlr::train(learner = mnist_89_learner, task = mnist_89_task)
+mnist_89_rf <- randomForest(
+  x = mnist_89_train[, -1], y = mnist_89_train[, 1],
+  ntree = 1000,
+  proximity = TRUE, oob.prox = TRUE, var = "impurity"
+)
 
-# evaluate performance on test data
-mnist_89_pred <- predict(mnist_89_rf, newdata = mnist_89_test)
-performance(mnist_89_pred)
+# Determine mmce
+mean(predict(mnist_89_rf, mnist_89_test) != mnist_89_test$X1)
 ```
 
 With proximities we are able to explore how similar the images of our training 
@@ -250,7 +280,7 @@ library(gridExtra)
 
 # turn proximity matrix into dissimilarity matrix
 # (proximity of 0 gets turned into a very small value)
-mnist_89_dist <- proximity_to_dist(mnist_89_rf$learner.model$proximity)
+mnist_89_dist <- proximity_to_dist(mnist_89_rf$proximity)
 
 # apply mds on the proximity matrix
 mnist_89_mds <- as.data.frame(cmdscale(mnist_89_dist))
@@ -259,15 +289,15 @@ mnist_89_mds$id <- 1:nrow(mnist_89_mds)
 
 # pick points on the outside of the point cloud for viz
 library(dplyr)
-mnist_89_mds <- mnist_89_mds %>% 
+mnist_89_examples <- mnist_89_mds %>% 
+  # chull returns indices of points on the convex hull
+  filter(row_number() %in% chull(mnist_89_mds[, c("V1", "V2")])) %>% 
   mutate(
-    dist = sqrt(V1^2 + V2^2),
-    sector = cut(atan2(V1, V2), seq(-pi, pi, l = 13)), ordered = TRUE) %>%
-  group_by(sector) %>% arrange(dist) %>% 
-  mutate(example = (dist == max(dist)))
-
-mnist_89_examples <- filter(mnist_89_mds, example)
-
+    angle = atan2(V1, V2),
+  ) %>%
+  arrange(angle) %>%
+  #pick 12 examples, well spaced in terms of their angle 
+  filter(row_number() %in% round(seq(1, n(), l = 12)))
 
 
 # plot the result
@@ -284,31 +314,23 @@ p <- ggplot(data = mnist_89_mds, aes(x = V1, y = V2, colour = class)) +
       "MDS (1 - RF proximity)\nMNIST: '8' vs '9'"
   )
 
-p_examples <- lapply(mnist_89_examples$id, function(i) {
-  plot_mnist_raster(mnist_89_train[as.numeric(i), -1])
+p_examples <- lapply(mnist_89_examples$id, function(id) {
+  plot_mnist_raster(mnist_89_train[id, 2:ncol(mnist_raw)], as.character(id))
 })
-  
-hlay <- rbind(c(NA,8,9,10,NA),
-              c(1,4,4,4,5),
-              c(2,4,4,4,6),
-              c(3,4,4,4,7),
-              c(NA,11,12,13,NA))
 
-grid.arrange(plot_mnist_raster(mnist_89_train[2, 2:ncol(mnist_raw)],"2"),
-             plot_mnist_raster(mnist_89_train[11, 2:ncol(mnist_raw)],"11"),
-             plot_mnist_raster(mnist_89_train[16, 2:ncol(mnist_raw)],"16"),
-             p,
-             plot_mnist_raster(mnist_89_train[130, 2:ncol(mnist_raw)],"130"),
-             plot_mnist_raster(mnist_89_train[126, 2:ncol(mnist_raw)],"126"),
-             plot_mnist_raster(mnist_89_train[129, 2:ncol(mnist_raw)],"129"),
-             plot_mnist_raster(mnist_89_train[123, 2:ncol(mnist_raw)],"123"),             
-             plot_mnist_raster(mnist_89_train[133, 2:ncol(mnist_raw)],"133"),
-             plot_mnist_raster(mnist_89_train[126, 2:ncol(mnist_raw)],"126"),
-             plot_mnist_raster(mnist_89_train[17, 2:ncol(mnist_raw)],"17"),               
-             plot_mnist_raster(mnist_89_train[11, 2:ncol(mnist_raw)],"11"),
-             plot_mnist_raster(mnist_89_train[24, 2:ncol(mnist_raw)],"24"),
-             layout_matrix=hlay)
+layout <- 
+  cbind(
+    c(NA, 6:4, NA),
+    rbind(
+      c(7:9),
+      matrix(13, 3, 3),
+      c(3:1)),
+    c(NA, 10:12, NA))
 
+
+do.call(grid.arrange,
+  c(p_examples, list(p), 
+    list(layout_matrix = layout)))
 ```
 
 By looking at the variations of the images along the axes we see that while the first axis
@@ -322,11 +344,12 @@ With variable importance we can now investigate which pixels are the "most impor
 want to tell the digits 8 and 9 apart:
 
 ```{r randforests-mnist_var}
-mnist_89_var_imp <- getFeatureImportance(mnist_89_rf)$res
+mnist_89_var_imp <- mnist_89_rf$importance
 mnist_89_var_imp <- as.data.frame(t(mnist_89_var_imp))
 
 # rescale importance to [0, 256] so they can be used as grayscale-image pixels:
-mnist_89_var_imp_rescaled <- 256 - mnist_89_var_imp$V1  / max(mnist_89_var_imp$V1) * 256
+mnist_89_var_imp_rescaled <- 256 - mnist_89_var_imp * 256 / max(mnist_89_var_imp)
+
 plot_mnist_raster(mnist_89_var_imp_rescaled)
 ```
 (white means high importance, black means low importance)
