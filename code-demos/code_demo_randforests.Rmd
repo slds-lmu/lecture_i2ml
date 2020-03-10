@@ -289,17 +289,15 @@ mnist_89_mds$id <- 1:nrow(mnist_89_mds)
 
 # pick points on the outside of the point cloud for viz
 library(dplyr)
-mnist_89_mds <- mnist_89_mds %>%
+mnist_89_examples <- mnist_89_mds %>% 
+  # chull returns indices of points on the convex hull
+  filter(row_number() %in% chull(mnist_89_mds[, c("V1", "V2")])) %>% 
   mutate(
-    dist = sqrt(V1^2 + V2^2),
-    sector = cut(atan2(V1, V2), seq(-pi, pi, l = 13)), ordered = TRUE
+    angle = atan2(V1, V2),
   ) %>%
-  group_by(sector) %>%
-  arrange(dist) %>%
-  mutate(example = (dist == max(dist)))
-
-mnist_89_examples <- filter(mnist_89_mds, example)
-
+  arrange(angle) %>%
+  #pick 12 examples, well spaced in terms of their angle 
+  filter(row_number() %in% round(seq(1, n(), l = 12)))
 
 
 # plot the result
@@ -316,33 +314,23 @@ p <- ggplot(data = mnist_89_mds, aes(x = V1, y = V2, colour = class)) +
       "MDS (1 - RF proximity)\nMNIST: '8' vs '9'"
   )
 
-p_examples <- lapply(mnist_89_examples$id, function(i) {
-  plot_mnist_raster(mnist_89_train[as.numeric(i), -1])
+p_examples <- lapply(mnist_89_examples$id, function(id) {
+  plot_mnist_raster(mnist_89_train[id, 2:ncol(mnist_raw)], as.character(id))
 })
 
-hlay <- rbind(
-  c(NA, 8, 9, 10, NA),
-  c(1, 4, 4, 4, 5),
-  c(2, 4, 4, 4, 6),
-  c(3, 4, 4, 4, 7),
-  c(NA, 11, 12, 13, NA)
-)
+layout <- 
+  cbind(
+    c(NA, 6:4, NA),
+    rbind(
+      c(7:9),
+      matrix(13, 3, 3),
+      c(3:1)),
+    c(NA, 10:12, NA))
 
-grid.arrange(plot_mnist_raster(mnist_89_train[2, 2:ncol(mnist_raw)], "2"),
-  plot_mnist_raster(mnist_89_train[11, 2:ncol(mnist_raw)], "11"),
-  plot_mnist_raster(mnist_89_train[16, 2:ncol(mnist_raw)], "16"),
-  p,
-  plot_mnist_raster(mnist_89_train[130, 2:ncol(mnist_raw)], "130"),
-  plot_mnist_raster(mnist_89_train[126, 2:ncol(mnist_raw)], "126"),
-  plot_mnist_raster(mnist_89_train[129, 2:ncol(mnist_raw)], "129"),
-  plot_mnist_raster(mnist_89_train[123, 2:ncol(mnist_raw)], "123"),
-  plot_mnist_raster(mnist_89_train[133, 2:ncol(mnist_raw)], "133"),
-  plot_mnist_raster(mnist_89_train[126, 2:ncol(mnist_raw)], "126"),
-  plot_mnist_raster(mnist_89_train[17, 2:ncol(mnist_raw)], "17"),
-  plot_mnist_raster(mnist_89_train[11, 2:ncol(mnist_raw)], "11"),
-  plot_mnist_raster(mnist_89_train[24, 2:ncol(mnist_raw)], "24"),
-  layout_matrix = hlay
-)
+
+do.call(grid.arrange,
+  c(p_examples, list(p), 
+    list(layout_matrix = layout)))
 ```
 
 By looking at the variations of the images along the axes we see that while the first axis
