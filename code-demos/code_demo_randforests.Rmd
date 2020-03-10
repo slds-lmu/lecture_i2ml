@@ -1,4 +1,4 @@
-  ---
+---
 output: pdf_document
 params:
   set_title: "Code demo for Random Forests"
@@ -14,10 +14,13 @@ params:
 
 # Code demo for Random Forests
 
-## Variable Importance from mlr
+## Variable Importance from mlr3
 
 ```{r randforests-data, message=FALSE}
-library(mlr)
+library(mlr3)
+library(mlr3learners)
+library(mlr3filters)
+library(mlr3viz)
 library(mlbench)
 library(dplyr)
 
@@ -43,21 +46,23 @@ train_1 <- servo[ train_indices, ]
 test_1 <- servo[ -train_indices, ]
 ```
 
-
+To access the variable importance we need to use a filter in mlr3. You can read more about this 
+[here](https://mlr3book.mlr-org.com/fs.html#fs-var-imp-filters).
 
 ```{r randforests-var_imp, message=FALSE}
 library(ggplot2)
 
-task <- makeRegrTask(data = train_1, target = "Class")
-lrn1 <- makeLearner("regr.randomForest")
-mod <- mlr::train(learner = lrn1, task = task)
+task <- TaskRegr$new(id = "servo", backend = train_1, target = "Class")
+lrn1 <- lrn("regr.ranger", importance = "impurity")
+lrn1$train(task = task)
 
-var_imp <- getFeatureImportance(mod)
-var <- as.data.frame(t(var_imp$res))
-var$names <- names(var_imp$res)
-p <- ggplot(data = var, aes(x = names, y = V1)) + geom_bar(stat = "identity") +
-  ggtitle(label = "Variable Importance from mlr")
-p
+filter <- flt("importance", learner = lrn1)
+filter$calculate(task)
+var <- as.data.table(filter)
+
+ggplot(data = var, aes(x = feature, y = score)) + geom_bar(stat = "identity") +
+  ggtitle(label = "Variable Importance from mlr3") +
+  labs(x = "Features", y = "Variable Importance")
 ```
 
 ## Variable importance from partykit
@@ -69,10 +74,9 @@ modForest <- cforest(Class ~ Motor + Screw + Pgain + Vgain, data = train_1)
 var <- as.data.frame(varimp(modForest))
 var$names <- rownames(var)
 colnames(var) <- c("var_imp", "names")
-p <- ggplot(data = var, aes(x = names, y = var_imp)) +
+ggplot(data = var, aes(x = names, y = var_imp)) +
   geom_bar(stat = "identity") +
   ggtitle(label = "Variable Importance from partykit")
-p
 ```
 
 ## Proximity measures in Random Forests
@@ -102,9 +106,9 @@ library(randomForest)
 # fit forest and extract proximity measure
 set.seed(1337)
 spiral_rf <- randomForest(
-  x = spiral$x, y = spiral$classes, 
+  x = spiral$x, y = spiral$classes,
   ntree = 1000,
-  proximity = TRUE, oob.prox = TRUE, 
+  proximity = TRUE, oob.prox = TRUE,
 )
 spiral_proximity <- spiral_rf$proximity
 spiral_proximity[1:5, 1:5]
@@ -118,7 +122,7 @@ an *"infinite"* distance -- they never ended up in the same leaf of any tree, ev
 proximity_to_dist <- function(proximity) {
   1 - proximity
 }
- 
+
 spiral_dist <- proximity_to_dist(spiral_proximity)
 spiral_dist[1:5, 1:5]
 
@@ -128,8 +132,10 @@ spiral_mds$class <- spiral$classes
 # plot the result, sweet
 p <- ggplot(data = spiral_mds, aes(x = V1, y = V2, colour = class)) +
   geom_point() +
-  labs(x = "1st dimension", y = "2nd dimension", 
-       title = "Multidimensional scaling based on inverse proximity (spirals data)")
+  labs(
+    x = "1st dimension", y = "2nd dimension",
+    title = "Multidimensional scaling based on inverse proximity (spirals data)"
+  )
 p
 ```
 Some structure seems visible, but this is really most useful for high-dimensional problems where
@@ -140,25 +146,27 @@ we have much more than just 2 features...
 Decision regions for the CART:
 
 ```{r randforests-dec_bnd_cart}
-library(mlr)
 spiral_data <- data.frame(spiral$x, y = factor(spiral$classes))
 colnames(spiral_data) <- c("x1", "x2", "y")
 # set features that should be inspected within the regions
 features <- c("x1", "x2")
-spiral_task <- mlr::makeClassifTask(data = spiral_data, target = "y")
+spiral_task <- TaskClassif$new(
+  id = "spirals", backend = spiral_data,
+  target = "y"
+)
 
-mlr::plotLearnerPrediction(
-  learner = "classif.rpart", task = spiral_task,
-  features = features
+plot_learner_prediction(
+  lrn("classif.rpart", predict_type = "prob"),
+  spiral_task
 )
 ```
 
 Decision regions for the Random Forest:
 
 ```{r randforests-dec_bnd_randforests}
-mlr::plotLearnerPrediction(
-  learner = "classif.randomForest", task = spiral_task,
-  features = features
+plot_learner_prediction(
+  lrn("classif.ranger", predict_type = "prob"),
+  spiral_task
 )
 ```
 
@@ -186,15 +194,19 @@ rotate <- function(x) t(apply(x, 2, rev))
 # function which plots a 28*28 raster image
 plot_mnist_raster <- function(pixels, title = "") {
   pixels <- rotate(t(matrix(as.numeric(pixels), nrow = 28, byrow = F)))
-  
-  #transform matrix m[i.j] into a data.frame with rows (x = i, y = j, value = m[i,j])
-  df <- data.frame(x = as.vector(row(pixels)),
-                   y = as.vector(col(pixels)),
-                   value  = as.vector(pixels))
 
-  ggplot(df, aes(x,y)) + geom_raster(aes(fill=value)) +
-    scale_fill_gradient(low = "white", high = "black", 
-                        limits = c(0,256), guide = "none") +
+  # transform matrix m[i.j] into a data.frame with rows (x = i, y = j, value = m[i,j])
+  df <- data.frame(
+    x = as.vector(row(pixels)),
+    y = as.vector(col(pixels)),
+    value = as.vector(pixels)
+  )
+
+  ggplot(df, aes(x, y)) + geom_raster(aes(fill = value)) +
+    scale_fill_gradient(
+      low = "white", high = "black",
+      limits = c(0, 256), guide = "none"
+    ) +
     ggtitle(title) + theme_void()
 }
 
@@ -232,13 +244,14 @@ Train a random forest model:
 
 ```{r randforests-mnist_learn}
 set.seed(123)
-mnist_89_task <- makeClassifTask(data = mnist_89_train, target = "X1")
-mnist_89_learner <- makeLearner("classif.randomForest", proximity = TRUE, oob.prox = TRUE)
-mnist_89_rf <- mlr::train(learner = mnist_89_learner, task = mnist_89_task)
+mnist_89_rf <- randomForest(
+  x = mnist_89_train[, -1], y = mnist_89_train[, 1],
+  ntree = 1000,
+  proximity = TRUE, oob.prox = TRUE, var = "impurity"
+)
 
-# evaluate performance on test data
-mnist_89_pred <- predict(mnist_89_rf, newdata = mnist_89_test)
-performance(mnist_89_pred)
+# Determine mmce
+mean(predict(mnist_89_rf, mnist_89_test) != mnist_89_test$X1)
 ```
 
 With proximities we are able to explore how similar the images of our training 
@@ -250,7 +263,7 @@ library(gridExtra)
 
 # turn proximity matrix into dissimilarity matrix
 # (proximity of 0 gets turned into a very small value)
-mnist_89_dist <- proximity_to_dist(mnist_89_rf$learner.model$proximity)
+mnist_89_dist <- proximity_to_dist(mnist_89_rf$proximity)
 
 # apply mds on the proximity matrix
 mnist_89_mds <- as.data.frame(cmdscale(mnist_89_dist))
@@ -259,11 +272,13 @@ mnist_89_mds$id <- 1:nrow(mnist_89_mds)
 
 # pick points on the outside of the point cloud for viz
 library(dplyr)
-mnist_89_mds <- mnist_89_mds %>% 
+mnist_89_mds <- mnist_89_mds %>%
   mutate(
     dist = sqrt(V1^2 + V2^2),
-    sector = cut(atan2(V1, V2), seq(-pi, pi, l = 13)), ordered = TRUE) %>%
-  group_by(sector) %>% arrange(dist) %>% 
+    sector = cut(atan2(V1, V2), seq(-pi, pi, l = 13)), ordered = TRUE
+  ) %>%
+  group_by(sector) %>%
+  arrange(dist) %>%
   mutate(example = (dist == max(dist)))
 
 mnist_89_examples <- filter(mnist_89_mds, example)
@@ -287,28 +302,30 @@ p <- ggplot(data = mnist_89_mds, aes(x = V1, y = V2, colour = class)) +
 p_examples <- lapply(mnist_89_examples$id, function(i) {
   plot_mnist_raster(mnist_89_train[as.numeric(i), -1])
 })
-  
-hlay <- rbind(c(NA,8,9,10,NA),
-              c(1,4,4,4,5),
-              c(2,4,4,4,6),
-              c(3,4,4,4,7),
-              c(NA,11,12,13,NA))
 
-grid.arrange(plot_mnist_raster(mnist_89_train[2, 2:ncol(mnist_raw)],"2"),
-             plot_mnist_raster(mnist_89_train[11, 2:ncol(mnist_raw)],"11"),
-             plot_mnist_raster(mnist_89_train[16, 2:ncol(mnist_raw)],"16"),
-             p,
-             plot_mnist_raster(mnist_89_train[130, 2:ncol(mnist_raw)],"130"),
-             plot_mnist_raster(mnist_89_train[126, 2:ncol(mnist_raw)],"126"),
-             plot_mnist_raster(mnist_89_train[129, 2:ncol(mnist_raw)],"129"),
-             plot_mnist_raster(mnist_89_train[123, 2:ncol(mnist_raw)],"123"),             
-             plot_mnist_raster(mnist_89_train[133, 2:ncol(mnist_raw)],"133"),
-             plot_mnist_raster(mnist_89_train[126, 2:ncol(mnist_raw)],"126"),
-             plot_mnist_raster(mnist_89_train[17, 2:ncol(mnist_raw)],"17"),               
-             plot_mnist_raster(mnist_89_train[11, 2:ncol(mnist_raw)],"11"),
-             plot_mnist_raster(mnist_89_train[24, 2:ncol(mnist_raw)],"24"),
-             layout_matrix=hlay)
+hlay <- rbind(
+  c(NA, 8, 9, 10, NA),
+  c(1, 4, 4, 4, 5),
+  c(2, 4, 4, 4, 6),
+  c(3, 4, 4, 4, 7),
+  c(NA, 11, 12, 13, NA)
+)
 
+grid.arrange(plot_mnist_raster(mnist_89_train[2, 2:ncol(mnist_raw)], "2"),
+  plot_mnist_raster(mnist_89_train[11, 2:ncol(mnist_raw)], "11"),
+  plot_mnist_raster(mnist_89_train[16, 2:ncol(mnist_raw)], "16"),
+  p,
+  plot_mnist_raster(mnist_89_train[130, 2:ncol(mnist_raw)], "130"),
+  plot_mnist_raster(mnist_89_train[126, 2:ncol(mnist_raw)], "126"),
+  plot_mnist_raster(mnist_89_train[129, 2:ncol(mnist_raw)], "129"),
+  plot_mnist_raster(mnist_89_train[123, 2:ncol(mnist_raw)], "123"),
+  plot_mnist_raster(mnist_89_train[133, 2:ncol(mnist_raw)], "133"),
+  plot_mnist_raster(mnist_89_train[126, 2:ncol(mnist_raw)], "126"),
+  plot_mnist_raster(mnist_89_train[17, 2:ncol(mnist_raw)], "17"),
+  plot_mnist_raster(mnist_89_train[11, 2:ncol(mnist_raw)], "11"),
+  plot_mnist_raster(mnist_89_train[24, 2:ncol(mnist_raw)], "24"),
+  layout_matrix = hlay
+)
 ```
 
 By looking at the variations of the images along the axes we see that while the first axis
@@ -322,11 +339,12 @@ With variable importance we can now investigate which pixels are the "most impor
 want to tell the digits 8 and 9 apart:
 
 ```{r randforests-mnist_var}
-mnist_89_var_imp <- getFeatureImportance(mnist_89_rf)$res
+mnist_89_var_imp <- mnist_89_rf$importance
 mnist_89_var_imp <- as.data.frame(t(mnist_89_var_imp))
 
 # rescale importance to [0, 256] so they can be used as grayscale-image pixels:
-mnist_89_var_imp_rescaled <- 256 - mnist_89_var_imp$V1  / max(mnist_89_var_imp$V1) * 256
+mnist_89_var_imp_rescaled <- 256 - mnist_89_var_imp * 256 / max(mnist_89_var_imp)
+
 plot_mnist_raster(mnist_89_var_imp_rescaled)
 ```
 (white means high importance, black means low importance)
