@@ -24,7 +24,7 @@ rmds_link <- paste0("../code-demos/code_demo_", demos, ".Rmd")
 cddat$Rmd <- paste0(
   "[Rmd](https://github.com/compstat-lmu/lecture_i2ml/tree/master/code-demos/code_demo_", 
   demos, ".Rmd)")
-cddat$PDF <- paste0("[pdf](https://nbviewer.jupyter.org/github/compstat-lmu/lecture_i2ml/tree/master/code-demos-pdf/code_demo_", 
+cddat$PDF <- paste0("[pdf](https://nbviewer.jupyter.org/github/compstat-lmu/lecture_i2ml/blob/master/code-demos-pdf/code_demo_", 
                     demos, ".pdf)")
 
 ## Read the title lines from the files
