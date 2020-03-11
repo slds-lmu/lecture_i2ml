@@ -1,0 +1,346 @@
+---
+output: pdf_document
+params:
+  set_title: "Code demo for Kaggle Challenge"
+---
+
+```{r kaggle-preamble, child = "../style/preamble_code_demos.Rmd", include = FALSE, purl = FALSE}
+
+```
+
+```{r kaggle-setup, child = "../style/setup.Rmd", include = FALSE, purl = FALSE}
+
+```  
+
+# Code demo for Kaggle Challenge
+
+In this code demo we
+
+* use CART to compete in a kaggle challenge,
+* learn how to make a submission for the challenge,
+* improve the model by using feature engineering.
+
+## Introductory kaggle challenge
+
+We will compete in our first [kaggle challenge](https://www.kaggle.com/c/titanic) on the prediction of titanic survivors. 
+
+### Preprocessing and Data check
+
+```{r kaggle_data}
+### Data preprocess
+
+# load and check the data
+all_train <- read.csv(file = "data/train_titanic.csv")
+str(all_train)
+# no target column "survived" on test dataset
+all_test <- read.csv(file = "data/test_titanic.csv")
+
+# transform target to factor variable for mlr3
+all_train$Survived <- as.factor(all_train$Survived)
+
+# can we use all features?
+# Nope: delete those with too many levels as this would inflate the model
+# also kill the ID
+
+train <- all_train[, -c(
+  which(colnames(all_train) == "Cabin"),
+  which(colnames(all_train) == "Name"),
+  which(colnames(all_train) == "Ticket"),
+  which(colnames(all_train) == "PassengerId")
+)]
+
+test <- all_test[, -c(
+  which(colnames(all_test) == "Cabin"),
+  which(colnames(all_test) == "Name"),
+  which(colnames(all_test) == "Ticket"),
+  which(colnames(all_test) == "PassengerId")
+)]
+```
+
+### Build a first simple model with `mlr3` and check the performance via CV
+
+```{r kaggle-cv_cart, warning=FALSE}
+### model corner
+library(mlr3)
+library(mlr3learners)
+library(mlr3tuning)
+library(mlr3filters)
+library("paradox")
+library("mlr3tuning")
+
+# show only warning messages
+lgr::get_logger("mlr3")$set_threshold("warn")
+
+# choose specific model and parameters
+task <- TaskClassif$new(
+  id = "titanic_train", backend = train,
+  target = "Survived"
+)
+
+# check choosable parameters and set accordingly
+lrn("classif.rpart")$param_set
+# check available settings here:
+# https://www.rdocumentation.org/packages/rpart/versions/4.1-12/topics/rpart.control
+learner <- lrn(
+  "classif.rpart",
+  predict_type = "prob",
+  minsplit = 10,
+  cp = 0.05
+)
+
+# train the model
+learner$train(task)
+
+### performance estimate via CV
+resampling <- rsmp("cv", folds = 10)
+cv <- resample(learner = learner, task = task, resampling = resampling)
+
+# use mlr3::mlr_measures to get list of possible measures
+# important: always check on which measure they evaluate you!
+cv$aggregate(measures = msrs(c("classif.ce", "classif.acc")))
+```
+
+Store and submit your predictions
+
+```{r kaggle-cv_cart_sub}
+# predict for submission
+pred <- learner$predict_newdata(newdata = test)
+submission <- as.data.frame(pred$response)
+
+submission$PassengerId <- all_test$PassengerId
+
+colnames(submission) <- c("Survived", "PassengerId")
+
+write.csv(submission, file = "data/submissionTitanic_1.csv", row.names = FALSE)
+```
+
+### Tune the Hyperparameters of the algorithm
+
+```{r kaggle-cv_cart_tune}
+### Tune the model
+# we chose two numeric parameters above and now search for optimal values
+# check available parameters
+set.seed(1337)
+learner <- lrn("classif.rpart", predict_type = "prob")
+resampling <- rsmp("cv", folds = 10)
+measures <- msrs(c("classif.ce", "classif.acc"))
+# make parameter set
+tune_ps <- ParamSet$new(list(
+  ParamDbl$new("cp", lower = 0.001, upper = 0.1),
+  ParamInt$new("minsplit", lower = 1, upper = 100)
+))
+terminator <- term("evals", n_evals = 100)
+
+# choose random search - why not grid search?
+tuner <- tnr("random_search")
+
+at <- AutoTuner$new(
+  learner = learner,
+  resampling = resampling,
+  measures = measures,
+  tune_ps = tune_ps,
+  terminator = terminator,
+  tuner = tuner
+)
+at$train(task)
+```
+
+Visualize the random search over both parameters:
+  
+```{r kaggle-vis_rand_search}
+library(ggplot2)
+vis_hyper <- at$tuning_instance$archive(unnest = "params")[
+  ,
+  c(
+    "cp",
+    "minsplit",
+    "classif.acc"
+  )
+]
+ggplot(vis_hyper, aes(x = minsplit, y = cp, color = classif.acc)) +
+  geom_point()
+
+# tuning result
+at$tuning_result
+```
+
+Store and submit those results to kaggle
+
+```{r kaggle-tune_cv_cart_sub}
+# use those param settings for the CART
+learner <- lrn(
+  "classif.rpart",
+  predict_type = "prob"
+) # inspect the learner
+# learner
+learner$param_set$values <- at$tuning_result$params
+learner$train(task)
+
+# predict for submission
+pred <- learner$predict_newdata(newdata = test)
+submission <- as.data.frame(pred$response)
+
+submission$PassengerId <- all_test$PassengerId
+
+colnames(submission) <- c("Survived", "PassengerId")
+
+write.csv(submission, file = "data/submissionTitanic_2.csv", row.names = FALSE)
+```
+
+#### Check variable importances
+
+```{r kaggle-cv_cart_var_imp}
+filter <- flt("importance", learner = learner)
+filter$calculate(task)
+
+var <- as.data.table(filter)
+ggplot(data = var, aes(x = feature, y = score)) +
+  geom_bar(stat = "identity") +
+  ggtitle(label = "Variable Importances") +
+  labs(x = "Features", y = "Variable Importance")
+```
+
+### Feature engineering
+
+Can we further condense the information from the multi-level factors and use it for our model?
+  
+  We take a closer look at the names of the guests. 
+
+```{r kaggle-feat_eng_data, message=FALSE, warning=FALSE}
+### feature engineering
+library(dplyr)
+
+# indicator for train or test set
+all_train$train <- 1
+all_test$train <- 0
+all_test$Survived <- NA
+
+# compute once for all data and split again for training with ID
+all_data <- rbind(all_train, all_test)
+eng_data <- all_data
+
+head(all_data$Name)
+```
+
+We can see, that there is information on the title of the people in their names. We use that information as a new feature!
+  
+```{r kaggle-feat_eng_title}
+# use regular expressions via strplit to extract the title of the people
+# temporary storage
+temp <- sapply(
+  strsplit(as.character(all_data$Name), split = ","),
+  function(x) x[2]
+)
+title <- strsplit(temp, split = " ")
+eng_data$title <- sapply(title, function(x) x[2])
+# unfortunately still too many titles with too few observations
+table(eng_data$title)
+```
+
+Btw.: we found the Captain:
+  
+```{r kaggle-feat_eng_captain}
+# btw.: we found the captain:
+all_data[which(eng_data$title == "Capt."), "Name"]
+```
+
+condense those with obs < 5 to class "other"
+
+```{r kaggle-feat_eng_other_title}
+freqs <- as.data.frame(table(eng_data$title))
+other_titles <- freqs[which(freqs$Freq < 5), "Var1"]
+eng_data[which(eng_data$title %in% other_titles), "title"] <- "other"
+eng_data$title <- as.factor(eng_data$title)
+# looks better now
+table(eng_data$title)
+```
+
+### Build updated model
+
+```{r kaggle-feat_eng_model}
+### model corner 2 with engineered feature
+train <- eng_data %>%
+  filter(train == 1) %>%
+  select(-c(PassengerId, Name, Ticket, train, Cabin))
+
+# transform target to factor variable for mlr3
+train$Survived <- as.factor(all_train$Survived)
+
+test <- eng_data %>%
+  filter(train == 0) %>%
+  select(-c(PassengerId, Name, Ticket, train, Cabin, Survived))
+
+# choose specific model and parameters
+task <- TaskClassif$new(
+  id = "titanic_train", backend = train,
+  target = "Survived"
+)
+
+learner <- lrn("classif.rpart", predict_type = "prob")
+resampling <- rsmp("cv", folds = 10)
+measures <- msrs(c("classif.ce", "classif.acc"))
+# make parameter set
+tune_ps <- ParamSet$new(list(
+  ParamDbl$new("cp", lower = 0.001, upper = 0.1),
+  ParamInt$new("minsplit", lower = 1, upper = 100)
+))
+terminator <- term("evals", n_evals = 100)
+
+# choose random search - why not grid search?
+tuner <- tnr("random_search")
+
+at <- AutoTuner$new(
+  learner = learner,
+  resampling = resampling,
+  measures = measures,
+  tune_ps = tune_ps,
+  terminator = terminator,
+  tuner = tuner
+)
+at$train(task)
+```
+
+Check tuning result
+
+```{r kaggle-feat_eng_res}
+at$tuning_result
+```
+
+Write and store the submission
+
+```{r kaggle-feat_eng_sub}
+# use those param settings for the CART
+learner <- lrn(
+  "classif.rpart",
+  predict_type = "prob"
+) # inspect the learner
+# learner
+learner$param_set$values <- at$tuning_result$params
+learner$train(task)
+
+# predict for submission
+pred <- learner$predict_newdata(newdata = test)
+submission <- as.data.frame(pred$response)
+
+submission$PassengerId <- all_test$PassengerId
+
+colnames(submission) <- c("Survived", "PassengerId")
+
+write.csv(submission, file = "data/submissionTitanic_3.csv", row.names = FALSE)
+```
+
+#### Check Variable Importances
+
+```{r kaggle-feat_eng_var_imp}
+filter <- flt("importance", learner = learner)
+filter$calculate(task)
+
+var <- as.data.table(filter)
+ggplot(data = var, aes(x = feature, y = score)) +
+  geom_bar(stat = "identity") +
+  ggtitle(label = "Variable Importances") +
+  labs(x = "Features", y = "Variable Importance")
+```
+
+What can we see? How could we criticize that result? Is there a way to detect the problem?
+  
