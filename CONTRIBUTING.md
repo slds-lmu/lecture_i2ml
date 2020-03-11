@@ -27,6 +27,8 @@ free to add your name to the [team](vignettes/team.Rmd).
 - We try to keep a "dependency graph" between slide sets up to date so that it's easier to keep track of
 what material needs to be understood before what else. Please do add appropriate `%! includes:`-comments in your slides to keep this up-to-date, see also `attic/slide-dependencies.R` and `slides/slide-dependencies.pdf`.
 - We recommend usage of `{tinytex}` (install via `tinytex::install_tinytex()`)
+- Use `make install` in the slides folder to automagically install **all** the `R` packages you'll need for the slides, demos and exercises. See also `attic/install.R`
+
 
 ### Code Snippets:
 

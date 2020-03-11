@@ -32,3 +32,6 @@ slide-dependencies.pdf: $(SLIDES) ../attic/slide-dependencies.R
 
 copypdfs: all
 	cp $(PDFS) ../slides-pdf/
+
+install: 
+	Rscript -e 'source("../attic/install.R")'

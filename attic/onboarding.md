@@ -35,7 +35,7 @@ At least once a week, write down how much time you spent on what topics on the *
 ## Getting help
 
 If you get stuck, either contact us on Slack or via the discussion section of the respective Github issue (ping one of us by including `@fabian-s` or `@bbischl` in your message) to request more info, feedback, a meeting, whatever you need.  
-Some of the Github issues we assign to you may not include a very detailed description of the problem or what the solution should look like. If that's the case and you're not sure what it is you're supposed to be working on, please do insist that we give you a better description of the problem/solution instead of a) doing nothing or b) doing something that's not useful.
+Some of the Github issues we assign to you may not include a very detailed description of the problem or what the solution should look like. If that's the case and you're not sure what it is you're supposed to be working on, please do insist that we give you a better description of the problem/solution instead of a) doing nothing or b) doing something that doesn't actually solve the problem.
 
 
 ## Getting it done 
@@ -60,5 +60,5 @@ If your PR contains modified code, please check that
 
 -  the code is structured well (see ["Code Smells & Feels"](https://github.com/jennybc/code-smells-and-feels) by Jenny Bryan for bad patterns to avoid)
 -  the code follows the style guide (easiest to do by using `lintr` and `styler`)
--  code is well documented (especially if it is meant to be read/worked on by students)
--  code is as simple, legible and clear as possible (especially if it is meant to be read/worked on by students)
+-  code is well documented (especially if it is meant to be worked on or read by students)
+-  code is as simple, legible and clear as possible (especially if it is meant to be worked on or read by students)
