@@ -46,7 +46,7 @@ What to bring for class:
 	- Stats student, data science student, other
 	- Found the videos pleasant to watch
 	- Found the online quizzes easy
-- [7 minutes] Talk to your neighbours: introduce yourself, why are you taking
+- [8 minutes] Talk to your neighbours: introduce yourself, why are you taking
   the course, what were obstacles or questions you had when working through the
 online material? Any questions specifically about content "ml basics" and
 "supervised regression"?
@@ -62,8 +62,9 @@ online material? Any questions specifically about content "ml basics" and
 ## ML Basics
 
 - What are 2-3 key points you found important from the chapter on ML Basics?
-	- [7 Minutes] Think about it, write it down for yourself
-	- [3 Minutes] Discuss with your neighbour, write them down in the
+	- [7 Minutes] Think about it, write it down for yourself, if needed
+	  check the slides again
+	- [10 Minutes] Discuss with your group, write them down in the
 	  Etherpad of today: https://pad.okfn.de/p/i2ml_ub_1 
 - Discussion of key points
 - Any questions about ML Basics? Also check Etherpad
@@ -72,7 +73,17 @@ online material? Any questions specifically about content "ml basics" and
 
 ## Supervised Regression
 
-- Go through code demos
+- Questions, discuss with your group (click "Ask for help" button if you have
+  questions or if you are done):
+	- What is the difference between L1 and L2 loss? Can you draw the
+	  difference?
+	- The hypothesis space in linear regression is the set of all linear
+	  functions. What does that mean?
+	- How can you determine the right complexity in polynomial regression?
+	- Let's say, we know the height and the income of 500 people, how would
+	  we proceed to determine the 8-nearest neighbours of a given person?
+Why would we have a problem, if we only knew their hair and eye color? How
+would you estimate the age of a given person using k-NN?
 - Questions? Also check questions in Etherpad. 
 
 
