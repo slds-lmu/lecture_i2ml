@@ -45,66 +45,69 @@ In this code demo we
 Firstly we generate stairs-like data:
 
 ```{r nested-data}
-library(mlr)
+library(mlr3)
+library(mlr3learners)
+library(mlr3tuning)
 library(mlbench)
 library(ggplot2)
 
 # function to simulate stairs data
-stairs <- function(n, steps){
-  xs <- as.data.frame(matrix(runif(2*n, max = 1/steps, min=0), ncol=2))
-  num_blocks <- steps*(steps-1)/2
+stairs <- function(n, steps) {
+  xs <- as.data.frame(matrix(runif(2 * n, max = 1 / steps, min = 0), ncol = 2))
+  num_blocks <- steps * (steps - 1) / 2
   xs$block <- sample(1:num_blocks, n, replace = T)
 
   block <- 1
-  for(i in 1:(steps-1)){
-    for(j in 1:i){
-      xs[xs$block == block,1:2] <- t(t(xs[xs$block == block,1:2]) + c(i/steps, 
-                                                    j/steps))
-      
+  for (i in 1:(steps - 1)) {
+    for (j in 1:i) {
+      xs[xs$block == block, 1:2] <- t(t(xs[xs$block == block, 1:2]) + c(
+        i / steps,
+        j / steps
+      ))
+
       block <- block + 1
     }
   }
-  return(xs[,1:2])
+  return(xs[, 1:2])
 }
 
 # function to generate two stairs which share an overlap
-two_stairs <- function(n, steps, overlap){
-  v1 <- stairs(n/2,steps)
-  v1$V2 <- v1$V2 - 1/steps + overlap
+two_stairs <- function(n, steps, overlap) {
+  v1 <- stairs(n / 2, steps)
+  v1$V2 <- v1$V2 - 1 / steps + overlap
   v1$V1 <- v1$V1 - overlap
-  v1[,c(1,2)] <- v1[,c(2,1)] # "mirror" the stairs
-  v1$classes <- "1"
-  v2 <- stairs(n/2,steps)
-  v2$classes <- "2"
-  
-  return(rbind(v1,v2))
+  v1[, c(1, 2)] <- v1[, c(2, 1)] # "mirror" the stairs
+  v1$classes <- factor("1")
+  v2 <- stairs(n / 2, steps)
+  v2$classes <- factor("2")
+
+  return(rbind(v1, v2))
 }
 
 set.seed(123)
 sim_stairs <- two_stairs(2000, 6, 0.03)
-ggplot(sim_stairs, aes(x=V1, y=V2)) + geom_point(aes(color=classes), alpha=0.5)
-
+ggplot(sim_stairs, aes(x = V1, y = V2)) + geom_point(aes(color = classes), 
+                                                     alpha = 0.5)
 ```
 
 Now we want to find the optimal hyperparameter k from  a set of candidates for a knn model. As we have already learned we can use CV for this task (We use the *knn_cv* function from the [resampling code demo](./code_demo_resampling.pdf)):
 
 ```{r nested-hyperparam_cv_knn}
 
-k_candidates <- seq(1,30,3)
+k_candidates <- seq(1, 30, 3)
 mmces <- NULL
-for(k in k_candidates){
+for (k in k_candidates) {
   set.seed(10)
-  
-  if(is.null(mmces)){
-    mmces <- knn_cv(sim_stairs, "classes", 10, k)$storage   
-  }else{
-    mmces <- cbind(mmces,  knn_cv(sim_stairs, "classes", 10, k)$storage)
-  }
 
+  if (is.null(mmces)) {
+    mmces <- knn_cv(sim_stairs, "classes", 10, k)$storage
+  } else {
+    mmces <- cbind(mmces, knn_cv(sim_stairs, "classes", 10, k)$storage)
+  }
 }
 
-results <- 
-  as.data.frame(t(apply(mmces,2,mean)))
+results <-
+  as.data.frame(t(apply(mmces, 2, mean)))
 colnames(results) <- as.character(k_candidates)
 results
 ```
@@ -114,9 +117,8 @@ generalization error? A naive approach would be to average the minimal MSE of al
 
 ```{r nested-bias_ge}
 
-apply(mmces,1,min)
-mean(apply(mmces,1,min))
-
+apply(mmces, 1, min)
+mean(apply(mmces, 1, min))
 ```
 
 From the lecture we know that this gives us a biased estimate.
@@ -132,7 +134,7 @@ Basically, we want to do two things: find the optimal hyperparameter and estimat
 
 
 kknn_nr <- function(data, target, outer_folds = 3, inner_folds = 4, k_candidates,
-                   inform = FALSE) {
+                    inform = FALSE) {
   # data: whole data set including the target variable
   # target: string indicating the target variable of the task
   # outer_folds: the amount of folds in the outer loop of the nested resampling
@@ -147,10 +149,14 @@ kknn_nr <- function(data, target, outer_folds = 3, inner_folds = 4, k_candidates
   counter <- 0
 
   # indices for the outer loops
-  outer_indices <- sample(x = seq(1, nrow(data), by = 1), 
-                          size = nrow(data), replace = FALSE)
-  index_outer_mat <- matrix(data = outer_indices, byrow = TRUE, 
-                            nrow = outer_folds)
+  outer_indices <- sample(
+    x = seq(1, nrow(data), by = 1),
+    size = nrow(data), replace = FALSE
+  )
+  index_outer_mat <- matrix(
+    data = outer_indices, byrow = TRUE,
+    nrow = outer_folds
+  )
 
   # frame to store the winner and its test-gen_error from all outer folds
   winner_cv <- as.data.frame(matrix(0, nrow = outer_folds, ncol = 2))
@@ -163,19 +169,23 @@ kknn_nr <- function(data, target, outer_folds = 3, inner_folds = 4, k_candidates
     inner_data <- data[ -index_outer_mat[i, ], ]
 
     # frame to store the CV-gen_errors for each candidate
-    candidate_gen_error <- 
+    candidate_gen_error <-
       as.data.frame(matrix(0, nrow = length(k_candidates), ncol = 2))
     colnames(candidate_gen_error) <- c("k", "gen_error")
 
     # calculate gen_error for each of the candidates via CV
     for (l in 1:length(k_candidates)) {
-      inner_indices <- 
-        sample(x = seq(1, nrow(inner_data), by = 1), 
-               size = nrow(inner_data), replace = FALSE)
+      inner_indices <-
+        sample(
+          x = seq(1, nrow(inner_data), by = 1),
+          size = nrow(inner_data), replace = FALSE
+        )
 
       # index matrix for inner folds
-      index_inner_mat <- matrix(data = inner_indices, 
-                                byrow = TRUE, nrow = inner_folds)
+      index_inner_mat <- matrix(
+        data = inner_indices,
+        byrow = TRUE, nrow = inner_folds
+      )
 
       # storage for CV errors for one candidate
       storage_inner_cv <- numeric(inner_folds)
@@ -187,16 +197,25 @@ kknn_nr <- function(data, target, outer_folds = 3, inner_folds = 4, k_candidates
         train_data <- inner_data[ -index_inner_mat[j, ], ]
 
         # model
-        task <- makeClassifTask(data = train_data, target = target)
-        learner <- makeLearner("classif.kknn", k = k_candidates[l]) 
-        model <- train(learner = learner, task = task)
+        task <- TaskClassif$new(
+          id = "train_data",
+          backend = train_data,
+          target = target
+        )
+        learner <- lrn("classif.kknn", k = k_candidates[l])
+        learner$train(task)
         # inform user about progress
         counter <- counter + 1
-        if (inform) print(paste0("model: ", counter, 
-                                 " inner fold: ", j, " outer fold: ", i))
+        if (inform) {
+          print(paste0(
+            "model: ", counter,
+            " inner fold: ", j, " outer fold: ", i
+          ))
+        }
         # store gen_error estimates from test on validation data
-        storage_inner_cv[j] <- performance(predict(model, newdata = eval_data),
-          measures = mmce)[[1]]
+        storage_inner_cv[j] <- learner$predict_newdata(
+          newdata = eval_data
+        )$score()[[1]]
       }
 
       # CV gen_error for candidate l
@@ -204,28 +223,31 @@ kknn_nr <- function(data, target, outer_folds = 3, inner_folds = 4, k_candidates
       candidate_gen_error[l, "k"] <- k_candidates[l]
     }
 
-    
-    
+
+
     # get gen_error for best candidate in this outer_fold
     # in case of equally good Candidates, choose the first one
     best_candidate <- candidate_gen_error[
       which(candidate_gen_error$gen_error ==
-        min(candidate_gen_error$gen_error)), "k"][1]
+        min(candidate_gen_error$gen_error)), "k"
+    ][1]
     winner_cv[i, "k"] <- best_candidate
-    
-    # model
-    task <- makeClassifTask(data = inner_data, target = "classes") 
-    learner <- makeLearner("classif.kknn", k= best_candidate)
 
-    model <- train(learner = learner, task = task)
+    # model
+    task <- TaskClassif$new(
+      id = "inner_data",
+      backend = inner_data,
+      target = target
+    )
+    learner <- lrn("classif.kknn", k = best_candidate)
+    learner$train(task)
     # store gen_error estimates from test on test data
-    winner_cv[i, "gen_error"] <- performance(predict(model, newdata = test_data),
-      measures = mmce
-    )[[1]]
+    winner_cv[i, "gen_error"] <- learner$predict_newdata(
+      newdata = test_data
+    )$score()[[1]]
   }
   return(winner_cv[order(winner_cv$gen_error), ])
 }
-
 ```
 
 Run it and check the results of the outer CV:
@@ -246,54 +268,78 @@ mean(result_nr$gen_error)
 So we get a bigger generalization error than the one we got for the simple CV.
 So how can we check what the real generalization error for our best candidate 
 k is? 
-Neat thing about the stairs data: we can simulate arbitrarily many new unseen data points, s.t
+Neat thing about the stairs data: we can simulate arbitrarily many new unseen data points, s.t.
 we can assess the real generalization error.
 
 ```{r nested-real_ge_est}
 set.seed(1337)
 unseen_data <- two_stairs(100000, 6, 0.03)
 
-task <- makeClassifTask(data = sim_stairs, target = "classes")
-learner <- makeLearner("classif.kknn", k = 28)
-model <- train(learner = learner, task = task)
-performance(predict(model, newdata = unseen_data), measures = mmce)[[1]]
-
+task <- TaskClassif$new(id = "stairs", backend = sim_stairs, target = "classes")
+learner <- lrn("classif.kknn", k = 28)
+learner$train(task = task)
+learner$predict_newdata(newdata = unseen_data)$score()
 ```
 
 As we see with the simple CV we arrived to an overly optimistic estimate (overtuning effect), while 
 a more realistic estimate could be achieved with the nested resampling algorithm. 
 
-## mlr implementation
+## mlr3 implementation
 
 ```{r nested-mlr_impl}
-ps <- makeParamSet(
-  makeDiscreteParam("k", values = k_candidates)
+# show only warning messages (the number of info messages is quite large
+# for our nested resampling design)
+lgr::get_logger("mlr3")$set_threshold("warn")
+
+task <- TaskClassif$new(
+  id = "stairs",
+  backend = sim_stairs,
+  target = "classes"
 )
 
-task <- makeClassifTask(data = sim_stairs, target = "classes")
+learner <- lrn("classif.kknn")
+# define the the inner cv
+resampling <- rsmp("cv", folds = 10)
+measures <- msr("classif.ce")
 
-# inner loop
-ctrl <- makeTuneControlGrid()
-inner <- makeResampleDesc("CV", iters = 10L)
-learner <- makeTuneWrapper("classif.kknn", 
-                           resampling = inner, 
-                           par.set = ps, control = ctrl, show.info = FALSE)
+# replicate the k_candidates test design
+param_set <- paradox::ParamSet$new(
+  params = list(paradox::ParamInt$new("k",
+    lower = min(k_candidates),
+    upper = max(k_candidates)
+  ))
+)
+# we can use a grid design since the candidates are uniformly spaced
+design <- paradox::generate_design_grid(param_set,
+  resolution = length(k_candidates)
+)
+dt <- tnr("design_points", design = design$data)
+# we want to test every candidate
+terminator <- term("evals", n_evals = length(k_candidates))
 
-# outer loop
-outer <- makeResampleDesc("CV", iters = 10)
-r <- resample(learner, task = task, resampling = outer,
-              extract = getTuneResult, show.info = FALSE)
-r
+at <- AutoTuner$new(
+  learner = learner,
+  resampling = resampling,
+  measures = measures,
+  tune_ps = param_set,
+  terminator = terminator,
+  tuner = dt
+)
+
+# define the outer cv
+resampling_outer <- rsmp("cv", folds = 10)
+# do nested resampling
+rr <- resample(task = task, learner = at, resampling = resampling_outer)
 ```
 
 Get the tuning results for the outer loops
 
 ```{r nested-mlr_res1}
 # tune results
-r$extract
+rr$score()[, c("iteration", "classif.ce")]
 ```
 
 ```{r nested-mlr_res2}
-getNestedTuneResultsX(r)
+rr$aggregate()
 ```
 
