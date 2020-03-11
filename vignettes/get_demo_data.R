@@ -4,14 +4,16 @@ demos <- c(
   "limo", "knn", "splines",
   "logreg", "cmpclass", "genclass",
   "resampling", "overfitting", "roc",
-  "cart", "randforests"
+  "cart", "randforests",
+  "nested", "kaggle"
 )
 topics <- c(
   rep("Supervised: Regression", 3),
   rep("Supervised: Classification", 3),
   rep("Evaluation", 3),
   "CART",
-  "Random Forest"
+  "Random Forest",
+  rep("Tuning", 2)
 )
 
 
