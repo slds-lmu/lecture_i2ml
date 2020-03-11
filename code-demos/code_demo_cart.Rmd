@@ -21,13 +21,11 @@ library(rpart)
 library(dplyr)
 library(rattle)
 library(mlbench)
-library(methods)
-library(devtools)
 library(BBmisc)
 library(rpart.plot)
 library(ggplot2)
-library(mlr)
-
+library(mlr3)
+library(mlr3learners)
 
 data("Servo")
 
@@ -88,51 +86,35 @@ rattle::fancyRpartPlot(model_2,
 #### Min split:
 
 ```{r cart-min_split}
-task <- makeRegrTask(data = train_1, target = "Class")
-lrn1 <- makeLearner("regr.rpart")
+task <- TaskRegr$new(id = "train_1", backend = train_1, target = "Class")
+lrn1 <- lrn("regr.rpart")
 
-plotParamSequence <- function(learner, task, param, values, plotfun, ...) {
+plot_param_sequence <- function(learner, task, param, values, plotfun, ...) {
   for (v in values) {
     xs <- list(...)
     xs[[param]] <- v
-    lrn2 <- setHyperPars(learner, par.vals = xs)
-    mod <- mlr::train(lrn2, task)
-    plotfun(mod$learner.model)
+    lrn2 <- learner$clone()
+    lrn2$param_set$values <- xs
+    mod <- lrn2$train(task)$model
+    plotfun(mod)
     title(sprintf("%s = %g", param, v))
     pause()
   }
 }
 
-plotParamSequenceRPart <- function(...)
-  plotParamSequence(learner = lrn1, plotfun = rpart.plot, ...)
+plot_param_sequence_rpart <- function(...)
+  plot_param_sequence(learner = lrn1, plotfun = function(x)
+    rpart.plot(x, roundint = FALSE), ...)
 
 min_splits <- c(3, 10, 20, 40)
-plotParamSequenceRPart(task = task, param = "minsplit", values = min_splits)
+plot_param_sequence_rpart(task = task, param = "minsplit", values = min_splits)
 ```
 
 ### Maximum depth of the tree
 
 ```{r cart-max_depth}
-task <- makeRegrTask(data = train_1, target = "Class")
-lrn1 <- makeLearner("regr.rpart")
-
-plotParamSequence <- function(learner, task, param, values, plotfun, ...) {
-  for (v in values) {
-    xs <- list(...)
-    xs[[param]] <- v
-    lrn2 <- setHyperPars(learner, par.vals = xs)
-    mod <- mlr::train(lrn2, task)
-    plotfun(mod$learner.model)
-    title(sprintf("%s = %g", param, v))
-    pause()
-  }
-}
-
-plotParamSequenceRPart <- function(...)
-  plotParamSequence(learner = lrn1, plotfun = rpart.plot, ...)
-
 max_depth <- c(1, 4, 10)
-plotParamSequenceRPart(task = task, param = "maxdepth", values = max_depth)
+plot_param_sequence_rpart(task = task, param = "maxdepth", values = max_depth)
 ```
 
 ## Invariance to monotonous feature transformation
@@ -169,22 +151,22 @@ Now we want to implement a simple regression tree learner (`rt`) for numerical f
 
 ```{r rt-impl}
 # Estimate a *r*egression *t*ree, which consists of nodes.
-# Every node is either a splitting node with 2 subnodes 
-# or a leaf / terminal node without subnodes (end of a tree branch). 
+# Every node is either a splitting node with 2 subnodes
+# or a leaf / terminal node without subnodes (end of a tree branch).
 # The two subnodes for each split are:
 #  - true_node: the split (i.e. feature < treshold) was TRUE
 #  - false_node: the split was FALSE
-# The tree is built recursively by calling rt on the subset of data in each 
+# The tree is built recursively by calling rt on the subset of data in each
 # tree branch again.
-# The final tree is then represented as a nested list of splitting nodes 
+# The final tree is then represented as a nested list of splitting nodes
 # containing splitting nodes containing further  splitting nodes and leaf nodes.
-# Every node itself is also simply represented as a list, see the very end of 
+# Every node itself is also simply represented as a list, see the very end of
 # this function for the definition.
 rt <- function(df, target, cur_depth = 0, max_depth = 30, min_split = 20) {
   feature_results <- list()
 
   # compute optimal split with minimal loss for every feature:
-  for (feature in colnames(df)) { 
+  for (feature in colnames(df)) {
     if (feature != target) {
       feature_results[[feature]] <- optimal_split(df, feature, target)
     }
@@ -217,7 +199,7 @@ rt <- function(df, target, cur_depth = 0, max_depth = 30, min_split = 20) {
         min_split = min_split
       )
     }
-    #.. now do the same things on the other node:
+    # .. now do the same things on the other node:
     if (nrow(split_result$false_split) < min_split) {
       # not enough observations to split node again
       false_node <- list(is_leaf = TRUE)
@@ -235,16 +217,19 @@ rt <- function(df, target, cur_depth = 0, max_depth = 30, min_split = 20) {
       )
     }
   }
-  
+
   list(
-    is_leaf = FALSE,  #terminal node=
-    true_node = true_node,  # the tree branch for which split was TRUE
+    is_leaf = FALSE, # terminal node=
+    true_node = true_node, # the tree branch for which split was TRUE
     false_node = false_node, # the tree branch for which split was FALSE
     loss = min_loss_split$loss, # the achieved loss in this split
-    feature = min_loss_split$feature, #the feature used for this split
-    threshold = min_loss_split$threshold, #the threshold of the feature used for the split
-    num_true = min_loss_split$num_true, # the predicted value for observations if split is TRUE
-    num_false = min_loss_split$num_false # the predicted value for observations in split is FALSE
+    feature = min_loss_split$feature, # the feature used for this split
+    threshold = min_loss_split$threshold, # the threshold of the feature used 
+                                          # for the split
+    num_true = min_loss_split$num_true, # the predicted value for observations 
+                                        # if split is TRUE
+    num_false = min_loss_split$num_false # the predicted value for observations 
+                                         # in split is FALSE
   )
 }
 
@@ -263,13 +248,13 @@ split_node <- function(df, split_rule) {
 # features this would have to be extended -- think about how?)
 optimal_split <- function(df, feature, target) {
   cur_losses <- list()
-  #sort data according to the feature, only keep feature and target
+  # sort data according to the feature, only keep feature and target
   df <- df[order(df[, feature]), c(feature, target)]
 
   split_points <- sort(unique(df[, feature]))
 
   # compute losses for all split points
-  for (i in 2:length(split_points)) { 
+  for (i in 2:length(split_points)) {
     is_split_true <- df[, feature] < split_points[i]
     split_true <- df[is_split_true, target]
     split_false <- df[!is_split_true, target]
@@ -287,7 +272,7 @@ optimal_split <- function(df, feature, target) {
   min_loss <- df_curr_losses[which.min(df_curr_losses[, "loss"]), ]
 
   data.frame(
-    loss = min_loss[1, "loss"], 
+    loss = min_loss[1, "loss"],
     threshold = min_loss[1, "threshold"],
     num_true = min_loss[1, "num_true"],
     num_false = min_loss[1, "num_false"],
@@ -309,7 +294,7 @@ predict_tree <- function(tree, df) {
   for (i in seq_len(nrow(df))) {
     cur_node <- tree
     # follow the splits until we reach a leaf
-    while (!cur_node$is_leaf) { 
+    while (!cur_node$is_leaf) {
       if (df[i, cur_node$feature] < cur_node$threshold) {
         pred_values[i] <- cur_node$num_true
         cur_node <- cur_node$true_node
@@ -332,10 +317,10 @@ set.seed(123)
 n <- 300
 x1 <- runif(n, -2, 3)
 x2 <- runif(n, -2, 3)
-y <- ifelse(x1 > 1.5, -1, 1) + 
-     ifelse(x2 > 1.5, .5, -.5) + 
-     ifelse(x1 < .5 & x2 < .5, -1, 1) +
-     rnorm(n, 0, 0.1)
+y <- ifelse(x1 > 1.5, -1, 1) +
+  ifelse(x2 > 1.5, .5, -.5) +
+  ifelse(x1 < .5 & x2 < .5, -1, 1) +
+  rnorm(n, 0, 0.1)
 
 train_data <- data.frame(x1, x2, y)
 # compute regression tree
@@ -350,12 +335,12 @@ tree$feature
 tree$threshold
 # if the subnodes of the first node were leaves, this would be the
 # output prediction for the splits:
-tree$num_true #if feature < threshold
-tree$num_false #if feature > threshold 
+tree$num_true # if feature < threshold
+tree$num_false # if feature > threshold
 # --> first split identical
 
 # first splitting node on "FALSE" branch:
-tree$false_node$feature 
+tree$false_node$feature
 tree$false_node$threshold
 # -->  same as for rpart as well
 ```
@@ -398,7 +383,8 @@ plot_2D_cart <- function(train_data,
       aes_string(x = X1, y = X2, fill = target),
       alpha = .8
     ) +
-    geom_point(data = train_data, aes_string(x = X1, y = X2), color = "white", size = 2, alpha=.5) +
+    geom_point(data = train_data, aes_string(x = X1, y = X2), color = "white", 
+               size = 2, alpha = .5) +
     geom_point(data = train_data, aes_string(x = X1, y = X2, color = target)) +
     scale_colour_gradient(limits = c(min_z, max_z)) +
     scale_fill_gradient(limits = c(min_z, max_z))
