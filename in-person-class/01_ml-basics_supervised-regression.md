@@ -7,7 +7,7 @@ What to bring for class:
 - Print-out of this document
 - Print-out of code demo
 - Print-out of exercise + solution
-- Sticky notes
+- Optional: Sticky notes
 
 
 # Welcome
@@ -35,6 +35,8 @@ What to bring for class:
 	- Day 3: Evaluation
 	- Day 4: Trees + Random Forests
 	- Day 5: Tuning
+- [4 minutes] We will use breakout rooms a lot. Please read
+  https://support.zoom.us/hc/en-us/articles/115005769646-Participating-in-Breakout-Rooms
 - Any organizational questions?
 - Cheat sheets available: please bring them each day.
 
