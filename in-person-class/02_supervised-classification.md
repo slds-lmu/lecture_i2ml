@@ -1,6 +1,7 @@
 # Welcome
 
 - Hope you had a good experience yesterday
+- **I would like to record this session. OK?**
 - Would like to collect some feedback:
 	- [4 minutes] add feedback to https://pad.okfn.de/p/i2ml_ub_2 
 - Any organisational comments or questions

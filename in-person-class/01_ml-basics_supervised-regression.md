@@ -13,6 +13,7 @@ What to bring for class:
 # Welcome
 
 - Honored to work with you!
+- **I would like to record this session. Is this ok for everyone?**
 - Teaching this course for the first time. Feedback very welcome.
 - Hope to create an environment that allows learning. 
 	- No judgement 
