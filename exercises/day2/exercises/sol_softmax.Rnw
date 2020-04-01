@@ -11,35 +11,22 @@
   \item[b)]
   When using softmax regression the posterior class probability for the class $k$ is modeled, s.t.
   $$\pi_k(x) = \frac{\exp(\theta_k^T x)}{\sum^g_{j=1} \exp(\theta_j^T x)}.$$ 
-  With this we can compare the probability implied by the model to the actually observed target variable:
-$$\text{"accuracy"}^{(i)} := \left.
-   \begin{cases}
-    \pi_1(x^{(i)}), & \text{for } y^{(i)} = 1 \\
-    \vdots & \vdots \\
-    \pi_g(x^{(i)}), & \text{for } y^{(i)} = g  
-  \end{cases}  \right\} = \prod^g_{j=1} \pi_j(x^{(i)})^{\mathds{1}_{\{y^{(i)} = j\}}}$$
-    For the entire data set, we combine these predicted probabilities into a
-joint probability of observing the target vector given the model:
-  $$\text{"global accuracy"} := \prod^n_{i=1}\prod^g_{j=1} \pi_j(x^{(i)})^{\mathds{1}_{\{y^{(i)} = j\}}}.$$
-
-We want a loss function, so we actually need the inverse of that:
-  $$ \text{"global inaccuracy"} := \frac{1}{ \prod^n_{i=1}\prod^g_{j=1} \pi_j(x^{(i)})^{\mathds{1}_{\{y^{(i)} = j\}}}}$$
   
-Finally, we want the empirical risk to be a \emph{sum} of loss function values, not a \emph{product}
-recall: $$\riske = \sum^n_{i=1} \Lxyi.$$
-So we turn the product into a sum by taking its log -- the same parameters minimize this, which is all we care about, and we end up with the cross entropy loss function:
-  
-$$ \Lxy = -\sum^g_{j=1} \mathds{1}_{\{y = j\}}\log[{\pi_j(x)}].$$
-Now we want to compare this result to negative log likelihood: \\ 
-A single observation is multinomially distributed, i.e., 
+  A single observation is multinomially distributed, i.e., 
 $$\mathcal{L}_i = \P(Y^{(i)} = y^{(i)}|x^{(i)},\theta_1, \dots, \theta_g) = 
-\prod^g_{j=1} \pi_j(x^{(i)})^{\mathds{1}_{\{y^{(i)} = j\}}}$$
+\prod^g_{j=1} \pi_j(x^{(i)})^{\mathds{1}_{\{y^{(i)} = j\}}}.$$
   Under the assumption that the observations are conditionally independent the 
   likelihood of the data can be expressed, s.t.
   $$\mathcal{L} = \P(Y^{(1)} = y^{(1)},\dots,Y^{(n)} = y^{(n)}|x^{(1)},\dots,x^{(n)},\theta_1, \dots, \theta_g) = \prod^n_{i=1}\prod^g_{j=1} \pi_j(x^{(i)})^{\mathds{1}_{\{y^{(i)} = j\}}}.$$
-  From this we see, that for the softmax regression the loss function is equal to the negative log likelihood of one observation and thus the associated empirical risk is exactly the negative log likelihood of the complete data set.
-  %$\log  \frac{\exp(-\theta_i^T x)}{\sum_k \exp(-\theta_k^T x)}= -z_i-\log {\sum_k \exp(-z_k)}$
-
+(By following the maximum likelihood principle, we would look for parameters $\theta_1, \dots, \theta_g$, which maximize the expression above.) \\
+ Now we want the empirical risk to be a \emph{sum} of loss function values, not a \emph{product}
+recall: $$\riske = \sum^n_{i=1} \Lxyi.$$
+We can turn the product into a sum by taking its log since the same parameters maximize the expressions. Finally, we convert the maximization into minimization by multiplying with -1. So we end up with the so-called cross-entropy loss function:
+  
+$$ \Lxy = -\sum^g_{j=1} \mathds{1}_{\{y = j\}}\log[{\pi_j(x)}].$$
+ 
+We see that for the softmax regression the loss function is equal to the negative log-likelihood of one observation. Thus the associated empirical risk is the negative log-likelihood of the complete data set.
+  
   \item[c)]
   Since the subtraction of any fixed vector from all $\theta_k$ does not change the prediction, one set of parameters is "redundant". Thus we set $\theta_g = (0,\dots,0).$
     Hence for $g$ classes we get $g - 1$ discriminant functions from the softmax $\hat{\pi}_1(x), \dots, \hat{\pi}_{g-1}(x)$ which can be interpreted as probability. The probability for class $g$ can be calculated by using $\hat{\pi}_g = 1 - \sum_{k = 1}^{g-1} \hat{\pi}_k(x)$. To estimate the class we are using majority vote:
