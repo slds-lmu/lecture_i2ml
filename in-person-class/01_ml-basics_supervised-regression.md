@@ -12,6 +12,7 @@ What to bring for class:
 
 # Welcome
 
+- We wait a little longer, please answer question in etherpad.
 - Honored to work with you!
 - **I would like to record this session. Is this ok for everyone?**
 - Teaching this course for the first time. Feedback very welcome.
@@ -39,6 +40,7 @@ What to bring for class:
 - [4 minutes] We will use breakout rooms a lot. Please read
   https://support.zoom.us/hc/en-us/articles/115005769646-Participating-in-Breakout-Rooms
 - Any organizational questions?
+- Go through content website, share screen, explain each item.
 - Cheat sheets available: please bring them each day.
 
 
