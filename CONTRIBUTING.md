@@ -10,8 +10,15 @@ free to add your name to the [team](vignettes/team.Rmd).
 
 ### Git-Workflow
 
-- Access to the `master` branch is protected, please make your own, issue-/task-specific branch **off the  `devel` branch** to work in and do a pull request once you're done. 
-- Do many **small, focused, single-issue commits** with **descriptive commit messages**: each commit message should refer the issue it adresses or fixes, i.e. include something like `adresses #<issuenumber>`, `closes #<issuenumber>` or similar, where applicable.
+- Access to the `master` branch is protected, please make your own,
+  issue-/task-specific branch **off the `master` branch** to work in and do a
+pull request once you're done. 
+- Do many **small, focused, single-issue commits** with **descriptive commit
+  messages**: each commit message should refer the issue it adresses or fixes,
+i.e. include something like `adresses #<issuenumber>`, `closes #<issuenumber>`
+or similar, where applicable.
+- We generally work based on the [feature branch
+  workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/feature-branch-workflow)
 
 ### Slides:
 
