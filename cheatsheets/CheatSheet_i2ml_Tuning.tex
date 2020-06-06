@@ -1,0 +1,209 @@
+\documentclass{beamer}
+
+\usepackage[orientation=landscape,size=a0,scale=1.4,debug]{beamerposter}
+\mode<presentation>{\usetheme{mlr}}
+
+\usepackage[utf8]{inputenc} % UTF-8
+\usepackage[english]{babel} % Language
+\usepackage{hyperref} % Hyperlinks
+\usepackage{ragged2e} % Text position
+\usepackage[export]{adjustbox} % Image position
+\usepackage[most]{tcolorbox}
+%\usepackage{nomencl}
+%\makenomenclature
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{dsfont}
+\usepackage{verbatim}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{csquotes}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{enumerate}
+\usepackage[absolute,overlay]{textpos}
+\usepackage{psfrag}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{eqnarray}
+\usepackage{arydshln}
+\usepackage{tabularx}
+\usepackage{placeins}
+\usepackage{tikz}
+\usepackage{setspace}
+\usepackage{colortbl}
+\usepackage{mathtools}
+\usepackage{wrapfig}
+\usepackage{bm}
+
+\input{basic-math.tex}
+\input{basic-ml.tex}
+\input{ml-bagging.tex}
+\input{ml-boosting.tex}
+\input{ml-trees.tex}
+\input{ml-automl}
+
+\title{I2ML :\,: CHEAT SHEET} % Package title in header, \, adds thin space between ::
+\newcommand{\packagedescription}{ % Package description in header
+	The \textbf{I2ML}: Introduction to Machine Learning course offers an introductory and applied overview of "supervised" Machine Learning. It is organized as a digital lecture.
+}
+
+\newlength{\columnheight} % Adjust depending on header height
+\setlength{\columnheight}{84cm} 
+
+\newtcolorbox{codebox}{%
+	sharp corners,
+	leftrule=0pt,
+	rightrule=0pt,
+	toprule=0pt,
+	bottomrule=0pt,
+	hbox}
+
+\newtcolorbox{codeboxmultiline}[1][]{%
+	sharp corners,
+	leftrule=0pt,
+	rightrule=0pt,
+	toprule=0pt,
+	bottomrule=0pt,
+	#1}
+
+\begin{document}
+\begin{frame}[fragile]{}
+\begin{columns}
+	\begin{column}{.31\textwidth}
+		\begin{beamercolorbox}[center]{postercolumn}
+			\begin{minipage}{.98\textwidth}
+				\parbox[t][\columnheight]{\textwidth}{
+					\begin{myblock}{Hyperparameters}
+						\textbf{Hyperparameters} $\lambdav$ are parameters that are \emph{inputs} to the training problem, in which a learner $\inducer$ minimizes the empirical risk on a training data set in order to find optimal \textbf{model parameters} $\theta$ which define the fitted model $\fh$.
+						\begin{itemize}
+                        \item not decided during training rather must be specified before the training
+                        \item an \textbf{input} of the training
+                        \item often control the complexity of a model
+                        \item can influence any structural property of a model or computational part of the training process
+                        \end{itemize}
+						\hspace*{1ex}
+				
+						\begin{codebox}
+			\textbf{Types of hyperparameters: }
+						\end{codebox}
+						\begin{itemize}
+						    \item Real-valued parameters: Minimal error improvement in a tree to accept a split
+						    \item Integer parameters: Neighborhood size $k$ for $k$-NN
+						    \item Categorical parameters: Which distance measure for $k$-NN
+						\end{itemize}
+						\end{myblock}
+						
+					%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+					\begin{myblock}{Hyperparameter Tuning}
+					
+					\textbf{(Hyperparameter) Tuning} is the process of finding good model hyperparameters\\
+					
+					\begin{codebox}
+					\textbf{A bi-level optimization problem:}
+					\end{codebox}
+					The well-known risk minimization problem to find $\hat f$ is \textbf{nested} within the outer hyperparameter optimization (also called second-level problem). \textbf{Nested hyperparameter tuning problem:}
+					$$ \min_{\lambdav \in \Lambda} \GEh{\Dtest}\left(\inducer(\Dtrain, \lambdav)\right) $$
+					
+					\begin{codebox}
+					\textbf{Components of a tuning problem:}
+					\end{codebox}
+					The dataset, the learner(tuned), the learner’s hyperparameters and their respective regions-of-interest over which optimization is done, the performance measure, a (resampling) procedure for estimating the predictive performance.
+					
+					\hspace*{1ex}
+					\begin{codebox}
+				\textbf{Tuning is hard:}
+				\end{codebox}
+					
+                        Because, tuning is derivative-free which is a black-box problem. Every evaluation is \textbf{expensive} and the answer we get from that evaluation is \textbf{not exact, but stochastic} in most settings. The space of hyperparameters we optimize over has a non-metric, complicated structure
+					\end{myblock}\vfill
+				}
+			\end{minipage}
+		\end{beamercolorbox}
+	\end{column}
+	\begin{column}{.31\textwidth}
+		\begin{beamercolorbox}[center]{postercolumn}
+			\begin{minipage}{.98\textwidth}
+				\parbox[t][\columnheight]{\textwidth}{
+				
+				\begin{myblock}{Basic Techniques}
+				
+				\begin{codebox}
+				\textbf{Grid Search:}
+				\end{codebox}
+				
+				\begin{itemize}
+                    \item Tries all hyperparameter combinations
+                    \item For each hyperparameter a finite set of candidates is predefined and searches all possible combinations in arbitrary order
+                    \item Grid Search over 10x10 points:
+                \end{itemize}
+                
+                \hspace*{1ex}
+                
+               \begin{center}
+             \includegraphics[width=0.5\columnwidth]{img/grid_1.PNG}
+               \end{center}
+               
+               \textbf{Note:} It is very easy to implement, all parameter types possible and parallelizing computation is trivial. However, it scales badly and is inefficient.\\
+               
+               \begin{codebox}
+				\textbf{Random Search:}
+				\end{codebox}
+				\begin{itemize}
+                    \item Small variation of Grid Search.
+                    \item Uniformly sample from the region-of-interest
+                    \item Random Search over 10x10 points:
+                \end{itemize}
+            
+                \hspace*{1ex}
+			    
+			    \begin{center}
+             \includegraphics[width=0.5\columnwidth]{img/rand.PNG}
+               \end{center}	
+              \textbf{Note:} Very easy to implement, all parameter types possible, trivial parallelization and an anytime algorithm and no discretization. But, it is also inefficient and scales badly.
+	    	
+	    	\end{myblock}
+	    	
+	    	\begin{myblock}{Tuning}
+	    	\begin{codebox} \textbf{Problem of Tuning}	\end{codebox}
+Need to \textbf{select an optimal learner} without compromising the \textbf{accuracy of the performance estimate} for that learner. For this 
+	    	\end{myblock}
+					}
+			\end{minipage}
+		\end{beamercolorbox}
+	\end{column}
+	\begin{column}{.31\textwidth}
+		\begin{beamercolorbox}[center]{postercolumn}
+			\begin{minipage}{.98\textwidth}
+				\parbox[t][\columnheight]{\textwidth}{
+						\begin{myblock}{}
+						\textbf{untouched test set} is needed.\\
+                    \begin{codebox} \textbf{Train-validation-test}	\end{codebox}
+A 3-way split is the simplest method:
+During tuning, a learner is trained on the \textbf{training set}, evaluated on the  \textbf{validation set} and after the best model configuration $\lambda^\star$ is selected, we re-train on the joint (training+validation) set and evaluate the model's performance on the \textbf{test set}.\\
+
+\begin{center}
+             \includegraphics[width=1\columnwidth]{img/tuning_1.PNG}
+               \end{center}
+
+\hspace*{1ex}
+
+If we want to tune over a set of candidate HP configurations $\lambda_i; i = 1, \dots$ with 4-fold CV in the inner resampling and 3-fold CV in the outer loop. The outer loop is visualized as the light green and dark green parts.
+
+\hspace*{1ex}
+
+ \begin{codebox} \textbf{Nested Resampling}	\end{codebox}
+ 
+ \begin{center}
+             \includegraphics[width=0.9\columnwidth]{img/tuning_2.PNG}
+               \end{center}
+The outer loop is visualized as the light green and dark green parts. This is with 4-fold CV in the inner resampling and 3-fold CV in the outer loop.
+
+                    \end{myblock}
+				}
+			\end{minipage}
+		\end{beamercolorbox}
+	\end{column}
+\end{columns}
+\end{frame}
+\end{document}
