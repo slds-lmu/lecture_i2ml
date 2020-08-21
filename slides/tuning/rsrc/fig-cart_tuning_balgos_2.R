@@ -29,7 +29,7 @@ library(kernlab)
 options(digits = 3, width = 65, str = strOptions(strict.width = "cut", vec.len = 3))
 
 
-
+source("plotTune.R")
 
 scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
   function(...) {
