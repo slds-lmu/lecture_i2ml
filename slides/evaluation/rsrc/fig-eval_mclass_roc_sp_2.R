@@ -26,7 +26,7 @@ plot_lp = function(...){
   plotLearnerPrediction(...) + scale_fill_viridis_d()
 }
 
-
+source("plot_roc_space.R")
 pdf("../figure/eval_mclass_roc_sp_2.pdf", width = 4, height = 4)
 fpr = c(0, 1, 0, 0.25, 0.75)
 tpr = c(1, 1, 0, 0.25, 0.75)
