@@ -73,7 +73,7 @@ data = data.frame(x = x, y = y)
 
 model = lm(y ~ x)
 
-plotModAbsoluteLoss(data, model = model, pt_idx = c(1,4))
+plotModAbsLogQuadLoss(data, model = model, pt_idx = c(1,4))
 ggsave("../figure/plot_abs_log_quad_loss.pdf", width = 1.5, height = 1.5)
 dev.off() 
 
