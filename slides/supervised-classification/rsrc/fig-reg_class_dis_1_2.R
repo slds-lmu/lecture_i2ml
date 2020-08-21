@@ -12,13 +12,13 @@ library(repr)
 library(MASS)
 library(data.table)
 library(BBmisc)
-library(ellipse)
 
 
 library(party)
 library(kableExtra)
 library(kknn)
 library(e1071)
+library(car)
 
 options(digits = 3, width = 65, str = strOptions(strict.width = "cut", vec.len = 3))
 
