@@ -12,9 +12,9 @@ library(repr)
 library(MASS)
 library(data.table)
 library(BBmisc)
-library(ellipse)
+library(car)
 
-
+library(mixtools)
 library(party)
 library(kableExtra)
 library(kknn)
