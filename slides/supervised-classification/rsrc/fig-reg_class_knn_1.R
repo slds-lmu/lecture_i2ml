@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -29,7 +29,7 @@ plot_lp = function(...){
 set.seed(600000)
 
 
-pdf("reg_class_knn_1.pdf", width = 8, height = 6)
+pdf("../figure/reg_class_knn_1.pdf", width = 8, height = 6)
 dd = subset(iris, Sepal.Length > 6.1 & Sepal.Length < 6.7 & Sepal.Width > 2.8 & Sepal.Width < 3.3)[,c(1,2,5)]
 xnew = c(6.4, 3)
 circleFun2 = function(center = c(0,0), diameter = 1, npoints = 100){
@@ -46,6 +46,6 @@ q = q + geom_polygon(data = circle.dat2, alpha = 0.2, fill = "#619CFF")
 q = q + theme(legend.position = c(0.14, 0.82), text = element_text(size = 25))
 q = q  + annotate("text", x = xnew[1], y = xnew[2], label = "x[new]", size = 10, parse = TRUE)
 q
-ggsave("reg_class_knn_1.pdf", width = 8, height = 6)
+ggsave("../figure/reg_class_knn_1.pdf", width = 8, height = 6)
 dev.off()
 

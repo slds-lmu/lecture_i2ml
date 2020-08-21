@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -23,7 +23,7 @@ library(e1071)
 options(digits = 3, width = 65, str = strOptions(strict.width = "cut", vec.len = 3))
 
 
-pdf("reg_class_dis_1_2.pdf", width = 8, height = 2.5)
+pdf("../figure/reg_class_dis_1_2.pdf", width = 8, height = 2.5)
 
 n = 300
 classa = data.frame(mvrnorm(n = n, mu = c(2,2), Sigma = matrix(c(2, 0, 0, 2), ncol = 2, byrow = TRUE)))
@@ -74,6 +74,6 @@ plot1 = ggplot(data = classa, aes(x = X1, y = X2, alpha = 0.2)) +
   geom_point(data = classb, aes(x = X1, y = X2, alpha = 0.2), col = "red", show.legend = FALSE) +
   coord_fixed()
 plot1
-ggsave("reg_class_dis_1_2.pdf", width = 8, height = 2.5)
+ggsave("../figure/reg_class_dis_1_2.pdf", width = 8, height = 2.5)
 dev.off()
 

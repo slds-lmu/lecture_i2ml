@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -87,8 +87,8 @@ df_auc = data.frame(
 names(df_auc) = c("#", "Truth", "Score")
 
 
-pdf("eval_mclass_roc_sp_12_1.pdf", width = 8, height = 4)
+pdf("../figure/eval_mclass_roc_sp_12_1.pdf", width = 8, height = 4)
 plotROC(df_auc, 0, table = FALSE, auc = TRUE, highlight = FALSE)
-ggsave("eval_mclass_roc_sp_12_1.pdf", width = 8, height = 4)
+ggsave("../figure/eval_mclass_roc_sp_12_1.pdf", width = 8, height = 4)
 dev.off()
 

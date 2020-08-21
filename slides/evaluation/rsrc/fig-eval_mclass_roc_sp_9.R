@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -82,7 +82,7 @@ plotROC = function (df_auc, threshold, table = TRUE, auc = FALSE, highlight = TR
 
 
 
-pdf("eval_mclass_roc_sp_9.pdf", width = 6, height = 4)
+pdf("../figure/eval_mclass_roc_sp_9.pdf", width = 6, height = 4)
 df_auc = data.frame(
   '#' = 1:12,
   Truth = c("Pos", "Neg")[c(1, 1, 1, 2, 1, 2, 1, 2, 2, 2, 1, 2)],
@@ -95,6 +95,6 @@ tpr = mlr::measureTPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thr
 fpr = mlr::measureFPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos", negative = "Neg")
 
 plotROC(df_auc, thresh)
-ggsave("eval_mclass_roc_sp_9.pdf", width = 6, height = 4)
+ggsave("../figure/eval_mclass_roc_sp_9.pdf", width = 6, height = 4)
 dev.off()
 

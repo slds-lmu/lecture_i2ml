@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -37,7 +37,7 @@ scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
 
 
 set.seed(600000)
-pdf("cart_splitcomp_3.pdf", width = 8, height = 3.4)
+pdf("../figure/cart_splitcomp_3.pdf", width = 8, height = 3.4)
 # generate data (one categorcal variable with 4 categories, 0-1 response)
 data = data.frame(category = sample(c("A", "B", "C", "D"), size = 150,
                                     replace = TRUE, prob = c(0.2, 0.1, 0.4, 0.3)),
@@ -65,6 +65,6 @@ vline.level = 'C'
 p3 = p2.pre +  geom_vline(xintercept = which(lvls == vline.level) - 0.5, col = 'red', lwd = 1, linetype = "dashed") +
   ggtitle("3)")
 grid.arrange(p1, p2, p3, ncol = 3)
-ggsave("cart_splitcomp_3.pdf", width = 8, height = 3.4)
+ggsave("../figure/cart_splitcomp_3.pdf", width = 8, height = 3.4)
 dev.off()
 

@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -37,8 +37,8 @@ scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
 
 
 set.seed(600000)
-pdf("cart_forest_intro_1.pdf", width = 8, height = 5.5)
+pdf("../figure/cart_forest_intro_1.pdf", width = 8, height = 5.5)
 plotLearnerPrediction("classif.randomForest", iris.task, cv = 0, ntree = 1) + ggtitle("1 Tree for Iris Dataset")
-ggsave("cart_forest_intro_1.pdf", width = 8, height = 5.5)
+ggsave("../figure/cart_forest_intro_1.pdf", width = 8, height = 5.5)
 dev.off()
 

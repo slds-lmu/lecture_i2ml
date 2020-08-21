@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -32,7 +32,7 @@ scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
 library(plyr)
 library(kernlab)
 
-pdf("cart_splitcriteria_2.pdf", width = 8, height = 3)
+pdf("../figure/cart_splitcriteria_2.pdf", width = 8, height = 3)
 set.seed(1221)
 n <- 50
 data <- data.frame(x = seq(-4 , 2, l = n))
@@ -111,6 +111,6 @@ p2 <- ggplot(data) +
 
 gridExtra::grid.arrange(p1, p2, nrow = 1, widths = c(1.2,1))
 
-ggsave("cart_splitcriteria_2.pdf", width = 8, height = 3)
+ggsave("../figure/cart_splitcriteria_2.pdf", width = 8, height = 3)
 dev.off()
 

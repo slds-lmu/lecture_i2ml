@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -75,7 +75,7 @@ res2.mean = apply(res2, 1:2, mean)
 save2(file = "overtuning-example.RData", res1 = res1, res2 = res2, res2.mean = res2.mean)
 
 
-pdf("cart_tuning_nestintro_1.pdf", width = 8, height = 3.5)
+pdf("../figure/cart_tuning_nestintro_1.pdf", width = 8, height = 3.5)
 
 ggd = BBmisc::load2("overtuning-example.RData", "res2.mean")
 ggd = reshape2::melt(ggd, measure.vars = colnames(res2), value.name = "tuneperf");
@@ -87,6 +87,6 @@ ggd$data.size = as.factor(ggd$data.size)
 pl = ggplot(ggd, aes(x = iter, y = tuneperf, col = data.size))
 pl =  pl + geom_line() + ylab("Tuning Error") + xlab("Iteration") + labs(colour = "Data Size")
 print(pl)
-ggsave("cart_tuning_nestintro_1.pdf", width = 8, height = 3.5)
+ggsave("../figure/cart_tuning_nestintro_1.pdf", width = 8, height = 3.5)
 dev.off()
 

@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -49,7 +49,7 @@ plotModQuadraticLoss = function (data, model, loss, pt_idx)
 }
 
 
-pdf("plot_quad_loss.pdf", height = 2.5)
+pdf("../figure/plot_quad_loss.pdf", height = 2.5)
 
 set.seed(31415)
 
@@ -59,6 +59,6 @@ data = data.frame(x = x, y = y)
 model = lm(y ~ x)
 
 plotModQuadraticLoss(data = data, model = model, pt_idx = c(1,4))
-ggsave("plot_quad_loss.pdf", width = 7, height = 2.5)
+ggsave("../figure/plot_quad_loss.pdf", width = 7, height = 2.5)
 dev.off() 
 

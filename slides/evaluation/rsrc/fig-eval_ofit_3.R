@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -29,7 +29,7 @@ plot_lp = function(...){
 library(plyr)
 library(kernlab)
 set.seed(600000)
-pdf("eval_ofit_3.pdf", width = 8, height = 3)
+pdf("../figure/eval_ofit_3.pdf", width = 8, height = 3)
 par(mar = c(2.1, 2.1, 0, 0))
 x <- seq(0, 1, length.out = 20)
 y1 <- c(1 - x[1:4], 1.5 - 4 * x[5:6], 0.5 - 0.8 * x[7:10], 0.15 - 0.1 * x[11:20])
@@ -49,6 +49,6 @@ box()
 text(0.85, 0.13, "Apparent error")
 text(0.85, 0.55, "Actual error")
 
-ggsave("eval_ofit_3.pdf", width = 8, height = 3)
+ggsave("../figure/eval_ofit_3.pdf", width = 8, height = 3)
 dev.off()
 

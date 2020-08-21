@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -51,9 +51,9 @@ scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
 library(plyr)
 library(kernlab)
 set.seed(600000)
-pdf("cart_intro_1.pdf", width = 8, height = 2.2)
+pdf("../figure/cart_intro_1.pdf", width = 8, height = 2.2)
 model = draw_cart_on_iris(depth = 2)
 
-ggsave("cart_intro_1.pdf", width = 8, height = 2.2)
+ggsave("../figure/cart_intro_1.pdf", width = 8, height = 2.2)
 dev.off()
 

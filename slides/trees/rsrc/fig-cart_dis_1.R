@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -37,7 +37,7 @@ scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
 
 
 set.seed(600000)
-pdf("cart_dis_1.pdf", width = 8, height = 5)
+pdf("../figure/cart_dis_1.pdf", width = 8, height = 5)
 n = 100
 data = data.frame(x1 = runif(n), x2 = runif(n))
 data$y = as.factor(with(data, as.integer(x1 > x2)))
@@ -47,6 +47,6 @@ pl = plotLearnerPrediction(rpart, task, gridsize = 300, cv = 0, err.mark = "none
                            prob.alpha = FALSE)
 pl = pl + geom_abline(slope = 1, linetype = 2)
 print(pl)
-ggsave("cart_dis_1.pdf", width = 8, height = 5)
+ggsave("../figure/cart_dis_1.pdf", width = 8, height = 5)
 dev.off()
 

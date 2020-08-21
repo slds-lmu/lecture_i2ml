@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -61,7 +61,7 @@ parallelStop()
 
 
 set.seed(12322)
-pdf("cart_tuning_balgos_3.pdf", width = 8, height = 3)
+pdf("../figure/cart_tuning_balgos_3.pdf", width = 8, height = 3)
 tr = BBmisc::load2("tune_example.RData")
 df = as.data.frame(tr$opt.path)
 ggd = df[, c("dob", "auc.test.mean")]
@@ -74,6 +74,6 @@ pl = pl +
   theme(axis.text=element_text(size=18), axis.title=element_text(size=22)) +
   ylab("Maximal AUC") + xlab("Iterations")
 print(pl)
-ggsave("cart_tuning_balgos_3.pdf", width = 8, height = 3)
+ggsave("../figure/cart_tuning_balgos_3.pdf", width = 8, height = 3)
 dev.off()
 

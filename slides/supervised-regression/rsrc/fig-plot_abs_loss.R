@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -59,7 +59,7 @@ plotModAbsoluteLoss = function (data, model, pt_idx, add_quadratic = TRUE)
 
 
 
-pdf("plot_abs_loss.pdf", height = 3)
+pdf("../figure/plot_abs_loss.pdf", height = 3)
 
 set.seed(31415)
 
@@ -70,6 +70,6 @@ data = data.frame(x = x, y = y)
 model = lm(y ~ x)
 
 plotModAbsoluteLoss(data, model = model, pt_idx = c(1,4), add_quadratic = FALSE) + ylim(c(0, 16))
-ggsave("plot_abs_loss.pdf", width = 1.5, height = 1.5)
+ggsave("../figure/plot_abs_loss.pdf", width = 1.5, height = 1.5)
 dev.off() 
 

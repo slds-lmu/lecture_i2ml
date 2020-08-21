@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -43,7 +43,7 @@ mod = mod$learner.model
 
 
 set.seed(600000)
-pdf("cart_stopprun_4.pdf", width = 8, height = 5.8)
+pdf("../figure/cart_stopprun_4.pdf", width = 8, height = 5.8)
 cps = rev(mod$cptable[-4, "CP"])
 #rattle::fancyRpartPlot(mod, sub = "Full tree")
 cps = cps[3]
@@ -52,6 +52,6 @@ lapply(cps, function(x) {
   sub_title = sprintf("Pruning with complexity parameter = %.3f.", x)
   rattle::fancyRpartPlot(p, sub = sub_title)
 })
-ggsave("cart_stopprun_4.pdf", width = 8, height = 5.8)
+ggsave("../figure/cart_stopprun_4.pdf", width = 8, height = 5.8)
 dev.off()
 

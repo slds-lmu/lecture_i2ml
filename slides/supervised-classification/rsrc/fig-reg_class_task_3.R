@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -31,6 +31,6 @@ set.seed(600000)
 
 library(GGally)
 ggpairs(iris, mapping = aes(col = Species))
-ggsave("reg_class_task_3.pdf", width = 8, height = 5)
+ggsave("../figure/reg_class_task_3.pdf", width = 8, height = 5)
 dev.off()
 

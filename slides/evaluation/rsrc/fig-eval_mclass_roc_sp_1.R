@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -27,7 +27,7 @@ plot_lp = function(...){
 }
 
 
-pdf("eval_mclass_roc_sp_1.pdf", width = 4, height = 4)
+pdf("../figure/eval_mclass_roc_sp_1.pdf", width = 4, height = 4)
 plot_roc_space = function(fpr, tpr, label) {
   d = data.frame(FPR = fpr, TPR = tpr, label = label)
   pl = ggplot(d, aes(x = FPR, y = TPR, label = label))
@@ -46,6 +46,6 @@ pl = pl + geom_text_repel(data = data.frame(FPR = 0.20, TPR = 0.83, label = "unc
 pl = pl + geom_segment(x = fpr[1], y = tpr[1], xend = fpr[3], yend = tpr[3], lty = "dotted")
 pl = pl + geom_text_repel(data = data.frame(FPR = 0.25, TPR = 0.65, label = "dominates"))
 print(pl)
-ggsave("eval_mclass_roc_sp_1.pdf", width = 4, height = 4)
+ggsave("../figure/eval_mclass_roc_sp_1.pdf", width = 4, height = 4)
 dev.off()
 

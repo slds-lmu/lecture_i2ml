@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -36,7 +36,7 @@ scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
   }
 
 
-pdf("cart_tuning_nestintro_3.pdf", width = 8, height = 3.5)
+pdf("../figure/cart_tuning_nestintro_3.pdf", width = 8, height = 3.5)
 
 size = 200
 p = 0.5
@@ -63,6 +63,6 @@ plot_dens_with_errs = function(k) {
 pl3 = plot_dens_with_errs(k = 100)
 pl4 = plot_dens_with_errs(k = 1000)
 grid.arrange(pl3, pl4, ncol = 2)
-ggsave("cart_tuning_nestintro_3.pdf", width = 8, height = 3.5)
+ggsave("../figure/cart_tuning_nestintro_3.pdf", width = 8, height = 3.5)
 dev.off()
 

@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -38,6 +38,6 @@ pl = pl + geom_point()
 pl = pl + coord_fixed()
 print(pl)
 
-ggsave("reg_lm_plot_2.pdf", width = 7.5, height = 3)
+ggsave("../figure/reg_lm_plot_2.pdf", width = 7.5, height = 3)
 dev.off()
 

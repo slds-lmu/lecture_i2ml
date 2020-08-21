@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -104,7 +104,7 @@ ggTrainTestPlot = function (data, truth.fun, truth.min, truth.max, test.plot,
 library(plyr)
 library(kernlab)
 set.seed(600000)
-pdf("eval_test_3.pdf", width = 8, height = 4)
+pdf("../figure/eval_test_3.pdf", width = 8, height = 4)
 degrees = 1:9
 
 errors = ggTrainTestPlot(data = mydf, truth.fun = .h, truth.min = 0,
@@ -126,6 +126,6 @@ arrows(4.75, 0.05, 2.75, 0.05, code = 2L, lty = 2L, length = 0.1)
 text(6.5, 0.05, "Overfitting,\n\nLow Bias,\nHigh Variance", bg = "white")
 arrows(7.5, 0.05, 5.5, 0.05, code = 1, lty = 2, length = 0.1)
 
-ggsave("eval_test_3.pdf", width = 8, height = 4)
+ggsave("../figure/eval_test_3.pdf", width = 8, height = 4)
 dev.off()
 

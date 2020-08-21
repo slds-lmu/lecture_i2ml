@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -38,7 +38,7 @@ scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
 
 
 set.seed(600000)
-pdf("cart_treegrow_4.pdf", width = 8, height = 4)
+pdf("../figure/cart_treegrow_4.pdf", width = 8, height = 4)
 task = subsetTask(iris.task, seq(1, 150, by = 20))
 lrn = makeLearner("classif.rpart", cp = 0, minbucket = 1, maxdepth = 1)
 pl = plotLearnerPrediction(lrn, task, gridsize = 100,
@@ -46,6 +46,6 @@ pl = plotLearnerPrediction(lrn, task, gridsize = 100,
 pl = pl + theme(legend.position="none")
 print(pl)
 
-ggsave("cart_treegrow_4.pdf", width = 8, height = 4)
+ggsave("../figure/cart_treegrow_4.pdf", width = 8, height = 4)
 dev.off()
 

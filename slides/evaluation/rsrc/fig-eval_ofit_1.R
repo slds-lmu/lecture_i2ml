@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -29,13 +29,13 @@ plot_lp = function(...){
 library(plyr)
 library(kernlab)
 set.seed(600000)
-pdf("eval_ofit_1.pdf", width = 8, height = 6)
+pdf("../figure/eval_ofit_1.pdf", width = 8, height = 6)
 data = as.data.frame(mlbench.2dnormals(n = 200, cl = 3))
 data$classes = mapvalues(data$classes, "3", "1")
 task = makeClassifTask(data = data, target = "classes")
 learner = makeLearner("classif.ksvm")
 plotLearnerPrediction(learner, task, kernel = "rbfdot", C = 1, sigma = 100, pointsize = 4)
 
-ggsave("eval_ofit_1.pdf", width = 8, height = 6)
+ggsave("../figure/eval_ofit_1.pdf", width = 8, height = 6)
 dev.off()
 

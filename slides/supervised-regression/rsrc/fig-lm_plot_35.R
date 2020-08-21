@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -101,13 +101,13 @@ coef1 <- c(1.8, .3)
 coef2 <- c(1, .1)
 coef3 <- c(0.5, .8)
 
-pdf("reg_lm_plot_35.pdf", width= 4.5, height = 5.5)
+pdf("../figure/reg_lm_plot_35.pdf", width= 4.5, height = 5.5)
 
 persp(x = c1_grid, y = c2_grid, sse_surf, theta = -130, phi = 10, 
       zlim = range(sse_surf),
       ticktype = "detailed", xlab = "Intercept", ylab = "Slope", zlab = "SSE", 
       col = clrs_ramp[clrs], border = rgb(0,0,0,.5))
-ggsave("reg_lm_plot_35.pdf", width= 4, height = 0.66)
+ggsave("../figure/reg_lm_plot_35.pdf", width= 4, height = 0.66)
 
 dev.off()
 

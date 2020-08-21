@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -28,7 +28,7 @@ getCurrentAspect = function() {
 }
 par(mar = c(4,4,0,0)+.1)
 cex = 1.5
-pdf("reg_knn_2.pdf", width = 8, height = 7)
+pdf("../figure/reg_knn_2.pdf", width = 8, height = 7)
 
 plot(x = c(1L,5L), y = c(1L,4L), ylim = c(0,5), xlim = c(0,6), pch = 19, las=1,
      panel.first=grid(col = "lightgray", lty = "solid"),
@@ -43,5 +43,5 @@ asp = getCurrentAspect()
 text(x = 3, y = 2.5, expression(d(x,tilde(x))~"="~sqrt((5-1)^2 + (4-1)^2)~"= 5"),
      adj = c(0.5,0), col = 1, srt = 180/pi*atan(3/4*asp), cex=cex)
 
-ggsave("reg_knn_2.pdf", width = 8, height = 7)
+ggsave("../figure/reg_knn_2.pdf", width = 8, height = 7)
 dev.off()

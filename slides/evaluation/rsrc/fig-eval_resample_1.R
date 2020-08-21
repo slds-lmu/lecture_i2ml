@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -35,7 +35,7 @@ scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
 library(plyr)
 library(kernlab)
 set.seed(600000)
-pdf("eval_resample_1.pdf", width = 8, height = 3.5)
+pdf("../figure/eval_resample_1.pdf", width = 8, height = 3.5)
 layout(cbind(rep(1, 3), 2:4, matrix(5:16, ncol = 4, byrow = TRUE)))
 par(mar = c(2,2,4,2))
 
@@ -69,6 +69,6 @@ for (i in 1:12) {
   }
 }
 
-ggsave("eval_resample_1.pdf", width = 8, height = 3.5)
+ggsave("../figure/eval_resample_1.pdf", width = 8, height = 3.5)
 dev.off()
 

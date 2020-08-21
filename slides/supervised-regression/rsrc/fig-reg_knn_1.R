@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -29,7 +29,7 @@ circleFun = function(center = c(0,0), diameter = 1, npoints = 100){
   yy = center[2L] + r * sin(tt)
   return(data.frame(x1 = xx, x2 = yy, class = NA))
 }
-pdf("reg_knn_1.pdf", width= 8, height = 3)
+pdf("../figure/reg_knn_1.pdf", width= 8, height = 3)
 knn_plot = function(mat, k) {
   n = nrow(mat) - 1
   dists = sort(as.matrix(dist(mat))[n + 1L, ])
@@ -52,5 +52,5 @@ mat = rbind(mat, c(0, 0))
 gridExtra::grid.arrange(knn_plot(mat, 15), knn_plot(mat, 7), knn_plot(mat, 3),
                         nrow = 1)
 
-ggsave("reg_knn_1.pdf", width = 8, height = 3)
+ggsave("../figure/reg_knn_1.pdf", width = 8, height = 3)
 dev.off()

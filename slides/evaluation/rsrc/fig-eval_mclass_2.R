@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -28,7 +28,7 @@ plot_lp = function(...){
 pal_2 <- viridisLite::viridis(2, end = .9)
 
 
-pdf("eval_mclass_2.pdf", width = 7, height = 2.5)
+pdf("../figure/eval_mclass_2.pdf", width = 7, height = 2.5)
 library(grid)
 phat = seq(0.01, 0.99, by = 0.01)
 d = rbind(
@@ -43,6 +43,6 @@ pl = pl + annotate(geom = "text", label = "wrong", x=0.1, y=2.0, col = pal_2[1])
 pl = pl + annotate(geom = "text", label = "wrong", x=0.9, y=2.0, col = pal_2[2])
 pl = pl + annotate(geom = "text", label = "right", x=0.9, y=0.1, col = pal_2[1])
 print(pl)
-ggsave("eval_mclass_2.pdf", width = 7, height = 2.5)
+ggsave("../figure/eval_mclass_2.pdf", width = 7, height = 2.5)
 dev.off()
 

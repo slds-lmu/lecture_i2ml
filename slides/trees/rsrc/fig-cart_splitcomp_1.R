@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -60,8 +60,8 @@ SSE2.log = log.mod$learner.model$frame$dev[3]
 
 
 set.seed(600000)
-pdf("cart_splitcomp_1.pdf", width = 6, height = 4)
+pdf("../figure/cart_splitcomp_1.pdf", width = 6, height = 4)
 fancyRpartPlot(mod$learner.model, sub = "")
-ggsave("cart_splitcomp_1.pdf", width = 6, height = 4)
+ggsave("../figure/cart_splitcomp_1.pdf", width = 6, height = 4)
 dev.off()
 

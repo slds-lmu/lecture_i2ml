@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -27,12 +27,12 @@ plot_lp = function(...){
 }
 
 
-pdf("eval_mclass_roc_sp_2.pdf", width = 4, height = 4)
+pdf("../figure/eval_mclass_roc_sp_2.pdf", width = 4, height = 4)
 fpr = c(0, 1, 0, 0.25, 0.75)
 tpr = c(1, 1, 0, 0.25, 0.75)
 label = c("Best", "Pos-100%", "Pos-0%", "Pos-25%", "Pos-75%")
 pl = plot_roc_space(fpr, tpr, label)
 print(pl)
-ggsave("eval_mclass_roc_sp_2.pdf", width = 4, height = 4)
+ggsave("../figure/eval_mclass_roc_sp_2.pdf", width = 4, height = 4)
 dev.off()
 

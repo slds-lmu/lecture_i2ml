@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -29,7 +29,7 @@ plot_lp = function(...){
 set.seed(600000)
 
 
-pdf("reg_class_knn_2.pdf", width = 9.5, height = 7)
+pdf("../figure/reg_class_knn_2.pdf", width = 9.5, height = 7)
 f = function(k, leg) { 
   pl = plot_lp("classif.kknn", iris.task, cv = 0, k = k) +
     ggtitle(sprintf("k = %i", k))
@@ -39,6 +39,6 @@ f = function(k, leg) {
 }
 grid.arrange(f(1, F), f(5, F), f(10, F), f(50, F))
 
-ggsave("reg_class_knn_2.pdf", width = 9.5, height = 7)
+ggsave("../figure/reg_class_knn_2.pdf", width = 9.5, height = 7)
 dev.off()
 

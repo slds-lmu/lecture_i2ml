@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -38,7 +38,7 @@ scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
   }
 
 
-pdf("cart_tuning_nestresample_1.pdf", width = 8, height = 3.5)
+pdf("../figure/cart_tuning_nestresample_1.pdf", width = 8, height = 3.5)
 load("overtuning_data.rds")
 library(dplyr)
 library(ggplot2)
@@ -52,6 +52,6 @@ df_overtuning %>%
   xlab("Amount of tried hyperparameter configurations") +
   ylab("Tuned Performance") +
   scale_linetype_discrete(name = "")
-ggsave("cart_tuning_nestresample_1.pdf", width = 8, height = 3.5)
+ggsave("../figure/cart_tuning_nestresample_1.pdf", width = 8, height = 3.5)
 dev.off()
 

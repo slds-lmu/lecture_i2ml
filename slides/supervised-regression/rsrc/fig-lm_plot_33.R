@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -101,14 +101,14 @@ coef1 <- c(1.8, .3)
 coef2 <- c(1, .1)
 coef3 <- c(0.5, .8)
 
-pdf("reg_lm_plot_33.pdf", height = 3)
+pdf("../figure/reg_lm_plot_33.pdf", height = 3)
 
 par(mfrow = c(1,3))
 frame_plot(x, y, coef1, colBlue, c(2, 5.5), c(x = 6.5, y = -0.5))
 frame_plot(x, y, coef2, colOrange, c(2, 5.5), c(x = 6.5, y = -0.5))
 frame_plot(x, y, coef3, colRed, c(2, 5.5), c(x = 6.5, y =  -0.5))
 #par(opar)
-ggsave("reg_lm_plot_33.pdf", width = 4, height = 3)
+ggsave("../figure/reg_lm_plot_33.pdf", width = 4, height = 3)
 
 dev.off()
 

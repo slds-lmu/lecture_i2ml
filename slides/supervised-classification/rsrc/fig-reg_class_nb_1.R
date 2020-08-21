@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -27,7 +27,7 @@ plot_lp = function(...){
   plotLearnerPrediction(...) + scale_fill_viridis_d()
 }
 
-pdf("reg_class_nb_1.pdf", width = 8, height = 3.5)
+pdf("../figure/reg_class_nb_1.pdf", width = 8, height = 3.5)
 
 # fake data
 n = 300
@@ -63,6 +63,6 @@ pl = plot_lp("classif.naiveBayes", task, cv = 0L)
 pl = pl + geom_contour(data = grid_dens1, aes(z = dens), alpha = .6, lwd = 1.5, bins = 10) 
 pl = pl + geom_contour(data = grid_dens2, aes(z = dens), alpha = .6, lwd = 1.4, bins = 10) 
 print(pl)
-ggsave("reg_class_nb_1.pdf", width = 8, height = 3.5)
+ggsave("../figure/reg_class_nb_1.pdf", width = 8, height = 3.5)
 dev.off()
 

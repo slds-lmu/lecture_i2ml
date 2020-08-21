@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -37,12 +37,12 @@ scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
 
 
 set.seed(600000)
-pdf("cart_forest_fimp_1.pdf", width = 8, height = 2.6)
+pdf("../figure/cart_forest_fimp_1.pdf", width = 8, height = 2.6)
 library(tidyr)
 library(kernlab)
 
 model = randomForest(Species ~ ., data = iris, importance = TRUE)
 randomForest::varImpPlot(model, main = "")
-ggsave("cart_forest_fimp_1.pdf", width = 8, height = 2.6)
+ggsave("../figure/cart_forest_fimp_1.pdf", width = 8, height = 2.6)
 dev.off()
 

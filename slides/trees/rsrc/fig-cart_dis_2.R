@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -37,7 +37,7 @@ scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
 
 
 set.seed(600000)
-pdf("cart_dis_2.pdf", width = 8, height = 5)
+pdf("../figure/cart_dis_2.pdf", width = 8, height = 5)
 fn = function(x) (sin(4*x - 4)) * ((2*x - 2)^2) * (sin(20*x - 4))
 d = data.frame(x = seq(0.2, 1, length.out = 7))
 d$y = fn(d$x)
@@ -49,6 +49,6 @@ dd = data.frame(x = x, y = fn(x))
 pl = pl + geom_line(data = dd, aes(x, y, color = "red"))
 pl = pl + theme(legend.position = "none")
 print(pl)
-ggsave("cart_dis_2.pdf", width = 8, height = 5)
+ggsave("../figure/cart_dis_2.pdf", width = 8, height = 5)
 dev.off()
 

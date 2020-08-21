@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -99,10 +99,10 @@ ggTrainTestPlot = function (data, truth.fun, truth.min, truth.max, test.plot,
 library(plyr)
 library(kernlab)
 set.seed(600000)
-pdf("eval_train_1.pdf", width = 5.5, height = 2)
+pdf("../figure/eval_train_1.pdf", width = 5.5, height = 2)
 ggTrainTestPlot(data = mydf, truth.fun = .h, truth.min = 0, truth.max = 1, 
                 test.plot = FALSE, test.ind = ind)[["plot"]] + ylim(0, 1)
 
-ggsave("eval_train_1.pdf", width = 5.5, height = 2)
+ggsave("../figure/eval_train_1.pdf", width = 5.5, height = 2)
 dev.off()
 

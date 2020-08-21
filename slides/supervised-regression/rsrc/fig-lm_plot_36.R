@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -101,7 +101,7 @@ coef1 <- c(1.8, .3)
 coef2 <- c(1, .1)
 coef3 <- c(0.5, .8)
 
-pdf("reg_lm_plot_36.pdf", width= 4.5, height = 5.5)
+pdf("../figure/reg_lm_plot_36.pdf", width= 4.5, height = 5.5)
 
 p <- persp(x = c1_grid, y = c2_grid, sse_surf, theta = -130, phi = 10, 
            zlim = range(sse_surf),
@@ -115,7 +115,7 @@ points_3d =
 points(points_3d, col = c(colGreen(255)), 
        pch = 16, cex = 2)
 points(points_3d, col = "black", pch = 1, cex = 2, lwd = 2)
-ggsave("reg_lm_plot_36.pdf", width= 4, height = 0.66)
+ggsave("../figure/reg_lm_plot_36.pdf", width= 4, height = 0.66)
 
 dev.off()
 

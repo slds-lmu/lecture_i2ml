@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -28,7 +28,7 @@ plot_lp = function(...){
 
 
 
-pdf("eval_mclass_roc_sp_12.pdf", width = 4.5, height = 3)
+pdf("../figure/eval_mclass_roc_sp_12.pdf", width = 4.5, height = 3)
 plot_roc_curves = function(d) {
   pl = ggplot(d, aes(x = FPR, y = TPR, col = model)) +  scale_color_viridis(discrete = TRUE, option = "D")
   pl = pl + geom_line(size = 2)
@@ -49,6 +49,6 @@ d = rbind(
 )
 pl = plot_roc_curves(d)
 print(pl)
-ggsave("eval_mclass_roc_sp_12.pdf", width = 4.5, height = 3)
+ggsave("../figure/eval_mclass_roc_sp_12.pdf", width = 4.5, height = 3)
 dev.off()
 

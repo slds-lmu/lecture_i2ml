@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -37,7 +37,7 @@ scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
 
 
 set.seed(600000)
-pdf("cart_forest_bag_1.pdf", width = 8, height = 2.5)
+pdf("../figure/cart_forest_bag_1.pdf", width = 8, height = 2.5)
 rho = seq(0, 1, by = 0.001)
 B = c(5, 50)
 sigma = 20
@@ -68,6 +68,6 @@ p1 = ggplot(data = grid, aes(x = rho, y = var)) +
   theme_minimal()
 
 p1
-ggsave("cart_forest_bag_1.pdf", width = 8, height = 2.5)
+ggsave("../figure/cart_forest_bag_1.pdf", width = 8, height = 2.5)
 dev.off()
 

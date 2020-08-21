@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -29,8 +29,8 @@ plot_lp = function(...){
 set.seed(600000)
 
 
-pdf("reg_class_task_2.pdf", width = 6, height = 6)
+pdf("../figure/reg_class_task_2.pdf", width = 6, height = 6)
 plot_lp(makeLearner("classif.svm"), iris.task, c("Petal.Length", "Petal.Width")) + ggtitle("Iris") 
-ggsave("reg_class_task_2.pdf", width = 6, height = 6)
+ggsave("../figure/reg_class_task_2.pdf", width = 6, height = 6)
 dev.off()
 

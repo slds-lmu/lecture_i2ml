@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -38,7 +38,7 @@ scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
 
 
 set.seed(600000)
-pdf("cart_tuning_balgos_1.pdf", width = 8, height = 3.5)
+pdf("../figure/cart_tuning_balgos_1.pdf", width = 8, height = 3.5)
 library(tidyr)
 library(kernlab)
 plotTune = function(d) {
@@ -52,6 +52,6 @@ x = y = seq(-10, 10, length.out = 10)
 d = expand.grid(x = x, y = y)
 pl = plotTune(d)
 print(pl)
-ggsave("cart_tuning_balgos_1.pdf", width = 8, height = 3.5)
+ggsave("../figure/cart_tuning_balgos_1.pdf", width = 8, height = 3.5)
 dev.off()
 

@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -37,7 +37,7 @@ scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
 
 
 set.seed(600000)
-pdf("cart_forest_intro_4.pdf", width = 8, height = 4.5)
+pdf("../figure/cart_forest_intro_4.pdf", width = 8, height = 4.5)
 library(tidyr)
 library(kernlab)
 
@@ -51,6 +51,6 @@ data.frame(model$err.rate, iter = seq_len(nrow(model$err.rate))) %>%
   xlab("Number of Trees") +
   ylab("MCE") +
   labs(color = "")
-ggsave("cart_forest_intro_4.pdf", width = 8, height = 4.5)
+ggsave("../figure/cart_forest_intro_4.pdf", width = 8, height = 4.5)
 dev.off()
 

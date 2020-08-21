@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -27,7 +27,7 @@ h = function(x) .h(x) + .1 * arima.sim(list(ar = .7, ma = 0), length(x)) + rnorm
 x = seq(0.4, 2, length = 31L)
 y = h(x)
 
-pdf("reg_pol_4.pdf", width= 8, height = 4.5)
+pdf("../figure/reg_pol_4.pdf", width= 8, height = 4.5)
 line.palette = viridisLite::viridis(4)
 baseplot = function() {
   # par(mar = c(2, 2, 1, 1))
@@ -48,6 +48,6 @@ for (i in 1:3) {
 legend("topright", paste(sprintf("f(x) with d = %s", c(1, 5, 25)), c("(linear)", "", "")),
        col = line.palette, lwd = 2L)
 
-ggsave("reg_pol_4.pdf", width = 8, height = 4.5)
+ggsave("../figure/reg_pol_4.pdf", width = 8, height = 4.5)
 dev.off()
 

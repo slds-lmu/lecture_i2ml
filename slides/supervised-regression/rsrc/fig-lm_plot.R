@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -32,6 +32,6 @@ ggplot() +
   geom_text(mapping = aes(x = 0, y = 1, label = "{theta[0] == intercept} == 1"), hjust = -0.1, parse = TRUE, color = "blue") +
   ylim(c(0, 3.5)) + xlim(c(-0.5, 4.3))
 
-ggsave("reg_lm_plot.pdf", width = 4.8, height = 3.1)
+ggsave("../figure/reg_lm_plot.pdf", width = 4.8, height = 3.1)
 dev.off()
 

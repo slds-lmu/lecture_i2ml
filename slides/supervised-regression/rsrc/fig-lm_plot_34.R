@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+ 
 library(knitr)
 library(mlbench)
 library(mlr)
@@ -101,7 +101,7 @@ coef1 <- c(1.8, .3)
 coef2 <- c(1, .1)
 coef3 <- c(0.5, .8)
 
-pdf("reg_lm_plot_34.pdf", width= 9, height = 4)
+pdf("../figure/reg_lm_plot_34.pdf", width= 9, height = 4)
 
 layout(cbind(c(1,2), c(3,0), c(4,4), c(4,4)))
 frame_plot(x, y, coef1, colBlue, c(2, 5.5), c(x = 6.5, y = -0.5))
@@ -127,7 +127,7 @@ points_3d = trans3d(x = cbind(coef1, coef2, coef3)[1,], y = cbind(coef1, coef2, 
 points(points_3d, col = c(colBlue(255), colOrange(255), colRed(255)), pch = 16, cex = 2)
 points(points_3d, col = "black", pch = 1, cex = 2, lwd = 2)
 #par(opar)
-ggsave("reg_lm_plot_34.pdf", width= 9, height = 6)
+ggsave("../figure/reg_lm_plot_34.pdf", width= 9, height = 6)
 
 dev.off()
 
