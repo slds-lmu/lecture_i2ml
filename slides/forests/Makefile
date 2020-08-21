@@ -1,10 +1,17 @@
 SLIDES = $(shell find . -maxdepth 1 -iname "slides-*.Rnw")
 PDFS = $(SLIDES:%.Rnw=%.pdf)
+TSLIDES = $(shell find . -maxdepth 1 -iname "slides-*fig.tex")
+TPDFS = $(TSLIDES:%.tex=%.pdf)
 
 all: texclean $(PDFS) 
+tex: texclean $(TPDFS) 
 
 $(PDFS): %.pdf: %.Rnw
 	Rscript -e 'setwd("$(dir $<)"); knitr::knit2pdf("$(notdir $<)")'
+
+$(TPDFS): %.pdf: %.tex
+	pdflatex $<
+
 
 texclean: 
 	rm -rf *.out
