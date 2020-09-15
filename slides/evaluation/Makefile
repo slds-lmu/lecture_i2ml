@@ -1,6 +1,6 @@
 SLIDES = $(shell find . -maxdepth 1 -iname "slides-*.Rnw")
 PDFS = $(SLIDES:%.Rnw=%.pdf)
-TSLIDES = $(shell find . -maxdepth 1 -iname "slides-*fig.tex")
+TSLIDES = $(shell find . -maxdepth 1 -iname "slides-*.tex")
 TPDFS = $(TSLIDES:%.tex=%.pdf)
 
 all: texclean $(PDFS) 
