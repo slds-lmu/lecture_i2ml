@@ -81,6 +81,7 @@ plotROC = function (df_auc, threshold, table = TRUE, auc = FALSE, highlight = TR
 }
 
 
+#first figure 
 
 pdf("../figure/eval_mclass_roc_sp_4.pdf", width = 4, height = 4)
 df_auc = data.frame(
@@ -95,5 +96,88 @@ fpr = mlr::measureFPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thr
 
 plotROC(df_auc, thresh)
 ggsave("../figure/eval_mclass_roc_sp_4.pdf", width = 4, height = 4)
+dev.off()
+
+
+#second figure with thresh = 0.9
+
+pdf("../figure/eval_mclass_roc_sp_5.pdf", width = 6, height = 4)
+
+plotROC(df_auc, thresh)
+ggsave("../figure/eval_mclass_roc_sp_5.pdf", width = 6, height = 4)
+dev.off()
+
+
+#third figure with thresh = 0.85
+
+pdf("../figure/eval_mclass_roc_sp_6.pdf", width = 6, height = 4)
+
+thresh = 0.85
+tpr = mlr::measureTPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos")
+fpr = mlr::measureFPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos", negative = "Neg")
+
+plotROC(df_auc, thresh)
+ggsave("../figure/eval_mclass_roc_sp_6.pdf", width = 6, height = 4)
+dev.off()
+
+
+#fourth figure with thresh = 0.66
+
+pdf("../figure/eval_mclass_roc_sp_7.pdf", width = 6, height = 4)
+
+thresh = 0.66
+tpr = mlr::measureTPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos")
+fpr = mlr::measureFPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos", negative = "Neg")
+
+plotROC(df_auc, thresh)
+ggsave("../figure/eval_mclass_roc_sp_7.pdf", width = 6, height = 4)
+dev.off()
+
+
+#fifth figure with thresh = 0.6
+
+pdf("../figure/eval_mclass_roc_sp_8.pdf", width = 6, height = 4)
+
+thresh = 0.6
+tpr = mlr::measureTPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos")
+fpr = mlr::measureFPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos", negative = "Neg")
+
+plotROC(df_auc, thresh)
+ggsave("../figure/eval_mclass_roc_sp_8.pdf", width = 6, height = 4)
+dev.off()
+
+
+#sixth figure with thresh = 0.55
+
+pdf("../figure/eval_mclass_roc_sp_9.pdf", width = 6, height = 4)
+
+thresh = 0.55
+tpr = mlr::measureTPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos")
+fpr = mlr::measureFPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos", negative = "Neg")
+
+plotROC(df_auc, thresh)
+ggsave("../figure/eval_mclass_roc_sp_9.pdf", width = 6, height = 4)
+dev.off()
+
+
+#seventh figure with thresh = 0.3
+
+pdf("../figure/eval_mclass_roc_sp_10.pdf", width = 6, height = 4)
+
+thresh = 0.3
+tpr = mlr::measureTPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos")
+fpr = mlr::measureFPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos", negative = "Neg")
+
+plotROC(df_auc, thresh)
+ggsave("../figure/eval_mclass_roc_sp_10.pdf", width = 6, height = 4)
+dev.off()
+
+
+#eighth figure 
+
+pdf("../figure/eval_mclass_roc_sp_11.pdf", width = 6, height = 4)
+
+plotROC(df_auc, 0, highlight = FALSE)
+ggsave("../figure/eval_mclass_roc_sp_11.pdf", width = 6, height = 4)
 dev.off()
 
