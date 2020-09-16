@@ -39,3 +39,10 @@ plotLearnerPrediction(learner, task, kernel = "rbfdot", C = 1, sigma = 100, poin
 ggsave("../figure/eval_ofit_1.pdf", width = 8, height = 6)
 dev.off()
 
+
+pdf("../figure/eval_ofit_2.pdf", width = 8, height = 6)
+plotLearnerPrediction(learner, task, kernel = "rbfdot", C = 1, sigma = 1, pointsize = 4)
+
+ggsave("../figure/eval_ofit_2.pdf", width = 8, height = 6)
+dev.off()
+
