@@ -26,6 +26,7 @@ options(digits = 3, width = 65, str = strOptions(strict.width = "cut", vec.len =
 pdf("../figure/reg_class_dis_1_2.pdf", width = 8, height = 2.5)
 
 n = 300
+set.seed(123)
 classa = data.frame(mvrnorm(n = n, mu = c(2,2), Sigma = matrix(c(2, 0, 0, 2), ncol = 2, byrow = TRUE)))
 classb = data.frame(mvrnorm(n = n, mu = c(10,7), Sigma = matrix(c(8, -6, -6, 8), ncol = 2, byrow = TRUE)))
 
