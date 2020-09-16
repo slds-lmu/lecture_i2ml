@@ -36,3 +36,13 @@ print(pl)
 ggsave("../figure/eval_mclass_roc_sp_2.pdf", width = 4, height = 4)
 dev.off()
 
+pdf("../figure/eval_mclass_roc_sp_3.pdf", width = 4, height = 4)
+fpr = c(0.75, 0.25)
+tpr = c(0.25, 0.75)
+label = c("C1", "C2")
+p1 = plot_roc_space(fpr, tpr, label)
+p1 = p1 + geom_segment(x = fpr[1], y = tpr[1], xend = fpr[2], yend = tpr[2], lty = "dotted")
+print(p1)
+ggsave("../figure/eval_mclass_roc_sp_3.pdf", width = 4, height = 4)
+dev.off()
+
