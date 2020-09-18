@@ -101,6 +101,7 @@ coef1 <- c(1.8, .3)
 coef2 <- c(1, .1)
 coef3 <- c(0.5, .8)
 
+#1st figure of best theta
 pdf("../figure/reg_lm_plot_35.pdf", width= 4.5, height = 5.5)
 
 persp(x = c1_grid, y = c2_grid, sse_surf, theta = -130, phi = 10, 
@@ -108,6 +109,25 @@ persp(x = c1_grid, y = c2_grid, sse_surf, theta = -130, phi = 10,
       ticktype = "detailed", xlab = "Intercept", ylab = "Slope", zlab = "SSE", 
       col = clrs_ramp[clrs], border = rgb(0,0,0,.5))
 ggsave("../figure/reg_lm_plot_35.pdf", width= 4, height = 0.66)
+
+dev.off()
+
+#2nd figure of best theta
+pdf("../figure/reg_lm_plot_36.pdf", width= 4.5, height = 5.5)
+
+p <- persp(x = c1_grid, y = c2_grid, sse_surf, theta = -130, phi = 10, 
+           zlim = range(sse_surf),
+           ticktype = "detailed", xlab = "Intercept", ylab = "Slope", zlab = "SSE", 
+           col = clrs_ramp[clrs], border = rgb(0,0,0,.5))
+points_3d = 
+  trans3d(x = coef(m)[1], 
+          y = coef(m)[2], 
+          z = sse(coef(m)[1], coef(m)[2], x, y),
+          pmat = p)
+points(points_3d, col = c(colGreen(255)), 
+       pch = 16, cex = 2)
+points(points_3d, col = "black", pch = 1, cex = 2, lwd = 2)
+ggsave("../figure/reg_lm_plot_36.pdf", width= 4, height = 0.66)
 
 dev.off()
 
