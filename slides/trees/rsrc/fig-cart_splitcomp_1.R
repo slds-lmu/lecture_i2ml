@@ -59,9 +59,14 @@ SSE1.log = log.mod$learner.model$frame$dev[2]
 SSE2.log = log.mod$learner.model$frame$dev[3]
 
 
-set.seed(600000)
+set.seed(123)
 pdf("../figure/cart_splitcomp_1.pdf", width = 6, height = 4)
 fancyRpartPlot(mod$learner.model, sub = "")
 ggsave("../figure/cart_splitcomp_1.pdf", width = 6, height = 4)
+dev.off()
+
+pdf("../figure/cart_splitcomp_2.pdf", width = 6, height = 4)
+fancyRpartPlot(log.mod$learner.model, sub = "")
+ggsave("../figure/cart_splitcomp_2.pdf", width = 6, height = 4)
 dev.off()
 
