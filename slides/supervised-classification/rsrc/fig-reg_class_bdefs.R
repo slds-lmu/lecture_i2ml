@@ -21,6 +21,10 @@ library(car)
 
 options(digits = 3, width = 65, str = strOptions(strict.width = "cut", vec.len = 3))
 
+plot_lp = function(...){
+  plotLearnerPrediction(...) + scale_fill_viridis_d()
+}
+
 
 pdf("../figure/reg_class_bdefs.pdf", width = 8, height = 5.5)
 
