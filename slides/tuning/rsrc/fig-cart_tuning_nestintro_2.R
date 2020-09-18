@@ -36,9 +36,6 @@ scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
     viridis::scale_color_viridis(..., end = .9, discrete = TRUE, drop = TRUE)
   }
 
-
-pdf("../figure/cart_tuning_nestintro_2.pdf", width = 8, height = 3.5)
-
 size = 200
 p = 0.5
 dens.x = seq(0, 1, length.out = 100)
@@ -61,9 +58,20 @@ plot_dens_with_errs = function(k) {
   return(pl)
 }
 
+#figure 1
+pdf("../figure/cart_tuning_nestintro_2.pdf", width = 8, height = 3.5)
 pl1 = plot_dens_with_errs(k = 1)
 pl2 = plot_dens_with_errs(k = 10)
 grid.arrange(pl1, pl2, ncol = 2)
 ggsave("../figure/cart_tuning_nestintro_2.pdf", width = 8, height = 3.5)
+dev.off()
+
+
+#figure 2
+pdf("../figure/cart_tuning_nestintro_3.pdf", width = 8, height = 3.5)
+pl3 = plot_dens_with_errs(k = 100)
+pl4 = plot_dens_with_errs(k = 1000)
+grid.arrange(pl3, pl4, ncol = 2)
+ggsave("../figure/cart_tuning_nestintro_3.pdf", width = 8, height = 3.5)
 dev.off()
 
