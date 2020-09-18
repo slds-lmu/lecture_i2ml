@@ -36,7 +36,7 @@ scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
   }
 
 
-set.seed(600000)
+set.seed(123)
 pdf("../figure/cart_dis_1.pdf", width = 8, height = 5)
 n = 100
 data = data.frame(x1 = runif(n), x2 = runif(n))
