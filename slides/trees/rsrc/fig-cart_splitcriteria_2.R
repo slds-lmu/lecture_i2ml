@@ -32,7 +32,7 @@ scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
 library(plyr)
 library(kernlab)
 
-pdf("../figure/cart_splitcriteria_2.pdf", width = 8, height = 3)
+cairo_pdf("../figure/cart_splitcriteria_2.pdf", family="DejaVu Sans", width = 8, height = 3)
 set.seed(1221)
 n <- 50
 data <- data.frame(x = seq(-4 , 2, l = n))
