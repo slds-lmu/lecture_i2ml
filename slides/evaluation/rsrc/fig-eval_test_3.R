@@ -20,7 +20,7 @@ library(kknn)
 library(e1071)
 
 options(digits = 3, width = 65, str = strOptions(strict.width = "cut", vec.len = 3))
-
+set.seed(123)
 
 plot_lp = function(...){
   plotLearnerPrediction(...) + scale_fill_viridis_d()
