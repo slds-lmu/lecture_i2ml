@@ -38,14 +38,27 @@ scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
   }
 
 
-set.seed(600000)
+set.seed(123)
+#figure 1
 pdf("../figure/cart_tuning_balgos_1.pdf", width = 8, height = 3.5)
-
 
 x = y = seq(-10, 10, length.out = 10)
 d = expand.grid(x = x, y = y)
 pl = plotTune(d)
 print(pl)
 ggsave("../figure/cart_tuning_balgos_1.pdf", width = 8, height = 3.5)
+dev.off()
+
+#figure 2
+
+pdf("../figure/cart_tuning_balgos_2.pdf", width = 8, height = 3.5)
+library(tidyr)
+library(kernlab)
+x = runif(40, -10, 10)
+y = runif(40, -10, 10)
+d = data.frame(x = x, y = y)
+pl = plotTune(d)
+print(pl)
+ggsave("../figure/cart_tuning_balgos_2.pdf", width = 8, height = 3.5)
 dev.off()
 
