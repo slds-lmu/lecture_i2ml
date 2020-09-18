@@ -36,7 +36,7 @@ scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
   }
 
 
-set.seed(600000)
+set.seed(123)
 pdf("../figure/cart_dis_2.pdf", width = 8, height = 5)
 fn = function(x) (sin(4*x - 4)) * ((2*x - 2)^2) * (sin(20*x - 4))
 d = data.frame(x = seq(0.2, 1, length.out = 7))
