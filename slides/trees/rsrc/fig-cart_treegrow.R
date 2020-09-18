@@ -19,6 +19,8 @@ library(kableExtra)
 library(kknn)
 library(e1071)
 library(rattle)
+library(pdftools)
+library(qpdf)
 
 options(digits = 3, width = 65, str = strOptions(strict.width = "cut", vec.len = 3))
 
@@ -51,10 +53,35 @@ scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
 
 library(plyr)
 library(kernlab)
-set.seed(600000)
+set.seed(123)
+
+#figure 1
 pdf("../figure/cart_treegrow_1.pdf", width = 8, height = 2.2)
 draw_cart_on_iris(depth = 1, with_tree_plot = TRUE)
-
 ggsave("../figure/cart_treegrow_1.pdf", width = 8, height = 2.2)
 dev.off()
+
+#figure 1 second part
+pdf_file = file.path("../figure/cart_treegrow_12.pdf")
+pdf_subset('../figure/cart_treegrow_1.pdf', pages = 2:2, output = pdf_file)
+
+#figure 2
+pdf("../figure/cart_treegrow_2.pdf", width = 8, height = 2.2)
+draw_cart_on_iris(depth = 2, with_tree_plot = TRUE)
+ggsave("../figure/cart_treegrow_2.pdf", width = 8, height = 2.2)
+dev.off()
+
+#figure 2 second part
+pdf_file = file.path("../figure/cart_treegrow_22.pdf")
+pdf_subset('../figure/cart_treegrow_2.pdf', pages = 2:2, output = pdf_file)
+
+#figure 3
+pdf("../figure/cart_treegrow_3.pdf", width = 8, height = 2.2)
+draw_cart_on_iris(depth = 3, with_tree_plot = TRUE)
+ggsave("../figure/cart_treegrow_3.pdf", width = 8, height = 2.2)
+dev.off()
+
+#figure 3 second part
+pdf_file = file.path("../figure/cart_treegrow_32.pdf")
+pdf_subset('../figure/cart_treegrow_3.pdf', pages = 2:2, output = pdf_file)
 
