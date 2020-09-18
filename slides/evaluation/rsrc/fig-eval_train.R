@@ -26,6 +26,12 @@ plot_lp = function(...){
   plotLearnerPrediction(...) + scale_fill_viridis_d()
 }
 
+#for cnsistent color scheme
+scale_c_d <- scale_colour_discrete <- scale_color_discrete <- 
+  function(...) {
+    viridis::scale_color_viridis(..., end = .9, discrete = TRUE, drop = TRUE)
+  }
+
 ## data for example
 .h = function(x) 0.5 + 0.4 * sin(2 * pi * x)
 h = function(x) .h(x) + rnorm(length(x), mean = 0, sd = 0.05)
@@ -98,7 +104,7 @@ ggTrainTestPlot = function (data, truth.fun, truth.min, truth.max, test.plot,
 
 library(plyr)
 library(kernlab)
-set.seed(600000)
+set.seed(123)
 
 #figure 1
 pdf("../figure/eval_train_1.pdf", width = 5.5, height = 2)
