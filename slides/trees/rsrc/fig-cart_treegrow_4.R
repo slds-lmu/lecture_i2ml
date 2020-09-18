@@ -37,7 +37,7 @@ scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
   }
 
 
-set.seed(600000)
+set.seed(123)
 pdf("../figure/cart_treegrow_4.pdf", width = 8, height = 4)
 task = subsetTask(iris.task, seq(1, 150, by = 20))
 lrn = makeLearner("classif.rpart", cp = 0, minbucket = 1, maxdepth = 1)
