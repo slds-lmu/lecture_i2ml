@@ -37,7 +37,7 @@ scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
   }
 
 
-set.seed(12322)
+set.seed(123)
 pdf("../figure/cart_tuning_balgos_3.pdf", width = 8, height = 3)
 tr = BBmisc::load2("tune_example.RData")
 df = as.data.frame(tr$opt.path)
