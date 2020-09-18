@@ -42,7 +42,9 @@ mod = train(lrn, bh.task)
 mod = mod$learner.model
 
 
-set.seed(600000)
+set.seed(123)
+
+#figure 1
 pdf("../figure/cart_stopprun_1.pdf", width = 8, height = 5.8)
 cps = rev(mod$cptable[-4, "CP"])
 rattle::fancyRpartPlot(mod, sub = "Full tree")
@@ -50,3 +52,40 @@ rattle::fancyRpartPlot(mod, sub = "Full tree")
 ggsave("../figure/cart_stopprun_1.pdf", width = 8, height = 5.8)
 dev.off()
 
+#figure 2
+pdf("../figure/cart_stopprun_2.pdf", width = 8, height = 5.8)
+cps = rev(mod$cptable[-4, "CP"])
+cps = cps[1]
+lapply(cps, function(x) {
+  p = rpart::prune(mod, cp = x)
+  sub_title = sprintf("Pruning with complexity parameter = %.3f.", x)
+  rattle::fancyRpartPlot(p, sub = sub_title)
+})
+ggsave("../figure/cart_stopprun_2.pdf", width = 8, height = 5.8)
+dev.off()
+
+#figure 3
+pdf("../figure/cart_stopprun_3.pdf", width = 8, height = 5.8)
+cps = rev(mod$cptable[-4, "CP"])
+#rattle::fancyRpartPlot(mod, sub = "Full tree")
+cps = cps[2]
+lapply(cps, function(x) {
+  p = rpart::prune(mod, cp = x)
+  sub_title = sprintf("Pruning with complexity parameter = %.3f.", x)
+  rattle::fancyRpartPlot(p, sub = sub_title)
+})
+ggsave("../figure/cart_stopprun_3.pdf", width = 8, height = 5.8)
+dev.off()
+
+#figure 4
+pdf("../figure/cart_stopprun_4.pdf", width = 8, height = 5.8)
+cps = rev(mod$cptable[-4, "CP"])
+#rattle::fancyRpartPlot(mod, sub = "Full tree")
+cps = cps[3]
+lapply(cps, function(x) {
+  p = rpart::prune(mod, cp = x)
+  sub_title = sprintf("Pruning with complexity parameter = %.3f.", x)
+  rattle::fancyRpartPlot(p, sub = sub_title)
+})
+ggsave("../figure/cart_stopprun_4.pdf", width = 8, height = 5.8)
+dev.off()
