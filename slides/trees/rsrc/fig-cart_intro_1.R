@@ -20,7 +20,7 @@ library(kknn)
 library(e1071)
 
 options(digits = 3, width = 65, str = strOptions(strict.width = "cut", vec.len = 3))
-
+set.seed(123)
 
 draw_cart_on_iris = function(depth, with_tree_plot = FALSE) {
   task = makeClassifTask(data = iris[,3:5], target = "Species")
@@ -50,10 +50,18 @@ scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
 
 library(plyr)
 library(kernlab)
-set.seed(600000)
+
 pdf("../figure/cart_intro_1.pdf", width = 8, height = 2.2)
 model = draw_cart_on_iris(depth = 2)
 
 ggsave("../figure/cart_intro_1.pdf", width = 8, height = 2.2)
+dev.off()
+
+#figure cart_intro 2
+
+pdf("../figure/cart_intro_2.pdf", width = 8, height = 4)
+model = draw_cart_on_iris(depth = 2)
+
+ggsave("../figure/cart_intro_2.pdf", width = 8, height = 3.5)
 dev.off()
 
