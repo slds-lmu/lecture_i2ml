@@ -21,7 +21,7 @@ library(kknn)
 options(digits = 3, width = 65, str = strOptions(strict.width = "cut", vec.len = 3))
 
 
-set.seed(600000)
+set.seed(123)
 .h = function(x) 0.6 + 0.4 * sin(2 * pi * x)
 h = function(x) .h(x) + .1 * arima.sim(list(ar = .7, ma = 0), length(x)) + rnorm(length(x), sd = .5)
 
