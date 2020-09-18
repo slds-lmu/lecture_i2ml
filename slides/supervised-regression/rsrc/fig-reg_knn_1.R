@@ -21,7 +21,7 @@ library(kknn)
 options(digits = 3, width = 65, str = strOptions(strict.width = "cut", vec.len = 3))
 
 
-set.seed(100000)
+set.seed(123)
 circleFun = function(center = c(0,0), diameter = 1, npoints = 100){
   r = diameter / 2
   tt = seq(0,2*pi,length.out = npoints)
