@@ -20,12 +20,13 @@ library(kknn)
 library(e1071)
 
 options(digits = 3, width = 65, str = strOptions(strict.width = "cut", vec.len = 3))
-
+set.seed(123)
 
 plot_lp = function(...){
   plotLearnerPrediction(...) + scale_fill_viridis_d()
 }
 
+#for consistent color scheme
 scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
   function(...) {
     viridis::scale_color_viridis(..., end = .9, discrete = TRUE, drop = TRUE)
