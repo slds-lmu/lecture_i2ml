@@ -24,7 +24,7 @@ options(digits = 3, width = 65, str = strOptions(strict.width = "cut", vec.len =
 
 
 
-pdf("../figure/reg_class_log_5.pdf", width = 8, height = 3)
+pdf("../figure/reg_class_log_5.pdf", width = 8, height = 5)
 set.seed(1234)
 n = 20
 x = runif(n, min = 0, max = 7)
@@ -44,6 +44,6 @@ p2 = p2 + geom_point(data = df, aes(x = x, y = prob, colour = y), size = 2)
 p2 = p2 + xlab("x") + ylab(expression(pi(x)))
 p2 = p2 + theme(legend.position = "none")
 p2
-ggsave("../figure/reg_class_log_5.pdf", width = 8, height = 3)
+ggsave("../figure/reg_class_log_5.pdf", width = 8, height = 5)
 dev.off()
 
