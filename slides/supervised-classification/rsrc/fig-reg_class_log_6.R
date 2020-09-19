@@ -27,7 +27,7 @@ plot_lp = function(...){
 }
 
 
-pdf("../figure/reg_class_log_6.pdf", width = 8, height = 3)
+pdf("../figure/reg_class_log_6.pdf", width = 8, height = 4)
 set.seed(1)
 n = 40
 x = runif(2 * n, min = 0, max = 7)
@@ -42,6 +42,14 @@ mm = m$learner.model
 df$score = -predict(mm)
 df$prob = getPredictionProbabilities(predict(m, task = task))
 plot_lp(lrn, task = task)
-ggsave("../figure/reg_class_log_6.pdf", width = 8, height = 3)
+ggsave("../figure/reg_class_log_6.pdf", width = 8, height = 4)
 dev.off()
 
+
+pdf("../figure/reg_class_log_7.pdf", width = 2, height = 2)
+set.seed(123)
+p2 = ggplot(df, aes(x = score, y = prob)) + geom_line() + geom_point(aes(colour = y), size = 2)
+p2 = p2 + theme(legend.position = "none") + xlim(c(-10, 10))
+plot(p2)
+ggsave("../figure/reg_class_log_7.pdf", width = 2, height = 2)
+dev.off()
