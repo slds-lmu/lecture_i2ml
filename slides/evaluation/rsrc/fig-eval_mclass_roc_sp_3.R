@@ -90,11 +90,9 @@ df_auc = data.frame(
   Score = c(0.95, 0.86, 0.69, 0.65, 0.59, 0.52, 0.51, 0.39, 0.28, 0.18, 0.15, 0.06)
 )
 names(df_auc) = c("#", "Truth", "Score")
-thresh = 0.9
-tpr = mlr::measureTPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos")
-fpr = mlr::measureFPR(truth = df_auc$Truth, response = ifelse(df_auc$Score > thresh, "Pos", "Neg"), positive = "Pos", negative = "Neg")
 
-plotROC(df_auc, thresh)
+
+plotROC(df_auc, 0, highlight = FALSE, table = FALSE)
 ggsave("../figure/eval_mclass_roc_sp_4.pdf", width = 4, height = 4)
 dev.off()
 
