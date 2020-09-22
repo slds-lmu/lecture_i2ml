@@ -1,0 +1,48 @@
+ 
+library(knitr)
+library(mlbench)
+library(mlr)
+library(OpenML)
+
+library(ggplot2)
+library(viridis)
+library(gridExtra)
+library(ggrepel)
+library(repr)
+
+library(data.table)
+library(BBmisc)
+
+
+library(party)
+library(kableExtra)
+library(kknn)
+library(e1071)
+
+options(digits = 3, width = 65, str = strOptions(strict.width = "cut", vec.len = 3))
+
+
+plot_lp = function(...){
+  plotLearnerPrediction(...) + scale_fill_viridis_d()
+}
+pal_2 <- viridisLite::viridis(2, end = .9)
+
+
+pdf("../figure/eval_mclass_2.pdf", width = 7, height = 2.5)
+library(grid)
+phat = seq(0.01, 0.99, by = 0.01)
+d = rbind(
+  data.frame(phat = phat, LL = -log(phat), true.label = "1"),
+  data.frame(phat = phat, LL = -log(1-phat), true.label = "0")
+)
+pl = ggplot(data = d, aes(x = phat, y = LL, col = true.label))
+pl = pl + geom_line() + xlab(expression(hat(pi)(x)))
+pl = pl + geom_vline(xintercept=0.5)
+pl = pl + annotate(geom = "text", label = "right", x=0.1, y=0.1, col = pal_2[2])
+pl = pl + annotate(geom = "text", label = "wrong", x=0.1, y=2.0, col = pal_2[1])
+pl = pl + annotate(geom = "text", label = "wrong", x=0.9, y=2.0, col = pal_2[2])
+pl = pl + annotate(geom = "text", label = "right", x=0.9, y=0.1, col = pal_2[1])
+print(pl)
+ggsave("../figure/eval_mclass_2.pdf", width = 7, height = 2.5)
+dev.off()
+
