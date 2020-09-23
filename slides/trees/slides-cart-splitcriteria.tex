@@ -203,9 +203,9 @@ $\implies$ \textbf{empirical risk minimization}
 
 \begin{itemize}
 \item Let $\Np \subseteq \D$ be the data that is assigned to a terminal node $\Np$ of a tree.
-\item Let $c$ be the predicted constant value for the data assigned to $\Np$: $\yh \equiv c$ for all $\left(x,y\right) \in \Np$.
+\item Let $c$ be the predicted constant value for the data assigned to $\Np$: $\yh \equiv c$ for all $\left(\xv, y\right) \in \Np$.
 \item Then the risk $\risk(\Np)$ for a leaf is simply the average loss for the data assigned to that leaf under a given loss function $L$:
-  $$\risk(\Np) = \frac{1}{|\Np|} \sum\limits_{(x,y) \in \Np} L(y, c)$$
+  $$\risk(\Np) = \frac{1}{|\Np|} \sum\limits_{(\xv, y) \in \Np} L(y, c)$$
 \item The prediction is given by the optimal constant $c = \argmin_c \risk(\Np)$
 \end{itemize}
 
@@ -214,16 +214,16 @@ $\implies$ \textbf{empirical risk minimization}
 \begin{itemize}
 \item A split w.r.t. \textbf{feature $\xj$ at split point $t$} divides a parent node $\Np$ into 
   \begin{align*}
-    \Nl &= \{ (x,y) \in \Np: \xj \leq t \} \text{ and } \Nr = \{ (x,y) \in \Np: \xj > t \}.
+    \Nl &= \{ (\xv, y) \in \Np: \xj \leq t \} \text{ and } \Nr = \{ (\xv, y) \in \Np: \xj > t \}.
   \end{align*}
 \item   
   In order to evaluate how good a split is, we compute the empirical risks
-  in both child nodes and sum it up
+  in both child nodes and sum them up:
      \begin{align*}
       \risk(\Np, j, t) &= \frac{|\Nl|}{|\Np|} \risk(\Nl) + \frac{|\Nr|}{|\Np|} \risk(\Nr) \\
-                  &= \frac{1}{|\Np|}\left(\sum\limits_{(x,y) \in \Nl} L(y, c_1) + \sum\limits_{(x,y) \in \Nr} L(y, c_2)\right)
+                  &= \frac{1}{|\Np|}\left(\sum\limits_{(\xv,y) \in \Nl} L(y, c_1) + \sum\limits_{(\xv,y) \in \Nr} L(y, c_2)\right)
       \end{align*}
-  \item finding the best way to split $\Np$ into $\Nl, \Nr$ means solving
+  \item Finding the best way to split $\Np$ into $\Nl, \Nr$ means solving
   $$\argmin_{j, t} \risk(\Np, j, t)$$
 \end{itemize}
 \end{vbframe}
@@ -231,9 +231,9 @@ $\implies$ \textbf{empirical risk minimization}
 \begin{vbframe}{Splitting criteria: Regression}
 \begin{itemize}
  \item For regression trees, we usually use $L_2$ loss:
-  $$\risk(\Np) = \frac{1}{|\Np|} \sum\limits_{(x,y) \in \Np} (y - c)^2$$
- \item The best constant prediction under $L_2$ is the mean
-  $$c = \bar{y}_\Np = \frac{1}{|\Np|} \sum\limits_{(x,y) \in \Np} y$$
+  $$\risk(\Np) = \frac{1}{|\Np|} \sum\limits_{(\xv,y) \in \Np} (y - c)^2$$
+ \item The best constant prediction under $L_2$ is the mean:
+  $$c = \bar{y}_\Np = \frac{1}{|\Np|} \sum\limits_{(\xv,y) \in \Np} y$$
 \end{itemize}
 
 \framebreak
@@ -260,7 +260,7 @@ We can also interpret this as a way of measuring the impurity of the target dist
 \begin{itemize}
 \item Typically uses either Brier score (so: $L_2$ loss on probabilities) or  Bernoulli loss (as in logistic regression) as loss functions
 \item Predicted probabilities in node $\Np$ are simply the class proportions in the node:
-$$ \pikNh = \frac{1}{|\Np|} \sum\limits_{(x,y) \in \Np} \I(y = k) $$
+$$ \pikNh = \frac{1}{|\Np|} \sum\limits_{(\xv,y) \in \Np} \I(y = k) $$
 This is the optimal prediction under both the logistic / Bernoulli loss and the Brier loss.
 \end{itemize}
 
@@ -280,14 +280,14 @@ This is the optimal prediction under both the logistic / Bernoulli loss and the 
 
 \begin{itemize}
 \item Splitting criteria for trees are usually defined in terms of "impurity reduction". Instead of minimizing empirical risk in the child nodes over all possible splits, a measure of \enquote{impurity} of the distribution of the target $y$ in the child nodes is minimized. 
-\item For regression trees, the \enquote{impurity} of a node is usuallly defined as the variance of the $\yi$ in the node. Minimizing this \enquote{variance impurity} is equivalent to minimizing the squared error loss for a predicted constant in the nodes. 
+\item For regression trees, the \enquote{impurity} of a node is usually defined as the variance of the $\yi$ in the node. Minimizing this \enquote{variance impurity} is equivalent to minimizing the squared error loss for a predicted constant in the nodes. 
 
 \framebreak 
 
 \item Minimizing the Brier score is equivalent to minimizing the Gini impurity
-$$I(\Np) = \sum_{k=1}^g \pikNh(1-\pikNh)$$
+$$I(\Np) = \sumkg \pikNh \left( 1-\pikNh \right)$$
 \item Minimizing the Bernoulli loss is equivalent to minimizing entropy impurity
-$$I(\Np) = -\sum_{k=1}^g \pikNh \log \pikNh$$
+$$I(\Np) = -\sumkg \pikNh \log \pikNh$$
 \item The approach based on loss functions instead of impurity measures is simpler and more straightforward, mathematically equivalent and shows that growing a tree can be understood in terms of empirical risk minimization.
 \end{itemize}
 \end{vbframe}
@@ -296,7 +296,7 @@ $$I(\Np) = -\sum_{k=1}^g \pikNh \log \pikNh$$
 
 \begin{itemize}
 \item Why don't we use the misclassification loss for classification trees? I.e., always predict the majority class in each child node and count how many errors we make.
-\item In many other cases, we are interested in minimizing this kind of error, but have to approximate it by some other criterion instead since the misclassification loss does not have derivatives that we can use for optimization.\\
+\item In many other cases, we are interested in minimizing this kind of error but have to approximate it by some other criterion instead, since the misclassification loss does not have derivatives that we can use for optimization.\\
 We don't need derivatives when we optimize the tree, so we could go for it!
 \item This is possible, but Brier score and Bernoulli loss are more sensitive to changes in the node probabilities, and  therefore often preferred
 \end{itemize}
