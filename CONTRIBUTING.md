@@ -37,12 +37,13 @@ what material needs to be understood before what else. Please do add appropriate
 - We recommend usage of `{tinytex}` (install via `tinytex::install_tinytex()`)
 - Use `make install` in the slides folder to automagically install **all** the `R` packages you'll need for the slides, demos and exercises. See also `attic/install.R`
 
-### Figures
-- The basic assumption is that you execute the R-files from the rsrc folder
+### Figures Used in the Slides
+- Figures not produced by us are added to figure-man folder of the respective chapter
 - R-files which produce figures should be named "fig-*.R"
-- These figure producing R-files should save their respective figures to "../figure/"
-- Utility functions used by more than one R-file should be exported to a separate R-file (also located in the respective rsrc folder)
-- Heavy simulations should not be done in the figures producing R-files. Instead, we only load Rdata files which were produced by separate R-files (also located in the rsrc folder)
+  - The basic assumption is that you execute the R-files from the rsrc folder
+  - These figure producing R-files should save their respective figures to "../figure/". From the name of the figure it should be clear which R-file produced it.
+  - Utility functions used by more than one R-file should be exported to a separate R-file (also located in the respective rsrc folder)
+  - Heavy simulations should not be done in the figures producing R-files. Instead, we only load Rdata files which were produced by separate R-files (also located in the rsrc folder)
 
 
 ### Code Snippets:
