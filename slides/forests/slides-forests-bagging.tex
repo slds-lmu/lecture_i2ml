@@ -162,7 +162,7 @@
   \item It's an \textbf{ensemble method}, i.e., it combines many models into one 
         big \enquote{meta-model}
   \item Such model ensembles often work much better than their members alone would.
-  \item for reasons, the constituent models of an ensemble are called \textbf{base learners} 
+  \item For reasons, the constituent models of an ensemble are called \textbf{base learners} 
       % that improves instable / high variance learners by variance smoothing
 \end{itemize}
 
@@ -171,7 +171,7 @@ In a \textbf{bagging} ensemble, all base learners are of the same type. The only
 Specifically, we train base learners $\blm, m = 1, \dots, M$ on $M$ \textbf{bootstrap} samples of training data $\D$:
 \begin{itemize}
   \item Draw $n$ observations from $\D$ with replacement
-  \item Fit the base learner on each of the $B$ bootstrap samples to get models $\hat f(x) = \blmh, m = 1, \dots, M$
+  \item Fit the base learner on each of the $B$ bootstrap samples to get models $\fh(x) = \blmh, m = 1, \dots, M$
 \end{itemize}
 
 \begin{center}
@@ -219,7 +219,7 @@ In one sentence:\\
 
 Because the variability of the average of the predictions of many base learner models is smaller than the variability of the predictions from one such base learner model.\\
 
-If the error of a base learner model is mostly due to (random) variability and not due to structural reasons, combining many such base learners by bagging helps by reducing this variability.
+If the error of a base learner model is mostly due to (random) variability and not due to structural reasons, combining many such base learners by bagging helps reducing this variability.
 
 
 \framebreak
@@ -229,27 +229,27 @@ If the error of a base learner model is mostly due to (random) variability and n
  \begin{align*}
  \ambifM &= \tfrac{1}{M}\sum^M_{m} \left(\blm- \fM\right)^2 \\
          &= \tfrac{1}{M}\sum^M_{m} \left(\left(\blm - y\right)  + \left(y - \fM\right)\right)^2\\
-         &= \tfrac{1}{M}\sum^M_{m} L(y, \blm) + L(y, \fM) \underbrace{- 2 \left(y - \tfrac{1}{M}\sum^M_{m}\blm\right)\left(y - \fM\right)}_{- 2 L\left(y, \fM\right)} \\[-.5em]
-  \intertext{so, if we take the expected value over the data's distribution:}
-  \E_{xy}\left[L\left(y, \fM\right)\right] &= \tfrac{1}{M}\sum^M_{m} \E_{xy}\left[L\left(y, \blm \right)\right] - \E_{xy}\left[\ambifM\right]
-  \end{align*}
+         &= \tfrac{1}{M}\sum^M_{m} L(y, \blm) + L(y, \fM) \underbrace{- 2 \left(y - \tfrac{1}{M}\sum^M_{m=1}\blm\right)\left(y - \fM\right)}_{- 2 L\left(y, \fM\right)} \\[-.5em] \intertext{So, if we take the expected value over the data's distribution:}
+         \Exy\left[L\left(y, \fM\right)\right] &= \tfrac{1}{M}\sum^M_{m} \Exy\left[L\left(y, \blm \right)\right] - \Exy\left[\ambifM\right] \end{align*}
 \end{scriptsize}
+\small
 $\Rightarrow$ The expected loss of the ensemble is lower than the average loss of the single base learner by the amount of instability in the ensemble's base learners.\\ The more accurate and diverse the base learners, the better.
+\normalsize
 \framebreak
 \end{vbframe}
 
 \begin{vbframe}{Improving Bagging}
 \begin{scriptsize}
 \begin{align*}
-\shortintertext{How to make $\E_{xy}\left[\ambifM\right]$ as large as possible?}
-\E_{xy}\left[L\left(y, \fM \right)\right] &= \tfrac{1}{M}\sum^M_{m} \E_{xy}\left[L\left(y, \blm \right)\right] - \E_{xy}\left[\ambifM\right] \\
-\shortintertext{Assume $\E_{xy}\left[\blm\right] = 0$ for simplicity, $\var_{xy}\left[\blm\right] = \E_{xy}\left[(\blm)^2\right] = \sigma^2$, $\corr_{xy}\left[\blm, \bl{m'}\right] = \rho$ for all $m, m'$.}
+\shortintertext{How to make $\Exy\left[\ambifM\right]$ as large as possible?}
+\Exy\left[L\left(y, \fM \right)\right] &= \tfrac{1}{M}\sum^M_{m} \Exy\left[L\left(y, \blm \right)\right] - \Exy\left[\ambifM\right] \\
+\shortintertext{Assume $\Exy\left[\blm\right] = 0$ for simplicity, $\var_{xy}\left[\blm\right] = \Exy\left[(\blm)^2\right] = \sigma^2$, $\corr_{xy}\left[\blm, \bl{m'}\right] = \rho$ for all $m, m'$.}
 \implies 
-\var_{xy}\left[\fM\right] &= \tfrac{1}{M} \sigma^2 +  \tfrac{M-1}{M} \rho \sigma^2 \qquad\left(... = \E_{xy}\left[(\fM)^2\right]\right)\\
- \E_{xy}\left[\ambifM\right] &= \tfrac{1}{M}\sum^M_{m} \E_{xy}\left[\left(\blm- \fM\right)^2\right]\\
- & = \tfrac{1}{M}\left(M \E_{xy}\left[(\blm)^2\right] + M \E_{xy}\left[(\fM)^2\right] - 
-     2 M \E_{xy}\left[\blm\fM\right]\right) \\
-  & = \sigma^2  + \E_{xy}\left[(\fM)^2\right] - 2 \tfrac{1}{M}\sum^M_{m'} \underbrace{\E_{xy}\left[\blm \bl{m'} \right]}_{\mathclap{\qquad\qquad\qquad\qquad= \cov_{xy}\left[\blm \bl{m'} \right] + \E_{xy}\left[\blm\right]\E_{xy}\left[\bl{m'}\right]}} \\
+\var_{xy}\left[\fM\right] &= \tfrac{1}{M} \sigma^2 +  \tfrac{M-1}{M} \rho \sigma^2 \qquad\left(... = \Exy\left[(\fM)^2\right]\right)\\
+ \Exy\left[\ambifM\right] &= \tfrac{1}{M}\sum^M_{m} \Exy\left[\left(\blm- \fM\right)^2\right]\\
+ & = \tfrac{1}{M}\left(M \Exy\left[(\blm)^2\right] + M \Exy\left[(\fM)^2\right] - 
+     2 M \Exy\left[\blm\fM\right]\right) \\
+  & = \sigma^2  + \Exy\left[(\fM)^2\right] - 2 \tfrac{1}{M}\sum^M_{m'} \underbrace{\Exy\left[\blm \bl{m'} \right]}_{\mathclap{\qquad\qquad\qquad\qquad= \cov_{xy}\left[\blm \bl{m'} \right] + \Exy\left[\blm\right]\Exy\left[\bl{m'}\right]}} \\
   &=  \sigma^2  + \left(\tfrac{1}{M} \sigma^2 +   \tfrac{M-1}{M} \rho \sigma^2\right) - 2\left(\tfrac{M-1}{M} \rho\sigma^2 + \tfrac{1}{M}\sigma^2 + 0 \cdot 0 \right)\\
   &= \tfrac{M-1}{M} \sigma^2 (1-\rho)
 \end{align*}
@@ -257,8 +257,8 @@ $\Rightarrow$ The expected loss of the ensemble is lower than the average loss o
 
 \begin{small}
 \begin{align*}
-\E_{xy}\left[L\left(y, \fM\right)\right] &= \textcolor{blue}{\tfrac{1}{M}\sum^M_{m} \E_{xy}\left[L\left(y, \blm \right)\right]} - \E_{xy}\left[\ambifM\right]\\
-\E_{xy}\left[\ambifM\right] &\cong 
+\Exy\left[L\left(y, \fM\right)\right] &= \textcolor{blue}{\tfrac{1}{M}\sum^M_{m} \Exy\left[L\left(y, \blm \right)\right]} - \Exy\left[\ambifM\right]\\
+\Exy\left[\ambifM\right] &\cong 
 \textcolor{purple}{\frac{M-1}{M}} \textcolor{cyan}{\var_{xy}\left[\blm\right]} \textcolor{violet}{\left(1 - \corr_{xy}\left[\blm, \bl{m'}\right]\right)}
 \end{align*}
 \end{small}
@@ -266,7 +266,7 @@ $\Rightarrow$ The expected loss of the ensemble is lower than the average loss o
 \item[$\Rightarrow$] \textcolor{blue}{\textbf{better base learners}} are better {\small (... duh)}
 \item[$\Rightarrow$] \textcolor{purple}{\textbf{more base learners}} are better {\small (theoretically, at least...)}\\
 \item[$\Rightarrow$] \textcolor{cyan}{\textbf{more variable base learners}} are better {\small(as long as their risk stays the same, of course!)}
-\item[$\Rightarrow$] \textcolor{violet}{\textbf{less correlation between base learners}} is better:\\ bagging helps more if baselearners are wrong in different ways so that their errors \enquote{cancel} each other out.\\
+\item[$\Rightarrow$] \textcolor{violet}{\textbf{less correlation between base learners}} is better:\\ bagging helps more if base learners are wrong in different ways so that their errors \enquote{cancel} each other out.\\
 \end{itemize}
 
 
@@ -275,10 +275,10 @@ $\Rightarrow$ The expected loss of the ensemble is lower than the average loss o
 \begin{vbframe}{Bagging: Synopsis}
 
   \begin{itemize}
-    \item Basic idea: fit the same model repeatedly on many \textbf{bootstrap} replications of the training dataset and \textbf{aggregate} the results
+    \item Basic idea: fit the same model repeatedly on many \textbf{bootstrap} replications of the training data set and \textbf{aggregate} the results
     \item Gains performance by reducing the variance of predictions, but (slightly) increases the bias: it reuses training data many times, so small mistakes can get amplified. 
-    \item Works best for unstable/high variance base learners where small changes in the training set can cause large changes in the prediction:\\
-    e.g. CART, Neural networks, Step-wise/forward/backward variable selection for regression\\
+    \item Works best for unstable/high-variance base learners, where small changes in the training set can cause large changes in predictions:\\
+    e.g., CART, neural networks, step-wise/forward/backward variable selection for regression\\
      \item Works best if base learners' predictions are only weakly correlated: they don't all make the same mistakes.
          \item Can degrade performance for stable methods like $k$-NN, LDA, Naive Bayes, linear regression
   \end{itemize}
