@@ -1,44 +1,39 @@
- 
+# PREREQ -----------------------------------------------------------------------
+
 library(knitr)
-library(mlbench)
-library(mlr)
-library(OpenML)
-
 library(ggplot2)
-library(viridis)
+library(mlr3)
+library(mlr3learners)
+library(mlr3viz)
 library(gridExtra)
-library(ggrepel)
-library(repr)
 
-library(data.table)
-library(BBmisc)
+# FUNCTIONS --------------------------------------------------------------------
 
-
-library(party)
-library(kableExtra)
-library(kknn)
-library(e1071)
-
-options(digits = 3, width = 65, str = strOptions(strict.width = "cut", vec.len = 3))
-
-
-plot_lp = function(...){
-  plotLearnerPrediction(...) + scale_fill_viridis_d()
+plot_pred = function(k, legend = FALSE) {
+  
+  learner = lrn("classif.kknn", k = k, predict_type = "prob")
+  
+  pl = plot_learner_prediction(learner, task) +
+    scale_fill_viridis_d(end = .9) +
+    ggtitle(sprintf("k = %i", k))
+  
+  if (!legend) 
+    pl = pl + theme(legend.position = "none")
+  
+  return(pl)
+  
 }
 
-set.seed(600000)
+# DATA -------------------------------------------------------------------------
 
+task = tsk("iris")
+task$select(c("Sepal.Width", "Sepal.Length"))
+
+# PLOT -------------------------------------------------------------------------
 
 pdf("../figure/reg_class_knn_2.pdf", width = 9.5, height = 7)
-f = function(k, leg) { 
-  pl = plot_lp("classif.kknn", iris.task, cv = 0, k = k) +
-    ggtitle(sprintf("k = %i", k))
-  if (!leg)
-    pl = pl + theme(legend.position = "none")
-  return(pl)
-}
-grid.arrange(f(1, F), f(5, F), f(10, F), f(50, F))
+
+grid.arrange(plot_pred(1), plot_pred(5), plot_pred(10), plot_pred(50))
 
 ggsave("../figure/reg_class_knn_2.pdf", width = 9.5, height = 7)
 dev.off()
-
