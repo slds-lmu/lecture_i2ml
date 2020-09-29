@@ -10,8 +10,16 @@ free to add your name to the [team](vignettes/team.Rmd).
 
 ### Git-Workflow
 
-- Access to the `master` branch is protected, please make your own, issue-/task-specific branch **off the  `devel` branch** to work in and do a pull request once you're done. 
-- Do many **small, focused, single-issue commits** with **descriptive commit messages**: each commit message should refer the issue it adresses or fixes, i.e. include something like `adresses #<issuenumber>`, `closes #<issuenumber>` or similar, where applicable.
+- Access to the `master` branch is protected, please make your own,
+  issue-/task-specific branch **off the `master` branch** to work in and do a
+pull request once you're done. 
+- Do many **small, focused, single-issue commits** with **descriptive commit
+  messages**: each commit message should refer the issue it adresses or fixes,
+i.e. include something like `adresses #<issuenumber>`, `closes #<issuenumber>`
+or similar, where applicable.
+- We generally work based on the [feature branch
+  workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/feature-branch-workflow)
+- The person who merges the pull requests adds a note to the [changelog](CHANGELOG.md) if the changes are substantial
 
 ### Slides:
 
@@ -23,11 +31,19 @@ free to add your name to the [team](vignettes/team.Rmd).
 - We write slides for beginners: keep it simple, keep it short
 - We try to keep slides modular: slidesets should represent about 15-20 minutes of material and be moderately self-contained.
 - Don't put code on the slides, the theory is orthogonal to issues of implementation (... in theory..). Code is strictly for exercises/ practice sessions. 
-- Compiling the slides should be done via the Makefile: just type `make` in the specific folder and it will render all slidesets in the folder, or `make <SLIDES>.pdf` to render a specific file `<SLIDES>.Rnw`.
+- Compiling the slides should be done via the Makefile: just type `make` in the specific folder and it will render all slidesets in the folder, or `make <SLIDES>.pdf` to render a specific file `<SLIDES>.tex`.
 - We try to keep a "dependency graph" between slide sets up to date so that it's easier to keep track of
 what material needs to be understood before what else. Please do add appropriate `%! includes:`-comments in your slides to keep this up-to-date, see also `attic/slide-dependencies.R` and `slides/slide-dependencies.pdf`.
 - We recommend usage of `{tinytex}` (install via `tinytex::install_tinytex()`)
 - Use `make install` in the slides folder to automagically install **all** the `R` packages you'll need for the slides, demos and exercises. See also `attic/install.R`
+
+### Figures Used in the Slides
+- Figures not produced by us are added to figure-man folder of the respective chapter
+- R-files which produce figures should be named "fig-*.R"
+  - The basic assumption is that you execute the R-files from the rsrc folder
+  - These figure producing R-files should save their respective figures to "../figure/". From the name of the figure it should be clear which R-file produced it.
+  - Utility functions used by more than one R-file should be exported to a separate R-file (also located in the respective rsrc folder)
+  - Heavy simulations should not be done in the figures producing R-files. Instead, we only load Rdata files which were produced by separate R-files (also located in the rsrc folder)
 
 
 ### Code Snippets:
