@@ -19,6 +19,7 @@ i.e. include something like `adresses #<issuenumber>`, `closes #<issuenumber>`
 or similar, where applicable.
 - We generally work based on the [feature branch
   workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/feature-branch-workflow)
+- The person who merges the pull requests adds a note to the [changelog](CHANGELOG.md) if the changes are substantial
 
 ### Slides:
 
