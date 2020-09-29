@@ -101,6 +101,7 @@ b_ell_lda = as.data.frame(ellipse(center = mu_b,
                                   shape = var_lda, 
                                   radius = 2, 
                                   draw = FALSE))
+
 b_ell_qda = as.data.frame(ellipse(center = mu_b, 
                                   shape = var_qda_b, 
                                   radius = 2, 
