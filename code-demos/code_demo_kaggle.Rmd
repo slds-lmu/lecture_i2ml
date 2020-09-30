@@ -65,11 +65,15 @@ library(mlr3)
 library(mlr3learners)
 library(mlr3tuning)
 library(mlr3filters)
-library("paradox")
-library("mlr3tuning")
+library(paradox)
+library(mlr3tuning)
+requireNamespace("lgr")
 
 # show only warning messages
-lgr::get_logger("mlr3")$set_threshold("warn")
+logger = lgr::get_logger("mlr3")
+logger$set_threshold("warn")
+logger = lgr::get_logger("bbotk")
+logger$set_threshold("warn")
 
 # choose specific model and parameters
 task <- TaskClassif$new(
@@ -123,13 +127,13 @@ write.csv(submission, file = "data/submissionTitanic_1.csv", row.names = FALSE)
 set.seed(1337)
 learner <- lrn("classif.rpart", predict_type = "prob")
 resampling <- rsmp("cv", folds = 10)
-measures <- msrs(c("classif.ce", "classif.acc"))
+measure <- msr("classif.acc")
 # make parameter set
 tune_ps <- ParamSet$new(list(
   ParamDbl$new("cp", lower = 0.001, upper = 0.1),
   ParamInt$new("minsplit", lower = 1, upper = 100)
 ))
-terminator <- term("evals", n_evals = 100)
+terminator <- trm("evals", n_evals = 100)
 
 # choose random search - why not grid search?
 tuner <- tnr("random_search")
@@ -137,8 +141,8 @@ tuner <- tnr("random_search")
 at <- AutoTuner$new(
   learner = learner,
   resampling = resampling,
-  measures = measures,
-  tune_ps = tune_ps,
+  measure = measure,
+  search_space = tune_ps,
   terminator = terminator,
   tuner = tuner
 )
@@ -149,7 +153,7 @@ Visualize the random search over both parameters:
   
 ```{r kaggle-vis_rand_search}
 library(ggplot2)
-vis_hyper <- at$tuning_instance$archive(unnest = "params")[
+vis_hyper <- at$tuning_instance$archive$data()[
   ,
   c(
     "cp",
@@ -173,7 +177,7 @@ learner <- lrn(
   predict_type = "prob"
 ) # inspect the learner
 # learner
-learner$param_set$values <- at$tuning_result$params
+learner$param_set$values <-  as.list(at$tuning_result[, c("cp", "minsplit")])
 learner$train(task)
 
 # predict for submission
@@ -278,13 +282,13 @@ task <- TaskClassif$new(
 
 learner <- lrn("classif.rpart", predict_type = "prob")
 resampling <- rsmp("cv", folds = 10)
-measures <- msrs(c("classif.ce", "classif.acc"))
+measure <- msr(c("classif.acc"))
 # make parameter set
 tune_ps <- ParamSet$new(list(
   ParamDbl$new("cp", lower = 0.001, upper = 0.1),
   ParamInt$new("minsplit", lower = 1, upper = 100)
 ))
-terminator <- term("evals", n_evals = 100)
+terminator <- trm("evals", n_evals = 100)
 
 # choose random search - why not grid search?
 tuner <- tnr("random_search")
@@ -292,8 +296,8 @@ tuner <- tnr("random_search")
 at <- AutoTuner$new(
   learner = learner,
   resampling = resampling,
-  measures = measures,
-  tune_ps = tune_ps,
+  measure = measure,
+  search_space = tune_ps,
   terminator = terminator,
   tuner = tuner
 )
@@ -315,7 +319,7 @@ learner <- lrn(
   predict_type = "prob"
 ) # inspect the learner
 # learner
-learner$param_set$values <- at$tuning_result$params
+learner$param_set$values <- as.list(at$tuning_result[, c("cp", "minsplit")])
 learner$train(task)
 
 # predict for submission
