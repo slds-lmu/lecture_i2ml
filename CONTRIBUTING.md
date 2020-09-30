@@ -21,7 +21,9 @@ or similar, where applicable.
   workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/feature-branch-workflow)
 - The person who merges the pull requests adds a note to the [changelog](CHANGELOG.md) if the changes are substantial
 
-### Slides:
+### Slides
+
+- **Do not** update the pdf-files of the `slides-pdf` folder. They will only be updated in case of a new release.
 
 - Notation on the slides uses [`latex-math`](https://github.com/compstat-lmu/latex-math). Please do read the accompanying ReadMe and clone [`latex-math`](https://github.com/compstat-lmu/latex-math) into this repo (otherwise you will not be able to render the slides).
 - Use the commands defined there, don't define your own. 
@@ -38,15 +40,17 @@ what material needs to be understood before what else. Please do add appropriate
 - Use `make install` in the slides folder to automagically install **all** the `R` packages you'll need for the slides, demos and exercises. See also `attic/install.R`
 
 ### Figures Used in the Slides
+
 - Figures not produced by us are added to figure-man folder of the respective chapter
-- R-files which produce figures should be named "fig-*.R"
+- R-files which produce figures should be named `fig-*.R`
   - The basic assumption is that you execute the R-files from the rsrc folder
-  - These figure producing R-files should save their respective figures to "../figure/". From the name of the figure it should be clear which R-file produced it.
+  - These figure producing R-files should save their respective figures to `../figure/`. From the name of the figure it should be clear which R-file produced it.
+  - If you create a new plot or change an existing plot, you need to commit your changes of the r-files as well as the corresponding pdf-files. This means in if you create a new plot, you will have to add the pdf-files with `git add -f *.pdf` since pdf-files are ignored in this repo by default.
   - Utility functions used by more than one R-file should be exported to a separate R-file (also located in the respective rsrc folder)
   - Heavy simulations should not be done in the figures producing R-files. Instead, we only load Rdata files which were produced by separate R-files (also located in the rsrc folder)
 
 
-### Code Snippets:
+### Code Snippets
 
 - Please follow this [style guide](https://style.tidyverse.org)
 - We write code that is meant to be read/worked on by beginners: 
