@@ -41,7 +41,7 @@ what material needs to be understood before what else. Please do add appropriate
 
 ### Figures Used in the Slides
 
-- Figures not produced by us are added to figure-man folder of the respective chapter
+- Figures not produced by us are added to the `figure-man` folder of the respective chapter
 - R-files which produce figures should be named `fig-*.R`
   - The basic assumption is that you execute the R-files from the rsrc folder
   - These figure producing R-files should save their respective figures to `../figure/`. From the name of the figure it should be clear which R-file produced it.
