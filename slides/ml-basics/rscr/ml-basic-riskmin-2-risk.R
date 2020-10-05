@@ -52,7 +52,7 @@ residual_plot <- function(data, model){
   ggplot(data = data, mapping = aes(x = x, y=y)) +
     geom_point() +
     geom_line (aes(x =x, y= model))+
-    geom_segment(aes(xend = x, yend = model), alpha = .2) +
+    geom_segment(aes(xend = x, yend = model), alpha = .2,colour = "blue") +
     theme_bw() +
     ylim(c(-10,10))+
     annotate("text", x = 6.5, y = -5, label = bquote(bolditalic(R)[emp](f)==~"="~.(risk)))
@@ -61,10 +61,11 @@ residual_plot <- function(data, model){
 }
 
 grid <- grid.arrange(
-  residual_plot(data, model= model_1),
+  residual_plot(data, model= model_1)+ 
+    theme(plot.background = element_rect(fill = "white")),
   #residual_plot(data, model= model_2),
   residual_plot(data, model= model_3), ncol = 2)
 
-ggsave("figure_man/ml-basic_riskmin-compare-risk.png", grid)
+ggsave("figure_man/ml-basic_riskmin-2-risk.png", grid)
 
 
