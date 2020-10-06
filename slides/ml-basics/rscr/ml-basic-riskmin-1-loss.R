@@ -54,7 +54,7 @@ loss_plot <-   ggplot(data = data, mapping = aes(x = x, y=y)) +
     #geom_segment(aes(xend = x, yend = model), alpha = .2) +
     theme_bw() +
     ylim(c(-10,10))+
-    annotate("text", x = 5.5, y = -5, label = bquote(bolditalic(L)(y,f(bold(.(x[example_oberservation]))))~"="~"|"~.(model_1[example_oberservation])~"-"~.(y[example_oberservation])~"|"~"="~.(loss)))
+    annotate("text", x = 5.5, y = -5, label = bquote(bolditalic(L)(y,f(bold(.(x[example_oberservation]))))~"="~"|"~.(model_1[example_oberservation])~"-"~(.(y[example_oberservation]))~"|"~"="~.(loss)))
     
   
 loss_plot
