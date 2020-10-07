@@ -10,7 +10,7 @@ parallelStartMulticore(15)
 
 # DATA -------------------------------------------------------------------------
 
-set.seed(12322)
+set.seed(123222)
 
 # Just run RS on spam for ranger so we can show an example path
 # that improves the result
