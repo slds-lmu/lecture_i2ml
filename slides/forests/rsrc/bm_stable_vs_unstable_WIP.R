@@ -12,36 +12,56 @@ library(data.table)
 
 # SIMULATION -------------------------------------------------------------------
 
-set.seed(899)
+
 
 # Benchmark experiment
 # Reference: Breiman (1996). Bagging Predictors. Machine Learning, 24, 123-140.
 # Note: Breiman's approach is more complex than this benchmark here
 # Create learners and their respective bagged version
 
+ensemble_size = 50L
+
 learner_rpart = lrn("classif.rpart")
 learner_rpart$id = "rpart"
 
-single_rpart = PipeOpSubsample$new(param_vals = list(frac = 0.632)) %>>%
-  PipeOpLearner$new(mlr_learners$get("classif.rpart"))
-ppl_rpart = ppl("greplicate", single_rpart, 50L)
-bagging_rpart = ppl_rpart %>>%
-  PipeOpClassifAvg$new(innum = 50L)
+single_rpart = po("subsample", frac = 1, replace = TRUE) %>>% 
+  lrn("classif.rpart")
+
+pipeline = ppl("greplicate", single_rpart, ensemble_size)
+
+bagging = pipeline %>>%
+  PipeOpClassifAvg$new(innum = ensemble_size)
+
+# single_rpart =  po("learner", lrn("classif.rpart"))
+# 
+# bagging_rpart = pipeline_bagging(single_rpart, 
+#                                  iterations = ensemble_size,
+#                                  frac = 0.7,
+#                                  averager = po("classifavg"))
+
 baglrn_rpart = GraphLearner$new(bagging_rpart)
 baglrn_rpart$id = "rpart.bagged"
+
+# single_rpart = PipeOpSubsample$new(param_vals = list(frac = 0.632)) %>>%
+#   PipeOpLearner$new(mlr_learners$get("classif.rpart"))
+# ppl_rpart = ppl("greplicate", single_rpart, 50L)
+# bagging_rpart = ppl_rpart %>>%
+#   PipeOpClassifAvg$new(innum = 50L)
+# baglrn_rpart = GraphLearner$new(bagging_rpart)
 
 learner_knn = lrn("classif.kknn")
 learner_knn$id = "kknn"
 
-single_knn = PipeOpSubsample$new(param_vals = list(frac = 0.632)) %>>%
+single_knn = PipeOpSubsample$new(param_vals = list (replace = TRUE,
+                                                    frac = 1)) %>>%
   PipeOpLearner$new(mlr_learners$get("classif.kknn"))
-ppl_knn = ppl("greplicate", single_knn, 50L)
+ppl_knn = ppl("greplicate", single_knn, ensemble_size)
 bagging_knn = ppl_knn %>>%
-  PipeOpClassifAvg$new(innum = 50L)
+  PipeOpClassifAvg$new(innum = ensemble_size)
 baglrn_knn = GraphLearner$new(bagging_knn)
 baglrn_knn$id = "kknn.bagged"
 
-learner_rf = lrn("classif.ranger", num.trees = 50)
+learner_rf = lrn("classif.ranger", num.trees = ensemble_size)
 learner_rf$id = "rf"
 
 learners = list(
@@ -72,6 +92,7 @@ task_son = tsk("sonar")
 task_son$id = "Sonar"
 
 tasks = list(task_wf, task_ion, task_gl, task_son)
+# tasks = list(task_wf, task_ion)
 
 # Specify resampling procedure
 
@@ -85,6 +106,7 @@ design = benchmark_grid(
   resamplings = rdesc
 )
 
+set.seed(899)
 bmr = benchmark(design)
 
 # PLOT -------------------------------------------------------------------------
