@@ -54,8 +54,6 @@
 \newcommand{\SweaveInput}[1]{} % because they are not real TeX commands
 \newcommand{\Sexpr}[1]{}       % will only be parsed by R
 
-
-
 \usepackage[english]{babel}
 \usepackage[utf8]{inputenc}
 
@@ -83,6 +81,7 @@
 \usepackage{mathtools}
 \usepackage{wrapfig}
 \usepackage{bm}
+
 \usetikzlibrary{shapes,arrows,automata,positioning,calc,chains,trees, shadows}
 \tikzset{
   %Define standard arrow tip
@@ -102,8 +101,8 @@
     shorten <=2pt,
     shorten >=2pt,}
 }
-\usepackage{subfig}
 
+\usepackage{subfig}
 
 % Defines macros and environments
 \input{../../style/common.tex}
@@ -123,109 +122,149 @@
 
 \setbeamertemplate{frametitle}{\expandafter\uppercase\expandafter\insertframetitle}
 
-
-
 \begin{document}
-% Introduction to Machine Learning
-% Day 1
 
 % Set style/preamble.Rnw as parent.
 
 % Load all R packages and set up knitr
 
-% This file loads R packages, configures knitr options and sets preamble.Rnw as parent file
+% This file loads R packages, configures knitr options and sets preamble.Rnw as 
+% parent file
 % IF YOU MODIFY THIS, PLZ ALSO MODIFY setup.Rmd ACCORDINGLY...
 
-
-
-
-
-
-
-
 % Defines macros and environments
+
 \input{../../latex-math/basic-math.tex}
 \input{../../latex-math/basic-ml.tex}
 
-%! includes: basics-learners
-
-\lecturechapter{Introduction: Losses \& Risk Minimization}
+\lecturechapter{Introduction: Learners}
 \lecture{Introduction to Machine Learning}
 
-\begin{frame}{How to Evaluate Models}
+% ------------------------------------------------------------------------------
 
-Compare predictions from a model with observed target values:
+\begin{vbframe}{Components of a Learner}
 
-\scriptsize
+Summarizing what we have seen before, nearly all supervised learning algorithms 
+can be described in terms of three components:
 
-% FIGURE SOURCE: https://docs.google.com/presentation/d/1dTc5act2POjELGuD8wFIUbPxG0QRZlg1PaYdHGU-FJM/edit?usp=sharing
-\begin{center}\includegraphics[width=0.8\textwidth]{figure_man/eval_inducer1_web} \end{center}
-\lz\lz
+\lz
+
+\begin{center}
+
+  \textbf{Learning = Hypothesis Space + Risk + Optimization}
+  
+\end{center}
+
+\lz
+
+\begin{itemize}
+
+  \item \textbf{Hypothesis Space:} Defines (and restricts!) what kind of model 
+  $f$ can be learned from the data.
+  
+  \item \textbf{Risk:} Quantifies how well a specific model performs on a given 
+  data set. This defines how to compare observed values to predictions and 
+  allows us to rank candidate models in order to choose the best one.
+  
+  \item \textbf{Optimization:} Defines how to search for the best model in the 
+  \textbf{hypothesis space}, typically guided by the metric used for the 
+  \textbf{risk}.
+  
+\end{itemize}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Supervised Learning, Formalized}
+
+A \textbf{learner} (or \textbf{inducer}) is a program which
+
+\begin{itemize}
+
+  \item receives a \textbf{training set} $\D \in \Xspace \times \Yspace$
+  
+  \item and uses an \textbf{optimization} procedure to find
+  $$\fh = \argmin_{f \in \Hspace} \riskef$$
+  
+  \item for a given \textbf{hypothesis class} $\Hspace$ of \textbf{models} 
+  $f:\Xspace \rightarrow \R^g,$
+  
+  \item based on a \textbf{risk} function $\riskef$ that quantifies the 
+  performance of $f \in \Hspace$ on $\D$.
+
+\end{itemize}
+
+\lz 
+
+It is important to understand that learners and models are not the same thing: 
+rather, a learner \emph{returns} a model. 
+
+\lz
+
+{\footnotesize (This does not cover all special cases, but it's a useful 
+framework for most supervised ML problems.)}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Learning as Empirical Risk Minimization}
+
+By decomposing learners into these components,
+
+\begin{itemize}
+
+  \item we have a framework to understand how they work,
+  
+  \item we can more easily evaluate in which settings they may be more or less 
+  suitable, and
+  
+  \item we can tailor learners to specific problems by clever choice of each of 
+  the three components.
+
+\end{itemize}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{frame}[squeeze]{Examples for Learning Components}
+
+% \vskip -.5em
+
+\begin{footnotesize}
+
+$\textbf{Hypothesis Space}: \begin{cases} 
+
+\text{Step functions} \\
+\text{Linear functions}\\
+\text{Sets of rules}\\
+\text{Neural networks}\\
+\text{Voronoi tesselations}\\
+\text{...}
+\end{cases}$
+
+$\phantom{Hypothesis Space RISK RISK} \textbf{Risk}: \begin{cases}
+\text{Mean squared error}\\
+\text{Misclassification rate}\\
+\text{Negative log-likelihood}\\
+\text{Information gain}\\
+\text{...}
+\end{cases}$
+
+$\phantom{hypothesis space risk RISK RISK} \textbf{Optimization}: \begin{cases}
+\text{Analytical solution}\\
+\text{Gradient descent}\\
+\text{Combinatorial optimization}\\
+\text{Genetic algorithms}\\
+\text{...}
+\end{cases}$
+
+\end{footnotesize}
 \end{frame}
 
-
-\begin{vbframe}{Motivation}
-  \begin{itemize}
-    \item Assume we trained a model to predict flat rent based on some features
-    (size, location, age, ...).
-    \item The real rent of a flat is EUR 1600, our model predicts EUR 1300.
-    \item How do we measure the performance of our model? 
-    \item Need to define a suitable criterion, e.g.:
-    \begin{itemize}
-      \item Absolute error $|1600 - 1300| = 300$
-      \item Squared error: $(1600 - 1300)^2 = 90000$\\
-      (puts more emphasis on predictions that are far off the mark)
-    \end{itemize}
-    \item The choice of this metric has a major influence on the final model, because it determines what constitutes a \emph{good} model: it will determine the ranking of the different models $f \in \Hspace$.
-    \item the metric we use is called the \textbf{loss function}. 
-  \end{itemize}
-\end{vbframe}
-
-
-\begin{vbframe}{Risk Minimization}
-\begin{itemize}
-    \item The \enquote{quality} of a prediction $\fx$ is measured by a \textbf{loss function} $\Lxy$ that quantifies how \enquote{close} $\fx$ is to $y$. \\
-    For example, $\Lxy = |\fx - y|$.
-    \item The ability of a model $f$ to reproduce the association between $\xv$ and $y$ that is
-    present in the data $\D$ can be measured by the average loss: the \textbf{empirical risk}
-    $$
-  \riskef = \meanin \Lxyi.
-  $$
-   \item Learning -- finding the \enquote{best} model -- then amounts to \textbf{empirical risk minimization}:\\    figuring out which model $f$ has the smallest average loss:
-$$
-\fh = \argmin_{f \in \Hspace} \riskef.
-$$
-\end{itemize}
-\framebreak
-
-Since the model $f$ is usually defined by \textbf{parameters} $\thetab$ in a parameter space $\Theta$, this becomes:
-
-\begin{eqnarray*}
-\risket & = & \meanin \Lxyit \cr
-\thetabh & = & \argmin_{\thetab \in \Theta} \risket
-\end{eqnarray*}
-
-Most learners in ML try to solve the above \emph{optimization problem}, which
-implies a tight connection between ML and optimization.
-
-\framebreak
-
-\begin{itemize}
-\item For regression tasks, the loss often only depends on the residual $\Lxy = L(y - \fx) = L(\eps)$.
-\item The choice of loss implies which kinds of errors are important or not -- requires \emph{domain knowledge}!
-\item For learners that correspond to probabilistic models, the loss determines / is equivalent to distributional assumptions.
-\item Since learning can be re-phrased as minimizing the loss, the choice of loss strongly affects the computational difficulty of learning:
-\begin{itemize}
-    \item How smooth is $\risket$ in $\thetab$?
-    \item Is $\risket$ differentiable so that we can use gradient-based methods?
-    \item Does $\risket$ have multiple local minima or saddlepoints over $\Theta$?\\
-\end{itemize}
-
-\end{itemize}
-\end{vbframe}
-
-
+% ------------------------------------------------------------------------------
 
 \endlecture
-
 \end{document}

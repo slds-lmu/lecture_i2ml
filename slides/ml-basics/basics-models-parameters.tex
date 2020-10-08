@@ -54,8 +54,6 @@
 \newcommand{\SweaveInput}[1]{} % because they are not real TeX commands
 \newcommand{\Sexpr}[1]{}       % will only be parsed by R
 
-
-
 \usepackage[english]{babel}
 \usepackage[utf8]{inputenc}
 
@@ -83,6 +81,7 @@
 \usepackage{mathtools}
 \usepackage{wrapfig}
 \usepackage{bm}
+
 \usetikzlibrary{shapes,arrows,automata,positioning,calc,chains,trees, shadows}
 \tikzset{
   %Define standard arrow tip
@@ -102,8 +101,8 @@
     shorten <=2pt,
     shorten >=2pt,}
 }
-\usepackage{subfig}
 
+\usepackage{subfig}
 
 % Defines macros and environments
 \input{../../style/common.tex}
@@ -123,109 +122,92 @@
 
 \setbeamertemplate{frametitle}{\expandafter\uppercase\expandafter\insertframetitle}
 
-
-
 \begin{document}
-% Introduction to Machine Learning
-% Day 1
 
 % Set style/preamble.Rnw as parent.
 
 % Load all R packages and set up knitr
 
-% This file loads R packages, configures knitr options and sets preamble.Rnw as parent file
+% This file loads R packages, configures knitr options and sets preamble.Rnw as 
+% parent file
 % IF YOU MODIFY THIS, PLZ ALSO MODIFY setup.Rmd ACCORDINGLY...
 
-
-
-
-
-
-
-
 % Defines macros and environments
+
 \input{../../latex-math/basic-math.tex}
 \input{../../latex-math/basic-ml.tex}
 
-%! includes: basics-learners
-
-\lecturechapter{Introduction: Losses \& Risk Minimization}
+\lecturechapter{Introduction: Models \& Parameters}
 \lecture{Introduction to Machine Learning}
 
-\begin{frame}{How to Evaluate Models}
+% ------------------------------------------------------------------------------
 
-Compare predictions from a model with observed target values:
+\begin{vbframe}{What is a Model?}
 
-\scriptsize
+\begin{itemize}
 
-% FIGURE SOURCE: https://docs.google.com/presentation/d/1dTc5act2POjELGuD8wFIUbPxG0QRZlg1PaYdHGU-FJM/edit?usp=sharing
-\begin{center}\includegraphics[width=0.8\textwidth]{figure_man/eval_inducer1_web} \end{center}
-\lz\lz
-\end{frame}
+  \item A \textbf{model} (or \textbf{hypothesis}) 
+  $$f : \Xspace \rightarrow \R^g$$ 
+  is a function that maps feature vectors to predicted target values.
+  
+  \item In conventional regression we will have $g = 1$, for classification
+  see later.
+  
+    % FIGURE SOURCE: https://docs.google.com/presentation/d/1bc6EQSsHEuVnyqFGX9E8oNfwOjAwVglRaIllxnOjLBo  /edit?usp=sharing Page 1
+  \begin{center}
+    \includegraphics[width=0.9\textwidth]{figure_man/the_model_web} 
+  \end{center}
+  
+  \framebreak
+  
+  \item We have already seen that machine learning typically requires 
+  constraining $f$ to a certain class of functions.
+  
+  \item Otherwise, the task of finding a \enquote{good} model is basically
+  impossible to solve.
+  
+  \item The set of functions defining a model class is called a 
+  \textbf{hypothesis space} $\Hspace$.
+  
+  \item For example, the set of all constant functions
+  $$\Hspace = \{f: \fx = c, c \in \R\}$$
+  forms a specific hypothesis space.
 
+\end{itemize}
 
-\begin{vbframe}{Motivation}
-  \begin{itemize}
-    \item Assume we trained a model to predict flat rent based on some features
-    (size, location, age, ...).
-    \item The real rent of a flat is EUR 1600, our model predicts EUR 1300.
-    \item How do we measure the performance of our model? 
-    \item Need to define a suitable criterion, e.g.:
-    \begin{itemize}
-      \item Absolute error $|1600 - 1300| = 300$
-      \item Squared error: $(1600 - 1300)^2 = 90000$\\
-      (puts more emphasis on predictions that are far off the mark)
-    \end{itemize}
-    \item The choice of this metric has a major influence on the final model, because it determines what constitutes a \emph{good} model: it will determine the ranking of the different models $f \in \Hspace$.
-    \item the metric we use is called the \textbf{loss function}. 
-  \end{itemize}
 \end{vbframe}
 
+% ------------------------------------------------------------------------------
 
-\begin{vbframe}{Risk Minimization}
-\begin{itemize}
-    \item The \enquote{quality} of a prediction $\fx$ is measured by a \textbf{loss function} $\Lxy$ that quantifies how \enquote{close} $\fx$ is to $y$. \\
-    For example, $\Lxy = |\fx - y|$.
-    \item The ability of a model $f$ to reproduce the association between $\xv$ and $y$ that is
-    present in the data $\D$ can be measured by the average loss: the \textbf{empirical risk}
-    $$
-  \riskef = \meanin \Lxyi.
-  $$
-   \item Learning -- finding the \enquote{best} model -- then amounts to \textbf{empirical risk minimization}:\\    figuring out which model $f$ has the smallest average loss:
-$$
-\fh = \argmin_{f \in \Hspace} \riskef.
-$$
-\end{itemize}
-\framebreak
-
-Since the model $f$ is usually defined by \textbf{parameters} $\thetab$ in a parameter space $\Theta$, this becomes:
-
-\begin{eqnarray*}
-\risket & = & \meanin \Lxyit \cr
-\thetabh & = & \argmin_{\thetab \in \Theta} \risket
-\end{eqnarray*}
-
-Most learners in ML try to solve the above \emph{optimization problem}, which
-implies a tight connection between ML and optimization.
-
-\framebreak
+\begin{vbframe}{Parameters of a Model}
 
 \begin{itemize}
-\item For regression tasks, the loss often only depends on the residual $\Lxy = L(y - \fx) = L(\eps)$.
-\item The choice of loss implies which kinds of errors are important or not -- requires \emph{domain knowledge}!
-\item For learners that correspond to probabilistic models, the loss determines / is equivalent to distributional assumptions.
-\item Since learning can be re-phrased as minimizing the loss, the choice of loss strongly affects the computational difficulty of learning:
-\begin{itemize}
-    \item How smooth is $\risket$ in $\thetab$?
-    \item Is $\risket$ differentiable so that we can use gradient-based methods?
-    \item Does $\risket$ have multiple local minima or saddlepoints over $\Theta$?\\
+
+  \item Within one hypothesis space, models are typically all \enquote{alike} in
+  a sense: they all share a certain structure.
+  
+  $\rightarrow$ E.g., all Gaussian density functions exhibit a bell-like shape.
+  
+  \item The only (!) aspects in which they differ are described by 
+  \textbf{parameters}.
+  
+  $\rightarrow$ Gaussians are solely determined by mean and variance.
+  
+  \item We typically subsume all parameters in a \textbf{parameter vector} 
+  $\thetab = (\theta_1, \theta_2, ...)$ from a \textbf{parameter space} 
+  $\Theta$.
+  
+  \item $\thetab$ is learned during training: finding a \enquote{good} model
+  boils down to finding a suitable combination of parameters.
+  
+  \item We will see in the next chapter how the \enquote{goodness} of a model 
+  can be determined.
+  
 \end{itemize}
 
-\end{itemize}
 \end{vbframe}
 
-
+% ------------------------------------------------------------------------------
 
 \endlecture
-
 \end{document}
