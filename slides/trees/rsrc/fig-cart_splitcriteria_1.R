@@ -9,7 +9,6 @@ options(tikzMetricPackages = c("\\usepackage[utf8]{inputenc}",
                                "\\usepackage[T1]{fontenc}", "\\usetikzlibrary{calc}",
                                "\\usepackage{amssymb}"))
 
-
 # DATA -------------------------------------------------------------------------
 
 set.seed(1221)
