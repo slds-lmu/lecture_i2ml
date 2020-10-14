@@ -1,45 +1,42 @@
- 
+# PREREQ -----------------------------------------------------------------------
+
 library(knitr)
-library(mlbench)
-library(mlr)
-library(OpenML)
-
+library(mlr3)
+library(mlr3learners)
+library(mlr3viz)
 library(ggplot2)
-library(viridis)
-library(gridExtra)
-library(ggrepel)
-library(repr)
-library(MASS)
-library(data.table)
-library(BBmisc)
+
+options(digits = 3, 
+        width = 65, 
+        str = strOptions(strict.width = "cut", vec.len = 3))
+
+# DATA -------------------------------------------------------------------------
+
+task = tsk("iris")
+task$select(c("Petal.Width", "Petal.Length"))
+
+learner_1 = lrn("classif.lda", predict_type = "prob")
+learner_2 = lrn("classif.qda", predict_type = "prob")
 
 
-library(party)
-library(kableExtra)
-library(kknn)
-library(e1071)
-library(car)
-
-options(digits = 3, width = 65, str = strOptions(strict.width = "cut", vec.len = 3))
-set.seed(123)
-
-#lda
+# PLOT 1 -----------------------------------------------------------------------
 
 pdf("../figure/reg_class_dis_2.pdf", width = 8, height = 5)
 
-plotLearnerPrediction("classif.lda",
-                      makeClassifTask(data = iris[,-(1:2)], target = "Species"),
-                      cv = 0) + scale_fill_viridis_d()
+plot_learner_prediction(learner_1, task) +
+  scale_fill_viridis_d(end = .9) +
+  guides(shape = FALSE, alpha = FALSE)
+
 ggsave("../figure/reg_class_dis_2.pdf", width = 8, height = 5)
 dev.off()
 
-#qda
+# PLOT 2 -----------------------------------------------------------------------
 
 pdf("../figure/reg_class_dis_4.pdf", width = 8, height = 5)
 
-plotLearnerPrediction("classif.qda",
-                      makeClassifTask(data = iris[,-(1:2)], target = "Species"),
-                      cv = 0) + scale_fill_viridis_d()
+plot_learner_prediction(learner_2, task) +
+  scale_fill_viridis_d(end = .9) +
+  guides(shape = FALSE, alpha = FALSE)
+
 ggsave("../figure/reg_class_dis_4.pdf", width = 8, height = 5)
 dev.off()
-

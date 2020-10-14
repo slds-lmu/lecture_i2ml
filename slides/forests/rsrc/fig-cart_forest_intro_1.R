@@ -1,44 +1,58 @@
- 
+# PREREQ -----------------------------------------------------------------------
+
 library(knitr)
-library(mlbench)
-library(mlr)
-library(OpenML)
-
+library(mlr3)
+library(mlr3learners)
+library(mlr3viz)
 library(ggplot2)
-library(viridis)
-library(gridExtra)
-library(ggrepel)
-library(repr)
 
-library(data.table)
-library(BBmisc)
+options(digits = 3, 
+        width = 65, 
+        str = strOptions(strict.width = "cut", vec.len = 3))
 
-library(party)
-library(rpart)
-library(rpart.plot)
-library(randomForest)
-library(rattle)
-library(smoof)
-library(kableExtra)
-library(kknn)
-library(e1071)
-library(rattle)
-
-library(plyr)
-library(kernlab)
-
-options(digits = 3, width = 65, str = strOptions(strict.width = "cut", vec.len = 3))
-
-
-scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
-  function(...) {
-    viridis::scale_color_viridis(..., end = .9, discrete = TRUE, drop = TRUE)
-  }
-
+# DATA -------------------------------------------------------------------------
 
 set.seed(600000)
+
+task = tsk("iris")
+task$select(c("Sepal.Width", "Sepal.Length"))
+
+num_trees = c(1, 10, 500)
+
+learners = lapply(num_trees, 
+                  function (i) {lrn("classif.ranger",
+                                    num.trees = i, 
+                                    predict_type = "prob")}) 
+
+# PLOT 1 -----------------------------------------------------------------------
+
 pdf("../figure/cart_forest_intro_1.pdf", width = 8, height = 5.5)
-plotLearnerPrediction("classif.randomForest", iris.task, cv = 0, ntree = 1) + ggtitle("1 Tree for Iris Dataset")
+
+plot_learner_prediction(learners[[1]], task) +
+  ggtitle(paste0(num_trees[1], " Tree(s) for Iris Dataset")) +
+  guides(shape = FALSE, alpha = FALSE)
+
 ggsave("../figure/cart_forest_intro_1.pdf", width = 8, height = 5.5)
 dev.off()
 
+# PLOT 2 -----------------------------------------------------------------------
+
+pdf("../figure/cart_forest_intro_2.pdf", width = 8, height = 5.5)
+
+plot_learner_prediction(learners[[2]], task) +
+  ggtitle(paste0(num_trees[2], " Tree(s) for Iris Dataset")) +
+  guides(shape = FALSE, alpha = FALSE)
+
+ggsave("../figure/cart_forest_intro_2.pdf", width = 8, height = 5.5)
+dev.off()
+
+# PLOT 3 -----------------------------------------------------------------------
+
+pdf("../figure/cart_forest_intro_3.pdf", width = 8, height = 5.5)
+
+plot_learner_prediction(learners[[3]], task) +
+  ggtitle(paste0(num_trees[3], " Tree(s) for Iris Dataset")) +
+  guides(shape = FALSE, alpha = FALSE)
+
+ggsave("../figure/cart_forest_intro_3.pdf", width = 8, height = 5.5)
+dev.off()

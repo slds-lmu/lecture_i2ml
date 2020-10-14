@@ -1,72 +1,69 @@
- 
+# PREREQ -----------------------------------------------------------------------
+
 library(knitr)
-library(mlbench)
-library(mlr)
-library(OpenML)
-
+library(mlr3)
+library(mlr3viz)
 library(ggplot2)
-library(viridis)
-library(gridExtra)
-library(ggrepel)
-library(repr)
-
-library(data.table)
-library(BBmisc)
-
-library(party)
-library(rpart)
-library(rpart.plot)
-library(randomForest)
-library(rattle)
-library(smoof)
-library(kableExtra)
-library(kknn)
-library(e1071)
 library(rattle)
 
-library(plyr)
-library(kernlab)
+options(digits = 3, 
+        width = 65, 
+        str = strOptions(strict.width = "cut", vec.len = 3))
 
-options(digits = 3, width = 65, str = strOptions(strict.width = "cut", vec.len = 3))
+# DATA -------------------------------------------------------------------------
 
+set.seed(600000)
 
-
-scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
-  function(...) {
-    viridis::scale_color_viridis(..., end = .9, discrete = TRUE, drop = TRUE)
-  }
-lrn = makeLearner("regr.rpart", par.vals = list(minsplit = 5))
-x = c(1,2,7,10,20)
-y = c(1,1,0.5,10,11)
+x = c(1, 2, 7, 10, 20)
+y = c(1, 1, 0.5, 10, 11)
 data = data.frame(x = x, y = y)
-task = makeRegrTask("example task", data = data, target = "y")
-mod = train(lrn, task)
-# check the prediction and the SSE in each node
-yval1 = mod$learner.model$frame$yval[2]
-yval2 = mod$learner.model$frame$yval[3]
-SSE1 = mod$learner.model$frame$dev[2]
-SSE2 = mod$learner.model$frame$dev[3]
 
-# create tree with x being log-transformed
-x.log = log(x)
-log.data = data.frame(x.log = x.log, y = y)
-log.task = makeRegrTask("log task", data = log.data, target = "y")
-log.mod = train(lrn, log.task)
-# check predictions and SSE
-yval1.log = log.mod$learner.model$frame$yval[2]
-yval2.log = log.mod$learner.model$frame$yval[3]
-SSE1.log = log.mod$learner.model$frame$dev[2]
-SSE2.log = log.mod$learner.model$frame$dev[3]
+task = TaskRegr$new(id = "example", backend = data, target = "y")
 
+learner = lrn("regr.rpart", minsplit = 5)
+learner$train(task)
 
-set.seed(123)
+mod = learner$model
+
+# Check the prediction and the SSE in each node
+
+yval1 = mod$frame$yval[2]
+yval2 = mod$frame$yval[3]
+SSE1 = mod$frame$dev[2]
+SSE2 = mod$frame$dev[3]
+
+# Create tree with x being log-transformed
+
+x_log = log(x)
+data_log = tibble(x_log = x_log, y = y)
+
+task_log = TaskRegr$new(id = "example_log", backend = data_log, target = "y")
+
+learner_log = learner$clone()
+learner_log$train(task_log)
+mod_log = learner_log$model
+
+# Check predictions and SSE
+
+yval1_log = mod_log$frame$yval[2]
+yval2_log = mod_log$frame$yval[3]
+SSE1_log = mod_log$frame$dev[2]
+SSE2_log = mod_log$frame$dev[3]
+
+# PLOT 1 -----------------------------------------------------------------------
+
 pdf("../figure/cart_splitcomp_1.pdf", width = 6, height = 4)
-fancyRpartPlot(mod$learner.model, sub = "")
+
+fancyRpartPlot(mod, sub = "")
+
 ggsave("../figure/cart_splitcomp_1.pdf", width = 6, height = 4)
 dev.off()
 
+# PLOT 2 -----------------------------------------------------------------------
+
 pdf("../figure/cart_splitcomp_2.pdf", width = 6, height = 4)
-fancyRpartPlot(log.mod$learner.model, sub = "")
+
+fancyRpartPlot(mod_log, sub = "")
+
 ggsave("../figure/cart_splitcomp_2.pdf", width = 6, height = 4)
 dev.off()
-

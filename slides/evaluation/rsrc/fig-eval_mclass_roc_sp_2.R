@@ -1,48 +1,101 @@
- 
+# PREREQ -----------------------------------------------------------------------
+
 library(knitr)
-library(mlbench)
-library(mlr)
-library(OpenML)
 
-library(ggplot2)
-library(viridis)
-library(gridExtra)
-library(ggrepel)
-library(repr)
+source("plot_roc.R")
 
-library(data.table)
-library(BBmisc)
+# DATA -------------------------------------------------------------------------
 
+df_auc = data.frame(
+  '#' = 1:12,
+  Truth = c("Pos", "Neg")[c(1, 1, 1, 2, 1, 2, 1, 2, 2, 2, 1, 2)],
+  Score = c(0.95, 0.86, 0.69, 0.65, 0.59, 0.52, 
+            0.51, 0.39, 0.28, 0.18, 0.15, 0.06)
+)
+names(df_auc) = c("#", "Truth", "Score")
 
-library(party)
-library(kableExtra)
-library(kknn)
-library(e1071)
+# PLOT 1 -----------------------------------------------------------------------
 
-options(digits = 3, width = 65, str = strOptions(strict.width = "cut", vec.len = 3))
+pdf("../figure/eval_mclass_roc_sp_4.pdf", width = 4, height = 4)
 
+plotROC(df_auc, 0, highlight = FALSE, table = FALSE)
 
-plot_lp = function(...){
-  plotLearnerPrediction(...) + scale_fill_viridis_d()
-}
-
-source("plot_roc_space.R")
-pdf("../figure/eval_mclass_roc_sp_2.pdf", width = 4, height = 4)
-fpr = c(0, 1, 0, 0.25, 0.75)
-tpr = c(1, 1, 0, 0.25, 0.75)
-label = c("Best", "Pos-100%", "Pos-0%", "Pos-25%", "Pos-75%")
-pl = plot_roc_space(fpr, tpr, label)
-print(pl)
-ggsave("../figure/eval_mclass_roc_sp_2.pdf", width = 4, height = 4)
+ggsave("../figure/eval_mclass_roc_sp_4.pdf", width = 4, height = 4)
 dev.off()
 
-pdf("../figure/eval_mclass_roc_sp_3.pdf", width = 4, height = 4)
-fpr = c(0.75, 0.25)
-tpr = c(0.25, 0.75)
-label = c("C1", "C2")
-p1 = plot_roc_space(fpr, tpr, label)
-p1 = p1 + geom_segment(x = fpr[1], y = tpr[1], xend = fpr[2], yend = tpr[2], lty = "dotted")
-print(p1)
-ggsave("../figure/eval_mclass_roc_sp_3.pdf", width = 4, height = 4)
+# PLOT 2 -----------------------------------------------------------------------
+
+pdf("../figure/eval_mclass_roc_sp_5.pdf", width = 6, height = 4)
+
+thresh = 0.9
+plotROC(df_auc, thresh)
+
+ggsave("../figure/eval_mclass_roc_sp_5.pdf", width = 6, height = 4)
 dev.off()
 
+# PLOT 3 -----------------------------------------------------------------------
+
+pdf("../figure/eval_mclass_roc_sp_6.pdf", width = 6, height = 4)
+
+thresh = 0.85
+plotROC(df_auc, thresh)
+
+ggsave("../figure/eval_mclass_roc_sp_6.pdf", width = 6, height = 4)
+dev.off()
+
+# PLOT 4 -----------------------------------------------------------------------
+
+pdf("../figure/eval_mclass_roc_sp_7.pdf", width = 6, height = 4)
+
+thresh = 0.66
+plotROC(df_auc, thresh)
+
+ggsave("../figure/eval_mclass_roc_sp_7.pdf", width = 6, height = 4)
+dev.off()
+
+# PLOT 5 -----------------------------------------------------------------------
+
+pdf("../figure/eval_mclass_roc_sp_8.pdf", width = 6, height = 4)
+
+thresh = 0.6
+plotROC(df_auc, thresh)
+
+ggsave("../figure/eval_mclass_roc_sp_8.pdf", width = 6, height = 4)
+dev.off()
+
+# PLOT 6 -----------------------------------------------------------------------
+
+pdf("../figure/eval_mclass_roc_sp_9.pdf", width = 6, height = 4)
+
+thresh = 0.55
+plotROC(df_auc, thresh)
+
+ggsave("../figure/eval_mclass_roc_sp_9.pdf", width = 6, height = 4)
+dev.off()
+
+# PLOT 7 -----------------------------------------------------------------------
+
+pdf("../figure/eval_mclass_roc_sp_10.pdf", width = 6, height = 4)
+
+thresh = 0.3
+plotROC(df_auc, thresh)
+
+ggsave("../figure/eval_mclass_roc_sp_10.pdf", width = 6, height = 4)
+dev.off()
+
+# PLOT 8 -----------------------------------------------------------------------
+
+pdf("../figure/eval_mclass_roc_sp_11.pdf", width = 6, height = 4)
+
+plotROC(df_auc, 0, highlight = FALSE)
+
+ggsave("../figure/eval_mclass_roc_sp_11.pdf", width = 6, height = 4)
+dev.off()
+
+# PLOT 9 -----------------------------------------------------------------------
+
+pdf("../figure/eval_mclass_roc_sp_12_1.pdf", width = 6, height = 4)
+
+plotROC(df_auc, 0, table = FALSE, auc = TRUE, highlight = FALSE)
+
+ggsave("../figure/eval_mclass_roc_sp_12_1.pdf", width = 8, height = 4)
