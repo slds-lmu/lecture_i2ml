@@ -32,11 +32,14 @@ data <- data.frame(x = x, y = y, model = model)
 
 regression_plot <- ggplot(data = data, mapping = aes(x = x, y=y)) +
     geom_point() +
-    geom_line (aes(x =x, y= model), color = "blue")
+    geom_line (aes(x =x, y= model), color = "blue")+
+  theme(axis.text=element_text(size=12),
+        axis.title=element_text(size=14,face="bold"))+
+  theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
     
 
 regression_plot
 
-ggsave(filename = "figure_man/ml-basics-supervised-regression-task.png",plot = regression_plot, width = 4.5, height = 3, units = "in")
+ggsave(filename = "figure/ml-basics-supervised-regression-task.png",plot = regression_plot, width = 4.5, height = 3, units = "in")
 
 
