@@ -38,7 +38,7 @@ y <- b0 + b1*x + eps
 #perfect model 
 model_1 <- b0 + b1*x
 
-model_2 <- b0 + (b1-0.4)*x
+# model_2 <- b0 + (b1-0.4)*x
 
 model_3 <- b0-10+ (b1+1.3)*x
  
@@ -55,7 +55,8 @@ residual_plot <- function(data, model){
     geom_segment(aes(xend = x, yend = model), alpha = .2,colour = "blue") +
     theme_bw() +
     ylim(c(-10,10))+
-    annotate("text", x = 6.5, y = -5, label = bquote(bolditalic(R)[emp](f)==~"="~.(risk)))
+    annotate(geom = "text", x = 6.5, y = -5, label = bquote(bolditalic(R)[emp](f)==~"="~.(round(risk,2))), size = 7)+
+    theme(axis.text=element_text(size=12),axis.title=element_text(size=14,face="bold"))
     #annotate("text", x = 6.5, y = -5, label = bquote(bolditalic(R)[emp](f)== frac(1,n) %*% sum(L(y^(i), f(bold(x)^(i))), i==1, n)~"="~.(risk)))
   
 }
@@ -66,6 +67,23 @@ grid <- grid.arrange(
   #residual_plot(data, model= model_2),
   residual_plot(data, model= model_3), ncol = 2)
 
-ggsave("figure_man/ml-basic_riskmin-2-risk.png", grid)
+ggsave(filename = "figure/ml-basic_riskmin-2-risk.png", plot = grid, width = 14, height = 3.5, units = "in")
+
+#-----------------------------------------------------------
+# SECOND PLOT WITH GREEN 
+# ----------------------------------------------------------
+
+
+
+grid_green <- grid.arrange(
+  residual_plot(data, model= model_1)+ 
+    theme(plot.background = element_rect(fill = "lightgreen")),
+  #residual_plot(data, model= model_2),
+  residual_plot(data, model= model_3), 
+  ncol = 2)
+
+ggsave(filename = "figure/ml-basic_riskmin-3-risk-min.png",plot = grid_green, width = 14, height = 3.5, units = "in")
+
+
 
 

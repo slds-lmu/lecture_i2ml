@@ -54,13 +54,16 @@ loss_plot <-   ggplot(data = data, mapping = aes(x = x, y=y)) +
     #geom_segment(aes(xend = x, yend = model), alpha = .2) +
     theme_bw() +
     ylim(c(-10,10))+
-    annotate("text", x = 5.5, y = -5, label = bquote(bolditalic(L)(y,f(bold(.(x[example_oberservation]))))~"="~"|"~.(model_1[example_oberservation])~"-"~(.(y[example_oberservation]))~"|"~"="~.(loss)))
+    annotate("text", x = 5.5, y = -5, label = bquote(bolditalic(L)(y,f(bold(.(round(x[example_oberservation],2)))))~"="~"|"~.(round(model_1[example_oberservation],2))~"-"~(.(round(y[example_oberservation],2)))~"|"~"="~.(round(loss,2))), size = 7) +
+    theme(axis.text=element_text(size=12),
+         axis.title=element_text(size=14,face="bold"))
+  
     
   
 loss_plot
 
 
 
-ggsave("figure_man/ml-basic_riskmin-1-loss.png", loss_plot)
+ggsave(filename = "figure/ml-basic_riskmin-1-loss.png", plot = loss_plot, width = 7, height = 3.5, units = "in")
 
 
