@@ -40,6 +40,7 @@ regression_plot <- ggplot(data = data, mapping = aes(x = x, y=y)) +
 
 regression_plot
 
-ggsave(filename = "figure/ml-basics-supervised-regression-task.png",plot = regression_plot, width = 4.5, height = 3, units = "in")
+ggsave(filename = "../figure/ml-basics-supervised-regression-task.png",
+       plot = regression_plot, width = 4.5, height = 3, units = "in")
 
 
