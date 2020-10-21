@@ -69,17 +69,17 @@ my_points = trans3d(
   
 )
 
-points(my_points, pch = 19, col = "red", cex = 1.6)
+points(my_points, pch = 19, col = "orange", cex = 2)
 
 p_1 = recordPlot()
 
 p_2 = ggplot(data_bvnorm, aes(x = x, y = y)) + 
-  geom_point(alpha = 0.6) + 
+  geom_point(alpha = 0.4) + 
   labs(x = "x", y = "y") + 
-  geom_point(data = highlight, col = "red", size = 4) +
+  geom_point(data = highlight, col = "orange", size = 6) +
   theme_bw()
 
-p = plot_grid(p_1, p_2)
+plot_grid(p_1, p_2)
 
 # CHANGE SAVING GO BASE R
 
