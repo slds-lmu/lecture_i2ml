@@ -50,13 +50,13 @@ residual_plot <- function(data, model){
   risk <- sum (abs(y-model))/nrow(data)
   
   ggplot(data = data, mapping = aes(x = x, y=y)) +
-    geom_point() +
+    geom_point(size = 4) +
     geom_line (aes(x =x, y= model))+
     geom_segment(aes(xend = x, yend = model), alpha = .2,colour = "blue") +
-    theme_bw() +
+    theme_classic() +
     ylim(c(-10,10))+
     annotate(geom = "text", x = 6.5, y = -5, label = bquote(bolditalic(R)[emp](f)==~"="~.(round(risk,2))), size = 7)+
-    theme(axis.text=element_text(size=12),axis.title=element_text(size=14,face="bold"))
+    theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"))
     #annotate("text", x = 6.5, y = -5, label = bquote(bolditalic(R)[emp](f)== frac(1,n) %*% sum(L(y^(i), f(bold(x)^(i))), i==1, n)~"="~.(risk)))
   
 }
