@@ -54,8 +54,6 @@
 \newcommand{\SweaveInput}[1]{} % because they are not real TeX commands
 \newcommand{\Sexpr}[1]{}       % will only be parsed by R
 
-
-
 \usepackage[english]{babel}
 \usepackage[utf8]{inputenc}
 
@@ -83,6 +81,7 @@
 \usepackage{mathtools}
 \usepackage{wrapfig}
 \usepackage{bm}
+
 \usetikzlibrary{shapes,arrows,automata,positioning,calc,chains,trees, shadows}
 \tikzset{
   %Define standard arrow tip
@@ -102,8 +101,8 @@
     shorten <=2pt,
     shorten >=2pt,}
 }
-\usepackage{subfig}
 
+\usepackage{subfig}
 
 % Defines macros and environments
 \input{../../style/common.tex}
@@ -123,112 +122,267 @@
 
 \setbeamertemplate{frametitle}{\expandafter\uppercase\expandafter\insertframetitle}
 
-
-
 \begin{document}
+
 % Set style/preamble.Rnw as parent.
 
 % Load all R packages and set up knitr
 
-% This file loads R packages, configures knitr options and sets preamble.Rnw as parent file
+% This file loads R packages, configures knitr options and sets preamble.Rnw as 
+% parent file
 % IF YOU MODIFY THIS, PLZ ALSO MODIFY setup.Rmd ACCORDINGLY...
 
+% Defines macros and environments
 
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
 
-
-
-
-
-
-%! includes: basics-notation, basics-whatisml
-
-\lecturechapter{Introduction: Supervised Learning}
+\lecturechapter{Introduction: Supervised Learning \& Learning Tasks}
 \lecture{Introduction to Machine Learning}
 
-\sloppy
+% ------------------------------------------------------------------------------
 
-\begin{vbframe}{Functions - From Object to Outcome}
+\begin{vbframe}{Idea of Supervised Learning}
 
 \begin{itemize}
-\item In \textbf{supervised ML} we try to find a mapping $f()$ that connects (the description of) an object to a certain aspect of that object.
 
-$$f(\textrm{object}) = \textrm{target}$$
+  \item \textbf{Goal:} Identify the fundamental functional relation in the data 
+  that maps an object's features to the target.
+  
+  \item Ideally, we would have full knowledge about the data-generating process
+  and thus be able to specify this mapping function precisely.
+  
+  \item However, since this is basically impossible, we must try to 
+  \textbf{learn} the mapping function: for objects exhibiting certain 
+  patterns or properties, certain outcomes are much more likely.
+  
+  $\rightarrow$ We call such an assumed mapping a \textbf{model} $f$.
+  
+  % \item In machine learning, we rely on computers, which is why the model 
+  % itself, as well as all feature and target values, need to be 
+  % \textbf{computable}.
+  
+\end{itemize}  
 
-\item So we would like to compute / predict / describe the target outcome, given an object from a certain set of admissible objects.
+\framebreak
 
-\item This mapping $f$ must be computable by a machine.
+\begin{itemize}
+
+  % \item The set-up in supervised learning will typically look like this:
+  % 
+  % \begin{itemize}
+  % 
+  %   \item We restrict our options to a certain class of functions,
+  %   
+  %   \item choose some metric to evaluate model candidates,
+  %   
+  %   \item and try to find the best candidate in an efficient way.
+  %   
+  % \end{itemize} 
+  % 
+  % \item This procedure is carried out by an algorithm called \textbf{learner} or
+  % \textbf{inducer}.
+  
+  \item \textbf{Supervised} learning means we make use of \emph{labeled}
+  data, i.e., observations for which we already know the target outcome.
+  
+  \item We try to construct $f$ automatically from an example set of such 
+  labeled objects.
+  
+  $\rightarrow$ The algorithm for finding $f$ is called \textbf{learner}.
+  
+  \item Using the thus learned model, we can make \textbf{predictions} based on
+  the features of our data.
+  
+  \item Knowing the \enquote{truth} allows us to test how well we have grasped 
+  the nature of the underlying mapping: we just need to compare our predictions 
+  to the actually observed values.
+  
+  \framebreak
+  
+  \item Ultimately, we will use our model to compute predictions for 
+  \textbf{new} data whose target values are unknown.
+  
+  \begin{center}
+    \includegraphics[width = 0.7\textwidth]{figure_man/the_inducer_web.png}
+  \end{center}
+
 \end{itemize}
 
 \end{vbframe}
 
-\begin{vbframe}{Computable Functions}
+% ------------------------------------------------------------------------------
+
+% \begin{vbframe}{Supervised Learning}
+% 
+% \begin{itemize}
+% 
+%   \item \textbf{Supervised} learning means we make use of \emph{labeled}
+%   data, i.e., observations for which we already know the target outcome.
+%   
+%   \item We try to construct $f$ automatically from an example set of such 
+%   labeled objects.
+%   
+%   \item Using the thus learned model, we can make \textbf{predictions} based on
+%   the features of our data.
+% 
+%   \item Knowing the \enquote{truth} allows us to test how well we have grasped 
+%   the nature of the underlying mapping by comparing our predictions to the 
+%   actually observed values.
+%   
+% \end{itemize} 
+% 
+% \end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+
+\begin{vbframe}{Tasks in Supervised Learning}
 
 \begin{itemize}
-\item This seems like a very general and powerful concept. 
-  Computable function are also called \emph{algorithms}.
-\item For many kinds of problems, the mapping $f$ can be constructed explicitly, either as an actual mathematical mapping or in terms of a finite number of well-defined computable steps, i.e.,  as an algorithm that computes $f$, for example:
-\begin{itemize}
-\item $f(\textrm{list of elements}) = \textrm{count of distinct elements}$
-\item $f(\textrm{polynomial function}) = \textrm{locations of extrem points}$
-\item $f(\textrm{map of roads}) = \textrm{shortest route from A to B}$
-\end{itemize}
-\item Computer scientists study which kinds of functions are computable, how algorithms to compute a given $f$ scale in terms of input sizes, and how to properly construct and implement them.
-\item Obviously, such manual or explicit construction of $f$ varies from entirely simple and obvious to nearly or fully impossible.
-\end{itemize}
+
+  \item In general, supervised learning comes in two flavors we call 
+  \textbf{tasks}:
+  
+  \begin{itemize}
+  
+    \item \textbf{Regression}: Given features $\xv$, predict corresponding 
+    output from $\Yspace \in \mathbb{R}^m$.
+  
+    \begin{center}
+      \includegraphics[width = 0.3\textwidth]{figure/ml-basics-supervised-regression-task.png} 
+    \end{center}
+
+    \item \textbf{Classification}: Assign an observation with features $\xv$ to 
+    one class of a finite set of classes $\Yspace = \{C_1,...,C_g\}, g \geq 2$
+    (details later).
+    \begin{center}
+      \includegraphics[width = 0.3\textwidth]{figure/ml-basics-supervised-classif-task.png} 
+    \end{center}
+  \end{itemize}
+\end{itemize}  
 \end{vbframe}
 
-\begin{vbframe}{Learning Functions on a Machine}
-\begin{itemize}
-\item For many important problems, defining and implementing $f$ \enquote{manually} is difficult to impossible, e.g.:
-$$f(\textrm{person}) = \textrm{probability of developing breast cancer}$$
-\item \textbf{Supervised ML aims at automatically constructing $f$ from a set of example objects where we already know the target outcome.}  This mapping $f$ is then called a \textbf{model}.
-\item Humans are pretty good at this, at least for some domains. We learn that for objects exhibiting certain  patterns or properties, certain outcomes are much more likely.\\
-This pattern recognition occurs implicitly and gradually through examples over time, without an explicit construction of an \enquote{algorithm}. Hence, \emph{learning}. 
-\item \emph{Supervised} learning because the target is known for all the example objects we use for learning, so we can \enquote{supervise} how well a model $f$ works by comparing its outputs (i.e, its \textbf{predictions}) to the target outcomes we have actually observed.
-\end{itemize}
-\end{vbframe}
+% ------------------------------------------------------------------------------
 
-\begin{vbframe}{Feature Vectors}
+\begin{vbframe}{Regression Tasks: Example}
 
-\begin{itemize}
-\item In order to simplify this problem we (usually) assume that the input for the model $f$ 
-is not the (often complex) object itself, but rather a list of \textbf{features} that describe it.
-\item This list of features must be available for all objects, i.e., measurable or computable.
-\item E.g.,
-\begin{align*}
-\begin{split}
-  f(\textrm{age, sex, gene expression, ...}) =\\
-   \textrm{prob. of developing breast cancer}
-\end{split}
-\end{align*}
-\end{itemize}
+Imagine you want to investigate how salary and workplace conditions 
+(\emph{features}) affect productivity of employees (\emph{target}) -- a standard 
+\textbf{regression} task. Therefore, you collect data about their worked minutes 
+per week (productivity), how many people work in the same office as the 
+employees in question, and the employees' salary.
+  
+% FIGURE SOURCE: https://docs.google.com/presentation/d/1qIWHJq-iZqfUsLLJD81Z9LhobGTIN3sDHTevnm5dxZ0/edit?usp=sharing
+\begin{center}
+  \includegraphics[width = 0.8\textwidth]{figure_man/data_table} 
+\end{center}
 
-\end{vbframe}
-
-\begin{vbframe}{Parameters, Statistics and Supervised Machine Learning}
+\framebreak
 
 \begin{itemize}
-\item Supervised ML additionally assumes that $f$ is of a certain \enquote{form}
-or comes from a certain \emph{class of functions}.\\
-This is necessary to make the problem of automatically finding a \enquote{good} model feasible at all.
-\item The specific behavior of a mapping from this class can then be described by \textbf{parameters} which defines its shape.
-\item Statistics also studies how to learn such functions (or, rather: their parameters) from example data and how to perform inference on them and interpret the results.
-\item For historical reasons, statistics is mostly focused on fairly simple classes of mappings, like (generalized) linear models.
-\item Supervised ML also includes more complex kinds of mappings that can often deal with more complicated and high-dimensional inputs.
+
+  \item For our observed data we know which outcome is produced.
+  
+  \item For new employees can only observe the features but not the target.
+
 \end{itemize}
+
+\begin{center}
+% FIGURE SOURCE: https://docs.google.com/presentation/d/1WLPubv9vxLL-JIlHAtsvTBBG5pbF4xgRGW_prkOAEnE/edit?usp=sharing Page 4 
+  \includegraphics[width=0.8\textwidth]{figure_man/what_is_a_model_web} 
+\end{center}
+
 \end{vbframe}
 
+% ------------------------------------------------------------------------------
 
-\begin{frame}{Summary}
+\begin{vbframe}{More Regression Tasks}
 
-\textbf{Supervised machine learning} is concerned with learning a function that
-predicts a certain \textbf{target} from an object's \textbf{features} from a
-set of examples for which both the features and the target are known.\\
-The function to be learned is restricted to come from a certain class of functions
-and its precise shape is defined in terms of a set of \textbf{parameters}.
+\begin{enumerate}
 
-\end{frame}
+  \item \textbf{House Prices}
+  
+  % \medskip
+  
+    \textbf{Aim}: Predict the price for a house in a certain area
+    
+    \lz
+    
+    \begin{center}
+    %https://docs.google.com/presentation/d/1m86-HK5-iCWbWpc_ssm2sZBQ8yxexIfjKcQXDU6DWss/edit?usp=sharing page 1
+    \includegraphics[width=0.6\textwidth]{figure_man/ml-basics-supervised-task-houses-data.png} 
+    
+    \lz
+    
+    %https://unsplash.com/photos/sPpe2D7VbpM
+    \includegraphics[width=0.35\textwidth]{figure_man/ml-basics-supervised-task-houses-pic.jpg} 
+    
+    \end{center}
+    
+  \framebreak
+  
+  \item \textbf{Length-of-stay in a hospital}
+  
+  \textbf{Aim}: Predict the number of days a single patient has to stay 
+    in hospital at the time of admission
+   
+    
+    \lz
+    
+    \begin{center}
+    %https://docs.google.com/presentation/d/1m86-HK5-iCWbWpc_ssm2sZBQ8yxexIfjKcQXDU6DWss/edit?usp=sharing page 2
+    \includegraphics[width=0.6\textwidth]{figure_man/ml-basics-supervised-task-hosp-data.png} 
+    
+    \lz
+    
+    %https://unsplash.com/photos/ZCO_5Y29s8k
+    \includegraphics[width=0.3\textwidth]{figure_man/ml-basics-supervised-task-hosp-pic.jpg} 
+    
+    \end{center}
+    
+  
+  
+\end{enumerate}
 
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Classification Tasks: Example}
+
+\textbf{Risk category in life insurance}
+
+  \textbf{Aim}: Predict one of five risk categories (\textbf{classification}) for a life insurance customer to determine the insurance premium 
+\begin{center}
+
+   %https://docs.google.com/presentation/d/1m86-HK5-iCWbWpc_ssm2sZBQ8yxexIfjKcQXDU6DWss/edit?usp=sharing page 3
+    \includegraphics[width=0.6\textwidth]{figure_man/ml-basics-supervised-task-insurance-data.png} 
+
+\lz
+
+% FIGURE SOURCE: https://docs.google.com/presentation/d/1WLPubv9vxLL-JIlHAtsvTBBG5pbF4xgRGW_prkOAEnE/edit?usp=sharing Page 3
+  \includegraphics[width = 0.2\textwidth]{figure_man/classif_ex_placeholder.jpg} 
+\end{center}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+% \begin{vbframe}{Summary}
+% 
+% \medskip
+% 
+% \textbf{Supervised machine learning} is concerned with learning a function 
+% that predicts a certain \textbf{target} from an object's \textbf{features} 
+% from a set of examples for which both the features and the target are known.\\
+% The function to be learned is restricted to come from a certain class of 
+% functions and its precise shape is defined in terms of a set of 
+% \textbf{parameters}.
+% 
+% \end{vbframe}
+
+% ------------------------------------------------------------------------------
 
 \endlecture
 \end{document}
