@@ -50,7 +50,7 @@ loss_plot <-   ggplot(data = data, mapping = aes(x = x, y=y)) +
                        y = model_1[example_oberservation], 
                        xend = x[example_oberservation], 
                        yend = y[example_oberservation]),
-                 colour = "blue")+
+                 colour = "blue", size = 1)+
     #geom_segment(aes(xend = x, yend = model), alpha = .2) +
     theme_classic() +
     ylim(c(-10,10))+
@@ -84,12 +84,12 @@ residual_plot <- ggplot(data = data_loss_function, mapping = aes(x = x, y = y))+
                              y = loss, 
                              xend = residuals, 
                              yend = rep(0, n)),
-               colour = "black", data = data_residuals)  +
+               colour = "black", data = data_residuals, size= 1)  +
   geom_segment(mapping = aes(x = residuals[example_oberservation], 
                      y = loss[example_oberservation], 
                      xend = residuals[example_oberservation], 
                      yend = 0),
-                 colour = "blue", data = data_residuals)  +
+                 colour = "blue", data = data_residuals, size = 1)  +
   xlab ( "y - f(x)")+
   ylab ("L(y, f(x))") +
   theme(axis.text=element_text(size=25),

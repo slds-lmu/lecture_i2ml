@@ -52,7 +52,7 @@ residual_plot <- function(data, model){
   ggplot(data = data, mapping = aes(x = x, y=y)) +
     geom_point(size = 4) +
     geom_line (aes(x =x, y= model))+
-    geom_segment(aes(xend = x, yend = model), alpha = .2,colour = "blue") +
+    geom_segment(aes(xend = x, yend = model), alpha = .2,colour = "blue", size = 1) +
     theme_classic() +
     ylim(c(-10,10))+
     annotate(geom = "text", x = 6.5, y = -5, label = bquote(bolditalic(R)[emp](f)==~"="~.(round(risk,2))), size = 7)+
