@@ -47,7 +47,7 @@ data <- data.frame(x = x, y = y, model_1 = model_1, model_2 = model_2, model_3)
 
 residual_plot <- function(data, model){
   
-  risk <- sum (abs(y-model))/nrow(data)
+  risk <- sum (abs(y-model))
   
   ggplot(data = data, mapping = aes(x = x, y=y)) +
     geom_point(size = 4) +
