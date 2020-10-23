@@ -21,7 +21,7 @@ plot_data <- function(data){
     geom_point(size= 4) +
     geom_line (aes(x =x, y= model_1))+
     theme_classic() +
-    ylim(c(-10,10)) +
+    ylim(c(-5,15)) +
     theme(axis.text=element_text(size=25),
           axis.title=element_text(size=25),
           panel.border = element_rect(colour = "black", fill=NA, size=0.5))
@@ -149,14 +149,14 @@ eps <- rnorm(n = n , mean = 0, sd = sd)
 x <- seq (1,10,length.out = n)
 
 #linear model 
-b0 <- 1
-b1 <- 0.5
+b0 <- 1.25
+b1 <- 0.9
 y <- b0 + b1*x + eps
 
 
 #####
-#perfect model 
-model_1 <- b0 + b1*x
+#model 1 & 1.5
+model_1 <- 1.25 + 0.9*x
 
 
 #####################################

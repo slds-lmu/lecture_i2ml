@@ -16,13 +16,13 @@ x <- seq (1,10,length.out = n)
 
 #calculate the values of the function with errors
 ##linear model 
-b0 <- 1
-b1 <- 0.5
+b0 <- 1.25
+b1 <- 0.9
 y <- b0 + b1*x + eps
 
 #propsed thetas
-theta_1 <- c(  4, 3,1, -9)
-theta_2 <- c( 1, 7,0.5, 1.8)
+theta_1 <- c(2, 3,6, 1)
+theta_2 <- c(3, 2,-1, 1.5)
 
 #------------------------------
 risk  <- function (x, y, n, theta_1, theta_2){
@@ -38,8 +38,19 @@ risk  <- function (x, y, n, theta_1, theta_2){
 #show table
 ##empirical risk for the differen thetas
 r_emp <- risk(x,y,n, theta_1, theta_2)
-theta_risk_df <- data.frame( theta_1 = theta_1, theta_2 = theta_2, r_emp = round(r_emp,2)) 
+r_emp_best <- risk(x,y,n, b0, b1)
+theta_risk_df <- data.frame( theta_1 = c(theta_1, b0), theta_2 = c(theta_2, b1), r_emp = c(round(r_emp,2),r_emp_best)) 
 theta_risk_df
+
+################################################################################
+#latex code
+
+library(xtable)
+options(xtable.floating = FALSE)
+options(xtable.timestamp = "")
+
+xtable(theta_risk_df)
+
 ########################################################################
 #-----------------------------
 x1seq = seq(-10,10,1)
@@ -69,6 +80,8 @@ facetcol <- cut(zfacet, nbcol)
 ##################
 png(file=sprintf("figure/ml-basic-riskmin-error-surface.png"))
 #par(mai=rep(0,4)); par(omi=rep(0,4))
+
+#surface 3d plot
 pmat <- persp(x1seq, x2seq, z,
       #theta=75, 
       #phi=55, 

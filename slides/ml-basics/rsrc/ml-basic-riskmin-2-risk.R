@@ -29,19 +29,19 @@ eps <- rnorm(n = n , mean = 0, sd = sd)
 x <- seq (1,10,length.out = n)
 
 #linear model 
-b0 <- 1
-b1 <- 0.5
+b0 <- 1.25
+b1 <- 0.9
 y <- b0 + b1*x + eps
 
 
 #####
 #perfect model 
-model_1 <- b0 + b1*x
+model_1 <- 1 + 1.5*x
 
 
-model_3 <- b0-10+ (b1+1.3)*x
+model_2 <- 6 + -1*x
  
-data <- data.frame(x = x, y = y, model_1 = model_1, model_2 = model_2, model_3) 
+data <- data.frame(x = x, y = y, model_1 = model_1, model_2) 
 
 
 residual_plot <- function(data, model, with_theta = FALSE){
@@ -56,7 +56,7 @@ residual_plot <- function(data, model, with_theta = FALSE){
                  colour = "blue", 
                  size = 1) +
     theme_classic() +
-    ylim(c(-10,10))+
+    ylim(c(-10,20))+
     theme(axis.text=element_text(size=25),
           axis.title=element_text(size=25),
           panel.border = element_rect(colour = "black", fill=NA, size=0.5))
@@ -83,7 +83,7 @@ grid <- grid.arrange(
   residual_plot(data, model= model_1)+ 
     theme(plot.background = element_rect(fill = "white")),
   #residual_plot(data, model= model_2),
-  residual_plot(data, model= model_3), ncol = 2)
+  residual_plot(data, model= model_2), ncol = 2)
 
 ggsave(filename = "figure/ml-basic_riskmin-2-risk.png", plot = grid, width = 14, height = 3.5, units = "in")
 
@@ -93,8 +93,7 @@ ggsave(filename = "figure/ml-basic_riskmin-2-risk.png", plot = grid, width = 14,
 grid_green <- grid.arrange(
   residual_plot(data, model= model_1, with_theta = TRUE)+ 
     theme(plot.background = element_rect(fill = "lightgreen")),
-  #residual_plot(data, model= model_2),
-  residual_plot(data, model= model_3, with_theta = TRUE), 
+  residual_plot(data, model= model_2, with_theta = TRUE), 
   ncol = 2)
 
 ggsave(filename = "figure/ml-basic_riskmin-3-risk-min.png",plot = grid_green, width = 14, height = 3.5, units = "in")
