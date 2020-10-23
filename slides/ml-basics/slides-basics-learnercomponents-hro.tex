@@ -54,8 +54,6 @@
 \newcommand{\SweaveInput}[1]{} % because they are not real TeX commands
 \newcommand{\Sexpr}[1]{}       % will only be parsed by R
 
-
-
 \usepackage[english]{babel}
 \usepackage[utf8]{inputenc}
 
@@ -83,6 +81,7 @@
 \usepackage{mathtools}
 \usepackage{wrapfig}
 \usepackage{bm}
+
 \usetikzlibrary{shapes,arrows,automata,positioning,calc,chains,trees, shadows}
 \tikzset{
   %Define standard arrow tip
@@ -102,13 +101,15 @@
     shorten <=2pt,
     shorten >=2pt,}
 }
-\usepackage{subfig}
 
+\usepackage{subfig}
 
 % Defines macros and environments
 \input{../../style/common.tex}
 
 %\usetheme{lmu-lecture}
+\newcommand{\titlefigure}{figure_man/learner_opt.jpg}
+\newcommand{\learninggoals}{\item Understand the components of a learner \item Know the formalization of supervised learning \item Be able to apply the concept of a learner to a supervised learning task}
 \usepackage{../../style/lmu-lecture}
 
 \let\code=\texttt
@@ -123,87 +124,149 @@
 
 \setbeamertemplate{frametitle}{\expandafter\uppercase\expandafter\insertframetitle}
 
-
-
 \begin{document}
+
 % Set style/preamble.Rnw as parent.
 
 % Load all R packages and set up knitr
 
-% This file loads R packages, configures knitr options and sets preamble.Rnw as parent file
+% This file loads R packages, configures knitr options and sets preamble.Rnw as 
+% parent file
 % IF YOU MODIFY THIS, PLZ ALSO MODIFY setup.Rmd ACCORDINGLY...
 
-
-
-
-
-
-
-
 % Defines macros and environments
+
 \input{../../latex-math/basic-math.tex}
 \input{../../latex-math/basic-ml.tex}
 
-%! includes: basics-supervised, basics-datatask, basics-learners, basics-riskminimization
-
-\lecturechapter{Introduction: Components of a Learner}
+\lecturechapter{Introduction: Learners}
 \lecture{Introduction to Machine Learning}
 
-\begin{frame}{Components of a Learner}
+% ------------------------------------------------------------------------------
 
-Nearly all supervised learning algorithms can be described
-in terms of three components:
+\begin{vbframe}{Components of a Learner}
+
+Summarizing what we have seen before, nearly all supervised learning algorithms 
+can be described in terms of three components:
 
 \lz
+
 \begin{center}
-\textbf{Learning = Hypothesis Space + Risk + Optimization}
+
+  \textbf{Learning = Hypothesis Space + Risk + Optimization}
+  
 \end{center}
+
 \lz
 
 \begin{itemize}
-\item
-  \textbf{Hypothesis Space:} Defines (and restricts!) what kind of model $f$ can be learned from the data.\\
-\item
-  \textbf{Risk:} A metric that quantifies how well a specific model performs on a
-  given data set. This defines how to compare observed values to predictions and allows us to rank candidate models in order to choose the best one.\\
-\item
-  \textbf{Optimization:} Defines how to search for the best model in the \textbf{hypothesis space}, typically guided by the metric used for the \textbf{risk}.\\
+
+  \item \textbf{Hypothesis Space:} Defines (and restricts!) what kind of model 
+  $f$ can be learned from the data.
+  
+  \item \textbf{Risk:} Quantifies how well a specific model performs on a given 
+  data set. This defines how to compare observed values to predictions and 
+  allows us to rank candidate models in order to choose the best one.
+  
+  \item \textbf{Optimization:} Defines how to search for the best model in the 
+  \textbf{hypothesis space}, typically guided by the metric used for the 
+  \textbf{risk}.
+  
 \end{itemize}
 
-\end{frame}
+\end{vbframe}
 
-\begin{frame}{Hypothesis Space + Risk + Optimization}
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Supervised Learning, Formalized}
+
+A \textbf{learner} (or \textbf{inducer}) $\inducer$ is a \emph{program} or 
+\emph{algorithm} which
+
+\begin{itemize}
+
+  \item receives a \textbf{training set} $\D \in \Xspace \times \Yspace$, and,
+  
+  \item for a given \textbf{hypothesis class} $\Hspace$ of \textbf{models} 
+  $f:\Xspace \rightarrow \R^g,$ 
+  
+  \item based on a \textbf{risk} function $\riskef$ that quantifies the 
+  performance of $f \in \Hspace$ on $\D,$
+  
+  \item uses an \textbf{optimization} procedure to find
+  $$\fh = \argmin_{f \in \Hspace} \riskef.$$
+
+\end{itemize}
+
+\lz 
+
+As before, we can also adapt this concept to finding $\thetabh$ for parametric
+models.
+
 \lz
-By decomposing learners into these components
+
+{\footnotesize (This does not cover all special cases, but it's a useful 
+framework for most supervised ML problems.)}
+
+\end{vbframe}
+
+
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Example of a Learner}
+
+%So what could a learner look like? 
+Let us consider a linear regression task with 
+a single feature and a single target variable.
+
 \begin{itemize}
-\item we have a framework to understand how they work \\
-\item we can more easily evaluate in which settings they may be more or less suitable\\
-\item we can tailor learners to specific problems by clever choice of each of the three components\\
+  
+  \item The \textbf{hypothesis space} in univariate linear regression is the set 
+  of all linear functions, with $\thetab = (\theta_0, \theta)$:
+  
+  $$\Hspace = \{\fx = \theta_0 + \theta \xv: \theta_0, \theta \in \R \}$$
+  
+  \begin{center}
+    \includegraphics[width = 0.5\textwidth]{figure_man/learner_hyp_space.jpg} 
+  \end{center}
+  
+  \framebreak
+  
+  \item We might use the mean squared error as loss function to our
+  \textbf{risk}, punishing larger distances between observations and regression 
+  line more severely:
+  
+  $$\risket = \meanin (\yi - \theta_0 - \theta \xi)^2$$
+  
+  \begin{center}
+    \includegraphics[width = 0.5\textwidth]{figure_man/learner_risk.jpg} 
+  \end{center}
+  
+  \framebreak
+  
+  \item \textbf{Optimization} will usually mean deriving the 
+  ordinary-least-squares (OLS) estimator $\thetabh$ analytically. We might,
+  however, also use gradient descent or some other optimization procedure.
+  
+  \begin{center}
+    \includegraphics[width = 0.5\textwidth]{figure_man/learner_opt.jpg} 
+  \end{center}
+    
 \end{itemize}
-\end{frame}
 
-\begin{frame}{Supervised Learning, Formalized:}
+\end{vbframe}
 
-A \textbf{learner} 
-\begin{itemize}
-\item receives a \textbf{training set} $\D \in \Xspace \times \Yspace$
-\item and uses an \textbf{optimization} procedure to find
-$$
-\fh = \argmin_{f \in \Hspace} \riskef.
-$$
-\item for a given \textbf{hypothesis class} $\Hspace$ of \textbf{models} $f:\Xspace \rightarrow \R^g$
-\item based on a \textbf{risk} function $\riskef$ that quantifies the performance of $f \in \Hspace$ on $\D$.
-\end{itemize}
-\lz\lz\lz
-{\footnotesize (This does not cover all special cases, but it's a useful framework for most supervised ML problems.)}
-\end{frame}
+% ------------------------------------------------------------------------------
 
+\begin{frame}[squeeze]{Variety of Learning Components}
 
-\begin{frame}[squeeze]{Components of a Learner}
-\vskip -.5em
+% \vskip -.5em
+
 \begin{footnotesize}
 
-$\textbf{Hypothesis Space} :\begin{cases} 
+$\textbf{Hypothesis Space}: \begin{cases} 
+
 \text{Step functions} \\
 \text{Linear functions}\\
 \text{Sets of rules}\\
@@ -212,7 +275,7 @@ $\textbf{Hypothesis Space} :\begin{cases}
 \text{...}
 \end{cases}$
 
-$\phantom{Hypothesis Space RISK RISK} \textbf{Risk} :\begin{cases}
+$\phantom{Hypothesis Space RISK RISK} \textbf{Risk}: \begin{cases}
 \text{Mean squared error}\\
 \text{Misclassification rate}\\
 \text{Negative log-likelihood}\\
@@ -220,8 +283,8 @@ $\phantom{Hypothesis Space RISK RISK} \textbf{Risk} :\begin{cases}
 \text{...}
 \end{cases}$
 
-$\phantom{hypothesis space risk RISK RISK} \textbf{Optimization} :\begin{cases}
-\text{Analytic solution}\\
+$\phantom{hypothesis space risk RISK RISK} \textbf{Optimization}: \begin{cases}
+\text{Analytical solution}\\
 \text{Gradient descent}\\
 \text{Combinatorial optimization}\\
 \text{Genetic algorithms}\\
@@ -230,5 +293,39 @@ $\phantom{hypothesis space risk RISK RISK} \textbf{Optimization} :\begin{cases}
 
 \end{footnotesize}
 \end{frame}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Learning as Empirical Risk Minimization}
+
+\begin{itemize}
+
+  \item By decomposing learners into these building blocks,
+  
+  \begin{itemize}
+
+    \item we have a framework to understand how they work,
+    
+    \item we can more easily evaluate in which settings they may be more or less 
+    suitable, and
+    
+    \item we can tailor learners to specific problems by clever choice of each 
+    of the three components.
+    
+  \end{itemize}
+  
+  \item There will, for instance, be optimization procedures that work well for
+  a certain combination of hypothesis space and risk function but perform poorly 
+  on others.
+  
+  \item In fact, it is a commonly acknowledged problem that no universally best
+  learner exists.
+
+\end{itemize}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
 \endlecture
 \end{document}
