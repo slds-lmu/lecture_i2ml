@@ -56,7 +56,8 @@ loss_plot <-   ggplot(data = data, mapping = aes(x = x, y=y)) +
     ylim(c(-10,10))+
     annotate("text", x = 5.5, y = -5, label = bquote(bolditalic(L)(y,f(bold(.(round(x[example_oberservation],2)))))~"="~"|"~.(round(model_1[example_oberservation],2))~"-"~(.(round(y[example_oberservation],2)))~"|"~"="~.(round(loss_example,2))), size = 7) +
     theme(axis.text=element_text(size=25),
-         axis.title=element_text(size=25))
+         axis.title=element_text(size=25),
+         panel.border = element_rect(colour = "black", fill=NA, size=0.5))
   
     
   
@@ -83,16 +84,22 @@ residual_plot <- ggplot(data = data_loss_function, mapping = aes(x = x, y = y))+
                              y = loss, 
                              xend = residuals, 
                              yend = rep(0, n)),
-               colour = "black", data = data_residuals, size= 1)  +
+               colour = "black", 
+               data = data_residuals, 
+               size= 1)  +
   geom_segment(mapping = aes(x = residuals[example_oberservation], 
                      y = loss[example_oberservation], 
                      xend = residuals[example_oberservation], 
                      yend = 0),
-                 colour = "blue", data = data_residuals, size = 1)  +
+              colour = "blue", 
+              data = data_residuals, 
+              size = 1)  +
   xlab ( "y - f(x)")+
   ylab ("L(y, f(x))") +
   theme(axis.text=element_text(size=25),
-        axis.title=element_text(size=25))
+        axis.title=element_text(size=25),
+        panel.border = element_rect(colour = "black", fill=NA, size=0.5)) 
+  
 
 residual_plot     
     
