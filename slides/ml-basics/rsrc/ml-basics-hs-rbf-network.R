@@ -5,6 +5,7 @@ library(tidyverse)
 library(ggplot2)
 library(gridExtra)
 library(mvtnorm)
+library(plotly)
 
 options(digits = 3, 
         width = 65, 
@@ -29,7 +30,9 @@ plot_basis_fun_2d = function(coeff, center, bandwidth = 1) {
   get_weighted_sum = function(x, coeff, center, bandwidth = 1) {
     
     apply(
-      sapply(c(1:3), function(i) get_basis_fun(x, coeff[[i]], center[[i]])), 
+      sapply(
+        c(1:length(coeff)), 
+        function(i) get_basis_fun(x, coeff[[i]], center[[i]])), 
       1, 
       sum)
     
@@ -101,7 +104,7 @@ plot_basis_fun_3d = function(coeff, center) {
       mean = center, 
       sigma = matrix(c(1, 0, 0, 1), nrow = 2))
 
-    grid_dens
+    grid_dens$z
 
   }
   
@@ -112,27 +115,60 @@ plot_basis_fun_3d = function(coeff, center) {
     x_2 = seq_x
   )
   
-  p = ggplot(df, aes(x = x_1, y = x_2))
+  p = ggplot(df, aes(x = x_1, y = x_2)) +
+    theme_bw() +
+    labs(
+      x = expr(paste(x[1])),
+      y = expr(paste(x[2]))
+      )
   
-  p = p + geom_contour(a, mapping = aes(x = x_1, y = x_2, z = z))
+  # p = p + geom_contour(a, mapping = aes(x = x_1, y = x_2, z = z))
+  # 
+  # for (i in 1:length(coeff)) {
+  #   
+  #   dens_i = get_basis_fun(
+  #     x = seq_x, coeff = coeff[[i]], center = center[[i]])
+  #   
+  #   # p = p + geom_contour(
+  #   #   dens_i,
+  #   #   mapping = aes(x = x_1, y = x_2, z = z),
+  #   #   binwidth = 0.001
+  #   # )
+  #   
+  # }
   
-  for (i in 1:length(coeff)) {
-    
-    dens_i = get_basis_fun(
-      x = seq_x, coeff = coeff[[i]], center = center[[i]])
-    
-    p = p + geom_contour(
-      dens_i,
-      mapping = aes(x = x_1, y = x_2, z = z)
-    )
-    
-  }
+  # dens_i = get_basis_fun(
+  #   x = seq_x, 
+  #   coeff = coeff[[1]], 
+  #   center = center[[1]]
+  #   )
+  # 
+  # dens = apply(
+  #   sapply(
+  #     c(1:length(coeff)), 
+  #     function(i) get_basis_fun(x, coeff[[i]], center[[i]])), 
+  #   1, 
+  #   sum)
+  
+  dens = expand.grid(x_1 = x, x_2 = x)
+  
+  dens$z = apply(
+    sapply(
+      c(1:length(coeff)), 
+      function(i) get_basis_fun(x, coeff[[i]], center[[i]])), 
+    1, 
+    sum)
+  
+  d = akima::interp(x = dens$x_1, y = dens$x_2, z = dens$z)
+  
+  p = plot_ly(x = d$x, y = d$y, z = d$z) %>% 
+    add_surface()
   
  p
   
 }
 
-plot_basis_fun_3d(list(0.2, 0.4), list(c(1, 1), c(2, 2)))
+plot_basis_fun_3d(list(0.2, 0.4), list(c(-1, -1), c(1, 1)))
 
 # PLOT -------------------------------------------------------------------------
 
@@ -155,3 +191,9 @@ x <- rmvnorm(n=100, mean=c(1,1))
 plot(x)
 
 
+a = matrix(rnorm(200, 0, 1), ncol = 10)
+
+fig <- plot_ly(z = ~a, html = F)
+fig <- fig %>% add_surface()
+
+fig
