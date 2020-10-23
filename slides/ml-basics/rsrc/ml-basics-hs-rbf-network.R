@@ -110,90 +110,72 @@ plot_basis_fun_3d = function(coeff, center) {
   
   seq_x = seq(-5, 5, length.out = 100)
   
-  df = data.frame(
-    x_1 = seq_x,
-    x_2 = seq_x
-  )
-  
-  p = ggplot(df, aes(x = x_1, y = x_2)) +
-    theme_bw() +
-    labs(
-      x = expr(paste(x[1])),
-      y = expr(paste(x[2]))
-      )
-  
-  # p = p + geom_contour(a, mapping = aes(x = x_1, y = x_2, z = z))
-  # 
-  # for (i in 1:length(coeff)) {
-  #   
-  #   dens_i = get_basis_fun(
-  #     x = seq_x, coeff = coeff[[i]], center = center[[i]])
-  #   
-  #   # p = p + geom_contour(
-  #   #   dens_i,
-  #   #   mapping = aes(x = x_1, y = x_2, z = z),
-  #   #   binwidth = 0.001
-  #   # )
-  #   
-  # }
-  
-  # dens_i = get_basis_fun(
-  #   x = seq_x, 
-  #   coeff = coeff[[1]], 
-  #   center = center[[1]]
-  #   )
-  # 
-  # dens = apply(
-  #   sapply(
-  #     c(1:length(coeff)), 
-  #     function(i) get_basis_fun(x, coeff[[i]], center[[i]])), 
-  #   1, 
-  #   sum)
-  
-  dens = expand.grid(x_1 = x, x_2 = x)
+  dens = expand.grid(x_1 = seq_x, x_2 = seq_x)
   
   dens$z = apply(
     sapply(
       c(1:length(coeff)), 
-      function(i) get_basis_fun(x, coeff[[i]], center[[i]])), 
+      function(i) get_basis_fun(seq_x, coeff[[i]], center[[i]])), 
     1, 
     sum)
   
-  d = akima::interp(x = dens$x_1, y = dens$x_2, z = dens$z)
+  # d = akima::interp(x = dens$x_1, y = dens$x_2, z = dens$z)
+  # 
+  # p = plot_ly(x = d$x, y = d$y, z = d$z) %>% 
+  #   add_surface()
   
-  p = plot_ly(x = d$x, y = d$y, z = d$z) %>% 
-    add_surface()
+  p = ggplot(dens, aes(x = x_1, y = x_2, z = z)) +
+    xlim(c(-5, 5)) +
+    ylim(c(-5, 5))
+  p = p + geom_contour_filled() 
+  p = p + guides(fill = FALSE)
   
  p
   
 }
 
-plot_basis_fun_3d(list(0.2, 0.4), list(c(-1, -1), c(1, 1)))
+plot_basis_fun_3d(list(0.2, 0.6, 0.4), list(c(-3, -1), c(1, 1), c(3, -1)))
 
 # PLOT -------------------------------------------------------------------------
 
 pdf("../figure/ml-basics-hs-rbf-network.pdf", width = 8, height = 4)
 
-p_1 = plot_basis_fun_2d(list(0.2, 0.5, 0.3), list(-3, 0, 2))
-p_2 = plot_basis_fun_2d(list(0.2, 0.5, 0.3), list(-2, 1, 2))
-p_3 = plot_basis_fun_2d(list(0.6, 0.2, 0.2), list(-3, 0, 2))
+p_1 = plot_basis_fun_2d(
+  coeff = list(0.2, 0.5, 0.3), 
+  center = list(-3, 0, 2)
+  )
+p_2 = plot_basis_fun_2d(
+  coeff = list(0.2, 0.5, 0.3), 
+  center = list(-2, 1, 2)
+  )
+p_3 = plot_basis_fun_2d(
+  coeff = list(0.6, 0.2, 0.2), 
+  center = list(-3, 0, 2)
+  )
 grid.arrange(p_1, p_2, p_3, ncol = 3)
 
 ggsave("../figure/ml-basics-hs-rbf-network.pdf", width = 8, height = 4)
 dev.off()
 
-
-x = dmvnorm(seq(-2, 2, length.out = 1000), c(0, 0), matrix(1, 0, 0, 1))
-
-dmvnorm(x=c(0,0))
-dmvnorm(x=c(0,0), mean=c(1,1))
-x <- rmvnorm(n=100, mean=c(1,1))
-plot(x)
-
-
-a = matrix(rnorm(200, 0, 1), ncol = 10)
-
-fig <- plot_ly(z = ~a, html = F)
-fig <- fig %>% add_surface()
-
-fig
+p_4 = plot_basis_fun_3d(
+  coeff = list(0.2, 0.6, 0.4), 
+  center = list(
+    c(-3, -1), 
+    c(1, 1), 
+    c(3, -1))
+  )
+p_5 = plot_basis_fun_3d(
+  coeff = list(0.2, 0.6, 0.4), 
+  center = list(
+    c(-3, 3), 
+    c(1, 1), 
+    c(4, -3))
+)
+p_6 = plot_basis_fun_3d(
+  coeff = list(0.1, 0.3, 0.6), 
+  center = list(
+    c(-3, -1), 
+    c(1, 1), 
+    c(3, -1))
+)
+grid.arrange(p_4, p_5, p_6, ncol = 3)
