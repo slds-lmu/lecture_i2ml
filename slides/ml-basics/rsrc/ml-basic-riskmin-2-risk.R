@@ -56,7 +56,7 @@ residual_plot <- function(data, model){
     theme_classic() +
     ylim(c(-10,10))+
     annotate(geom = "text", x = 6.5, y = -5, label = bquote(bolditalic(R)[emp](f)==~"="~.(round(risk,2))), size = 7)+
-    theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"))
+    theme(axis.text=element_text(size=25),axis.title=element_text(size=25))
     #annotate("text", x = 6.5, y = -5, label = bquote(bolditalic(R)[emp](f)== frac(1,n) %*% sum(L(y^(i), f(bold(x)^(i))), i==1, n)~"="~.(risk)))
   
 }

@@ -56,8 +56,7 @@ loss_plot <-   ggplot(data = data, mapping = aes(x = x, y=y)) +
     ylim(c(-10,10))+
     annotate("text", x = 5.5, y = -5, label = bquote(bolditalic(L)(y,f(bold(.(round(x[example_oberservation],2)))))~"="~"|"~.(round(model_1[example_oberservation],2))~"-"~(.(round(y[example_oberservation],2)))~"|"~"="~.(round(loss_example,2))), size = 7) +
     theme(axis.text=element_text(size=25),
-         axis.title=element_text(size=25,
-                                 face="bold"))
+         axis.title=element_text(size=25))
   
     
   
@@ -77,7 +76,7 @@ data_residuals <- data.frame(residuals = residuals, loss = loss)
 
 residual_plot <- ggplot(data = data_loss_function, mapping = aes(x = x, y = y))+
   geom_line() +
-  geom_point(mapping = aes(x=residuals, y=loss), data = data_residuals, shape =1, size = 4)+
+  geom_point(mapping = aes(x=residuals, y=loss), data = data_residuals, shape =1, size = 4, color = "blue")+
   xlim(-5,5) +
   theme_classic()+
   geom_segment(mapping = aes(x = residuals, 
@@ -93,7 +92,7 @@ residual_plot <- ggplot(data = data_loss_function, mapping = aes(x = x, y = y))+
   xlab ( "y - f(x)")+
   ylab ("L(y, f(x))") +
   theme(axis.text=element_text(size=25),
-        axis.title=element_text(size=25,face="bold"))
+        axis.title=element_text(size=25))
 
 residual_plot     
     

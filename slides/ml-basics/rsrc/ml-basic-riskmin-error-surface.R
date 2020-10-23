@@ -1,5 +1,6 @@
 ## Compare the risk functions of different possible models
 
+load("ml-basic-riskmin-calculate_risk.R")
 #######
 # Create sample data
 set.seed(1234)
@@ -21,15 +22,15 @@ b1 <- 0.5
 y <- b0 + b1*x + eps
 
 #propsed thetas
-theta_1 <- c(10, 2, 4, 3,1)
-theta_2 <- c(10, 0.5, 1, 2,0.5)
+theta_1 <- c(  4, 3,1, -9)
+theta_2 <- c( 1, 7,0.5, 1.8)
 
 #------------------------------
 risk  <- function (x, y, n, theta_1, theta_2){
   length <- length(theta_1)
   result <- rep(99,length)
   for (i in 1:length){
-    result[i] <- sum (abs(y - (theta_1[i] + theta_2[i]*x)))/n
+    result[i] <- sum (abs(y - (theta_1[i] + theta_2[i]*x)))
   }
   result
 }
