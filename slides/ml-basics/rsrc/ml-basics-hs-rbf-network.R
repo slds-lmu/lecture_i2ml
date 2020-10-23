@@ -1,96 +1,166 @@
 # PREREQ -----------------------------------------------------------------------
 
 library(knitr)
-library(ggplot2)
-library(tidyverse)
-library(data.table)
-library(gridExtra)
 
 options(digits = 3, 
         width = 65, 
         str = strOptions(strict.width = "cut", vec.len = 3))
 
+# DATA -------------------------------------------------------------------------
+
+set.seed(2310)
+
+x_1 = rnorm(1000, 0, 1)
+
 # HELPERS ----------------------------------------------------------------------
 
-make_line = function(x, a, b) a * x + b
+plot_basis_fun_2d = function(coeff, center, bandwidth = 1) {
+  
+  get_basis_fun = function(x, coeff, center, bandwidth = 1) {
+    
+    coeff * dnorm(x, center, 1 / bandwidth)
+    
+  }
+  
+  get_weighted_sum = function(x, coeff, center, bandwidth = 1) {
+    
+    # get_basis_fun(x, coeff[1], center[1]) +
+    #   get_basis_fun(x, coeff[2], center[2]) +
+    #   get_basis_fun(x, coeff[3], center[3])
+    
+    # sum(mapply(get_basis_fun, x, coeff, center))
+    
+    apply(
+      sapply(c(1:3), function(i) get_basis_fun(x, coeff[i], center[i])), 
+      1, 
+      sum)
+    
+    }
+  
+  p = ggplot(data.frame(x_1 = c(-5, 5)), aes(x_1)) +
+    theme_bw() + 
+    ylim(c(-0.05, 0.3)) +
+    labs(
+      x = expression(paste(x[1])),
+      y = expression(paste(f(x[1]))))
+  
+  for (i in 1:length(coeff)) {
+    
+    p = p + stat_function(
+      fun = get_basis_fun, 
+      args = list(coeff[i], center[i]),
+      linetype = "dashed")
+    
+    p = p + geom_segment(
+      x = center[i],
+      xend = center[i],
+      y = 0,
+      yend = coeff[i] * dnorm(0, 0, bandwidth),
+      size = 1.4,
+      color = "orange"
+    )
+    
+    p = p + annotate(
+      "text",
+      x = center[i],
+      y = -0.02,
+      label = expr(paste(c[!!i], " = ", !!center[i])),
+      size = 6,
+      angle = 45,
+      color = "orange"
+    )
+    
+    p = p + annotate(
+      "text",
+      x = center[i],
+      y = coeff[i] * dnorm(0, 0, bandwidth) + 0.01,
+      label = expr(paste(a[!!i], " = ", !!coeff[i])),
+      size = 6,
+      color = "blue"
+      
+    )
+    
+    p = p + stat_function(
+      fun = get_weighted_sum, 
+      args = list(coeff, center))
+    
+  }
 
-make_line_plot = function(intercept, slope)  {
+  p
   
-  # Base
+}
+
+plot_basis_fun_3d = function(coeff, center, bandwidth = 1) {
   
-  p = ggplot(data.frame(x = c(0, 5)), aes(x))
+  get_basis_fun = function(x, coeff, center, bandwidth = 1) {
+    
+    coeff * dnorm(x, center, 1 / bandwidth)
+    
+  }
   
-  # Line
+  get_weighted_sum = function(x, coeff, center, bandwidth = 1) {
+    
+    get_basis_fun(x, coeff[1], center[1]) +
+      get_basis_fun(x, coeff[2], center[2]) +
+      get_basis_fun(x, coeff[3], center[3])
+    
+  }
   
-  p = p + stat_function(
-    fun = make_line, 
-    args = list(a = slope, b = intercept))
+  p = ggplot(data.frame(x_1 = c(-5, 5)), aes(x_1))
   
-  # Marker for intercept
+  for (i in 1:length(coeff)) {
+    
+    p = p + stat_function(
+      fun = get_basis_fun, 
+      args = list(coeff[i], center[i]),
+      linetype = "dashed")
+    
+    p = p + geom_segment(
+      x = center[i],
+      xend = center[i],
+      y = 0,
+      yend = coeff[i] * dnorm(0, 0, bandwidth),
+      size = 1.4,
+      color = "orange"
+    )
+    
+    p = p + annotate(
+      "text",
+      x = center[i] + 0.5,
+      y = 0.02,
+      label = expr(paste(c[!!i], " = ", !!center[i])),
+      size = 6,
+      color = "orange"
+    )
+    
+    p = p + annotate(
+      "text",
+      x = center[i],
+      y = coeff[i] * dnorm(0, 0, bandwidth) + 0.01,
+      label = expr(paste(a[!!i], " = ", !!coeff[i])),
+      size = 6,
+      color = "blue"
+      
+    )
+    
+    p = p + stat_function(
+      fun = get_weighted_sum, 
+      args = list(coeff, center))
+    
+  }
   
-  p = p + geom_point(
-    data = data.frame(x = 0, y = intercept), 
-    aes(x = x, y = y),
-    color = "blue",
-    size = 4)
-  
-  p = p + annotate(
-    "text",
-    x = 0.8,
-    y = intercept + 0.3,
-    label = expr(paste(theta[0], " = ", !!intercept)),
-    size = 4,
-    color = "blue")
-  
-  # Marker for slope
-  
-  triangle = data.table(
-    group = c(1, 1, 1), 
-    x = c(1, 2, 2), 
-    y = c(intercept + slope, intercept + slope, intercept + 2 * slope)
-  )
-  
-  p = p + geom_polygon(
-    triangle, 
-    mapping = aes(x = x, y = y, group = group),
-    fill = "orange",
-    alpha = 0.2)
-  
-  p = p + annotate(
-    "text",
-    x = 3,
-    y = ifelse(slope < 0, intercept + slope - 0.3, intercept + slope + 0.3),
-    label = expr(paste(theta[1], " = ", !!slope)),
-    size = 4,
-    color = "orange"
-  )
-  
-  # Labs
-  
-  p = p + labs(
-    title = paste(
-      "f(x) = ",
-      ifelse(slope == 0, "", slope), 
-      "x", 
-      " + ", 
-      ifelse(intercept == 0, "", intercept)
-    ),
-    y = "f(x)"
-  )
-  
-  p = p + ylim(0, 5)
   p
   
 }
 
 # PLOT -------------------------------------------------------------------------
 
-pdf("../figure/ml-basics-hs-lin-functions.pdf", width = 8, height = 4)
+pdf("../figure/ml-basics-hs-rbf-network.pdf", width = 8, height = 4)
 
-p_1 = make_line_plot(1, 2)
-p_2 = make_line_plot(2, 0)
-p_3 = make_line_plot(3, -0.5)
+p_1 = plot_basis_fun_2d(c(0.2, 0.5, 0.3), c(-3, 0, 2))
+p_2 = plot_basis_fun_2d(c(0.2, 0.5, 0.3), c(-2, 1, 2))
+p_3 = plot_basis_fun_2d(c(0.6, 0.2, 0.2), c(-3, 0, 2))
 grid.arrange(p_1, p_2, p_3, ncol = 3)
 
-ggsave("../figure/ml-basics-hs-lin-functions.pdf", width = 8, height = 4)
+ggsave("../figure/ml-basics-hs-rbf-network.pdf", width = 8, height = 4)
 dev.off()

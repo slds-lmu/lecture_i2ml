@@ -18,7 +18,8 @@ make_line_plot = function(intercept, slope)  {
   
   # Base
   
-  p = ggplot(data.frame(x = c(0, 5)), aes(x))
+  p = ggplot(data.frame(x = c(0, 5)), aes(x)) +
+    theme_bw()
   
   # Line
   
