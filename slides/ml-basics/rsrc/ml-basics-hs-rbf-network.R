@@ -136,7 +136,7 @@ plot_basis_fun_3d = function(coeff, center) {
 
 plot_basis_fun_3d(list(0.2, 0.6, 0.4), list(c(-3, -1), c(1, 1), c(3, -1)))
 
-# PLOT -------------------------------------------------------------------------
+# PLOT 1 -----------------------------------------------------------------------
 
 pdf("../figure/ml-basics-hs-rbf-network.pdf", width = 8, height = 4)
 
@@ -157,6 +157,10 @@ grid.arrange(p_1, p_2, p_3, ncol = 3)
 ggsave("../figure/ml-basics-hs-rbf-network.pdf", width = 8, height = 4)
 dev.off()
 
+# PLOT 1 -----------------------------------------------------------------------
+
+pdf("../figure/ml-basics-hs-rbf-network_2.pdf", width = 8, height = 4)
+
 p_4 = plot_basis_fun_3d(
   coeff = list(0.2, 0.6, 0.4), 
   center = list(
@@ -167,6 +171,7 @@ p_4 = plot_basis_fun_3d(
 p_5 = plot_basis_fun_3d(
   coeff = list(0.2, 0.6, 0.4), 
   center = list(
+    
     c(-3, 3), 
     c(1, 1), 
     c(4, -3))
@@ -179,3 +184,6 @@ p_6 = plot_basis_fun_3d(
     c(3, -1))
 )
 grid.arrange(p_4, p_5, p_6, ncol = 3)
+
+ggsave("../figure/ml-basics-hs-rbf-network_2.pdf", width = 8, height = 4)
+dev.off()
