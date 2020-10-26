@@ -35,7 +35,7 @@ add_lm = function(coef, color, coef_label) {
   
   text(x = coef_label[1], 
        y = coef_label[2], 
-       labels = bquote(theta == "("~.(coef[1])~","~.(coef[2])~")"),
+       labels = bquote(theta == "("~.(coef[1])~","~.(coef[2])~")"^T),
        col = color(255))
   
 }
@@ -101,11 +101,11 @@ surface_plot = function (z = sse_surf,
 
 pdf("../figure/lm_reg1.pdf", height = 3, width = 4)
 coef1 <- c(0.3, 0)
-frame_plot(x, y, coef1, colBlue, c(2, 5.5), c(x = 6.5, y = -0.5))
+frame_plot(x, y, coef1, colBlue, c(2, 5.3), c(x = 6.5, y = -0.5))
 dev.off()
 
 pdf("../figure/lm_reg2.pdf", height = 3, width = 4)
-frame_plot(x, y, coef(m), colGreen, c(2, 5.5), c(x = 6.5, y =  -0.5))
+frame_plot(x, y, coef(m), colGreen, c(2, 5.3), c(x = 6.5, y =  -0.5))
 dev.off()
 
 
