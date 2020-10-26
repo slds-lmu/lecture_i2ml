@@ -82,13 +82,15 @@ pdf("../figure/lm_reg2.pdf", height = 3, width = 4)
 frame_plot(x, y, coef(m), colGreen, c(2, 5.5), c(x = 6.5, y =  -0.5))
 dev.off()
 
-set.seed(234)
+
 pdf("../figure/lm_reg3.pdf", height = 3, width = 4)
 data_plot(x,y) 
-num_lines <- 7
-cl <- rainbow(num_lines)
+num_lines <- 6
+offset <- 3
+set.seed(234)
+cl <- rainbow(offset+num_lines)
 for(i in 1:num_lines){
-  abline( coef = runif(2,-5,5), lwd=1, col=cl[i])
+  abline( coef = runif(2,-5,5), lwd=1, col=cl[offset+i], lty=i)
 }
 dev.off()
 
