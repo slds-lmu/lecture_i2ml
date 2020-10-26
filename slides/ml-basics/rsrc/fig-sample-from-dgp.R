@@ -53,9 +53,23 @@ data_2d = rmvnorm(300, mean = mu, sigma = Sigma) %>%
 
 reg = lm(y ~ x, data = data_2d)
 theta_0 = coef(reg)[1]
-y = seq(-8, 8, length.out = 1000) + theta_0
-x = dnorm(y, 0, sd = sqrt((1 - cor_xy^2) * var_y)) * 2
-path = data.frame(y, x)
+y_1 = seq(-8, 8, length.out = 1000) + theta_0
+y_2 = y_1 - 2
+y_3 = y_1 + 2
+x_1 = dnorm(y_4, 0, sd = sqrt((1 - cor_xy^2) * var_y)) * 3
+x_2 = x_1 - 1 / cor_xy * 3
+x_3 = x_1 + 1 / cor_xy * 3
+
+path_1 = data.frame(y_1, x_1)
+path_2 = data.frame(y_2, x_2)
+path_3 = data.frame(y_3, x_3)
+
+# Compute path for marginal density of y
+
+y_4 = y_1
+x_4 = dnorm(y_4, 0, sd = sqrt(var_y)) * 5
+
+path_4 = data.frame(y_4, x_4)
 
 # PLOT 1 -----------------------------------------------------------------------
 
@@ -81,41 +95,78 @@ orca(p_1, "../figure/sample-dgp-3d.png", width = 400, height = 300)
 
 pdf("../figure/sample-dgp-2d.pdf", width = 5, height = 3.5)
 
+# Scatterplot
+
 p_2 = ggplot(data_2d, aes(x = x, y = y)) +
   geom_point(color = "orange") +
   theme_bw() + 
   theme(
     axis.text = element_text(size = 16),
     axis.title = element_text(size = 16)
-    )
+    ) +
+  xlim(c(-10, 10)) +
+  ylim(c(-10, 10))
+
+# Regression line
 
 p_2 = p_2 + 
   geom_abline(
-    slope = 1,
+    slope = cor_xy,
     intercept = 0
   )
+
+# Rug plot
 
 p_2 = p_2 + 
   geom_rug()
 
-p_2 = p_2 +
-  geom_density(
-    data_2d, 
-    mapping = aes(x = x, y = stat(scaled) - 8)
-    )
+# Conditional densities
 
 p_2 = p_2 +
-  geom_density(
-    data_2d, 
-    mapping = aes(x = stat(scaled) - 8, y = y)
+  geom_path(
+    path_1,
+    mapping = aes(x = x_1, y = y_1),
+    color = "blue"
   )
 
 p_2 = p_2 +
   geom_path(
-    path,
-    mapping = aes(x = x, y = y),
+    path_2,
+    mapping = aes(x = x_2, y = y_2),
     color = "blue"
   )
+
+p_2 = p_2 +
+  geom_path(
+    path_3,
+    mapping = aes(x = x_3, y = y_3),
+    color = "blue"
+  )
+
+# Marginal densities
+
+my_dnorm = function(x, mean, sd, a, b) {
+  
+  a * dnorm(x, mean = mean, sd = sd) + b
+  
+}
+
+p_2 = p_2 +
+  geom_path(
+    path_4,
+    mapping = aes(x = x_4 - 10, y = y_4)
+  )
+
+p_2 = p_2 + 
+  stat_function(
+    fun = my_dnorm,
+    args = list(
+      mean = 0, 
+      sd = sqrt(var_x), 
+      a = 5, 
+      b = -10)
+  )
+
 p_2
 
 ggsave("../figure/sample-dgp-2d.pdf", width = 5, height = 3.5)
