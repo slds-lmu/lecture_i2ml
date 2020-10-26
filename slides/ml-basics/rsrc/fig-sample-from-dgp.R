@@ -19,7 +19,7 @@ set.seed(1026)
 mu_x = mu_y = 0
 mu = c(mu_x, mu_y)
 var_x = var_y = 4
-cor_xy = 0.9
+cor_xy = 0.7
 cov_xy = cor_xy * sqrt(var_x) * sqrt(var_y)
 Sigma = matrix(c(
   var_x,
@@ -54,7 +54,7 @@ data_2d = rmvnorm(300, mean = mu, sigma = Sigma) %>%
 reg = lm(y ~ x, data = data_2d)
 theta_0 = coef(reg)[1]
 y = seq(-8, 8, length.out = 1000) + theta_0
-x = dnorm(y, 0, sd = sqrt((1 - cor_xy^2) * var_y)) * 3
+x = dnorm(y, 0, sd = sqrt((1 - cor_xy^2) * var_y)) * 2
 path = data.frame(y, x)
 
 # PLOT 1 -----------------------------------------------------------------------
@@ -62,7 +62,7 @@ path = data.frame(y, x)
 scene = list(
   camera = list(eye = list(
     x = 0, 
-    y = 1, 
+    y = 1.4, 
     z = 2)
   )
 )
@@ -75,32 +75,41 @@ p_1 = plot_ly(x = dens_3d$x, y = dens_3d$y, z = dens_3d$z) %>%
     colors = my_palette) %>% 
   layout(scene = scene)
 
-orca(p_1, "../figure/sample-dgp-3d.png")
+orca(p_1, "../figure/sample-dgp-3d.png", width = 400, height = 300)
 
 # PLOT 2 -----------------------------------------------------------------------
 
-pdf("../figure/sample-dgp-2d.pdf", width = 5, height = 3)
+pdf("../figure/sample-dgp-2d.pdf", width = 5, height = 3.5)
 
 p_2 = ggplot(data_2d, aes(x = x, y = y)) +
   geom_point(color = "orange") +
-  theme_bw()
+  theme_bw() + 
+  theme(
+    axis.text = element_text(size = 16),
+    axis.title = element_text(size = 16)
+    )
+
 p_2 = p_2 + 
   geom_abline(
     slope = 1,
     intercept = 0
   )
+
 p_2 = p_2 + 
   geom_rug()
+
 p_2 = p_2 +
   geom_density(
     data_2d, 
     mapping = aes(x = x, y = stat(scaled) - 8)
     )
+
 p_2 = p_2 +
   geom_density(
     data_2d, 
     mapping = aes(x = stat(scaled) - 8, y = y)
   )
+
 p_2 = p_2 +
   geom_path(
     path,
@@ -109,5 +118,5 @@ p_2 = p_2 +
   )
 p_2
 
-ggsave("../figure/sample-dgp-2d.pdf", width = 5, height = 3)
+ggsave("../figure/sample-dgp-2d.pdf", width = 5, height = 3.5)
 dev.off()
