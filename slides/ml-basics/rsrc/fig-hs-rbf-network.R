@@ -40,12 +40,12 @@ plot_basis_fun_2d = function(coeff, center, bandwidth = 1) {
   
   p = ggplot(data.frame(x_1 = c(-5, 5)), aes(x_1)) +
     theme_bw() + 
-    theme(
-      plot.title = element_text(size = 24),
-      axis.title = element_text(size = 18),
-      axis.text = element_text(size = 14)
-    ) +
-    ylim(c(-0.05, 0.32)) +
+    # theme(
+    #   plot.title = element_text(size = 24),
+    #   axis.title = element_text(size = 18),
+    #   axis.text = element_text(size = 14)
+    # ) +
+    ylim(c(-0.05, 0.35)) +
     labs(
       x = expression(paste(x[1])),
       y = expression(paste(f(x[1]))))
@@ -61,43 +61,43 @@ plot_basis_fun_2d = function(coeff, center, bandwidth = 1) {
       "point",
       x = center[[i]],
       y = 0,
-      color = "orange",
-      size = 6
+      color = "orange"
+      # size = 6
     )
     
-    p = p + annotate(
-      "text",
-      x = center[[i]],
-      y = -0.02,
-      label = expr(paste(c[!!i], " = ", !!center[[i]])),
-      size = 6,
-      angle = 45,
-      color = "orange"
-    )
+    # p = p + annotate(
+    #   "text",
+    #   x = center[[i]],
+    #   y = -0.03,
+    #   label = expr(paste(c[!!i], " = ", !!center[[i]])),
+    #   # size = 6,
+    #   angle = 45,
+    #   color = "orange"
+    # )
     
     p = p + geom_segment(
       x = center[[i]],
       xend = center[[i]],
       y = 0,
       yend = coeff[[i]] * dnorm(0, 0, bandwidth),
-      size = 1.2,
+      # size = 1.2,
       color = "blue"
     )
     
-    p = p + annotate(
-      "text",
-      x = center[[i]],
-      y = 0.5 * coeff[[i]] * dnorm(0, 0, bandwidth),
-      label = expr(paste(a[!!i], " = ", !!coeff[[i]])),
-      size = 6,
-      color = "blue"
-      
-    )
+    # p = p + annotate(
+    #   "text",
+    #   x = center[[i]] - 0.5,
+    #   y = 0.5 * coeff[[i]] * dnorm(0, 0, bandwidth),
+    #   label = expr(paste(a[!!i], " = ", !!coeff[[i]])),
+    #   # size = 6,
+    #   color = "blue",
+    #   angle = 90
+    # )
     
     p = p + stat_function(
       fun = get_weighted_sum, 
-      args = list(coeff, center),
-      size = 1.2)
+      args = list(coeff, center))
+      # size = 1.2)
     
   }
 
@@ -155,13 +155,13 @@ orca(a, "test.png")
 
 # PLOT 1 -----------------------------------------------------------------------
 
-pdf("../figure/ml-basics-hs-rbf-network.pdf", width = 8, height = 4)
+pdf("../figure/ml-basics-hs-rbf-network.pdf", width = 8, height = 3.5)
 
 p_1 = plot_basis_fun_2d(
   coeff = list(0.4, 0.2, 0.4), 
   center = list(-3, -2, 1)
   ) +
-  ggtitle("Exemplary parameter setting")
+  ggtitle("Exemplary setting")
 
 p_2 = plot_basis_fun_2d(
   coeff = list(0.4, 0.2, 0.4), 
@@ -171,12 +171,12 @@ p_2 = plot_basis_fun_2d(
     "segment", 
     x = 2, 
     xend = 3.9, 
-    y = -0.01, 
-    yend = -0.01, 
+    y = -0.02, 
+    yend = -0.02, 
     colour = "orange", 
-    size = 2, 
+    # size = 2, 
     alpha = 0.6, 
-    arrow = arrow()
+    arrow = arrow(length = unit(2, "mm"))
   ) +
   ggtitle("Centers altered")
 
@@ -188,29 +188,41 @@ p_3 = plot_basis_fun_2d(
     "segment", 
     x = -3, 
     xend = -3, 
-    y = 0.25, 
-    yend = 0.27, 
+    y = 0.3, 
+    yend = 0.35, 
     colour = "blue", 
-    size = 2, 
+    # size = 2, 
     alpha = 0.6, 
-    arrow = arrow()
+    arrow = arrow(length = unit(2, "mm"))
   )  +
   annotate(
     "segment", 
     x = 1, 
     xend = 1, 
-    y = 0.11, 
+    y = 0.14, 
     yend = 0.09, 
     colour = "blue", 
-    size = 2, 
+    # size = 2, 
     alpha = 0.6, 
-    arrow = arrow()
+    arrow = arrow(length = unit(2, "mm"))
   ) +
   ggtitle("Weights altered")
 
 grid.arrange(p_1, p_2, p_3, ncol = 3)
 
-ggsave("../figure/ml-basics-hs-rbf-network.pdf", width = 8, height = 4)
+# grid.arrange(
+#   p_1,
+#   p_2,
+#   p_3,
+#   layout_matrix = rbind(
+#     c(NA, 2),
+#     c(1, 2),
+#     c(1, 3),
+#     c(NA, 3)
+#   )
+# )
+
+ggsave("../figure/ml-basics-hs-rbf-network.pdf", width = 8, height = 3.5)
 dev.off()
 
 # PLOT 2 -----------------------------------------------------------------------
