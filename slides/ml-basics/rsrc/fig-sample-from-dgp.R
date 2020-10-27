@@ -10,6 +10,41 @@ options(digits = 3,
         width = 65, 
         str = strOptions(strict.width = "cut", vec.len = 3))
 
+# HELPER FUNCTIONS -------------------------------------------------------------
+
+# Function to create path for vertical conditional densities in plot
+# Offset determines shift from origin, stretch stretching for better visibility
+
+create_conditional_paths = function(
+  boundary = 10, 
+  npoints = 1000, 
+  offset = 0,
+  stretch = 10,
+  var_x,
+  var_y,
+  cor_xy
+) 
+  
+  {
+  # 
+  # y = seq(
+  #   -boundary - 1 / (cor_xy * sqrt(var_y / var_x)) * offset, 
+  #   boundary - 1 / (cor_xy * sqrt(var_y / var_x)) * offset, 
+  #   length.out = npoints
+  #   )
+  y = seq(-boundary, boundary, length.out = npoints)  #+ 
+    #1 / (cor_xy * sqrt(var_y / var_x)) * (offset)
+  
+  x = stretch * dnorm(
+    y,
+    mean = 0,
+    sd = sqrt((1 - cor_xy^2) * var_y) 
+  ) + 1 / (cor_xy * sqrt(var_y / var_x)) * (offset)
+  
+  data.frame(y = y + offset, x, offset = offset)
+  
+}
+
 # DATA -------------------------------------------------------------------------
 
 # Create data as bivariate Gaussian
@@ -18,8 +53,9 @@ set.seed(1026)
 
 mu_x = mu_y = 0
 mu = c(mu_x, mu_y)
-var_x = var_y = 4
-cor_xy = 0.7
+var_x = 4
+var_y = 9
+cor_xy = 2/3
 cov_xy = cor_xy * sqrt(var_x) * sqrt(var_y)
 Sigma = matrix(c(
   var_x,
@@ -45,31 +81,53 @@ dens_3d = akima::interp(x = dens$x, y = dens$y, z = dens$z)
 
 # Sample data from bivariate distribution
 
-data_2d = rmvnorm(300, mean = mu, sigma = Sigma) %>% 
+data_2d = rmvnorm(1000, mean = mu, sigma = Sigma) %>% 
   as.data.frame() %>% 
   rename(x = V1, y = V2)
 
 # Compute path for conditional density y|x (amplified for plot)
 
-reg = lm(y ~ x, data = data_2d)
-theta_0 = coef(reg)[1]
-y_1 = seq(-8, 8, length.out = 1000) + theta_0
-y_2 = y_1 - 2
-y_3 = y_1 + 2
-x_1 = dnorm(y_4, 0, sd = sqrt((1 - cor_xy^2) * var_y)) * 3
-x_2 = x_1 - 1 / cor_xy * 3
-x_3 = x_1 + 1 / cor_xy * 3
+# y_1 = seq(-8, 8, length.out = 1000)
+# y_2 = y_1 - 2.5
+# y_3 = y_1 + 2.5
+# x_1 = dnorm(y_1, 0, sd = sqrt((1 - cor_xy^2) * var_y)) * 10
+# x_2 = x_1 - 1 / (cor_xy * sqrt(var_y / var_x)) * 2.5
+# x_3 = x_1 + 1 / (cor_xy * sqrt(var_y / var_x)) * 2.5
+# 
+# path_1 = data.frame(y_1, x_1)
+# path_2 = data.frame(y_2, x_2)
+# path_3 = data.frame(y_3, x_3)
 
-path_1 = data.frame(y_1, x_1)
-path_2 = data.frame(y_2, x_2)
-path_3 = data.frame(y_3, x_3)
+conditional_paths = list (
+  
+  path_1 = create_conditional_paths(
+    var_x = var_x, 
+    var_y = var_y, 
+    cor_xy = cor_xy),
+  
+  path_2 = create_conditional_paths(
+    offset = -2.5,
+    var_x = var_x, 
+    var_y = var_y, 
+    cor_xy = cor_xy),
+  
+  path_3 = create_conditional_paths(
+    offset = 2.5,
+    var_x = var_x, 
+    var_y = var_y, 
+    cor_xy = cor_xy)
+  
+)
 
 # Compute path for marginal density of y
+# 
+# y_4 = seq(-10, 10, length.out = 1000)
+# x_4 = dnorm(y_4, 0, sd = sqrt(var_y)) * 10
 
-y_4 = y_1
-x_4 = dnorm(y_4, 0, sd = sqrt(var_y)) * 5
-
-path_4 = data.frame(y_4, x_4)
+marginal_path = data.frame(
+  y = seq(-10, 10, length.out = 1000), 
+  x = dnorm(y_4, 0, sd = sqrt(var_y)) * 10
+  )
 
 # PLOT 1 -----------------------------------------------------------------------
 
@@ -97,7 +155,7 @@ pdf("../figure/sample-dgp-2d.pdf", width = 5, height = 3.5)
 
 # Scatterplot
 
-p_2 = ggplot(data_2d, aes(x = x, y = y)) +
+p_2 = ggplot(data_2d, aes(x, y)) +
   geom_point(color = "orange") +
   theme_bw() + 
   theme(
@@ -111,7 +169,7 @@ p_2 = ggplot(data_2d, aes(x = x, y = y)) +
 
 p_2 = p_2 + 
   geom_abline(
-    slope = cor_xy,
+    slope = cor_xy * sqrt(var_y / var_x),
     intercept = 0
   )
 
@@ -122,26 +180,52 @@ p_2 = p_2 +
 
 # Conditional densities
 
-p_2 = p_2 +
-  geom_path(
-    path_1,
-    mapping = aes(x = x_1, y = y_1),
-    color = "blue"
-  )
+for (i in 1:length(conditional_paths)) {
+  
+  p_2 = p_2 +
+    geom_path(
+      conditional_paths[[i]],
+      mapping = aes(x, y),
+      color = "blue"
+    ) +
+    annotate(
+      "segment",
+      x = conditional_paths[[i]]$offset[1],
+      xend = conditional_paths[[i]]$offset[1],
+      y = -10,
+      yend = 10,
+      color = "grey")# +
+    # annotate(
+    #   "segment",
+    #   x = conditional_paths[[i]]$offset[1],
+    #   xend = conditional_paths[[i]]$offset[1] + max(conditional_paths[[i]]$x),
+    #   y = cor_xy * sqrt(var_y / var_x) * conditional_paths[[i]]$offset[1],
+    #   yend = cor_xy * sqrt(var_y / var_x) * conditional_paths[[i]]$offset[1],
+    #   color = "grey"
+    # )
+  
+}
 
-p_2 = p_2 +
-  geom_path(
-    path_2,
-    mapping = aes(x = x_2, y = y_2),
-    color = "blue"
-  )
-
-p_2 = p_2 +
-  geom_path(
-    path_3,
-    mapping = aes(x = x_3, y = y_3),
-    color = "blue"
-  )
+# p_2 = p_2 +
+#   geom_path(
+#     path_1,
+#     mapping = aes(x, y),
+#     color = "blue"
+#   )
+# 
+# p_2 = p_2 +
+#   geom_path(
+#     path_2,
+#     mapping = aes(x, y),
+#     color = "blue"
+#   )
+# 
+# p_2 = p_2 +
+#   geom_path(
+#     path_3,
+#     mapping = aes(x, y),
+#     color = "blue"
+#   )
 
 # Marginal densities
 
@@ -153,8 +237,8 @@ my_dnorm = function(x, mean, sd, a, b) {
 
 p_2 = p_2 +
   geom_path(
-    path_4,
-    mapping = aes(x = x_4 - 10, y = y_4)
+    marginal_path,
+    mapping = aes(x = x - 10, y = y)
   )
 
 p_2 = p_2 + 
@@ -163,7 +247,7 @@ p_2 = p_2 +
     args = list(
       mean = 0, 
       sd = sqrt(var_x), 
-      a = 5, 
+      a = 10, 
       b = -10)
   )
 
