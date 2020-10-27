@@ -153,18 +153,19 @@ plot_3d = function(coeff, center, sd = 1, beta = 1) {
     dimension = 3)
   
   d = akima::interp(x = dens$x_2, y = dens$x_1, z = dens$z)
- 
-  # center_coords$z = get_weighted_sum(
-  #   center_coords, 
-  #   coeff = coeff, 
-  #   center = center,
-  #   beta = beta,
-  #   dimension = 3)
   
-  foo = dens %>% 
+  center_points = dens %>% 
     inner_join(center_coords)
   
   # Plot
+  
+  scene = list(
+    camera = list(eye = list(
+      x = 1.5, 
+      y = 1.5, 
+      z = 1.25)
+    )
+  )
   
   my_palette = c("cornflowerblue", "blue4")
   
@@ -174,13 +175,14 @@ plot_3d = function(coeff, center, sd = 1, beta = 1) {
       colors = my_palette
     ) %>% 
     add_trace(
-      x = foo$x_1, 
-      y = foo$x_2,
-      z = foo$z, 
+      x = center_points$x_1, 
+      y = center_points$x_2,
+      z = center_points$z, 
       type = "scatter3d",
       showlegend = FALSE,
       colors = "orange"
-    )
+    ) %>% 
+    layout(scene = scene)
 
   # p = plot_ly(x = d$x, y = d$y, z = d$z) %>%
   #   add_surface() %>% 
@@ -259,32 +261,40 @@ dev.off()
 
 # PLOT 2 -----------------------------------------------------------------------
 
-pdf("../figure/hs-rbf-network-3d.pdf", width = 8, height = 4)
-
 p_4 = plot_3d(
-  coeff = list(1, 0.5, 0.7), 
-  center = list(c(-2, -2), c(2, 3), c(-1, -2))
-)
-orca(p4, "../figure/ml-basics-hs-rbf-network.pdf")
-
-p_5 = plot_basis_fun_3d(
-  coeff = list(0.2, 0.6, 0.4), 
+  coeff = list(
+    0.4, 
+    0.2, 
+    0.4), 
   center = list(
-    
-    c(-3, 3), 
-    c(1, 1), 
-    c(4, -3))
+    c(2, -2), 
+    c(0, 0), 
+    c(-3, 2))
 )
+orca(p_4, "../figure/hs-rbf-network-3d-1.pdf",
+     height = 400,
+     width = 400)
 
-p_6 = plot_basis_fun_3d(
-  coeff = list(0.1, 0.3, 0.6), 
+p_5 = plot_3d(
+  coeff = list(
+    0.4, 
+    0.2, 
+    0.4), 
   center = list(
-    c(-3, -1), 
-    c(1, 1), 
-    c(3, -1))
+    c(2, -2), 
+    c(3, 3), 
+    c(-3, 2))
 )
+orca(p_5, "../figure/hs-rbf-network-3d-2.pdf")
 
-grid.arrange(p_4, p_5, p_6, ncol = 3)
-
-ggsave("../figure/hs-rbf-network-3d.pdf", width = 8, height = 4)
-dev.off()
+p_6 = plot_3d(
+  coeff = list(
+    0.2, 
+    0.45, 
+    0.35), 
+  center = list(
+    c(2, -2), 
+    c(0, 0), 
+    c(-3, 2))
+)
+orca(p_6, "../figure/hs-rbf-network-3d-3.pdf")
