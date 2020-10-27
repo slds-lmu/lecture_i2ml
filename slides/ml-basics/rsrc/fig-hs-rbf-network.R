@@ -269,11 +269,15 @@ p_4 = plot_3d(
   center = list(
     c(2, -2), 
     c(0, 0), 
-    c(-3, 2))
+    c(-3, 2)
+    )
 )
-orca(p_4, "../figure/hs-rbf-network-3d-1.pdf",
-     height = 400,
-     width = 400)
+orca(
+  p_4, 
+  "../figure/hs-rbf-network-3d-1.pdf",
+  height = 400,
+  width = 400
+  )
 
 p_5 = plot_3d(
   coeff = list(
@@ -283,9 +287,15 @@ p_5 = plot_3d(
   center = list(
     c(2, -2), 
     c(3, 3), 
-    c(-3, 2))
+    c(-3, 2)
+    )
 )
-orca(p_5, "../figure/hs-rbf-network-3d-2.pdf")
+orca(
+  p_5, 
+  "../figure/hs-rbf-network-3d-2.pdf",
+  height = 400,
+  width = 400
+  )
 
 p_6 = plot_3d(
   coeff = list(
@@ -295,6 +305,12 @@ p_6 = plot_3d(
   center = list(
     c(2, -2), 
     c(0, 0), 
-    c(-3, 2))
+    c(-3, 2)
+    )
 )
-orca(p_6, "../figure/hs-rbf-network-3d-3.pdf")
+orca(
+  p_6, 
+  "../figure/hs-rbf-network-3d-3.pdf",
+  width = 400, 
+  height = 400
+  )
