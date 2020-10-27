@@ -199,7 +199,7 @@ plot_3d = function(coeff, center, sd = 1, beta = 1) {
 
 # PLOT 1 -----------------------------------------------------------------------
 
-pdf("../figure/ml-basics-hs-rbf-network.pdf", width = 8, height = 3.5)
+pdf("../figure/hs-rbf-network-2d.pdf", width = 8, height = 3.5)
 
 p_1 = plot_2d(
   coeff = list(0.4, 0.2, 0.4), 
@@ -254,12 +254,12 @@ p_3 = plot_2d(
 
 grid.arrange(p_1, p_2, p_3, ncol = 3)
 
-ggsave("../figure/ml-basics-hs-rbf-network.pdf", width = 8, height = 3.5)
+ggsave("../figure/hs-rbf-network-2d.pdf", width = 8, height = 3.5)
 dev.off()
 
 # PLOT 2 -----------------------------------------------------------------------
 
-pdf("../figure/ml-basics-hs-rbf-network_2.pdf", width = 8, height = 4)
+pdf("../figure/hs-rbf-network-3d.pdf", width = 8, height = 4)
 
 p_4 = plot_3d(
   coeff = list(1, 0.5, 0.7), 
@@ -286,5 +286,5 @@ p_6 = plot_basis_fun_3d(
 
 grid.arrange(p_4, p_5, p_6, ncol = 3)
 
-ggsave("../figure/ml-basics-hs-rbf-network_2.pdf", width = 8, height = 4)
+ggsave("../figure/hs-rbf-network-3d.pdf", width = 8, height = 4)
 dev.off()

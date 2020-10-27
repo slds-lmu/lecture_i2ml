@@ -86,12 +86,12 @@ make_line_plot = function(intercept, slope)  {
 
 # PLOT -------------------------------------------------------------------------
 
-pdf("../figure/ml-basics-hs-lin-functions.pdf", width = 8, height = 4)
+pdf("../figure/hs-lin-functions.pdf", width = 8, height = 4)
 
 p_1 = make_line_plot(1, 2)
 p_2 = make_line_plot(2, 0)
 p_3 = make_line_plot(3, -0.5)
 grid.arrange(p_1, p_2, p_3, ncol = 3)
 
-ggsave("../figure/ml-basics-hs-lin-functions.pdf", width = 8, height = 4)
+ggsave("../figure/hs-lin-functions.pdf", width = 8, height = 4)
 dev.off()
