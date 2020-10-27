@@ -11,32 +11,49 @@ options(digits = 3,
         width = 65, 
         str = strOptions(strict.width = "cut", vec.len = 3))
 
-# DATA -------------------------------------------------------------------------
+# HELPER FUNCTIONS  ------------------------------------------------------------
 
-set.seed(2310)
-
-x_1 = rnorm(1000, 0, 1)
-
-# HELPERS ----------------------------------------------------------------------
-
-plot_basis_fun_2d = function(coeff, center, bandwidth = 1) {
+get_basis_fun = function(x, coeff, center, beta = 1, dimension) {
   
-  get_basis_fun = function(x, coeff, center, bandwidth = 1) {
+  if (dimension == 2) {
     
-    coeff * dnorm(x, center, 1 / bandwidth)
+    return(coeff * dnorm(x, center, 1 / beta))
     
-  }
+  } else if (dimension == 3) {
+    
+    # grid_dens = expand.grid(x_1 = x, x_2 = x)
+    
+    return(coeff * dmvnorm(
+      x, 
+      mean = center, 
+      sigma = matrix(c(beta, 0, 0, beta), nrow = 2)
+      )
+    )
+    
+  } else {return(NA)}
   
-  get_weighted_sum = function(x, coeff, center, bandwidth = 1) {
-    
-    apply(
-      sapply(
-        c(1:length(coeff)), 
-        function(i) get_basis_fun(x, coeff[[i]], center[[i]])), 
-      1, 
-      sum)
-    
-    }
+}
+
+# ------------------------------------------------------------------------------
+
+get_weighted_sum = function(x, coeff, center, beta, dimension) {
+  
+  apply(
+    sapply(
+      c(seq_along(coeff)), 
+      function(i) get_basis_fun(x, 
+                                coeff[[i]], 
+                                center[[i]], 
+                                dimension = dimension)
+      ), 
+    1, 
+    sum)
+  
+}
+
+# ------------------------------------------------------------------------------
+
+plot_2d = function(coeff, center, beta = 1) {
   
   p = ggplot(data.frame(x_1 = c(-5, 5)), aes(x_1)) +
     theme_bw() + 
@@ -50,11 +67,11 @@ plot_basis_fun_2d = function(coeff, center, bandwidth = 1) {
       x = expression(paste(x[1])),
       y = expression(paste(f(x[1]))))
   
-  for (i in 1:length(coeff)) {
+  for (i in seq_along(coeff)) {
     
     p = p + stat_function(
       fun = get_basis_fun, 
-      args = list(coeff[[i]], center[[i]]),
+      args = list(coeff[[i]], center[[i]], dimension = 2),
       linetype = "dashed")
     
     p = p + annotate(
@@ -79,7 +96,7 @@ plot_basis_fun_2d = function(coeff, center, bandwidth = 1) {
       x = center[[i]],
       xend = center[[i]],
       y = 0,
-      yend = coeff[[i]] * dnorm(0, 0, bandwidth),
+      yend = coeff[[i]] * dnorm(0, 0, beta),
       # size = 1.2,
       color = "blue"
     )
@@ -96,7 +113,7 @@ plot_basis_fun_2d = function(coeff, center, bandwidth = 1) {
     
     p = p + stat_function(
       fun = get_weighted_sum, 
-      args = list(coeff, center))
+      args = list(coeff, center, dimension = 2))
       # size = 1.2)
     
   }
@@ -107,63 +124,90 @@ plot_basis_fun_2d = function(coeff, center, bandwidth = 1) {
 
 # ------------------------------------------------------------------------------
 
-plot_basis_fun_3d = function(coeff, center) {
+plot_3d = function(coeff, center, sd = 1, beta = 1) {
   
-  get_basis_fun = function(x, coeff, center) {
-    
-    grid_dens = expand.grid(x_1 = x, x_2 = x)
-    
-    grid_dens$z = coeff * dmvnorm(
-      grid_dens, 
-      mean = center, 
-      sigma = matrix(c(1, 0, 0, 1), nrow = 2))
-
-    grid_dens$z
-
-  }
+  # Center points
+  
+  center_coords = data.frame(
+    t(
+      matrix(
+        unlist(center), 
+        nrow = 2)
+    )
+  ) %>% 
+    rename(x_1 = X1, x_2 = X2)
+  
+  # Surface
   
   seq_x = seq(-5, 5, length.out = 100)
+  dens = rbind(
+    expand.grid(x_1 = seq_x, x_2 = seq_x),
+    center_coords
+    )
   
-  dens = expand.grid(x_1 = seq_x, x_2 = seq_x)
+  dens$z = get_weighted_sum(
+    dens, 
+    coeff = coeff, 
+    center = center,
+    beta = beta,
+    dimension = 3)
   
-  dens$z = apply(
-    sapply(
-      c(1:length(coeff)), 
-      function(i) get_basis_fun(seq_x, coeff[[i]], center[[i]])), 
-    1, 
-    sum)
+  d = akima::interp(x = dens$x_2, y = dens$x_1, z = dens$z)
+ 
+  # center_coords$z = get_weighted_sum(
+  #   center_coords, 
+  #   coeff = coeff, 
+  #   center = center,
+  #   beta = beta,
+  #   dimension = 3)
   
-  d = akima::interp(x = dens$x_1, y = dens$x_2, z = dens$z)
-
+  foo = dens %>% 
+    inner_join(center_coords)
+  
+  # Plot
+  
+  my_palette = c("cornflowerblue", "blue4")
+  
   p = plot_ly(x = d$x, y = d$y, z = d$z) %>%
-    add_surface()
-  
-  # p = ggplot(dens, aes(x = x_1, y = x_2, z = z)) +
-  #   xlim(c(-5, 5)) +
-  #   ylim(c(-5, 5))
-  # p = p + geom_contour_filled()
-  # p = p + scale_fill_grey(start = 0.9, end = 0.1)
-  # p = p + guides(fill = FALSE)
-  
- p
+    add_surface(
+      showscale = FALSE,
+      colors = my_palette
+    ) %>% 
+    add_trace(
+      x = foo$x_1, 
+      y = foo$x_2,
+      z = foo$z, 
+      type = "scatter3d",
+      showlegend = FALSE,
+      colors = "orange"
+    )
+
+  # p = plot_ly(x = d$x, y = d$y, z = d$z) %>%
+  #   add_surface() %>% 
+  #   add_trace(data = center_coords,
+  #     x = c(2), 
+  #     y = c(2), 
+  #     z = c(0.05), 
+  #     name = "z", 
+  #     type = "scatter3d",
+  #     color = "red"
+  #   )
+
+  p
   
 }
-
-a = plot_basis_fun_3d(list(0.2, 0.6, 0.4), list(c(-3, -1), c(1, 1), c(3, -1)))
-orca(a, "test.png")
-
 
 # PLOT 1 -----------------------------------------------------------------------
 
 pdf("../figure/ml-basics-hs-rbf-network.pdf", width = 8, height = 3.5)
 
-p_1 = plot_basis_fun_2d(
+p_1 = plot_2d(
   coeff = list(0.4, 0.2, 0.4), 
   center = list(-3, -2, 1)
   ) +
   ggtitle("Exemplary setting")
 
-p_2 = plot_basis_fun_2d(
+p_2 = plot_2d(
   coeff = list(0.4, 0.2, 0.4), 
   center = list(-3, -2, 4)
   ) +
@@ -180,7 +224,7 @@ p_2 = plot_basis_fun_2d(
   ) +
   ggtitle("Centers altered")
 
-p_3 = plot_basis_fun_2d(
+p_3 = plot_2d(
   coeff = list(0.6, 0.2, 0.2), 
   center = list(-3, -2, 1)
   ) +
@@ -210,18 +254,6 @@ p_3 = plot_basis_fun_2d(
 
 grid.arrange(p_1, p_2, p_3, ncol = 3)
 
-# grid.arrange(
-#   p_1,
-#   p_2,
-#   p_3,
-#   layout_matrix = rbind(
-#     c(NA, 2),
-#     c(1, 2),
-#     c(1, 3),
-#     c(NA, 3)
-#   )
-# )
-
 ggsave("../figure/ml-basics-hs-rbf-network.pdf", width = 8, height = 3.5)
 dev.off()
 
@@ -229,13 +261,11 @@ dev.off()
 
 pdf("../figure/ml-basics-hs-rbf-network_2.pdf", width = 8, height = 4)
 
-p_4 = plot_basis_fun_3d(
-  coeff = list(0.2, 0.6, 0.4), 
-  center = list(
-    c(-3, -1), 
-    c(1, 1), 
-    c(3, -1))
-  )
+p_4 = plot_3d(
+  coeff = list(1, 0.5, 0.7), 
+  center = list(c(-2, -2), c(2, 3), c(-1, -2))
+)
+orca(p4, "../figure/ml-basics-hs-rbf-network.pdf")
 
 p_5 = plot_basis_fun_3d(
   coeff = list(0.2, 0.6, 0.4), 
