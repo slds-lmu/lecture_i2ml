@@ -32,7 +32,7 @@ make_line_plot = function(intercept, slope)  {
   p = p + geom_point(
     data = data.frame(x = 0, y = intercept), 
     aes(x = x, y = y),
-    color = "blue",
+    color = "orange",
     size = 4)
   
   p = p + annotate(
@@ -41,7 +41,7 @@ make_line_plot = function(intercept, slope)  {
     y = intercept + 0.3,
     label = expr(paste(theta[0], " = ", !!intercept)),
     size = 4,
-    color = "blue")
+    color = "orange")
   
   # Marker for slope
   
@@ -54,7 +54,7 @@ make_line_plot = function(intercept, slope)  {
   p = p + geom_polygon(
     triangle, 
     mapping = aes(x = x, y = y, group = group),
-    fill = "orange",
+    fill = "blue",
     alpha = 0.2)
   
   p = p + annotate(
@@ -63,7 +63,7 @@ make_line_plot = function(intercept, slope)  {
     y = ifelse(slope < 0, intercept + slope - 0.3, intercept + slope + 0.3),
     label = expr(paste(theta[1], " = ", !!slope)),
     size = 4,
-    color = "orange"
+    color = "blue"
   )
   
   # Labs
