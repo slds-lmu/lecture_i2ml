@@ -57,15 +57,10 @@ plot_2d = function(coeff, center, beta = 1) {
   
   p = ggplot(data.frame(x_1 = c(-5, 5)), aes(x_1)) +
     theme_bw() + 
-    # theme(
-    #   plot.title = element_text(size = 24),
-    #   axis.title = element_text(size = 18),
-    #   axis.text = element_text(size = 14)
-    # ) +
     ylim(c(-0.05, 0.35)) +
     labs(
-      x = expression(paste(x[1])),
-      y = expression(paste(f(x[1]))))
+      x = expression(paste(x)),
+      y = expression(paste(f(x))))
   
   for (i in seq_along(coeff)) {
     
@@ -79,42 +74,20 @@ plot_2d = function(coeff, center, beta = 1) {
       x = center[[i]],
       y = 0,
       color = "orange"
-      # size = 6
     )
-    
-    # p = p + annotate(
-    #   "text",
-    #   x = center[[i]],
-    #   y = -0.03,
-    #   label = expr(paste(c[!!i], " = ", !!center[[i]])),
-    #   # size = 6,
-    #   angle = 45,
-    #   color = "orange"
-    # )
     
     p = p + geom_segment(
       x = center[[i]],
       xend = center[[i]],
       y = 0,
       yend = coeff[[i]] * dnorm(0, 0, beta),
-      # size = 1.2,
       color = "blue"
     )
-    
-    # p = p + annotate(
-    #   "text",
-    #   x = center[[i]] - 0.5,
-    #   y = 0.5 * coeff[[i]] * dnorm(0, 0, bandwidth),
-    #   label = expr(paste(a[!!i], " = ", !!coeff[[i]])),
-    #   # size = 6,
-    #   color = "blue",
-    #   angle = 90
-    # )
-    
+
     p = p + stat_function(
       fun = get_weighted_sum, 
-      args = list(coeff, center, dimension = 2))
-      # size = 1.2)
+      args = list(coeff, center, dimension = 2)
+      )
     
   }
 
@@ -184,24 +157,13 @@ plot_3d = function(coeff, center, sd = 1, beta = 1) {
     ) %>% 
     layout(scene = scene)
 
-  # p = plot_ly(x = d$x, y = d$y, z = d$z) %>%
-  #   add_surface() %>% 
-  #   add_trace(data = center_coords,
-  #     x = c(2), 
-  #     y = c(2), 
-  #     z = c(0.05), 
-  #     name = "z", 
-  #     type = "scatter3d",
-  #     color = "red"
-  #   )
-
   p
   
 }
 
 # PLOT 1 -----------------------------------------------------------------------
 
-pdf("../figure/hs-rbf-network-2d.pdf", width = 8, height = 3.5)
+pdf("../figure/hs-rbf-network-2d.pdf", width = 8, height = 2.2)
 
 p_1 = plot_2d(
   coeff = list(0.4, 0.2, 0.4), 
@@ -256,7 +218,7 @@ p_3 = plot_2d(
 
 grid.arrange(p_1, p_2, p_3, ncol = 3)
 
-ggsave("../figure/hs-rbf-network-2d.pdf", width = 8, height = 3.5)
+ggsave("../figure/hs-rbf-network-2d.pdf", width = 8, height = 2.2)
 dev.off()
 
 # PLOT 2 -----------------------------------------------------------------------
