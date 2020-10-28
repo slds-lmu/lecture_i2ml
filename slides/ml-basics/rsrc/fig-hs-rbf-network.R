@@ -137,11 +137,14 @@ plot_3d = function(coeff, center, sd = 1, beta = 1) {
       x = 1.5, 
       y = 1.5, 
       z = 1.25)
-    )
+    ),
+    xaxis = list(title = "x1"),
+    yaxis = list(title = "x2"),
+    zaxis = list(title = "f(x1,x2)")
   )
   
   my_palette = c("cornflowerblue", "blue4")
-  
+
   p = plot_ly(x = d$x, y = d$y, z = d$z) %>%
     add_surface(
       showscale = FALSE,
@@ -182,7 +185,6 @@ p_2 = plot_2d(
     y = -0.02, 
     yend = -0.02, 
     colour = "orange", 
-    # size = 2, 
     alpha = 0.6, 
     arrow = arrow(length = unit(2, "mm"))
   ) +
@@ -199,7 +201,6 @@ p_3 = plot_2d(
     y = 0.3, 
     yend = 0.35, 
     colour = "blue", 
-    # size = 2, 
     alpha = 0.6, 
     arrow = arrow(length = unit(2, "mm"))
   )  +
@@ -210,7 +211,6 @@ p_3 = plot_2d(
     y = 0.14, 
     yend = 0.09, 
     colour = "blue", 
-    # size = 2, 
     alpha = 0.6, 
     arrow = arrow(length = unit(2, "mm"))
   ) +
@@ -238,7 +238,7 @@ orca(
   p_4, 
   "../figure/hs-rbf-network-3d-1.pdf",
   height = 400,
-  width = 400
+  width = 450
   )
 
 p_5 = plot_3d(
@@ -256,7 +256,7 @@ orca(
   p_5, 
   "../figure/hs-rbf-network-3d-2.pdf",
   height = 400,
-  width = 400
+  width = 450
   )
 
 p_6 = plot_3d(
@@ -273,6 +273,6 @@ p_6 = plot_3d(
 orca(
   p_6, 
   "../figure/hs-rbf-network-3d-3.pdf",
-  width = 400, 
-  height = 400
+  height = 400, 
+  width = 450
   )

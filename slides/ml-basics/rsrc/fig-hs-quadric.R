@@ -44,9 +44,12 @@ plot_quadric = function(boundary = 10, npoints = 100, theta_0, P, Q) {
   scene = list(
     camera = list(eye = list(
       x = 0, 
-      y = 1.5, 
-      z = 0.5)
-    )
+      y = 2.2, 
+      z = 1)
+    ),
+    xaxis = list(title = "x1"),
+    yaxis = list(title = "x2"),
+    zaxis = list(title = "f(x1,x2)")
   )
   
   my_palette = c("cornflowerblue", "blue4")
@@ -56,11 +59,7 @@ plot_quadric = function(boundary = 10, npoints = 100, theta_0, P, Q) {
       showscale = FALSE,
       colors = my_palette
     ) %>% 
-    layout(
-      scene = scene,
-      xaxis = list(title = "x_1"),
-      yaxis = list(title = "x_2")
-      )
+    layout(scene = scene)
   
 }
 
