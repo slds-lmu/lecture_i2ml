@@ -109,7 +109,10 @@
 
 %\usetheme{lmu-lecture}
 \newcommand{\titlefigure}{figure/lm_reg2}
-\newcommand{\learninggoals}{\item Understand the components of a learner \item Understand the formalization of supervised learning \item Be able to apply the concept of a learner to a supervised learning task}
+\newcommand{\learninggoals}{
+\item Know the three components of a learner: Hypothesis space, risk, optimization 
+\item Understand that defining these separately is the basic design of a learner
+\item Know a variety of choices for all three components}
 \usepackage{../../style/lmu-lecture}
 
 \let\code=\texttt
@@ -139,12 +142,12 @@
 \input{../../latex-math/basic-math.tex}
 \input{../../latex-math/basic-ml.tex}
 
-\lecturechapter{ML-Basics: Learners}
+\lecturechapter{ML-Basics: Components of Supervised Learning}
 \lecture{Introduction to Machine Learning}
 
 % ------------------------------------------------------------------------------
 
-\begin{vbframe}{Components of a Learner}
+\begin{vbframe}{Components of Supervised Learning}
 
 Summarizing what we have seen before, many supervised learning algorithms 
 can be described in terms of three components:
@@ -176,7 +179,7 @@ can be described in terms of three components:
 
 % ------------------------------------------------------------------------------
 
-\begin{vbframe}{Components of a Learner - Advanced}
+\begin{vbframe}{Components of Supervised Learning}
 
 This concept can be extended by the concept of \textbf{penalization}, where the model complexity is accounted for in the risk:
 
@@ -193,13 +196,54 @@ This concept can be extended by the concept of \textbf{penalization}, where the 
 
 \begin{itemize}
 
-  \item We will not treat penalization in this course, so for the moment you can just think of the risk as sum of the losses.
+  \item As long as we didn't introduce penalization, you can just think of the risk as sum of the losses.
   
   \item While this a useful framework for most supervised ML problems, it does not cover all special cases, because some ML methods are not defined via risk minimization and for some models, it is not possible (or very hard) to explicitly define the hypothesis space.
   
 \end{itemize}
 
 \end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{frame}[squeeze]{Variety of Learning Components}
+
+% \vskip -.5em
+The framework is a good orientation to not get lost here:
+
+\vskip .5em
+
+\begin{footnotesize}
+
+$\textbf{Hypothesis Space}: \begin{cases} 
+
+\text{Step functions} \\
+\text{Linear functions}\\
+\text{Sets of rules}\\
+\text{Neural networks}\\
+\text{Voronoi tesselations}\\
+\text{...}
+\end{cases}$
+
+$\phantom{Hypothesis Space RISK } \textbf{Risk / Loss}: \begin{cases}
+\text{Mean squared error}\\
+\text{Misclassification rate}\\
+\text{Negative log-likelihood}\\
+\text{Information gain}\\
+\text{...}
+\end{cases}$
+
+$\phantom{hypothesis space risk RISK RISK RISK} \textbf{Optimization}: \begin{cases}
+\text{Analytical solution}\\
+\text{Gradient descent}\\
+\text{Combinatorial optimization}\\
+\text{Genetic algorithms}\\
+\text{...}
+\end{cases}$
+
+\end{footnotesize}
+\end{frame}
+
 
 % ------------------------------------------------------------------------------
 
@@ -222,13 +266,17 @@ A \textbf{learner} (or \textbf{inducer}) $\inducer$ is a \emph{program} or
   $$\fh = \argmin_{f \in \Hspace} \riskef.$$
 
 \end{itemize}
+We can write the inducer as a formal mapping (where $\Lambda$ is a set of hyperparameters specific to the learner):
+\[\inducer: \D \times \Lambda \rightarrow \Hspace\]
+And as before, we can also adapt this concept to finding $\thetabh$ for parametric
+models:
+\[\inducer: \D \times \Lambda \rightarrow \Theta\]
 
-\lz 
 
-As before, we can also adapt this concept to finding $\thetabh$ for parametric
-models.
+%\lz 
 
-\lz
+
+%\lz
 
 % {\footnotesize (This does not cover all special cases, but it's a useful framework for most supervised ML problems.)}
 
@@ -241,7 +289,7 @@ models.
 \begin{vbframe}{Example of a Learner}
 
 %So what could a learner look like? 
-Let us consider a linear regression task with 
+Let us consider a regression task with 
 a single feature and a single target variable.
 
 \begin{itemize}
@@ -252,26 +300,27 @@ a single feature and a single target variable.
   $$\Hspace = \{\fx = \theta_0 + \theta \xv: \theta_0, \theta \in \R \}$$
   
   \begin{center}
-    \includegraphics[trim = 1.5cm 1.5cm 1.5cm 1.5cm, width = 0.5\textwidth]{figure/lm_reg3} 
+    \includegraphics[trim = 1.5cm 1.5cm 1.5cm 1.5cm, width = 0.4\textwidth]{figure/lm_reg3} 
   \end{center}
+  \textbf{Design choice:} F.e. add more flexibility by allowing polynomial effects or by using a spline basis.
   
   \framebreak
   
-  \item We might use the mean squared error as loss function to our
-  \textbf{risk}, punishing larger distances between observations and regression 
-  line more severely:
+  \item We might use the squared error as loss function to our
+  \textbf{risk}, punishing larger distances %between observations and regression line 
+  more severely:
   
   $$\risket = \sumin (\yi - \theta_0 - \theta \xi)^2$$
   
   \begin{center}
     \includegraphics[trim = 1.5cm 1.5cm 1.5cm 1.5cm, width = 0.6\textwidth]{figure/lm_reg1} 
   \end{center}
+  \textbf{Design choice:} F.e. use absolute error as loss function.
   
   \framebreak
   
   \item \textbf{Optimization} will usually mean deriving the 
-  ordinary-least-squares (OLS) estimator $\thetabh$ analytically. We might,
-  however, also use gradient descent or some other optimization procedure.
+  ordinary-least-squares (OLS) estimator $\thetabh$ analytically. 
   
     
 \end{itemize}
@@ -282,45 +331,12 @@ a single feature and a single target variable.
 \minipage{0.49\textwidth}
 \includegraphics[trim=1.5cm 1.5cm 1.5cm 1.5cm, width=\linewidth]{figure/lm_reg4}
 \endminipage
+ 
 \end{figure}
+  \textbf{Design choice:} F.e. use gradient descent or some other optimization procedure.
+
 \end{vbframe}
 
-% ------------------------------------------------------------------------------
-
-\begin{frame}[squeeze]{Variety of Learning Components}
-
-% \vskip -.5em
-
-\begin{footnotesize}
-
-$\textbf{Hypothesis Space}: \begin{cases} 
-
-\text{Step functions} \\
-\text{Linear functions}\\
-\text{Sets of rules}\\
-\text{Neural networks}\\
-\text{Voronoi tesselations}\\
-\text{...}
-\end{cases}$
-
-$\phantom{Hypothesis Space RISK } \textbf{Risk / Loss}: \begin{cases}
-\text{Mean squared error}\\
-\text{Misclassification rate}\\
-\text{Negative log-likelihood}\\
-\text{Information gain}\\
-\text{...}
-\end{cases}$
-
-$\phantom{hypothesis space risk RISK RISK} \textbf{Optimization}: \begin{cases}
-\text{Analytical solution}\\
-\text{Gradient descent}\\
-\text{Combinatorial optimization}\\
-\text{Genetic algorithms}\\
-\text{...}
-\end{cases}$
-
-\end{footnotesize}
-\end{frame}
 
 % ------------------------------------------------------------------------------
 
