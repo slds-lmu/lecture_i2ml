@@ -157,7 +157,11 @@
 \begin{vbframe}{How to Evaluate Models}
 
 \begin{itemize}
-\item In the training, we want to optimize $\thetab$. To score $\thetab$, we have to compare the actual output with the predicted output: 
+\item When training a learner, we optimize over our hypothesis space,
+    to find the function which matches our training data best.
+\item This means, we are looking for a function, where the 
+    predicted output per training point is as close possible to
+    the observed label.
 \end{itemize}
 
 
@@ -168,16 +172,17 @@
 
 
 \begin{center}\includegraphics[width=0.8\textwidth]{figure_man/ml-basics-riskmin-eval.png} \end{center}
-\vspace{-0.5cm}
+% \vspace{-0.5cm}
 \begin{itemize}
-    \item We need to define a suitable criterion, e.g.:
-    \begin{itemize}
-      \item Absolute error $|2588 - 2220| = 368$
-      \item Squared error: $(2588 - 2220)^2 = 135,424$\\
-    \end{itemize}
-    \item The choice of this metric has a major influence on the final model, as it determines what a \emph{good} model is. 
-    \item It will determine the ranking of the different models $f \in \Hspace$.
-    \item The metric we use is called the \textbf{loss function}. 
+    \item To make this precise, we need to define now how we measure the difference
+        between a prediction and a ground truth label pointwise.
+%     \begin{itemize}
+%       \item Absolute error $|2588 - 2220| = 368$
+%       \item Squared error: $(2588 - 2220)^2 = 135,424$\\
+%     \end{itemize}
+%     \item The choice of this metric has a major influence on the final model, as it determines what a \emph{good} model is. 
+%     \item It will determine the ranking of the different models $f \in \Hspace$.
+%     \item The metric we use is called the \textbf{loss function}. 
   \end{itemize}
   
 \end{vbframe}
@@ -186,80 +191,103 @@
 \begin{vbframe}{Loss}
 
 The \textbf{loss function} $\Lxy$ quantifies the "quality" of the prediction $\fx$ of a single observation $\xv$:
-
     $$
     L: \Yspace \times \R^g \to \R.
     $$
-
-\lz
-
-How "close" $\fx$ is to y can be quantified e. g. by the absolute loss $\Lxy = |\fx - y|$.
+In regression, we could use the absolute loss $\Lxy = |\fx - y|$; 
 
 
-\vfill
+% \vfill
 
 
 %ml-basic-riskmin-1-loss.R first plot
+% \begin{center}
+% \begin{figure}[!b]
+
 \begin{center}
-\begin{figure}[!b]
-\includegraphics[width=0.9\textwidth]{figure/ml-basic_riskmin-1-loss_abs.png}
-\end{figure}
+\includegraphics[width=0.5\textwidth]{figure/ml-basic_riskmin-1-loss_abs.png}
 \end{center}
+or the L2-loss $\Lxy = (y - \fx)^2$:
+\begin{center}
+\includegraphics[width=0.5\textwidth]{figure/ml-basic_riskmin-1-loss_sqrd.png}
+\end{center}
+% \end{figure}
+% \end{center}
 
-\framebreak
-
-Often, we use the L2-loss $\Lxy = (y - \fx)^2$:
 
 %ml-basic-riskmin-1-loss.R first plot
-\begin{center}
-\begin{figure}[!b]
-\includegraphics[width=0.9\textwidth]{figure/ml-basic_riskmin-1-loss_sqrd.png}
-\end{figure}
-\end{center}
+% \begin{center}
+% \begin{figure}[!b]
+% \includegraphics[width=0.5\textwidth]{figure/ml-basic_riskmin-1-loss_sqrd.png}
+% \end{figure}
+% \end{center}
 
 
 
 \end{vbframe}
 
 
-\begin{vbframe}{Risk}
+\begin{vbframe}{Risk of a Model}
 
-The \textbf{risk function} quantifies the "quality" of the whole model. 
+\begin{itemize}
+  \item The (theoretical) \textbf{risk} associated with a certain hypothesis $\fx$ measured by a loss function $\Lxy$ is the \textbf{expected loss}
+  $$ \riskf := \E_{xy} [\Lxy] = \int \Lxy \text{d}\Pxy. $$
+  \item This is the average error we incur when we use $f$ on data from $\Pxy$.
+  \item Goal in ML: Find a hypothesis $\fx \in \Hspace$ that \textbf{minimizes} risk.
+\end{itemize}
+
+\framebreak
+
+
+\textbf{Problem}: Minimizing $\riskf$ over $f$ is not feasible:
+
+\begin{itemize}
+\item $\Pxy$ is unknown (otherwise we could use it to construct optimal predictions).
+\item We could estimate $\Pxy$ in non-parametric fashion from the data $\D$, e.g., by kernel density estimation, but this really does not scale to higher dimensions (see \enquote{curse of dimensionality}).
+\item We can efficiently estimate $\Pxy$, if we place rigorous assumptions on its distributional form, and methods like discriminant analysis work exactly this way. 
+\end{itemize}
 
 \lz
 
-The ability of a model $f$ to reproduce the association between $\xv$ and $y$ that is present in the data $\D$ can be measured by the \textbf{summed loss}, also called \textbf{"empirical risk"}: \\
+But as we have $n$ i.i.d. data points from $\Pxy$ available we can simply
+approximate the expected risk by computing it on $\D$.
 
-  $$
-  \riskef = \sumin \Lxyi.
-  $$
-  $$
-  \risk:  \Hspace \to \R.
-  $$  
-        
+\end{vbframe}
 
-\vfill
 
+
+
+\begin{vbframe}{Empirical Risk}
+
+To evaluate, how well a given function $f$ matches our training data,
+we now simply sum-up all $f$'s pointwise losses.
+  
+$$ \riskef = \sumin \Lxyi $$
+
+This gives rise to the \textbf{empirical risk function} which allows us
+to associate one quality score with each of our models,
+which encodes how well our model fits our training data.
+$$ \riske:  \Hspace \to \R $$  
+% The ability of a model $f$ to reproduce the association between $\xv$ and $y$ that is present in the data $\D$ can be measured by the \textbf{summed loss}, also called \textbf{"empirical risk"}: \\
 \begin{center}
 \begin{figure}[!b]
-\includegraphics[width=1\textwidth]{figure/ml-basic_riskmin-2-risk.png}
+\includegraphics[width=0.9\textwidth]{figure/ml-basic_riskmin-2-risk.png}
 \end{figure}
 \end{center}
 
 \framebreak 
    
-\textbf{Notes:}
 \begin{itemize}
-\item The risk is often denoted as empirical mean over $\Lxy$
+\item The risk can also be defined as an average loss
   $$
     \riskeb(f) = \frac{1}{n}\sumin \Lxyi. 
   $$
   The factor $\frac{1}{n}$ does not make a difference in optimization, so we will consider $\riske(f)$ most of the time.  
-\item Since the model $f$ is usually defined by \textbf{parameters} $\thetab$ in a parameter space $\Theta$, this becomes:
-$$\risk : \R^d \to \R.$$
+\item Since $f$ is usually defined by \textbf{parameters} $\thetab$, this becomes:
+$$\risk : \R^d \to \R$$
 \begin{eqnarray*}
-\risket & = & \meanin \Lxyit \cr
-\thetabh & = & \argmin_{\thetab \in \Theta} \risket
+\risket & = & \sumin \Lxyit \cr
+% \thetabh & = & \argmin_{\thetab \in \Theta} \risket
 \end{eqnarray*}
  
 
@@ -271,14 +299,14 @@ $$\risk : \R^d \to \R.$$
 
 
 
-\begin{vbframe}{Risk minimization}
+\begin{vbframe}{Empirical risk minimization}
 
 The best model is the model with the smallest risk. 
 
 \lz
 
-If we have a finite number of models $f$, we can compare the risk $\risket$ of all models: 
-
+If we have a finite number of models $f$, we could simply tabulate them
+and select the best.
 
 
 % calculated in ml-basic-riskmin-error-surface.R (theta_risk_df)
@@ -297,17 +325,18 @@ If we have a finite number of models $f$, we can compare the risk $\risket$ of a
 
 \end{vbframe}
 
-\begin{vbframe}{Risk Minimization}
+\begin{vbframe}{Empirical Risk Minimization}
 
-But: Normally, the hypothesis space $\Hspace$ is infinitely large. 
+But usually $\Hspace$ is infinitely large. 
 
 \lz
 
-As the the mapping of the hypothesis space to its parameters is bijective, we can consider the error surface depending on the parameters $\thetab$:
+Instead we can consider the risk surface w.r.t. the parameters $\thetab$.\\
+(By this I simple mean the visualization of $\risket$)
 
 \begin{table}
 \begin{minipage}{0.4\linewidth}
-$$\risk : \R^d \to \R.$$
+$$\risket : \R^d \to \R.$$
 \scalebox{0.8}{
 \begin{tabular}{ c | c | c || c }
  Model & \(\displaystyle \thetab_{intercept} \) & \(\displaystyle \thetab_{slope} \) & \(\displaystyle \risket \) \\ 
@@ -325,17 +354,14 @@ $$\risk : \R^d \to \R.$$
 \end{minipage}
 \end{table}
 
-\end{vbframe}
 
-\begin{vbframe}{Risk Minimization}
+\framebreak
 
-
-The process of finding the best model is called \textbf{empirical risk minimization} (ERM).
-
-% Learning -- finding the \enquote{best} model -- then amounts to \textbf{empirical risk minimization}:\\    figuring out which model $f$ has the smallest average loss:
+Minimizing this surface is called \textbf{empirical risk minimization} (ERM).
 $$
 \thetah = \argmin_{\thetab \in \Theta} \risket.
 $$
+Usually we do this by numerical optimization.
 
 \begin{table}
 \begin{minipage}{0.4\linewidth}
@@ -354,30 +380,30 @@ $$\risk : \R^d \to \R.$$
 }
 \end{minipage}\hfill
 	\begin{minipage}{0.55\linewidth}
-\includegraphics[width=\textwidth]{figure/ml-basic-riskmin-error-surface-best.png}
+\includegraphics[trim=0 100 0 100,clip,width=\textwidth]{figure/ml-basic-riskmin-error-surface-best.png}
 \end{minipage}
 \end{table}
 
-Most learners in ML try to solve the above \emph{optimization problem}, which implies a tight connection between ML and optimization.
+In a certain sense, we have now reduced the problem of learning to 
+\textbf{numerical parameter optimization}.
 
 \end{vbframe}
 
 
-\begin{vbframe}{Further remarks}
+% \begin{vbframe}{Further remarks}
+% \begin{itemize}
+% \item For regression tasks, the loss often only depends on the residual $\Lxy = L(y - \fx) = L(\eps)$.
+% \item The choice of loss implies which kinds of errors are important or not -- requires \emph{domain knowledge}!
+% \item For learners that correspond to probabilistic models, the loss determines / is equivalent to distributional assumptions.
+% \item Since learning can be re-phrased as minimizing the loss, the choice of loss strongly affects the computational difficulty of learning:
+% \begin{itemize}
+%     \item How smooth is $\risket$ in $\thetab$?
+%     \item Is $\risket$ differentiable so that we can use gradient-based methods?
+%     \item Does $\risket$ have multiple local minima or saddlepoints over $\Theta$?\\
+% \end{itemize}
 
-\begin{itemize}
-\item For regression tasks, the loss often only depends on the residual $\Lxy = L(y - \fx) = L(\eps)$.
-\item The choice of loss implies which kinds of errors are important or not -- requires \emph{domain knowledge}!
-\item For learners that correspond to probabilistic models, the loss determines / is equivalent to distributional assumptions.
-\item Since learning can be re-phrased as minimizing the loss, the choice of loss strongly affects the computational difficulty of learning:
-\begin{itemize}
-    \item How smooth is $\risket$ in $\thetab$?
-    \item Is $\risket$ differentiable so that we can use gradient-based methods?
-    \item Does $\risket$ have multiple local minima or saddlepoints over $\Theta$?\\
-\end{itemize}
-
-\end{itemize}
-\end{vbframe}
+% \end{itemize}
+% \end{vbframe}
 
 
 

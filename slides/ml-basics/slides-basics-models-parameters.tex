@@ -110,7 +110,11 @@
 
 \newcommand{\titlefigure}{figure_man/network.PNG}
 \newcommand{\learninggoals}{
-\item \textcolor{red}{tbd}}
+\item Understand that an ML model is simply a parametrized curve
+\item Understand that the hypothesis space lists all admissible models
+    for a learner
+\item Understand the relationship between the hypothesis space and the parameter space
+}
 
 %\usetheme{lmu-lecture}
 %\usetheme{lmu-lecture}
@@ -156,9 +160,13 @@
   \item A \textbf{model} (or \textbf{hypothesis}) 
   $$f : \Xspace \rightarrow \R^g$$ 
   is a function that maps feature vectors to predicted target values.
+
+\item In conventional regression: $g = 1$; for 
+classification $g$ is the number of classes, and output vectors are scores 
+or class probabilities (details later).
   
-  \item Loosely speaking: if $f$ is fed a set of features, it will output the 
-  target corresponding to these feature values under our hypothesis.
+  % \item Loosely speaking: if $f$ is fed a set of features, it will output the 
+  % target corresponding to these feature values under our hypothesis.
   
 \end{itemize}
 
@@ -167,9 +175,6 @@
   \includegraphics[width = 0.8\textwidth]{figure_man/the_model_web} 
 \end{center}
   
-{\footnotesize In conventional regression we will have $g = 1$; for 
-classification $g$ equals the number of classes, and output vectors are scores 
-or class probabilities (details later).}
 
 \framebreak
 
@@ -179,9 +184,9 @@ or class probabilities (details later).}
   underlying assumption being that these hold true for \emph{all} data drawn 
   from $\Pxy$.
   
-  \item It is easily conceivable how models can range from super simple (e.g.,
-  tree stumps) to reasonably complex (e.g., variational autoencoders), and how 
-  there is an infinite number of them.
+  \item It is easily conceivable how models can range from super simple (e.g., 
+   linear, tree stumps) to very complex (e.g., deep neural networks) and there
+   are infinitely many choice how we can construct such functions.
   
   \begin{figure}
   % \centering
@@ -199,8 +204,7 @@ or class probabilities (details later).}
   
   \vspace{0.2cm}
   
-  \item In fact, machine learning requires \textbf{constraining} $f$ to a 
-  certain type of functions.
+  \item In fact, ML requires \textbf{constraining} $f$ to a   certain type of functions.
 
 \end{itemize}
 
@@ -216,14 +220,14 @@ or class probabilities (details later).}
   \enquote{good} model among all the available ones is impossible to solve.
   
   \item This means: we have to determine the class of our model \emph{a priori}, 
-  thereby narrowing down our options considerably.
+  thereby narrowing down our options considerably. We could call that a 
+  \textbf{structural prior}.
   
   \item The set of functions defining a specific model class is called a 
   \textbf{hypothesis space} $\Hspace$:
   
   $$\Hspace = \{f: f \text{ belongs to a certain functional family}\}$$
   
-  \item \textcolor{red}{BB: drop "family of curves" somewhere}
 
 \end{itemize}  
 
@@ -231,22 +235,23 @@ or class probabilities (details later).}
 
 % ------------------------------------------------------------------------------
 
-\begin{vbframe}{Parameters of a Model}
+\begin{vbframe}{Parametrization}
 
 \begin{itemize}
   
   \item All models within one hypothesis space share a common functional 
-  structure.
+  structure. We usually construct the space as 
+  \textbf{parametrized family of curves}.
   
-  \item In fact, the only aspect in which they differ is the values of 
-  \textbf{parameters}.
+  % \item In fact, the only aspect in which they differ is the values of 
+  % \textbf{parameters}.
   
-  \item We usually subsume all these parameters in a \textbf{parameter vector} 
-  $\thetab = (\theta_1, \theta_2, ...)$ from a \textbf{parameter space} 
+  \item We collect all parameters in a \textbf{parameter vector} 
+  $\thetab = (\theta_1, \theta_2, \ldots, \theta_d)$ from \textbf{parameter space} 
   $\Theta$.
   
-  \item They are our means of configuration: once set, our model is fully 
-  determined.
+  \item They are our means of fixing a specific function from the family. 
+      Once set, our model is fully determined.
   
   \item Therefore, we can re-write $\Hspace$ as:
 
@@ -258,64 +263,79 @@ or class probabilities (details later).}
     \end{split}
   \end{equation*}
   
+  
   \framebreak
   
   \item This means: finding the optimal model is perfectly equivalent to 
   finding the optimal set of parameter values.
   
-  \item The bijective relation between optimization over $f \in \Hspace$ and 
+  \item The relation between optimization over $f \in \Hspace$ and 
   optimization over $\thetab \in \Theta$ allows us to operationalize our search
   for the best model via the search for the optimal value on a $p$-dimensional
   parameter surface.
   
   \begin{center}
   % https://docs.google.com/presentation/d/1cg7VqEplV8xoBEujxFBDLKNczXdST-EVhgvJHJCHTbo/edit?usp=sharing
-    \includegraphics[width = 0.4\textwidth]{figure_man/bijection_f_theta.PNG} 
+    \includegraphics[width = 0.6\textwidth]{figure_man/bijection_f_theta.PNG} 
   \end{center}
   
   \item $\thetab$ might be scalar or comprise thousands of parameters,
   depending on the complexity of our model.
   
-\end{itemize}
 
+ \framebreak
+  
+  \item Short remark: In fact, some parameter vectors, for some model classes, might
+      encode the same function. So the parameter-to-model mapping could 
+      be non-injective. 
+    \item We call this then a non-identifiable model.
+    \item But this shall not concern us here.
+
+  \begin{center}
+% https://docs.google.com/presentation/d/1KYNhUr5SLH8mmLcgARAE4VRPFwYRytclpaSTLuKMuW0/edit#slide=id.p    
+      \includegraphics[width = 0.6\textwidth]{figure_man/bijection_f_theta_2.PNG} 
+  \end{center}
+
+\end{itemize}
 \end{vbframe}
 
 % ------------------------------------------------------------------------------
 
-\begin{vbframe}{Examples for Hypothesis Spaces}
+% \begin{vbframe}{Examples for Hypothesis Spaces}
 
-\textbf{Example 1:} Hypothesis space of univariate linear functions
-$$\Hspace = \{f: \fx = \thx =  \textcolor{orange}{\theta_0} + 
+\begin{vbframe}{Example: Univariate linear functions}
+$$\Hspace = \{f: \fx = \textcolor{orange}{\theta_0} + 
 \textcolor{blue}{\theta_1} x, \thetab \in \R^2\}$$
 
 \begin{center}
   \includegraphics[width = \textwidth]{figure/hs-lin-functions.pdf}
 \end{center}
 
-\framebreak
+\end{vbframe}
 
-\textbf{Example 2:} Hypothesis space of bivariate quadratic functions
+\begin{vbframe}{Example: Bivariate quadratic functions}
 
 \begin{equation*}
-  \begin{split}
-    \Hspace &= \{f: \fx =  \textcolor{orange}{\theta_0} + \textcolor{blue}{p^T} 
-    \xv + \xv \textcolor{red}{Q} \xv^T =  \\
-    &= \textcolor{orange}{\theta_0} + \textcolor{blue}{\theta_1} x_1 + 
+  % \begin{split}
+    \Hspace = \{f: \fx =  
+        % \txtcolor{orange}{\theta_0} + \textcolor{blue}{p^T} 
+    % \xv + \xv \textcolor{red}{Q} \xv^T =  \\
+    \textcolor{orange}{\theta_0} + \textcolor{blue}{\theta_1} x_1 + 
     \textcolor{blue}{\theta_2} x_2 + \textcolor{red}{\theta_3} x_1^2 + 
     \textcolor{red}{\theta_4} x_2^2 + \textcolor{red}{\theta_5} x_1 x_2, 
     \thetab \in \R^6\},
-  \end{split}
+  % \end{split}
 \end{equation*}
 
-where 
-$p = \big(\begin{smallmatrix}
-\theta_1 & \theta_2
-\end{smallmatrix}\big)$
-and
-$Q = \Big(\begin{smallmatrix}
-\theta_3 & \frac{1}{2} \theta_5 \\
-\frac{1}{2} \theta_5 & \theta_4
-\end{smallmatrix}\Big).$
+% where 
+% $p = \big(\begin{smallmatrix}
+% \theta_1 & \theta_2
+% \end{smallmatrix}\big)$
+% and
+% $Q = \Big(\begin{smallmatrix}
+% \theta_3 & \frac{1}{2} \theta_5 \\
+% \frac{1}{2} \theta_5 & \theta_4
+% \end{smallmatrix}\Big).$
 
 \vspace*{-\baselineskip}
 
@@ -372,11 +392,11 @@ $Q = \Big(\begin{smallmatrix}
   \normalsize
   
 \end{columns}
+\end{vbframe}
 
-\framebreak
 
-\textbf{Example 3:} Hypothesis space of radial basis function networks with
-Gaussian basis functions
+\begin{vbframe}{Example: RBF Network}
+Radial basis function networks with Gaussian basis functions
 $$\Hspace = \bigg\{ f: \fx =  \sumik \textcolor{blue}{a_i} \rho ( \| \xv - 
 \textcolor{orange}{\textbf{c}_i}  \|) 
 \bigg\},$$ 
@@ -391,7 +411,7 @@ $$\Hspace = \bigg\{ f: \fx =  \sumik \textcolor{blue}{a_i} \rho ( \| \xv -
     \xv - \textcolor{orange}{\textbf{c}_i} \|^2)$ is the $i$-th radial basis
     function with bandwidth $\beta \in \R$.
   \end{itemize}
-  Usually, the number of centers, $n$, and the bandwidth $\beta$ need to be set 
+  Usually, the number of centers $k$ and the bandwidth $\beta$ need to be set 
   in advance (so-called \emph{hyperparameters}).
   \normalsize
 \end{minipage}%
