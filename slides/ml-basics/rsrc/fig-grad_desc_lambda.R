@@ -45,7 +45,7 @@ ggsave(filename = "../figure/grad_desc_alpha1.pdf",
        plot = alpha_plot(0.15, 10), 
        width = 8, height = 8, units = "cm")
 ggsave(filename = "../figure/grad_desc_alpha2.pdf", 
-       plot = alpha_plot(0.3, 5), 
+       plot = alpha_plot(0.05, 5), 
        width = 8, height = 8, units = "cm")
 ggsave(filename = "../figure/grad_desc_alpha3.pdf", 
        plot = alpha_plot(0.355, 5), 
