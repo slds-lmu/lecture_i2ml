@@ -1,3 +1,5 @@
+library(ggplot2)
+
 R <- function(x) (x[1]^2 + 3*x[2]^2)
 d_R <- function(x) c(2*x[1], 6*x[2])
 
@@ -26,7 +28,10 @@ lambda_plot <- function(lambda, n){
     geom_contour(aes(z=R), colour="white")+
     xlab(expression(theta[1])) +
     ylab(expression(theta[2])) +
-    theme(legend.position = "none")
+    theme(axis.ticks = element_blank(),
+          axis.text = element_blank(),
+          legend.position = "none") 
+  
   for (i in seq(n-1)){
     p <- p +   geom_path(data=as.data.frame(theta_trace[i:(i+1),]), aes(x=V1, y=V2), colour="red", arrow = arrow(),
                          size=1.1)
