@@ -11,14 +11,14 @@ thetas <- as.data.frame(expand.grid(x = theta_1, y = theta_2))
 thetas$R <- apply(thetas, 1,function(theta) R(theta)) 
 
 
-lambda_plot <- function(lambda, n){
+alpha_plot <- function(alpha, n){
 
   theta_0 <- c(-2.5, 3)
   theta_i <- theta_0
   theta_trace <- theta_i
   
   for(i in seq(n)){
-    theta_i_n <- theta_i - lambda * d_R(theta_i)
+    theta_i_n <- theta_i - alpha * d_R(theta_i)
     theta_trace <- rbind(theta_trace, theta_i_n)
     theta_i <- theta_i_n
   }
@@ -41,14 +41,14 @@ lambda_plot <- function(lambda, n){
 
 }
 
-ggsave(filename = "../figure/grad_desc_lambda1.pdf", 
-       plot = lambda_plot(0.15, 10), 
+ggsave(filename = "../figure/grad_desc_alpha1.pdf", 
+       plot = alpha_plot(0.15, 10), 
        width = 8, height = 8, units = "cm")
-ggsave(filename = "../figure/grad_desc_lambda2.pdf", 
-       plot = lambda_plot(0.3, 5), 
+ggsave(filename = "../figure/grad_desc_alpha2.pdf", 
+       plot = alpha_plot(0.3, 5), 
        width = 8, height = 8, units = "cm")
-ggsave(filename = "../figure/grad_desc_lambda3.pdf", 
-       plot = lambda_plot(0.355, 5), 
+ggsave(filename = "../figure/grad_desc_alpha3.pdf", 
+       plot = alpha_plot(0.355, 5), 
        width = 8, height = 8, units = "cm")
 
 
