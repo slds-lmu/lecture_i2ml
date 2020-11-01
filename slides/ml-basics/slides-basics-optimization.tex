@@ -166,45 +166,48 @@
 \lecture{Introduction to Machine Learning}
 
 
-\begin{vbframe}{Introduction}
+\begin{vbframe}{Learning as Parameter Optimization}
 \begin{itemize}
-\item We have seen, we can parmetrize models $f$ regarding a parametrization $\thetab \in \Theta$. 
-\item Hence we can express the associated empirical risk of the model as a function of these parameters: $\risket$.
-\item Therefore, when we try to find the best model, we actually traverse on the error surface from a starting point (yellow) with the goal of finding the point with the lowest empirical risk (red).
+\item We have seen, we can operationalize the search for a model $f$ that matches
+    training data best, by looking for its parametrization $\thetab \in \Theta$
+    with lowest empirical risk $\risket$.
+\item Therefore, we usually traverse the error surface downwards; often by local search from a starting point to its minimum.
 \end{itemize}
 \begin{center}
 \begin{figure}[!b]
-\includegraphics[trim=2.4cm 2.4cm 2.4cm 2.4cm, width=0.3\textwidth]{figure/err_surf}
+\includegraphics[trim=2.4cm 2.4cm 2.4cm 2.4cm, width=0.4\textwidth]{figure/err_surf}
 \end{figure}
 \end{center}
 
-\end{vbframe}
-\begin{vbframe}{Introduction}
+\framebreak
 
-Formally, this means that we find the best model $\hat f$ parametrized by parameters $\thetabh \in \Theta$ regarding an empirical risk $\riske$ by \textbf{minimizing} $\risket$ with respect to $\thetab$, i.e., 
+The ERM optimization problem is:
+% this means that we find the best model $\hat f$ parametrized by parameters $\thetabh \in \Theta$ regarding an empirical risk $\riske$ by \textbf{minimizing} $\risket$ with respect to $\thetab$, i.e., 
 
 \[
 \thetabh  = \argmin_{\thetab \in \Theta} \risket .
 \]
 
-For such a \textbf{(global) minimum} $\thetabh$ it obviously holds that 
+For a \textbf{(global) minimum} $\thetabh$ it obviously holds that 
 \[
 \forall \thetab \in \Theta :\quad \riske(\thetabh) \leq \risket .
 \]
 
-However, this does not imply that $\thetabh$ is unique by any means. \\
+This does not imply that $\thetabh$ is unique. \\
 \lz
-Which kind of technique we can use to solve the minimization problem strongly depends on the feature space. In this chapter we will focus on purely numeric features.
+Which kind numerical technique is reasonable for this problem strongly depends 
+on model and parameter structure (continuous params? uni-modal $\risket$?). 
+Here, we will only discuss very simple scenarios.
 
 \end{vbframe}
-\begin{vbframe}{Continuous $\riske$}
+\begin{vbframe}{Local Minima}
 
-If the empirical risk $\riske$ is continuous in $\thetab$ we can define a \textbf{local minimum} $\thetabh$, such that
+If $\riske$ is continuous in $\thetab$ we can define a \textbf{local minimum} $\thetabh$:
 \[
-\exists \epsilon > 0\; \forall \thetab \in \left\{\bar\thetab \in \Theta ~\big|~ \left\Vert\thetabh - \bar\thetab\right\Vert < \epsilon\right\}: \quad \riske(\thetabh) \leq \risket .
+\exists \epsilon > 0\; \forall \thetab \text{ with } \left\Vert\thetabh - \thetab\right\Vert < \epsilon: \quad \riske(\thetabh) \leq \risket .
 \]
-Clearly every global minimum is also a local minimum (if it exists). \\
-In general finding a local minimum is easier than finding a global minimum.
+Clearly every global minimum is also a local minimum.
+Finding a local minimum is easier than finding a global minimum.
 
 \begin{center}
 \begin{figure}[!b]
@@ -213,13 +216,13 @@ In general finding a local minimum is easier than finding a global minimum.
 \end{center}
 
 \end{vbframe}
-\begin{vbframe}{Continuously differentiable $\riske$}
+\begin{vbframe}{Local Minima and stationary points}
 \footnotesize
-If the empirical risk $\riske$ is continuously differentiable in $\thetab$ then a \textbf{sufficient condition} for $\thetabh$ to be a local minimum is that the gradient 
+If $\riske$ is continuously differentiable in $\thetab$ then a \textbf{sufficient condition} for a local minimum is that $\thetabh$ is \textbf{stationary} with 0 gradient, so no local improvement is possible:
 \[
 \frac{\partial}{\partial\thetab}\riske(\thetabh) = 0
 \]
-and the Hessian $\frac{\partial^2}{\partial\thetab^2}\riske(\thetabh)$ is positive definite. Which makes sense, since, while the gradient can be thought of as the local direction and rate of fastest increase, the Hessian measures the local curvature of $\riske$.
+and the Hessian $\frac{\partial^2}{\partial\thetab^2}\riske(\thetabh)$ is positive definite. While the neg. gradient points into the direction of fastest local decrease, the Hessian measures local curvature of $\riske$.
 
 \begin{figure}[!htb]
 \minipage{0.32\textwidth}
@@ -239,19 +242,19 @@ and the Hessian $\frac{\partial^2}{\partial\thetab^2}\riske(\thetabh)$ is positi
 \end{vbframe}
 \begin{vbframe}{Least Squares Estimator}
 Now, for given features $\Xmat \in \mathbb{R}^{n\times p}$ and target $\yv \in \mathbb{R}^n$, we want to find the best linear model regarding the squared error loss, i.e.,
-\[\risket = \left\Vert \Xmat\thetab - \yv\right\Vert_2^2 = \sumin (\thetab^\top\xv^{(i)} - \yi)\;.\]
+\[\risket = \left\Vert \Xmat\thetab - \yv\right\Vert_2^2 = \sumin (\thetab^\top\xv^{(i)} - \yi)^2\;.\]
 
 With the sufficient condition for continously differentiable functions it can be shown that the \textbf{least squares estimator}
 \[\thetabh = (\Xmat^\top\Xmat)^{-1}\Xmat^\top\yv.\]
-is a local minimum of $\riske$. Since, here, $\riske$ is a convex function it follows that there is only one minimum. Hence $\thetabh$ is the global minimum. \\
+is a local minimum of $\riske$. If $\Xmat$ is full-rank, $\riske$ is strictly convex and there is only one local minimum - which is also global. \\
 
-\lz \textbf{Note:} Often such an analytical solution to our respective minimization problem does not exist. Therefore we need numerical methods which enable us to find an approximate solution.
+\lz \textbf{Note:} Often such analytical solutions in ML are not possible, and we rather have to use iterative numerical optimization.
 
 \end{vbframe}
 \begin{vbframe}{Gradient Descent}
-    The simple idea of \textbf{gradient descent} (GD) is to follow iteratively from the $t$-th solution candidate $\thetab^{[t]}$ in the direction of the negative gradient, i.e., the direction of the steepest descent, with a learning rate $\lambda$ to the [$t+1$]-th solution candidate $\thetab^{[t+1]}$, s.t.
+    The simple idea of GD is to follow iteratively go from the current candidate $\thetab^{[t]}$ in the direction of the negative gradient, i.e., the direction of the steepest descent, with learning rate $\alpha$ to the next $\thetab^{[t+1]}$:
 \[
-    \thetab^{[t+1]} = \thetab^{[t]} - \lambda \frac{\partial}{\partial\thetab}{\riske(\thetab^{[t]})}.
+    \thetab^{[t+1]} = \thetab^{[t]} - \alpha \frac{\partial}{\partial\thetab}{\riske(\thetab^{[t]})}.
 \]
 
 \begin{tabular}{l}
@@ -264,7 +267,7 @@ $\;$
 \endminipage\hfill
 \minipage{0.54\textwidth}
 \vspace{0pt}% 
-So we choose a random starting point $\thetab^{[0]}$ with associated empirical risk $\riske(\thetab^{[0]}) = 76.25.$
+We choose a random start $\thetab^{[0]}$ with risk $\riske(\thetab^{[0]}) = 76.25.$
 \endminipage\hfill
 \end{tabular}
 
@@ -291,7 +294,7 @@ $\;$
 \endminipage\hfill
 \minipage{0.54\textwidth}
 \vspace{0pt}% 
-We arrive at $\thetab^{[1]}$ with associated empirical risk $\riske(\thetab^{[1]}) \approx 42.73.$ \\ Hence our estimation has improved since $\riske(\thetab^{[1]}) < \riske(\thetab^{[0]}).$
+We arrive at $\thetab^{[1]}$ with risk\\$\riske(\thetab^{[1]}) \approx 42.73.$ \\ We improved:\\$\riske(\thetab^{[1]}) < \riske(\thetab^{[0]}).$
 \endminipage\hfill
 \end{tabular}
 \end{vbframe}
@@ -316,7 +319,8 @@ $\;$
 \endminipage\hfill
 \minipage{0.54\textwidth}
 \vspace{0pt}% 
-We arrive at $\thetab^{[2]}$ with associated empirical risk $\riske(\thetab^{[2]}) \approx 25.08.$ Thus clearly, we have improved our estimation again.
+Now $\thetab^{[2]}$ has risk $\riske(\thetab^{[2]}) \approx 25.08.$
+% Thus clearly, we have improved our estimation again.
 \endminipage\hfill
 \end{tabular}
 \end{vbframe}
@@ -330,7 +334,8 @@ $\;$
 \endminipage\hfill
 \minipage{0.54\textwidth}
 \vspace{0pt}% 
-We iteratively improve our estimation by repeating this procedure until $\riske$ converges\footnote[frame]{This is not the only stopping criterium; e.g., we could limit the number of iterations.}. 
+We iterate this until some form of convergence or termination.
+% \footnote[frame]{This is not the only stopping criterium; e.g., we could limit the number of iterations.}. 
 \endminipage\hfill
 \\
 \minipage{0.32\textwidth}
@@ -341,7 +346,8 @@ $\;$
 \endminipage\hfill
 \minipage{0.54\textwidth}
 \vspace{0pt}% 
-Eventually we arrive at a minimum $\thetabh$ with $\riske(\thetabh) = 0.$
+We arrive close to a stationary $\thetabh$ which is hopefully at least
+a local minimum.
 \endminipage\hfill
 \end{tabular}
 \end{vbframe}
@@ -350,23 +356,26 @@ Eventually we arrive at a minimum $\thetabh$ with $\riske(\thetabh) = 0.$
 \footnotesize
 \begin{itemize}
 \item The negative gradient is a direction that looks locally promising to reduce $\riske$. \\
-\item Hence it weights components higher\footnote[frame]{in an absolute sense} in which $\riske$ decreases more. \\
+\item Hence it weights components higher
+    % \footnote[frame]{in an absolute sense} 
+    in which $\riske$ decreases more. \\
 \item However, the length of $-\frac{\partial}{\partial\thetab}{\riske}$ measures only the local decrease rate, i.e., there are no guarantees that we will not go "too far". \\
-\item Thus we use the learning rate $\lambda$ to scale the step length in each iteration. \\A $\lambda$ chosen too high can lead to poor convergence or no convergence at all. \\
-A $\lambda$ chosen too low leads obviously to slow convergence.
+\item We use a learning rate $\alpha$ to scale the step length in each iteration. Too much can lead to overstepping and no converge, too low leads to slow convergence.
+\item Usually, a simple constant rate or rate-decrease mechanisms to enforce local convergence are used
+    % control the rate. 
 \end{itemize}
 \begin{figure}[!htb]
 \minipage{0.32\textwidth}
   \includegraphics[width=\linewidth]{figure/grad_desc_lambda1}
-  \caption*{\tiny good convergence for $\lambda1$}
+  \caption*{\tiny good convergence for $\alpha1$}
 \endminipage\hfill
 \minipage{0.32\textwidth}
   \includegraphics[width=\linewidth]{figure/grad_desc_lambda2}
-  \caption*{\tiny poor convergence for $\lambda_2 (> \lambda_1$)}
+  \caption*{\tiny poor convergence for $\alpha_2 (> \alpha_1$)}
 \endminipage\hfill
 \minipage{0.32\textwidth}%
   \includegraphics[width=\linewidth]{figure/grad_desc_lambda3}
-  \caption*{\tiny no convergence for $\lambda_3 (> \lambda_2$)}
+  \caption*{\tiny no convergence for $\alpha_3 (> \alpha_2$)}
 \endminipage
 \end{figure}
 
@@ -374,20 +383,21 @@ A $\lambda$ chosen too low leads obviously to slow convergence.
 
 \begin{vbframe}{Further topics}
 \begin{itemize}
-\item There exist many improvements of the GD method, e.g., we could also optimize the learning rate $\lambda$.
-\item GD is a so-called first-order method. Second-order methods use the Hessian (which must therefore exist) to refine the search direction.
+\item GD is a so-called first-order method. Second-order methods use the Hessian to refine the search direction for faster convergence.
+\item There exist many improvements of GD, e.g., to smartly control the learn rate, to escape saddle points, to mimic second order behavior without computing the expensive Hessian.
+    % ould also optimize the learning rate $\alpha$.
 % \item If some parameters are dependent of each other, we can model such dependicies either by \textbf{equality} or \textbf{inequality constraints}, i.e., 
 % \[g(\thetab) = 0 \quad \text{or} \quad h(\thetab) \geq 0.\]
 % There exist numerical methods to solve constrained optimization problems, such as sequential quadratic programming.
-\item If the gradient of GD is not derived from the empirical risk of the whole data set, but instead from a randomly selected subset of it, we call the respective method \textbf{stochastic gradient descent} (SGD). For high-dimensional problems this can lead to a higher computational efficiency.
-\item Often it is desirable to not allow arbitrarily large $\Vert \thetabh \Vert$, since this could result, among other things, in numerical instability of the method. This procedure is called \textbf{regularization}.
+\item If the gradient of GD is not derived from the empirical risk of the whole data set, but instead from a randomly selected subset, we call this \textbf{stochastic gradient descent} (SGD). For large-scale problems this can lead to higher computational efficiency.
+% \item Often it is desirable to not allow arbitrarily large $\Vert \thetabh \Vert$, since this could result, among other things, in numerical instability of the method. This procedure is called \textbf{regularization}.
 \end{itemize}
 \end{vbframe}
 
 
-\begin{vbframe}{Further topics}
-    learning vs optimuzation,.,.,.
-\end{vbframe}
+% \begin{vbframe}{Further topics}
+    % learning vs optimuzation,.,.,.
+% \end{vbframe}
 
 
 \endlecture
