@@ -63,6 +63,10 @@ what material needs to be understood before what else. Please do add appropriate
 
 now in `/code-demos`. Originals at [this link](https://github.com/compstat-lmu/lecture_intro_to_ml_notebooks)
 
+### Google Figures
+
+Google Figures are stored in the [G-Drive](https://drive.google.com/drive/folders/1JVlK94X7-h1DNaUo-gxOvIyVZph42iHj)
+
 ### Creating Lecture Videos
 
 - Video files should have the same name as the slide set they are narrating.
