@@ -1,6 +1,6 @@
 # Introduction to Machine Learning (I2ML)
 
-Main course site: https://compstat-lmu.github.io/lecture_i2ml
+Main course site: https://introduction-to-machine-learning.netlify.app/
 
 Repository on Github: https://github.com/compstat-lmu/lecture_i2ml
 
