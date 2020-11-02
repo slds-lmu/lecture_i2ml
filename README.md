@@ -1,5 +1,9 @@
 # Introduction to Machine Learning (I2ML)
 
+The site of this course was moved to: https://introduction-to-machine-learning.netlify.app/
+
+<!--
+
 Main course site: https://compstat-lmu.github.io/lecture_i2ml
 
 Repository on Github: https://github.com/compstat-lmu/lecture_i2ml
@@ -88,3 +92,4 @@ Knowing this helps us to keep the project alive. Thank you!
 philosophy as this course, with much more emphasis on learning R, doing data 
 visualization and understanding more classical statistical inference methods 
 (hypothesis tests, linear regression, etc.)
+-->
