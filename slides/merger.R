@@ -34,6 +34,6 @@ sldat0 <- merge(sldir_order, sl_order, by = "dir")
 sorted_dat <- sldat0[with(sldat0, order(dirorder, order)), c("dir", "deck")]
 
 files <- paste(paste0(sorted_dat$dir,.Platform$file.sep ,sorted_dat$deck, ".pdf"), collapse = " ")
-system(paste("gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dAutoRotatePages=/None -sOutputFile=finished.pdf", files))
+system(paste("gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dAutoRotatePages=/None -sOutputFile=lecture-slides.pdf", files))
 
        
