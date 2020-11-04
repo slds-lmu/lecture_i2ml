@@ -1,0 +1,256 @@
+\documentclass{beamer}
+\newcommand \beameritemnestingprefix{}
+
+
+\usepackage[orientation=landscape,size=a0,scale=1.4,debug]{beamerposter}
+\mode<presentation>{\usetheme{mlr}}
+
+
+\usepackage[utf8]{inputenc} % UTF-8
+\usepackage[english]{babel} % Language
+\usepackage{hyperref} % Hyperlinks
+\usepackage{ragged2e} % Text position
+\usepackage[export]{adjustbox} % Image position
+\usepackage[most]{tcolorbox}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{dsfont}
+\usepackage{verbatim}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{csquotes}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage[absolute,overlay]{textpos}
+\usepackage{psfrag}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{eqnarray}
+\usepackage{arydshln}
+\usepackage{tabularx}
+\usepackage{placeins}
+\usepackage{tikz}
+\usepackage{setspace}
+\usepackage{colortbl}
+\usepackage{mathtools}
+\usepackage{wrapfig}
+\usepackage{bm}
+
+
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-trees.tex}
+
+
+\title{I2ML :\,: CHEAT SHEET} % Package title in header, \, adds thin space between ::
+\newcommand{\packagedescription}{ % Package description in header
+	The \textbf{I2ML}: Introduction to Machine Learning course offers an introductory and applied overview of "supervised" Machine Learning. It is organized as a digital lecture.
+}
+
+\newlength{\columnheight} % Adjust depending on header height
+\setlength{\columnheight}{84cm} 
+
+\newtcolorbox{codebox}{%
+	sharp corners,
+	leftrule=0pt,
+	rightrule=0pt,
+	toprule=0pt,
+	bottomrule=0pt,
+	hbox}
+
+\newtcolorbox{codeboxmultiline}[1][]{%
+	sharp corners,
+	leftrule=0pt,
+	rightrule=0pt,
+	toprule=0pt,
+	bottomrule=0pt,
+	#1}
+
+\begin{document}
+\begin{frame}[fragile]{}
+\begin{columns}
+	\begin{column}{.31\textwidth}
+		\begin{beamercolorbox}[center]{postercolumn}
+			\begin{minipage}{.98\textwidth}
+				\parbox[t][\columnheight]{\textwidth}{
+					\begin{myblock}{Introduction to CART}
+						\begin{codebox}
+							\textbf{CART} refers to Classification And Regression Tree
+						\end{codebox}
+
+						\begin{codebox}
+							\textbf{Basic Idea:}
+						\end{codebox}
+						\begin{itemize}[$\bullet$]     
+            \setlength{\itemindent}{+.3in}
+                        \item Split the data into two parts according to one of the features.
+                        \item Binary Splits are constructed top-down.
+                        \item Constant prediction in each leaf (numerical, class label, probability vector)
+                        \item An observation will end up in exactly one leaf node
+                        \end{itemize}
+				
+						\begin{codebox}
+						\textbf{Trees as an additive model: }
+						\end{codebox}
+						
+trees divide the feature space $\Xspace$ into \textbf{rectangular regions}:
+
+\begin{align*}
+\fx = \sum_{m=1}^M c_m \I(x \in Q_m),
+\end{align*}
+
+a tree with $M$ leaf nodes defines $M$ \enquote{rectangles} $Q_m$.\vspace*{1ex}
+$c_m$ is the predicted numerical response, class label or class distribution in the respective leaf node.
+\end{myblock}
+
+\begin{myblock}{Splitting Criteria}
+Use \textbf{empirical risk minimization} for finding good splitting rules to define the tree. Splitting criteria for trees are usually defined in terms of "impurity reduction".
+
+\begin{codebox} \textbf{Formalization: }
+\end{codebox}
+The risk $\risk(\Np)$ for a leaf is simply the average loss for the data assigned to that leaf under a given loss function $L$: $$\risk(\Np) = \frac{1}{|\Np|} \sum\limits_{(x,y) \in \Np} L(y, c)$$
+  
+  Let $\Np \subseteq \D$ be the data that is assigned to a terminal node $\Np$ of a tree.
+Let $c$ be the predicted constant value for the data assigned to $\Np$: $\yh \equiv c$ for all $\left(x,y\right) \in \Np$.\vspace*{1ex}
+The prediction is given by the optimal constant $c = \argmin_c \risk(\Np)$
+
+\begin{codebox}
+\textbf{Splitting criteria for regression: }\end{codebox}
+For regression trees usually $L_2$ loss is used: 
+  $$\risk(\Np) = \frac{1}{|\Np|} \sum\limits_{(x,y) \in \Np} (y - c)^2$$\vspace*{1ex}
+The best constant prediction under $L_2$ is the mean
+
+\end{myblock}\vfill
+				}
+			\end{minipage}
+		\end{beamercolorbox}
+	\end{column}
+	
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{column}{.31\textwidth}
+\begin{beamercolorbox}[center]{postercolumn}
+\begin{minipage}{.98\textwidth}
+\parbox[t][\columnheight]{\textwidth}{
+  \begin{myblock}{ }
+  \begin{codebox}
+  \textbf{Splitting criteria for classification:}
+  \end{codebox} Typically uses Brier score or  Bernoulli loss as loss functions
+  Predicted probabilities in node $\Np$ are the class proportions in the node:
+    $$ \pikNh = \frac{1}{|\Np|} \sum\limits_{(x,y) \in \Np} \I(y = k) $$
+    
+    \begin{codebox}
+  \textbf{Gini Impurity:}
+  \end{codebox}
+  Minimizing the Brier score is equivalent to minimizing the Gini impurity $$I(\Np) = \sum_{k=1}^g \pikNh(1-\pikNh)$$
+    
+    \begin{codebox}
+  \textbf{Entropy Impurity:}
+  \end{codebox}
+  Minimizing the Bernoulli loss is equivalent to minimizing entropy impurity $$I(\Np) = -\sum_{k=1}^g \pikNh \log \pikNh$$
+    
+    Brier score and Bernoulli loss are more sensitive to changes in the node probabilities, and therefore often preferred than misclassification loss.
+  
+  \end{myblock}
+  \begin{myblock}{Growing a Tree}
+  
+  We start with an empty tree, a root node that contains all the data.\vspace*{1ex}Trees are then grown by recursively applying \emph{greedy} optimization to each node $\Np$. Greedy means \textbf{exhaustive search}\vspace*{1ex}
+  
+  \begin{itemize}[$\bullet$]     
+  \setlength{\itemindent}{+.3in}
+  \item All possible splits of $\Np$ on all possible points $t$ for all features $x_j$ are compared in terms of their empirical risk $\risk(\Np, j, t)$.
+  \item Training data is then distributed to child nodes according to the optimal split and the procedure is repeated in the child nodes.      \end{itemize}
+  
+  Splits are usually placed at the mid-point of the observations they split
+  \end{myblock}
+  
+  \begin{myblock}{Split computation}
+  
+  \begin{codebox}
+  \textbf{Monotone feature transformations: }	\end{codebox}
+  Monotone transformations of one or several features will only change the numerical value of the split point.\vspace*{1ex}
+  \end{myblock}
+}
+\end{minipage}
+\end{beamercolorbox}
+\end{column}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{column}{.31\textwidth}
+\begin{beamercolorbox}[center]{postercolumn}
+\begin{minipage}{.98\textwidth}
+\parbox[t][\columnheight]{\textwidth}{
+  \begin{myblock}{ }
+  
+  \begin{codebox}
+  \textbf{CART: Nominal Features}	
+  \end{codebox}
+  
+  \begin{itemize}[$\bullet$]     
+  \setlength{\itemindent}{+.3in}
+  \item A split on a nominal feature partitions the feature levels:
+    $$x_j \in \{a,c,e\} \leftarrow \Np \rightarrow x_j \in \{b,d\} $$
+    \item For a feature with $m$ levels,
+  there are about $2^m$ different possible partitions of the $m$ values into two groups\vspace*{1ex} ($2^{m-1} - 1$ because of symmetry and empty groups).
+  \item Searching over all these becomes prohibitive for larger values of $m$.
+  \end{itemize}
+
+  \begin{codebox}
+  \textbf{For $0-1$ responses, in each node: }
+  \end{codebox}
+  
+  \begin{itemize}[$\bullet$]     
+  \setlength{\itemindent}{+.3in}
+  \item Calculate the proportion of $1$-outcomes for each category.
+  \item Sort the categories according to these proportions.
+  \end{itemize}
+
+  \begin{codebox}
+  \textbf{For continuous responses, in each node: }
+  \end{codebox}
+  
+  \begin{itemize}[$\bullet$]     
+  \setlength{\itemindent}{+.3in}
+  \item Calculate the mean of the outcome in each category
+  \item Sort the categories by increasing mean of the outcome
+  \end{itemize}
+
+  \begin{codebox}	
+  \textbf{Missing Feature values: }	\end{codebox}
+  CART often uses the so-called \textbf{surrogate split} principle to automatically deal with missing values in features used for splits during prediction.
+  \vspace*{1ex}
+  \end{myblock}
+  
+  \begin{myblock}{Stopping Criteria \& Pruning}
+  \begin{codebox} \textbf{Overfitting Trees: }	
+  \end{codebox}
+  
+  \begin{itemize}[$\bullet$]     
+  \setlength{\itemindent}{+.3in}
+  \item Problem 1: longer time is needed and this can be solved by using stopping criteria.
+  \item Problem 2: very complex trees with lots of branches and leaves will \emph{overfit the training data.} Stopping criteria is used to solve this.
+  \item Problem 3: it is very hard to tell where to stop while growing the tree. That is why pruning is used to resolve this problem.
+  \end{itemize}
+  
+  \begin{codebox}
+  \textbf{Note: }
+  \end{codebox}
+  
+  \begin{itemize}[$\bullet$]     
+  \setlength{\itemindent}{+.3in}
+  \item \textbf{Advantages: }CART performs automatic feature selection. It is fast and scales well larger data. Not much preprocessing is required. It can also model discontinuities and non-linearities
+  \item \textbf{Disadvantages: }CART has linear dependencies. Prediction functions of trees are never smooth as they are always step functions. It is empirically not the best predictor. There is high instability (variance) of the trees. 
+  \end{itemize}
+  \end{myblock}
+  }
+  
+  \end{minipage}
+  \end{beamercolorbox}
+  \end{column}
+  
+  
+  
+\end{columns}
+\end{frame}
+\end{document}
