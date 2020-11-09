@@ -8,8 +8,6 @@ Main course site: https://introduction-to-machine-learning.netlify.app/
 # Contents, License, Team and Further Info
 Please see the main course site.
 
-https://docs.github.com/en/free-pro-team@latest/github/working-with-github-pages/unpublishing-a-g
-
 
 ## Help is appreciated and welcome!
 
