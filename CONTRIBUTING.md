@@ -81,6 +81,10 @@ Google Figures are stored in the [G-Drive](https://drive.google.com/drive/folder
       - set preferences to "USB microphone" & set loudness fairly high
       - set the frame rate to 30
 
+### Number of slides and length of videos
+
+The number of slides and length of videos can be found [here](https://docs.google.com/spreadsheets/d/1dPj2GAFG8ixlRTX_i3Y-DQtPkVnHAF51oimP4-jhdgo/edit#gid=0) and should be updated regularly (i.e. if a new video is published)
+
 ### Website
 
 The website is updated whenever the master branch is pushed, via the [Github action Pkgdown](https://github.com/compstat-lmu/lecture_i2ml/actions). 
