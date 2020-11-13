@@ -276,7 +276,7 @@ $$\Hspace = \left\{ \fx: \fx = \sum_{t = 1}^T c_t \I(\xv \in Q_t)
     \item Pass observations along until each ends up in exactly 
     one leaf node
     \item In each step, find the optimal feature-threshold
-    combination to split \\ by
+    combination to \\ split by
   \item Assign response $c_t$ to leaf node $m$
 \end{itemize}
 
@@ -297,33 +297,42 @@ $$\Hspace = \left\{ \fx: \fx = \sum_{t = 1}^T c_t \I(\xv \in Q_t)
 
 \footnotesize
 
-\textbf{\textcolor{gray!80}{Empirical risk for typical loss functions}} \\
+\textbf{\textcolor{gray!80}{Empirical risk}} \\
 
 \begin{itemize}
-  \item Empirical risk is calculated per terminal node $\Np_m$.
-  \item Classification (for $g$ classes):
+  \item Empirical risk is calculated for each potential terminal node $\Np_m$
+  of a split.
+  \item In general, trees can handle any type of loss function. Typical choices
+  are:
   \begin{itemize}
     \footnotesize
-    \item Using \textit{\textbf{Brier score}} () \\
-    $\risk(\Np_t) = \sum\limits_{(\xv,y) \in \Np_t} \sumkg \left( \I(y = k)
-    - \pikx \right)^2$
-    \item Using \textit{\textbf{Bernoulli loss}} \\
-    $\risk(\Np_t) = \sum\limits_{(\xv,y) \in \Np_t} \sumkg \I(y = k) \cdot
-    \log(\pikx)$
+    \item Classification (for $g$ classes):
+    \begin{itemize}
+      \footnotesize
+      \item Using \textit{\textbf{Brier score}} \\
+      $\risk(\Np_t) = \sum\limits_{(\xv,y) \in \Np_t} \sumkg \left( \I(y = k)
+      - \pikx \right)^2$
+      \item Using \textit{\textbf{Bernoulli loss}} \\
+      $\risk(\Np_t) = \sum\limits_{(\xv,y) \in \Np_t} \sumkg \I(y = k) \cdot
+      \log(\pikx)$
+    \end{itemize}
+    \item Regression: Using \textit{\textbf{quadratic loss}} \\
+    $\risk(\Np_t) = \sum\limits_{(\xv,y) \in \Np_t} (y - c_t)^2$
   \end{itemize}
-  \item Regression: Using \textit{\textbf{quadratic loss}} \\
-  $\risk(\Np_t) = \sum\limits_{(\xv,y) \in \Np_t} (y - c_t)^2$
 \end{itemize}
 
 \smallskip
 
-\textbf{\textcolor{gray!80}{Optimization}} {}{} Exhaustive search for optimal 
-splitting criterion (greedy optimization) \\
+\textbf{\textcolor{gray!80}{Optimization}} {}{} \textbf{Exhaustive} search over
+all (randomly selected) split candidates in each node to minimize empirical risk 
+in the child nodes (greedy optimization) \\
 
 \smallskip
 
-\textbf{\textcolor{gray!80}{Hyperparameters}} {}{} Tree depth, minimum number
-of observations per node, ...  
+\textbf{\textcolor{gray!80}{Hyperparameters}} {}{} \textbf{Complexity}, i.e., 
+number of leaves $T$ \\
+$\rightarrow$ Controlled via tree depth, minimum number of observations per 
+node, maximum number of leaves, minimum risk reduction per split, ...
 
 \normalsize
   
@@ -399,6 +408,8 @@ predictor}}}
 
 \vspace{0.3cm}
 
+\small
+
 \textbf{For applications of CART, note the following:}
 \lz
 
@@ -447,9 +458,9 @@ to form a \textbf{random forest} (bagging) or used in combination with boosting.
 
 \textbf{\textcolor{gray!80}{General idea}} {}{} Random forests are 
 \textit{\textbf{bagging ensembles}}: they combine multiple CART (weak learners)
-to form a strong learner. They use \textbf{complex}, fully grown trees with low 
-bias and compensate for single trees' high variance by aggregating $M$ of them 
-in a \textbf{decorrelated} manner. 
+to form a strong learner. They use \textbf{complex} trees with low  bias and 
+compensate for single trees' high variance by aggregating $M$ of them in a 
+\textbf{decorrelated} manner. 
 
 \medskip
 
@@ -483,35 +494,33 @@ c_t^{[m]} \I(\xv \in Q_t^{[m]}) \right\}$$
 
 \footnotesize
 
-\textbf{\textcolor{gray!80}{Empirical risk for typical loss functions}} \\
+\textbf{\textcolor{gray!80}{Empirical risk}} {}{}
+Like the tree base learners themselves, random forests can be used with any
+kind of loss function. Empirical risk is computed for all potential child nodes
+in all trees.
+
+\medskip
+
+\textbf{\textcolor{gray!80}{Optimization}} {}{} \textbf{Exhaustive} search over
+all (randomly selected) split candidates in each node of each tree to minimize
+empirical risk in the child nodes (greedy optimization) \\
+
+\medskip
+
+\textbf{\textcolor{gray!80}{Hyperparameters}}
 
 \begin{itemize}
-  \item Empirical risk is calculated per terminal node $\Np_m$.
-  \item Classification (for $g$ classes):
-  \begin{itemize}
-    \footnotesize
-    \item Using \textit{\textbf{Brier score}} \\
-    $\risk(\Np_m) = \sum\limits_{(\xv,y) \in \Np_m} \sumkg \left( \I(y = k)
-    - \pikx \right)^2$
-    \item Using \textit{\textbf{Bernoulli loss}} \\
-    $\risk(\Np_m) = \sum\limits_{(\xv,y) \in \Np_m} \sumkg \I(y = k) \cdot
-    \log(\pikx)$
-  \end{itemize}
-  \item Regression: Using \textit{\textbf{quadratic loss}} \\
-  $\risk(\Np_m) = \sum\limits_{(\xv,y) \in \Np_m} (y - c_m)^2$
+  \item \textbf{Complexity}, i.e., number of leaves $T$ of each base learner \\
+  $\rightarrow$ Controlled via tree depth, minimum number of observations per 
+  node, maximum number of leaves, minimum risk reduction per split, ...
+  \item \textbf{Ensemble size}, i.e., number of trees
+  \item \textbf{Number of split candidates}, i.e., number of features to be
+  considered as splitting variables at each split \\
+  $\rightarrow$ Frequently used heuristics are 
+  $\left \lfloor{\sqrt{p}}\right \rfloor$ for classification and
+  $\left \lfloor{p/3}\right \rfloor$ for regression
+  
 \end{itemize}
-
-\smallskip
-
-\textbf{\textcolor{gray!80}{Optimization}} {}{} Exhaustive search for optimal 
-splitting criterion (greedy optimization) \\
-
-\smallskip
-
-\textbf{\textcolor{gray!80}{Hyperparameters}} {}{} Tree depth, minimum number
-of observations per node, ...  
-
-\normalsize
   
 \end{frame}
 
@@ -531,14 +540,36 @@ of observations per node, ...
     \textbf{\textcolor{gray!80}{Advantages}}
     \footnotesize
     \begin{itemize}
-      \item[$\textbf{\textcolor{gray!80}{+}}$] Foo
+      \item[$\textbf{\textcolor{gray!80}{+}}$] Translation of most advantages 
+      of \textbf{trees} (e.g., inherent variable selection, handling of
+      missing data)
+      \item[$\textbf{\textcolor{gray!80}{+}}$] Fairly good at 
+      \textbf{prediction}: improved accuracy through bagging
+      \item[$\textbf{\textcolor{gray!80}{+}}$] Inherent computation of 
+      \textbf{feature importance}
+      \item[$\textbf{\textcolor{gray!80}{+}}$] Quite \textbf{stable} wrt changes 
+      in the data
+      \item[$\textbf{\textcolor{gray!80}{+}}$] Good with 
+      \textbf{high-dimensional} data, even in presence of noisy covariates
+      \item[$\textbf{\textcolor{gray!80}{+}}$] Applicable to \textbf{unbalanced} 
+      data
+      \item[$\textbf{\textcolor{gray!80}{+}}$] Easy to \textbf{parallelize}
+      \item[$\textbf{\textcolor{gray!80}{+}}$] Rather easy to \textbf{tune}
     \end{itemize}
   \end{column}
   \begin{column}{0.5\textwidth}
     \textbf{\textcolor{gray!80}{Disadvantages}}
     \footnotesize
     \begin{itemize}
-      \item[$\textbf{\textcolor{gray!80}{-}}$] Foo
+      \item[$\textbf{\textcolor{gray!80}{-}}$] Loss of single trees' 
+      \textbf{interpretability} -- black-box method
+      \item[$\textbf{\textcolor{gray!80}{-}}$] Hard to \textbf{visualize}
+      \item[$\textbf{\textcolor{gray!80}{-}}$] Often suboptimal for 
+      \textbf{regression}
+      \item[$\textbf{\textcolor{gray!80}{-}}$] Computationally demanding --
+      both in \textbf{runtime} and \textbf{memory}
+      \item[$\textbf{\textcolor{gray!80}{-}}$] Often still inferior in
+      \textbf{performance} to other methods (e.g., boosting)
     \end{itemize}
   \end{column}
 \end{columns}
@@ -549,7 +580,7 @@ of observations per node, ...
 
 \fbox{\parbox{\textwidth}{
 \centering
-\textbf{Foo}}}
+\textbf{Fairly good predictor, but black-box method}}}
 
 \end{frame}
 
