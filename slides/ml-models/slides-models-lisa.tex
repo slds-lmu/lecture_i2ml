@@ -272,7 +272,7 @@ $\Hspace = \left\{ \fx: \fx = \sum_{t = 1}^T c_t \I(\xv \in Q_t)
 
 \medskip
 
-\begin{minipage}{0.5\textwidth}
+\begin{minipage}{0.6\textwidth}
   \begin{itemize}
     \item Pass observations along until each ends up in exactly 
     one leaf node
@@ -282,7 +282,7 @@ $\Hspace = \left\{ \fx: \fx = \sum_{t = 1}^T c_t \I(\xv \in Q_t)
 \end{itemize}
 
 \end{minipage}%
-\begin{minipage}{0.5\textwidth}
+\begin{minipage}{0.4\textwidth}
   \includegraphics[width=\textwidth]{figure/cart.pdf}
 \end{minipage}
 
@@ -462,7 +462,7 @@ combination with \textit{\textbf{boosting}}.
 \medskip
 
 \textbf{\textcolor{gray!80}{General idea}} ~~ Random forests are 
-\textit{\textbf{bagging ensembles}}: they combine multiple CART (weak learners)
+\textit{\textbf{bagging ensembles}}: they combine multiple CART (base learners)
 to form a strong learner. They use \textbf{complex} trees with low  bias and 
 compensate for single trees' high variance by aggregating $M$ of them in a 
 \textbf{decorrelated} manner. 
@@ -475,7 +475,7 @@ c_t^{[m]} \I(\xv \in Q_t^{[m]}) \right\}$
 
 \medskip
 
-\begin{minipage}{0.5\textwidth}
+\begin{minipage}{0.6\textwidth}
   \begin{itemize}
     \item Training on bootstrap samples of the data and only on a random subset 
     of features to incur variability
@@ -483,7 +483,7 @@ c_t^{[m]} \I(\xv \in Q_t^{[m]}) \right\}$
     (classification)
   \end{itemize}
 \end{minipage}%
-\begin{minipage}{0.5\textwidth}
+\begin{minipage}{0.4\textwidth}
   \includegraphics[width=0.9\textwidth]{figure/rf_3d.PNG}
 \end{minipage}
 
@@ -518,16 +518,15 @@ empirical risk in the child nodes (greedy optimization) \\
 \textbf{\textcolor{gray!80}{Hyperparameters}}
 
 \begin{itemize}
+  \item \textbf{Ensemble size}, i.e., number of trees
   \item \textbf{Complexity}, i.e., number of leaves $T$ of each base learner \\
   $\rightarrow$ Controlled via tree depth, minimum number of observations per 
   node, maximum number of leaves, minimum risk reduction per split, ...
-  \item \textbf{Ensemble size}, i.e., number of trees
   \item \textbf{Number of split candidates}, i.e., number of features to be
   considered as splitting variables at each split \\
   $\rightarrow$ Frequently used heuristics: 
   $\left \lfloor{\sqrt{p}}\right \rfloor$ for classification and
   $\left \lfloor{p/3}\right \rfloor$ for regression
-  
 \end{itemize}
   
 \end{frame}
@@ -639,18 +638,19 @@ package \texttt{scikit-learn}
 
 \colorbox{gray!80}{\textcolor{white}{SUPERVISED}} 
 \colorbox{gray!80}{\textcolor{white}{NON-PARAMETRIC}} 
-\colorbox{gray!80}{\textcolor{white}{BLACK-BOX}} 
+\colorbox{gray!80}{\textcolor{white}{BLACK-BOX}}
+\colorbox{gray!80}{\textcolor{white}{FEATURE SELECTION}}
 
 \medskip
 
 \textbf{\textcolor{gray!80}{General idea}} ~~ Gradient boosting (GB) is an
-\textit{\textbf{ensemble}} method that constructs a strong learner from weak base
-learners (frequently, CART). \\
-As opposed to \textit{\textbf{bagging}}, however,
-it assembles the base learners in a \textbf{sequential, stage-wise} manner: in 
-each iteration, GB improves the current model by adding a new component that
-minimizes empirical risk. The final model is a weighted sum of base learners 
-$b(\xv, \thetam)$ with weights $\betam$.
+\textit{\textbf{ensemble}} method that constructs a strong learner from weak 
+base learners (frequently, CART). \\
+As opposed to \textit{\textbf{bagging}}, however, base learners are assembled
+in a \textbf{sequential, stage-wise} manner: in each iteration, GB improves the 
+current model by adding a new component that minimizes empirical risk. The final 
+model is a weighted sum of base learners $b(\xv, \thetam)$ with weights 
+$\betam$.
 
 \medskip
 
@@ -659,19 +659,61 @@ $\Hspace = \left\{ \fx: \fx = \sum_{m = 1}^M \betam b(\xv, \thetam) \right\}$
 
 \medskip
 
-\begin{minipage}{0.5\textwidth}
+\begin{minipage}{0.6\textwidth}
   \begin{itemize}
-    \item One boosting iteration $\widehat{=}$ one approximate gradient step in 
-    function space, $b(\xv, \thetam)$ corresponding as closely as possible to 
-    the negative loss function gradient
     \item Finding next additive component $\widehat{=}$ fitting base learner
-    to current point-wise residuals
+    to current point-wise residuals  
+    \item One boosting iteration $\widehat{=}$ one approximate gradient step in 
+    function space
+    \item Fitting of each base learner using information from previously
+    added ones
   \end{itemize}
 \end{minipage}%
-\begin{minipage}{0.5\textwidth}
+\begin{minipage}{0.4\textwidth}
   \includegraphics[width=0.9\textwidth]{figure/gb_3d.PNG}
 \end{minipage}
 
+\end{frame}
+
+% ------------------------------------------------------------------------------
+
+\LARGE
+\begin{frame}{\textcolor{gray!80}{Gradient boosting} ~~ Functionality}
+\normalsize
+\vspace{-0.5cm}
+\noindent \textcolor{gray!80}{\rule{\textwidth}{1pt}}
+
+\vspace{0.3cm}
+
+\footnotesize
+
+\textbf{\textcolor{gray!80}{Empirical risk}}
+
+\begin{itemize}
+  \item \textbf{Outer loss:} Loss used to compute pseudo-residuals -- how large 
+  is the error of the current model fit? \\
+  $\rightarrow$ Arbitrary \textbf{differentiable} loss function
+  \item \textbf{Inner loss:} Loss used to fit next base learner component to 
+  current pseudo-residuals \\
+  $\rightarrow$ Typically, \textit{\textbf{quadratic loss}} (desirable 
+  optimization properties)
+\end{itemize}
+
+\medskip
+
+\textbf{\textcolor{gray!80}{Optimization}} ~~ \textit{\textbf{Functional 
+gradient descent}} for outer, \textbf{arbitrary} procedure for inner 
+optimization loop (depending on inner loss)
+
+\medskip
+
+\textbf{\textcolor{gray!80}{Hyperparameters}}
+
+\begin{itemize}
+  \item \textbf{Ensemble size}, i.e., number of base learners
+  \item \textbf{Learning rate}, i.e., impact of single base learner
+  \item \textbf{Complexity} of base learners (depending on type used)
+\end{itemize}
 
 \end{frame}
 
