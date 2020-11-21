@@ -165,6 +165,473 @@ winner.
 \end{frame}
 
 % ------------------------------------------------------------------------------
+% LINEAR MODEL
+% ------------------------------------------------------------------------------
+
+\begin{frame}{Linear Model -- Functionality}
+
+\footnotesize
+
+\maketag{SUPERVISED}
+\maketag{PARAMETRIC}
+\maketag{WHITE-BOX}
+
+
+\medskip
+
+$\overleftwitchonbroom*{\textcolor{white}{abc}}$
+Caro alter Tanzbesen
+
+\highlight{General idea} ~~  
+%\begin{itemize}
+A linear model (LM) fits a \textbf{hyperplane} $\theta_0 + \thx$ to minimize the distance between the data points and its closed point on the hyperplane. 
+%\item The linear model approximates the \textbf{linear influence} of the features on the target variable. 
+%\item Thus, linear models can only perform \textbf{regression}, as they can only predict continous, numeric values. 
+%\end{itemize}
+
+\medskip
+
+\highlight{Hypothesis space} ~~
+$\Hspace = \{ \theta_0 + \thx\ |\ (\theta_0, \thetab) \in \R^{p+1} \}$
+
+% \textbf{Linear Model}: Used in different contexts, often a synonym for models in the class of linear predictors or for linear regression (with potentially transformed input space, i.e.,  $\yi = \thetab^\top \psi^{(i)}(\xi) + \varepsilon^{(i)}$, where $\psi^{(i)}(\cdot)$ can be non-linear functions transforming $\xi$). 
+
+
+\medskip
+\footnotesize
+\begin{minipage}{0.45\textwidth}
+  \includegraphics[width=0.8\textwidth]{figure/reg_lm_plot.pdf}
+\end{minipage}
+ \normalsize 
+\begin{minipage}{0.45\textwidth}
+  \includegraphics[width=0.7\textwidth]{figure/regression_hyperplane.jpg}
+\end{minipage}
+
+\end{frame}
+
+% ------------------------------------------------------------------------------
+
+\begin{frame}{Linear Model -- Functionality}
+
+\footnotesize
+
+\highlight{Empirical risk}
+\begin{itemize}\footnotesize
+  \item Typically, \textbf{ordinary least squares (OLS)} with a squared loss function is used for regression: $\risket  = \sumin \left(\yi - \thetab^T \xi\right)^2$
+    
+   \item Sometimes the empirical risk function is based on the \textbf{absolute loss} or the \textbf{Huber loss}. %$\risket = \sumin \left|\yi - \thetab^T \xi\right|$ 
+  
+  \item For \textbf{logistic regression} the ERM is based on the \textbf{log loss} $\Lxy = \log \left[1 + \exp \left(-y\fx\right)\right]$.
+  
+  \item In this case, the hyperplane can represent the decision boundary between two classes (\textbf{classification}). 
+
+
+\end{itemize}
+
+\footnotesize
+
+\medskip
+
+\highlight{Optimization} ~~ 
+\begin{itemize}\footnotesize
+  \item for \textbf{OLS}: analytically with $\bm{\hat \theta} = (\Xmat^\top \Xmat)^{-1} \Xmat^\top\ydat$
+  \item for \textbf{other loss functions}: numerical optimization 
+\end{itemize}
+
+\medskip
+
+\highlight{Hyperparameters} ~~ none \\
+
+\medskip
+
+\highlight{Runtime behavior} ~~ $\mathcal{O}(d^2 \cdot n + d^3)$ for $n$ 
+observations and $d$ features (with analytical OLS solution)
+
+\end{frame}
+
+% ------------------------------------------------------------------------------
+
+\begin{frame}{Linear Model -- Pro's \& Con's}
+
+\footnotesize
+
+\begin{columns}[onlytextwidth]
+  \begin{column}{0.5\textwidth}
+    \highlight{Advantages}
+    \footnotesize
+    \begin{itemize}
+      \positem \textbf{simple and fast} implementation; cheap computational costs
+      \positem intuitive \textbf{interpretability}: mean influence of features on the output and feature importance
+      \positem fits \textbf{linearly} separable data sets very well
+      \positem works well \textbf{independent of data size}
+      \positem basis for many machine learning algorithms
+      \positem $\mathghost{\text{ boo}}$
+
+    \end{itemize}
+  \end{column}
+
+  \begin{column}{0.5\textwidth}
+    \highlight{Disadvantages}
+    \footnotesize
+    \begin{itemize}
+      \negitem not suitable for data based on a \textbf{non-linear} data generating process $\rightarrow$ \textbf{strong simplification} of real-world problems
+      
+      \negitem \textbf{strong assumptions}: data is independent (multi-collinearity must be removed and normal distributed residuals ??
+      
+      \negitem tend to \textbf{overfit} (can be reduced by regularization)
+      
+      \negitem \textbf{sensitive to outliers and noisy data}
+    \end{itemize}
+  \end{column}
+\end{columns}
+
+\vfill
+
+\small
+
+\conclbox{Simple method with good interpretability for linear problems, but strong assumptions and simplification of real-world problems}
+
+\end{frame}
+
+% ------------------------------------------------------------------------------
+
+\begin{frame}{Linear Model -- Practical hints}
+
+\footnotesize
+
+ \highlight{Check assumptions???????} \\
+ This model is very effective, if the following assumptions are fulfilled:
+ \begin{itemize}\footnotesize
+  \item \textbf{linearity}: the relationship between the mean of predicted value and the features
+  \item \textbf{homoscedasticity}: The variance of residuals is equal for all features.
+  \item \textbf{independence}: All observations are independent of each other.
+  \item \textbf{normality}: Y is normally distributed for any fixed value of the features
+\end{itemize}
+
+\lz
+
+  \highlight{Implementation} \\
+  \smallskip
+  R: function \code{lm}\\
+  Python: \code{LinearRegression} from package \code{sklearn.linear\_model}, package for advanced statistical parameters \code{statsmodels.api} 
+
+\lz
+
+ \highlight{Regularization} \\
+ \smallskip
+ 
+ In practice, we often use regularized models in order to \textbf{prevent overfitting} or perform feature selection. More details will follow in the subsequent chapter. 
+
+
+\end{frame}
+
+% ------------------------------------------------------------------------------
+% REGULARIZED LINEAR MODEL
+% ------------------------------------------------------------------------------
+
+\begin{frame}{Regularized LM -- Functionality}
+
+\footnotesize
+
+\maketag{SUPERVISED}
+\maketag{PARAMETRIC}
+\maketag{WHITE-BOX}
+
+\medskip
+
+\highlight{General idea} ~~
+\begin{itemize}
+
+\item Linear model (LM) can \textbf{overfit} if we operate in high-dimensional space with not that many oberservations.
+
+\item When features are highly correlated, the least-squares estimate becomes highly sensitive to random errors in the observed response, producing a \textbf{large variance in the fit}.
+
+\item If we fit a linear model, we can find a compromise between generalizing the model (simple model, underfitted) and correspond closely to the data (complex model, overfitted).
+
+\end{itemize}
+
+\medskip
+
+\highlight{Hypothesis space} ~~
+$\Hspace = \{ \theta_0 + \thx\ |\ (\theta_0, \thetab) \in \R^{p+1} \} $
+
+\medskip
+% \footnotesize
+% \begin{minipage}{0.5\textwidth}
+\centering
+  \includegraphics[width=0.7\textwidth]{figure/reg_lm_comparision.png}
+% \end{minipage}
+%  \normalsize
+% \begin{minipage}{0.4\textwidth}
+%   \includegraphics[width=0.7\textwidth]{figure/regression_hyperplane.jpg}
+% \end{minipage}
+
+\end{frame}
+
+% ------------------------------------------------------------------------------
+
+\begin{frame}{Regularized LM -- Functionality}
+
+\footnotesize
+
+\highlight{Empirical risk}
+
+\begin{itemize}
+
+\item Therefore, we minimize the empirical risk function $\risket$ \textbf{plus the a complexity measure} $J(\thetab)$:
+  $$
+  \riskrt = \risket + \lambda \cdot J(\thetab). 
+  $$ 
+  
+\item We can use the L2-penalty for the complexity measure (\textbf{ridge regression}) with $J(\thetab) = |\thetab\|_2^2 $. 
+
+\item Alternativly, \textbf{LASSO} (least absolute shrinkage and selection operator) uses the L1-penalty ($J(\thetab) = |\thetab\|_1 $).
+
+\item Whereas both regularization methods shrink the coefficients of the model, LASSO also performs \textbf{feature selection}. 
+
+\item Elastic net as a convex combination of Ridge and LASSO ???
+  
+  
+\end{itemize}
+
+
+
+
+
+\medskip
+
+\highlight{Optimization} ~~
+\begin{itemize}\footnotesize
+  \item for \textbf{Ridge} regression: analytically with $\thetah_{\text{Ridge}} = (\Xmat^T \Xmat  + \lambda \id)^{-1} \Xmat^T\ydat$
+  \item for \textbf{LASSO regression}: e. g. (sub)-gradient descent
+\end{itemize}
+
+\medskip
+
+\highlight{Hyperparameter} \textbf{shrinkage parameter} $\lambda$ [and $\alpha$ for Elastic net??] \\
+
+\medskip
+
+\highlight{Runtime behavior} ~~ $\mathcal{O}(d^2 \cdot n + d^3)$ for $n$ 
+observations and $d$ features 
+
+\end{frame}
+
+% ------------------------------------------------------------------------------
+
+\begin{frame}{Regularized LM -- Pro's \& Con's}
+
+\footnotesize
+
+\textcolor{red}{SAME LIKE LINEAR MODEL?}
+
+\begin{columns}[onlytextwidth]
+  \begin{column}{0.5\textwidth}
+    \highlight{Advantages}
+    \footnotesize
+    \begin{itemize}
+      \positem simple and fast implementation; cheap computational costs
+      \positem intuitive interpretability: mean influence of features on the output and feature importance
+      \positem fits linearly separable data sets very well
+      \positem works well independent of data size
+      \positem basis for many machine learning algorithms
+      \positem prevents \textbf{overfitting}
+
+    \end{itemize}
+  \end{column}
+
+  \begin{column}{0.5\textwidth}
+    \highlight{Disadvantages}
+    \footnotesize
+    \begin{itemize}
+      \negitem not suitable for data based on a non-linear data generating process $\rightarrow$ strong simplification of real-world problems
+
+      \negitem strong assumptions: data is independent (multi-collinearity must be removed and normal distributed residuals ????
+
+      \negitem sensitive to outliers and noisy data
+    \end{itemize}
+  \end{column}
+\end{columns}
+
+\vfill
+
+\small
+
+\conclbox{\textcolor{red}{Simple method with good interpretability for linear problems, but strong assumptions and simplification of real-world problems.}}
+
+\end{frame}
+
+% ------------------------------------------------------------------------------
+
+\begin{frame}{Regularized LM -- Practical hints}
+
+\footnotesize
+
+  \highlight{Choice of regularization parameter  $\lambda$} \\
+  \smallskip
+ Choose $\lambda$ with e. g. smallest sum of squared residuals through cross-validation. \\
+ In the R package \code{glmnet} \code{lambda.min} is the value of $\lambda$ that gives minimum mean cross-validated error.
+ 
+ 
+
+\lz
+
+  \highlight{Implementation} \\
+  \smallskip
+  R: package for regularized linear model \code{glmnet}\\
+  Python: \code{LinearRegression} from package \code{sklearn.linear\_model}, package for advanced statistical parameters \code{statsmodels.api}
+
+\end{frame}
+
+% ------------------------------------------------------------------------------
+% SVM
+% ------------------------------------------------------------------------------
+
+\begin{frame}{SVM -- Functionality}
+
+\footnotesize
+
+\maketag{SUPERVISED}
+\maketag{PARAMETRIC}
+\maketag{NON-PARAMETRIC}
+\maketag{WHITE-BOX}
+
+\medskip
+
+\highlight{General idea} ~~
+\begin{itemize}
+
+\item Support vector machines (SVMs) construct separating \textbf{hyperplanes} in a multi-dimenstional space.  
+
+\item The SVM algorithm finds a decision boundary (\textbf{separating hyperplane}) that maximizes the distance (\textbf{margin}) between the closest members (\textbf{support vectors}) of the separate classes. (\textbf{Linear SVM})
+
+\item If the data is not linearly separable, \textbf{kernels} transform the input space into a higher dimensional space. (\textbf{Non-linear SVM})
+
+\end{itemize}
+
+\medskip
+
+% \operatorname{sign}(\mathbf{w} \cdot \Phi(\mathbf{x})+b)
+
+\highlight{Hypothesis space} ~~
+\textcolor{red}{$\Hspace = \{ \operatorname{sign}\sumin \alpha_i \yi k(\xi, \xv)  + \theta_0  |\ (\theta_0, \thetab) \in \R^{p+1} \} $}
+
+\medskip
+ \footnotesize
+ \begin{minipage}{0.4\textwidth}
+\centering
+ \includegraphics[width=0.6\textwidth]{figure/svm_wording.png}
+ \end{minipage}
+  \normalsize
+ \begin{minipage}{0.5\textwidth}
+ \centering
+ \includegraphics[width=0.6\textwidth]{figure/svm_kernel.PNG}
+   
+ \end{minipage}
+
+\end{frame}
+
+% ------------------------------------------------------------------------------
+
+\begin{frame}{SVM -- Functionality}
+
+\footnotesize
+
+\highlight{Empirical risk}
+
+N
+
+\medskip
+
+\highlight{Optimization} ~~
+XX
+
+\medskip
+
+\highlight{Hyperparameter}
+
+\begin{itemize}
+  \item \textbf{C}: penalization for missclassified data points 
+  \item \textbf{kernel parameters}: depending if and which kernel is used (e. g. degree of the polynomial kernel or width of RBF kernel)
+
+\end{itemize}
+
+\medskip
+
+\highlight{Runtime behavior} ~~ $\mathcal{O}(n^2 \cdot d + n^3)$ for $n$ 
+observations and $d$ features
+
+\end{frame}
+
+% ------------------------------------------------------------------------------
+
+\begin{frame}{SVM -- Pro's \& Con's}
+
+\footnotesize
+
+
+\begin{columns}[onlytextwidth]
+  \begin{column}{0.5\textwidth}
+    \highlight{Advantages}
+    \footnotesize
+    \begin{itemize}
+      \positem can learn non-linear decision boundaries
+      \positem often sparse solution
+      \positem robust against overfitting; especially in high-dimensional space 
+      \positem computational costs are low ????? 
+    \end{itemize}
+  \end{column}
+
+  \begin{column}{0.5\textwidth}
+    \highlight{Disadvantages}
+    \footnotesize
+    \begin{itemize}
+      %\item[$\textbf{\textcolor{gray!80}{-}}$] very memory-intensive
+      \negitem not easy tunable as it is highly important to choose the right kernel
+      \negitem does not scale well to larger data sets
+    \end{itemize}
+  \end{column}
+\end{columns}
+
+\vfill
+
+\small
+
+\conclbox{XX}
+
+\end{frame}
+
+% ------------------------------------------------------------------------------
+
+\begin{frame}{SVM -- Practical hints}
+
+\footnotesize
+
+  \highlight{Kernels} \\
+  \smallskip
+ For projecting the input data into another onto a higher dimension, mainly these three types of kernels are used: 
+ \begin{itemize}
+ 
+ \item \textbf{Linear kernel}: the dot product of the given observations
+ 
+ \item \textbf{Polynomial kernel}: curved lines in the input space
+ 
+ \item \textbf{Radial basis function (RBF) kernel}: complex regions in the input space (e. g. spirals)
+ 
+ \end{itemize}
+ 
+ 
+
+\lz
+
+  \highlight{Implementation} \\
+  \smallskip
+  R: package for regularized linear model \code{XXX}\\
+  Python: \code{XX} from package \code{XXX}, package for XXXX \code{statsmodels.api}
+
+\end{frame}
+
+% ------------------------------------------------------------------------------
 % CART (Classification and Regression Trees)
 % ------------------------------------------------------------------------------
 
@@ -665,472 +1132,6 @@ from package \code{scikit-learn}, \code{XGBClassifier} /
 \smallskip
 Overall \textbf{limited tunability} \\
 Number of split candidates often more impactful than number of trees
-
-\end{frame}
-
-% ------------------------------------------------------------------------------
-% LINEAR MODEL
-% ------------------------------------------------------------------------------
-
-\begin{frame}{Linear Model -- Functionality}
-
-\footnotesize
-
-\maketag{SUPERVISED}
-\maketag{PARAMETRIC}
-\maketag{WHITE-BOX}
-
-
-\medskip
-
-$\overleftwitchonbroom*{\textcolor{white}{abc}}$
-Caro alter Tanzbesen
-
-\highlight{General idea} ~~  
-%\begin{itemize}
-A linear model (LM) fits a \textbf{hyperplane} $\theta_0 + \thx$ to minimize the distance between the data points and its closed point on the hyperplane. 
-%\item The linear model approximates the \textbf{linear influence} of the features on the target variable. 
-%\item Thus, linear models can only perform \textbf{regression}, as they can only predict continous, numeric values. 
-%\end{itemize}
-
-\medskip
-
-\highlight{Hypothesis space} ~~
-$\Hspace = \{ \theta_0 + \thx\ |\ (\theta_0, \thetab) \in \R^{p+1} \}$
-
-% \textbf{Linear Model}: Used in different contexts, often a synonym for models in the class of linear predictors or for linear regression (with potentially transformed input space, i.e.,  $\yi = \thetab^\top \psi^{(i)}(\xi) + \varepsilon^{(i)}$, where $\psi^{(i)}(\cdot)$ can be non-linear functions transforming $\xi$). 
-
-
-\medskip
-\footnotesize
-\begin{minipage}{0.45\textwidth}
-  \includegraphics[width=0.8\textwidth]{figure/reg_lm_plot.pdf}
-\end{minipage}
- \normalsize 
-\begin{minipage}{0.45\textwidth}
-  \includegraphics[width=0.7\textwidth]{figure/regression_hyperplane.jpg}
-\end{minipage}
-
-\end{frame}
-
-% ------------------------------------------------------------------------------
-
-\begin{frame}{Linear Model -- Functionality}
-
-\footnotesize
-
-\highlight{Empirical risk}
-\begin{itemize}\footnotesize
-  \item Typically, \textbf{ordinary least squares (OLS)} with a squared loss function is used for regression: $\risket  = \sumin \left(\yi - \thetab^T \xi\right)^2$
-    
-   \item Sometimes the empirical risk function is based on the \textbf{absolute loss} or the \textbf{Huber loss}. %$\risket = \sumin \left|\yi - \thetab^T \xi\right|$ 
-  
-  \item For \textbf{logistic regression} the ERM is based on the \textbf{log loss} $\Lxy = \log \left[1 + \exp \left(-y\fx\right)\right]$.
-  
-  \item In this case, the hyperplane can represent the decision boundary between two classes (\textbf{classification}). 
-
-
-\end{itemize}
-
-\footnotesize
-
-\medskip
-
-\highlight{Optimization} ~~ 
-\begin{itemize}\footnotesize
-  \item for \textbf{OLS}: analytically with $\bm{\hat \theta} = (\Xmat^\top \Xmat)^{-1} \Xmat^\top\ydat$
-  \item for \textbf{other loss functions}: numerical optimization 
-\end{itemize}
-
-\medskip
-
-\highlight{Hyperparameters} ~~ none \\
-
-\medskip
-
-\highlight{Runtime behavior} ~~ $\mathcal{O}(d^2 \cdot n + d^3)$ for $n$ 
-observations and $d$ features (with analytical OLS solution)
-
-\end{frame}
-
-% ------------------------------------------------------------------------------
-
-\begin{frame}{Linear Model -- Pro's \& Con's}
-
-\footnotesize
-
-\begin{columns}[onlytextwidth]
-  \begin{column}{0.5\textwidth}
-    \highlight{Advantages}
-    \footnotesize
-    \begin{itemize}
-      \positem \textbf{simple and fast} implementation; cheap computational costs
-      \positem intuitive \textbf{interpretability}: mean influence of features on the output and feature importance
-      \positem fits \textbf{linearly} separable data sets very well
-      \positem works well \textbf{independent of data size}
-      \positem basis for many machine learning algorithms
-
-    \end{itemize}
-  \end{column}
-
-  \begin{column}{0.5\textwidth}
-    \highlight{Disadvantages}
-    \footnotesize
-    \begin{itemize}
-      \negitem not suitable for data based on a \textbf{non-linear} data generating process $\rightarrow$ \textbf{strong simplification} of real-world problems
-      
-      \negitem \textbf{strong assumptions}: data is independent (multi-collinearity must be removed and normal distributed residuals ??
-      
-      \negitem tend to \textbf{overfit} (can be reduced by regularization)
-      
-      \negitem \textbf{sensitive to outliers and noisy data}
-    \end{itemize}
-  \end{column}
-\end{columns}
-
-\vfill
-
-\small
-
-\conclbox{Simple method with good interpretability for linear problems, but strong assumptions and simplification of real-world problems}
-
-\end{frame}
-
-% ------------------------------------------------------------------------------
-
-\begin{frame}{Linear Model -- Practical hints}
-
-\footnotesize
-
- \highlight{Check assumptions???????} \\
- This model is very effective, if the following assumptions are fulfilled:
- \begin{itemize}\footnotesize
-  \item \textbf{linearity}: the relationship between the mean of predicted value and the features
-  \item \textbf{homoscedasticity}: The variance of residuals is equal for all features.
-  \item \textbf{independence}: All observations are independent of each other.
-  \item \textbf{normality}: Y is normally distributed for any fixed value of the features
-\end{itemize}
-
-\lz
-
-  \highlight{Implementation} \\
-  \smallskip
-  R: function \code{lm}\\
-  Python: \code{LinearRegression} from package \code{sklearn.linear\_model}, package for advanced statistical parameters \code{statsmodels.api} 
-
-\lz
-
- \highlight{Regularization} \\
- \smallskip
- 
- In practice, we often use regularized models in order to \textbf{prevent overfitting} or perform feature selection. More details will follow in the subsequent chapter. 
-
-
-\end{frame}
-
-% ------------------------------------------------------------------------------
-% REGULARIZED LINEAR MODEL
-% ------------------------------------------------------------------------------
-
-\begin{frame}{Regularized LM -- Functionality}
-
-\footnotesize
-
-\maketag{SUPERVISED}
-\maketag{PARAMETRIC}
-\maketag{WHITE-BOX}
-
-\medskip
-
-\highlight{General idea} ~~
-\begin{itemize}
-
-\item Linear model (LM) can \textbf{overfit} if we operate in high-dimensional space with not that many oberservations.
-
-\item When features are highly correlated, the least-squares estimate becomes highly sensitive to random errors in the observed response, producing a \textbf{large variance in the fit}.
-
-\item If we fit a linear model, we can find a compromise between generalizing the model (simple model, underfitted) and correspond closely to the data (complex model, overfitted).
-
-\end{itemize}
-
-\medskip
-
-\highlight{Hypothesis space} ~~
-$\Hspace = \{ \theta_0 + \thx\ |\ (\theta_0, \thetab) \in \R^{p+1} \} $
-
-\medskip
-% \footnotesize
-% \begin{minipage}{0.5\textwidth}
-\centering
-  \includegraphics[width=0.7\textwidth]{figure/reg_lm_comparision.png}
-% \end{minipage}
-%  \normalsize
-% \begin{minipage}{0.4\textwidth}
-%   \includegraphics[width=0.7\textwidth]{figure/regression_hyperplane.jpg}
-% \end{minipage}
-
-\end{frame}
-
-% ------------------------------------------------------------------------------
-
-\begin{frame}{Regularized LM -- Functionality}
-
-\footnotesize
-
-\highlight{Empirical risk}
-
-\begin{itemize}
-
-\item Therefore, we minimize the empirical risk function $\risket$ \textbf{plus the a complexity measure} $J(\thetab)$:
-  $$
-  \riskrt = \risket + \lambda \cdot J(\thetab). 
-  $$ 
-  
-\item We can use the L2-penalty for the complexity measure (\textbf{ridge regression}) with $J(\thetab) = |\thetab\|_2^2 $. 
-
-\item Alternativly, \textbf{LASSO} (least absolute shrinkage and selection operator) uses the L1-penalty ($J(\thetab) = |\thetab\|_1 $).
-
-\item Whereas both regularization methods shrink the coefficients of the model, LASSO also performs \textbf{feature selection}. 
-
-\item Elastic net as a convex combination of Ridge and LASSO ???
-  
-  
-\end{itemize}
-
-
-
-
-
-\medskip
-
-\highlight{Optimization} ~~
-\begin{itemize}\footnotesize
-  \item for \textbf{Ridge} regression: analytically with $\thetah_{\text{Ridge}} = (\Xmat^T \Xmat  + \lambda \id)^{-1} \Xmat^T\ydat$
-  \item for \textbf{LASSO regression}: e. g. (sub)-gradient descent
-\end{itemize}
-
-\medskip
-
-\highlight{Hyperparameter} \textbf{shrinkage parameter} $\lambda$ [and $\alpha$ for Elastic net??] \\
-
-\medskip
-
-\highlight{Runtime behavior} ~~ $\mathcal{O}(d^2 \cdot n + d^3)$ for $n$ 
-observations and $d$ features 
-
-\end{frame}
-
-% ------------------------------------------------------------------------------
-
-\begin{frame}{Regularized LM -- Pro's \& Con's}
-
-\footnotesize
-
-\textcolor{red}{SAME LIKE LINEAR MODEL?}
-
-\begin{columns}[onlytextwidth]
-  \begin{column}{0.5\textwidth}
-    \highlight{Advantages}
-    \footnotesize
-    \begin{itemize}
-      \positem simple and fast implementation; cheap computational costs
-      \positem intuitive interpretability: mean influence of features on the output and feature importance
-      \positem fits linearly separable data sets very well
-      \positem works well independent of data size
-      \positem basis for many machine learning algorithms
-      \positem prevents \textbf{overfitting}
-
-    \end{itemize}
-  \end{column}
-
-  \begin{column}{0.5\textwidth}
-    \highlight{Disadvantages}
-    \footnotesize
-    \begin{itemize}
-      \negitem not suitable for data based on a non-linear data generating process $\rightarrow$ strong simplification of real-world problems
-
-      \negitem strong assumptions: data is independent (multi-collinearity must be removed and normal distributed residuals ????
-
-      \negitem sensitive to outliers and noisy data
-    \end{itemize}
-  \end{column}
-\end{columns}
-
-\vfill
-
-\small
-
-\conclbox{\textcolor{red}{Simple method with good interpretability for linear problems, but strong assumptions and simplification of real-world problems.}}
-
-\end{frame}
-
-% ------------------------------------------------------------------------------
-
-\begin{frame}{Regularized LM -- Practical hints}
-
-\footnotesize
-
-  \highlight{Choice of regularization parameter  $\lambda$} \\
-  \smallskip
- Choose $\lambda$ with e. g. smallest sum of squared residuals through cross-validation. \\
- In the R package \code{glmnet} \code{lambda.min} is the value of $\lambda$ that gives minimum mean cross-validated error.
- 
- 
-
-\lz
-
-  \highlight{Implementation} \\
-  \smallskip
-  R: package for regularized linear model \code{glmnet}\\
-  Python: \code{LinearRegression} from package \code{sklearn.linear\_model}, package for advanced statistical parameters \code{statsmodels.api}
-
-\end{frame}
-
-% ------------------------------------------------------------------------------
-% SVM
-% ------------------------------------------------------------------------------
-
-\begin{frame}{SVM -- Functionality}
-
-\footnotesize
-
-\maketag{SUPERVISED}
-\maketag{PARAMETRIC}
-\maketag{NON-PARAMETRIC}
-\maketag{WHITE-BOX}
-
-\medskip
-
-\highlight{General idea} ~~
-\begin{itemize}
-
-\item Support vector machines (SVMs) construct separating \textbf{hyperplanes} in a multi-dimenstional space.  
-
-\item The SVM algorithm finds a decision boundary (\textbf{separating hyperplane}) that maximizes the distance (\textbf{margin}) between the closest members (\textbf{support vectors}) of the separate classes. (\textbf{Linear SVM})
-
-\item If the data is not linearly separable, \textbf{kernels} transform the input space into a higher dimensional space. (\textbf{Non-linear SVM})
-
-\end{itemize}
-
-\medskip
-
-% \operatorname{sign}(\mathbf{w} \cdot \Phi(\mathbf{x})+b)
-
-\highlight{Hypothesis space} ~~
-\textcolor{red}{$\Hspace = \{ \operatorname{sign}\sumin \alpha_i \yi k(\xi, \xv)  + \theta_0  |\ (\theta_0, \thetab) \in \R^{p+1} \} $}
-
-\medskip
- \footnotesize
- \begin{minipage}{0.4\textwidth}
-\centering
- \includegraphics[width=0.6\textwidth]{figure/svm_wording.png}
- \end{minipage}
-  \normalsize
- \begin{minipage}{0.5\textwidth}
- \centering
- \includegraphics[width=0.6\textwidth]{figure/svm_kernel.PNG}
-   
- \end{minipage}
-
-\end{frame}
-
-% ------------------------------------------------------------------------------
-
-\begin{frame}{SVM -- Functionality}
-
-\footnotesize
-
-\highlight{Empirical risk}
-
-N
-
-\medskip
-
-\highlight{Optimization} ~~
-XX
-
-\medskip
-
-\highlight{Hyperparameter}
-
-\begin{itemize}
-  \item \textbf{C}: penalization for missclassified data points 
-  \item \textbf{kernel parameters}: depending if and which kernel is used (e. g. degree of the polynomial kernel or width of RBF kernel)
-
-\end{itemize}
-
-\medskip
-
-\highlight{Runtime behavior} ~~ $\mathcal{O}(n^2 \cdot d + n^3)$ for $n$ 
-observations and $d$ features
-
-\end{frame}
-
-% ------------------------------------------------------------------------------
-
-\begin{frame}{SVM -- Pro's \& Con's}
-
-\footnotesize
-
-
-\begin{columns}[onlytextwidth]
-  \begin{column}{0.5\textwidth}
-    \highlight{Advantages}
-    \footnotesize
-    \begin{itemize}
-      \positem can learn non-linear decision boundaries
-      \positem often sparse solution
-      \positem robust against overfitting; especially in high-dimensional space 
-      \positem computational costs are low ????? 
-    \end{itemize}
-  \end{column}
-
-  \begin{column}{0.5\textwidth}
-    \highlight{Disadvantages}
-    \footnotesize
-    \begin{itemize}
-      %\item[$\textbf{\textcolor{gray!80}{-}}$] very memory-intensive
-      \negitem not easy tunable as it is highly important to choose the right kernel
-      \negitem does not scale well to larger data sets
-    \end{itemize}
-  \end{column}
-\end{columns}
-
-\vfill
-
-\small
-
-\conclbox{XX}
-
-\end{frame}
-
-% ------------------------------------------------------------------------------
-
-\begin{frame}{SVM -- Practical hints}
-
-\footnotesize
-
-  \highlight{Kernels} \\
-  \smallskip
- For projecting the input data into another onto a higher dimension, mainly these three types of kernels are used: 
- \begin{itemize}
- 
- \item \textbf{Linear kernel}: the dot product of the given observations
- 
- \item \textbf{Polynomial kernel}: curved lines in the input space
- 
- \item \textbf{Radial basis function (RBF) kernel}: complex regions in the input space (e. g. spirals)
- 
- \end{itemize}
- 
- 
-
-\lz
-
-  \highlight{Implementation} \\
-  \smallskip
-  R: package for regularized linear model \code{XXX}\\
-  Python: \code{XX} from package \code{XXX}, package for XXXX \code{statsmodels.api}
 
 \end{frame}
 
