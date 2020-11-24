@@ -8,7 +8,7 @@ set.seed(123L)
 spiral <- mlbench.spirals(n = 500, sd = 0.1)
 df_spiral <- as.data.frame(spiral)
 
-plot(spiral)
+plot(spiral$x, pch=19, col=c("blue", "orange")[spiral$classes])
 
 task <- TaskClassif$new(id = "spirals_task", backend = df_spiral, 
                         target = "classes")
