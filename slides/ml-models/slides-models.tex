@@ -535,17 +535,29 @@ observations and $p$ features
 \footnotesize
 
 \maketag{SUPERVISED}
-\maketag{|non| PARAMETRIC}
-\maketag{WHITE-BOX}
+\maketag{PARAMETRIC}
+\maketag{BLACK-BOX}
 
 \medskip
 
 \highlight{General idea}
 \begin{itemize}
 
-\item Support vector machines (SVMs) construct separating \textbf{hyperplanes} in a multi-dimenstional space.  
+%\item Support vector machines (SVMs) construct separating \textbf{hyperplanes} in a multi-dimenstional space.  
 
-\item The SVM algorithm finds a decision boundary (\textbf{separating hyperplane}) that maximizes the distance (\textbf{margin}) between the closest members (\textbf{support vectors}) of the separate classes. 
+  \item The support vector machine (SVM) algorithm finds a decision boundary (\textbf{separating hyperplane}) that maximizes the distance (\textbf{margin $\gamma$}) between the closest members (\textbf{support vectors, SV}) of the separate classes. (\textbf{hard margin})
+  
+  %\item It is a \textbf{convex optimization problem} (quadratic programm) which tries to maximise the \enquote{safety margin} where the distance of all data point to the hyperplane should be greater than the margin. 
+  
+  \item In a \textbf{soft-margin SVM} also \enquote{violations} of the margin are allowed $\rightarrow$ not only the margin should be maximized, but also the margin violations minimized. 
+  
+  %\item The parameter $C > 0$ controls this trade-off between the contradictonary goals. 
+  
+  \item There are three different types of training points: \textbf{Non-SVs} which do not influence the hyperplane, \textbf{SVs} which are exactly on the hyperplane and \textbf{margin violators}. 
+  
+  
+  
+  
 
 
 \end{itemize}
@@ -555,19 +567,21 @@ observations and $p$ features
 % \operatorname{sign}(\mathbf{w} \cdot \Phi(\mathbf{x})+b)
 
 \highlight{Hypothesis space} ~~
-\textcolor{red}{$\Hspace = \{ \operatorname{sign}\sumin \alpha_i \yi k(\xi, \xv)  + \theta_0  |\ (\theta_0, \thetab) \in \R^{p+1} \} $}
+\textcolor{red}{$\Hspace = \left\{f: \Xspace \to \R ~|~\fx = \thetab^\top \xv\right\}$}
 
 \medskip
  \footnotesize
- \begin{minipage}{0.4\textwidth}
-\centering
- \includegraphics[width=0.6\textwidth]{figure/svm_wording.png}
+ \begin{minipage}{0.6\textwidth}
+    \centering
+    \includegraphics[width=0.9\textwidth]{figure/svm_motivation_hard_margin.png}
  \end{minipage}
   \normalsize
- \begin{minipage}{0.5\textwidth}
- \centering
- \includegraphics[width=0.6\textwidth]{figure/svm_kernel.PNG}
-   
+  \hfill\vline\hfill
+ \begin{minipage}{0.3\textwidth}
+    \centering
+    %https://docs.google.com/presentation/d/1g7q1hbTNmQeuRWQIM8SF9l6iKWmJyuhyhm3s9QjA0jM/edit?usp=sharing
+%from FCIM 2020/Linear SVM /slides-3-soft-margin (last plot, page8)
+    \includegraphics[width=1.1\textwidth]{figure/svm_wording.png}
  \end{minipage}
 
 \end{frame}
@@ -580,27 +594,31 @@ observations and $p$ features
 
 \highlight{Empirical risk}
 
-N
+Soft-margin SVMs can also be interpreted as \textbf{L2-regularized ERM}: 
+
+$$ \frac{1}{2} \|\thetab\|^2 + C \sumin \Lxyi ;\; \Lyf = \max(1-yf, 0),$$ 
+with $\Lyf$ as the hinge loss, $\|\thetab\| = 1 / \gamma$ and $C$ as cost parameter for margin violation.
 
 \medskip
 
 \highlight{Optimization} ~~
-XX
+As the problem is \textbf{not differentiable}, there are the following solutions: 
+\begin{enumerate}
+\item Use a smoothed loss (squared hinge, huber), then do gradient descent.\\
+  NB: Will not  create a sparse SVM if we do not add extra tricks.
+\item Use \textbf{subgradient} methods.
+\item Do stochastic subgradient descent.\\
+  Pegasos: Primal Estimated sub-GrAdient SOlver for SVM.
+\end{enumerate}
 
 \medskip
 
-\highlight{Hyperparameters}
+\highlight{Hyperparameters} ~~ \textbf{C} : penalization for missclassified data points 
 
-\begin{itemize}
-  \item \textbf{C}: penalization for missclassified data points 
-  \item \textbf{kernel parameters}: depending if and which kernel is used (e. g. degree of the polynomial kernel or width of RBF kernel)
-
-\end{itemize}
 
 \medskip
-
-\highlight{Runtime behavior} ~~ $\mathcal{O}(n^2 \cdot p + n^3)$ for $n$ 
-observations and $p$ features
+%https://www.ijcaonline.org/research/volume128/number3/abdiansah-2015-ijca-906480.pdf
+\highlight{Runtime behavior} ~~ \textcolor{red}{$\mathcal{O}(n^3)$ for $n$ observations} %$\mathcal{O}(n^2 \cdot p + n^3)$ for $n$ observations and $p$ features
 
 \end{frame}
 
@@ -616,10 +634,11 @@ observations and $p$ features
     \highlight{Advantages}
     \footnotesize
     \begin{itemize}
-      \positem can learn non-linear decision boundaries
-      \positem often sparse solution
-      \positem robust against overfitting; especially in high-dimensional space 
-      \positem computational costs are low ????? 
+      \positem \textbf{high accuaracy}
+      \positem \textbf{compact solutions} (often sparse solution)
+      \positem robust against overfitting (\textbf{regularized}); especially in high-dimensional space
+      \positem \textbf{stable} solutions, as the non-SV do not influence the separating hyperplane
+      %\positem \textbf{memory efficient} (only use non-SVs)
     \end{itemize}
   \end{column}
 
@@ -627,9 +646,10 @@ observations and $p$ features
     \highlight{Disadvantages}
     \footnotesize
     \begin{itemize}
-      %\item[$\textbf{\textcolor{gray!80}{-}}$] very memory-intensive
-      \negitem not easy tunable as it is highly important to choose the right kernel
-      \negitem does not scale well to larger data sets
+      \negitem \textbf{costly implementation}; long training times
+      \negitem does not scale well to \textbf{larger data sets} \textbf{??}
+      \negitem only \textbf{linear separation} $\rightarrow$ possible with non-linear SVMs which are explained in the following slides.
+      \negitem \textbf{difficult to interpret}
     \end{itemize}
   \end{column}
 \end{columns}
@@ -638,7 +658,7 @@ observations and $p$ features
 
 \small
 
-\conclbox{XX}
+\conclbox{Very accuarate solution for high-dimensional data that is linear separable}
 
 \end{frame}
 
@@ -648,29 +668,21 @@ observations and $p$ features
 
 \footnotesize
 
-  \highlight{Kernels} \\
-  \smallskip
- For projecting the input data into another onto a higher dimension, mainly these three types of kernels are used: 
- \begin{itemize}
- 
- \item \textbf{Linear kernel}: the dot product of the given observations
- 
- \item \textbf{Polynomial kernel}: curved lines in the input space
- 
- \item \textbf{Radial basis function (RBF) kernel}: complex regions in the input space (e. g. spirals)
- 
- \end{itemize}
- 
- 
+  \highlight{Prepocessing} \\
+  Features must be rescaled before applying SVMs.
+  
+  \medskip
+  
+  \highlight{Tuning} \\
+  The cost parameter $C$ must be tuned, as it has a high infleunce on the resulting separating hyperplane. 
 
-\medskip
+  \medskip
 
   \highlight{Implementation} 
   \begin{itemize}
     \item \textbf{R:} \code{mlr3} learners \code{LearnerClassifSVM} / 
     \code{LearnerRegrSVM}, calling \code{e1071::svm()}
-    \item \textbf{Python:} \code{XX} from package \code{XXX}, package for XXXX 
-    \code{statsmodels.api}
+    \item \textbf{Python:} \code{sklearn.svm.SVC} from package \code{scikit-learn} / package \code{libSVM}
   \end{itemize}
 
 \end{frame}
@@ -689,8 +701,8 @@ observations and $p$ features
 \footnotesize
 
 \maketag{SUPERVISED}
-\maketag{|non| PARAMETRIC}
-\maketag{WHITE-BOX}
+\maketag{NON PARAMETRIC}
+\maketag{BLACK-BOX}
 
 \medskip
 
