@@ -567,7 +567,7 @@ observations and $p$ features
 % \operatorname{sign}(\mathbf{w} \cdot \Phi(\mathbf{x})+b)
 
 \highlight{Hypothesis space} ~~
-\textcolor{red}{$\Hspace = \left\{f: \Xspace \to \R ~|~\fx = \thetab^\top \xv\right\}$}
+$\Hspace = \left\{f: \Xspace \to \R ~|~\fx = \thetab^\top \xv + \theta_0\right\}$
 
 \medskip
  \footnotesize
@@ -634,8 +634,8 @@ As the problem is \textbf{not differentiable}, there are the following solutions
     \highlight{Advantages}
     \footnotesize
     \begin{itemize}
-      \positem \textbf{high accuaracy}
-      \positem \textbf{compact solutions} (often sparse solution)
+      \positem high \textbf{accuaracy}
+      \positem often \textbf{sparse} solution
       \positem robust against overfitting (\textbf{regularized}); especially in high-dimensional space
       \positem \textbf{stable} solutions, as the non-SV do not influence the separating hyperplane
       %\positem \textbf{memory efficient} (only use non-SVs)
@@ -647,9 +647,9 @@ As the problem is \textbf{not differentiable}, there are the following solutions
     \footnotesize
     \begin{itemize}
       \negitem \textbf{costly implementation}; long training times
-      \negitem does not scale well to \textbf{larger data sets} \textbf{??}
+      \negitem does not scale well to \textbf{larger data sets} \textcolor{red}{\textbf{??}}
       \negitem only \textbf{linear separation} $\rightarrow$ possible with non-linear SVMs which are explained in the following slides.
-      \negitem \textbf{difficult to interpret}
+      \negitem poor \textbf{interpretability}
     \end{itemize}
   \end{column}
 \end{columns}
@@ -709,11 +709,8 @@ As the problem is \textbf{not differentiable}, there are the following solutions
 \highlight{General idea}
 \begin{itemize}
 
-\item Support vector machines (SVMs) construct separating \textbf{hyperplanes} in a multi-dimenstional space.  
-
-\item The SVM algorithm finds a decision boundary (\textbf{separating hyperplane}) that maximizes the distance (\textbf{margin}) between the closest members (\textbf{support vectors}) of the separate classes. (\textbf{Linear SVM})
-
-\item If the data is not linearly separable, \textbf{kernels} transform the input space into a higher dimensional space. (\textbf{Non-linear SVM})
+  \item Non-linear SVMs construct a separating hyperplane in a \textbf{higher dimensional dimension}
+  \item \textbf{Kernels = feature map + inner product} $k(\xv, \tilde \xv)$ transform the input space into a higher dimensional space and calculates the inner product. 
 
 \end{itemize}
 
@@ -722,18 +719,23 @@ As the problem is \textbf{not differentiable}, there are the following solutions
 % \operatorname{sign}(\mathbf{w} \cdot \Phi(\mathbf{x})+b)
 
 \highlight{Hypothesis space} ~~
-\textcolor{red}{$\Hspace = \{ \operatorname{sign}\sumin \alpha_i \yi k(\xi, \xv)  + \theta_0  |\ (\theta_0, \thetab) \in \R^{p+1} \} $}
+$\Hspace = \{ \fx = \sumin \alpha_i \yi k(\xi, \xv)  + \theta_0 |\ \theta_0, \alpha_i \in \R \} $
+%\textcolor{red}{$\Hspace = \{ \operatorname{sign}(\sumin \alpha_i \yi k(\xi, \xv)  + \theta_0) |\ (\theta_0, \thetab) \in \R^{p+1} \} $}
 
 \medskip
  \footnotesize
- \begin{minipage}{0.4\textwidth}
+ \begin{minipage}{0.48\textwidth}
 \centering
- \includegraphics[width=0.6\textwidth]{figure/svm_wording.png}
+  % from FCIM 2020 lecture_cim2\2020\09-nonlinear-svm\slides-1-featuregen.Rnw page 3
+  $\phi(x_1, x_2) = (x_1, x_2, x_1^2+x_2^2)$
+ \includegraphics[width=0.9\textwidth]{figure/nonlin_svn_kernel.png}
  \end{minipage}
-  \normalsize
- \begin{minipage}{0.5\textwidth}
+  \footnotesize
+ \begin{minipage}{0.48\textwidth}
  \centering
- \includegraphics[width=0.6\textwidth]{figure/svm_kernel.PNG}
+ % from FCIM 2020 lecture_cim2\2020\09-nonlinear-svm\slides-5-kernel-rbf.Rnw
+ $k(\xv, \tilde \xv) = \exp(-\gamma \|\xv - \tilde \xv\|^2)$
+ \includegraphics[width=0.95\textwidth]{figure/nonlin-svm-rbf.png}
    
  \end{minipage}
 
@@ -747,27 +749,43 @@ As the problem is \textbf{not differentiable}, there are the following solutions
 
 \highlight{Empirical risk}
 
-N
+SVMs can also be interpreted as \textbf{L2-regularized ERM}: 
+
+$$ \frac{1}{2} \|\thetab\|^2 + C \sumin \Lxyi ;\; \Lyf = \max(1-yf, 0),$$ 
+with $\Lyf$ as the hinge loss, $\|\thetab\| = 1 / \gamma$ and $C$ as cost parameter for margin violation.
 
 \medskip
 
 \highlight{Optimization} ~~
-XX
+As the problem is \textbf{not differentiable}, there are the following solutions: 
+\begin{enumerate}
+\item Use a smoothed loss (squared hinge, huber), then do gradient descent.\\
+  NB: Will not  create a sparse SVM if we do not add extra tricks.
+\item Use \textbf{subgradient} methods.
+\item Do stochastic subgradient descent.\\
+  Pegasos: Primal Estimated sub-GrAdient SOlver for SVM.
+\end{enumerate}
 
 \medskip
+
 
 \highlight{Hyperparameters}
 
 \begin{itemize}
   \item \textbf{C}: penalization for missclassified data points 
-  \item \textbf{kernel parameters}: depending if and which kernel is used (e. g. degree of the polynomial kernel or width of RBF kernel)
+  \item \textbf{Kernel parameters}: depending if and which kernel is used (e. g. degree of the polynomial kernel or width of RBF kernel)
 
 \end{itemize}
 
 \medskip
 
-\highlight{Runtime behavior} ~~ $\mathcal{O}(n^2 \cdot p + n^3)$ for $n$ 
-observations and $p$ features
+%Support Vector Machine Solvers by Bottou and Lin: https://leon.bottou.org/publications/pdf/lin-2006.pdf
+%SVM-optimization and steepest-descent line search by List and Simon: https://www.cs.mcgill.ca/~colt2009/papers/021.pdf
+\highlight{Runtime behavior} ~~ $\mathcal{O}(n^2)$ or $ \mathcal{O}(n^3)$ for $n$ observations depending on the kernel
+
+
+%\highlight{Runtime behavior} ~~ $\mathcal{O}(n^2 \cdot p + n^3)$ for $n$ 
+%observations and $p$ features
 
 \end{frame}
 
@@ -783,10 +801,11 @@ observations and $p$ features
     \highlight{Advantages}
     \footnotesize
     \begin{itemize}
-      \positem can learn non-linear decision boundaries
-      \positem often sparse solution
-      \positem robust against overfitting; especially in high-dimensional space 
-      \positem computational costs are low ????? 
+      \positem high \textbf{accuaracy}
+      \positem can learn \textbf{non-linear decision boundaries}
+      \positem often \textbf{sparse} solution
+      \positem robust against overfitting (\textbf{regularized}); especially in high-dimensional space 
+      \positem \textbf{stable} solutions, as the non-SV do not influence the separating hyperplane
     \end{itemize}
   \end{column}
 
@@ -794,9 +813,14 @@ observations and $p$ features
     \highlight{Disadvantages}
     \footnotesize
     \begin{itemize}
+      \negitem \textbf{costly implementation}; long training times
+      \negitem does not scale well to \textbf{larger data sets} \textcolor{red}{\textbf{??}}
+      \negitem only \textbf{linear separation} $\rightarrow$ possible 
+      with non-linear SVMs which are explained in the following slides.
+      \negitem poor \textbf{interpretability}
       %\item[$\textbf{\textcolor{gray!80}{-}}$] very memory-intensive
-      \negitem not easy tunable as it is highly important to choose the right kernel
-      \negitem does not scale well to larger data sets
+      \negitem \textbf{not easy tunable} as it is highly important to choose the right kernel
+      
     \end{itemize}
   \end{column}
 \end{columns}
@@ -805,7 +829,7 @@ observations and $p$ features
 
 \small
 
-\conclbox{XX}
+\conclbox{Non-linear SVMs perform very well for non-linear separable datas, but are hard to interpret and need a lot of tuning.}
 
 \end{frame}
 
@@ -817,7 +841,7 @@ observations and $p$ features
 
   \highlight{Kernels} \\
   \smallskip
- For projecting the input data into another onto a higher dimension, mainly these three types of kernels are used: 
+ Mainly, these three types of kernels are used: 
  \begin{itemize}
  
  \item \textbf{Linear kernel}: the dot product of the given observations
@@ -832,12 +856,20 @@ observations and $p$ features
 
 \medskip
 
-  \highlight{Implementation} 
+ \highlight{Tuning} \\
+ \begin{itemize}
+    \item SVMs are sensitive to its hyperparameters and \textbf{should always be tuned}. 
+    \item For the RBF kernel the the \textbf{RBF sigma heuristic} is used. 
+  \end{itemize}
+  
+
+  \medskip
+
+   \highlight{Implementation} 
   \begin{itemize}
     \item \textbf{R:} \code{mlr3} learners \code{LearnerClassifSVM} / 
     \code{LearnerRegrSVM}, calling \code{e1071::svm()}
-    \item \textbf{Python:} \code{XX} from package \code{XXX}, package for XXXX 
-    \code{statsmodels.api}
+    \item \textbf{Python:} \code{sklearn.svm.SVC} from package \code{scikit-learn} / package \code{libSVM}
   \end{itemize}
 
 \end{frame}
