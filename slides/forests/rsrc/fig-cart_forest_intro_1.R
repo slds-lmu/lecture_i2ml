@@ -56,3 +56,23 @@ plot_learner_prediction(learners[[3]], task) +
 
 ggsave("../figure/cart_forest_intro_3.pdf", width = 8, height = 5.5)
 dev.off()
+
+# PLOT 4 -----------------------------------------------------------------------
+
+# Save plot for ML models slides (different size)
+
+pdf("../../ml-models/figure/rf-10.pdf", width = 8, height = 4)
+
+plot_learner_prediction(learners[[1]], task)  +
+  guides(shape = FALSE, alpha = FALSE)
+
+ggsave("../../ml-models/figure/rf-10.pdf", width = 8, height = 4)
+dev.off()
+
+pdf("../../ml-models/figure/rf-500.pdf", width = 8, height = 4)
+
+plot_learner_prediction(learners[[3]], task) +
+  guides(shape = FALSE, alpha = FALSE)
+
+ggsave("../../ml-models/figure/rf-500.pdf", width = 8, height = 4)
+dev.off()

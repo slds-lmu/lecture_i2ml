@@ -45,3 +45,19 @@ dev.off()
 
 pdf_file = file.path("../figure/cart_treegrow_32.pdf")
 pdf_subset('../figure/cart_treegrow_3.pdf', pages = 2:2, output = pdf_file)
+
+# PLOT 4 -----------------------------------------------------------------------
+
+# Plot for ML model slides (different size)
+
+pdf("../../ml-models/figure/cart-partition.pdf", width = 8, height = 3.5)
+
+draw_cart_on_iris(depth = 3, with_tree_plot = TRUE)
+
+ggsave("../../ml-models/figure/cart-partition.pdf", width = 8, height = 3.5)
+dev.off()
+
+pdf_file = file.path("../../ml-models/figure/cart-tree.pdf")
+pdf_subset("../../ml-models/figure/cart-partition.pdf", pages = 2:2, 
+           output = pdf_file)
+
