@@ -20,18 +20,22 @@ make_circle = function(center, radius, npoints = 100) {
   
 }
 
-plot_pred = function(k) {
+plot_pred = function(k, legend = FALSE) {
   
   learner = lrn("classif.kknn", k = k, predict_type = "prob")
-  plot_learner_prediction(learner, task) +
+  plot_learner_prediction(learner, task) + 
     theme(legend.position = "none")
 
 }
 
 # DATA -------------------------------------------------------------------------
 
+# Reduce iris to sepal variables
+
 iris_knn <- iris %>% 
   select(Sepal.Length, Sepal.Width, Species)
+
+# Select arbitrary observation
 
 index_i <- iris_knn %>%
   rowid_to_column() %>%
@@ -41,12 +45,26 @@ index_i <- iris_knn %>%
 
 x_i <- iris_knn[index_i, ]
 
+# Compute distance matrix
+
 dist_mat <- dist(iris_knn %>% select(-Species), method = "euclidean")
-dist_vec_x_i <- sort(as.matrix(dist_mat)[index_i, ])
+dist_vec_x_i <- as.matrix(dist_mat)[index_i, ]
 
-circle_data <- make_circle(c(x_i[[1]], x_i[[2]]), dist_vec_x_i[50])
+# Determine k-neighborhood
 
-task = tsk("iris")
+my_k <- 50
+
+neighbors_x_i <- order(dist_vec_x_i)[1:my_k]
+
+circle_data <- make_circle(
+  c(x_i[[1]], x_i[[2]]), 
+  dist_vec_x_i[neighbors_x_i[my_k]])
+
+neighborhood_labels <- table(iris_knn[neighbors_x_i, "Species"]) / my_k
+
+# Train kknn learner
+
+task <- tsk("iris")
 task$select(c("Sepal.Width", "Sepal.Length"))
 
 # PLOT -------------------------------------------------------------------------
@@ -54,7 +72,7 @@ task$select(c("Sepal.Width", "Sepal.Length"))
 pdf("../figure/knn-neighborhood.pdf", width = 25, height = 6)
 
 p = ggplot(iris, aes(x = Sepal.Length, y = Sepal.Width, color = Species)) +
-  geom_point(size = 3) + 
+  geom_jitter(size = 2) + 
   geom_point(
     x_i, 
     mapping = aes(Sepal.Length, Sepal.Width), 
@@ -64,7 +82,22 @@ p = p + geom_polygon(
   circle_data, 
   mapping = aes(x = Sepal.Length, y = Sepal.Width),
   alpha = 0.2, 
-  fill = "#619CFF")
+  fill = "gray")
+p = p + annotate(
+  "text",
+  x = 6,
+  y = 4.2,
+  # label = expr(paste(
+  #   "(", pi[set], " = ", !!neighborhood_labels[1], ", ",
+  #   pi[vers], " = ", !!neighborhood_labels[2], ", ",
+  #   pi[virg], " = ", !!neighborhood_labels[3], ")")),
+  label = expr(paste(
+    hat(pi)(x[i]), " = (", 
+    !!neighborhood_labels[1], ", ",
+    !!neighborhood_labels[2], ", ",
+    !!neighborhood_labels[3], 
+    ")")),
+  size = 15)
 p = p + 
   theme(text = element_text(size = 40)) +
   theme(legend.position = "none")
@@ -72,7 +105,7 @@ p = p +
 grid.arrange(
   p,
   plot_pred(1) + theme(text = element_text(size = 40)), 
-  plot_pred(50) + theme(text = element_text(size = 40)),
+  plot_pred(50, legend = TRUE) + theme(text = element_text(size = 40)),
   ncol = 3)
 
 ggsave("../figure/knn-neighborhood.pdf", width = 25, height = 6)
