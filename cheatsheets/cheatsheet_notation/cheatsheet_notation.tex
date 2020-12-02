@@ -101,11 +101,14 @@ $\Dtrain$, $\Dtest \subset \D$ : \textbf{data for training and testing} \\
 (often: $\D = \Dtrain ~ \dot{\cup} ~ \Dtest$)\\
  
 $\xyi \in \Xspace\times \Yspace$ : $i$ -th \textbf{observation} or \textbf{instance} \\
+
+$o_k^{(i)} = \overbrace{(0, 0, ...,}^{k - 1} \textbf{1},  \overbrace{0, 0, ...)}^{n - k}
+\in \setzo^n$ : \textbf{class vector} for $i$-th observation of class $k$ \\
  
 $\P_{xy}$ : \textbf{joint probability distribution on} $\Xspace \times \Yspace$ \\
 
 $\pi_k = \P(y = k)$:\textbf{ prior probability} for class $k$ \\
-In case of binary labels we might abbreviate: $\pi = \P(y = 1)$. \\
+In case of binary labels we might abbreviate: $\pi = \P(y = 1)$.
   
 % $\pdfxy: \Xspace \times \Yspace \rightarrow [0, \infty)$ : \textbf{joint probability density function (pdf)}, often parametrized by $\thetab \in \Theta$ \textcolor{blue}{(then: $\pdfxyt$)} \\
 \end{myblock}
@@ -123,8 +126,7 @@ $\Theta \subset \R^d$ : \textbf{parameter space} \\
 $\thetab = (\theta_1, \theta_2, ..., \theta_d) \in \Theta$: model \textbf{parameters}\\
 Some models may traditionally use different symbols. \\
 
-$\Hspace = \{f : \Xspace \rightarrow \R^g ~|~ f \text{ belongs to a certain functional family}\}$ : \\ \textbf{hypothesis space} -- set of functions defining a specific model class to which we restrict our \\
-learning task 					
+$\Hspace = \{f : \Xspace \rightarrow \R^g ~|~ f \text{ belongs to a certain functional family}\}$ : \\ \textbf{hypothesis space} -- set of functions to which we restrict learning 					
 \end{myblock}\vfill
 % End First Column
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -142,7 +144,7 @@ learning task
 \textbf{Learner }$\inducer: \preimageInducerShort \rightarrow \Hspace$  takes a training set  $\Dtrain \in \allDatasets$  and produces a model $f : \Xspace \rightarrow \R^g$, its hyperparameters set to $\bm{\lambda} \in \bm{\Lambda}$.\\
 For a parametrized model this can be adapted to $\inducer: \preimageInducerShort \rightarrow \Theta$ \\
 
-$\bm{\Lambda} = \bm{\Lambda_1} \times \bm{\Lambda_2} \times ... \times \bm{\Lambda_{\ll}} \subset \R^{\ll}$, where $\bm{\Lambda_j} = (a_j, b_j), \quad a_j, b_j \in \R,$ \\$j = 1, 2, ... , \ll$: \textbf{hyperparameter space} \\
+$\bm{\Lambda} = \bm{\Lambda_1} \times \bm{\Lambda_2} \times ... \times \bm{\Lambda_{\ll}} \subset \R^{\ll}$, where $\bm{\Lambda_j} = (a_j, b_j), \quad a_j, b_j \in \R,$ \\$j = 1, 2, ... , \ll$ : \textbf{hyperparameter space} \\
 
 $\bm{\lambda} = (\lambda_1, \lambda_2, ..., \lambda_{\ll}) \in \bm{\Lambda}$ : \textbf{model hyperparameters} \\
 
@@ -166,12 +168,11 @@ The hat symbol denotes \textbf{learned} functions and parameters.
 %-------------------------------------------------------------------------------
 \begin{myblock}{Loss and Risk}
   $L: \Yspace \times \R^g \to \R$ : \textbf{loss function} \\
- It quantifies the "quality" of the prediction $\fx$ for a single
- observation $\xv$.  \\
+ Quantifies "quality" of prediction $\fx$ (or $\pikx$) for single $\xv$. \\
   
   $\riske:  \Hspace \to \R $ : \textbf{empirical risk } \\
 The ability of a model $f$ to reproduce the association between $\xv$ and $y$ \\
-that is present in the data $\D$ can be measured by the summed loss:\\
+that is present in the data $\D$ can be measured by the summed loss:
   
 \begin{center}
   $\riskef = \sumin \Lxyi$ 
@@ -179,10 +180,10 @@ that is present in the data $\D$ can be measured by the summed loss:\\
 \\
   
 Learning then amounts to \textbf{empirical risk minimization} -- figuring out which model $\fh$ has the smallest summed loss. \\ 
-Since $f$ is usually defined by \textbf{parameters} $\thetab$, this becomes:\\
+Since $f$ is usually defined by \textbf{parameters} $\thetab$, this becomes:
 
 \begin{center}
-$\fh = \argmin_{\thetab \in \Theta} \risket) = \argmin_{\thetab \in \Theta} \sumin \Lxyit,$ \\
+$\thetabh = \argmin_{\thetab \in \Theta} \risket) = \argmin_{\thetab \in \Theta} \sumin \Lxyit,$ \\
 where $\riske : \Theta \to \R.$
 \end{center}
 
@@ -251,7 +252,9 @@ where $\riske : \Theta \to \R.$
   \item $\Lxy = (y-\fx)^2$ or $\Lxy = 0.5 (y-\fx)^2$
   \item Convex and differentiable
   \item Tries to reduce large residuals (loss scaling quadratically)
-  \item $\fxh = \text{mean of } y | \bm{x}$
+  \item \textcolor{orange}{Optimal constant model: $\fxh = \meanin \yi =
+  \bar{y}$}
+  % \item $\fxh = \text{mean of } y | \bm{x}$
 \end{itemize}
 
 \vspace*{1ex}
@@ -264,7 +267,8 @@ where $\riske : \Theta \to \R.$
   \item $\Lxy = |y-\fx|$
   \item Convex and more robust
   \item Non-differentiable for $y = \fx$, optimization becomes harder
-  \item $\fxh = \text{median of } y | \bm{x}$     
+  \item \textcolor{orange}{Optimal constant model: $\fxh = \text{med}(\yi)$}
+  % \item $\fxh = \text{median of } y | \bm{x}$     
 \end{itemize}
   %\includegraphics[width=1.03\columnwidth]{img/reg_loss_2.PNG} 
 \end{myblock}
@@ -272,12 +276,27 @@ where $\riske : \Theta \to \R.$
 %-------------------------------------------------------------------------------
 % Classification Losses 
 %------------------------------------------------------------------------------- 
+
 \begin{myblock}{Classification Losses}
-  \textbf{Log-loss / Bernoulli loss / binomial loss}\\
-  $LL = \meanin \left( - \yi \log(\pixih) - (1-\yi) \log(1-\pixih) \right)$\\
-  
-  \textbf{Multiclass loss} \\
-  $ LL = - \meanin \sumkg o_k^{(i)} \log(\pikxih) $  
+
+% \textbf{0-1 loss} \\
+% $\Lhxy = [y \neq \hx]$ ~ for $\Yspace = \setzo$ \\
+
+\textbf{Brier score (binary case)} \\
+$\Lpixy = (\pix - y)^2$ ~ for $\Yspace = \setzo$ \\
+
+\textbf{Log-loss / Bernoulli loss / binomial loss (binary case)}\\
+For $\Yspace = \setzo$: $\Lpixy = -y \log(\pix) - (1-y) \log(1-\pix)$ \\
+For $\Yspace = \setmp$: $\textcolor{orange}{\Lpixy = }$ \\
+For $\Yspace = \setzo$: $\Lxy = -y \cdot \fx + \log(1 + \exp(\fx))$ \\
+For $\Yspace = \setmp$: $\Lxy = \log(1 + \exp(- y \cdot \fx))$ \\
+
+\textbf{Brier score (multi-class case)} \\
+$\Lpixy =  \sumkg (\pikx - o_k)^2$ \\
+
+\textbf{Log-loss (multi-class case)} \\
+$ \Lpixy =  - \sumkg o_k \log(\pikx)$  \\
+$\textcolor{orange}{\Lxy = }$
 \end{myblock}
 %-------------------------------------------------------------------------------
 % Classification 
@@ -292,7 +311,7 @@ where $\riske : \Theta \to \R.$
 
 \textbf{Classification} usually means to construct $g$ \textbf{discriminant functions}:
   
-$f_1(\xv), \ldots, \fgx$, so that we choose our class as $h(\xv) = \argmax_{k \in \gset} \fkx$ \\
+$f_1(\xv), \ldots, \fgx$, so that we choose our class as \\ $h(\xv) = \argmax_{k \in \gset} \fkx$ \\
 
 \textbf{Linear Classifier:} functions $\fkx$ can be specified as linear functions\\
 
@@ -301,13 +320,13 @@ $f_1(\xv), \ldots, \fgx$, so that we choose our class as $h(\xv) = \argmax_{k \i
 \textbf{Binary classification: }If only 2 classes ($\Yspace = \setzo$ or  $\Yspace = \setmp$) exist, we can use a single discriminant function $\fx = f_{1}(\xv) - f_{2}(\xv)$.  \\
 
 
-\textbf{Generative approach }models $\pdfxyk$, usually by making some assumptions about the structure of these distributions and employs the Bayes theorem: 
-$\pikx = \postk \propto \pdfxyk \pik$. \\ %It allows the computation of \hspace*{1ex}$\pikx$. \\
-\textbf{Examples}: Linear discriminant analysis (LDA), Quadratic discriminant analysis (QDA), Naive Bayes\\
-
-\textbf{Discriminant approach }tries to optimize the discriminant functions directly, usually via empirical risk minimization:\\ 
-$ \fh = \argmin_{f \in \Hspace} \riske(f) = \argmin_{f \in \Hspace} \sumin \Lxyi.$\\
-\textbf{Examples}: Logistic/softmax regression, kNN
+% \textbf{Generative approach }models $\pdfxyk$, usually by making some assumptions about the structure of these distributions and employs the Bayes theorem: 
+% $\pikx = \postk \propto \pdfxyk \pik$. \\ %It allows the computation of \hspace*{1ex}$\pikx$. \\
+% \textbf{Examples}: Linear discriminant analysis (LDA), Quadratic discriminant analysis (QDA), Naive Bayes\\
+% 
+% \textbf{Discriminant approach }tries to optimize the discriminant functions directly, usually via empirical risk minimization:\\ 
+% $ \fh = \argmin_{f \in \Hspace} \riske(f) = \argmin_{f \in \Hspace} \sumin \Lxyi.$\\
+% \textbf{Examples}: Logistic/softmax regression, kNN
 
 
 \end{myblock}
