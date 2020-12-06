@@ -59,7 +59,8 @@ train_data = rbind(train_data, c(0, 0, 0))
 # Plot function  -------------------------------------------------------------------------
 
 
-#last point is the one
+#last point is the point we are looking at
+#function: give the index of the points with the minimal distance of the features
 find_k_nearest_neighbors<- function (train_data, k = 2){
   euc_dist <- function(x1, x2) sqrt(sum((x1 - x2) ^ 2))
   point <- train_data[nrow(train_data),1:2]
@@ -69,7 +70,10 @@ find_k_nearest_neighbors<- function (train_data, k = 2){
   k_smallest_index
 }
 
-
+#plot a 3d plot with all points + a surface for the knn prediction + the knns
+#train_data: data we plot
+# k: number of neighbors 
+# resolution: how we choose the grid of the surface
 plot_knn_3d <- function(train_data, k = 2, resolution_surface = 0.2) {
   #test_data --> predicted surface
   x1seq = seq(-2,2,resolution_surface)
@@ -101,7 +105,7 @@ plot_knn_3d <- function(train_data, k = 2, resolution_surface = 0.2) {
   #surface plot
   # https://pj.freefaculty.org/guides/Rcourse/plot-3d/plots-3d.pdf
   # 
-
+#--------- Color
   #source: http://www.imsbio.co.jp/RGM/R_rdfile?f=graphics/man/persp.Rd&d=R_rel
   z <- prediction_matrix
   nrz <- nrow(z)
@@ -115,11 +119,11 @@ plot_knn_3d <- function(train_data, k = 2, resolution_surface = 0.2) {
   zfacet <- z[-1, -1] + z[-1, -ncz] + z[-nrz, -1] + z[-nrz, -ncz]
   # Recode facet z-values into color indices
   facetcol <- cut(zfacet, nbcol)
+  #--------- Color (end) 
   
   
   
-  
-   
+  #surface plot 
   predicted_surface <- persp(x = x1seq, 
                              y = x2seq, 
                              z = prediction_matrix,
@@ -208,12 +212,14 @@ plot_knn_3d <- function(train_data, k = 2, resolution_surface = 0.2) {
 
 
 # Plot -------------------------------------------------------------------------
-plot_knn_3d (train_data, k = 15, resolution_surface = 0.1)
-plot_knn_3d (train_data, k = 7, resolution_surface = 0.1)
-plot_knn_3d (train_data, k = 3, resolution_surface = 0.1)
+# plot_knn_3d (train_data, k = 15, resolution_surface = 0.1)
+# plot_knn_3d (train_data, k = 7, resolution_surface = 0.1)
+# plot_knn_3d (train_data, k = 3, resolution_surface = 0.1)
 
+# all the ks we want to plot
 all_k <- c(15,7,3)
 
+#save the png's
 for (x in all_k) {
   png(file=sprintf("figure/knn-reg-3d-%i.png", x))
   par(mai=c(0,0,1,0)); par(omi=rep(0,4))
