@@ -77,7 +77,7 @@ knn_plot_surface = function(train_data, k, resolution_surface = 0.1) {
   
   n = nrow(train_data) - 1
   
-  dists = sort(as.matrix(dist(train_data))[n + 1L, ])
+  dists = sort(as.matrix(dist(train_data[,1:2]))[n + 1L, ])
   neighbs = as.numeric(names(dists[1:(k + 1)]))
 
   circle.dat = circleFun(c(0, 0), 2.01 * dists[k + 1], npoints = 100)
