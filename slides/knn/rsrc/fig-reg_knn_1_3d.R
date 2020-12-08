@@ -58,17 +58,17 @@ train_data = rbind(train_data, c(0, 0, 0))
 
 # Plot function  -------------------------------------------------------------------------
 
-
-#last point is the point we are looking at
-#function: give the index of the points with the minimal distance of the features
-find_k_nearest_neighbors<- function (train_data, k = 2){
-  euc_dist <- function(x1, x2) sqrt(sum((x1 - x2) ^ 2))
-  point <- train_data[nrow(train_data),1:2]
-  distance<- apply(train_data[-nrow(train_data),1:2],1, function(x){sqrt(sum((x - point) ^ 2))})
-  
-  k_smallest_index <- as.vector(t(apply(t(as.matrix(distance)), 1, order)[ 1:k, ]))
-  k_smallest_index
-}
+# 
+# #last point is the point we are looking at
+# #function: give the index of the points with the minimal distance of the features
+# find_k_nearest_neighbors<- function (train_data, k = 2){
+#   euc_dist <- function(x1, x2) sqrt(sum((x1 - x2) ^ 2))
+#   point <- train_data[nrow(train_data),1:2]
+#   distance<- apply(train_data[-nrow(train_data),1:2],1, function(x){sqrt(sum((x - point) ^ 2))})
+#   
+#   k_smallest_index <- as.vector(t(apply(t(as.matrix(distance)), 1, order)[ 1:k, ]))
+#   k_smallest_index
+# }
 
 #plot a 3d plot with all points + a surface for the knn prediction + the knns
 #train_data: data we plot
@@ -138,10 +138,11 @@ plot_knn_3d <- function(train_data, k = 2, resolution_surface = 0.2) {
                              box = TRUE,
                              axes = TRUE,
                              ticktype = "detailed",
+                             #main = paste0("k = ",k),
                              #shade = FALSE,
                              border = NA,
-                             col =  color[facetcol],#"grey97",#drapecol(volcano), (libary (shape))
-                             main = paste0("k = ",k)
+                             col =  color[facetcol]#"grey97",#drapecol(volcano), (libary (shape))
+                             
   )
   
   
@@ -170,41 +171,18 @@ plot_knn_3d <- function(train_data, k = 2, resolution_surface = 0.2) {
            col = "darkviolet",
            lty = 5)
   
-  #center point in light green 
-  center_point <- trans3d(train_data$x1[nrow(train_data)], 
-                          train_data$x2[nrow(train_data)], 
-                          train_data$y[nrow(train_data)], 
-                          pmat = predicted_surface)
-  
-  
-  points(center_point, 
-         pch = 19, 
-         col = "green2")
-  
-  #k neighbors 
-  index_knn <- find_k_nearest_neighbors (train_data, k = k)
-  center_point <- trans3d(train_data$x1[index_knn], 
-                          train_data$x2[index_knn], 
-                          train_data$y[index_knn], 
-                          pmat = predicted_surface)
-  
-  
-  points(center_point, 
-         pch = 19, 
-         col = "darkcyan")
-  #segment all 
-  v_ground_knn <- trans3d(train_data$x1[index_knn], 
-                      train_data$x2[index_knn], 
-                      rep(0, k), 
-                      pmat = predicted_surface)
-  
-  
-  segments(train_points$x[index_knn], 
-           train_points$y[index_knn],
-           v_ground_knn$x,
-           v_ground_knn$y, 
-           col = "darkcyan",
-           lty = 5)
+  # #center point in light green 
+  # center_point <- trans3d(train_data$x1[nrow(train_data)], 
+  #                         train_data$x2[nrow(train_data)], 
+  #                         train_data$y[nrow(train_data)], 
+  #                         pmat = predicted_surface)
+  # 
+  # 
+  # points(center_point, 
+  #        pch = 19, 
+  #        col = "green2")
+  # 
+
   
   
 }
@@ -222,7 +200,7 @@ all_k <- c(15,7,3)
 #save the png's
 for (x in all_k) {
   png(file=sprintf("figure/knn-reg-3d-%i.png", x))
-  par(mai=c(0,0,1,0)); par(omi=rep(0,4))
+  par(mai=c(0,0,0,0)); par(omi=rep(0,4))
   plot_knn_3d (train_data, k = x, resolution_surface = 0.1)
   dev.off()
 }
