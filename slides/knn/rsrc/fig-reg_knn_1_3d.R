@@ -141,6 +141,7 @@ plot_knn_3d <- function(train_data, k = 2, resolution_surface = 0.2) {
                              #main = paste0("k = ",k),
                              #shade = FALSE,
                              border = NA,
+                             xaxs = "i",
                              col =  color[facetcol]#"grey97",#drapecol(volcano), (libary (shape))
                              
   )
