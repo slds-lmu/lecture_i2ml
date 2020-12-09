@@ -112,9 +112,10 @@
 %\usetheme{lmu-lecture}
 \newcommand{\titlefigure}{figure/reg_knn_0}
 \newcommand{\learninggoals}{
-\item Understand the basic idea of k-NN
+\item Understand the basic idea of k-NN for regression and classification
+\item Understand that k-NN is a non-parametric, local model
 \item Know different distance measures for different scales of feature variables
-\item Understand that k-NN has no optimization step}
+}
 \usepackage{../../style/lmu-lecture}
 
 
@@ -176,9 +177,9 @@
 \begin{vbframe}{$k$-Nearest-Neighbors}
 
 \begin{itemize}
-\item $k$-\textbf{NN} can be used for regression and classification
-\item It generates predictions $\yh$ for a given $\xv$ by comparing the $k$ observations that are closest to $\xv$
-\item "Closeness" requires a distance or similarity measure (usually: Euclidean).
+\item $k$-\textbf{NN} can be used for regression and classification.
+\item Generates "similar" predictions for $\xv$ as its $k$ closest neighbors.
+\item "Closeness" requires a distance or similarity measure.
 \item The set containing the $k$ closest points $\xi$ to $\xv$ in the training data is called  the $k$-\textbf{neighborhood} $N_k(\xv)$ of $\xv$.
 \end{itemize}
 
@@ -202,13 +203,11 @@
   \begin{itemize}
     \item Most popular distance measure for numerical features: \\
     \textbf{Euclidean distance}
-    \item For two data points $\xv$ and $\tilde{\xv}$ with $p$ features $\in \R$
+    \item For two data points $\xv$ and $\tilde{\xv}$ with $p$ numeric features
       \begin{itemize}
-        \item the Euclidean distance is
-        $d_{Euclidean}\left(\xv, \tilde{\xv}\right) = \sqrt{\sumjp(x_j- \tilde{x}_j)^2}$.
+        \item $d_{Euclidean}\left(\xv, \tilde{\xv}\right) = \sqrt{\sumjp(x_j- \tilde{x}_j)^2}$.
       
-        \item the Manhattan distance is % based on the $L_1$-norm:
-              $d_{manhattan}(\xv, \tilde{\xv}) = \sumjp |x_j - \tilde{x}_j|$.
+        \item $d_{manhattan}(\xv, \tilde{\xv}) = \sumjp |x_j - \tilde{x}_j|$.
       \end{itemize}   
     \end{itemize}
 
@@ -376,17 +375,15 @@ Complex, local model vs smoother, more global model
   \item Hence, its parameters are the training data, there is no real compression of information.
   \item As the number of parameters grows with the number of training points, we call 
     $k$-NN a non-parametric model
-  \item Hence, $k$-NN is not based on any distributional or strong functional assumption,
+  \item $k$-NN is not based on any distributional or functional assumption,
     and can, in theory, model data situations of arbitrary complexity.  
-  \item $k$-NN has no optimization step and is a very local model.  
-  \item We cannot simply use least-squares loss on the training data for picking $k$,
-    because we would always pick $k=1$.  
-  %\item The smaller $k$, the less stable, less smooth and more \enquote{wiggly} the decision
+  % \item $k$-NN has no optimization step and is a very local model.  
+  % \item We cannot simply use least-squares loss on the training data for picking $k$,
+    % because we would always pick $k=1$.  
+  \item The smaller $k$, the less stable, less smooth and more \enquote{wiggly} the decision
     boundary becomes.  
   \item Accuracy of $k$-NN can be severely degraded by the presence of noisy or irrelevant features,
     or when the feature scales are not consistent with their importance.
-  % \item $k$-NN makes no assumptions about the underlying data distribution.
-  %\item In binary classification, we might choose an odd k to avoid ties.
   \end{itemize}
 
 % \framebreak
@@ -406,11 +403,28 @@ Complex, local model vs smoother, more global model
 
 \end{vbframe}
 
-\begin{vbframe}{distance measures - extensions}
-\small
-\textbf{Categorical variables, missing data and mixed space:}
+\begin{vbframe}{Standardization and Weights}
 
-The Gower distance \(d_{gower}(\xv, \tilde{\xv})\) is a weighted mean of \(d_{gower}(x_j,\tilde{x}_j)\):
+
+\begin{itemize}
+  \item \textbf{Standardization:} Features in k-NN are usually standardized or normalized. If two features have values on a very different range, most distances would place a higher importance on the one with larger range, leading to imbalanced influence of that feature.
+  \item \textbf{Importance:} Sometimes one feature has a higher importance (maybe we know this via domain knowledge). It can now manually be upweighted to reflect this.
+
+$$d^{weighted}_{Euclidean}\left(\xv, \tilde{\xv}\right) = \sqrt{\sumjp w_{j}(x_j- \tilde{x}_j)^2}$$
+  
+  \item If these weights would have to be learned in a data-driven manner, 
+    we could only do this by hyperparameter tuning in k-NN. This is inconvenient,
+    and Gaussian processes handle this much better.
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Gower distance}
+\begin{itemize}
+    \item A weighted mean of univ. distances in the j-th feature.
+    \item It can handle categoricals, missings and different ranges.
+\end{itemize}
+
 
 $$d_{gower}(\xv, \tilde{\xv}) = \frac{\sumjp \delta_{x_j,\tilde{x}_j} \cdot d_{gower}(x_j,\tilde{x}_j)}{
 \sumjp \delta_{x_j,\tilde{x}_j}}.
@@ -418,18 +432,16 @@ $$
 
 \begin{itemize}
 
-  \item \(\delta_{x_j,\tilde{x}_j}\) is 0 or 1. It becomes 0
-  when the $j$-th variable is \textbf{\textit{missing}} in at least one of the observations ($\xv$ or $\tilde{\xv}$),
-  or when the variable is asymmetric binary (where \enquote{1} is more
-  important/distinctive than \enquote{0}, e.~g., \enquote{1} means \enquote{color-blind}) and both values are zero. Otherwise it is 1.
-  \item \(d_{gower}(x_j,\tilde{x}_j)\), the $j$-th variable contribution to the
-  total distance, is a distance between the values of $x_j$ and $\tilde{x}_j$.
-  For nominal variables the distance is 0 if both values are equal and 1 otherwise.
-  The contribution of other variables is the absolute difference of
-  both values, divided by the total range of that variable.
+  \item \(\delta_{x_j,\tilde{x}_j}\) is 0 or 1. 
+  It's 0 if $j$-th feature is \emph{missing} in at least one observation,
+  or when the feature is asymmetric binary (where \enquote{1} is more
+  important than \enquote{0}) and both values are zero. Otherwise 1.
+  \item \(d_{gower}(x_j,\tilde{x}_j)\): 
+  For nominals it's 0 if both values are equal and 1 otherwise.
+  For integers and reals it's the absolute difference, divided by range.
 
 \end{itemize}
-\normalsize
+
 \framebreak
 
 Example of Gower distance with data on sex and income:
@@ -485,35 +497,7 @@ $d_{gower}(\xv^{(2)},\xv^{(3)}) = \frac{0 \cdot 1 + 1 \cdot \frac{\left| 2100 - 
 $
 
 \vfill
-
-%For categorical variables distances are often not easily comparible
-%(Is male closer to female than 2340\$ to 2100\$?). Hence, adding weights for variables
-%can be especially useful here.
-\framebreak
-
-\textbf{Weights:}
-\vfill
-
-Weights can be used to address two problems in distance calculation:
-
-\begin{itemize}
-  \item \textbf{Standardization:} Two features may have values with a different scale. Many distance formulas (not Gower) would place a higher importance on a feature with higher values, leading to an imbalance. Assigning a higher weight to the lower-valued feature can combat this effect.
-  \item \textbf{Importance:} Sometimes one feature has a higher importance (e.~g., more recent measurement). Assigning weights according to the importance of the feature can align the distance measure with known feature importance.
-\end{itemize}
-
-\begin{columns}[T]
-  \begin{column}{0.2\textwidth}
-    For example:
-  \end{column}
-  \begin{column}{0.8\textwidth}
-     $d^{weighted}_{Euclidean}\left(\xv, \tilde{\xv}\right) = \sqrt{\sumjp w_{j}(x_j- \tilde{x}_j)^2}$
-  \end{column}
-\end{columns}
-
-\vfill
-
 \end{vbframe}
-
 
 
 
