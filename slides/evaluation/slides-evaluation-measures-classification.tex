@@ -217,8 +217,8 @@ ACC = \meanin [\yi = \yih] \in [0;1]
 & \textbf{setosa}     & 50              & 0                   & 0                  & 0              & 50           \\
 & \textbf{versicolor} & 0               & 46                  & 4                  & 4              & 50           \\
 & \textbf{virginica}  & 0               & 4                   & 46                 & 4              & 50           \\
-& \textbf{error}      & 0               & 4                   & 4                  & 8              &              \\
-& \textbf{$n$}        & 50              & 50                  & 50                 &                & 150          \\ 
+& \textbf{error}      & 0               & 4                   & 4                  & 8              &      -        \\
+& \textbf{$n$}        & 50              & 50                  & 50                 &      -          & 150          \\ 
 
 %& & & & & &\\
 
@@ -254,104 +254,110 @@ We can see class sizes (predicted and true) and where errors occur.
 
 \begin{vbframe}{Labels: Costs}
 We can also assign different costs to different errors via a cost matrix.
-\[
+
+$$
   Costs = \meanin C[\yi, \yih]
-\]
+$$
 
-\underline{Example}:\\ 
+\underline{Example}: \\
+
+Depending on certain features (age, income, profession, ...) a bank wants to decide, if it grants a 10,000 EUR loan.\\ 
+
+\medskip
+
+Predict if a person is solvent (yes / no).\\ 
+Should a bank give her/him a loan?\\
 
 
-
-Predict if person has a ticket (yes / no).\\ 
-Should train conductor check ticket of a person?\\
-
-\begin{columns}
-\begin{column}{0.5\textwidth}
-
-
+\medskip
   \begin{tabular}{ll}
-    \textbf{Costs:} & \\
-    Ticket checking:& 3 EUR\\
-    Fee for fare-dodging:& 40 EUR\\
-    % Ticket price:& 10 EUR\\
+    \textbf{Examplary costs:} & \\
+    Loan cannot be repaid:& 10,000 EUR\\
+    Interest paid for the loan:& 100 EUR\\
+ 
   \end{tabular}
   
-\end{column}
-\begin{column}{0.5\textwidth} 
 
-   \includegraphics[width=0.8\textwidth]{figure_man/conductor.jpg}
-    {\tiny \url{http://www.oslobilder.no/OMU/OB.%C3%9864/2902}}
-   
-\end{column}
-\end{columns}
+
+ \begin{table}[ht]
+ \small
+
+\begin{tabular}{cccc}
+    \hline
+    & &\multicolumn{2}{c}{True classes} \\ 
+    & &\textbf{solvent} & \textbf{not solvent}  \\ 
+ \hline
+    \multirow{2}{*}{\parbox{1cm}{Predicted \\ classes}}& \textbf{solvent}     & 0                 & 10,000\\
+    & \textbf{not solvent} & 100               & 0\\
+    \hline
+\end{tabular}
+
+\end{table}
+ 
+
 
 \end{vbframe}
-
+%--------------------------------------------------------
 
 \begin{vbframe}{Labels: Costs}
 
-Predict if person has a ticket (yes / no).\\ 
-
 \begin{columns}
-\begin{column}{0.3\textwidth} 
-
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
-\begin{verbatim}
-Cost matrix C
-     predicted
-true   no yes
-  no  -37   0
-  yes   3   0
-\end{verbatim}
-\end{kframe} \begin{kframe}\begin{verbatim}
-Confusion matrix
-     predicted
-true  no yes
-  no   7   0
-  yes 93   0
-\end{verbatim}
-\end{kframe} \begin{kframe}\begin{verbatim}
-Confusion matrix * C
-     predicted
-true    no yes
-  no  -259   0
-  yes  279   0
-\end{verbatim}
-\end{kframe}
-\end{knitrout}
-
+\begin{column}{0.5\textwidth} 
+\footnotesize\textbf{Cost matrix}
+ \begin{table}[ht]
+ \tiny
+\begin{center}
+\begin{tabular}{cccc}
+    \hline
+    & &\multicolumn{2}{c}{True classes} \\ 
+    & &\textbf{solvent} & \textbf{not solvent}  \\ 
+ \hline
+    \multirow{2}{*}{\parbox{0.5cm}{Predicted \\ classes}}& \textbf{solvent}     & 0                 & 10,000\\
+    & \textbf{not solvent} & 100               & 0\\
+    \hline
+\end{tabular}
+\end{center}
+\end{table}
 \end{column}
-\begin{column}{0.65\textwidth}
+
+\begin{column}{0.5\textwidth}
+\footnotesize\textbf{Confusion matrix}
+ \begin{table}[ht]
+ \tiny
+\begin{center}
+\begin{tabular}{cccc}
+    \hline
+    & &\multicolumn{2}{c}{True classes} \\ 
+    & &\textbf{solvent} & \textbf{not solvent}  \\ 
+ \hline
+    \multirow{2}{*}{\parbox{0.5cm}{Predicted \\ classes}}& \textbf{solvent}     & 70                 & 3\\
+    & \textbf{not solvent} & 7              & 20\\
+    \hline
+\end{tabular}
+\end{center}
+\end{table}
+\end{column}
+\end{columns}
 
 
-  \begin{tabular}{ll}
-    \textbf{Costs:} & \\
-    Ticket checking:& 3 EUR\\
-    Fee for fare-dodging:& 40 EUR\\
-    % Ticket price:& 10 EUR\\
-  \end{tabular}
-  \lz
-  
-  Our model says that we should not trust anyone and check the tickets of 
-  all passengers.
-  
-  
-  \begin{align*}
-      Costs &= \meanin C[\yi, \yih] \\
-      &= \frac{1}{100} \left( 
+
+ 
+  \begin{itemize}
+    \item If the bank gives every person a credit, the costs are at:
+      \begin{align*}
+      Costs &= \meanin C[\yi, \yih] \\&= 
+      \frac{1}{100} \left( 
       -37 \cdot 7 + 
       0 \cdot 0 + 
       3 \cdot 93 +
       0 \cdot 0 
-      \right) \\
-      &= \frac{20}{100} = 0.2
+      \right) = 0.2
     \end{align*}
-\end{column}
-
-\end{columns}
-
-
+    
+  
+  \end{itemize}
+ 
+ 
 \end{vbframe}
 
 
