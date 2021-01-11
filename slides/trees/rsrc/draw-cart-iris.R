@@ -30,7 +30,7 @@ draw_cart_on_iris = function(depth, with_tree_plot = FALSE) {
     # "palettes" should ensure that colors in tree growing in rectangles and 
     # tree match
     
-    fancyRpartPlot(model, 
+    rattle::fancyRpartPlot(model, 
                    sub = "", 
                    palettes = c("Reds", "Greens", "Blues"))
     

@@ -34,3 +34,12 @@ model = draw_cart_on_iris(depth = 2)
 
 ggsave("../figure/cart_splitcriteria_1.pdf", width = 8, height = 4)
 dev.off()
+
+# PLOT 4 -----------------------------------------------------------------------
+
+pdf("../figure/cart_intro_1_with_tree.pdf", width = 4, height = 2.2)
+
+model = draw_cart_on_iris(depth = 2, with_tree_plot = TRUE)
+
+ggsave("../figure/cart_intro_1_with_tree.pdf", width = 4, height = 2.2)
+dev.off()
