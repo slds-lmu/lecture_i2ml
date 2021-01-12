@@ -9,7 +9,6 @@ task <- TaskClassif$new(id = "spirals", backend = data, target = "classes")
 num_trees <- c(1, 10, 20, 100, 1000)
 
 set.seed(123)
-nt <- 5000
 for (nt in num_trees) {
   print(plot_learner_prediction(
     learner = lrn("classif.ranger", num.trees = nt), 
@@ -17,6 +16,7 @@ for (nt in num_trees) {
   BBmisc::pause()
 }
 
+nt <- 5000
 plot_learner_prediction(
   learner = lrn("classif.ranger", num.trees = nt), 
   task = task)
