@@ -12,7 +12,9 @@ What to bring for class:
 
 # Welcome
 
+- We wait a little longer, please answer question in etherpad.
 - Honored to work with you!
+- **I would like to record this session. Is this ok for everyone?**
 - Teaching this course for the first time. Feedback very welcome.
 - Hope to create an environment that allows learning. 
 	- No judgement 
@@ -38,6 +40,7 @@ What to bring for class:
 - [4 minutes] We will use breakout rooms a lot. Please read
   https://support.zoom.us/hc/en-us/articles/115005769646-Participating-in-Breakout-Rooms
 - Any organizational questions?
+- Go through content website, share screen, explain each item.
 - Cheat sheets available: please bring them each day.
 
 
@@ -48,11 +51,13 @@ What to bring for class:
 	- Stats student, data science student, other
 	- Found the videos pleasant to watch
 	- Found the online quizzes easy
+	- If online: Did you watch the videos?
 - [8 minutes] Talk to your neighbours: introduce yourself, why are you taking
   the course, what were obstacles or questions you had when working through the
 online material? Any questions specifically about content "ml basics" and
 "supervised regression"?
 
+# BREAK 15 minutes
 
 # Diving into the materials
 
@@ -75,30 +80,46 @@ online material? Any questions specifically about content "ml basics" and
 
 ## Supervised Regression
 
-- Questions, discuss with your group (click "Ask for help" button if you have
-  questions or if you are done):
-	- What is the difference between L1 and L2 loss? Can you draw the
-	  difference?
-	- The hypothesis space in linear regression is the set of all linear
-	  functions. What does that mean?
-	- How can you determine the right complexity in polynomial regression?
-	- Let's say, we know the height and the income of 500 people, how would
-	  we proceed to determine the 8-nearest neighbours of a given person?
-Why would we have a problem, if we only knew their hair and eye color? How
-would you estimate the age of a given person using k-NN?
+- Questions, discuss with your group (click "Ask for help"
+  button if you have questions or if you are done):
+	- What is the difference between L1 and L2 loss? Can you
+	  draw the difference?
+	- The hypothesis space in linear regression is the set
+	  of all linear functions. What does that mean?
+	- How can you determine the right complexity in
+	  polynomial regression?
+	- Let's say, we know the height and the income of 500
+	  people, how would we proceed to determine the
+8-nearest neighbours of a given person?  Why would we have a
+problem, if we only knew their hair and eye color? How would you
+estimate the age of a given person using k-NN?
 - Questions? Also check questions in Etherpad. 
 
-
-## Afternoon
-
-- Distribute Exercise sheets
-- Please work on solving the exercises. Alone or in group.
-- If you have a question or are stuck, put the sticky note on the back of your
-  laptop. 
-- The solution is available online. Please try to only look at it once you are
-  done.
+# BREAK until 11
 
 
+# Code demo (Tobi)
+
+# LUNCH BREAK
+
+# Afternoon
+
+- Please work on solving the exercises:
+  https://compstat-lmu.github.io/lecture_i2ml/articles/content.html#exercises  
+- If you have a question or are stuck, ask for help (see button
+  in Zoom) 
+- The solution is available online. Please try to only look at
+  it once you are done.
+- I will distribute you into groups (breakout rooms).
+- If there is any problem with your group, let me know.
+- Each group is responsible to present one solution tomorrow
+  morning: the number of the group = exercise number to present.
+	- 5 groups = 5 exercises
+	- You will be able to use screen sharing for this.
+- I will be available for questions until 3.
+- Don't forget to take breaks!
+- Exercise 6 is a bonus exercise, which we will not discuss
+  tomorrow.
 
 
  
