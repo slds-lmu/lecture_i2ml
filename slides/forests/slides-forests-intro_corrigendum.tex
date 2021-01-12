@@ -110,11 +110,6 @@
 % \input{common.tex}
 
 %\usetheme{lmu-lecture}
-\newcommand{\titlefigure}{figure/cart_forest_fimp_1a}
-\newcommand{\learninggoals}{
-\item Understand that the goal of defining variable importance is to enhance interpretability of the random forest
-\item Know definition of variable importance based on improvement in split criterion
-\item Know definition of variable importance based on permutations of OOB observations}
 \usepackage{../../style/lmu-lecture}
 
 \let\code=\texttt
@@ -132,9 +127,6 @@
 
 
 \begin{document}
-% Introduction to Machine Learning
-% Day 4
-
 % Set style/preamble.Rnw as parent.
 
 
@@ -150,108 +142,62 @@
 
 
 
-% Defines macros and environments
-\input{../../latex-math/ml-trees.tex}
-\input{../../latex-math/ml-bagging.tex}
+%! includes: cart-intro, forests-bagging
 
-%! includes: forests-intro
-
-
-\lecturechapter{Random Forests: Feature Importance}
+\lecturechapter{Random Forest: OOB error estimate}
 \lecture{Introduction to Machine Learning}
-
 \sloppy
 
 
-\begin{vbframe}{Variable Importance}
+
+\begin{vbframe}{OOB error for Random Forests}
+In section 2 / slide 7 we saw the following description about the estimation of the OOB error in random forests:
+\begin{center}
+%https://docs.google.com/presentation/d/16gg9PqtEV_Ii_ZBw0zA9GdUIled-6OVkoqArX1ouTmo/edit#slide=id.g4193e2316a_0_68
+\includegraphics[width=0.65\textwidth]{figure_man/rF_oob_error_new.pdf}
+\end{center}
 
 \begin{itemize}
-  \item Single trees are highly interpretable
-  \item Random forests as ensembles of trees lose this feature
-  \item Contributions of the different features to the model are difficult to evaluate
-  \item Way out: variable importance measures
-  \item Basic idea: by how much would the performance of the random forest decrease if a specific feature were removed or rendered useless?
+  \item OOB size: $P(\text{not drawn}) = \left(1 - \frac{1}{n}\right)^n \ \stackrel{n \to \infty}{\longrightarrow} \ \frac{1}{e} \approx 0.37$
+  \item Predict all observations with trees that didn't use them for training and compute average loss of these predictions
+  \item Similar to 3-CV, can be used for a quick model selection
 \end{itemize}
-
-
-\framebreak
-
-\begin{algorithm}[H]
-  \small
-  \caption*{Measure based on improvement in split criterion}
-  \begin{algorithmic}[0]
-    \For{features $x_j$, $j = 1$ to $p$}
-    \For{tree base learners $\blmh$, $m = 1$ to $M$}
-    \State {Find all nodes $\Np$ in $\blmh$ that use $x_j$.} 
-    \State {Compute improvement in splitting criterion achieved by them.}
-    \State {Add up these improvements.}
-    \EndFor
-    \State {Add up improvements over all trees to get feature importance of $x_j$.}
-    %\State {This is the feature importance for $x_j$.}
-    \EndFor
-  \end{algorithmic}
-\end{algorithm}
-\vskip -2em
-\begin{figure}
-\begin{knitrout}\footnotesize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-
-{\centering \includegraphics[width=0.95\textwidth]{figure/cart_forest_fimp_1} 
-
-}
-
-
-
-\end{knitrout}
-% \caption{Two importance measures on the iris dataset.}
-\end{figure}
-
-\framebreak
-
-\begin{algorithm}[H]
-  \small
-  \caption*{Measure based on permutations of OOB observations}
-  \begin{algorithmic}[0]
-    \State While growing tree, pass down OOB observations and record predictive accuracy.
-    \State Permute OOB observations of $j$-th feature. This destroys the association between the target and the permuted $j$-th feature.
-    \State Pass down the permuted OOB observations and evaluate predictive accuracy again.
-    \State The decrease of performance induced by permutation is averaged over all trees and
-  is used as a measure for the importance of the $j$-th variable.
-  \end{algorithmic}
-\end{algorithm}
-
-% \framebreak
-
-% <<>>=
-% lrn = makeLearner("classif.randomForest", importance = TRUE)
-% mod = train(lrn, iris.task)
-% mlr::getFeatureImportance(mod)
-% @
-
-% \framebreak
-
-% <<echo=TRUE, size="footnotesize", fig.height=4>>=
-% rf = getLearnerModel(mod)
-% randomForest::varImpPlot(rf,
-%   main = "Variable Importance")
-% @
-
-% \framebreak
-
-% <<echo=TRUE, size="footnotesize", fig.height=4>>=
-% v = generateFilterValuesData(iris.task,
-%   method = c("rf.importance", "cforest.importance"))
-% plotFilterValues(v)
-% @
 
 
 \end{vbframe}
 
-\begin{vbframe}{Variable Importance based on permutations of OOB observations}
+
+\begin{vbframe}{OOB error for Random Forests}
+\begin{itemize}
+\item This description is not entirely correct. In the following, we will see the correct description to estimate the OOB error. 
+\item Each observation is passed down every  tree where this observation is an out-of bag-observation. On average, each observation is OOB in 37\% of the trees. 
+\item In the next step (the aggregation step), we average the predictions from all of these trees (in regression setting). In a classification setting, we simply calculate the relative frequencies of all possible classes. 
+\item The result from this aggregation step is then used as the prediction for the respective observation. For each observation, the loss function is evaluated. 
+\item Finally, the generalization error is estimated as the average of the single losses.  
+\end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{OOB error for Random Forests}
+\begin{itemize}
+\item The original description (compare slide 1) implied that the loss function is applied to the predictions from the single trees directly. 
+\item This is not true, the loss function is applied to the aggregation from the single trees. 
+\item We denote the set of trees where observation $i$ is out-of-bag by $OOB_i$ and the predictions for observation $i$ from a single tree $j$ by $\hat y_i^{(j)}$.
+\item In a regression setting, the predicted target value for observation $i$ can easily be derived by $\hat y^{oob}_{i} = \dfrac{1}{|OOB_i|}\sum\limits_{j\in OOB_i} \hat y_i^{(j)}$
+\item The generalization error is then estimated via $$R_{emp}^{oob} = \dfrac 1n \sum_{i=1}^n L(y_i, \hat  y^{oob}_{i})$$
+\end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{Feature importance for Random Forests}
+\begin{itemize}
+\item The same holds true for the description of the variable importance in section 3 / slide 4.
 \begin{center}
 % FIGURE SOURCE: https://docs.google.com/presentation/d/16gg9PqtEV_Ii_ZBw0zA9GdUIled-6OVkoqArX1ouTmo/edit#slide=id.p
-\includegraphics[width = 10.3cm]{figure_man/rF_varImp_permutation_new.pdf}
+\includegraphics[width = 8cm]{figure_man/rF_varImp_permutation_new.pdf}
 \end{center}
+\item Again, (contrary to the schematic description above) it is \textbf{not} true that the loss function is applied to each prediction of the single trees  individually, but is applied to the aggregation of these predictions. 
+\end{itemize}
 \end{vbframe}
 
 \endlecture
