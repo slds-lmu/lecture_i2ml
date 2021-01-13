@@ -1,5 +1,10 @@
 ## Changelog
 
+
+### 01-2021
+- supervised-regression/slides-regression-knn and supervised-classification/slides-classification-knn are deleted and merged into knn/slides-knn
+- tuning splitted into tuning and nested resampling
+
 ### 11-2020
 - Reworked Chapter 1: 
     - Concepts are now in clear, single chunks
