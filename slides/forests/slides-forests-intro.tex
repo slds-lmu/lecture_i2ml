@@ -251,34 +251,42 @@ during training, based on the out-of-bag observations for each tree:
 
 \begin{center}
   % https://docs.google.com/drawings/d/1rxWgtVJEnurCPQ3njgDZ_JWPuQmiMfUttVU7q3Dr3Zs/edit
-  \includegraphics[width=0.6\textwidth]{figure_man/forests-oob-error-corr}
+  \includegraphics[width=0.7\textwidth]{figure_man/forests-oob-error-2}
 \end{center}
 
 \footnotesize
 
 \begin{itemize}
-  \item Let $\text{OOB}^{[m]}$ denote the index set $$\left \{i \in \setn: \xyi 
-  \text{ is OOB for } \blm \right \}$$ of OOB observations in 
-  $\blm$, and let $\hat{y}^{(i)[m]}$ be the prediction for observation $i$ 
-  by $\blm$.
-  \item Compute the OOB prediction for each observation:
+  \item For an unbiased prediction of the generalization error, we exploit the 
+  fact that the $i$-th observation acts as unseen test point for all trees in 
+  which it is OOB. 
+  \item Let $\text{OOB}^{[m]}$ denote the index set 
+  $\left \{i \in \setn | (\xv^{(i)}, \yi) \text{ is OOB for } \blm \right \}$.
+  \item The number of trees for which the $i$-th observation is OOB is then 
+  given by $S_{\text{OOB}}^{(i)} = 
+  \sum_{m = 1}^M \I(i \in \text{OOB}^{[m]})$.
+  \item We can compute the average over predictions $\hat{y}^{(i)[m]}$ from 
+  trees $\blm$ that have observation $i$ in their OOB data to obtain an 
+  ensemble prediction.
+  \item The average loss of these ensemble OOB predictions over all $n$ 
+  observations yields an estimate for the generalization error.
+  \item Compute the ensemble OOB prediction for each observation:
   $$\yih_{\text{OOB}} = \begin{cases}
-  \frac{1}{|\{m \in \{1, \ldots, M\}: i \in 
-  \text{OOB}^{[m]} \}|} \sum_{m = 1}^{M} 
-  \I(i \in \text{OOB}^{[m]}) \cdot \hat{y}^{(i)[m]} \quad \text{in regression,} \\
-  \phantom{x} \\
-  \argmax_{k \in \setg} \sum_{m = 1}^{M} \I(i \in \text{OOB}^{[m]}) \cdot
-   \I(\hat{h}^{(i)[m]} = k) \quad \text{in classification.}
+  \frac{1}{S_{\text{OOB}}^{(i)}} \sum_{m = 1}^{M} 
+  \I(i \in \text{OOB}^{[m]}) \cdot \hat{y}^{(i)[m]} & \text{in regression,} 
+  \\ \phantom{x} \\
+  \argmax_{k \in \setg} 
+  \frac{\sum_{m = 1}^{M} \I(i \in \text{OOB}^{[m]}) \cdot 
+  \I(\hat{h}^{(i)[m]} = k)} {S_{\text{OOB}}^{(i)}} &
+  \text{in classification.}
   \end{cases}$$
   \item Then, take the average of the resulting point-wise losses to estimate 
   the OOB error of the forest:
   $$\widehat{\text{err}}_{\text{OOB}} = \meanin L(\yi, \yih_{\text{OOB}})$$
-  \item OOB size: $P(\text{not drawn}) = \left(1 - \frac{1}{n}\right)^n \ \stackrel{n \to \infty}{\longrightarrow} \ \frac{1}{e} \approx 0.37$
-  \item Similar to 3-CV, can be used for a quick model selection
   \item OOB size: $\P(i \in \text{OOB}^{[m]}) = \left(1 - \frac{1}{n}\right)^n 
   \ \stackrel{n \to \infty}{\longrightarrow} \ \frac{1}{e} \approx 0.37$ for 
   $i \in \setn$. \\
-  $\rightarrow$ Similar to 3-CV, can be used for a quick model selection.
+  \item Similar to 3-CV, can be used for a quick model selection.
 \end{itemize}
 
 
