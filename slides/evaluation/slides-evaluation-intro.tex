@@ -109,11 +109,11 @@
 \input{../../style/common.tex}
 
 %\usetheme{lmu-lecture}
-\newcommand{\titlefigure}{figure_man/eval_fig_title_intro.png}
+\newcommand{\titlefigure}{figure_man/intro-titlefig.jpg}
 \newcommand{\learninggoals}{
 \item Understand the goal of performance estimation
-\item Understand the difference between outer and inner loss
-\item Know the definition of generalization error}
+\item Know the definition of generalization error
+\item Understand the difference between outer and inner loss}
 \usepackage{../../style/lmu-lecture}
 
 \let\code=\texttt
@@ -129,7 +129,6 @@
 \setbeamertemplate{frametitle}{\expandafter\uppercase\expandafter\insertframetitle}
 
 
-
 \begin{document}
 
 
@@ -137,266 +136,170 @@
 % IF YOU MODIFY THIS, PLZ ALSO MODIFY setup.Rmd ACCORDINGLY...
 
 
-
-
-
-
-
-
 % Defines macros and environments
 \input{../../latex-math/basic-math.tex}
 \input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-automl.tex}
 %! includes: basics-learners 
 
 \lecturechapter{Evaluation: Introduction and Remarks}
 \lecture{Introduction to Machine Learning}
 
-% \begin{vbframe}{Goals of performance evaluation}
-% 
-% 
-% \textbf{Model evaluation}\\
-% <<out.width = "0.2\\textwidth", fig.height=5>>=
-% set.seed(31415)
-% 
-% x = 1:5
-% y = 2 + 0.5 * x + rnorm(length(x), 0, 1.5)
-% dat = data.frame(x = x, y = y)
-% model = lm(y ~ x)
-% dat$y_hat <- predict(model)
-% 
-% ggplot(data = dat, aes(x = x, y = y)) +
-%     geom_abline(intercept = coef(model)[1], slope = coef(model)[2]) +
-%     geom_segment(aes(xend = x, yend = y_hat), color = "red") +
-%     geom_point() +
-%     theme_void()
-% @
-%      
-%      
-% 
-% \textbf{Algorithm evaluation}\\
-% \begin{center}
-%     { \Huge \checkmark }
-% \end{center}
-% 
-% 
-% \textbf{Model selection}
-% \begin{center}
-%     \begin{tikzpicture}
-%     \draw [thick] (0,0) rectangle (.5,.5);
-%     \draw [fill=green, thick] (0.5,0) rectangle (1,1);
-%     \draw [thick] (1,0) rectangle (1.5,.75);
-%     \end{tikzpicture}
-% \end{center}
-% 
-% \textbf{Learning curve estimation}
-% <<fig.height=2, fig.width=5, out.width="0.2\\textwidth">>=
-% # rsrc data from rsrc/learning_curve.R
-% load("rsrc/learning_curve.RData")
-% 
-% opt = res.rpart
-% opt$mmce = opt$mmce - mean(opt$mmce) + 0.08
-% 
-% ggplot(data = opt, aes(x = percentage, y = mmce)) + 
-%     geom_line(aes(colour = measure), size = 3) + 
-%     theme_void() + theme(legend.position = "none")
-% @
-%     
-% \end{vbframe}
-% 
-% 
-% 
-% \begin{vbframe}{Goals of performance evaluation}
-% 
-% \begin{itemize}
-%   \item \textbf{Model evaluation:}
-%     Estimate \emph{generalization} error of a model on new (unseen) data, drawn from the same data generating process that training data came from.
-%   \item \textbf{Algorithm evaluation:}
-%     Estimate \emph{generalization} error of a learning algorithm, trained on a data set
-%     of a certain size, on new (unseen) data, all drawn from the same data generating process.
-%   \item \textbf{Model selection:}
-%     Select the best model from a set of potential candidate models (e.g., different model classes, different
-%     hyperparameter settings, different features)
-%   \item \textbf{Learning curve estimation:}
-%     How does the generalization error scale when an algorithm is trained on training sets of different sizes?
-% \end{itemize}
-% 
-% All goals are related, i.e., reliable estimation of (predictive) performance is the foundation for all of them.
-% 
-% \end{vbframe}
+% ------------------------------------------------------------------------------
 
-% \begin{vbframe}{Performance Estimation}
-% \begin{itemize}
-% \item Goal: Estimate performance on new data 
-% \item For now, we start by assuming to have a fixed model, already fitted on some data.
-% \item We also assume to have some reasonable data for testing available. 
-%  \item ML performance evaluation provides clear and simple protocols for reliable model validation. 
-%    These protocols are often much simpler than classical statistical model diagnosis and rely only on few assumptions
-%  \item Most important assumption: Data we use is realistic and i.i.d.  
-% \item ML evaluation is still hard enough and offers LOTS of options to cheat yourself and especially your clients, mistakes can happen on many levels. 
-% \end{itemize}
-% \end{vbframe}
-
-
-\begin{vbframe}{Performance Evaluation}
-\begin{center}
-How well does my model perform...\\
-
-\lz
-
-\begin{tikzpicture}
-    \draw [fill=purple, thick] (0,0) rectangle (.5,.5);
-    \draw [fill=green, thick] (0.5,0) rectangle (1,1);
-    \draw [fill=orange, thick] (1,0) rectangle (1.5,.75);
-\end{tikzpicture}
-
-\lz
-... on data from the same data-generating process?\\
-\lz
-In practice:\\
-\lz
-... on current data (training data)?\\
-... on new data (test data)?\\
-... based on a certain measure/metric?\\
-...
-
-\end{center}
-\end{vbframe}
-
-
-% \begin{vbframe}{Performance Evaluation: Assumption}
-% (for now)
-% \begin{itemize}
-% \item We have a fixed model, already fitted on some data.
-% \item We have appropriate test data. 
-% \item Data is realistic and i.i.d.
-% \end{itemize}
-% \end{vbframe}
-
-
-\begin{vbframe}{Performance Evaluation}
-ML performance evaluation provides clear and simple protocols for reliable model
-validation. 
+\begin{vbframe}{Performance estimation}
 
 \begin{itemize}
-\item Often simpler than classical statistical model diagnosis 
-\item Relies only on few assumptions
-\item Still hard enough and offers \textbf{lots} of options to cheat / make mistakes 
+  \item After training our model, we are naturally interested in its
+  \textbf{performance}.
+  \item We recall what supervised learning is about: 
+  
+  $$\inducer: \preimageInducerShort \rightarrow \Hspace, \quad (\D, \lambdav)
+  \mapsto \fh_{\D, \lambdav}$$
+  \item $\inducer$ minimizes the empirical risk resulting from $\Lyf$.
+  \item This so-called \textbf{inner loss}, however, is only a statistical proxy
+  to what we are really interested in: the \textbf{true expected loss} for 
+  new, unlabeled data.
+  \item After all, we chose our model precisely so it would be loss-minimal 
+  on the data we trained it on, but we cannot hope for it to perform equally 
+  well on general data from $\Pxy$.
 \end{itemize}
-\end{vbframe}
-
-\begin{vbframe}{Performance Measures}
-
-We measure performance using a statistical estimator for the 
-\textbf{generalization error} (GE).
 
 \lz
-$\text{GE} = $ expected loss of a fixed model
-
-\lz
-$\hat{\text{GE}} = $ average loss 
-
-\lz \lz
-
-Example: Mean squared error (L2 loss)
-\[
-\hat{\text{GE}} = MSE = \meanin (\yi - \yih)^2
-\]
+$\rightarrow$ Evaluation based on the inner loss would be 
+\textbf{optimistically biased}.
 
 \end{vbframe}
 
-% \begin{vbframe}{Performance Estimation}
-%  Clearly, we are looking for a statistical estimator - for the generalization error! 
-%  Different levels of randomness are involved: 
-% \begin{itemize}
-%  \item Even if we are evaluating on a fixed test data set, this is only a sample and not full reality. 
-%    The sample can be too small, then our estimator will be of high variance; 
-%    the sample could not be from the distribution of interest, then our estimator will be biased.
-%  \item The same holds true for our model - it was only fitted on a sample. This creates another source of randomness, the training
-%    data sample. This is true, even if the fitting algorithm is deterministic. 
-% \item In ML, many learning algorithms are stochastic: Think random forest, or stochastic gradient descent. This is a third source of randomness.
-% \end{itemize}
-% \end{vbframe}
+% ------------------------------------------------------------------------------
 
-\begin{vbframe}{Measures: Inner vs. Outer Loss}
+\begin{vbframe}{Generalization error}
+
+\begin{itemize}
+  \item The true expected loss for a model $\fh_{\D_n, \lambdav}$, learned on 
+  $\D_n \sim \Pxy$, is measured w.r.t. previously 
+  unseen data $(\xv, y) \sim \Pxy$.
+  \item We refer to this as \textbf{generalization error} or \textbf{outer 
+  loss}:
+  $$\mathrm{GE}(\fh_{\D_n, \lambdav}) := \E_{(\xv, y) \sim \Pxy}\left[ 
+  L\left(y, \fh_{\D_n, \lambdav}(\xv)\right) \right]$$
+  \item The goal of \textbf{performance evaluation} is to measure 
+  $\mathrm{GE}(\fh_{\D_n, \lambdav})$. \\
+  $\rightarrow$ As $\Pxy$ is unknown to us, we can only estimate it.
+\end{itemize}
 
 \begin{center}
-\lz
-Inner loss = loss used in learning\\
-\lz
-Outer loss = loss used in evaluation\\
-= evaluation measure
-\lz
-%% CC-0 https://publicdomainvectors.org/en/free-clipart/Grumpy-student-vector-image/76859.html
-
-\includegraphics[width=0.3\textwidth]{figure_man/student.pdf}\\
+% FIGURE SOURCE: https://docs.google.com/drawings/d/13AH298rMnDL5p0SrBd6VCukC9vg1qyRXGqgMcvuPRc0/edit?usp=sharing
+\includegraphics[width=0.6\textwidth]{figure_man/evaluation-intro-ge.pdf}
 
 \end{center}
 
 \end{vbframe}
 
+% ------------------------------------------------------------------------------
 
+\begin{vbframe}{Inner vs outer loss}
 
-% \begin{vbframe}{Measures: Inner vs. Outer Loss}
-% 
-% \begin{itemize}
-% \item To judge the performance of a model on a given data set, we might want to produce a quantitative 
-% measure of the performance on that set. 
-% \item Usually we define a function that measures the quality of a prediction per observation.
-% \item We then aggregate over the complete set - often by some form of averaging.
-% \end{itemize}
-% 
-% \lz
-% 
-% Don't we already know this? Sounds like loss functions and risk estimation? 
-% It nearly is the same.
-% \end{vbframe}
-
-% \begin{vbframe}{Measures: Inner Loss}
-% \begin{itemize}
-% \item We already covered this, its associated empirical risk is optimized during model fitting
-% \item The keyword above is \textbf{optimization}, some functions are much tamer to handle than others, 
-%   smoothness and differentiability are often required for efficient optimization
-% \item For this reason, we often choose something that's easier to handle numerically
-% \item Another pretty practical reason might be: Our toolkit of choice only implements the optimization of a certain inner loss; 
-%   changing the outer loss to something custom is simple, changing the inner often is not
-% \end{itemize}
-% \end{vbframe}
-% 
-% \begin{vbframe}{Measures: Outer Loss}
-% \begin{itemize}
-% \item Performance measure to assess the model
-% \item Should be carefully considered and selected
-% \item There are no objectively better or worse measures - YOU have to select depending on your application, domain
-%   and what you want
-% \item Except for \enquote{should be reasonable and reflect what I want} there are no huge requirements for an outer measure, it is a function which takes a vector of prediction and a vector of labels and evaluates them
-% \item Think about what will happen after a (wrong) prediction of your model, that should help to design an outer loss
-% \item Yes, in model selection (later), we optimize it, but we use special techniques there anyway that can deal with arbitrary measures 
-% \end{itemize}
-% \end{vbframe}
-
-
-\begin{vbframe}{Measures: Inner vs. Outer Loss}
-\lz
-Optimally: inner loss = outer loss\\[.5em]
-Not always possible:\\ some losses are hard to optimize / no loss is specified directly\\
-
-\lz
-
-\underline{Example}:\\[.5em]
-\begin{tabular}{ll}
-Logistic Regression & $\rightarrow$ minimize binomial loss \\
-kNN & $\rightarrow$ no explicit loss minimization\\
-\end{tabular}
 \begin{itemize}
-  \item When evaluating the models we might be interested in (cost-weighted) classification error 
-  \item Or some of the more advanced measures from ROC analysis like AUC
+  \item Supervised learning thus implies the following dichotomy:
+  \begin{itemize}
+    \item \textbf{Learning}: train $\fh_{\D_n, \lambdav}$ minimizing 
+    \textit{inner} loss
+    \item \textbf{Evaluation}: evaluate $\fh_{\D_n, \lambdav}$ estimating
+    \textit{outer} loss
+  \end{itemize}
+  \item Beyond evaluating a single learner, the outer loss lends itself to
+  comparing different types of learners, or learners with varying hyperparameter
+  configurations $\lambdav$.
 \end{itemize}
 
-% Nowadays, one can also optimize many of the harder losses directly, but this is less standard, less
-% often implemented and we will not cover this here.
+\lz
+
+\begin{itemize}
+  \item Ideally, we have \textbf{inner loss = outer loss}.
+  \item This is not always possible -- sometimes we use losses that are 
+  hard to optimize or do not even specify one directly, as in:
+  \begin{itemize}
+    \item Logistic regression: minimization of binomial loss
+    \item k-NN: no explicit loss minimization
+  \end{itemize}
+  \item On the other hand, there are some special metrics for evaluation,
+  such as those derived from ROC curves.
+\end{itemize}
 
 \end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Inner vs outer loss}
+
+\small
+
+\textbf{Example:} logistic regression
+
+\begin{itemize}
+  \item An intuitive choice for the loss in logistic regression would be to
+  evaluate the share of incorrect predictions.
+  \item This leads to the \textbf{mislassification error rate (MCE)}, computing
+  the mean over pointwise \textbf{0-1 loss}.
+\end{itemize}
+
+\lz
+
+\begin{minipage}{0.6\textwidth}
+  \begin{itemize}
+    \item 0-1 loss simply assigns a loss of 1 for incorrect predictions and 0
+    otherwise: $$\Lhxy = [y - \hx]$$
+  \end{itemize}
+\end{minipage}%
+\begin{minipage}{0.4\textwidth}
+  \includegraphics[width=0.8\textwidth]{figure/zero-one-loss}
+\end{minipage}
+
+\lz
+
+\begin{itemize}
+  \item Problem: 0-1 loss is not differentiable (not continuous even). \\
+  $\rightarrow$ This is why we use binomial loss as \textbf{inner} loss 
+  instead.
+  \item For evaluation, differentiability is not required. \\
+  $\rightarrow$ We may use 0-1 as \textbf{outer} loss and evaluate our 
+  learner on its MCE. 
+\end{itemize}
+
+\normalsize
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Training and test data}
+
+\begin{itemize}
+  \item For reliable estimates of $\mathrm{GE}(\fh_{\D_n, \lambdav})$ we need 
+  \textbf{test data} that are independent of the data we trained our model on.
+  \item Such test sets are not always available, but we will learn about 
+  techniques of \textbf{resampling} that allow us to carve out test sets from 
+  the data at hand.
+\end{itemize}
+
+\begin{center}
+  % FIGURE SOURCE: https://docs.google.com/presentation/d/1CDxKPNn2J7oZQOY62mlXS-s4Bu0IUiw57cjfCXOpzDk/edit#slide=id.p
+  \includegraphics[width=0.4\textwidth]{figure_man/train-test-data.jpg}
+\end{center}
+
+\begin{itemize}
+  \item Note that this paradigm is somewhat different from traditional 
+  statistical model diagnosis where models are judged by their goodness-of-fit 
+  rather than their generalization ability.
+  % \item The goodness-of-fit measures employed there (such as $R^2$ or 
+  % information criteria) are rooted in regression modeling and are based, in a
+  % broad sense, on the inner loss.
+\end{itemize}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
 
 \endlecture
-
 \end{document}
