@@ -273,23 +273,31 @@ during training, based on the out-of-bag observations for each tree:
   \item Compute the ensemble OOB prediction for each observation:
   $$\yih_{\text{OOB}} = \begin{cases}
   \frac{1}{S_{\text{OOB}}^{(i)}} \sum_{m = 1}^{M} 
-  \I(i \in \text{OOB}^{[m]}) \cdot \hat{y}^{(i)[m]} & \text{in regression,} 
+  \I(i \in \text{OOB}^{[m]}) \cdot \hat{y}^{(i)[m]}
+  & \text{in regression,} 
   \\ \phantom{x} \\
-  \argmax_{k \in \setg} 
-  \frac{\sum_{m = 1}^{M} \I(i \in \text{OOB}^{[m]}) \cdot 
-  \I(\hat{h}^{(i)[m]} = k)} {S_{\text{OOB}}^{(i)}} &
+  \left[
+  \frac{1}{S_{\text{OOB}}^{(i)}} \sum_{m = 1}^{M} \I(i \in \text{OOB}^{[m]}) 
+  \cdot \I(\hat{h}^{(i)[m]} = k) \right]_{k \in \setg} &
   \text{in classification.}
   \end{cases}$$
-  \item Then, take the average of the resulting point-wise losses to estimate 
-  the OOB error of the forest:
+  \item Note that the above formula yields a scalar regression and 
+  a $g$-valued probability vector in classification (with a 
+  slight abuse of notion, we might also predict a one-hot encoded class label in 
+  the latter case).
+  \item E.g., assume a classification task with $g = 3$ classes where 
+  observation $i$ is OOB in $S_{\text{OOB}}^{(i)} = 10$ trees. If classes 1 to 
+  3 are predicted 4, 4 and 2 times, respectively, we have 
+  $\yih_{\text{OOB}} = (0.4, 0.4, 0.2)$.
+  \item Eventually, take the average of the resulting point-wise losses to 
+  estimate the OOB error of the forest:
   $$\widehat{\text{err}}_{\text{OOB}} = \meanin L(\yi, \yih_{\text{OOB}})$$
-  \item Note that the use of class labels commands the use of 0-1 loss in 
-  classification (alternative formulations for other losses are possible).
   \item OOB size: $\P(i \in \text{OOB}^{[m]}) = \left(1 - \frac{1}{n}\right)^n 
   \ \stackrel{n \to \infty}{\longrightarrow} \ \frac{1}{e} \approx 0.37$ for 
   $i \in \setn$.
   \item Similar to 3-CV, can be used for a quick model selection.
 \end{itemize}
+
 
 
 \end{vbframe}
