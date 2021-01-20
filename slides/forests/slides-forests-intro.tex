@@ -207,8 +207,6 @@ Modification of bagging for trees proposed by Breiman (2001):
 
 }
 
-
-
 \end{knitrout}
 \begin{knitrout}\scriptsize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
@@ -216,8 +214,6 @@ Modification of bagging for trees proposed by Breiman (2001):
 {\centering \includegraphics[width=0.95\textwidth]{figure/cart_forest_intro_2} 
 
 }
-
-
 
 \end{knitrout}
 \begin{knitrout}\scriptsize
@@ -227,14 +223,14 @@ Modification of bagging for trees proposed by Breiman (2001):
 
 }
 
-
-
 \end{knitrout}
 \end{vbframe}
 
 \begin{vbframe}{Out-of-Bag Error Estimate}
-With the RF it is possible to obtain unbiased estimates of the generalization error directly
-during training, based on the out-of-bag observations for each tree:
+
+With the RF it is possible to obtain unbiased estimates of the generalization 
+error directly during training, based on the out-of-bag observations for each 
+tree:
 
 \begin{knitrout}\scriptsize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
@@ -242,17 +238,13 @@ during training, based on the out-of-bag observations for each tree:
 {\centering \includegraphics[width=0.95\textwidth]{figure/cart_forest_intro_4} 
 
 }
-
-
-
 \end{knitrout}
 
-\framebreak
+\end{vbframe}
 
-\begin{center}
-  % https://docs.google.com/drawings/d/1rxWgtVJEnurCPQ3njgDZ_JWPuQmiMfUttVU7q3Dr3Zs/edit
-  \includegraphics[width=0.7\textwidth]{figure_man/forests-oob-error-2}
-\end{center}
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Out-of-Bag Predictions}
 
 \footnotesize
 
@@ -265,86 +257,93 @@ during training, based on the out-of-bag observations for each tree:
   \item The number of trees for which the $i$-th observation is OOB is then 
   given by $S_{\text{OOB}}^{(i)} = 
   \sum_{m = 1}^M \I(i \in \text{OOB}^{[m]})$.
-  \item We can compute the average over predictions $\hat{y}^{(i)[m]}$ from 
-  trees $\blm$ that have observation $i$ in their OOB data to obtain an 
-  ensemble prediction.
-  \item The average loss of these ensemble OOB predictions over all $n$ 
-  observations yields an estimate for the generalization error.
+  \item We can compute the ensemble OOB prediction for each observation as:
+  $$\yih_{\text{OOB}} = \begin{cases}
+  \frac{1}{S_{\text{OOB}}^{(i)}} \sum_{m = 1}^{M}
+  \I(i \in \text{OOB}^{[m]}) \cdot \hat{y}^{(i)[m]}
+  & \text{in regression,} \\
+  \phantom{x} \\
+  \left[
+  \frac{1}{S_{\text{OOB}}^{(i)}} \sum_{m = 1}^{M} \I(i \in \text{OOB}^{[m]})
+  \cdot \I(\hat{h}^{(i)[m]} = k) \right]_{k \in \setg} &
+  \text{in classification.}
+  \end{cases}$$
 \end{itemize}
-Compute the ensemble OOB prediction for each observation:
-$$\yih_{\text{OOB}} = \begin{cases}
-\frac{1}{S_{\text{OOB}}^{(i)}} \sum_{m = 1}^{M} 
-\I(i \in \text{OOB}^{[m]}) \cdot \hat{y}^{(i)[m]}
-& \text{in regression,} \\ 
-\phantom{x} \\
-\left[
-\frac{1}{S_{\text{OOB}}^{(i)}} \sum_{m = 1}^{M} \I(i \in \text{OOB}^{[m]}) 
-\cdot \I(\hat{h}^{(i)[m]} = k) \right]_{k \in \setg} &
-\text{in classification.}
-\end{cases}$$
+
+\vspace{0.3cm}
+
+\begin{minipage}[b]{0.19\textwidth}
+  \tiny
+  $\textcolor{orange}{\I(i \in \text{OOB}^{[1]}) = 1}$
+\end{minipage}
+\begin{minipage}[b]{0.19\textwidth}
+  \tiny
+  $\textcolor{orange}{\I(i \in \text{OOB}^{[2]}) = 0}$
+\end{minipage}
+\begin{minipage}[b]{0.19\textwidth}
+  \tiny
+  $\textcolor{orange}{\I(i \in \text{OOB}^{[3]}) = 1}$
+\end{minipage}
+\begin{minipage}{0.7\textwidth}
+  % https://docs.google.com/drawings/d/1Lfc7lRDgtrkwHDRlJahDNYtOoQ7biBJQkGGTjMDkeaM/edit
+  \includegraphics[width = 0.95\textwidth]{figure_man/forests-oob-pred.jpg}
+\end{minipage}%
+\begin{minipage}{0.3\textwidth}
+  \tiny
+  $\yih_{\text{OOB}} = $ \\ 
+  $= \frac{1}{\textcolor{orange}{S_{\text{OOB}}^{(i)}}} 
+  \sum_{m} \I(i \in \text{OOB}^{[m]}) \textcolor{blue}{\hat{y}^{(i)[m]}}$ \\
+  $= \frac{1}{\textcolor{orange}{2}} (\textcolor{blue}{5 + 8}) = 6.5$
+\end{minipage}
+\vspace{-0.2cm}
+\begin{minipage}[b]{0.19\textwidth}
+  \tiny
+  $\textcolor{blue}{\hat{y}^{(i)[1]} = 5}$
+\end{minipage}
+\begin{minipage}[b]{0.19\textwidth}
+  \tiny
+  \phantom{foo}
+\end{minipage}
+\begin{minipage}[b]{0.19\textwidth}
+  \tiny
+  $\textcolor{blue}{\hat{y}^{(i)[1]} = 8}$
+\end{minipage}
+
+\vspace{0.2cm}
+\tiny
+% $\yih_{\text{OOB}} =  \frac{1}{\textcolor{orange}{S_{\text{OOB}}^{(i)}}} 
+% \sum_{m} \I(i \in \text{OOB}^{[m]}) \textcolor{blue}{\hat{y}^{(i)[m]}}
+% = \frac{1}{\textcolor{orange}{2}} (\textcolor{blue}{5 + 8}) = 6.5$
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Out-of-Bag Error}
+
+% \begin{center}
+%   % https://docs.google.com/drawings/d/1rxWgtVJEnurCPQ3njgDZ_JWPuQmiMfUttVU7q3Dr3Zs/edit
+%   \includegraphics[width=0.7\textwidth]{figure_man/forests-oob-error-2}
+% \end{center}
+
+\footnotesize
+
 \begin{itemize}
-  \footnotesize
-  \item This yields a scalar in regression and 
-  a $g$-valued vector in classification.
-  \item E.g., assume a classification task with $g = 3$ classes where 
-  observation $i$ is OOB in $S_{\text{OOB}}^{(i)} = 10$ trees. If classes 1 to 
-  3 are predicted 4, 4 and 2 times, respectively, we have 
-  $\yih_{\text{OOB}} = (0.4, 0.4, 0.2)$.
-  \item Eventually, take the average of the resulting point-wise losses to 
+  \item Note that the ensemble OOB predictions $\yih_{\text{OOB}}$ are scalars 
+  in regression and $g$-valued probability vectors in classification.
+  % \item As an example for the latter case, assume a classification task with 
+  % $g = 3$ classes where observation $i$ is OOB in $S_{\text{OOB}}^{(i)} = 10$ 
+  % trees. If classes 1 to 3 are predicted 4, 4 and 2 times, respectively, we have 
+  % $\yih_{\text{OOB}} = (0.4, 0.4, 0.2)$.
+  \item Now we take the average of the resulting point-wise losses to 
   estimate the OOB error of the forest:
   $$\widehat{\text{err}}_{\text{OOB}} = \meanin L(\yi, \yih_{\text{OOB}})$$
-  \item OOB size: $\P(i \in \text{OOB}^{[m]}) = \left(1 - \frac{1}{n}\right)^n 
-  \ \stackrel{n \to \infty}{\longrightarrow} \ \frac{1}{e} \approx 0.37$ for 
+  \item Computing the probability of $i$ being OOB in the $m$-th tree,
+  we can see that the OOB error estimation is actually akin to 3-fold CV:
+  $$\P(i \in \text{OOB}^{[m]}) = \left(1 - \frac{1}{n}\right)^n 
+  \ \stackrel{n \to \infty}{\longrightarrow} \ \frac{1}{e} \approx 0.37$$ for 
   $i \in \setn$.
-  \item Similar to 3-CV, can be used for a quick model selection.
 \end{itemize}
-
-% \begin{itemize}
-%   \item For an estimation of the generalization error, we exploit the 
-%   fact that the $i$-th observation acts as unseen test point for all trees in 
-%   which it is OOB. 
-%   \item Let $\text{OOB}^{[m]}$ denote the index set 
-%   $\left \{i \in \setn | (\xv^{(i)}, \yi) \text{ is OOB for } \blm \right \}$.
-%   \item The number of trees for which the $i$-th observation is OOB is then 
-%   given by $S_{\text{OOB}}^{(i)} = 
-%   \sum_{m = 1}^M \I(i \in \text{OOB}^{[m]})$.
-%   \item We can compute the average over predictions $\hat{y}^{(i)[m]}$ from 
-%   trees $\blm$ that have observation $i$ in their OOB data to obtain an 
-%   ensemble prediction.
-%   \item The average loss of these ensemble OOB predictions over all $n$ 
-%   observations yields an estimate for the generalization error.
-%   \item Compute the ensemble OOB prediction for each observation:
-%   $$\yih_{\text{OOB}} = \begin{cases}
-%   \frac{1}{S_{\text{OOB}}^{(i)}} \sum_{m = 1}^{M} 
-%   \I(i \in \text{OOB}^{[m]}) \cdot \hat{y}^{(i)[m]}
-%   & \text{in regression,} 
-%   \\ \phantom{x} \\
-%   \left[
-%   \frac{1}{S_{\text{OOB}}^{(i)}} \sum_{m = 1}^{M} \I(i \in \text{OOB}^{[m]}) 
-%   \cdot \I(\hat{h}^{(i)[m]} = k) \right]_{k \in \setg} &
-%   \text{in classification.}
-%   \end{cases}$$
-%   \begin{itemize}
-%     \footnotesize
-%     \item Note that the above formula yields a scalar regression and 
-%     a $g$-valued probability vector in classification (with a 
-%     slight abuse of notion, we might also predict a one-hot encoded class label 
-%     in the latter case).
-%     \item E.g., assume a classification task with $g = 3$ classes where 
-%     observation $i$ is OOB in $S_{\text{OOB}}^{(i)} = 10$ trees. If classes 1 to 
-%     3 are predicted 4, 4 and 2 times, respectively, we have 
-%     $\yih_{\text{OOB}} = (0.4, 0.4, 0.2)$.
-%   \end{itemize}
-%   \item Eventually, take the average of the resulting point-wise losses to 
-%   estimate the OOB error of the forest:
-%   $$\widehat{\text{err}}_{\text{OOB}} = \meanin L(\yi, \yih_{\text{OOB}})$$
-%   \item OOB size: $\P(i \in \text{OOB}^{[m]}) = \left(1 - \frac{1}{n}\right)^n 
-%   \ \stackrel{n \to \infty}{\longrightarrow} \ \frac{1}{e} \approx 0.37$ for 
-%   $i \in \setn$.
-%   \item Similar to 3-CV, can be used for a quick model selection.
-% \end{itemize}
-
-
 
 \end{vbframe}
 
