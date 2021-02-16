@@ -22,5 +22,7 @@ texclean:
 	rm -rf *.nav
 	rm -rf *.snm
 	rm -rf *.vrb
+	rm -rf *.fls
+	rm -rf *.fdb_latexmk
 	rm -rf *.synctex.gz
 	rm -rf *-concordance.tex
