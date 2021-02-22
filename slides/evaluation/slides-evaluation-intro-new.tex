@@ -215,8 +215,7 @@ $\rightarrow$ Evaluation based on the inner loss would be
 \begin{vbframe}{Set-based performance metrics}
 
 \begin{itemize}
-  \item For computation of the outer loss, we introduce a 
-  \textbf{set-based metric} $\rho$.
+  \item For the outer loss, we introduce a \textbf{set-based metric} $\rho$.
   \item This allows us to use outer losses that are defined on the entire test 
   set rather than point-wise (e.g., the AUC), and potentially differ from the 
   inner loss.
@@ -238,11 +237,11 @@ $\rightarrow$ Evaluation based on the inner loss would be
   \item To ease notation, we will represent our train and test sets by index 
   vectors $J_\mathrm{train} \in \nset^{m_\mathrm{train}}$ and $J_\mathrm{test} 
   \in \nset^{m_\mathrm{test}}$.
-  \item With this, we can denote the corresponding vector of labels as
-  $\yv_J = \left(y^{(J^{(1)})},\dots, y^{(J^{(m)})} \right) \in \Yspace^m$ and 
-  the matrix of prediction scores as
-  $\bm{F}_{J,f} = \left( f(\xv^{(J^{(1)})}), \dots, f(\xv^{(J^{(m)})}) \right)
-  \in \R^{m\times g}$.
+  % \item With this, we can denote the corresponding vector of labels as
+  % $\yv_J = \left(y^{(J^{(1)})},\dots, y^{(J^{(m)})} \right) \in \Yspace^m$ and 
+  % the matrix of prediction scores as
+  % $\bm{F}_{J,f} = \left( f(\xv^{(J^{(1)})}), \dots, f(\xv^{(J^{(m)})}) \right)
+  % \in \R^{m\times g}$.
   \item This allows us to define the generalization error as:
   $$\mathrm{GE}(\inducer, \lambdav, m_{\mathrm{train}}, \rho) := 
   \lim_{m_{\mathrm{test}} \rightarrow \infty} \E \left[ \rho \left(
@@ -250,15 +249,87 @@ $\rightarrow$ Evaluation based on the inner loss would be
   \right)\right].$$
   \item The expectation is taken w.r.t the unkown distribution $\Pxy$ from which 
   both $\Dtrain$ and $\Dtest$ are sampled independently.
-  % \item In practice, we therefore estimate the generalization error based on our 
-  % train-test split: 
-  % $$\widehat{\mathrm{GE}}_{J_\mathrm{train}, J_\mathrm{test}}(\inducer, 
-  % \lambdav, |J_\mathrm{train}|, \rho) = 
-  % \rho(\yv_{J_\mathrm{test}}, \bm{F}_{J_\mathrm{test}, \fh}) 
-  % \textrm{ with } \fh = \inducer(\Dtrain, \lambdav).$$
+  \item We must therefore estimate the \textbf{generalization error} based on 
+  our train-test split:
+  $$\widehat{\mathrm{GE}}_{J_\mathrm{train}, J_\mathrm{test}}(\inducer,
+  \lambdav, m_\mathrm{train}, \rho) =
+  \rho(\yv_{J_\mathrm{test}}, \bm{F}_{J_\mathrm{test}, 
+  \fh_{\mathcal{D}_{\mathrm{train}}, \lambdav}}).$$
+  \item In practice, we will not rely on a single split, but use 
+  \textbf{resampling} to repeatedly carve out test observations from our data.
 \end{itemize}
 
 \end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Inner vs outer loss}
+
+\begin{itemize}
+  \item Supervised learning thus implies the following dichotomy:
+  \begin{itemize}
+    \item \textbf{Learning}: minimize inner loss
+    \item \textbf{Evaluation}: estimate outer loss
+  \end{itemize}
+\item Beyond evaluating a single learner, the outer loss lends itself to
+comparing different types of learners, or learners with varying hyperparameter
+configurations $\lambdav$.
+% \end{itemize}
+% 
+% \lz
+% 
+% \begin{itemize}
+  \item Ideally, we have \textbf{inner loss = outer loss}.
+  \item This is not always possible -- some special (set-based) metrics for 
+  evaluation, such as the AUC, are not applicable as inner loss.
+  \item On the other hand, we sometimes use losses that are 
+  hard to optimize or do not even specify one directly.
+  % , as in:
+  % \begin{itemize}
+  %   \item Logistic regression: minimization of binomial loss
+  %   \item k-NN: no explicit loss minimization
+  % \end{itemize}
+\end{itemize}
+
+\framebreak
+
+% \small
+
+\textbf{Example:} logistic regression
+
+\begin{itemize}
+  \item An intuitive choice would be the share of incorrect predictions.
+  \item This leads to the \textbf{mislassification error rate (MCE)}, computing
+  the mean over pointwise \textbf{0-1 loss}.
+\end{itemize}
+
+\lz
+
+\begin{minipage}{0.6\textwidth}
+  \begin{itemize}
+    \item 0-1 loss simply assigns a loss of 1 for incorrect predictions and 0
+    otherwise: $$\Lhxy = [y - \hx]$$
+  \end{itemize}
+\end{minipage}%
+\begin{minipage}{0.4\textwidth}
+  \includegraphics[width=0.8\textwidth]{figure/zero-one-loss}
+\end{minipage}
+
+\lz
+
+\begin{itemize}
+  \item Problem: 0-1 loss is not differentiable (not continuous even). \\
+  $\rightarrow$ This is why we use binomial loss as \textbf{inner} loss 
+  instead.
+  \item For evaluation, differentiability is not required. \\
+  $\rightarrow$ We may evaluate our learner on its MCE. 
+\end{itemize}
+
+\normalsize
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
 
 \endlecture
 \end{document}
