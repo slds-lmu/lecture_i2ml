@@ -161,14 +161,14 @@
 
 
 \begin{vbframe}{Labels: ROC Space}
-% \begin{itemize}
-% \item We characterize a classifier by its TPR and FPR values and plot them in a coordinate
-%       system
-% \item We could also use 2 different ROC metrics which define a trade-off, like TPR and PPV!
-% \end{itemize}
+ \begin{itemize}
+ \item We characterize a classifier by its TPR and FPR values and plot them in a coordinate
+       system
+ \item We could also use 2 different ROC metrics which define a trade-off, like TPR and PPV!
+ \end{itemize}
 
 
-Plot True Positive Rate and False Positive Rate:
+
 \begin{columns}
 \begin{column}{0.5\textwidth}
 
@@ -216,9 +216,7 @@ FPR = $\frac{\text{FP}}{\text{FP} + \text{TN}}$
 \begin{vbframe}{Labels: ROC Space}
   \begin{itemize}
   \item The best classifier lies on the top-left corner
-  \item The diagonal $\approx$ random labels (with different proportions).\\ 
-  Assign positive $x$ as "pos" with 25\% probability $\rightarrow$ $TPR = 0.25$.\\ 
-  Assign negative $x$ as "pos" with 25\% probability $\rightarrow$ $FPR = 0.25$.
+  \item The diagonal is worst, where classifiers produce random labels (with different proportions). If each positive $x$ will be randomly classified with 25\% as "pos", $TPR = 0.25$. If we assign each negative $x$ randomly to "pos", $FPR = 0.25$.
 \end{itemize}
 
 \lz
@@ -240,9 +238,12 @@ In practice, we should never obtain a classifier below the diagonal.\\
 
 \lz
 
-Inverting the predicted labels ($0 \rightarrow 1$ and $1 \rightarrow 0$) will result in a reflection at the diagonal. 
+Inverting the predicted labels ($0 \rightarrow 1$ and $1 \rightarrow 0$) will result in a reflection at the diagonal. ($TPR2 = 1-TPR1$ and $FPR2 = 1-FPR1$)
 
 \lz
+
+
+
 
 \begin{knitrout}\scriptsize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
@@ -259,8 +260,9 @@ Inverting the predicted labels ($0 \rightarrow 1$ and $1 \rightarrow 0$) will re
 
 
 \begin{vbframe}{Label Distribution in TPR and FPR}
-TPR and FPR are insensitive to the class distribution:\\
-Not affected by changes in the ratio $\np/\nn$ (at prediction).\\
+
+TPR and FPR (ROC curves) are insensitive to the class distribution in the sense that they are not affected by changes in the ratio $\np/\nn$ (at prediction).
+
 
 \begin{columns}
 \begin{column}{0.45\textwidth}
@@ -351,9 +353,13 @@ $$\hx:= [\pix) \ge c] \quad \text{ or } \quad \hx = [\fx \ge c]$$
 
 \textbf{To draw a ROC curve}:\\
 
-Iterate through all possible thresholds $c$
-
+\begin{itemize}
+ \item \textcolor{blue}{Rank test observations on decreasing score}
+  \item Iterate through all possible thresholds $c$ and draw a point in the ROC space (FPR, TPR) for the resulting classifier
+\end{itemize}
 \lz 
+
+
 
 
 $\rightarrow$ Visual inspection of all possible thresholds / results
@@ -380,24 +386,36 @@ $\rightarrow$ Visual inspection of all possible thresholds / results
 
 
 
-% \begin{vbframe}{ROC Curve}
-% \begin{center}
-% \includegraphics[width=\textwidth]{figure_man/roc-curves2.png}
-% \end{center}
-% \end{vbframe}
+ \begin{vbframe}{Draw ROC Curve}
 
-% \begin{vbframe}{ROC Curve}
-% \begin{itemize}
-%   \item Rank test observations on decreasing score
-%   \item Set $\alpha=1$, so we start in $(0, 0)$; we predict everything as "neg"
-%   \item For each observation $x$ (in the decreasing order).
-%   \begin{itemize}
-%     \item Reduce threshold, so prediction for next observation changes
-%     \item If $x$ is "pos", move TPR $1/n_+$ up, as we have one TP more
-%     \item If $x$ is "neg", move FPR $1/n_-$ right, as we have one FP more
-%   \end{itemize}
-% \end{itemize}
-% \end{vbframe}
+ 
+ \begin{itemize}
+\item Small thresholds will very liberally predict class 1, and result in a potentially higher FPR, but also higher TPR
+  \item High thresholds will very conservatively predict class 1, and result in a lower FPR and TPR
+  \item As we have not defined the trade-off between false postives and false negative costs,
+    we cannot easily select the "best" threshold; but a visual inspection of all possible results seems useful
+\end{itemize}
+
+\textcolor{blue}{Include this again or compare it with above?}
+ \begin{itemize}
+   \item Rank test observations on decreasing score
+   \item Set $\alpha=1$, so we start in $(0, 0)$; we predict everything as "neg"
+   \item For each observation $x$ (in the decreasing order).
+   \begin{itemize}
+     \item Reduce threshold, so prediction for next observation changes
+     \item If $x$ is "pos", move TPR $1/n_+$ up, as we have one TP more
+     \item If $x$ is "neg", move FPR $1/n_-$ right, as we have one FP more
+   \end{itemize}
+ \end{itemize}
+
+\color{green}{ Include this picture?}
+ 
+  \begin{center}
+ \includegraphics[width=\textwidth]{figure_man/roc-curves2.png}
+ \end{center}
+ 
+ 
+ \end{vbframe}
 
 
 \begin{vbframe}{ROC Curve}
@@ -543,12 +561,12 @@ $\rightarrow$ FPR = 0.5
   \item The AUC (in [0,1]) is a single metric to evaluate scoring classifiers
   \item AUC = 1: Perfect classifier
   \item AUC = 0.5: Randomly ordered
-  % \item AUC = 0: Perfect, with inverted labels
+  \item AUC = 0: Perfect, with inverted labels
 \end{itemize}
 \begin{knitrout}\scriptsize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
 
-{\centering \includegraphics[width=0.8\textwidth]{figure/eval_mclass_roc_sp_12_1} 
+{\centering \includegraphics[width=0.7\textwidth]{figure/eval_mclass_roc_sp_12_1} 
 
 }
 
