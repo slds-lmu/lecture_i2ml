@@ -1,0 +1,196 @@
+\documentclass{beamer}
+
+
+\usepackage[orientation=landscape,size=a0,scale=1.4,debug]{beamerposter}
+\mode<presentation>{\usetheme{mlr}}
+
+
+\usepackage[utf8]{inputenc} % UTF-8
+\usepackage[english]{babel} % Language
+\usepackage{hyperref} % Hyperlinks
+\usepackage{ragged2e} % Text position
+\usepackage[export]{adjustbox} % Image position
+\usepackage[most]{tcolorbox}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{dsfont}
+\usepackage{verbatim}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{csquotes}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{enumerate}
+\usepackage[absolute,overlay]{textpos}
+\usepackage{psfrag}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{eqnarray}
+\usepackage{arydshln}
+\usepackage{tabularx}
+\usepackage{placeins}
+\usepackage{tikz}
+\usepackage{setspace}
+\usepackage{colortbl}
+\usepackage{mathtools}
+\usepackage{wrapfig}
+\usepackage{bm}
+\usepackage{mathdots}
+
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+
+
+\title{I2ML :\,: EVALUATION AND TUNING} % Package title in header, \, adds thin space between ::
+\newcommand{\packagedescription}{ \invisible{x} % Package description in header
+	% The \textbf{I2ML}: Introduction to Machine Learning course offers an introductory and applied overview of "supervised" Machine Learning. It is organized as a digital lecture.
+}
+
+\newlength{\columnheight} % Adjust depending on header height
+\setlength{\columnheight}{84cm} 
+
+\newtcolorbox{codebox}{%
+	sharp corners,
+	leftrule=0pt,
+	rightrule=0pt,
+	toprule=0pt,
+	bottomrule=0pt,
+	hbox}
+
+\newtcolorbox{codeboxmultiline}[1][]{%
+	sharp corners,
+	leftrule=0pt,
+	rightrule=0pt,
+	toprule=0pt,
+	bottomrule=0pt,
+	#1}
+	
+
+	
+\begin{document}
+\begin{frame}[fragile]{}
+\vspace{-8ex}
+\begin{columns}
+	\begin{column}{.31\textwidth}
+		\begin{beamercolorbox}[center]{postercolumn}
+			\begin{minipage}{.98\textwidth}
+				\parbox[t][\columnheight]{\textwidth}{
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% First Column begin
+%-------------------------------------------------------------------------------
+% Set-Based Performance Metrics
+%-------------------------------------------------------------------------------
+\begin{myblock}{Set-Based Performance Metrics}
+$J \in \{1,\dots,n\}^m$ : $m$-dimensional index vector for a dataset $\D \in 
+\allDatasetsn$, which also induces 
+$\D_J = \left(\D^{(J^{(1)})},\dots,\D^{(J^{(m)})}\right) \in \allDatasets_m$\\
+
+
+$\boldsymbol{y}_J = \left(y^{(J^{(1)})},\dots,y^{(J^{(m)})}\right) \in \Yspace^m$ :
+vector of labels\\
+
+$\boldsymbol{F}_{J,f} = \left(f(\xb^{(J^{(1)})}),\dots, f(\xb^{(J^{(m)})})\right) 
+\in \R^{m\times g}$ : matrix of prediction scores regarding a model $f$\\
+
+General \textbf{performance measure}: $\rho: \bigcup_{m\in\N}\left(\Yspace^m\times\R^{m\times g}\right)  \rightarrow \R$ maps every $m$-dimensional label vector $\boldsymbol{y}_J$ and its matrix of prediction scores $\boldsymbol{F}_{J,f}$ to a scalar performance value.\\
+
+$\rho_L (\boldsymbol{y}, \boldsymbol{F}) = \sum_{i=1}^m L(\boldsymbol{y}^{(i)}, \boldsymbol{F}^{(i)})$ : performance measure induced by an arbitrary point-wise loss $L$
+\end{myblock}
+%-------------------------------------------------------------------------------
+% Generalization Error
+%-------------------------------------------------------------------------------
+\begin{myblock}{Generalization Error}
+The \textbf{generalization error} $\mathrm{GE}$ is the performance of a model induced by $\inducer_{\boldsymbol{\lambda}}$ from datasets $\Dtrain \sim (\P_{\xv y})^{m_{\mathrm{train}}}$ evaluated with performance measure $\rho$ over a dataset $\Dtest \sim (\P_{\xv y})^{m_{\mathrm{test}}}$ when $m_{\mathrm{test}}\rightarrow\infty$, i.e.,\\
+
+ $\mathrm{GE}(\inducer, \bm{\lambda}, m_{\mathrm{train}}, \rho) = \lim_{m_{\mathrm{test}}\rightarrow\infty} \E \left[ \rho\left(\boldsymbol{y}, \boldsymbol{F}_{J_{\mathrm{test}},f_{\mathcal{D}_{\mathrm{train}}, \bm{\lambda}}}\right)\right],$ \\
+ 
+where $f_{\mathcal{D}_{\mathrm{train}}, \bm{\lambda}} = \inducer(\mathcal{D}_{\mathrm{train}}, \bm{\lambda})$ and the expectation is taken over both datasets $\Dtrain$ and $\Dtest (= \mathcal{D}_{J_\mathrm{test}})$.
+\end{myblock}
+
+\begin{myblock}{Data Splitting and Resampling}
+% $\widehat{\mathrm{GE}}_{J_\mathrm{train}, J_\mathrm{test}}(\mathcal{I}, \boldsymbol\lambda, |J_\mathrm{train}|, \rho) = \rho(\boldsymbol{y}_{J_\mathrm{test}}, \boldsymbol{F}_{J_\mathrm{test}, f_{\mathcal{D}_{\mathrm{train}}, \bm{\lambda}}})$ : estimator of the generalization error  
+% $\mathrm{GE}(\inducer, \bm{\lambda}, |J_\mathrm{train}|, \rho)$ \\
+
+$S = \left((J_{\mathrm{train},1}, J_{\mathrm{test},1}),\dots,
+(J_{\mathrm{train},K}, J_{\mathrm{test},K})\right)$ : \textbf{resampling strategy} consisting of $K$ train-test-splits $(J_{\mathrm{train},i}, J_{\mathrm{test},i})$\\
+
+\textbf{Estimator of the generalization error} $\mathrm{GE}(\inducer, \bm{\lambda}, m_\mathrm{train}, \rho)$:
+\begin{equation*}
+\begin{split}
+\widehat{\mathrm{GE}}_S(\inducer, \boldsymbol\lambda, \rho) = \mathrm{agr}\Big(
+ &\rho\Big(\boldsymbol{y}_{J_{\mathrm{test},1}}, \boldsymbol{F}_{J_{\mathrm{test},1},f_{\mathcal{D}_{\mathrm{train},1}, \boldsymbol\lambda}}\Big), \\ &\large{\vdots} \\
+& \rho\Big(\boldsymbol{y}_{J_{\mathrm{test},K}}, \boldsymbol{F}_{J_{\mathrm{test},B},
+f_{\mathcal{D}_{\mathrm{train},K}, \boldsymbol\lambda}}\Big)
+    \Big),
+\end{split}
+\end{equation*}
+where the aggregating function $\mathrm{agr}$ is often the $\textrm{mean}$ and
+$m_{\mathrm{train}} \approx m_{\mathrm{train},1} \approx \dots \approx m_{\mathrm{train},K}$ and $m_{\mathrm{train}} = \mathrm{mode}(m_{\mathrm{train},1}, \dots, m_{\mathrm{train},K})$
+\end{myblock}
+\vfill
+% End First Column
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+				}
+			\end{minipage}
+		\end{beamercolorbox}
+	\end{column}
+	\begin{column}{.31\textwidth}
+		\begin{beamercolorbox}[center]{postercolumn}
+			\begin{minipage}{.98\textwidth}
+				\parbox[t][\columnheight]{\textwidth}{
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Begin Second Column
+\underline{Resampling Strategies}\\
+
+\textbf{Cross-validation}\\ 
+
+\textbf{Leave-one-out cross validation}\\
+
+Repeated \textbf{subsampling} / Monte Carlo cross-validation\\ 
+
+\textbf{Bootstrap sampling}\\ 
+
+\begin{myblock}{Tuning}
+
+$\boldsymbol{\lambda^*} = \argmin \limits_{\boldsymbol{\lambda} \in \bm{\Lambda}} \widehat{\mathrm{GE}}_S(\inducer, \boldsymbol\lambda, \rho)$ : optimal hyperparameter\\
+
+\underline{Black-Box Optimization Techniques}\\
+
+\textbf{Grid search}\\ 
+
+\textbf{Random search}
+\end{myblock}
+
+
+
+% End Second Column					
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+				}
+			\end{minipage}
+		\end{beamercolorbox}
+	\end{column}
+	\begin{column}{.31\textwidth}
+		\begin{beamercolorbox}[center]{postercolumn}
+			\begin{minipage}{.98\textwidth}
+				\parbox[t][\columnheight]{\textwidth}{
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Begin Third Column#
+
+
+%-------------------------------------------------------------------------------
+% Regression Losses 
+%------------------------------------------------------------------------------- 
+\begin{myblock}{Nested Resampling}
+
+\end{myblock}
+
+% End Third Column
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+			  }
+			\end{minipage}
+		\end{beamercolorbox}
+	\end{column}
+\end{columns}
+
+\end{frame}
+\end{document}
