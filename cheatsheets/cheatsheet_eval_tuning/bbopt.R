@@ -88,7 +88,7 @@ instance$eval_batch(design)
 
 surrogate = SurrogateSingleCritLearner$new(learner = lrn("regr.km"))
 acqfun = AcqFunctionCB$new(surrogate = surrogate)
-acqopt = AcqOptimizer$new(opt("random_search", batch_size = 20), trm("evals", n_evals = 21))
+acqopt = AcqOptimizer$new(opt("random_search", batch_size = 21), trm("evals", n_evals = 21))
 optim <- OptimizerMbo$new(acq_function = acqfun, 
                  loop_function = bayesopt_soo,
                  acq_optimizer = acqopt
@@ -99,4 +99,4 @@ plots[[3]] <- bg_plot +
   ggtitle("Bayesian optimization")
 
 bb_cmp <- grid.arrange(grobs = plots, nrow = 1)
-ggsave("bb_cmp.pdf")
+ggsave("bb_cmp.pdf", plot = bb_cmp, width = 8, height = 4, units = "in")
