@@ -101,4 +101,4 @@ plots[[3]] <- bg_plot +
   ggtitle("BO")
 
 bb_cmp <- grid.arrange(grobs = plots, nrow = 1)
-ggsave("../figure/bb_cmp.pdf", plot = bb_cmp, width = 8, height = 4, units = "in")
+ggsave("../figure/bb_cmp.pdf", plot = bb_cmp, width = 8, height = 3, units = "in")

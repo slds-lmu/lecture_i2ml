@@ -121,7 +121,7 @@ $S = \left((J_{\mathrm{train},1}, J_{\mathrm{test},1}),\dots,
 \begin{split}
 \widehat{\mathrm{GE}}_S(\inducer, \boldsymbol\lambda, \rho) = \mathrm{agr}\Big(
  &\rho\Big(\boldsymbol{y}_{J_{\mathrm{test},1}}, \boldsymbol{F}_{J_{\mathrm{test},1},f_{\mathcal{D}_{\mathrm{train},1}, \boldsymbol\lambda}}\Big), \\ &\large{\vdots} \\
-& \rho\Big(\boldsymbol{y}_{J_{\mathrm{test},K}}, \boldsymbol{F}_{J_{\mathrm{test},B},
+& \rho\Big(\boldsymbol{y}_{J_{\mathrm{test},K}}, \boldsymbol{F}_{J_{\mathrm{test},K},
 f_{\mathcal{D}_{\mathrm{train},K}, \boldsymbol\lambda}}\Big)
     \Big),
 \end{split}
@@ -155,7 +155,9 @@ Repeated \textbf{subsampling} / Monte Carlo cross-validation :\\
 \begin{myblock}{Tuning}
 
 \textbf{Tuner} $\mathcal{T}: \allDatasets \times \mathds{S}_K \times \{\inducer: \inducer \textrm{ is a learner}\} \times \mathrm{P} \rightarrow \Hspace$ takes a dataset $\D \in \allDatasets$, and produces a model $f$ learned with learner $\inducer_{\boldsymbol{\widehat{\lambda^*}}}$ where
-\begin{center}$\boldsymbol{\widehat{\lambda^*}} \approx \boldsymbol{\lambda^*} = \argmin \limits_{\boldsymbol{\lambda} \in \bm{\Lambda}} \widehat{\mathrm{GE}}_S(\inducer, \boldsymbol\lambda, \rho)$, i.e.,\end{center} the optimal hyperparameter regarding the performance measure $\rho \in \mathrm{P}$ and the resampling strategy $S \in \mathds{S}_K$ defined on $\D$.\\
+\begin{center}$\boldsymbol{\widehat{\lambda^*}} \approx \boldsymbol{\lambda^*} = \argmin \limits_{\boldsymbol{\lambda} \in \bm{\Lambda}} \widehat{\mathrm{GE}}_S(\inducer, \boldsymbol\lambda, \rho)$, i.e.,\end{center} the optimal hyperparameter regarding the performance measure $\rho \in \mathrm{P}$ and the resampling strategy $S \in \mathds{S}_K$ defined on $\D$. Here $\bm{\Lambda}$ denotes the search space which is a bounded subset of the hyperparameter space.\\
+
+For fixed resampling strategy $S$, learner $\inducer$ and performance measure $\rho$ a learner $\mathcal{T}_{S,\inducer,\rho}$ can be derived from a tuner $\mathcal{T}.$ Possible hyperparameters of $\mathcal{T}_{S,\inducer,\rho}$, so-called strategy parameters, are for simplicity's sake suppressed in this notation.\\
 
 \underline{Black-Box Optimization Techniques}\\
 
@@ -196,7 +198,21 @@ Repeated \textbf{subsampling} / Monte Carlo cross-validation :\\
 \begin{myblock}{Nested Resampling}
 
 $S_{B, K} = \left(S_{\mathrm{outer}}, \left(S_{\mathrm{inner}}^{(1)},\dots,S_{\mathrm{inner}}^{(B)}
-\right)\right)$ : \textbf{nested resampling strategy} where $S_{\mathrm{outer}} \in \mathds{S}_B$ defined over $\D$ and $S_{\mathrm{inner}}^{(i)} \in \mathds{S}_K$ defined over $\D_{\textrm{outer,train,i}}$\\\
+\right)\right)$ : \textbf{nested resampling strategy} where $S_{\mathrm{outer}} \in \mathds{S}_B$ defined on $\D$ and $S_{\mathrm{inner}}^{(i)} \in \mathds{S}_K$ defined on $\D_{\textrm{outer,train,i}}$\\\
+
+\textbf{Estimator of the generalization error} $\mathrm{GE}(\mathcal{T}_{S,\inducer,\rho}, m_\mathrm{train}) = \mathrm{GE}(\inducer, \boldsymbol{\widehat{\lambda^*}}, m_\mathrm{train}, \rho)$ :
+\begin{equation*}
+\begin{split}
+\widehat{\mathrm{GE}}_{S_{B,K}}(\mathcal{T}_{S,\inducer,\rho}) = \mathrm{agr}\Big(
+ &\rho\Big(\boldsymbol{y}_{J_{\mathrm{outer,test},1}}, \boldsymbol{F}_{J_{\mathrm{outer,test},1},f_{\mathcal{D}_{\mathrm{outer,train},1}}}\Big), \\ &\large{\vdots} \\
+& \rho\Big(\boldsymbol{y}_{J_{\mathrm{outer,test},B}}, \boldsymbol{F}_{J_{\mathrm{outer,test},B},
+f_{\mathcal{D}_{\mathrm{outer,train},B}}}\Big)
+    \Big),
+\end{split}
+\end{equation*}
+where $f_{\mathcal{D}_{\mathrm{outer,train},i}} = \mathcal{T}_{S_{\mathrm{inner}}^{(i)},\inducer,\rho}(\mathcal{D}_{\mathrm{outer,train},i})$ and \\
+$S_{\mathrm{inner}}^{(i)}$ has the same type of resampling strategy as $S$ and \\
+$m_{\mathrm{train}} \approx m_{\mathrm{outer,train},1} \approx \dots \approx m_{\mathrm{outer,train},B}$ and\\ $m_{\mathrm{train}} = \mathrm{mode}(m_{\mathrm{outer,train},1}, \dots, m_{\mathrm{outer,train},B})$\\
 
  \begin{center}
              \includegraphics[width=0.9\columnwidth]{img/tuning_2.PNG}
