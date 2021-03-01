@@ -1,0 +1,260 @@
+\documentclass{beamer}
+\newcommand \beameritemnestingprefix{}
+
+
+\usepackage[orientation=landscape,size=a0,scale=1.4,debug]{beamerposter}
+\mode<presentation>{\usetheme{mlr}}
+
+
+\usepackage[utf8]{inputenc} % UTF-8
+\usepackage[english]{babel} % Language
+\usepackage{hyperref} % Hyperlinks
+\usepackage{ragged2e} % Text position
+\usepackage[export]{adjustbox} % Image position
+\usepackage[most]{tcolorbox}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{dsfont}
+\usepackage{verbatim}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{csquotes}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage[absolute,overlay]{textpos}
+\usepackage{psfrag}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{eqnarray}
+\usepackage{arydshln}
+\usepackage{tabularx}
+\usepackage{placeins}
+\usepackage{tikz}
+\usepackage{setspace}
+\usepackage{colortbl}
+\usepackage{mathtools}
+\usepackage{wrapfig}
+\usepackage{bm}
+
+
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-bagging.tex}
+\input{../../latex-math/ml-boosting.tex}
+\input{../../latex-math/ml-trees.tex}
+
+
+
+\title{I2ML :\,: CHEAT SHEET} % Package title in header, \, adds thin space between ::
+\newcommand{\packagedescription}{ % Package description in header
+	The \textbf{I2ML}: Introduction to Machine Learning course offers an introductory and applied overview of "supervised" Machine Learning. It is organized as a digital lecture.
+}
+
+\newlength{\columnheight} % Adjust depending on header height
+\setlength{\columnheight}{84cm}
+
+\newtcolorbox{codebox}{%
+	sharp corners,
+	leftrule=0pt,
+	rightrule=0pt,
+	toprule=0pt,
+	bottomrule=0pt,
+	hbox}
+
+\newtcolorbox{codeboxmultiline}[1][]{%
+	sharp corners,
+	leftrule=0pt,
+	rightrule=0pt,
+	toprule=0pt,
+	bottomrule=0pt,
+	#1}
+
+\begin{document}
+\begin{frame}[fragile]{}
+\begin{columns}
+	\begin{column}{.31\textwidth}
+		\begin{beamercolorbox}[center]{postercolumn}
+			\begin{minipage}{.98\textwidth}
+				\parbox[t][\columnheight]{\textwidth}{
+					\begin{myblock}{Forward Stagewise Additive Modelling}
+						\begin{codebox}
+			        \textbf{Basic Idea:}
+						\end{codebox}
+						  \begin{itemize}[$\bullet$]
+                \setlength{\itemindent}{+.3in}
+                \item
+                  Gradient boosting uses the idea of stagewise additive modelling
+                \item
+                  We want to learn an additive model:
+                  $$
+                  \fx = \sum_{m=1}^M \betam b(\xv, \thetam).
+                  $$
+                \item
+                  Hence, we minimize the empirical risk:
+                  $$
+                    \riskef = \sum_{i=1}^n L\left(\yi,\fxi \right)
+                            = \sum_{i=1}^n L\left(\yi, \sum_{m=1}^M \betam b\left(\xi, \thetam\right)\right)
+                  $$
+                \item
+                  Because of the additive structure it is difficult to jointly minimize $\riskef$ w.r.t.
+                  $\left(\left(\beta^{[1]}, \theta^{[1]}\right), \ldots, \left(\beta^{[M]}, \theta^{[M]}\right)\right)$
+                \item
+                  Hence, we add additive components in a greedy fashion by sequentially minimizing
+                  the risk only w.r.t. the next additive component:
+                  $$
+                  \min \limits_{\beta, \theta} \sum_{i=1}^n L\left(\yi, \fmdh\left(\xi\right) +
+                    \beta b\left(\xi, \theta\right)\right)
+                  $$
+              \end{itemize}
+
+						  \begin{codebox}
+                  \textbf{Boosting vs. Bagging: }
+              \end{codebox}
+						  In contrast to bagging, boosting fits a model sequentially where each component
+              builds on the ones before.
+              \begin{center}
+                \includegraphics[width=0.5\columnwidth]{img/bagging_vs_boosting.png}
+              \end{center}
+              \begin{codebox}
+                \textbf{Note: }
+              \end{codebox}
+              Forward stagewise additive modelling is not really an algorithm, but rather an
+              abstract principle. We need to find the new additive component
+              $b\left(\xv, \thetam\right)$ and its weight coefficient $\betam$ in each iteration
+              $m$. This can be done by gradient descent, but in function space.
+            \end{myblock}\vfill
+				} % parbox end
+			\end{minipage}
+		\end{beamercolorbox}
+	\end{column}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{column}{.31\textwidth}
+  \begin{beamercolorbox}[center]{postercolumn}
+    \begin{minipage}{.98\textwidth}
+      \parbox[t][\columnheight]{\textwidth}{
+        \begin{myblock}{Gradient Boosting}
+          Modification of bagging for trees proposed by Breiman (2001):
+          \begin{itemize}[$\bullet$]
+            \setlength{\itemindent}{+.3in}
+            \item
+              Pseudo residuals $\rmi$ tells us how we could \enquote{nudge} our whole
+              function $f$ in the direction of the data reduce its empirical risk:
+              $$
+              \rmi = -\left[\fp{\Lxyi}{f(\xi)}\right]_{f=\fmd}
+              $$
+            \item
+              The additive component (simple model) $b\left(\xv, \thetam\right) \in \mathcal{B}$ is
+              fit to the pseudo residuals: $\thetamh = \argmin_{\theta} \sum_{i=1}^n \left(\rmi - b(\xi, \theta)\right)^2$
+          \end{itemize}
+          \input{algo/gradient_boosting_general.tex}
+
+          \begin{codebox}
+            \textbf{In a nutshell}
+          \end{codebox}
+            One boosting iteration is exactly one approximated gradient step in
+            function space, which minimizes the empirical risk as much as possible.
+
+          \begin{codebox}
+            \textbf{Gradient boosting with trees}
+          \end{codebox}
+          \begin{itemize}[$\bullet$]
+            \setlength{\itemindent}{+.3in}
+            \item
+              Trees can be written as: $ b(\xv) = \sum_{t=1}^{T} c_t \mathds{1}_{\{\xv \in R_t\}} $
+            \item
+              Instead of finding $\ctm$ and $\betam$ in two separate steps we do:
+              $$
+              \fm(\xv) = \fmd(\xv) +  \sum_{t=1}^{\Tm} \ctmt \mathds{1}_{\{\xv \in \Rtm\}}.
+              $$
+            \item
+              Constants $\ctm$ are calculated individually and directly loss-optimally:
+              $$
+              \ctmt = \argmin_{c} \sum_{\xi \in \Rtm} L(\yi, \fmd(\xi) + c)
+              $$
+             \item
+               Regions $\Rtm$ are calculated not loss-optimal but with the squared loss
+               against the pseudo-residuals.
+          \end{itemize}
+          \begin{codebox}
+            \textbf{Classification}
+          \end{codebox}
+          \begin{itemize}[$\bullet$]
+            \setlength{\itemindent}{+.3in}
+            \item
+              For binary classification $\Yspace = \{0, 1\}$, an appropriate loss
+              function has to be used, e.g. Bernoulli loss $\Lxy = - y \cdot \fx + \log(1 + \exp(\fx))$
+            \item
+              Using this loss function, we can simply run GB as for regression.
+             \item
+               For multiclass problems $\Yspace = \{1, \ldots, g\}$ we create $g$
+               discriminant functions $\fxk$, one for each class, each an additive
+               model of base learners.
+          \end{itemize}
+        \end{myblock}
+      } % parbox end
+    \end{minipage}
+  \end{beamercolorbox}
+\end{column}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{column}{.31\textwidth}
+  \begin{beamercolorbox}[center]{postercolumn}
+    \begin{minipage}{.98\textwidth}
+      \parbox[t][\columnheight]{\textwidth}{
+        \begin{myblock}{Regularization and Shrinkage}
+          If GB runs for a large number of iterations, it can overfit due to its aggressive
+          loss minimization. Options for regularization:
+          \begin{itemize}[$\bullet$]
+            \setlength{\itemindent}{+.3in}
+              \item
+                Limit the number of boosting iterations $M$ (\enquote{early stopping}), i.e.,
+                limit the number of additive components.
+              \item
+                Limit the depth of the trees. This can also be interpreted as choosing the
+                order of interaction.
+              \item
+                Shorten the step length $\betam$ of each iteration.
+          \end{itemize}
+        \end{myblock}
+
+        \begin{myblock}{Componentwise Gradient Boosting}
+          Aim of componentwise gradient boosting (model-based boosting) to find a model that
+          has strong predictive performance, interpretable components, does automatic selection
+          of components, and is sparser than a model fitted with maximum-likelihood estimation.
+          \begin{itemize}[$\bullet$]
+            \setlength{\itemindent}{+.3in}
+              \item
+                The base learner is now chosen from a set of base learner
+                $\bj(\xv,\pmb\theta) \quad j = 1,\dots, J$
+              \item
+                Base learners are often familiar statistical models
+              \item
+                In each iteration, only the best base learner is selected and used for
+                updating the model
+          \end{itemize}
+        \end{myblock}
+
+        \begin{myblock}{Synopsis}
+        \textbf{Hypothesis Space:}
+          Models build with boosting are weighted sums of base learners $b(\xv, \thetam)$.
+          \vspace*{1ex}
+
+        \textbf{Risk:}
+          Models build with boosting can use any kind of loss function as long as the derivative exists.
+          \vspace*{1ex}
+
+        \textbf{Optimization:}
+          Gradient descent in function space.
+          \end{myblock}
+      }
+    \end{minipage}
+  \end{beamercolorbox}
+\end{column}
+
+
+\end{columns}
+\end{frame}
+\end{document}
