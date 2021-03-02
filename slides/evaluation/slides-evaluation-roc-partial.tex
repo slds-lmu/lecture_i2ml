@@ -111,7 +111,8 @@
 %\usetheme{lmu-lecture}
 \newcommand{\titlefigure}{figure_man/intro-titlefig.jpg}
 \newcommand{\learninggoals}{
-\item tbd}
+\item Understand why pAUC is a reasonable metric in some contexts.
+\item Know how pAUC is computed and normalized.}
 \usepackage{../../style/lmu-lecture}
 
 \let\code=\texttt
@@ -146,28 +147,69 @@
 % ------------------------------------------------------------------------------
 
 \begin{vbframe}{Partial AUC}
+
 \begin{itemize}
-  \item Sometimes it can be useful to look at a \href{http://journals.sagepub.com/doi/pdf/10.1177/0272989X8900900307}{specific region under the ROC curve}  $\Rightarrow$ partial AUC (pAUC).
-  \item Examples: focus on a region with low FPR or a region with high TPR:
+  \item Sometimes it can be useful to look at a specific region under the ROC 
+  curve $\Rightarrow$ partial AUC (pAUC).
+  % \item This leads to partial AUC (pAUC), originally proposed by 
+  % \href{http://journals.sagepub.com/doi/pdf/10.1177/0272989X8900900307}
+  % {McClish (1989)}.
+  \item For example, we might focus on a region with low FPR or a region with 
+  high TPR:
 \end{itemize}
 
 \begin{knitrout}\scriptsize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-
-{\centering \includegraphics[width=0.9\textwidth]{figure/eval_mclass_roc_sp_13} 
-
-}
-
+{\centering \includegraphics[width=0.9\textwidth]{figure/eval_mclass_roc_sp_13} }
 \end{knitrout}
 
-\framebreak
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Partial AUC -- example}
 
 \begin{itemize}
-  \item $\text{pAUC} \in [0, c_2 - c_1]$.
-  \item The partial AUC can be corrected (see \href{http://journals.sagepub.com/doi/pdf/10.1177/0272989X8900900307}{McClish}), to have values between $0$ and $1$, where $0.5$ is non discriminant and $1$ is maximal: $$\text{pAUC}_\text{corrected} = \cfrac{1+\cfrac{\text{pAUC} - \text{min}}{\text{max} - \text{min}}}{2} $$
-  \item $\text{min}$ is the
-value of the non-discriminant AUC in the region
-  \item $\text{max}$ is the maximum possible AUC in the region
+  \item Applications where only parts of the ROC curve are relevant to 
+  evaluation often occur in biomedical contexts.
+  \item For example, 
+  \href{https://clincancerres.aacrjournals.org/content/16/24/6111}
+  {Wild et al. (2010)} used pAUC in their study of biomarkers for the detection 
+  of colorectal cancer.
+  \item Sensitivity, i.e., being able to correctly detect present diseases, is 
+  crucial in this setting.
+  \item At the same time, high sensitivity is only useful if the classifier also 
+  achieves high specificity.
+  \item Otherwise, healthy patients might receive costly and entirely 
+  unnecessary treatment.
+  \item Rather than optimizing sensitivity and specificity symmetrically, it is 
+  therefore reasonable to demand a certain level of specificity here, and 
+  evaluate learners on the resulting pAUC.
+\end{itemize}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Corrected Partial AUC}
+
+\begin{itemize}
+  \item The scale of the partial AUC depends on the FPR cut-off values used to 
+  determine the region of interest $\Rightarrow \text{pAUC} \in [0, c_2 - c_1]$.
+  \item For standard AUC, we have $c_1 = 0$ and $c_2 = 1$.
+  \item We can scale pAUC to take on values in $[0, 1]$ again:
+  $$\text{pAUC}_\text{corrected} = \cfrac{1}{2} \left( 1 + \cfrac{\text{pAUC} - 
+  \text{min}}{\text{max} - \text{min}} \right),$$
+  where
+  \begin{itemize}
+    \item $\text{min}$ is the value of the non-discriminant AUC, 
+    and
+    \item $\text{max}$ is the maximum possible AUC in the region.
+  \end{itemize}
+  % \item As usual, $\text{pAUC} = 0.5$ corresponds to the non-discriminant and 
+  % $\text{pAUC} = 1$ to the perfect classifier.
+  \lz
+  \item NB: using pAUC means casting aside parts of the information.
 \end{itemize}
 
 \end{vbframe}
