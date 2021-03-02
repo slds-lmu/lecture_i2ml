@@ -147,85 +147,27 @@
 
 % ------------------------------------------------------------------------------
 
-\begin{vbframe}{Overview}
-\setbeamercolor{item}{fg=red}
-\setbeamercolor{normal text}{fg=red}
-\usebeamercolor[fg]{normal text}
-
-Chapter outline
-\begin{enumerate}
-  \item Intro. Def $\rho$, GE for single train-test split, inner vs outer
-  \item Possibilities for $\rho$. Measures regr/classif/ROC
-  \item Overfitting
-  \item Train/test errors
-  \item Resampling. GE for resampling strategy
-\end{enumerate}
-$\Rightarrow$ Tuning/nested resampling in subsequent chapter
-
-\end{vbframe}
-
-% ------------------------------------------------------------------------------
-
 \begin{vbframe}{Performance estimation}
 
 \begin{itemize}
   \item After training our model, we are naturally interested in its
   \textbf{performance}.
-  \item Recall that supervised learning is about finding the optimal model 
-  for our data at hand, given a set of hyperparameters: 
+  \item We recall what supervised learning is about: 
+  
   $$\inducer: \preimageInducerShort \rightarrow \Hspace, \quad (\D, \lambdav)
-  \mapsto \fh_{\D, \lambdav}.$$
-  \item We obtain $\fh_{\D, \lambdav}$ by means of empirical risk minimization, 
-  based on what we will now call \textbf{inner loss}.
-  \item However, the inner loss does not tell us anything about the performance 
-  of our learner -- after all, we chose our model precisely so it would be 
-  loss-minimal on the data we trained it on.
+  \mapsto \fh_{\D, \lambdav}$$
+  \item $\inducer$ minimizes the empirical risk resulting from $\Lyf$.
+  \item This so-called \textbf{inner loss}, however, is only a statistical proxy
+  to what we are really interested in: the \textbf{true expected loss} for 
+  new, unlabeled data.
+  \item After all, we chose our model precisely so it would be loss-minimal 
+  on the data we trained it on, but we cannot hope for it to perform equally 
+  well on general data from $\Pxy$.
 \end{itemize}
 
 \lz
-$\rightarrow$ We cannot hope for $\fh_{\D, \lambdav}$ to perform equally well 
-on unseen data. \\
 $\rightarrow$ Evaluation based on the inner loss would be 
 \textbf{optimistically biased}.
-
-\framebreak
-
-\begin{itemize}
-  \item We wish to compute the true expected loss of our learner, referred to as
-  \textbf{generalization error} or \textbf{outer loss}.
-\end{itemize}
-
-\begin{center}
-% FIGURE SOURCE: https://docs.google.com/drawings/d/13AH298rMnDL5p0SrBd6VCukC9vg1qyRXGqgMcvuPRc0/edit?usp=sharing
-\includegraphics[width=0.7\textwidth]{figure_man/evaluation-intro-ge.pdf}
-\end{center}
-
-\begin{itemize}
-  \item In order to estimate performance on previously unseen observations, we 
-  need independent \textbf{test data}. 
-  \item As such a test set is not always available, we make do with 
-  splitting our data at hand into non-overlapping sets $\Dtrain$ and $\Dtest$, 
-  with respective sizes $m_{\mathrm{train}}$ and $m_{\mathrm{test}}$.
-\end{itemize}
-
-\end{vbframe}
-
-% ------------------------------------------------------------------------------
-
-\begin{vbframe}{Set-based performance metrics}
-
-\begin{itemize}
-  \item For the outer loss, we introduce a \textbf{set-based metric} $\rho$.
-  \item This allows us to use outer losses that are defined on the entire test 
-  set rather than point-wise (e.g., the AUC), and potentially differ from the 
-  inner loss.
-  \item For arbitrary data sets of size $m$ and a prediction matrix 
-  $\bm{F} \in \R^{m \times g}$ returned by our model, $\rho$ is defined as:
-  $$\rho: \bigcup_{m \in \N} \left( \Yspace^m \times \R^{m \times g} \right) 
-  \rightarrow \R, \quad (\yv, \bm{F}) \mapsto \rho(\yv, \bm{F}).$$
-  \item We can easily translate this to our usual notion of point-wise loss:
-  $$\rho_L(\yv, \bm{F}) = \sum_{i=1}^m L(\yi, \bm{F}^{(i)}).$$
-\end{itemize}
 
 \end{vbframe}
 
@@ -234,30 +176,23 @@ $\rightarrow$ Evaluation based on the inner loss would be
 \begin{vbframe}{Generalization error}
 
 \begin{itemize}
-  \item To ease notation, we will represent our train and test sets by index 
-  vectors $J_\mathrm{train} \in \nset^{m_\mathrm{train}}$ and $J_\mathrm{test} 
-  \in \nset^{m_\mathrm{test}}$.
-  % \item With this, we can denote the corresponding vector of labels as
-  % $\yv_J = \left(y^{(J^{(1)})},\dots, y^{(J^{(m)})} \right) \in \Yspace^m$ and 
-  % the matrix of prediction scores as
-  % $\bm{F}_{J,f} = \left( f(\xv^{(J^{(1)})}), \dots, f(\xv^{(J^{(m)})}) \right)
-  % \in \R^{m\times g}$.
-  \item This allows us to define the \textbf{generalization error} as:
-  $$\mathrm{GE}(\inducer, \lambdav, m_{\mathrm{train}}, \rho) := 
-  \lim_{m_{\mathrm{test}} \rightarrow \infty} \E \left[ \rho \left(
-  \yv, \bm{F}_{J_{\mathrm{test}},\fh_{\mathcal{D}_{\mathrm{train}}, \lambdav}} 
-  \right)\right].$$
-  \item The expectation is taken w.r.t the unkown distribution $\Pxy$ from which 
-  both $\Dtrain$ and $\Dtest$ are sampled independently.
-  \item We must therefore estimate the generalization error based on our 
-  train-test split:
-  $$\widehat{\mathrm{GE}}_{J_\mathrm{train}, J_\mathrm{test}}(\inducer,
-  \lambdav, m_\mathrm{train}, \rho) =
-  \rho(\yv_{J_\mathrm{test}}, \bm{F}_{J_\mathrm{test}, 
-  \fh_{\mathcal{D}_{\mathrm{train}}, \lambdav}}).$$
-  \item In practice, we will not rely on a single split, but use 
-  \textbf{resampling} to repeatedly carve out test observations from our data.
+  \item The true expected loss for a model $\fh_{\D_n, \lambdav}$, learned on 
+  $\D_n \sim \Pxy$, is measured w.r.t. previously 
+  unseen data $(\xv, y) \sim \Pxy$.
+  \item We refer to this as \textbf{generalization error} or \textbf{outer 
+  loss}:
+  $$\mathrm{GE}(\fh_{\D_n, \lambdav}) := \E_{(\xv, y) \sim \Pxy}\left[ 
+  L\left(y, \fh_{\D_n, \lambdav}(\xv)\right) \right]$$
+  \item The goal of \textbf{performance evaluation} is to measure 
+  $\mathrm{GE}(\fh_{\D_n, \lambdav})$. \\
+  $\rightarrow$ As $\Pxy$ is unknown to us, we can only estimate it.
 \end{itemize}
+
+\begin{center}
+% FIGURE SOURCE: https://docs.google.com/drawings/d/13AH298rMnDL5p0SrBd6VCukC9vg1qyRXGqgMcvuPRc0/edit?usp=sharing
+\includegraphics[width=0.6\textwidth]{figure_man/evaluation-intro-ge.pdf}
+
+\end{center}
 
 \end{vbframe}
 
@@ -268,30 +203,43 @@ $\rightarrow$ Evaluation based on the inner loss would be
 \begin{itemize}
   \item Supervised learning thus implies the following dichotomy:
   \begin{itemize}
-    \item \textbf{Learning}: minimize inner loss
-    \item \textbf{Evaluation}: estimate outer loss
+    \item \textbf{Learning}: train $\fh_{\D_n, \lambdav}$ minimizing 
+    \textit{inner} loss
+    \item \textbf{Evaluation}: evaluate $\fh_{\D_n, \lambdav}$ estimating
+    \textit{outer} loss
   \end{itemize}
   \item Beyond evaluating a single learner, the outer loss lends itself to
   comparing different types of learners, or learners with varying hyperparameter
   configurations $\lambdav$.
-  \item Ideally, we have \textbf{inner loss = outer loss}.
-  \item This is not always possible -- some special (set-based) metrics for 
-  evaluation, such as the AUC, are not applicable as inner loss.
-  \item On the other hand, we sometimes use losses that are 
-  hard to optimize or do not even specify one directly.
-  % , as in:
-  % \begin{itemize}
-  %   \item Logistic regression: minimization of binomial loss
-  %   \item k-NN: no explicit loss minimization
-  % \end{itemize}
 \end{itemize}
 
-\framebreak
+\lz
+
+\begin{itemize}
+  \item Ideally, we have \textbf{inner loss = outer loss}.
+  \item This is not always possible -- sometimes we use losses that are 
+  hard to optimize or do not even specify one directly, as in:
+  \begin{itemize}
+    \item Logistic regression: minimization of binomial loss
+    \item k-NN: no explicit loss minimization
+  \end{itemize}
+  \item On the other hand, there are some special metrics for evaluation,
+  such as those derived from ROC curves.
+\end{itemize}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Inner vs outer loss}
+
+\small
 
 \textbf{Example:} logistic regression
 
 \begin{itemize}
-  \item An intuitive choice would be the share of incorrect predictions.
+  \item An intuitive choice for the loss in logistic regression would be to
+  evaluate the share of incorrect predictions.
   \item This leads to the \textbf{mislassification error rate (MCE)}, computing
   the mean over pointwise \textbf{0-1 loss}.
 \end{itemize}
@@ -301,11 +249,10 @@ $\rightarrow$ Evaluation based on the inner loss would be
 \begin{minipage}{0.6\textwidth}
   \begin{itemize}
     \item 0-1 loss simply assigns a loss of 1 for incorrect predictions and 0
-    otherwise: $$\Lhxy = [y \neq \hx]$$
+    otherwise: $$\Lhxy = [y - \hx]$$
   \end{itemize}
 \end{minipage}%
 \begin{minipage}{0.4\textwidth}
-  \centering
   \includegraphics[width=0.8\textwidth]{figure/zero-one-loss}
 \end{minipage}
 
@@ -316,10 +263,39 @@ $\rightarrow$ Evaluation based on the inner loss would be
   $\rightarrow$ This is why we use binomial loss as \textbf{inner} loss 
   instead.
   \item For evaluation, differentiability is not required. \\
-  $\rightarrow$ We may evaluate our learner on its \textbf{MCE}. 
+  $\rightarrow$ We may use 0-1 as \textbf{outer} loss and evaluate our 
+  learner on its MCE. 
 \end{itemize}
 
 \normalsize
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Training and test data}
+
+\begin{itemize}
+  \item For reliable estimates of $\mathrm{GE}(\fh_{\D_n, \lambdav})$ we need 
+  \textbf{test data} that are independent of the data we trained our model on.
+  \item Such test sets are not always available, but we will learn about 
+  techniques of \textbf{resampling} that allow us to carve out test sets from 
+  the data at hand.
+\end{itemize}
+
+\begin{center}
+  % FIGURE SOURCE: https://docs.google.com/presentation/d/1CDxKPNn2J7oZQOY62mlXS-s4Bu0IUiw57cjfCXOpzDk/edit#slide=id.p
+  \includegraphics[width=0.4\textwidth]{figure_man/train-test-data.jpg}
+\end{center}
+
+\begin{itemize}
+  \item Note that this paradigm is somewhat different from traditional 
+  statistical model diagnosis where models are judged by their goodness-of-fit 
+  rather than their generalization ability.
+  % \item The goodness-of-fit measures employed there (such as $R^2$ or 
+  % information criteria) are rooted in regression modeling and are based, in a
+  % broad sense, on the inner loss.
+\end{itemize}
 
 \end{vbframe}
 
