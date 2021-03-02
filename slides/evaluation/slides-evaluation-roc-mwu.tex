@@ -111,7 +111,8 @@
 %\usetheme{lmu-lecture}
 \newcommand{\titlefigure}{figure_man/intro-titlefig.jpg}
 \newcommand{\learninggoals}{
-\item tbd}
+\item Understand the rank-based nature of AUC.
+\item See the connection between AUC and Mann-Whitney-U statistic.}
 \usepackage{../../style/lmu-lecture}
 
 \let\code=\texttt
@@ -157,20 +158,23 @@
   \includegraphics[trim = 0 0 0 -20, clip, width=0.5\textwidth]
   {figure/eval_mclass_roc_sp_12_1} 
   \end{center}
-  \item The AUC abstracts from the actual classification scores,
-  considering only their rank.
+  \item The AUC abstracts from the actual classification scores and
+  considers only their rank.
 \end{itemize}
 
 \framebreak 
 
 \begin{itemize}
-  \item We can thus interpret the AUC as the probability of our classifier 
+  \small
+  \item We can interpret the AUC as the probability of our classifier 
   ranking a random positive observation higher than a random negative one.
+  \item A perfect classifier will rank all positive above all negative 
+  observations, achieving AUC = 1.
 \end{itemize}
 
 \begin{center}
 % FIGURE SOURCE: https://docs.google.com/drawings/d/1flfi73s8qr53-ZE6oq4qRGIG-sccpBp2cSfw1Stxh8I/edit
-\includegraphics[width=0.9\textwidth,page=1]{figure_man/auc_interpretation_new}
+  \includegraphics[width=0.8\textwidth]{figure_man/auc_interpretation_new}
 \end{center}
 
 \end{vbframe}
@@ -180,8 +184,23 @@
 \begin{vbframe}{Mann-Whitney-U test}
 
 \begin{itemize}
-  \item The Mann-Whitney-U test is a non-parametric hypothesis test on 
-  differences in location between two distributions.
+  \item The Mann-Whitney-U test is a \textbf{non-parametric hypothesis test} on 
+  the difference in location between two samples $X$, $Y$ of sizes $n_1$ and 
+  $n_2$, respectively.
+  \item Under the null, $X$ and $Y$ follow the same (unknown) distribution $\P$, 
+  and for any pair of observations $x \in X$, $y \in Y$ drawn at random from 
+  $\P$, the following statement holds:
+  $\P(x \in X) > \P(y \in Y) = \P(x \in X) < \P(y \in Y) = 0.5$.
+  \item The test statistic is computed as follows ($R_1$ denoting the sum of 
+  ranks of the $x_i$):
+  \begin{equation*}
+    % \begin{split}
+      U = \frac{1}{n_1 n_2} \sum_{i = 1}^{n_1} \sum_{j = 1}^{n_2} 
+      \I[x_i > y_j]
+      = R_1 - \cfrac{n_1(n_1 + 1)}{2}
+    % \end{split}
+  \end{equation*}
+  \item For large samples, $U$ is approximately normally distributed.
 \end{itemize}
 
 \end{vbframe}
@@ -191,43 +210,46 @@
 \begin{vbframe}{AUC \& Mann-Whitney-U test}
 
 \begin{itemize}
-\item Now, we will see how the AUC relates to the (normalized) 
-Wilcoxon-Mann-Whitney statistic.
-\item First we plot the ranks of all the scores as a stack of horizontal bars, and color them by the labels.
-\item Stack the green bars on top of one another, and slide them horizontally as needed to get a nice even stairstep on the right edge (See: practical method example for ROC curves):
+  \item We can directly interpret the AUC in the light of the U 
+  statistic.
+  \item In order to see this, plot the ranks of all the scores as a stack of 
+  horizontal bars, and color them by label.
+  \item Next, keep only the green ones, and slide them 
+  horizontally to get a nice even stairstep on the right edge:
 \end{itemize}
 \begin{center}
-\includegraphics[width=0.8\textwidth]{figure_man/roc-mannwhitney3.png}
+\includegraphics[trim = 0 40 0 0, clip, width=0.9\textwidth]
+{figure_man/roc-mannwhitney3.png}
 \end{center}
-
 
 \framebreak
 
 \begin{center}
-\includegraphics[width=0.5\textwidth]{figure_man/roc-mannwhitney2.png}
+\includegraphics[width=0.6\textwidth]{figure_man/roc-mannwhitney2.png}
 \end{center}
 
 \begin{itemize}
- \item Definition of the U statistic: $U = R_1 - \cfrac{n_1(n_1 + 1)}{2}$
- \begin{itemize}
-  \item $R_1$ is the sum of ranks of positive cases (the area of the green bars)
-  \item $n_1$ is the number of positive cases
- \end{itemize}
-  \item The area of the green bars on the right side is equal to $\cfrac{n_1(n_1 + 1)}{2}$.
+  \item Denoting the respective numbers of cases as $n_+$ and $n_-$, we 
+  have: $U = R_+ - \cfrac{n_+(n_+ + 1)}{2}$.
+  \item The area of the green bars on the right is equal to 
+  $\cfrac{n_+(n_+ + 1)}{2}$.
 \end{itemize}
 
 \framebreak
+
 \begin{center}
-\includegraphics[width=0.5\textwidth]{figure_man/roc-mannwhitney2.png}
+  \includegraphics[width=0.6\textwidth]{figure_man/roc-mannwhitney2.png}
 \end{center}
 
 \begin{itemize}
- \item $U =$ area of the green bars on left side
- \item area of dashed rectangle = $n_1 \cdot n_2$
- \item $AUC$ is $U$ normalized to the unit square,
+  \item $U$: area of the green bars on the left.
+  \item $n_+ \cdot n_-$: area of the dashed rectangle.
 \end{itemize}
-$$\Longrightarrow AUC = \cfrac{U}{n_1\cdot n_2}$$
-with $n_1 = \text{POS}$ and $n_2 = \text{NEG}$.
+
+\vfill
+ 
+$\Rightarrow$ $AUC$ is $U$ normalized to the unit square: \\
+$$AUC = \cfrac{U}{n_+\cdot n_-}.$$
 
 \end{vbframe}
 
