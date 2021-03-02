@@ -107,15 +107,11 @@
 
 % Defines macros and environments
 \input{../../style/common.tex}
-% \input{common.tex}
-
 
 %\usetheme{lmu-lecture}
-\newcommand{\titlefigure}{figure_man/plot_title_eval_regr.png}
+\newcommand{\titlefigure}{figure_man/intro-titlefig.jpg}
 \newcommand{\learninggoals}{
-\item Know the definitions of mean squared error (MSE) and mean absolute error (MAE)
-\item Understand the connections of MSE and MAE to L2 and L1 loss
-\item Know the definitions of $R^2$ and generalized $R^2$}
+\item tbd}
 \usepackage{../../style/lmu-lecture}
 
 \let\code=\texttt
@@ -130,127 +126,56 @@
 
 \setbeamertemplate{frametitle}{\expandafter\uppercase\expandafter\insertframetitle}
 
+
 \begin{document}
+
 
 % This file loads R packages, configures knitr options and sets preamble.Rnw as parent file
 % IF YOU MODIFY THIS, PLZ ALSO MODIFY setup.Rmd ACCORDINGLY...
 
+
 % Defines macros and environments
 \input{../../latex-math/basic-math.tex}
 \input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-automl.tex}
+%! includes: basics-learners 
 
-%! includes: regression-losses, evaluation-intro
-
-\lecturechapter{Evaluation: Measures for Regression}
+\lecturechapter{Evaluation: ROC \& Mann-Whitney-U Test}
 \lecture{Introduction to Machine Learning}
 
 % ------------------------------------------------------------------------------
 
-\begin{vbframe}{Mean Squared Error}
-
- The \textbf{Mean Squared Error} compares the mean of the squared distances between the target variable $y$ and the predicted target $\yh$.
+\begin{vbframe}{Foo}
 
 \begin{center}
-$
-MSE = \meanin (\yi - \yih)^2 \in [0;\infty)
-$
-\hspace{4em} $\rightarrow$ L2 loss.
+\includegraphics[width=0.5\textwidth]{figure_man/roc-mannwhitney2.png}
 \end{center}
 
-Single observations with a large prediction error heavily influence the \textbf{MSE}, as they enter quadratically.
+\begin{itemize}
+ \item Definition of the U statistic: $U = R_1 - \cfrac{n_1(n_1 + 1)}{2}$
+ \begin{itemize}
+  \item $R_1$ is the sum of ranks of positive cases (the area of the green bars)
+  \item $n_1$ is the number of positive cases
+ \end{itemize}
+  \item The area of the green bars on the right side is equal to $\cfrac{n_1(n_1 + 1)}{2}$.
+\end{itemize}
 
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-
-{\centering \includegraphics[width=0.7\textwidth]{figure/plot_quad_loss} 
-
-}
-
-\end{knitrout}
-
-Similar measures: sum of squared errors (SSE), root mean squared error (RMSE, brings measurement back to the original scale of the outcome).
-
-\end{vbframe}
-
-% ------------------------------------------------------------------------------
-
-\begin{vbframe}{Mean Absolute Error}
-
-A more robust (but not neccessarily better) way to compute a performance measure is the \textbf{Mean Absolute Error}:
+\framebreak
 \begin{center}
-$
-MAE = \meanin |\yi - \yih| \in [0;\infty)
-$
-\hspace{4em} $\rightarrow$ L1 loss.
+\includegraphics[width=0.5\textwidth]{figure_man/roc-mannwhitney2.png}
 \end{center}
 
-
-Less influenced by large errors and maybe more intuitive than the MSE.
-
-\lz
-
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-
-{\centering \includegraphics[width=0.8\textwidth]{figure/plot_abs_loss} 
-
-}
-
-
-
-\end{knitrout}
-
-Similar measures: median absolute error (for even more robustness).
+\begin{itemize}
+ \item $U =$ area of the green bars on left side
+ \item area of dashed rectangle = $n_1 \cdot n_2$
+ \item $AUC$ is $U$ normalized to the unit square,
+\end{itemize}
+$$\Longrightarrow AUC = \cfrac{U}{n_1\cdot n_2}$$
+with $n_1 = \text{POS}$ and $n_2 = \text{NEG}$.
 
 \end{vbframe}
 
 % ------------------------------------------------------------------------------
-
-\begin{vbframe}{$R^2$}
-\begin{small}
-Another well known measure from statistics is $R^2$.
-
-\[
-R^2 = 1 - \frac{\sumin (\yi - \yih)^2}{\sumin (\yi - \bar{y})^2} = 1 - \frac{SSE_{LinMod}}{SSE_{Intercept}}
-\]
-
-\begin{itemize}
-\item Usually introduced as \textit{fraction of variance explained} by the model
-\item Simpler explanation: It compares the SSE of a constant model (baseline) with a more complex model (LM), on some data, usually the same as used for model fitting.
-\item $R^2=1$: all residuals are 0, we predict perfectly, \\
-$R^2=0$: we predict as badly as the constant model
-\item If measured on the training data, $R^2 \in [0;1]$, as the LM must be at least as good as the constant, and both SSEs are non-negative.
-\item On other data $R^2$ can even be negative as there is no guarantee that the LM generalizes better than a constant (overfitting).
-\end{itemize}
-\end{small}
-\end{vbframe}
-
-% ------------------------------------------------------------------------------
-
-\begin{vbframe}{Generalized $R^2$ for ML}
-A simple generalization of $R^2$ for ML seems to be:
-
-\[
-1 - \frac{Loss_{ComplexModel}}{Loss_{SimplerModel}}
-\]
-
-\begin{itemize}
- \item This introduces a general measure of comparison between a simpler baseline, and a more complex model considered as an alternative
-\item Works for arbitrary measures (not only SSE), for arbitrary models, on any data set of interest
-\item E.g. model vs constant, LM vs non-linear model, tree vs forest, model without some features vs model with them included
-\item In ML we would rather use that metric on a holdout-test set, there is no reason not to do that
-\item Fairly unknown; our terminology (generalized $R^2$) is non-standard
-\end{itemize}
-\end{vbframe}
-
 
 \endlecture
 \end{document}
-
-% ------------------------------------------------------------------------------
-
-\begin{vbframe}{Regression losses in classical statistics}
-
-\textcolor{blue}{TO DO}
-
-\end{vbframe}
