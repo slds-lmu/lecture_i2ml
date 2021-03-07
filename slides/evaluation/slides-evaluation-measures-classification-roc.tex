@@ -112,7 +112,8 @@
 %\usetheme{lmu-lecture}
 \newcommand{\titlefigure}{figure_man/roc_metrics.png}
 \newcommand{\learninggoals}{
-\item Understand why accuracy is not an optimal performance measure for imbalanced labels
+\item Understand why accuracy is not an optimal performance measure for 
+imbalanced labels
 \item Understand the different measures computable from a confusion matrix
 \item Be aware that each of these measures has a variety of names }
 \usepackage{../../style/lmu-lecture}
@@ -129,19 +130,10 @@
 
 \setbeamertemplate{frametitle}{\expandafter\uppercase\expandafter\insertframetitle}
 
-
-
 \begin{document}
-
 
 % This file loads R packages, configures knitr options and sets preamble.Rnw as parent file
 % IF YOU MODIFY THIS, PLZ ALSO MODIFY setup.Rmd ACCORDINGLY...
-
-
-
-
-
-
 
 % Defines macros and environments
 \input{../../latex-math/basic-math.tex}
@@ -151,120 +143,196 @@
 \lecturechapter{Evaluation: Measures for Binary Classification: ROC Measures}
 \lecture{Introduction to Machine Learning}
 
-\begin{vbframe}{Imbalanced Binary Labels}
+% ------------------------------------------------------------------------------
 
-\begin{center}
-% FIGURE SOURCE: https://docs.google.com/drawings/d/1WERS9WXwS4zla86fk6ESQkskNN1WZMI1YCPprnp0Ew0/edit?usp=sharing
-\includegraphics[width=.9\textwidth]{figure_man/imbalanced.pdf}\\
-Classify all as \enquote{no disease} (green) $\rightarrow$ high accuracy.
+% \begin{vbframe}{Imbalanced Binary Labels}
+% 
+% \begin{center}
+% % FIGURE SOURCE: https://docs.google.com/drawings/d/1WERS9WXwS4zla86fk6ESQkskNN1WZMI1YCPprnp0Ew0/edit?usp=sharing
+% \includegraphics[width=.9\textwidth]{figure_man/imbalanced.pdf}\\
+% Classify all as \enquote{no disease} (green) $\rightarrow$ high accuracy.
+% 
+% \lz
+% 
+% \textbf{Accuracy Paradox}
+% \end{center}
+% 
+% \end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+% \begin{vbframe}{Imbalanced Costs}
+% 
+% \begin{center}
+% % FIGURE SOURCE: https://docs.google.com/drawings/d/1GlmMqzpeNHU_rtPFIrJMlY9Iz6XexvHEwTl3dNYKyQU/edit?usp=sharing
+% \includegraphics[width=.3\textwidth]{figure_man/imbalanced-costs.pdf}\\
+% Classify incorrectly as \enquote{no disease} $\rightarrow$ very high cost
+% 
+% \end{center}
+% 
+% \end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{class imbalance}
+
+\begin{itemize}
+ \item Consider a binary classifier for diagnosing a serious medical 
+ condition.
+ \item Here, label distribution is often \textbf{imbalanced}, i.e, not many 
+ people have the disease.
+ \item Evaluating on error rates is often inappropriate for scenarios with 
+ imbalanced labels:
+ \begin{itemize}
+   \item Assume that only 0.5\,\% of 1000 patients have the disease.
+   \item Always returning \enquote{no disease} has an error rate of 0.5\,\%, 
+   corresponding to very high accuracy.
+   \item However, this sends all sick patients home, which is the worst 
+   possible system -- even classifying everyone as \enquote{disease} might be 
+   better (depending on the treatment).
+ \end{itemize}
+ \item This problem is known as the \textbf{accuracy paradox}.
+\end{itemize}
+
+Classifying all observations as \enquote{no disease} (green) yields top 
+accuracy simply because the \enquote{disease} occurs so rarely 
+$\rightarrow$ accuracy paradox.
 
 \lz
 
-\textbf{Accuracy Paradox}
-\end{center}
-
-\end{vbframe}
-
-
-\begin{vbframe}{Imbalanced Costs}
-
 \begin{center}
-% FIGURE SOURCE: https://docs.google.com/drawings/d/1GlmMqzpeNHU_rtPFIrJMlY9Iz6XexvHEwTl3dNYKyQU/edit?usp=sharing
-\includegraphics[width=.3\textwidth]{figure_man/imbalanced-costs.pdf}\\
-Classify incorrectly as \enquote{no disease} $\rightarrow$ very high cost
-
+  % FIGURE SOURCE: https://docs.google.com/drawings/d  /1WERS9WXwS4zla86fk6ESQkskNN1WZMI1YCPprnp0Ew0/edit?usp=sharing
+  \includegraphics[width=0.7\textwidth]{figure_man/imbalanced.pdf}
 \end{center}
 
 \end{vbframe}
+ 
+% ------------------------------------------------------------------------------
 
- \begin{vbframe}{Imbalanced Binary Labels}
- \begin{itemize}
-   \item Consider a binary classifier for diagnosing a serious medical condition
-   \item Here, label distribution is often \textbf{imbalanced}, i.e, not many people have the disease
-   \item Evaluating with error rate for imbalanced labels is often inappropriate
-   \item Assume that only 0.5\,\% of 1000 patients have the disease
-   \item Always returning "no disease" has an error rate of 0.5\,\%, which sounds good
-   \item However, this sends all sick patients home, which is the worst possible system, even classifying everyone as "sick" might be better, depending on what happens next
-   \item This problem is sometimes known as the \textbf{accuracy paradox}
- \end{itemize}
- \end{vbframe}
+\begin{vbframe}{imbalanced costs}
  
- \begin{vbframe}{Binary Classifiers and Costs}
- \begin{itemize}
-   \item Another point of view is imbalanced costs
-   \item In our example, classifying a sick patient as healthy, should incur a much higher loss then classifying a healthy patient as sick
-   \item The costs depend a lot on what happens next: We can likely assume that our system is some type of screening filter,
-     often the next step after labeling someone as "sick" might be a more invasive, expensive, but more reliable test for the disease
-   \item Erroneously subjecting someone to that second step is not good (psychologically, economically, or because the second test might introduce
-     medical risks), but sending someone home to get worse or die seems much worse
-   \item Such a situation not only arises under label imbalance, but also when labels are maybe balanced but costs differ
-   \item We could see this as imbalanced costs of misclassification, rather than imbalanced labels; both situations are tightly connected
- \end{itemize}
- \end{vbframe}
- 
- \begin{vbframe}{Binary Classifiers and Costs}
- \begin{itemize}
-   \item Problem is: If we could specify costs precisely, we could evaluate against them, we might even optimize our model for them
-   \item This important subfield of ML is called \textbf{cost-sensitive learning}, which we will not cover in this lecture unit
-   \item Unfortunately, users often have a notoriously hard time to come up with precise cost numbers in imbalanced scenarios
-   \item Evaluating "from different perspectives", with multiple metrics, often helps, especially to get a first impression
-     of the quality of the system
- \end{itemize}
- \end{vbframe}
- 
- \begin{frame}{ROC Analysis}
-ROC Analysis -- which stands for "receiver operating characteristics" -- is a subfield of ML which studies the evaluation of binary prediction systems.
+\begin{itemize}
+  \item Another point of view is \textbf{imbalanced costs}.
+  \item In our example, classifying a sick patient as healthy should incur a 
+  much higher loss then classifying a healthy patient as sick.
+  \item The costs depend a lot on what happens next: we can likely assume that 
+  our system is some type of screening filter, and often the next step after 
+  labeling someone as sick might be a more invasive, expensive, but also  more 
+  reliable test for the disease.
+  \item Erroneously subjecting someone to this step is undesirable 
+  (psychological, economic, medical expense), but sending someone home to get 
+  worse or die seems is much more so.
+  \item Such situations not only arise under label imbalance, but also when 
+  costs differ (even though classes might be balanced).
+  \item We could see this as imbalanced costs of misclassification, rather than 
+  imbalanced labels; both situations are tightly connected.
+\end{itemize}
+
+\framebreak
 
 \lz
 
-Initially developed by electrical engineers and radar engineers during World War II for detecting enemy objects in battlefields. 
+\begin{minipage}[c]{0.65\textwidth}
+  \raggedright
+  \textbf{Imbalanced costs: } classifying incorrectly as \enquote{no disease} 
+  incurs very high cost.
+\end{minipage}%
+\begin{minipage}[c]{0.35\textwidth}
+  \centering
+  \includegraphics[trim = 0 0 0 10, clip, width=0.4\textwidth]
+  {figure_man/imbalanced-costs.pdf}
+\end{minipage}
+
+\lz
+
+\begin{itemize}
+  \item Problem: if we were able to specify costs precisely, we could evaluate 
+  or even optimize on them.
+  \item This important subfield of ML is called \textbf{cost-sensitive 
+  learning}, which we will not cover in this lecture unit.
+  \item Unfortunately, users tend to find it notoriously hard to come up with 
+  precise cost figures in imbalanced scenarios.
+  \item Evaluating \enquote{from different perspectives}, with multiple metrics, 
+  often helps to get a first impression of system quality.
+\end{itemize}
+ 
+\end{vbframe}
+ 
+% ------------------------------------------------------------------------------
+ 
+ % \begin{vbframe}{Binary Classifiers and Costs}
+ % \begin{itemize}
+ %   \item Problem is: If we could specify costs precisely, we could evaluate against them, we might even optimize our model for them
+ %   \item This important subfield of ML is called \textbf{cost-sensitive learning}, which we will not cover in this lecture unit
+ %   \item Unfortunately, users often have a notoriously hard time to come up with precise cost numbers in imbalanced scenarios
+ %   \item Evaluating "from different perspectives", with multiple metrics, often helps, especially to get a first impression
+ %     of the quality of the system
+ % \end{itemize}
+ % \end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{frame}{ROC Analysis}
+
+\begin{itemize}
+  \item \textbf{ROC analysis} is a subfield of ML which studies the evaluation 
+  of binary prediction systems.
+  \item ROC stands for \enquote{receiver operating characteristics} and was 
+  initially developed by electrical engineers and radar engineers during World 
+  War II for detecting enemy objects in battlefields -- still has the funny 
+  name.
+\end{itemize}
+
+\lz
 
 \begin{center}
 \includegraphics[width=.4\textwidth]{figure_man/receiver_operator.jpg}
 {\tiny \url{http://media.iwm.org.uk/iwm/mediaLib//39/media-39665/large.jpg}}
 \end{center}
 
-Still has the funny name.
 \end{frame}
 
- 
+% ------------------------------------------------------------------------------
 
- \begin{vbframe}{Confusion Matrix and ROC Metrics}
- \begin{itemize}
-   \item From now on, we call one class "positive", one "negative" and their respective sizes
-     $n_+$ and $n_-$
-   \item The positive class is the more important, often smaller one
-   \item We represent all predictions in a confusion matrix and count correct and incorrect class assignments
-   \item False Positive means: We assigned "positive", but were wrong
- \end{itemize}
-% % FIGURE SOURCE: No source
- \includegraphics[width=0.7\textwidth]{figure_man/roc-confmatrix1.png}
- \end{vbframe}
+%  \begin{vbframe}{Confusion Matrix and ROC Metrics}
+%  \begin{itemize}
+%    \item From now on, we will call one class "positive", one "negative" and 
+%    their respective sizes $n_+$ and $n_-$.
+%    \item The positive class is the more important, often smaller one.
+%    \item We represent all predictions in a confusion matrix and count correct 
+%    and incorrect class assignments
+%    \item False Positive means: We assigned "positive", but were wrong
+%  \end{itemize}
+% % % FIGURE SOURCE: No source
+%  \includegraphics[width=0.7\textwidth]{figure_man/roc-confmatrix1.png}
+%  \end{vbframe}
 
+% ------------------------------------------------------------------------------
 
-\begin{vbframe}{Confusion Matrix}
+% \begin{vbframe}{Confusion Matrix}
+% 
+% \begin{center}
+% \small
+% \renewcommand{\arraystretch}{1.5}
+% \begin{tabular}{cc||cc}
+%     & & \multicolumn{2}{c}{\bfseries True Class $y$}  \\
+%     & & $+$ & $-$  \\ 
+%     \hline \hline
+%     \bfseries Pred.     & $+$ & TP & FP\\
+%               $\yh$ & $-$ & FN & TN\\ 
+% \end{tabular}
+% \renewcommand{\arraystretch}{1}
+% \end{center}
+% 
+% \begin{itemize}
+%   \item $+$: \enquote{positive} class
+%   \item $-$: \enquote{negative} class
+%   \item $\np$: number of observations in $+$
+%   \item $\nn$: number of observations in $-$
+% \end{itemize}
+% \end{vbframe}
 
-\begin{center}
-\small
-\renewcommand{\arraystretch}{1.5}
-\begin{tabular}{cc||cc}
-    & & \multicolumn{2}{c}{\bfseries True Class $y$}  \\
-    & & $+$ & $-$  \\ 
-    \hline \hline
-    \bfseries Pred.     & $+$ & TP & FP\\
-              $\yh$ & $-$ & FN & TN\\ 
-\end{tabular}
-\renewcommand{\arraystretch}{1}
-\end{center}
-
-\begin{itemize}
-  \item $+$: \enquote{positive} class
-  \item $-$: \enquote{negative} class
-  \item $\np$: number of observations in $+$
-  \item $\nn$: number of observations in $-$
-\end{itemize}
-\end{vbframe}
-
+% ------------------------------------------------------------------------------
 
 \begin{vbframe}{Labels: ROC Metrics}
 From the confusion matrix (binary case), we can calculate "ROC" metrics.
@@ -308,17 +376,20 @@ From the confusion matrix (binary case), we can calculate "ROC" metrics.
 \end{itemize}
 \end{vbframe}
 
-
-
+% ------------------------------------------------------------------------------
 
 \begin{vbframe}{Labels: ROC Metrics}
-Example
+
+Example:
+
 \begin{center}
   % FIGURE SOURCE: No source
   \includegraphics[width=\textwidth]{figure_man/roc-confmatrix-example.png}
 \end{center}
 
 \end{vbframe}
+
+% ------------------------------------------------------------------------------
 
 \begin{vbframe}{More metrics and alternative terminology}
 
@@ -332,56 +403,74 @@ Unfortunately, for many concepts in ROC, 2-3 different terms exist.
 \href{https://upload.wikimedia.org/wikipedia/commons/0/0e/DiagnosticTesting_Diagram.svg}{\beamergotobutton{Interactive diagram}}
 \end{vbframe}
 
+% ------------------------------------------------------------------------------
 
 \begin{vbframe}{Labels: $F_1$-Measure}
-\begin{small}
- \begin{itemize}
-   \item It is difficult to achieve a high \textit{Positive Predictive Value} and high \textit{True Positive Rate} simultaneously.
-   \item A classifier that predicts more "positives" will tend to be more sensitive (higher TPR), but it will also tend to give more false positives (lower TNR, lower PPV).
-   \item A classifier that predicts more "negatives" will tend to be more precise (higher PPV), but it will also produce more false negatives (lower TPR).
+
+\small
+
+\begin{itemize}
+  \item It is difficult to achieve a high \textbf{Positive Predictive Value} and 
+  high \textbf{True Positive Rate} simultaneously.
+   \item A classifier predicting more positive will be more 
+   sensitive (higher TPR), but it will also tend to give more \textbf{false} 
+   positives (lower TNR, lower PPV).
+   \item A classifier that predicts more negatives will be more precise 
+   (higher PPV), but it will also produce more \textbf{false} negatives 
+   (lower TPR).
  \end{itemize}
 
-
-A measure that balances two conflicting goals\\[.5em]
+The \textbf{$F_1$ score} balances two conflicting goals:\\%[.5em]
 \begin{enumerate}
  \item Maximising Positive Predictive Value
  \item Maximising True Positive Rate\\[.5em]
 \end{enumerate}
-is the harmonic mean of PPV and TPR:
-$$F_1 = 2 \cfrac{PPV \cdot TPR}{PPV + TPR}$$
 
-Note that this measure still doesn’t account for the number of true
+$F_1$ is the harmonic mean of PPV and TPR:
+$$F_1 = 2 \cdot \cfrac{PPV \cdot TPR}{PPV + TPR}$$
+
+Note that this measure still does not account for the number of true
 negatives.
-\end{small}
+
 \end{vbframe}
 
-\begin{vbframe}{Labels: $F_1$-Measure}
-Tabulated $F_1$-Score for different TPR (rows) and PPV (cols) combinations. 
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
-\begin{verbatim}
-    0.0  0.2  0.4  0.6  0.8  1.0
-0.0   0 0.00 0.00 0.00 0.00 0.00
-0.2   0 0.20 0.27 0.30 0.32 0.33
-0.4   0 0.27 0.40 0.48 0.53 0.57
-0.6   0 0.30 0.48 0.60 0.69 0.75
-0.8   0 0.32 0.53 0.69 0.80 0.89
-1.0   0 0.33 0.57 0.75 0.89 1.00
-\end{verbatim}
-\end{kframe}
-\end{knitrout}
-$\rightarrow$ Tends more towards the lower of the 2 combined values.
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Labels: $F_1$ Measure}
+
+\begin{minipage}[c]{0.5\textwidth}
+  % \small
+  $F_1$ score for different combinations of TPR \& PPV. \\
+  $\rightarrow$ Tends more towards the lower of the two combined values.
+\end{minipage}%
+\begin{minipage}[c]{0.5\textwidth}
+  \centering
+  \includegraphics[width=0.8\textwidth]{figure/eval_mclass_roc.pdf}
+\end{minipage}
+
+% Tabulated $F_1$-Score for different TPR (rows) and PPV (cols) combinations:
+% \begin{knitrout}\scriptsize
+% \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+% 
+% \includegraphics[width=0.5\textwidth]{figure/eval_mclass_roc.pdf}
+% 
+% \end{knitrout}
+% $\rightarrow$ Tends more towards the lower of the two combined values.
 
 
 \begin{itemize}
-  \item A model with $TPR=0$ (no one predicted as positive from the positive class) or $PPV=0$ (no real positives among the predicted) has an F1 of 0
-  \item Predicting always "neg": $F_1 = 0$
-  \item Predicting always "pos": $F_1 = 2 PPV / (PPV + 1) = 2 \np / (\np + n)$,\\ 
-  which will be rather small, if the size of the positive class $\np$ is small.
+  \item A model with $TPR=0$ (no positive instance predicted as positive) or 
+  $PPV=0$ (no true positives among the predicted) has $F_1 = 0$.
+  \item Always predicting \enquote{negative}: $F_1 = 0$.
+  \item Always predicting \enquote{positive}: $F_1 = 2 \cdot PPV / (PPV + 1) = 
+  2 \cdot \np / (\np + n)$,\\ 
+  which will be small when the size of the positive class $\np$ is small.
 \end{itemize}
 
 
 \end{vbframe}
+
+% ------------------------------------------------------------------------------
 
 \endlecture
 
