@@ -111,7 +111,9 @@
 %\usetheme{lmu-lecture}
 \newcommand{\titlefigure}{figure_man/intro-titlefig.jpg}
 \newcommand{\learninggoals}{
-\item tbd}
+\item Understand why pAUC is a reasonable metric in some contexts
+\item Know how pAUC is computed and normalized
+\item Understand multi-class AUC}
 \usepackage{../../style/lmu-lecture}
 
 \let\code=\texttt
@@ -140,15 +142,92 @@
 \input{../../latex-math/ml-automl.tex}
 %! includes: basics-learners 
 
-\lecturechapter{Evaluation: Multi-Class AUC}
+\lecturechapter{Evaluation: AUC Extensions}
 \lecture{Introduction to Machine Learning}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Partial AUC}
+
+\begin{itemize}
+  \item Sometimes it can be useful to look at a specific region under the ROC 
+  curve $\Rightarrow$ partial AUC (pAUC).
+  % \item This leads to partial AUC (pAUC), originally proposed by 
+  % \href{http://journals.sagepub.com/doi/pdf/10.1177/0272989X8900900307}
+  % {McClish (1989)}.
+  \item For example, we might focus on a region with low FPR or a region with 
+  high TPR:
+\end{itemize}
+
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+{\centering \includegraphics[width=0.9\textwidth]{figure/eval_mclass_roc_sp_13} }
+\end{knitrout}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Partial AUC -- example}
+
+\begin{itemize}
+  \item Applications where sensitivity and specificity are treated asymetrically 
+  often occur in biomedical contexts.
+  \item For example, 
+  \href{https://clincancerres.aacrjournals.org/content/16/24/6111}
+  {Wild et al. (2010)} used pAUC in their study of biomarkers for the detection 
+  of colorectal cancer.
+  \item Sensitivity, i.e., being able to correctly detect present diseases, is 
+  crucial in this setting.
+  \item At the same time, high sensitivity is only useful if the classifier also 
+  achieves high specificity. \\
+  $\rightarrow$ Otherwise, healthy patients might receive costly and entirely 
+  unnecessary treatment.
+  \item It is therefore reasonable to demand a certain level of specificity and 
+  evaluate/optimize learners on the resulting pAUC.
+\end{itemize}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Corrected Partial AUC}
+
+\begin{itemize}
+  \item The scale of the partial AUC depends on the FPR cut-off values used to 
+  determine the region of interest $\Rightarrow \text{pAUC} \in [0, c_2 - c_1]$.
+  \item For standard AUC, we have $c_1 = 0$ and $c_2 = 1$.
+  \item We can scale pAUC to take on values in $[0, 1]$ again:
+  $$\text{pAUC}_\text{corrected} = \cfrac{1}{2} \left( 1 + \cfrac{\text{pAUC} - 
+  \text{AUC}_{\text{min}}}{\text{AUC}_{\text{max}} - \text{AUC}_{\text{min}}} 
+  \right),$$
+  where
+  \begin{itemize}
+    \item $\text{AUC}_{\text{min}}$ is the value of the non-discriminant AUC, 
+    and
+    \item $\text{AUC}_{\text{max}}$ is the maximum possible AUC in the region.
+  \end{itemize}
+  % \item As usual, $\text{pAUC} = 0.5$ corresponds to the non-discriminant and 
+  % $\text{pAUC} = 1$ to the perfect classifier.
+  \lz
+  \item NB: using pAUC means casting aside parts of the information 
+  deliberately.
+\end{itemize}
+
+\end{vbframe}
 
 % ------------------------------------------------------------------------------
 
 \begin{vbframe}{Multiclass AUC}
 \begin{itemize}
-  \item Consider multiclass classification, where a classifier predicts the probability $p_k$ of belonging to class $k$ for each class.
-  \item Hand and Till (2001) proposed to average the AUC of pairwise comparisons (1 vs. 1) of a multiclass classifier.
+  \item In its original form, AUC (as the other ROC metrics) is defined for the 
+  binary-class case.
+  \item We can easily extend AUC to multi-class classification, where the 
+  classifier predicts the probability $\postk$ of belonging to class $k$ for 
+  each class $k \in \setg$, $g > 2$.
+  \item \href{https://link.springer.com/article/10.1023/A:1010920819831}
+  {Hand and Till (2001)} proposed to average the AUC of pairwise comparisons 
+  (one-vs-one) of a multi-class classifier.
   \begin{itemize}
     \item estimate $AUC(i,j)$ for each pair of class $i$ and $j$
     \item $AUC(i,j)$ is the probability that a randomly drawn member of class $i$ has a lower probability of belonging to class $j$
