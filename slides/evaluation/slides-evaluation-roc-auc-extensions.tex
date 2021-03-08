@@ -161,7 +161,7 @@
 
 \begin{knitrout}\scriptsize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-{\centering \includegraphics[width=0.9\textwidth]{figure/eval_mclass_roc_sp_13} }
+{\centering \includegraphics[width=0.9\textwidth]{figure/eval_mclass_roc_sp_13}}
 \end{knitrout}
 
 \end{vbframe}
@@ -220,25 +220,86 @@
 
 \begin{vbframe}{Multi-class AUC}
 
-\textcolor{blue}{Still WIP -- more details here}
+% \small
 
 \begin{itemize}
+  \small
   \item In its original form, AUC (as the other ROC metrics) is defined for the 
   binary-class case.
-  \item We can easily extend AUC to \textbf{multi-class} classification, where 
-  the classifier predicts the probability $\pik$ of belonging to class $k$ for 
-  each class $k \in \setg$.
-  \item \href{https://link.springer.com/article/10.1023/A:1010920819831}
-  {Hand and Till (2001)} proposed to average the AUC of pairwise comparisons 
-  (one-vs-one) of a multi-class classifier:
+  \item We can extend AUC to \textbf{multi-class} classification, where 
+  estimating the area under the ROC curve evolves into estimating the 
+  hypervolume under the ROC surface.
+  \item This can be achieved by considering a set of two-dimensional curves and 
+  subsequent aggregation. \\
+  $\rightarrow$ In principle, we have the choice between one-vs-one and 
+  one-vs-rest comparisons.
+\end{itemize}  
+
+\vfill
+ 
+\begin{minipage}[c]{0.75\textwidth}
+  \centering
+  \includegraphics[trim = 0 40 -20 40, clip, width=\textwidth]
+  {figure/eval_auc_extensions}
+\end{minipage}%
+\begin{minipage}[c]{0.25\textwidth}
+  \scriptsize
+  \raggedright
+  One-vs-one comparisons between classes for classification of \texttt{iris} 
+  species with LDA according to sepal width.
+\end{minipage}
+ 
+% \begin{center}
+%   \includegraphics[trim = 0 40 0 40, clip, width=0.5\textwidth]
+%   {figure/eval_auc_extensions}
+% \end{center}
+ 
+\framebreak
+  
+\begin{itemize}  
+  \small
+  \item For the first possibility, 
+  \href{https://link.springer.com/article/10.1023/A:1010920819831}
+  {Hand and Till (2001)} proposed to average the AUC of respective pairwise 
+  comparisons between two classes.
   \begin{itemize}
-    \item Compute $\text{AUC}(i,j)$ for each pair of classes $i, j \in \setg$.
-    \item $\text{AUC}(i,j)$ is the probability that a randomly drawn member of 
-    class $i$ has a lower probability of belonging to class $j$
-    than a randomly drawn member of class $j$.
-    \item For $g$ classes, we have ${{g}\choose{2}} = \tfrac{g (g-1)}{2}$ values 
-    of $\text{AUC}(i,j)$, which are then averaged to compute the multi-class 
-    AUC.
+    \small
+    % \small
+  % , where 
+  % the classifier predicts the probability $\pik$ of belonging to class $k$ for 
+  % each class $k \in \setg$.
+  % \item \href{https://link.springer.com/article/10.1023/A:1010920819831}
+  % {Hand and Till (2001)} proposed to average the AUC of pairwise comparisons 
+  % (one-vs-one) of a multi-class classifier.
+    \item First, compute for all pairs of classes $k, \ell \in \setg$ the 
+    probability $\text{AUC}(k ~|~ \ell)$ of a randomly drawn member of class $k$ 
+    having a lower probability of belonging to class $\ell$ than a randomly drawn 
+    member of class $\ell$.
+    \item For $g = 2$, we have $\text{AUC}(k ~|~ \ell) = 
+    \text{AUC}(\ell ~|~ k)$, but not necessarily so for $g > 2$.
+    \item However, since class identifiability is immune to any bijective 
+    transformation of the labels, we cannot distinguish $\text{AUC}(k ~|~ \ell)$ 
+    from $\text{AUC}(\ell ~|~ k)$, so we set 
+    $\text{AUC}(k, \ell) = \frac{1}{2} \cdot [\text{AUC}(k ~|~ \ell) + 
+    \text{AUC}(\ell ~|~ k)]$.
+  
+  % \begin{itemize}
+  %   \item Compute $\text{AUC}(i,j)$ for each pair of classes $i, j \in \setg$.
+  %   \item $\text{AUC}(i,j)$ is the probability that a randomly drawn member of 
+  %   class $i$ has a lower probability of belonging to class $j$
+  %   than a randomly drawn member of class $j$.
+  %   \item For $g$ classes, we have ${{g}\choose{2}} = \tfrac{g (g-1)}{2}$ values 
+  %   of $\text{AUC}(i,j)$, which are then averaged to compute the multi-class 
+  %   AUC.
+  % \end{itemize}
+  
+    \item Averaging over all pairs of classes yields the overall AUC as a 
+    multi-class performance metric:
+    $$\text{AUC}_{MC} = \frac{2}{g(g + 1)} \sum_{k < \ell} \text{AUC}(k, \ell) 
+    \in [0, 1].$$
+    \item This reduces to the standard AUC for the binary case.
+    % \item Again, a non-discriminant classifier will have $\text{AUC}_{MC} = 0.5$
+    % as all pairwise probability estimates equal 0.5.
   \end{itemize}
 \end{itemize}
 \end{vbframe}
