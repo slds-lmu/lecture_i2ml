@@ -30,12 +30,6 @@ measures <- list(
 
 bm_result <- as.data.table(bmr$aggregate(measures))
 
-# scale_zero_one <- function(x) (x - min(x)) / (max(x) - min(x))
-# 
-# bm_result[
-#   , sapply(measures, function(i) i$id) := lapply(.SD, scale_zero_one),
-#   .SDcols = sapply(measures, function(i) i$id)]
-
 bm_result[
   , sapply(measures, function(i) i$id) := lapply(.SD, function(i) frank(1 - i)),
   .SDcols = sapply(measures, function(i) i$id)]
@@ -53,7 +47,7 @@ setorder(bm_result_long, "metric")
 
 p <- ggplot(bm_result_long, aes(x = learner_id, y = metric, fill = value)) +
   geom_tile() +
-  geom_text(aes(label = value), color = "white") +
+  geom_text(aes(label = value), color = "white", size = 5L) +
   scale_fill_gradient(
     low = "darkgreen",
     high = "darkolivegreen3") +
