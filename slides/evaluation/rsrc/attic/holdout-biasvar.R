@@ -21,7 +21,7 @@ task1 = convertMLBenchObjToTask("mlbench.spirals", n1, sd = 0.1)
 
 r1 = subsample(lrn, task1, iters = ss.iters * 10, split = n2 / n1, keep.pred = FALSE)
 realperf = r1$aggr
-res = array(NA, dim = c(length(split.rates), ss.iters, nreps), 
+res = array(NA, dim = c(length(split.rates), ss.iters, nreps),
  dimnames = list(split.rates, 1:ss.iters, 1:nreps))
 
 for (i in 1:nreps) {
