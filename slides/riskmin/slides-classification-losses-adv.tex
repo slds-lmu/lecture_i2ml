@@ -1,0 +1,379 @@
+%<<setup-child, include = FALSE>>=
+%library(knitr)
+%library(qrmix)
+%library(mlr)
+%library(quantreg)
+%library(reshape2)
+%set_parent("../style/preamble.Rnw")
+%@
+
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/optimization_steps.jpeg}
+\newcommand{\learninggoals}{
+\item Understand that an ML model is simply a parametrized curve
+\item Understand that the hypothesis space lists all admissible models
+    for a learner
+\item Understand the relationship between the hypothesis space and the parameter space
+}
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+
+\begin{document}
+
+\lecturechapter{Advanced Classification Losses}
+\lecture{Introduction to Machine Learning}
+
+
+\begin{vbframe}{Risk Minimization for Classification}
+
+Let $y$ be categorical with $g$ classes, i. e.  $\Yspace = \{1, ..., g\}$ and let $f: \Xspace \to \R^g$. We assume our model $f$ outputs a $g$-dimensional vector of scores or probabilities, one per class.
+
+\lz 
+
+\textbf{Note}: In this section, we will consider loss for \textbf{binary classification} tasks, so $\fx$ and $\pix$ are univariate scalars.
+
+\lz 
+
+  We will (usually) encode labels as $y \in \{-1, 1\}$ for scoring classifiers $\fx$, and as $y \in \{0, 1\}$ for probabilistic classifiers $\pix$ unless explicitly stated differently. 
+
+
+\lz
+
+\textbf{Goal:} Find a model $f$ that minimizes the expected loss over random observations $\xy \sim \Pxy$ 
+
+$$
+\argmin_{f \in \Hspace} \riskf = \E_{xy}[\Lxy] = \int \Lxy ~ \text{d}\Pxy. 
+$$
+
+
+\begin{itemize}
+  \item As for regression before, losses measure prediction errors \textbf{point-wise}.
+  \item In classification, however, we need to distinguish the different types of prediction functions:
+  \item Losses can either be defined on
+  \begin{itemize}
+    \item hard labels $\hx$ or
+    \item (class) scores $\fx$ or
+    \item (class) probabilities $\pix$. 
+  \end{itemize}
+  \item For multiclass classification, loss functions will be defined on vectors of scores ($f_1(\xv), ..., f_g(\xv)$) or on vectors of probabilities ($\pi_1(\xv), ..., \pi_g(\xv)$).
+\end{itemize}
+
+
+\framebreak 
+
+\begin{figure}
+  \includegraphics[width=0.8\textwidth]{figure_man/classifiers.png}
+\end{figure}
+
+Note that for a \textbf{binary scoring classifier} $\fx$,
+
+$$
+\hx = \sign(\fx) \in \{-1, 1\}
+$$
+and for a \textbf{probabilistic classifier} $\pix$
+
+$$
+\hx = \mathds{1}_{\{ \pix > c \}} \in \{0, 1\}
+$$
+
+(e.g. $c = 0.5$) will be the corresponding label. 
+
+
+\end{vbframe}
+
+\begin{vbframe}{Margins} 
+
+When considering scoring classifiers $\fx$ we usually define loss functions on the so-called \textbf{margin}
+
+$$
+r = y\cdot \fx =  \begin{cases} > 0  \quad &\text{ if } y = \sign(\fx) \text{ (correct classification)}\,, \\
+                      < 0 \quad &\text{ if } y \ne \sign(\fx) \text{ (misclassification)}\,, \end{cases}
+$$
+
+$|\fx|$ is called \textbf{confidence}.
+
+% \framebreak
+
+% We define the \textbf{loss plot} for binary scoring classifiers as the plot that shows the point-wise loss $\Lxy$, vs. the \textbf{margin} $y \cdot \fx$. Large positive values of $y \cdot \fx$ are good and penalized less.
+
+% \lz
+
+% \textbf{Example:} 0-1-Loss
+
+% <<echo=FALSE, warning=FALSE, message=FALSE, fig.height = 3>>=
+% x = seq(-2, 2, by = 0.01); y = as.numeric(x < 0)
+% qplot(x, y, geom = "line", xlab = expression(y %.% f(x)), ylab = expression(L(y, f(x))))
+%   @
+
+% For probabilistic classifiers, loss plots show the Loss $L(y, \pix)$ versus the class probability $\pix$.
+
+
+\end{vbframe}
+
+
+
+% \begin{vbframe}{Classification Losses: (Naive) L2-Loss}
+
+
+% $$
+% \Lxy = (1 - y\fx)^2,
+% $$
+
+
+% \begin{itemize}
+%   \item L2-loss defined on scores
+%   \item Predictions with high confidence $|f(x)|$ are penalized  regardless of whether the signs of $y$ and $f(x)$ match.
+%   \item Squared loss on the loss functions is thus not the best choice.
+
+%   <<loss-squareclass-plot, echo=FALSE, results='hide', fig.height= 1.8, fig.asp = 0.4>>=
+%  x = seq(-2, 5, by = 0.01)
+%  plot(x, (1-x)^2, type = "l", xlab = expression(y %.% f(x)), ylab = expression(paste((1-yf(x))^2)), main = "Square loss")
+%  box()
+% @
+
+%   \item The theoretical risk becomes
+%     \begin{eqnarray*}
+%     \risk(f) &=& \mathbb{E}_x [(1-\fx)^2 (P(1 | x)) + (1+\fx)^2 (1-P(1 | x))] \\
+%     &=& \mathbb{E}_x [1 + 2\fx + \fx^2-4\fx P(1 | x)].
+%     \end{eqnarray*}
+%   \item By differentiating w.r.t. $f(x)$ we get the minimizer of $\risk(f)$ for the square loss function
+
+%     \begin{eqnarray*}
+%     f(\xv) &=& 2\cdot P(1 | \xv) - 1.
+%     \end{eqnarray*}
+%     \item The empiricla optimzer is then
+%     $$
+%     \fh(\xv) = \frac{2}{n}\cdot \sumin \I[y^{(i)} = 1] - 1.
+%     $$
+
+
+% \end{itemize}
+
+% \end{vbframe}
+
+
+\section{0-1-Loss}
+
+\begin{vbframe}{0-1-Loss}
+
+\begin{itemize}
+  \item Let us first consider a classifier $\hx$ that outputs discrete classes directly. 
+  \item The most natural choice for $\Lhxy$ is of course the 0-1-loss that counts the number of misclassifications
+  $$
+  \Lhxy = \mathds{1}_{\{y \ne \hx\}} =
+     \footnotesize \begin{cases} 1 \quad \text{ if } y \ne \hx \\ 0 \quad    \text{ if } y = \hx  \end{cases}.
+  $$
+  \item We can express the 0-1-loss also for a scoring classifier $\fx$ based on the margin $r$
+
+  $$
+  \Lr = \mathds{1}_{\{r < 0\}} = \mathds{1}_{\{y\fx < 0\}} = \mathds{1}_{\{y \neq \hx\}}.
+  $$
+
+\end{itemize}
+
+
+\framebreak 
+
+$$
+  \Lr = \mathds{1}_{\{r < 0\}} = \mathds{1}_{\{y\fx < 0\}} = \mathds{1}_{\{y \neq \hx\}} 
+$$
+
+\begin{itemize}
+\item Intuitive, often what we are interested in.
+\item Analytic properties:  Not continuous, even for linear $f$ the optimization problem is NP-hard and close to intractable.
+\end{itemize}
+
+\begin{center}
+\includegraphics[width = 11cm ]{figure_man/0-1-loss.png} \\
+\end{center}
+
+
+\end{vbframe}
+
+
+\section{Brier Score}
+
+\begin{vbframe}{Brier Score}
+
+The binary Brier score is defined on probabilities $\pix \in [0, 1]$ and 0-1-encoded labels $y \in \{0, 1\}$ and measures their squared distance (L2 loss on probabilities).
+
+\begin{eqnarray*}
+L\left(y, \pix\right) &=& (\pix - y)^2
+\end{eqnarray*}
+
+\vspace{0.2cm}
+\begin{center}
+\includegraphics[width = 11cm ]{figure_man/Brier-score.png} \\
+\end{center}
+
+
+\end{vbframe}
+
+
+
+\section{Bernoulli Loss}
+
+\begin{vbframe}{Bernoulli Loss}
+
+\vspace*{-0.5cm}
+\begin{eqnarray*}
+  L_{-1, +1}(y, \fx) &=& \ln(1+\exp(-y\fx)) \\
+  L_{0, 1}(y, \fx) &=& - y \cdot \fx + \log(1 + \exp(\fx)). 
+\end{eqnarray*}
+
+\begin{itemize}
+  \item Two equivalent formulations: Labels $y \in \{-1, 1\}$ or $y \in \{0, 1\}$
+  \item Negative log-likelihood of Bernoulli model, e.g., logistic regression
+  \item Convex, differentiable
+  \item Pseudo-Residuals (0,1 case): $\tilde{r} = y - \frac{1}{1+\exp(-\fx)}$\\   
+    Interpretation: $L1$ distance between 0/1-labels and posterior prob!
+\end{itemize}
+
+\vspace{0.2cm}
+\begin{center}
+\includegraphics[width = 9cm ]{figure_man/bernoulli.png} \\
+\end{center}
+
+\end{vbframe}
+
+
+
+
+\begin{vbframe}{Bernoulli loss on probabilities}
+
+If scores are transformed into probabilities by the logistic function  $\pix = \left(1 + \exp(- \fx)\right)^{-1}$, we arrive at another equivalent formulation of the loss
+
+  $$
+    L_{0,1}(y, \pix) = - y \log \left(\pix\right) - (1 - y) \log \left(1 - \pix\right). 
+  $$
+
+\begin{center}
+\includegraphics[width = 10cm ]{figure_man/bernoulli-loss.png} \\
+\end{center}
+
+Via this form it is easy to show that the point-wise optimum for probability estimates is $\pixh = \P(y~|~\xv = \xv)$.
+
+\end{vbframe}
+
+
+
+
+% \vspace*{-0.2cm}
+
+% \begin{eqnarray*}
+%   \Lxy = \log \left[1 + \exp \left(-y\fx\right)\right].
+% \end{eqnarray*}
+
+% We transform scores into probabilities by
+
+% $$
+% \pix = \P(y = 1 ~|~\xv) = s(\fx) = \frac{1}{1 + \exp(- \fx)},
+% $$
+
+% with $s(.)$ being the logistic sigmoid function as introduced in chapter 2.
+
+% \framebreak
+
+% As already shown before, an equivalent approach that directly outputs probabilities $\pix$ is minimizing the \textbf{Bernoulli loss}
+
+% \begin{eqnarray*}
+% \Lxy = -y \log \left(\pix\right) - (1 - y) \log \left(1 - \pix\right)
+% \end{eqnarray*}
+
+% for $\pix$ in the hypothesis space
+
+% \begin{eqnarray*}
+%   \Hspace = \left\{\pi: \Xspace \to [0, 1] ~|~\pix = s(\thetab^\top \xv)\right\}
+% \end{eqnarray*}
+
+% with $s(.)$ again being the logistic function.
+
+% \framebreak
+
+
+% Logistic Regression with one feature $\xv \in \R$. The figure shows how $\xv \mapsto \pix$.
+
+% <<fig.height=4>>=
+% set.seed(1234)
+% n = 20
+% x = runif(n, min = 0, max = 7)
+% y = x + rnorm(n) > 3.5
+% df = data.frame(x = x, y = y)
+
+% model = glm(y ~ x,family = binomial(link = 'logit'), data = df)
+% df$score = predict(model)
+% df$prob = predict(model, type = "response")
+% x = seq(0, 7, by = 0.01)
+% dfn = data.frame(x = x)
+% dfn$prob = predict(model, newdata = dfn, type = "response")
+% dfn$score = predict(model, newdata = dfn)
+
+% p2 = ggplot() + geom_line(data = dfn, aes(x = x, y = prob))
+% p2 = p2 + geom_point(data = df, aes(x = x, y = prob, colour = y), size = 2)
+% p2 = p2 + xlab("x") + ylab(expression(pi(x)))
+% p2 = p2 + theme(legend.position = "none")
+% p2
+% @
+
+% \framebreak
+
+% Logistic regression with two features:
+
+
+\section{Summary}
+
+\begin{vbframe}{Summary of Loss Functions}
+
+\vspace*{-0.5cm}
+
+\begin{table}[] 
+\footnotesize
+\renewcommand{\arraystretch}{1.5} %<- modify value to suit your needs
+\begin{tabular}{c|lll}
+Name & Formula & Differentiable \\ \hline
+0-1 & $L(y, \hx) = [y \neq \hx]$  & \xmark \\
+Brier & $L(y, \pix) = \left(\pix - y\right)^2$ & \checkmark \\
+Bernoulli & $L_{-1+1}(y, \fx)= \ln[1 + \exp(-y\fx)]$ & \checkmark \\
+Bernoulli & $L_{0,1}(y, \fx) = - y \fx + \log(1 + \exp(\fx))$ & \checkmark \\
+Bernoulli & $L_{0,1}(y, \pix) = - y \log\pix - (1 - y) \log (1 - \pix)$ & \checkmark \\
+\end{tabular}
+\end{table}
+
+\begin{table}[] 
+\footnotesize
+\renewcommand{\arraystretch}{1.5} %<- modify value to suit your needs
+  \begin{tabular}{c|lll}
+  Name & Point-wise Opt. & Optimal Constant\\ \hline
+  0-1 & $\hxh = \argmax_{l \in \Yspace} \P(y = l~|~ \xv)$  & $\hx = \text{mode} \left\{\yi\right\}$ \\
+  Brier & $\pixh = \P(y = 1~|~\xv = \xv)$ & $\hat{\pi} = \frac{1}{n} \sumin \yi$\\
+  Bernoulli & $\pixh = \P(y = 1~|~\xv = \xv)$ & $\hat{\pi} = \frac{1}{n} \sumin \yi$\\
+  Bernoulli & $\fxh = \log\left(\frac{\P(y = 1 ~|~\xv)}{1 - \P(y = 1 ~|~\xv)}\right)$ & $\fh = \ln \frac{n_{+1}}{n_{-1}}$  
+  \end{tabular}
+\end{table}
+
+
+\framebreak 
+
+There are other loss functions for classification tasks, for example:
+
+\begin{itemize}
+  \item Hinge-Loss 
+  \item Exponential-Loss
+\end{itemize}
+
+As for regression, loss functions might also be customized to an objective that is defined by an application. 
+
+\end{vbframe}
+
+
+
+\endlecture
+
+\end{document}

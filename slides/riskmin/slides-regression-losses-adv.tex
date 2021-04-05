@@ -1,0 +1,404 @@
+%<<setup-child, include = FALSE>>=
+%library(knitr)
+%library(qrmix)
+%library(mlr)
+%library(quantreg)
+%library(reshape2)
+%set_parent("../style/preamble.Rnw")
+%@
+
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/optimization_steps.jpeg}
+\newcommand{\learninggoals}{
+\item Understand that an ML model is simply a parametrized curve
+\item Understand that the hypothesis space lists all admissible models
+    for a learner
+\item Understand the relationship between the hypothesis space and the parameter space
+}
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+
+\begin{document}
+
+\lecturechapter{Advanced Regression Losses}
+\lecture{Introduction to Machine Learning}
+
+
+\begin{vbframe}{Losses and Residuals}
+
+\begin{itemize}
+  \item Regression losses usually only depend on the \textbf{ residuals}
+
+  \vspace*{-0.5cm}
+
+  \begin{eqnarray*}
+    r &:=& y - \fx %\\
+    %r^{(i)} &:=& \yi - \fxi .
+  \end{eqnarray*}
+
+
+  \item A loss is called \textbf{distance-based} if
+  \begin{itemize}
+    \item it can be written in terms of the residual
+    $$
+      \Lxy = \psi (r) \text{ for some } \psi: \R \to \R
+    $$
+    \item $\psi(r) = 0 \Leftrightarrow r = 0$ .
+  \end{itemize}
+  \item A loss is \textbf{translation-invariant}, if $L(y + a, \fx + a) = \Lxy$.
+
+\end{itemize}
+  % We will see later that in case of the L2-loss, pseudo-residuals correspond to the residuals - hence the name.
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{Loss Plots}
+
+We call the plot that shows the point-wise error, i.e. the loss $\Lxy$ vs. the \textbf{residuals} $r := y - \fx$ (for regression), \textbf{loss plot}. The pseudo-residual corresponds to the slope of the tangent in $\left(y - \fx, \Lxy \right)$. 
+
+\vspace*{0.5cm}
+
+
+\begin{figure}
+\includegraphics[width = 1\linewidth]{figure_man/loss.png}
+\end{figure}
+
+%<<echo=FALSE, warning=FALSE, message=FALSE, fig.height = 4>>=
+%   xx = seq(-2, 2, by = 0.01); 
+%   yy = xx^2
+%   plot(xx, yy, type = "l", xlab = "y - f(x)", ylab = "L(y, f(x))")
+%   points(1, 1, col = "red")
+%   lines(x = c(1, 1), y = c(0, 1), col = "red")
+%   points(xx, 2 * xx - 1, type = "l", col = "red")
+%  @
+
+% We will define a similar plot for classification later on in this chapter.
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{The role of Loss Functions}
+
+Why should we care about how to choose the loss function $\Lxy$?
+
+\begin{itemize}
+% \item For regression, the loss usually only depends on residual $\Lxy = L\left(y - \fx\right) = L(\eps)$, this is a \emph{translation invariant} loss
+\item \textbf{Statistical} properties of $f$: Choice of loss implies statistical properties of $f$ like robustness and an implicit error distribution.
+\item \textbf{Computational / Optimization} complexity of the optimization problem: The complexity of the optimization problem
+$$
+\argmin_{\thetab \in \Theta} \risket
+$$
+is influenced by the choice of the loss function, i.e.\
+
+  \begin{itemize}
+    \item Smoothness of the objective \\
+    \begin{footnotesize} 
+    Some optimization methods require smoothness (e.g. gradient methods).
+    \end{footnotesize}
+    \item Uni- or multimodality of the problem \\
+    \begin{footnotesize} 
+    If $\Lxy$ is convex in its second argument, and $\fxt$ is linear in $\thetab$, then $\risket$ is convex; every local minimum of $\risket$ is a global one. If $L$ is not convex, $\risket$ might have multiple local minima (bad!).
+    \end{footnotesize}
+  \end{itemize}
+\end{itemize}
+
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{Risk Minimization}
+
+Now, we will discuss the most common loss functions and the optimal solution with respect to 
+
+
+\begin{itemize}
+  \item the theoretical risk 
+  $$
+  \riskf =  \E[\Lxy] = \int_{\Xspace \times \Yspace} \Lxy ~ d\Pxy
+  $$ 
+  and
+  \item the empirical risk 
+  $$
+ \riskef = \sumin \Lxyi. 
+  $$
+\end{itemize}
+
+\end{vbframe}
+
+
+\section{Huber-Loss}
+
+
+\begin{vbframe}{Huber-Loss}
+
+% Description
+\vspace*{-0.3cm}
+
+$$
+\Lxy = \begin{cases}
+  \frac{1}{2}(y - \fx)^2  & \text{ if } |y - \fx| \le \delta \\
+  \delta |y - \fx|-\frac{1}{2}\delta^2 \quad & \text{ otherwise }
+  \end{cases}, \delta > 0
+$$
+
+\begin{itemize}
+\item Piecewise combination of $L1$ and $L2$ loss
+\item Analytic properties: Convex, differentiable, robust
+\item Combines advantages of $L1$ and $L2$ loss: differentiable + robust
+\end{itemize}
+
+\vspace*{-1cm}
+
+\begin{center}
+\includegraphics[width = 9cm]{figure_man/loss_huber_plot1.png} \\
+\end{center}
+
+\framebreak
+
+The following plot shows the Huber loss for different values of $\delta$.
+
+\begin{center}
+\includegraphics[width = 11cm]{figure_man/loss_huber_plot2.png} 
+\end{center}
+
+\end{vbframe}
+
+\begin{vbframe}{Huber Loss: Optimal constant model}
+
+What is the optimal constant model $\fx = \thetab$ w.r.t. the Huber loss?
+
+\vspace{-0.2cm}
+\begin{eqnarray*}
+f &=& \argmin_{f \in \Hspace} \riskef\\
+\Leftrightarrow
+\hat \thetab&=& \argmin_{\thetab\in \R} \sumin L(y, \thetab)
+\end{eqnarray*}
+
+with $L(y, \thetab) = \begin{cases}
+  \frac{1}{2}(y - \thetab)^2  & \text{ if } |y - \thetab| \le \delta \\
+  \delta |y - \thetab|-\frac{1}{2}\delta^2 \quad & \text{ otherwise }
+  \end{cases}. $
+
+\begin{itemize}
+\item There is no closed-form solution.
+\item Numerical optimization methods are necessary.
+\item $\to$  the \enquote{optimal} solution can only be approached to a certain degree of accuracy via iterative optimization.
+\end{itemize}
+
+
+\framebreak
+
+\vspace{0.2cm}
+
+\begin{center}
+\includegraphics[width = 11cm ]{figure_man/Huber1.png} \\
+\end{center}
+
+
+\framebreak 
+
+And when adding an outlier: 
+
+\vspace{0.2cm}
+
+\begin{center}
+\includegraphics[width = 9cm ]{figure_man/Huber-outlier.png} \\
+\end{center}
+
+
+% We see that the constant model fitted w.r.t. Huber loss in fact lies between L1- and L2-Loss.
+
+\end{vbframe}
+
+
+\section{Summary}
+
+\begin{vbframe}{Summary of Loss Functions}
+
+\begin{table}[]
+\begin{tabular}{c|ccc}
+
+& $L2$ & $L1$ & Huber \\ \hline 
+Point-wise optimum & $\E_{y|x}\left[y ~|~ \xv\right]$ & $\text{med}_{y|x}\left[y ~|~ \xv\right]$ & n.a. \\
+Best constant & $\frac{1}{n}\sumin \yi$ & $\text{med}\left(\yi\right)$ & n.a.\\
+Differentiable & \checkmark & \xmark & \checkmark \\
+Convex & \checkmark & \checkmark & \checkmark \\
+Robust & \xmark & \checkmark & \checkmark \\
+\end{tabular}
+\end{table}
+
+There are many other loss functions for regression tasks, for example:
+
+\begin{itemize}
+  \item Quantile-Loss
+  \item $\epsilon$-insensitive-Loss  
+  \item Log-Barrier-Loss
+\end{itemize}
+
+Loss functions might also be customized to an objective that is defined by an application. 
+
+% \framebreak 
+% \begin{itemize}
+  % \item In future chapters, we will talk about different learning algorithms.
+  % \lz
+  % \item We will come back to loss functions introduced in this chapter or we will introduce new ones. 
+  % \lz
+  % \item We will see how learning algorithms are composed into specific hypothesis classes and loss functions; we will come back to the loss functions introduced in this chapter or introduce new ones.
+% \end{itemize}
+
+
+% When introducing different learning algorithms, we will come back to the loss functions introduced in this chapter or even introduce new ones. For example:  
+
+% \begin{itemize}
+%   \item Ordinary Linear Regression: L2-loss
+%   \item Logistic Regression: Logistic loss
+%   \item Support Vector Machine Classification: Hinge-Loss (to be introduced) (see \textbf{SVM} chapter)
+%   \item Support Vector Machine Regression: $\epsilon$-insensitive loss (see \textbf{SVM} chapter)
+%   \item AdaBoost: Exponential loss (see \textbf{Boosting} chapter)
+% \end{itemize}
+
+% Once knowing the theory of risk minimization and properties of loss functions, we can combine model classes and loss functions as needed or even tailor loss functions to our needs. 
+
+
+
+\end{vbframe}
+
+
+\section{Log-Barrier Loss}
+
+\begin{vbframe}{Log-Barrier Loss}
+
+\begin{footnotesize}
+\[
+  \Lxy = \left\{\begin{array}{lr}
+        -a^{2} \cdot \log \Bigl( 1 - \Bigl(\frac{\left|y - \fx\right|}{a}\Bigr)^2 \Bigr), & \text{if } \left|y-\fx\right| \leq a \\
+        \infty, & \text{if } \left|y-\fx\right|  > a
+        \end{array}\right.
+  \]
+\end{footnotesize}
+\begin{itemize}
+\item Behaves like L2 loss for small residuals
+\item We use this, if we don't want residuals larger than $a$ at all
+\item No guarantee that the risk minimization problem has a solution
+\item Plot shows Log-Barrier Loss for $a=2$
+\end{itemize}
+
+\begin{figure}
+\includegraphics[width = 0.8\textwidth]{figure_man/log-barrier01.png}
+\end{figure}
+
+
+\end{vbframe}
+
+
+% \section{Comparison of Loss Functions}
+% 
+% 
+% \begin{vbframe}{Comparison of Loss Functions}
+% 
+% 
+% \begin{center}
+% \includegraphics[width = 10cm]{figure_man/2_7_loss_comparison_plot1.png} \\
+% \end{center}
+% 
+% 
+% \framebreak
+% 
+% 
+% This plot shows the optimal constant model $\fx = \thetab$ (also \enquote{featureless predictor}) for the losses that have been discussed.
+% 
+% \begin{center}
+% \includegraphics[width = 10cm, height = 6.5cm]{figure_man/2_8_loss_comparison_constant_model_plot1.png} \\
+% \end{center}
+% 
+% \end{vbframe}
+
+\section{Advanced Classification Losses}
+
+
+
+% \begin{vbframe}{Classification Losses: Hinge Loss}
+% \begin{itemize}
+% \item $\Lxy = \max\{0, 1 - \yf\}$, used in SVMs
+% \item Convex
+% \item No derivatives for $\yf = 1$, optimization becomes harder
+% \item No closed-form analytical solution to empirical risk minimization
+% \item More robust, outliers in $y$ are less problematic
+% \item Correctly classified samples with confidence $> 1$ are not penalized
+% \end{itemize}
+% 
+% <<loss-hinge-plot, echo=FALSE, results='hide', fig.height=3, fig.align='center'>>=
+% x = seq(-2, 2, by = 0.01); y = pmax(0, 1 - x)
+% qplot(x, y, geom = "line", xlab = expression(y %.% f(x)), ylab = expression(L(yf(x))))
+% @
+% 
+% \end{vbframe}
+
+
+\begin{vbframe}{Classification Losses: Exponential Loss}
+
+Another possible choice for a (binary) loss function that is a smooth approximation to the 0-1-loss:
+\begin{itemize}
+\item $\Lxy = \exp(-y\fx)$, used in AdaBoost
+\item Convex, differentiable (thus easier to optimize than 0-1-loss)
+\item The loss increases exponentially for wrong predictions with high confidence; if the prediction is right with a small confidence only, there, loss is still positive
+\item No closed-form analytic solution to empirical risk minimization
+\end{itemize}
+
+
+\begin{figure}
+\includegraphics[width = 0.8\textwidth]{figure_man/exponential-loss.png}
+\end{figure}
+
+
+\end{vbframe}
+
+\begin{vbframe}{Risk minimizing functions}
+
+Overview of binary classification losses and the corresponding risk minimizing functions:
+
+\lz
+
+\begin{tabular}{p{2.5cm}|p{3.5cm}|p{4.5cm}}
+  loss name & loss formula  & minimizing function \\
+  \hline
+  0-1 & $[y \neq \hx]$ & $\hxh = \footnotesize \begin{cases} 1 \quad \text{ if } \pix > 1/2 \\ -1 \quad \pix < 1/2  \end{cases}$ \\
+  Hinge & $\max\{0, 1 - \yf\}$ & $\fh(x) =  \footnotesize \begin{cases} 1 \quad \text{ if } \pix > 1/2 \\ -1 \quad \pix < 1/2  \end{cases}$ \\
+  Logistic & $\ln(1+\exp(-y\fx))$ & $\fh(x) =  \ln \biggl(\frac{\pix}{1-\pix}\biggr)$ \\
+  Cross entropy & $-y\ln(\pix) \newline -(1-y)\ln(1-\pix)$ & \\
+  & & \\
+  Exponential & $\exp(-y\fx)$ &
+
+\end{tabular}
+
+\end{vbframe}
+
+\begin{vbframe}{Classification Losses: AUC-loss}
+
+\begin{itemize}
+\item Often AUC is used as an evaluation criterion for binary classifiers
+\item Let $Y \in \{-1, 1\}$ with observations $n_{-1}$ number of negative and $n_{1}$ of positive samples %$y_i, i = 1, \ldots, n_{-1} + n_1$.
+\item The AUC can then be defined as
+$$AUC = n_{-1}^{-1} n_1^{-1} \sum_{i: y_i = 1} \sum_{j: y_j = -1} I(f_i > f_j)$$
+\item This is not differentiable wrt $f$ due to $I(f_i > f_j)$
+\item But the indicator function can be approximated by the distribution function of the triangular distribution on $[-1, 1]$ with mean $0$
+\item However, direct optimization of the AUC is usually not as good as optimization wrt a common loss and tuning via AUC in practice 
+
+\end{itemize}
+\end{vbframe}
+
+
+\endlecture
+
+\end{document}

@@ -1,0 +1,302 @@
+%<<setup-child, include = FALSE>>=
+%library(knitr)
+%library(qrmix)
+%library(mlr)
+%library(quantreg)
+%library(reshape2)
+%set_parent("../style/preamble.Rnw")
+%@
+
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/optimization_steps.jpeg}
+\newcommand{\learninggoals}{
+\item Understand what the Bayes optimal model is
+\item Derive the point-wise optimizers of different loss functions
+\item Derivce the optimal constant models 
+}
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+
+\begin{document}
+
+\lecturechapter{Theoretical Considerations on Classification Losses}
+\lecture{Introduction to Machine Learning}
+
+\begin{vbframe}{Bayes Optimal Classifier}
+
+
+https://machinelearningmastery.com/bayes-optimal-classifier/
+
+\end{vbframe}
+
+
+
+
+\begin{vbframe}{Point-wise Optimum}
+
+
+We can in general rewrite the risk as
+
+\vspace*{-0.5cm}
+
+\begin{eqnarray*}
+  \riskf  & = & \Exy\left[\Lxy\right] = \E_x \left[ \E_{y|x} [ L(y, \fx) ] \right] \\
+          & = & \E_x \left[\sum_{k \in \Yspace} L(k, \fx) \P(y = k~|~ \xv = \xv)\right]\,, \\
+          % & = & E_x \sum_{k \in \Yspace} L(k, \fx) \pikx,
+\end{eqnarray*}
+
+with $\P(y = k| \xv = \xv)$ being the posterior probability for class $k$.
+
+\lz 
+
+The optimal model for a loss function $\Lxy$ is
+
+\begin{eqnarray*}
+  \fxh &=& \argmin_{f \in \Hspace} \sum_{k \in \Yspace} L(k, f(\bm{x})) \P(y = k| \xv = \xv)\,.  \\
+\end{eqnarray*}
+
+If we can estimate $\Pxy$ very well via $\pikx$ through a stochastic model, we can now compute the loss-optimal classifications point-wise. 
+
+But usually we directly adapt to the loss via \textbf{empirical risk minimization}. 
+
+$$
+\fh = \argmin_{f \in \Hspace} \riske(f) = \argmin_{f \in \Hspace} \sumin \Lxyi.
+$$
+  
+
+\end{vbframe}
+
+
+\section{0-1-Loss}
+
+
+
+\begin{vbframe}{0-1-Loss: Point-wise Optimum}
+
+For an (unrestricted) classifier $\hx$ and the 0-1-loss: 
+
+$$
+\min_{h \in \Hspace} \risk(h) = \E_{xy}[L(y, \hx)]. 
+$$
+
+The (point-wise) solution of the above minimization problem is
+
+\begin{footnotesize}
+  \begin{eqnarray*}  
+  \hxh &=& \argmin_{l \in \Yspace} \sum_{k \in \Yspace} L(k, l) \cdot \P(y = k~|~\xv = \xv) \\
+  &=& \argmin_{l \in \Yspace} \sum_{k \ne l} \P(y = k~|~\xv = \xv) = \argmin_{l \in \Yspace} 1 - \P(y = l~|~\xv = \xv) \\
+  &=& \argmax_{l \in \Yspace} \P(y = l~|~ \xv = \xv)
+  \end{eqnarray*}
+\end{footnotesize}
+
+which corresponds to predicting the most probable class. 
+
+\lz 
+
+$\hxh$ is called the \textbf{Bayes optimal classifier}. The expected loss is called \textbf{Bayes loss} or \textbf{Bayes error rate} for the 0-1-loss.
+
+
+\end{vbframe}
+
+\begin{vbframe}{0-1-Loss: Optimal constant Model}
+
+The optimal constant model (featureless predictor) under 0-1 loss, with $y \in \setmp$, either for hard classifiers $\hx$ or scoring classifiers $\fx$ 
+
+$$
+  L(y, \hx) = \mathds{1}_{y \neq \hx}
+$$
+
+is the classifier that predicts the most frequent class in the data
+
+
+$$
+\hx = \text{mode} \left\{\yi\right\} \qquad \text{or} \qquad \fx = \text{mode} \left\{\yi\right\}.
+$$
+
+\textbf{Proof:} Exercise / Trivial. 
+
+% \lz 
+
+% For general hypothesis spaces, however, optimization becomes very hard or even intractable. 
+
+\end{vbframe}
+
+\begin{vbframe}{Brier Score: Point-wise Optimum}
+
+The minimizer of the (theoretical) risk $\risk(f)$ for the Brier score  
+
+\begin{eqnarray*}
+\hat \pi(\xv) &=& \P(y~|~\xv = \xv),
+\end{eqnarray*}
+
+which means that the Brier score would reach its minimum if the prediction equals the \enquote{true} probability of the outcome. 
+
+\lz 
+
+\textbf{Proof: }We have seen that the (theoretical) optimal prediction $c$ for an arbitrary loss function at fixed point $\xv$ is
+
+$$
+\argmin_{c} \sum_{k \in \Yspace} L(y, c) \P(y = k| \xv = \xv)\,.
+$$
+
+We plug in the Brier score
+
+\vspace*{-0.3cm}
+
+\begin{footnotesize}
+  \begin{eqnarray*}
+    && \argmin_c L(1, c) \underbrace{\P(y = 1| \xv = \xv)}_p + L(0, c) \underbrace{\P(y = 0| \xv = \xv)}_{1 - p} \\ 
+    &=&  \argmin_c \quad (c - 1)^2 p + c^2 (1 - p)\\
+    &=&  \argmin_c \quad (c - p)^2.
+  \end{eqnarray*}
+\end{footnotesize}
+
+The expression is minimal if $c = p = \P(y = 1~|~\xv = \xv)$.
+
+\end{vbframe}
+
+\begin{vbframe}{Brier Score: Optimal constant Model}
+
+The optimal constant probability model $\pix = \theta$ w.r.t. the Brier score for labels from $\Yspace = \setzo$ is:
+
+\begin{eqnarray*}
+  \min_{\theta} \riske(\theta) &=& \min_{\thetab} \sumin \left(\yi - \theta\right)^2 \\
+  \Leftrightarrow \frac{\partial \riske(\theta)}{\partial \theta} &=& - 2 \cdot \sumin (\yi - \theta) = 0 \\
+  \hat \theta &=& \frac{1}{n} \sumin \yi.   
+\end{eqnarray*}
+
+This is the fraction of class-1 observations in the observed data.\\
+(This also directly follows from our $L2$-proof for regression).
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{Bernoulli loss: Point-wise Optimum}
+
+The theoretical point-wise optimum for scores under Bernoulli loss is actually
+the point-wise log-odds:
+
+\begin{eqnarray*}
+\fh(\xv) &=&  \ln \biggl(\frac{\P(y~|~\xv = \xv)}{1-\P(y~|~\xv = \xv)}\biggr).
+\end{eqnarray*}
+
+The function is undefined when $P(y~|~\xv = \xv) = 1$ or $P(y~|~\xv = \xv) = 0$, but predicts a smooth curve which grows when $P(y~|~\xv = \xv)$ increases and equals $0$ when $P(y~|~\xv = \xv) = 0.5$.
+
+\lz 
+
+\textbf{Proof: } We consider the case $\Yspace = \{-1, 1\}$. We have seen that the (theoretical) optimal prediction $c$ for an arbitrary loss function at fixed point $\xv$ is
+
+$$
+\argmin_{c} \sum_{k \in \Yspace} L(y, c) \P(y = k| \xv = \xv)\,.
+$$
+
+\framebreak 
+
+We plug in the Bernoulli loss
+
+\vspace*{-0.3cm}
+
+\begin{footnotesize}
+  \begin{eqnarray*}
+    && \argmin_c L(1, c) \underbrace{\P(y = 1| \xv = \xv)}_p + L(-1, c) \underbrace{\P(y = -1| \xv = \xv)}_{1 - p} \\ 
+    &=&  \argmin_c \ln(1 + \exp(-c)) p + \ln(1 + \exp(c)) (1 - p).
+  \end{eqnarray*}
+\end{footnotesize}
+
+\vspace*{-0.3cm}
+
+Setting the derivative w.r.t. $c$ to zero yields
+
+\vspace*{-0.3cm}
+
+\begin{footnotesize}
+  \begin{eqnarray*}
+  0 &=& - \frac{\exp(-c)}{1 + \exp(-c)} p + \frac{\exp(c)}{1 + \exp(c)} (1 - p) \\ 
+   &=& - \frac{\exp(-c)}{1 + \exp(-c)} p + \frac{1}{1 + \exp(- c)} (1 - p) \\ 
+  % &=& -  \frac{\exp(-c)}{1 + \exp(-c)} p + \frac{1}{1 + \exp(-c)} - \frac{1}{1 + \exp(-c)} p \\
+  &=& - p + \frac{1}{1 + \exp(-c)} \\
+  \Leftrightarrow p &=& \frac{1}{1 + \exp(-c)} \\
+  \Leftrightarrow c &=& \ln\left(\frac{p}{1 - p}\right)
+  \end{eqnarray*}
+\end{footnotesize}
+
+
+% \framebreak 
+
+% Another common equivalent formulation of this loss function is defined on labels $y \in \{0, 1\}$ instead of $y \in \{-1, 1\}$
+
+% $$
+%   L_{0, 1}(y, \fx) = - y \cdot \fx + \log(1 + \exp(\fx)). 
+% $$
+
+% We indicate this by subscripts of the loss function. 
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{Bernoulli: Optimal constant Model}
+
+The optimal constant probability model $\pix = \theta$ w.r.t. the Bernoulli loss for labels from $\Yspace = \{0, 1\}$) is:
+
+\begin{eqnarray*}
+  \thetah = \argmin_{\theta} \risket = \frac{1}{n} \sumin \yi
+\end{eqnarray*}
+
+Again, this is the fraction of class-1 observations in the observed data.
+We can simply prove this again by setting the derivative of the risk to 0 and solving for $\theta$.
+
+\framebreak
+
+The optimal constant score model $\fx = \theta$ w.r.t. the Bernoulli loss labels from $\Yspace = \setmp$ or $\Yspace = \setzo$ is:
+
+\begin{eqnarray*}
+  \thetah = \argmin_{\theta} \risket = \ln \frac{n_{+1}}{n_{-1}} = \ln \frac{n_{+1}/n}{n_{-1}/n} 
+\end{eqnarray*}
+
+where $n_{-1}$ and $n_{+1}$ are the numbers of negative and positive observations, respectively.
+
+\lz
+
+This again shows a tight (and unsurprising) connection of this loss to log-odds.
+
+\lz
+
+Proving this is also a (quite simple) exercise.
+
+\end{vbframe}
+
+\begin{vbframe}{Bernoulli-Loss: Naming Convention}
+
+We have seen three loss functions that are closely related. In the literature, there are different names for the losses: 
+
+\begin{eqnarray*}
+  L_{-1+1}(y, \fx) &=& \ln(1+\exp(-y\fx)) \\
+  L_{0, 1}(y, \fx) &=& - y \cdot \fx + \log(1 + \exp(\fx)). 
+\end{eqnarray*}
+
+are referred to as Bernoulli, Binomial or logistic loss. 
+
+  $$
+    L_{0,1}(y, \pix) = - y \log \left(\pix\right) - (1 - y) \log \left(1 - \pix\right). 
+  $$
+
+is referred to as cross-entropy or log-loss. 
+
+\lz 
+
+For simplicity, we will call all of them \textbf{Bernoulli loss}, and rather make clear whether they are defined on labels $y \in \{0, 1\}$ or $y \in \{-1, 1\}$ and on scores $\fx$ or probabilities $\pix$. 
+
+\end{vbframe}
+
+\endlecture
+
+\end{document}

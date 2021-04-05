@@ -1,0 +1,348 @@
+%<<setup-child, include = FALSE>>=
+%library(knitr)
+%library(qrmix)
+%library(mlr)
+%library(quantreg)
+%library(reshape2)
+%set_parent("../style/preamble.Rnw")
+%@
+
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/optimization_steps.jpeg}
+\newcommand{\learninggoals}{
+\item Understand that an ML model is simply a parametrized curve
+\item Understand that the hypothesis space lists all admissible models
+    for a learner
+\item Understand the relationship between the hypothesis space and the parameter space
+}
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+\begin{document}
+
+
+
+% 1 -- Goes out, in I2ML "Components of a Learner"
+
+\begin{vbframe}{What is Learning?}
+
+\begin{center}
+\begin{table}[]
+\begin{tabular}{ccccccc}
+ Learning & = & Hypothesis space & + & Risk & + & Optimization
+ % &  &  \checkmark &  & \textbf{?} & &  \textbf{?} \\
+\end{tabular}
+\end{table}
+\end{center}
+
+\begin{itemize}
+  \item The \textbf{hypothesis space} $\Hspace$ is the search space of the learning algorithm. It is a predefined set of functions (also called models) from which the learning algorithm picks one function/model. \\ \vspace{1mm}
+  Example: Space of linear models. \vspace{3mm}
+  \item The \textbf{risk} is a metric to evaluate and compare the different models in the hypothesis space. \\ \vspace{1mm}
+  Example: Sum of squared errors. \vspace{3mm}
+  \item The \textbf{optimizer} is the algorithm used to minimize the risk over the hypothesis space. \\ \vspace{1mm}
+  Example optimizer: Gradient descent. \vspace{3mm}
+\end{itemize}
+
+% \begin{itemize}
+%   \item Assume we decided on a certain hypothesis space $\Hspace$ (e. g. the space of linear models) and we are given some data $\D$ we can use for training.
+
+%   % \item How do we get the \enquote{best} model $\hat f$?
+%   \item What does \enquote{best} mean? How do we distinguish good models from bad ones? (Cost function)
+%   \item And how do we get there? (Optimization)
+% \end{itemize}
+
+\end{vbframe}
+
+
+
+
+\section{Loss Functions}
+
+
+% 3, 4, 5 -- Pointwise losses are in I2ML
+
+\begin{vbframe}{Losses: Measuring Errors Point-wise}
+
+Given the hypothesis space of linear models, which model will be returned by a learning algorithm (under \enquote{perfect} optimization)?
+
+\vspace*{0.2cm}
+
+\begin{center}
+\includegraphics[width = 11cm ]{figure_man/example_intro.png} \\
+\end{center}
+
+
+\textbf{Answer:} It depends on the metric we use to compare models.
+
+\end{vbframe}
+
+
+\begin{vbframe}{Losses: Measuring Errors Point-wise}
+
+\begin{itemize}
+  \item Let us assume that there is a probability distribution $\Pxy$ defined on $\Xspace \times \Yspace$ induced by the process that generates the observed data $\D$. 
+  \item Further, let $(\xv, y)$ denote the random variables that follow this distribution. 
+  \item We consider a model $f \in \Hspace, f: \Xspace \to \R^g$, and want to quantify the \enquote{goodness} of the function. 
+  \item Intuitively, a \enquote{good} function outputs values $\fx$ which are close to the targets $y \in \Yspace$
+  $$
+    y \approx \fx 
+  $$
+  for $(\xv, y) \sim \Pxy$. 
+  \item We quantify the \enquote{goodness} of a model $\fx$ \textbf{point-wise} via a \textbf{loss} function 
+    $$
+    L: \Yspace \times \R^g \to \R,
+    $$
+
+  which compares the prediction and the real target $L(y, \fx)$.
+\end{itemize}
+
+\textbf{Example:} $\Lxy = (y - \fx)^2$ (point-wise squared errors)
+
+\vspace*{-4mm}
+
+\begin{center}
+  \includegraphics[width = 10cm]{figure_man/loss_quadratic_plot1.png} \\
+\end{center}
+
+\end{vbframe}
+
+
+% 6, 7, 8 - Will go into Chapter Types of Losses, Pseudo-residuals
+
+\begin{vbframe}{Losses, Residuals and Pseudo-Residuals}
+
+\begin{itemize}
+\item Regression losses usually only depend on the \textbf{ residuals}
+
+\vspace*{-0.5cm}
+
+\begin{eqnarray*}
+  r &:=& y - \fx %\\
+  %r^{(i)} &:=& \yi - \fxi .
+\end{eqnarray*}
+
+
+\item A loss is called \textbf{distance-based} if
+\begin{itemize}
+  \item it can be written in terms of the residual
+  $$
+    \Lxy = \psi (r) \text{ for some } \psi: \R \to \R
+  $$
+  \item $\psi(r) = 0 \Leftrightarrow r = 0$ .
+\end{itemize}
+\item A loss is \textbf{translation-invariant}, if $L(y + a, \fx + a) = \Lxy$.
+
+  % We will see later that in case of the L2-loss, pseudo-residuals correspond to the residuals - hence the name.
+
+\framebreak 
+
+
+%% DR: I don't think the following is correct. E.g., take the translation-invariant Loss function
+%% L(x,y) = 1 + (x-y)^2 = 1 + r^2 = psi(r) with r = x-y. 
+%% It holds L(x+a,y+a) = 1+(x+a-y-a)^2 = L(x,y), BUT
+%% psi(0) = 1 and thus L is not distance-based.
+% \textbf{Note}: A loss is translation-invariant iff it is distance-based:
+% 
+% \begin{itemize}
+%   \item[$\Rightarrow$] If a loss is translation-invariant, then it is also distance-based:
+%   \begin{footnotesize}
+%   \begin{eqnarray*}
+%     \Lxy &=& L(y - y, \fx - y) = L(0, - r) =: \psi(r).
+%   \end{eqnarray*}
+%   \end{footnotesize}
+%   \item [$\Leftarrow$] The residual $r = y - \fx$ is translation-invariant, thus any loss that depends on the residual only is also translation-invariant.
+% \end{itemize}
+
+% \begin{itemize}
+%   \item[$\Rightarrow$] If a loss is distance-based, then it is also translation-invariant:
+% The residual $r = y - \fx$ is translation-invariant, thus any loss that depends on the residual only is also translation-invariant.
+%   \begin{footnotesize}
+%   \begin{eqnarray*}
+%     \Lxy &=& L(y, \fx) = \psi(r) = \psi(y - \fx) = \psi(y - \fx - a + a) = \psi((y-a) - (\fx - a)) = L(y - a, \fx - a)
+%   \end{eqnarray*}
+%   \end{footnotesize}
+%   \item [$\Leftarrow$] The residual $r = y - \fx$ is translation-invariant, thus any loss that depends on the residual only is also translation-invariant.
+% \end{itemize}
+\framebreak 
+
+\item We further define \textbf{pseudo-residuals} as the negative first derivatives of loss functions w.r.t. $\fx$
+
+  \begin{eqnarray*}
+    % \tilde r &:=& - \frac{\partial \Lxy}{\partial \fx} \qquad 
+    % \tilde r^{(i)} := - \frac{\partial \Lxyi}{\partial \fxi} 
+    \tilde r &:=& - \frac{\partial \Lxy}{\partial \fx}.  % \qquad 
+    % \tilde r^{(i)} := - \frac{\partial \Lxyi}{\partial f} 
+  \end{eqnarray*}
+  % (Note that pseudo-residuals are functions of $y$ and $\fx$)
+\item We will gain more intuition about the principle of pseudo-residuals in a later chapter. 
+\end{itemize}
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{Loss Plots}
+
+We call the plot that shows the point-wise error, i.e. the loss $\Lxy$ vs. the \textbf{residuals} $r := y - \fx$ (for regression), \textbf{loss plot}. The pseudo-residual corresponds to the slope of the tangent in $\left(y - \fx, \Lxy \right)$. 
+
+\vspace*{0.5cm}
+
+
+\begin{figure}
+\includegraphics[width = 1\linewidth]{figure_man/loss.png}
+\end{figure}
+
+%<<echo=FALSE, warning=FALSE, message=FALSE, fig.height = 4>>=
+%   xx = seq(-2, 2, by = 0.01); 
+%   yy = xx^2
+%   plot(xx, yy, type = "l", xlab = "y - f(x)", ylab = "L(y, f(x))")
+%   points(1, 1, col = "red")
+%   lines(x = c(1, 1), y = c(0, 1), col = "red")
+%   points(xx, 2 * xx - 1, type = "l", col = "red")
+%  @
+
+% We will define a similar plot for classification later on in this chapter.
+
+\end{vbframe}
+
+
+
+\section{Theoretical Risk Minimization}
+
+
+% 10, 11-- Covered in I2ML
+\begin{vbframe}{(Theoretical) Risk Minimization}
+
+\begin{itemize}
+  \item The (theoretical) \textbf{risk} associated with a certain hypothesis $\fx$ measured by a loss function $\Lxy$ is the \textbf{expected loss}
+  $$ \riskf := \E_{xy} [\Lxy] = \int \Lxy \text{d}\Pxy. $$
+  \item Our goal is to find a hypothesis $\fx \in \Hspace$ that \textbf{minimizes} the risk.
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{(Theoretical) Risk Minimization: Limitation} 
+
+% The goodness of the prediction $y=\fx$ is measured by a \emph{loss function} $\Lxy $.
+% Its expectation is the so-called \emph{risk}:
+%   $$ \riskf = \E [\Lxy] = \int \Lxy d\Pxy. $$
+
+\textbf{Problem}: Minimizing $\riskf$ over $f$ is generally not feasible or practical:
+
+\begin{itemize}
+\item $\Pxy$ is unknown (if it were known, we could use it directly to construct optimal predictions).
+\item We could estimate $\Pxy$ in non-parametric fashion from the data $\D$ (i.i.d. drawn from $\Pxy$), e.g. by kernel density estimation, but this really does not scale to higher dimensions (see \enquote{curse of dimensionality}).
+\item We can efficiently estimate $\Pxy$, if we place rigorous assumptions on its distributional form, and methods like discriminant analysis work exactly this way. \textbf{Machine learning} usually studies more flexible models.
+\end{itemize}
+
+\end{vbframe}
+
+
+\section{Empirical Risk Minimization}
+
+
+% 13, 14-- Covered in I2ML
+
+\begin{vbframe}{Empirical Risk Minimization}
+
+Let 
+$$
+\D = \Dset,
+$$
+with observations $\xyi \overset{\text{i.i.d.}}{\sim}\Pxy$.
+
+\vspace{0.2cm}
+
+An alternative (without directly assuming anything about $\P_{xy}$) is to approximate $\riskf$ based on $\D$ by means of the \textbf{empirical risk}
+
+\vspace*{-0.2cm}
+
+\begin{eqnarray*}
+\riske(f) &:=& \sumin \Lxyi
+\end{eqnarray*}
+
+Learning then amounts to \textbf{empirical risk minimization}
+
+$$
+\fh = \argmin_{f \in \Hspace} \riske(f).
+$$
+
+\framebreak 
+
+\textbf{Notes: }
+
+\begin{itemize}
+  \item The risk is often denoted as empirical mean over $\Lxy$
+  $$
+    \riskeb(f) = \frac{1}{n}\sumin \Lxyi. 
+  $$
+  The factor $\frac{1}{n}$ does not make a difference in optimization, so we will consider $\riske(f)$ most of the time.
+  \item If $f$ is parameterized by $\thetab \in \Theta$, this becomes:
+
+  \begin{eqnarray*}
+  \risket & = & \sumin \Lxyit \cr
+  \hat{\thetab} & = & \argmin_{\thetab \in \Theta} \riske(\thetab)
+  \end{eqnarray*}
+
+\end{itemize}
+
+\end{vbframe}
+
+
+
+% 15 -- Goes into advanced Optimization? 
+
+\begin{vbframe}{Machine Learning = Optimization?}
+
+Learning (often) means solving the above \textbf{optimization problem}.
+There is a very tight connection between ML and optimization, but still, there are substantial differences:
+
+\begin{itemize}
+  \item In machine learning, we want to find a model that is optimal w.r.t. the theoretical risk $\risk(f)$.
+  \item In general, we cannot compute the theoretical risk, because the data generating process $\Pxy$ is not known.
+  \item Instead, we use observed data $\D$ to formulate the empirical risk $\riskef$.
+  \item However, $\riske(f)$ is a good approximation for $\risk(f)$ only if $\D$ is an unbiased, independent and large enough sample from $\Pxy$.
+  \item So in machine learning, we optimize an approximated version of the problem we are actually interested in.
+\end{itemize}
+
+\end{vbframe}
+
+% Slide 16 -- As intro in Advanced Regression Losses
+
+\begin{vbframe}{The role of Loss Functions}
+
+Why should we care about how to choose the loss function $\Lxy$?
+
+\begin{itemize}
+% \item For regression, the loss usually only depends on residual $\Lxy = L\left(y - \fx\right) = L(\eps)$, this is a \emph{translation invariant} loss
+\item \textbf{Statistical} properties of $f$: Choice of loss implies statistical properties of $f$ like robustness and an implicit error distribution.
+\item \textbf{Computational / Optimization} complexity of the optimization problem: The complexity of the optimization problem
+$$
+\argmin_{\thetab \in \Theta} \risket
+$$
+is influenced by the choice of the loss function, i.e.\
+
+  \begin{itemize}
+    \item Smoothness of the objective \\
+    \begin{footnotesize} 
+    Some optimization methods require smoothness (e.g. gradient methods).
+    \end{footnotesize}
+    \item Uni- or multimodality of the problem \\
+    \begin{footnotesize} 
+    If $\Lxy$ is convex in its second argument, and $\fxt$ is linear in $\thetab$, then $\risket$ is convex; every local minimum of $\risket$ is a global one. If $L$ is not convex, $\risket$ might have multiple local minima (bad!).
+    \end{footnotesize}
+  \end{itemize}
+\end{itemize}
+
+
+\end{vbframe}
+
+\endlecture
+\end{document}

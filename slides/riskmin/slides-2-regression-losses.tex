@@ -1,0 +1,467 @@
+%<<setup-child, include = FALSE>>=
+%library(knitr)
+%library(qrmix)
+%library(mlr)
+%library(quantreg)
+%library(reshape2)
+%set_parent("../style/preamble.Rnw")
+%@
+
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/optimization_steps.jpeg}
+\newcommand{\learninggoals}{
+\item Understand that an ML model is simply a parametrized curve
+\item Understand that the hypothesis space lists all admissible models
+    for a learner
+\item Understand the relationship between the hypothesis space and the parameter space
+}
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+
+\begin{document}
+
+\begin{vbframe}{Risk Minimization}
+
+Now, we will discuss the most common loss functions and the optimal solution with respect to 
+
+
+\begin{itemize}
+  \item the theoretical risk 
+  $$
+  \riskf =  \E[\Lxy] = \int_{\Xspace \times \Yspace} \Lxy ~ d\Pxy
+  $$ 
+  and
+  \item the empirical risk 
+  $$
+ \riskef = \sumin \Lxyi. 
+  $$
+\end{itemize}
+
+\end{vbframe}
+
+\section{L2-Loss}
+
+
+\begin{vbframe}{L2-Loss}
+
+\vspace*{-0.5cm}
+
+$$
+\Lxy = \left(y-\fx\right)^2 \quad \text{or} \quad \Lxy = 0.5 \left(y-\fx\right)^2
+$$
+
+\vspace*{-2mm}
+
+\begin{itemize}
+\item Tries to reduce large residuals (if residual is twice as large, loss is 4 times as large), hence outliers in $y$ can become problematic
+\item Analytic properties: convex, differentiable (gradient no problem in loss minimization)
+\item Residuals = Pseudo-residuals: \begin{footnotesize} $\tilde r = - \pd{0.5 (y-\fx)^2}{\fx} = y - \fx = r$\end{footnotesize}
+\end{itemize}
+
+% <<loss-quadratic-plot, echo=FALSE, results='hide', fig.height=3>>=
+% x = seq(-2, 2, by = 0.01); y = x^2
+% qplot(x, y, geom = "line", xlab = expression(y-f(x)), ylab = expression(L(y-f(x))))
+% @
+
+% \framebreak
+
+\vspace*{-6mm}
+
+\begin{center}
+  \includegraphics[width = 9cm]{figure_man/loss_quadratic_plot1.png} \\
+\end{center}
+
+\end{vbframe}
+
+
+\begin{vbframe}{L2-Loss: Point-wise optimum}
+
+Let us consider the (theoretical) risk for  $\Yspace = \R$ and the $L2$-Loss $\Lxy = \left(y-\fx\right)^2$. % We assume our hypothesis space is not restricted at all and contains all possible functions $\Hspace = \{f: \Xspace \to \Yspace\}$. 
+
+\begin{itemize}
+\item By the law of total expectation
+  \begin{eqnarray*}
+    \riskf &=& \E_{xy} \left[\Lxy\right] 
+    \\ &=& \E_x \left[\E_{y|x}\left[\Lxy~|~\xv = \xv\right]\right] \\
+  &=& \E_x
+  \left[\E_{y|x}\left[(y-\fx)^2~|\xv = \xv\right]\right]. 
+  \end{eqnarray*}
+% \item As our hypothesis space is not restricted at all, we can proceed quite \enquote{arbitrarily} when constructing our model $\hat f$.  
+\item Assume we are free to choose $f$ as we wish: At any point $\xv = \xv$ we can predict any $c$ we want. The best point-wise prediction is the conditional mean
+$$
+  \fxh = \mbox{argmin}_c \E_{y|x}\left[(y - c)^2 ~|~ \xv = \xv \right]\overset{(*)}{=} \E_{y|x} \left[y ~|~ \xv \right]. 
+$$
+
+\framebreak 
+
+\item $^{(*)}$ follows from:
+\begin{eqnarray*}
+&& \mbox{argmin}_c \E\left[(y - c)^2\right] \\  &=& \mbox{argmin}_c \underbrace{\E\left[(y - c)^2\right] - \left(\E[y] - c\right)^2}_{\var[y - c] = \var[y]} + \left(\E[y] - c\right)^2 \\ &=& \mbox{argmin}_c \var[y] + \left(\E[y] - c\right)^2 \\ &=& \E[y]. 
+\end{eqnarray*}
+\end{itemize}
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{L2-Loss: Optimal constant model}
+
+% Derive Constant model and L2 loss
+
+For the sake of simplicity, let us consider the hypothesis space $\Hspace$ of constant models 
+
+$$
+\Hspace = \left\{f~|~\fx = \thetab, \thetab\in \R \right\}.
+$$
+
+\textbf{Goal:} Derive the optimal constant model w.r.t. the $L2$-Loss. 
+
+\begin{eqnarray*}
+f &=& \argmin_{f \in \Hspace} \riskef = \sumin \Lxyi\\
+\Leftrightarrow \quad \hat \thetab&=& \argmin_{\thetab\in \R} \sum_{i = 1}^n \left(\yi - \thetab\right)^2
+\end{eqnarray*}
+
+\framebreak
+
+We calculate the first derivative of $\riske$ w.r.t. $\thetab$ and set it to $0$: 
+
+
+\begin{eqnarray*}
+\frac{\partial \risket}{\partial \thetab} = 2 \sumin \left(\yi - \thetab\right) &\overset{!}{=}& 0 \\
+\sumin \yi - n \thetab&=& 0 \\
+\hat \thetab&=& \frac{1}{n} \sumin \yi =: \bar y.
+\end{eqnarray*}
+
+So the optimal constant model predicts the average of observed outcomes $\fxh = \bar y$.
+
+\framebreak
+
+
+
+\begin{center}
+\includegraphics[width = 11cm ]{figure_man/L2-loss.png} \\
+\end{center}
+
+
+\end{vbframe}
+
+
+\section{L1-Loss}
+
+\begin{vbframe}{L1-Loss}
+
+% Description
+\vspace*{-0.3cm}
+
+$$
+\Lxy = \left|y-\fx\right|
+$$
+
+\begin{itemize}
+\item More robust than $L2$, outliers in $y$ are less problematic.
+\item Analytical properties: convex, not differentiable for $y = f(\bm{x})$ (optimization becomes harder).
+\end{itemize}
+
+\vspace*{-6mm}
+
+\begin{center}
+  \includegraphics[width = 9cm]{figure_man/loss_absolute_plot1.png} \\
+\end{center}
+
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{L1-Loss: Point-wise optimum}
+
+We calculate the (theoretical) risk for the $L1$-Loss $\Lxy = \left|y-\fx\right|$ with unrestricted $\Hspace = \{f: \Xspace \to \Yspace\}$. 
+
+\begin{itemize}
+  \item Again, we use the law of total expectation 
+  $$
+    \riskf = \E_x \left[\E_{y|x}\left[|y-\fx|~|\xv = \xv\right]\right]. 
+  $$
+  \item As the functional form of $f$ is not restricted, we can just optimize point-wise at any point $\xv = \xv$. The best prediction at $\xv = \xv$ is then 
+
+  $$
+    \fxh = \mbox{argmin}_c \E_{y|x}\left[|y - c|\right]\overset{(*)}{=} \text{med}_{y|x} \left[y ~|~ \xv \right]. 
+  $$
+
+  \framebreak 
+
+  \item $^{(*)}$ Let $p(y)$ be the density function of $y$. Then: 
+  \begin{eqnarray*}
+  && \mbox{argmin}_c \E\left[|y - c|\right] = \mbox{argmin}_c \int_{-\infty}^\infty |y - c| ~ p(y) \text{d}y \\
+  &=& \mbox{argmin}_c \int_{-\infty}^c -(y - c)~p(y)~\text{d}y + \int_c^\infty (y - c)~p(y)~\text{d}y 
+  \end{eqnarray*}
+  Setting the derivation w.r.t. $c$ to zero yields: 
+  \begin{eqnarray*}
+  0 &=& \int_{-\infty}^c p(y)~\text{d}y - \int_c^\infty p(y)~~\text{d}y \\
+  &=& \P_y (y \le c) - \left(1 - \P_y (y \le c)\right)\\
+  &=& 2 \cdot \P_y (y \le c) - 1 \\
+  \Leftrightarrow 0.5 &=& \P_y (y \le c),
+  \end{eqnarray*}
+  which yields $c = \text{med}_y(y)$.  
+
+\end{itemize}
+
+\end{vbframe}
+
+
+\begin{vbframe}{L1-Loss: Optimal constant model}
+
+% Derive Constant model and L2 loss
+
+\textbf{Goal:} Derive the optimal constant model 
+
+
+$$
+f \in \Hspace = \left\{\fx = \thetab~|~ \thetab\in \R \right\},
+$$
+
+w.r.t. the $L1$-Loss. 
+
+\begin{eqnarray*}
+f &=& \argmin_{f \in \Hspace} \riskef\\
+\Leftrightarrow \quad \hat \thetab&=& \argmin_{\thetab\in \R} \sum_{i = 1}^n \left|\yi - \thetab\right| \\
+\Leftrightarrow \quad \hat \thetab&=& \text{med}(\yi)
+\end{eqnarray*}
+
+% \textbf{Proof:} Exercise.
+
+
+\framebreak
+
+% Take proof from this page? 
+% https://math.stackexchange.com/questions/113270/the-median-minimizes-the-sum-of-absolute-deviations-the-l-1-norm/1024462#1024462
+
+\textbf{Proof:} 
+
+\begin{itemize}
+  \item Firstly note that for $n = 1$ the median $\thetah = \text{med}(\yi) = y^{(1)}$ obviously minimizes the empirical risk $\riske$ associated to the $L1$ loss $L$. 
+  \item Hence let $n > 1$ in the following: Let 
+
+  $$
+    S_{a,b}:\mathbb{R} \rightarrow \mathbb{R}^+_0, \thetab \mapsto |a- \thetab| + |b-\thetab|
+  $$
+
+  for $a, b \in \mathbb{R}$. It holds that
+  \begin{eqnarray*}
+  S_{a,b}(\thetab) &=& \begin{cases}|a-b| ,& \text{ for } \thetab \in [a,b]\\ |a-b| + 2\cdot\min\{|a-\thetab|,|b-\thetab|\}
+  ,& \text{ otherwise. }\end{cases}
+  \end{eqnarray*}
+  Thus, any $\thetah \in [a,b]$ minimizes $S_{a,b}$. \\
+
+  Let us define $i_{\max} = n / 2$ for $n$ even and $i_{\max} = (n - 1) / 2$ for $n$ odd and consider the intervals 
+  $$
+    \mathcal{I}_i := [y^{(i)},y^{(n+1-i)}], i \in \{1, ..., i_{\max}\}. 
+  $$
+
+  By construction $\mathcal{I}_{j+1} \subseteq \mathcal{I}_j$ for $j \in \{1,\dots,i_{\max}-1\}$ and $\mathcal{I}_{i_{\max}} \subseteq \mathcal{I}_i$. With this, $\riske$ can be expressed as
+  \begin{footnotesize}
+  \begin{eqnarray*}
+  \riske(\thetab) &=& \sumin L(\yi,\thetab) = \sumin|\yi - \thetab| \\ 
+  &=& \underbrace{|\yi[1] - \thetab| + |\yi[n] - \thetab|}_{= S_{\yi[1], \yi[n]}(\thetab)} + \underbrace{|\yi[2] - \thetab| + |\yi[n - 1] - \thetab|}_{= S_{\yi[2], \yi[n - 1]}(\thetab)} + ...  \\
+  &=& \begin{cases} \sum\limits_{i = 1}^{i_{\max}} S_{\yi, \yi[n + 1 - i]}(\thetab) & \text{ for } n \text{ is even} \\
+  \sum\limits_{i = 1}^{i_{\max}} \left(S_{\yi, \yi[n + 1 - i]}(\thetab)\right) + |\yi[n + 1] - \thetab| & \text{ for } n \text{ is odd}. \end{cases}
+  \end{eqnarray*}
+  \end{footnotesize}
+
+  % \begin{eqnarray*}
+  % \begin{cases}
+  % \sum^{\overbrace{n/2}^{=:i_{\max}}}_{i=1} \overbrace{S_{y^{(i)},y^{(n+1-i)}}(c)}^{=:S_i(c)},&  \text{ for } n \text{ is even}\\
+  % (\sum^{\overbrace{(n-1)/2}^{=:i_{\max}}}_{i=1} \underbrace{S_{y^{(i)},y^{(n+1-i)}}(c)}_{=:S_i(c)}) + \underbrace{|y^{(n+1)/2}-c|}_{=:S_0(c)},& \text{ for } n \text{ is odd}. 
+  % \end{cases}
+  % \end{eqnarray*}
+  % \end{footnotesize}
+  % Now we define for $i \in \{1,\dots,i_{\max}\} \; \mathcal{I}_i := [y^{(i)},y^{(n+1-i)}].$ \\
+  % From construction it follows that for  $j \in \{1,\dots,i_{\max}-1\}$
+  % $$\mathcal{I}_{j+1} \subseteq \mathcal{I}_j \Rightarrow \forall i \in \{1,\dots,i_{\max}\}:  \mathcal{I}_{i_{\max}} \subseteq \mathcal{I}_i.$$
+  \framebreak 
+
+  From this follows that
+  \begin{itemize}
+  \item for \enquote{$n$ is even}: $\thetah \in  \mathcal{I}_{i_{\max}} = [y^{(n/2)},y^{(n/2+1)}]$ minimizes $S_i$ for all $i \in \{1,\dots, i_{\max}\} \; \Rightarrow  \riske$ reaches its global minimum at $\thetah$,
+  \item for \enquote{$n$ is odd}: $\thetah = y^{(n+1)/2} \in \mathcal{I}_{i_{\max}}$ minimizes $S_i$ for all $i \in \{1,\dots, i_{\max}\} \; \Rightarrow  \riske$ reaches its global minimum at $\thetah$.
+  \end{itemize}
+
+  Since the median fulfills these conditions, we can conclude that it minimizes 
+  the $L1$ loss.
+\end{itemize}
+
+\framebreak
+
+
+\begin{center}
+\includegraphics[width = 11cm ]{figure_man/L1-loss.png} \\
+\end{center}
+
+\framebreak 
+
+We see that the $L1$-Loss is more robust w.r.t. outliers than the $L2$-Loss. 
+\vspace{0.3cm}
+
+
+\begin{center}
+\includegraphics[width = 9cm ]{figure_man/L1andL2-loss.png} \\
+\end{center}
+
+
+\end{vbframe}
+
+
+
+\section{Huber-Loss}
+
+
+\begin{vbframe}{Huber-Loss}
+
+% Description
+\vspace*{-0.3cm}
+
+$$
+\Lxy = \begin{cases}
+  \frac{1}{2}(y - \fx)^2  & \text{ if } |y - \fx| \le \delta \\
+  \delta |y - \fx|-\frac{1}{2}\delta^2 \quad & \text{ otherwise }
+  \end{cases}, \delta > 0
+$$
+
+\begin{itemize}
+\item Piecewise combination of $L1$ and $L2$ loss
+\item Analytic properties: Convex, differentiable, robust
+\item Combines advantages of $L1$ and $L2$ loss: differentiable + robust
+\end{itemize}
+
+\vspace*{-1cm}
+
+\begin{center}
+\includegraphics[width = 9cm]{figure_man/loss_huber_plot1.png} \\
+\end{center}
+
+\framebreak
+
+The following plot shows the Huber loss for different values of $\delta$.
+
+\begin{center}
+\includegraphics[width = 11cm]{figure_man/loss_huber_plot2.png} 
+\end{center}
+
+\end{vbframe}
+
+\begin{vbframe}{Huber Loss: Optimal constant model}
+
+What is the optimal constant model $\fx = \thetab$ w.r.t. the Huber loss?
+
+\vspace{-0.2cm}
+\begin{eqnarray*}
+f &=& \argmin_{f \in \Hspace} \riskef\\
+\Leftrightarrow
+\hat \thetab&=& \argmin_{\thetab\in \R} \sumin L(y, \thetab)
+\end{eqnarray*}
+
+with $L(y, \thetab) = \begin{cases}
+  \frac{1}{2}(y - \thetab)^2  & \text{ if } |y - \thetab| \le \delta \\
+  \delta |y - \thetab|-\frac{1}{2}\delta^2 \quad & \text{ otherwise }
+  \end{cases}. $
+
+\begin{itemize}
+\item There is no closed-form solution.
+\item Numerical optimization methods are necessary.
+\item $\to$  the \enquote{optimal} solution can only be approached to a certain degree of accuracy via iterative optimization.
+\end{itemize}
+
+
+\framebreak
+
+\vspace{0.2cm}
+
+\begin{center}
+\includegraphics[width = 11cm ]{figure_man/Huber1.png} \\
+\end{center}
+
+
+\framebreak 
+
+And when adding an outlier: 
+
+\vspace{0.2cm}
+
+\begin{center}
+\includegraphics[width = 9cm ]{figure_man/Huber-outlier.png} \\
+\end{center}
+
+
+% We see that the constant model fitted w.r.t. Huber loss in fact lies between L1- and L2-Loss.
+
+\end{vbframe}
+
+
+\section{Summary}
+
+\begin{vbframe}{Summary of Loss Functions}
+
+\begin{table}[]
+\begin{tabular}{c|ccc}
+
+& $L2$ & $L1$ & Huber \\ \hline 
+Point-wise optimum & $\E_{y|x}\left[y ~|~ \xv\right]$ & $\text{med}_{y|x}\left[y ~|~ \xv\right]$ & n.a. \\
+Best constant & $\frac{1}{n}\sumin \yi$ & $\text{med}\left(\yi\right)$ & n.a.\\
+Differentiable & \checkmark & \xmark & \checkmark \\
+Convex & \checkmark & \checkmark & \checkmark \\
+Robust & \xmark & \checkmark & \checkmark \\
+\end{tabular}
+\end{table}
+
+There are many other loss functions for regression tasks, for example:
+
+\begin{itemize}
+  \item Quantile-Loss
+  \item $\epsilon$-insensitive-Loss  
+  \item Log-Barrier-Loss
+\end{itemize}
+
+Loss functions might also be customized to an objective that is defined by an application. 
+
+% \framebreak 
+% \begin{itemize}
+  % \item In future chapters, we will talk about different learning algorithms.
+  % \lz
+  % \item We will come back to loss functions introduced in this chapter or we will introduce new ones. 
+  % \lz
+  % \item We will see how learning algorithms are composed into specific hypothesis classes and loss functions; we will come back to the loss functions introduced in this chapter or introduce new ones.
+% \end{itemize}
+
+
+% When introducing different learning algorithms, we will come back to the loss functions introduced in this chapter or even introduce new ones. For example:  
+
+% \begin{itemize}
+%   \item Ordinary Linear Regression: L2-loss
+%   \item Logistic Regression: Logistic loss
+%   \item Support Vector Machine Classification: Hinge-Loss (to be introduced) (see \textbf{SVM} chapter)
+%   \item Support Vector Machine Regression: $\epsilon$-insensitive loss (see \textbf{SVM} chapter)
+%   \item AdaBoost: Exponential loss (see \textbf{Boosting} chapter)
+% \end{itemize}
+
+% Once knowing the theory of risk minimization and properties of loss functions, we can combine model classes and loss functions as needed or even tailor loss functions to our needs. 
+
+
+
+\end{vbframe}
+
+
+
+
+\endlecture
+\end{document}
+
+
+
+
