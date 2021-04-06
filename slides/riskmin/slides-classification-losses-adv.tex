@@ -10,13 +10,14 @@
 \input{../../style/preamble}
 \input{../../latex-math/basic-math}
 \input{../../latex-math/basic-ml}
+\input{../../latex-math/ml-trees} % For the comparison of Brier and Gini index
+
 
 \newcommand{\titlefigure}{figure_man/optimization_steps.jpeg}
 \newcommand{\learninggoals}{
-\item Understand that an ML model is simply a parametrized curve
-\item Understand that the hypothesis space lists all admissible models
-    for a learner
-\item Understand the relationship between the hypothesis space and the parameter space
+  \item Understand why the choice of the loss function matters
+  \item Learn about basic properties of regression losses
+  \item Learn about some advanced loss functions
 }
 
 \title{Introduction to Machine Learning}
@@ -31,64 +32,18 @@
 \lecture{Introduction to Machine Learning}
 
 
-\begin{vbframe}{Risk Minimization for Classification}
-
-Let $y$ be categorical with $g$ classes, i. e.  $\Yspace = \{1, ..., g\}$ and let $f: \Xspace \to \R^g$. We assume our model $f$ outputs a $g$-dimensional vector of scores or probabilities, one per class.
-
-\lz 
-
-\textbf{Note}: In this section, we will consider loss for \textbf{binary classification} tasks, so $\fx$ and $\pix$ are univariate scalars.
-
-\lz 
-
-  We will (usually) encode labels as $y \in \{-1, 1\}$ for scoring classifiers $\fx$, and as $y \in \{0, 1\}$ for probabilistic classifiers $\pix$ unless explicitly stated differently. 
-
-
-\lz
-
-\textbf{Goal:} Find a model $f$ that minimizes the expected loss over random observations $\xy \sim \Pxy$ 
-
-$$
-\argmin_{f \in \Hspace} \riskf = \E_{xy}[\Lxy] = \int \Lxy ~ \text{d}\Pxy. 
-$$
-
-
-\begin{itemize}
-  \item As for regression before, losses measure prediction errors \textbf{point-wise}.
-  \item In classification, however, we need to distinguish the different types of prediction functions:
-  \item Losses can either be defined on
-  \begin{itemize}
-    \item hard labels $\hx$ or
-    \item (class) scores $\fx$ or
-    \item (class) probabilities $\pix$. 
-  \end{itemize}
-  \item For multiclass classification, loss functions will be defined on vectors of scores ($f_1(\xv), ..., f_g(\xv)$) or on vectors of probabilities ($\pi_1(\xv), ..., \pi_g(\xv)$).
-\end{itemize}
-
-
-\framebreak 
-
-\begin{figure}
-  \includegraphics[width=0.8\textwidth]{figure_man/classifiers.png}
-\end{figure}
-
-Note that for a \textbf{binary scoring classifier} $\fx$,
-
-$$
-\hx = \sign(\fx) \in \{-1, 1\}
-$$
-and for a \textbf{probabilistic classifier} $\pix$
-
-$$
-\hx = \mathds{1}_{\{ \pix > c \}} \in \{0, 1\}
-$$
-
-(e.g. $c = 0.5$) will be the corresponding label. 
-
-
-\end{vbframe}
 
 \begin{vbframe}{Margins} 
+
+Losses can be defined on 
+
+\begin{itemize}
+  \item Hard labels $\hx \in \Yspace$
+  \item Scores $\fx \in \R$
+  \item Probabilities $\pix$
+\end{itemize}
+
+\lz 
 
 When considering scoring classifiers $\fx$ we usually define loss functions on the so-called \textbf{margin}
 
@@ -216,6 +171,109 @@ L\left(y, \pix\right) &=& (\pix - y)^2
 
 \end{vbframe}
 
+\begin{vbframe}{Brier Score: Point-wise Optimum}
+
+The minimizer of the (theoretical) risk $\risk(f)$ for the Brier score  
+
+\begin{eqnarray*}
+\hat \pi(\xv) &=& \P(y~|~\xv = \xv),
+\end{eqnarray*}
+
+which means that the Brier score would reach its minimum if the prediction equals the \enquote{true} probability of the outcome. 
+
+\lz 
+
+\textbf{Proof: }We have seen that the (theoretical) optimal prediction $c$ for an arbitrary loss function at fixed point $\xv$ is
+
+$$
+\argmin_{c} \sum_{k \in \Yspace} L(y, c) ~ \P(y = k~|~ \xv = \xv)\,.
+$$
+
+We plug in the Brier score
+
+\vspace*{-0.3cm}
+
+\begin{footnotesize}
+  \begin{eqnarray*}
+    && \argmin_c L(1, c) \underbrace{\P(y = 1| \xv = \xv)}_{:= p} + L(0, c) \underbrace{\P(y = 0| \xv = \xv)}_{= 1 - p} \\ 
+    &=&  \argmin_c \quad (c - 1)^2 p + c^2 (1 - p)\\
+    &=&  \argmin_c \quad (c - p)^2.
+  \end{eqnarray*}
+\end{footnotesize}
+
+The expression is minimal if $c = p = \P(y = 1~|~\xv = \xv)$.
+
+\end{vbframe}
+
+\begin{vbframe}{Brier Score: Optimal constant Model}
+
+The optimal constant probability model $\pix = \theta$ w.r.t. the Brier score for labels from $\Yspace = \setzo$ is:
+
+\begin{eqnarray*}
+  \min_{\theta} \riske(\theta) &=& \min_{\thetab} \sumin \left(\yi - \theta\right)^2 \\
+  \Leftrightarrow \frac{\partial \riske(\theta)}{\partial \theta} &=& - 2 \cdot \sumin (\yi - \theta) = 0 \\
+  \hat \theta &=& \frac{1}{n} \sumin \yi.   
+\end{eqnarray*}
+
+This is the fraction of class-1 observations in the observed data.\\
+(This also directly follows from our $L2$-proof for regression).
+
+\end{vbframe}
+
+\begin{vbframe}{Gini splitting = Brier score minimization}
+
+
+Interestingly, splitting a classification tree w.r.t. the Gini index is equivalent to minimizing the Brier score in each node. 
+
+\lz 
+
+To prove this we show that 
+
+
+$$
+  \risk(\Np) = n_\Np I(\Np)
+$$
+  
+  where $I$ is the Gini impurity 
+
+$$I(\Np) = \sum_{k\neq k\prime} \pikN \pi^{(\Np)}_{k\prime} = \sum_{k=1}^g \pikN(1-\pikN),
+$$
+
+
+
+  and $\risk(\Np)$ is calculated w.r.t. the Brier score
+
+$$
+  L(y, \pix) = \sum_{k = 1}^g \left([y = k] - \pi_k(\xv)\right)^2.
+$$
+
+\framebreak
+
+
+\begin{eqnarray*}
+\risk(\Np) &=& \sum_{\xy \in \Np}  \sum_{k = 1}^g \left([y = k] - \pi_k(\xv)\right)^2 \\
+&=& \sum_{k = 1}^g \sum_{\xy \in \Np}   \left([y = k] - \pi_k(\xv)\right)^2 \\
+&=& \sum_{k = 1}^g n_{\Np,k}\left(1 - \frac{n_{\Np,k}}{n_{\Np }}\right)^2 + (n_{\Np } - n_{\Np,k})\left(\frac{n_{\Np,k}}{n_{\Np }}\right)^2
+\end{eqnarray*}
+
+
+In the last step, we plugged in the optimal prediction w.r.t. the Brier score (the fraction of class $k$ observations):
+
+$$\hat \pi_k(\xv)= \pikN = \frac{n_{\Np,k}}{n_{\Np }}.$$ 
+
+
+We further simplify the expression to
+
+% \begin{footnotesize}
+\begin{eqnarray*}
+\risk(\Np) &=&  \sum_{k = 1}^g n_{\Np,k}\left(\frac{n_{\Np } - n_{\Np,k}}{n_{\Np }}\right)^2 + (n_{\Np } - n_{\Np,k})\left(\frac{n_{\Np,k}}{n_{\Np }}\right)^2 \\
+&=& \sum_{k = 1}^g \frac{n_{\Np,k}}{n_{\Np }} \frac{n_{\Np } - n_{\Np,k}}{n_{\Np }} \left(n_{\Np } - n_{\Np,k } + n_{\Np,k}\right) \\
+&=& n_{\Np } \sum_{k = 1}^g \pikN \cdot (1 - \pikN) = n_\Np I(\Np).
+\end{eqnarray*}
+% \end{footnotesize}
+
+\end{vbframe}
+
 
 
 \section{Bernoulli Loss}
@@ -261,6 +319,152 @@ If scores are transformed into probabilities by the logistic function  $\pix = \
 Via this form it is easy to show that the point-wise optimum for probability estimates is $\pixh = \P(y~|~\xv = \xv)$.
 
 \end{vbframe}
+
+
+
+\begin{vbframe}{Bernoulli loss: Point-wise Optimum}
+
+The theoretical point-wise optimum for scores under Bernoulli loss is actually
+the point-wise log-odds:
+
+\begin{eqnarray*}
+\fh(\xv) &=&  \ln \biggl(\frac{\P(y~|~\xv = \xv)}{1-\P(y~|~\xv = \xv)}\biggr).
+\end{eqnarray*}
+
+The function is undefined when $P(y~|~\xv = \xv) = 1$ or $P(y~|~\xv = \xv) = 0$, but predicts a smooth curve which grows when $P(y~|~\xv = \xv)$ increases and equals $0$ when $P(y~|~\xv = \xv) = 0.5$.
+
+\lz 
+
+\textbf{Proof: } We consider the case $\Yspace = \{-1, 1\}$. We have seen that the (theoretical) optimal prediction $c$ for an arbitrary loss function at fixed point $\xv$ is
+
+$$
+\argmin_{c} \sum_{k \in \Yspace} L(y, c) \P(y = k| \xv = \xv)\,.
+$$
+
+\framebreak 
+
+We plug in the Bernoulli loss
+
+\vspace*{-0.3cm}
+
+\begin{footnotesize}
+  \begin{eqnarray*}
+    && \argmin_c L(1, c) \underbrace{\P(y = 1| \xv = \xv)}_p + L(-1, c) \underbrace{\P(y = -1| \xv = \xv)}_{1 - p} \\ 
+    &=&  \argmin_c \ln(1 + \exp(-c)) p + \ln(1 + \exp(c)) (1 - p).
+  \end{eqnarray*}
+\end{footnotesize}
+
+\vspace*{-0.3cm}
+
+Setting the derivative w.r.t. $c$ to zero yields
+
+\vspace*{-0.3cm}
+
+\begin{footnotesize}
+  \begin{eqnarray*}
+  0 &=& - \frac{\exp(-c)}{1 + \exp(-c)} p + \frac{\exp(c)}{1 + \exp(c)} (1 - p) \\ 
+   &=& - \frac{\exp(-c)}{1 + \exp(-c)} p + \frac{1}{1 + \exp(- c)} (1 - p) \\ 
+  % &=& -  \frac{\exp(-c)}{1 + \exp(-c)} p + \frac{1}{1 + \exp(-c)} - \frac{1}{1 + \exp(-c)} p \\
+  &=& - p + \frac{1}{1 + \exp(-c)} \\
+  \Leftrightarrow p &=& \frac{1}{1 + \exp(-c)} \\
+  \Leftrightarrow c &=& \ln\left(\frac{p}{1 - p}\right)
+  \end{eqnarray*}
+\end{footnotesize}
+
+
+% \framebreak 
+
+% Another common equivalent formulation of this loss function is defined on labels $y \in \{0, 1\}$ instead of $y \in \{-1, 1\}$
+
+% $$
+%   L_{0, 1}(y, \fx) = - y \cdot \fx + \log(1 + \exp(\fx)). 
+% $$
+
+% We indicate this by subscripts of the loss function. 
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{Bernoulli: Optimal constant Model}
+
+The optimal constant probability model $\pix = \theta$ w.r.t. the Bernoulli loss for labels from $\Yspace = \{0, 1\}$) is:
+
+\begin{eqnarray*}
+  \thetah = \argmin_{\theta} \risket = \frac{1}{n} \sumin \yi
+\end{eqnarray*}
+
+Again, this is the fraction of class-1 observations in the observed data.
+We can simply prove this again by setting the derivative of the risk to 0 and solving for $\theta$.
+
+\framebreak
+
+The optimal constant score model $\fx = \theta$ w.r.t. the Bernoulli loss labels from $\Yspace = \setmp$ or $\Yspace = \setzo$ is:
+
+\begin{eqnarray*}
+  \thetah = \argmin_{\theta} \risket = \ln \frac{n_{+1}}{n_{-1}} = \ln \frac{n_{+1}/n}{n_{-1}/n} 
+\end{eqnarray*}
+
+where $n_{-1}$ and $n_{+1}$ are the numbers of negative and positive observations, respectively.
+
+\lz
+
+This again shows a tight (and unsurprising) connection of this loss to log-odds.
+
+\lz
+
+Proving this is also a (quite simple) exercise.
+
+\end{vbframe}
+
+\begin{vbframe}{Bernoulli-Loss: Naming Convention}
+
+We have seen three loss functions that are closely related. In the literature, there are different names for the losses: 
+
+\begin{eqnarray*}
+  L_{-1+1}(y, \fx) &=& \ln(1+\exp(-y\fx)) \\
+  L_{0, 1}(y, \fx) &=& - y \cdot \fx + \log(1 + \exp(\fx)). 
+\end{eqnarray*}
+
+are referred to as Bernoulli, Binomial or logistic loss. 
+
+  $$
+    L_{0,1}(y, \pix) = - y \log \left(\pix\right) - (1 - y) \log \left(1 - \pix\right). 
+  $$
+
+is referred to as cross-entropy or log-loss. 
+
+\lz 
+
+For simplicity, we will call all of them \textbf{Bernoulli loss}, and rather make clear whether they are defined on labels $y \in \{0, 1\}$ or $y \in \{-1, 1\}$ and on scores $\fx$ or probabilities $\pix$. 
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{Entropy splitting = log loss minimization}
+
+The logarithmic loss for multiple classes $y \in \{1, 2, ..., g\}$ is defined as
+$$ L(y, \pikx) = \sum_{k = 1}^g [y = k] \cdot \log \left(\pi_k(\xv)\right). $$
+\vspace{-0.4cm}
+\begin{eqnarray*}
+\risk(\Np) &=& \sum_{\xy \in \Np}  \sum_{k = 1}^g [y = k] \log \pi_k(\xv) \\
+&=& \sum_{k = 1}^g \sum_{\xy \in \Np} [y = k] \log \pikN \\
+&=& \sum_{k = 1}^g n_{\Np k} \log \pikN = n_{\Np} \sum_{k = 1}^g \pikN \log \pikN = n_\Np I(\Np)
+\end{eqnarray*} 
+Plugging in the optimal constant $\pi_k(\xv) = \pikN$.
+
+
+\framebreak
+
+\textbf{Conclusion}: 
+  
+  Stumps/trees with entropy splitting use the same loss function as logistic regression (binary) / softmax regression (multiclass). While logistic regression is based on the hypothesis space of \textbf{linear functions}, stumps/trees use \textbf{step functions} as hypothesis spaces. 
+
+\end{vbframe}
+
+
+
 
 
 
@@ -326,6 +530,46 @@ Via this form it is easy to show that the point-wise optimum for probability est
 
 % Logistic regression with two features:
 
+\section{Exponential Loss}
+
+\begin{vbframe}{Classification Losses: Exponential Loss}
+
+Another possible choice for a (binary) loss function that is a smooth approximation to the 0-1-loss:
+\begin{itemize}
+\item $\Lxy = \exp(-y\fx)$, used in AdaBoost
+\item Convex, differentiable (thus easier to optimize than 0-1-loss)
+\item The loss increases exponentially for wrong predictions with high confidence; if the prediction is right with a small confidence only, there, loss is still positive
+\item No closed-form analytic solution to empirical risk minimization
+\end{itemize}
+
+
+\begin{figure}
+\includegraphics[width = 0.8\textwidth]{figure_man/exponential-loss.png}
+\end{figure}
+
+
+\end{vbframe}
+
+
+\section{AUC Loss}
+
+
+\begin{vbframe}{Classification Losses: AUC-loss}
+
+\begin{itemize}
+\item Often AUC is used as an evaluation criterion for binary classifiers
+\item Let $Y \in \{-1, 1\}$ with observations $n_{-1}$ number of negative and $n_{1}$ of positive samples %$y_i, i = 1, \ldots, n_{-1} + n_1$.
+\item The AUC can then be defined as
+$$AUC = n_{-1}^{-1} n_1^{-1} \sum_{i: y_i = 1} \sum_{j: y_j = -1} I(f_i > f_j)$$
+\item This is not differentiable wrt $f$ due to $I(f_i > f_j)$
+\item But the indicator function can be approximated by the distribution function of the triangular distribution on $[-1, 1]$ with mean $0$
+\item However, direct optimization of the AUC is usually not as good as optimization wrt a common loss and tuning via AUC in practice 
+
+\end{itemize}
+\end{vbframe}
+
+
+
 
 \section{Summary}
 
@@ -371,6 +615,47 @@ There are other loss functions for classification tasks, for example:
 As for regression, loss functions might also be customized to an objective that is defined by an application. 
 
 \end{vbframe}
+
+\begin{vbframe}{Risk minimizing functions}
+
+Overview of binary classification losses and the corresponding risk minimizing functions:
+
+\lz
+
+\begin{tabular}{p{2.5cm}|p{3.5cm}|p{4.5cm}}
+  loss name & loss formula  & minimizing function \\
+  \hline
+  0-1 & $[y \neq \hx]$ & $\hxh = \footnotesize \begin{cases} 1 \quad \text{ if } \pix > 1/2 \\ -1 \quad \pix < 1/2  \end{cases}$ \\
+  Hinge & $\max\{0, 1 - \yf\}$ & $\fh(x) =  \footnotesize \begin{cases} 1 \quad \text{ if } \pix > 1/2 \\ -1 \quad \pix < 1/2  \end{cases}$ \\
+  Logistic & $\ln(1+\exp(-y\fx))$ & $\fh(x) =  \ln \biggl(\frac{\pix}{1-\pix}\biggr)$ \\
+  Cross entropy & $-y\ln(\pix) \newline -(1-y)\ln(1-\pix)$ & \\
+  & & \\
+  Exponential & $\exp(-y\fx)$ &
+
+\end{tabular}
+
+\end{vbframe}
+
+
+
+
+% \begin{vbframe}{Classification Losses: Hinge Loss}
+% \begin{itemize}
+% \item $\Lxy = \max\{0, 1 - \yf\}$, used in SVMs
+% \item Convex
+% \item No derivatives for $\yf = 1$, optimization becomes harder
+% \item No closed-form analytical solution to empirical risk minimization
+% \item More robust, outliers in $y$ are less problematic
+% \item Correctly classified samples with confidence $> 1$ are not penalized
+% \end{itemize}
+% 
+% <<loss-hinge-plot, echo=FALSE, results='hide', fig.height=3, fig.align='center'>>=
+% x = seq(-2, 2, by = 0.01); y = pmax(0, 1 - x)
+% qplot(x, y, geom = "line", xlab = expression(y %.% f(x)), ylab = expression(L(yf(x))))
+% @
+% 
+% \end{vbframe}
+
 
 
 

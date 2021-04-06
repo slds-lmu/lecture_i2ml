@@ -13,10 +13,8 @@
 
 \newcommand{\titlefigure}{figure_man/optimization_steps.jpeg}
 \newcommand{\learninggoals}{
-\item Understand that an ML model is simply a parametrized curve
-\item Understand that the hypothesis space lists all admissible models
-    for a learner
-\item Understand the relationship between the hypothesis space and the parameter space
+\item Learn how to derive the theoretical optimizers of the L1 and the L2 loss 
+\item Understand the connection between theoretical and the empirical optimizers
 }
 
 \title{Introduction to Machine Learning}
@@ -31,37 +29,8 @@
 \lecture{Introduction to Machine Learning}
 
 
-\begin{vbframe}{L2-Loss}
 
-\vspace*{-0.5cm}
-
-$$
-\Lxy = \left(y-\fx\right)^2 \quad \text{or} \quad \Lxy = 0.5 \left(y-\fx\right)^2
-$$
-
-\vspace*{-2mm}
-
-\begin{itemize}
-\item Tries to reduce large residuals (if residual is twice as large, loss is 4 times as large), hence outliers in $y$ can become problematic
-\item Analytic properties: convex, differentiable (gradient no problem in loss minimization)
-\item Residuals = Pseudo-residuals: \begin{footnotesize} $\tilde r = - \pd{0.5 (y-\fx)^2}{\fx} = y - \fx = r$\end{footnotesize}
-\end{itemize}
-
-% <<loss-quadratic-plot, echo=FALSE, results='hide', fig.height=3>>=
-% x = seq(-2, 2, by = 0.01); y = x^2
-% qplot(x, y, geom = "line", xlab = expression(y-f(x)), ylab = expression(L(y-f(x))))
-% @
-
-% \framebreak
-
-\vspace*{-6mm}
-
-\begin{center}
-  \includegraphics[width = 9cm]{figure_man/loss_quadratic_plot1.png} \\
-\end{center}
-
-\end{vbframe}
-
+\section{L2-Loss: Theoretical Optimum}
 
 \begin{vbframe}{L2-Loss: Point-wise optimum}
 
@@ -76,90 +45,32 @@ Let us consider the (theoretical) risk for  $\Yspace = \R$ and the $L2$-Loss $\L
   \left[\E_{y|x}\left[(y-\fx)^2~|\xv = \xv\right]\right]. 
   \end{eqnarray*}
 % \item As our hypothesis space is not restricted at all, we can proceed quite \enquote{arbitrarily} when constructing our model $\hat f$.  
+
 \item Assume we are free to choose $f$ as we wish: At any point $\xv = \xv$ we can predict any $c$ we want. The best point-wise prediction is the conditional mean
 $$
   \fxh = \mbox{argmin}_c \E_{y|x}\left[(y - c)^2 ~|~ \xv = \xv \right]\overset{(*)}{=} \E_{y|x} \left[y ~|~ \xv \right]. 
 $$
 
-\framebreak 
+\begin{footnotesize}
+$^{(*)}$ follows from:
+  \begin{eqnarray*}
+  && \mbox{argmin}_c \E\left[(y - c)^2\right] = \mbox{argmin}_c \underbrace{\E\left[(y - c)^2\right] - \left(\E[y] - c\right)^2}_{\var[y - c] = \var[y]} + \left(\E[y] - c\right)^2 \\ &=& \mbox{argmin}_c \var[y] + \left(\E[y] - c\right)^2 = \E[y]. 
+  \end{eqnarray*}
+\end{footnotesize}
 
-\item $^{(*)}$ follows from:
+
+\item The best featureless predictor (i.e., the best constant model) is
 \begin{eqnarray*}
-&& \mbox{argmin}_c \E\left[(y - c)^2\right] \\  &=& \mbox{argmin}_c \underbrace{\E\left[(y - c)^2\right] - \left(\E[y] - c\right)^2}_{\var[y - c] = \var[y]} + \left(\E[y] - c\right)^2 \\ &=& \mbox{argmin}_c \var[y] + \left(\E[y] - c\right)^2 \\ &=& \E[y]. 
-\end{eqnarray*}
+  \text{(Theoretical) \quad}\fx &=& \E_{y~|~\xv}\left[y~|~\xv\right] \overset{\text{featureless}}{=} \E_y \left[y\right] \\
+  \text{(Empirical) \quad}\fx &=& \bar y 
+\end{eqnarray*} 
+
 \end{itemize}
 
 \end{vbframe}
 
 
-
-\begin{vbframe}{L2-Loss: Optimal constant model}
-
-% Derive Constant model and L2 loss
-
-For the sake of simplicity, let us consider the hypothesis space $\Hspace$ of constant models 
-
-$$
-\Hspace = \left\{f~|~\fx = \thetab, \thetab\in \R \right\}.
-$$
-
-\textbf{Goal:} Derive the optimal constant model w.r.t. the $L2$-Loss. 
-
-\begin{eqnarray*}
-f &=& \argmin_{f \in \Hspace} \riskef = \sumin \Lxyi\\
-\Leftrightarrow \quad \hat \thetab&=& \argmin_{\thetab\in \R} \sum_{i = 1}^n \left(\yi - \thetab\right)^2
-\end{eqnarray*}
-
-\framebreak
-
-We calculate the first derivative of $\riske$ w.r.t. $\thetab$ and set it to $0$: 
-
-
-\begin{eqnarray*}
-\frac{\partial \risket}{\partial \thetab} = 2 \sumin \left(\yi - \thetab\right) &\overset{!}{=}& 0 \\
-\sumin \yi - n \thetab&=& 0 \\
-\hat \thetab&=& \frac{1}{n} \sumin \yi =: \bar y.
-\end{eqnarray*}
-
-So the optimal constant model predicts the average of observed outcomes $\fxh = \bar y$.
-
-\framebreak
-
-
-
-\begin{center}
-\includegraphics[width = 11cm ]{figure_man/L2-loss.png} \\
-\end{center}
-
-
-\end{vbframe}
-
-
-\section{L1-Loss}
-
-\begin{vbframe}{L1-Loss}
-
-% Description
-\vspace*{-0.3cm}
-
-$$
-\Lxy = \left|y-\fx\right|
-$$
-
-\begin{itemize}
-\item More robust than $L2$, outliers in $y$ are less problematic.
-\item Analytical properties: convex, not differentiable for $y = f(\bm{x})$ (optimization becomes harder).
-\end{itemize}
-
-\vspace*{-6mm}
-
-\begin{center}
-  \includegraphics[width = 9cm]{figure_man/loss_absolute_plot1.png} \\
-\end{center}
-
-
-\end{vbframe}
-
+\section{L1-Loss: Theoretical Optimum}
 
 
 \begin{vbframe}{L1-Loss: Point-wise optimum}
@@ -176,6 +87,12 @@ We calculate the (theoretical) risk for the $L1$-Loss $\Lxy = \left|y-\fx\right|
   $$
     \fxh = \mbox{argmin}_c \E_{y|x}\left[|y - c|\right]\overset{(*)}{=} \text{med}_{y|x} \left[y ~|~ \xv \right]. 
   $$
+\item The best featureless predictor (i.e., the best constant model) is
+\begin{eqnarray*}
+  \text{(Theoretical) \quad}\fx &=& \text{med}_{y|x} \left[y ~|~ \xv \right] \overset{\text{featureless}}{=}  \text{med}_{y} \left[y \right] \\
+  \text{(Empirical) \quad}\fx &=& \text{med}(\yi)
+\end{eqnarray*} 
+
 
   \framebreak 
 
@@ -193,6 +110,8 @@ We calculate the (theoretical) risk for the $L1$-Loss $\Lxy = \left|y-\fx\right|
   \end{eqnarray*}
   which yields $c = \text{med}_y(y)$.  
 
+
+
 \end{itemize}
 
 \end{vbframe}
@@ -202,14 +121,7 @@ We calculate the (theoretical) risk for the $L1$-Loss $\Lxy = \left|y-\fx\right|
 
 % Derive Constant model and L2 loss
 
-\textbf{Goal:} Derive the optimal constant model 
-
-
-$$
-f \in \Hspace = \left\{\fx = \thetab~|~ \thetab\in \R \right\},
-$$
-
-w.r.t. the $L1$-Loss. 
+For your reference: The optimal constant model for the empirical risk w.r.t. the L1 loss 
 
 \begin{eqnarray*}
 f &=& \argmin_{f \in \Hspace} \riskef\\
@@ -217,7 +129,11 @@ f &=& \argmin_{f \in \Hspace} \riskef\\
 \Leftrightarrow \quad \hat \thetab&=& \text{med}(\yi)
 \end{eqnarray*}
 
-% \textbf{Proof:} Exercise.
+
+can be derived as follows: 
+
+\begin{itemize}
+  \item Firstly note that for $n = 1$ the median $\thetah = \text{med}(\yi) = y^{(1)}$ obviously minimizes the empirical risk $\riske$ associated to the $L1$ loss $L$. 
 
 
 \framebreak
@@ -225,10 +141,6 @@ f &=& \argmin_{f \in \Hspace} \riskef\\
 % Take proof from this page? 
 % https://math.stackexchange.com/questions/113270/the-median-minimizes-the-sum-of-absolute-deviations-the-l-1-norm/1024462#1024462
 
-\textbf{Proof:} 
-
-\begin{itemize}
-  \item Firstly note that for $n = 1$ the median $\thetah = \text{med}(\yi) = y^{(1)}$ obviously minimizes the empirical risk $\riske$ associated to the $L1$ loss $L$. 
   \item Hence let $n > 1$ in the following: Let 
 
   $$
@@ -279,22 +191,22 @@ f &=& \argmin_{f \in \Hspace} \riskef\\
   the $L1$ loss.
 \end{itemize}
 
-\framebreak
+% \framebreak
 
 
-\begin{center}
-\includegraphics[width = 11cm ]{figure_man/L1-loss.png} \\
-\end{center}
+% \begin{center}
+% \includegraphics[width = 11cm ]{figure_man/L1-loss.png} \\
+% \end{center}
 
-\framebreak 
+% \framebreak 
 
-We see that the $L1$-Loss is more robust w.r.t. outliers than the $L2$-Loss. 
-\vspace{0.3cm}
+% We see that the $L1$-Loss is more robust w.r.t. outliers than the $L2$-Loss. 
+% \vspace{0.3cm}
 
 
-\begin{center}
-\includegraphics[width = 9cm ]{figure_man/L1andL2-loss.png} \\
-\end{center}
+% \begin{center}
+% \includegraphics[width = 9cm ]{figure_man/L1andL2-loss.png} \\
+% \end{center}
 
 
 \end{vbframe}

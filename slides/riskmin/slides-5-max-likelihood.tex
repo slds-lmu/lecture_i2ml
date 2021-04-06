@@ -1,0 +1,493 @@
+%<<setup-child, include = FALSE>>=
+%library(knitr)
+%library(qrmix)
+%library(mlr)
+%library(quantreg)
+%library(reshape2)
+%set_parent("../style/preamble.Rnw")
+%@
+
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/optimization_steps.jpeg}
+\newcommand{\learninggoals}{
+\item Understand that an ML model is simply a parametrized curve
+\item Understand that the hypothesis space lists all admissible models
+    for a learner
+\item Understand the relationship between the hypothesis space and the parameter space
+}
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+\begin{document}
+
+\section{Regression}
+
+\begin{vbframe}{Maximum Likelihood}
+
+Let us approach regression from a maximum likelihood perspective. 
+
+\lz 
+
+We assume that 
+
+$$
+y = \ftrue(\xv) + \eps,
+$$
+where $\ftrue$ is a function that is parameterized by $\thetab$ with $\eps$ being a random variable that follows some distribution $\P_\eps$, with $\E[\eps] = 0$. Further, we assume $\epsilon$ to be independent of $\xv$. 
+
+\lz 
+
+It follows that 
+\begin{itemize}
+\item $y~|~\xv$ follows a distribution with mean $\ftrue(\xv)$ and variance $\var(\eps)$. 
+\item We denote the corresponding density function by $p(y~|~\xv, \thetab)$. 
+\end{itemize}
+
+
+\framebreak 
+
+\begin{itemize}
+\item Given data 
+$$
+\D = \Dset
+$$ 
+
+the maximum-likelihood principle is to maximize the \textbf{likelihood}
+
+$$ \LLt = \prod_{i=1}^n \pdfyigxit $$
+or to minimize the \textbf{negative log-likelihood}:
+$$ -\llt = -\sumin \lpdfyigxit $$
+
+\framebreak 
+
+\item Let us now simply define the negative log-likelihood as \textbf{loss function} 
+$$ \Lxyt := - \lpdfygxt $$
+\item Maximum-likelihood optimization can be formulated as an empirical risk minimization problem
+$$\risket = \sumin \Lxyit$$
+
+% \item Then the maximum-likelihood estimator $\thetah$, which we obtain by optimizing $\LLt$ is identical
+% to the loss-minimal $\thetah$ we obtain by minimizing $\risket$.
+\item We can even disregard multiplicative or additive constants in the loss as they do not change the minimizer.
+
+\framebreak 
+
+\item For every error distribution $\P_\eps$ we can derive an equivalent loss function, which leads to the same point estimator for the parameter vector $\thetab$ as maximum-likelihood.
+\lz
+\item \textbf{NB}: The other way around does not always work: We cannot derive a probability density function or error distribution corresponding to every loss function -- the Hinge loss is a prominent example.
+\end{itemize}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Gaussian Errors - L2-Loss} 
+
+Let us assume that errors are Gaussian, i.e. $\epsi \sim \mathcal{N}(0, \sigma^2)$. Then
+
+
+$$
+y = \ftrue(\xv) + \eps \sim N\left(\ftrue(\xv), \sigma^2\right). 
+$$
+
+The likelihood is then 
+
+\begin{eqnarray*}
+\LL(\thetab) &=& \prod_{i=1}^n \pdf\left(\yi ~\bigg|~ \fxit, \sigma^2\right) \\ &\propto& \exp\left(-\frac{1}{2\sigma^2}\sumin \left(\yi - \fxit\right)^2\right)\,.
+\end{eqnarray*}
+
+\framebreak 
+
+It is easy to see that minimizing the negative log-likelihood is equivalent to the $L2$-loss minimization approach since
+
+\begin{eqnarray*}
+- \llt &=& - \log\left(\LL(\thetab)\right) \\
+&=& - \log\left(\exp\left(-\frac{1}{2\sigma^2}\sumin \left(\yi - \fxit\right)^2\right)\right) \\
+&\propto& \sumin \left(\yi - \fxit\right)^2.
+\end{eqnarray*}
+
+
+\begin{footnotesize}
+\textbf{Note:} We use $\propto$ as \enquote{proportional to ... up to multiplicative and additive constants}. 
+\end{footnotesize}
+
+\framebreak 
+
+\begin{itemize}
+\item We can plot the \enquote{empirical} error distribution, i.e. the distribution of the residuals after fitting a model w.r.t. $L2$-loss.
+\item With the help of a Q-Q-plot we can compare the empirical residuals vs. the theoretical quantiles of a Gaussian distribution.  
+\end{itemize}
+
+\includegraphics{figure_man/residuals_plot_L2.pdf}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Laplace Errors - L1-Loss}
+
+Let us assume that errors are Laplacian, i.e. $\eps$ follows a Laplace distribution which has the density 
+
+$$
+ \frac{1}{2\sigma} \exp\left(-\frac{|x|}{\sigma}\right)\,, \sigma > 0.
+$$ 
+
+Then
+
+$$
+y = \ftrue(\xv) + \eps 
+$$
+
+follows a Laplace distribution with mean $\fxit$ and scale parameter $\sigma$. 
+
+\framebreak 
+
+The likelihood is then 
+
+\begin{eqnarray*}
+\LL(\thetab) &=& \prod_{i=1}^n \pdf\left(\yi ~\bigg|~ \fxit, \sigma\right) \\ &\propto& \exp\left(-\frac{1}{\sigma}\sumin \left|\yi - \fxit\right|\right)\,.
+\end{eqnarray*}
+
+
+The negative log-likelihood is
+
+$$
+- \llt \propto - \sumin \left|\yi - \fxit\right|.
+$$
+
+Minimizing the negative log-likelihood for Laplacian error terms corresponds to empirical risk minimization with L1-loss. 
+
+
+\framebreak 
+
+\begin{itemize}
+\item Distribution of empirical residuals and their comparison to the theoretical quantiles of a Laplace-distribution. 
+\end{itemize}
+
+\includegraphics{figure_man/residuals_plot_L1.pdf}
+
+\end{vbframe}
+
+\begin{vbframe}{Other Error Distributions}
+
+\begin{itemize}
+\item There are losses that do not correspond to \enquote{real} error densities, like the Huber loss. (In the QQ-plot below we show residuals against quantiles of a normal. )
+\end{itemize}
+
+\begin{center}
+\includegraphics{figure_man/residuals_plot_Huber.pdf}
+\end{center}
+
+\framebreak 
+
+However, intuitively, we see that a certain type of loss function corresponds to a certain error distribution. 
+
+\begin{table}[]
+\begin{tabular}{ll}
+Loss function & Error Distribution \\
+\hline
+$L2$-Loss & Gaussian Errors \\
+$L1$-Loss & Laplace Errors \\
+Huber Loss & \enquote{Huber Errors}
+\end{tabular}
+\end{table}
+
+\end{vbframe}
+
+
+\section{Classification}
+
+
+\begin{vbframe}{Maximum Likelihood in Classification}
+
+Let us assume the outputs $\yi$ to be Bernoulli-distributed, i.e.  
+
+$$
+  \yi \sim \text{Ber}(\pix) 
+$$
+
+with probability $\pix$ that depends on $\xv$. 
+
+\lz 
+
+The maximization of the negative log-likelihood is based on
+
+\begin{eqnarray*}
+- \llt &=& -\sumin \lpdfyigxit \\ &=& \sumin -\yi \log[\pi\left(\xi\right)] - \left(1-\yi\right) \log [1 - \pi\left(\xi\right)]. \\
+\end{eqnarray*}
+
+
+\framebreak 
+
+This gives rise to the following loss function 
+
+$$
+  L_{0, 1}(y, \pix) = -y\ln(\pix)-(1-y)\ln(1-\pix)
+$$
+
+which we introduced as \textbf{Bernoulli} loss. 
+
+\vspace{0.2cm}
+
+\begin{center}
+\includegraphics[width = 11cm ]{figure_man/bernoulli-loss.png} \\
+\end{center}
+
+
+
+% \framebreak 
+
+% The Bernoulli loss is used in \textbf{logistic regression} in combination with the hypothesis space of linear functions
+
+% \vspace*{-0.3cm}
+
+% \begin{eqnarray*}
+%   \Hspace = \left\{f: \Xspace \to \R ~|~\fx = \thetab^\top \xv\right\}
+% \end{eqnarray*}
+
+% Scores are afterwards transformed into probabilities by the logistic function $\pix = \left(1 + \exp(- \fx)\right)^{-1}$  
+
+% \begin{center}
+%   \includegraphics[width = 0.4\textwidth]{figure_man/logreg-2vars-data.png}~~\includegraphics[width = 0.4\textwidth]{figure_man/logreg-2vars-score-vs-prob.png}
+% \end{center}
+
+% \framebreak
+
+% \begin{center}
+%   \includegraphics[width=0.8\textwidth]{figure_man/logreg-2vars-surface.png}
+% \end{center}
+
+
+\end{vbframe}
+
+
+
+
+% \begin{vbframe}{Classification Losses: Bernoulli Loss}
+% \begin{itemize}
+%   \item $L(y, \pix) = -y\ln(\pix)-(1-y)\ln(1-\pix) $
+%   % \item Also called \textbf{Bernoulli Loss}
+%   \item Convex, differentiable (gradient methods can be used), not robust
+%   \item Also called logarithmic loss or cross-entropy loss (which will be motivated later)
+% \end{itemize}
+
+
+% \framebreak 
+
+% \lz 
+
+% The constant model $\pix =< \theta$ that is optimal w.r.t. the empirical risk is the fraction of class $1$ observations
+
+% $$
+% \hat \pi (\xv) = \frac{1}{n}\sumin \yi.
+% $$
+
+% \textbf{Proof:} Exercise.
+
+
+% \end{vbframe}
+
+
+
+% \begin{vbframe}{Classification Losses: Cross-Entropy Loss}
+
+% \begin{itemize}
+%   \item The cross entropy loss 
+%   $$
+%   \Lxy = -y\ln(\pix)-(1-y)\ln(1-\pix)$$
+%   % is equivalent to logistic loss when 
+%   \item  The cross entropy loss is closely related to the Kullback-Leibler divergence, which will be introduced later in the chapter.
+%   \item Very often used in neural networks with binary output nodes for classification.
+% \end{itemize}
+
+% \end{vbframe}
+
+% \section{Outlook}
+
+% \begin{vbframe}{Outlook}
+
+% When introducing different learning algorithms, we will come back to the loss functions introduced in this chapter or even introduce new ones. For example:  
+
+% \begin{itemize}
+%   \item Ordinary Linear Regression: L2-loss
+%   \item Logistic Regression: Logistic loss
+%   \item Support Vector Machine Classification: Hinge-Loss (to be introduced) (see \textbf{SVM} chapter)
+%   \item Support Vector Machine Regression: $\epsilon$-insensitive loss (see \textbf{SVM} chapter)
+%   \item AdaBoost: Exponential loss (see \textbf{Boosting} chapter)
+% \end{itemize}
+
+% Once knowing the theory of risk minimization and properties of loss functions, we can combine model classes and loss functions as needed or even tailor loss functions to our needs. 
+
+% \end{vbframe}
+
+% \framebreak
+
+% we get the risk function
+
+% \begin{eqnarray*}
+% \risk(f) &=& \mathbb{E}_x [\max\{0, 1 - \fx\} \pix + \max\{0, 1 + y\fx\} (1-\pix)].
+% \end{eqnarray*}
+
+% The minimizer of $\risk(f)$ for the hinge loss function is
+
+% \begin{eqnarray*}
+  % $fh(x) =  \footnotesize \begin{cases} 1 \quad \text{ if } \pix > 1/2 \\ -1 \quad \pix < 1/2  \end{cases}$
+% \end{eqnarray*}
+
+
+
+% \section{Selected methods for regression and classification}
+
+% \begin{vbframe}{Normal linear and additive regression}
+
+% For $i \in \nset$ (simple case and with basis functions):
+% \begin{eqnarray*}
+% \yi & = & \fxi + \epsi = \theta_0 + \theta^T \xi + \epsi\\
+% \yi & = & \fxi + \epsi = \theta_0 + \theta^T \phi(\xi) + \epsi
+% \end{eqnarray*}
+
+% \begin{itemize}
+% \item basis functions $\phi(x)=(\phi_1(x), \ldots, \phi_m(x))^T$
+% \item assumption: $\epsi \iid N(0, \sigma^2)$
+% \end{itemize}
+
+% \lz
+
+% Given observed data $\D$  we want to address the questions
+% \begin{itemize}
+% \item  Given basis functions, how to find $\theta$? ({\bf Parameter estimation})
+% \item  How to select basis functions for my problem? ({\bf Model selection} )
+% \end{itemize}
+
+% \framebreak
+
+% We'll address the model selection problem later, for now leave it at:
+% Doing this \enquote{manually} is rather frowned upon...
+
+% \lz
+
+% A typical ML way to estimate the parameters is to not require the assumption
+% $\epsi \iid N(0, \sigma^2)$, but instead assume the that prediction error is measured
+% by \emph{squared error} as our \emph{loss function} in \emph{risk minimization}:
+
+% $$
+% \riske(\thetab) = SSE(\thetab) = \sumin \Lxyit = \sumin \left(\yi - \theta^T \xi\right)^2
+% $$
+
+% NB: We assume here and from now on that $\theta_0$ is included in $\theta$.
+
+% Using matrix notation the empirical risk can be written as
+% $$
+% SSE(\thetab) = (\ydat - \Xmat\thetab)^T(\ydat - \Xmat\thetab).
+% $$
+
+
+% Differentiating w.r.t $\theta$ yields the so-called \emph{normal equations}:
+% $$
+% \Xmat^T(\ydat - \Xmat\thetab) = 0
+% $$
+% The optimal $\theta$ is
+% $$
+% \thetah = (\Xmat^T \Xmat)^{-1} \Xmat^T\ydat
+% $$
+
+% In statistics, we would start from a maximum-likelihood perspective
+% $$
+% \yi = \fxi + \epsi \sim N\left(\fxi, \sigma^2\right)
+% $$
+% $$
+% \LLt = \prod_{i=1}^n \pdf\left(\yi | \fxit, \sigma^2\right) \propto \exp\left(-\frac{\sumin (\yi - \fxit)^2}{2\sigma^2}\right)
+% $$
+% It's easy to see that minimizing the neg. log-likelihood is equivalent to the
+% loss minimization approach since
+% $$
+% \llt \propto - \sumin \left(\yi - \fxit\right)^2.
+% $$
+
+
+% \framebreak
+
+% <<lm-mtcars-plot>>=
+% data(mtcars)
+% regr.task = makeRegrTask(data = mtcars, target = "mpg")
+% plotLearnerPrediction("regr.lm", regr.task, features = "disp")
+% @
+% \end{vbframe}
+
+% \begin{vbframe}{Example: Linear Regr. with L1 vs L2 loss}
+
+% <<l1-vs-l2-loss-prep>>=
+% set.seed(123)
+
+% # prediction with f, based on vec x and param vec beta
+% f = function(x, beta) {
+%   crossprod(x, beta)
+% }
+
+% # L1 and L2 loss, based on design mat X, vec, param vec beta, computed with f
+% loss1 = function(X, y, beta) {
+%   yhat = apply(X, 1, f, beta = beta)
+%   sum((y - yhat)^2)
+% }
+% loss2 = function(X, y, beta) {
+%   yhat = apply(X, 1, f, beta = beta)
+%   sum(abs(y - yhat))
+% }
+
+% # optimize loss (1 or 2) with optim
+% # yes, neldermead not really the best, who cares it is 1d
+% optLoss = function(X, y, loss) {
+%   start = rep(0, ncol(X))
+%   res = optim(start, loss, method = "Nelder-Mead", X = X, y = y)
+%   res$par
+% }
+
+% # plot data and a couple of linear models
+% plotIt = function(X, y, models = list()) {
+%   gd = data.frame(x = X[, 2],  y = y, outlier = c(TRUE, rep(FALSE, length(y) - 1)))
+%   pl = ggplot(data = gd, aes(x = x, y = y, shape = outlier))
+%   pl = pl + geom_point(alpha = .8) + guides(shape = FALSE)
+%   for (i in seq_along(models)) {
+%     m = models[[i]]
+%     pl = pl + geom_abline(intercept = m$beta[1], slope = m$beta[2], 
+%       col = m$col, lty = m$lty, alpha = .8)
+%   }
+%   return(pl)
+% }
+
+
+% # generate some data, sample from line with gaussian errors
+% # make the leftmost obs an outlier
+% n = 10
+% x = sort(runif(n = n, min = 0, max = 10))
+% y = 3 * x + 1 + rnorm(n, sd = 5)
+% X = cbind(x0 = 1, x1 = x)
+% y[1] = 50
+% @
+
+% L1 loss is less sensitive to outliers than L2 loss:
+% <<l1-vs-l2-loss-plot, fig.height=4.5>>=
+% # fit l1/2 models on data without then with outlier data
+% b1 = optLoss(X[-1,], y[-1], loss = loss1)
+% b2 = optLoss(X[-1,], y[-1], loss = loss2)
+% b3 = optLoss(X, y, loss = loss1)
+% b4 = optLoss(X, y, loss = loss2)
+
+% # plot all 4 models
+% pl = plotIt(X, y, models = list(
+%   list(beta = b1, col = pal_2[1], lty = "solid"),
+%   list(beta = b2, col = pal_2[2], lty = "solid"),
+%   list(beta = b3, col = pal_2[1], lty = "dashed"),
+%   list(beta = b4, col = pal_2[2], lty = "dashed")
+% ))
+% print(pl)
+% @
+% Violet = L2, green = L1 loss.\\
+% Solid = fit without, dashed = fit with outlier ($\blacktriangle$ at (\Sexpr{c(x[1], y[1])})).
+% \end{vbframe}
+
+\endlecture
+\end{document}
