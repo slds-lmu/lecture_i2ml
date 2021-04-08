@@ -1,0 +1,203 @@
+%<<setup-child, include = FALSE>>=
+%library(knitr)
+%library(qrmix)
+%library(mlr)
+%library(quantreg)
+%library(reshape2)
+%set_parent("../style/preamble.Rnw")
+%@
+
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/optimization_steps.jpeg}
+\newcommand{\learninggoals}{
+  \item Know the Log-Barrier loss
+  \item Know the Epsilon-Insensitive loss
+  \item Know the Quantile Loss
+}
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+
+\begin{document}
+
+\lecturechapter{Advanced Regression Losses}
+\lecture{Introduction to Machine Learning}
+
+\begin{vbframe}{Advanced Loss Functions}
+\begin{itemize}
+\item More advanced or special loss functions are necessary in certain applications
+\item Examples:
+\begin{itemize}
+%\item Quantile loss: Predicting the x\% in malnourished children in an African country 
+\item Log-Barrier loss: Extremely under- or overestimating demand in production would yield to bankruptcy
+\item Epsilon-Insensitive loss: A certain amount of deviation in production does no harm, larger deviations do
+\end{itemize}
+\item Hinge loss: $\rightarrow$ SVM
+\item Sometimes a custom loss must be designed specifically for the given application.
+\end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{Log-Barrier Loss}
+
+\begin{footnotesize}
+\[
+  \Lxy = \left\{\begin{array}{lr}
+        -a^{2} \cdot \log \Bigl( 1 - \Bigl(\frac{\left|y - \fx\right|}{a}\Bigr)^2 \Bigr), & \text{if } \left|y-\fx\right| \leq a \\
+        \infty, & \text{if } \left|y-\fx\right|  > a
+        \end{array}\right.
+  \]
+\end{footnotesize}
+\begin{itemize}
+\item Behaves like L2 loss for small residuals
+\item We use this, if we don't want residuals larger than $a$ at all
+\item No guarantee that the risk minimization problem has a solution
+\item Plot shows Log-Barrier Loss for $a=2$
+\end{itemize}
+
+\begin{figure}
+\includegraphics[width = 0.8\textwidth]{figure_man/log-barrier01.png}
+\end{figure}
+
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{Log Barrier: Optimal constant model}
+
+\begin{itemize}
+ \item Similarly to the Huber loss, there is no closed-form solution for the optimal constant model $\fx = \thetab$ w.r.t. the Log Barrier loss. 
+ \item Again, numerical optimization methods are necessary. 
+\end{itemize}
+
+\vspace{0.2cm}
+
+\begin{center}
+\includegraphics[width = 9cm ]{figure_man/log_barrier2.png} \\
+\end{center}
+
+
+\framebreak 
+
+
+Note that the optimization problem has no (finite) solution, if there is no way to fit a constant where all residuals are smaller than $a$. 
+
+\vspace{- 0.2cm}
+
+
+\begin{center}
+\includegraphics[width = 0.8\textwidth]{figure_man/log_barrier_2_1.png} \\
+\end{center}
+
+% We see that the constant model fitted w.r.t. Huber loss in fact lies between L1- and L2-Loss.
+
+\end{vbframe}
+
+\begin{vbframe}{Epsilon-Insensitive loss}
+
+\vspace*{-0.3cm}
+$$
+\Lxy =  \begin{cases}
+  0,  & \text{if } |y - \fx| \le \epsilon \\
+  |y - \fx|-\epsilon, & \text{otherwise }
+  \end{cases}
+$$
+\vspace*{-0.3cm}
+\begin{itemize}
+\item $ \epsilon \in \R_{+}$
+\item Modification of L1-loss, errors below $\epsilon$ accepted without penalty
+\item Properties: convex and not differentiable for $ y - \fx \in \{-\epsilon, \epsilon\}$
+\item no-closed form solution
+\end{itemize}
+
+\vspace*{-1.1cm}
+
+\begin{center}
+\includegraphics[width = 10cm, height = 4.7cm]{figure_man/2_6_loss_epsilon_plot1.png} \\
+\end{center}
+
+\end{vbframe}
+
+
+\begin{vbframe}{$\epsilon$-insensitive Loss: Optimal Constant}
+
+% % Derive Constant model and eps-insens loss
+What is the optimal constant model $\fx = \thetab$ w.r.t. the $\epsilon$-insensitive loss $\Lxy =  |y - \fx| ~ \mathbf{1}_{ \left\{|y - \fx| > \epsilon \right\}}$?
+
+\vspace{-0.2cm}
+\begin{eqnarray*}
+f &=& \argmin_{f \in \Hspace} \riskef\\
+\Leftrightarrow \quad\hat \thetab&=& \argmin_{\thetab\in \R}\sumin \Lxyi \\
+&=& \argmin_{\thetab\in \R} \sum_{i \in I_\eps} \left| \yi - \fx \right| - \eps  \\
+&=& \text{median}\left(\left\{\yi ~|~ i \in I_\eps\right\}\right) - |I_\eps| \cdot \eps \\
+\end{eqnarray*}
+
+with $I_\eps := \left\{i: |\yi - \fxi| \le \eps \right\}$.
+
+% \framebreak
+
+% 
+% < <eps-loss-plot, fig.height = 5.5, include = FALSE>>=
+%   
+%   plotConstantModel(df, c("L2", "L1", "quant25", "quant75", "Huber1", "eps2"))
+% @
+% 
+% \begin{center}
+% \includegraphics[width = 10cm]{figure/eps-loss-plot-1.pdf} \\
+% \end{center}
+
+\end{vbframe}
+
+\begin{vbframe}{Regression Losses: Quantile Loss}
+\vspace{-0.3cm}
+
+\footnotesize
+$$
+\Lxy = \begin{cases} (1 - \alpha) (\fx - y), & \text{ if } y < \fx\\
+\alpha (y - \fx) & \text{if } y \ge \fx
+\end{cases}
+$$
+
+
+\normalsize
+\begin{itemize}
+\item Quantile $\alpha \in (0,1)$
+\item Is an extension of L1 loss (with $\alpha = 0.5$ equals L1 loss)
+\item Weights positive / negative residuals more 
+\item $\alpha<0.5$ $(\alpha>0.5)$ penalty to over-estimation (under-estimation)
+\item Also known as \textbf{pinball loss}
+\end{itemize}
+
+\vspace*{-0.5cm}
+
+\begin{center}
+\includegraphics[width = 10cm, height = 4.7cm]{figure_man/2_3_loss_pinball_plot2.png}
+\end{center}
+
+\framebreak
+
+What is the optimal constant model $\fx = \theta$ w.r.t.\ the Quantile Loss?
+\vspace{-0.2cm}
+\begin{eqnarray*}
+f &=& \argmin_{f \in \Hspace} \riske \\
+\Leftrightarrow\quad 
+\hat \theta &=& \argmin_{\theta \in \R}\left\{ (1 - \alpha) \sum_{\yi<\theta}  \left|\yi-\theta\right| + \alpha \sum_{\yi \geq\theta}  \left|\yi-\theta\right|\right\} \\
+\Leftrightarrow\quad \hat \theta &=& Q_\alpha(\{\yi\})
+\end{eqnarray*}
+
+where $Q_\alpha(.)$ computes the empirical $\alpha$-quantile of $\{\yi\}, i = 1, ..., n$.
+
+
+\end{vbframe}
+
+
+\endlecture
+
+\end{document}

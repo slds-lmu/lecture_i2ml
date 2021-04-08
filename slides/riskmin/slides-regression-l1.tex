@@ -13,8 +13,8 @@
 
 \newcommand{\titlefigure}{figure_man/optimization_steps.jpeg}
 \newcommand{\learninggoals}{
-\item Learn how to derive the theoretical optimizers of the L1 and the L2 loss 
-\item Understand the connection between theoretical and the empirical optimizers
+  \item Know the risk minimizer of the L1-loss
+\item Know the optimal constant model for the L1-loss
 }
 
 \title{Introduction to Machine Learning}
@@ -25,60 +25,40 @@
 
 \begin{document}
 
-\lecturechapter{Theoretical Considerations on Regression Losses}
+\lecturechapter{Regression Losses: L1-loss}
 \lecture{Introduction to Machine Learning}
 
 
+\begin{vbframe}{L1-Loss}
 
-\section{L2-Loss: Theoretical Optimum}
+% Description
+\vspace*{-0.3cm}
 
-\begin{vbframe}{L2-Loss: Point-wise optimum}
-
-Let us consider the (theoretical) risk for  $\Yspace = \R$ and the $L2$-Loss $\Lxy = \left(y-\fx\right)^2$. % We assume our hypothesis space is not restricted at all and contains all possible functions $\Hspace = \{f: \Xspace \to \Yspace\}$. 
+$$
+\Lxy = \left|y-\fx\right|
+$$
 
 \begin{itemize}
-\item By the law of total expectation
-  \begin{eqnarray*}
-    \riskf &=& \E_{xy} \left[\Lxy\right] 
-    \\ &=& \E_x \left[\E_{y|x}\left[\Lxy~|~\xv = \xv\right]\right] \\
-  &=& \E_x
-  \left[\E_{y|x}\left[(y-\fx)^2~|\xv = \xv\right]\right]. 
-  \end{eqnarray*}
-% \item As our hypothesis space is not restricted at all, we can proceed quite \enquote{arbitrarily} when constructing our model $\hat f$.  
-
-\item Assume we are free to choose $f$ as we wish: At any point $\xv = \xv$ we can predict any $c$ we want. The best point-wise prediction is the conditional mean
-$$
-  \fxh = \mbox{argmin}_c \E_{y|x}\left[(y - c)^2 ~|~ \xv = \xv \right]\overset{(*)}{=} \E_{y|x} \left[y ~|~ \xv \right]. 
-$$
-
-\begin{footnotesize}
-$^{(*)}$ follows from:
-  \begin{eqnarray*}
-  && \mbox{argmin}_c \E\left[(y - c)^2\right] = \mbox{argmin}_c \underbrace{\E\left[(y - c)^2\right] - \left(\E[y] - c\right)^2}_{\var[y - c] = \var[y]} + \left(\E[y] - c\right)^2 \\ &=& \mbox{argmin}_c \var[y] + \left(\E[y] - c\right)^2 = \E[y]. 
-  \end{eqnarray*}
-\end{footnotesize}
-
-
-\item The best featureless predictor (i.e., the best constant model) is
-\begin{eqnarray*}
-  \text{(Theoretical) \quad}\fx &=& \E_{y~|~\xv}\left[y~|~\xv\right] \overset{\text{featureless}}{=} \E_y \left[y\right] \\
-  \text{(Empirical) \quad}\fx &=& \bar y 
-\end{eqnarray*} 
-
+\item More robust than $L2$, outliers in $y$ are less problematic.
+\item Analytical properties: convex, not differentiable for $y = f(\bm{x})$ (optimization becomes harder).
 \end{itemize}
+
+\vspace*{-6mm}
+
+\begin{center}
+  \includegraphics[width = 9cm]{figure_man/loss_absolute_plot1.png} \\
+\end{center}
+
 
 \end{vbframe}
 
 
-\section{L1-Loss: Theoretical Optimum}
+\begin{vbframe}{L1-Loss: Risk Minimizer}
 
-
-\begin{vbframe}{L1-Loss: Point-wise optimum}
-
-We calculate the (theoretical) risk for the $L1$-Loss $\Lxy = \left|y-\fx\right|$ with unrestricted $\Hspace = \{f: \Xspace \to \Yspace\}$. 
+We calculate the (true) risk for the $L1$-Loss $\Lxy = \left|y-\fx\right|$ with unrestricted $\Hspace = \{f: \Xspace \to \Yspace\}$. 
 
 \begin{itemize}
-  \item Again, we use the law of total expectation 
+  \item We use the law of total expectation 
   $$
     \riskf = \E_x \left[\E_{y|x}\left[|y-\fx|~|\xv = \xv\right]\right]. 
   $$
@@ -87,12 +67,6 @@ We calculate the (theoretical) risk for the $L1$-Loss $\Lxy = \left|y-\fx\right|
   $$
     \fxh = \mbox{argmin}_c \E_{y|x}\left[|y - c|\right]\overset{(*)}{=} \text{med}_{y|x} \left[y ~|~ \xv \right]. 
   $$
-\item The best featureless predictor (i.e., the best constant model) is
-\begin{eqnarray*}
-  \text{(Theoretical) \quad}\fx &=& \text{med}_{y|x} \left[y ~|~ \xv \right] \overset{\text{featureless}}{=}  \text{med}_{y} \left[y \right] \\
-  \text{(Empirical) \quad}\fx &=& \text{med}(\yi)
-\end{eqnarray*} 
-
 
   \framebreak 
 
@@ -119,24 +93,28 @@ We calculate the (theoretical) risk for the $L1$-Loss $\Lxy = \left|y-\fx\right|
 
 \begin{vbframe}{L1-Loss: Optimal constant model}
 
-% Derive Constant model and L2 loss
-
-For your reference: The optimal constant model for the empirical risk w.r.t. the L1 loss 
+The optimal constant model in terms of the theoretical risk for the L1 loss is the median over $y$:
 
 \begin{eqnarray*}
-f &=& \argmin_{f \in \Hspace} \riskef\\
-\Leftrightarrow \quad \hat \thetab&=& \argmin_{\thetab\in \R} \sum_{i = 1}^n \left|\yi - \thetab\right| \\
-\Leftrightarrow \quad \hat \thetab&=& \text{med}(\yi)
-\end{eqnarray*}
+  \fx &=& \text{med}_{y|x} \left[y ~|~ \xv \right] \overset{\text{drop } \xv}{=}  \text{med}_{y} \left[y \right]
+  \end{eqnarray*} 
+
+The optimizer of the empirical risk is $\text{med}(\yi)$ over $\yi$, which is the empirical estimate for $\text{med}_{y} \left[y \right]$. 
+
+\vspace*{-0.3cm}
+
+\begin{center}
+\includegraphics[width = 0.5\textwidth ]{figure_man/l1_vs_l2.png} \\
+\end{center}
 
 
-can be derived as follows: 
+\framebreak 
+
+\textbf{Proof}: 
 
 \begin{itemize}
   \item Firstly note that for $n = 1$ the median $\thetah = \text{med}(\yi) = y^{(1)}$ obviously minimizes the empirical risk $\riske$ associated to the $L1$ loss $L$. 
 
-
-\framebreak
 
 % Take proof from this page? 
 % https://math.stackexchange.com/questions/113270/the-median-minimizes-the-sum-of-absolute-deviations-the-l-1-norm/1024462#1024462
@@ -181,6 +159,7 @@ can be derived as follows:
   % $$\mathcal{I}_{j+1} \subseteq \mathcal{I}_j \Rightarrow \forall i \in \{1,\dots,i_{\max}\}:  \mathcal{I}_{i_{\max}} \subseteq \mathcal{I}_i.$$
   \framebreak 
 
+
   From this follows that
   \begin{itemize}
   \item for \enquote{$n$ is even}: $\thetah \in  \mathcal{I}_{i_{\max}} = [y^{(n/2)},y^{(n/2+1)}]$ minimizes $S_i$ for all $i \in \{1,\dots, i_{\max}\} \; \Rightarrow  \riske$ reaches its global minimum at $\thetah$,
@@ -208,6 +187,19 @@ can be derived as follows:
 % \includegraphics[width = 9cm ]{figure_man/L1andL2-loss.png} \\
 % \end{center}
 
+\framebreak 
+
+\end{vbframe}
+
+
+\begin{vbframe}{Robustness}
+
+We see that the $L1$-Loss is more robust w.r.t. outliers than the $L2$-Loss. 
+\vspace{0.3cm}
+
+\begin{center}
+\includegraphics[width = 9cm ]{figure_man/L1andL2-loss.png} \\
+\end{center}
 
 \end{vbframe}
 

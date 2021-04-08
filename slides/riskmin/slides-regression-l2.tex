@@ -1,0 +1,136 @@
+%<<setup-child, include = FALSE>>=
+%library(knitr)
+%library(qrmix)
+%library(mlr)
+%library(quantreg)
+%library(reshape2)
+%set_parent("../style/preamble.Rnw")
+%@
+
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/optimization_steps.jpeg}
+\newcommand{\learninggoals}{
+  \item Know the risk minimizer of the L2-loss
+\item Know the optimal constant model for the L2-loss
+}
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+
+\begin{document}
+
+\lecturechapter{Regression Losses: L2-loss}
+\lecture{Introduction to Machine Learning}
+
+\begin{vbframe}{L2-Loss}
+
+\vspace*{-0.5cm}
+
+$$
+\Lxy = \left(y-\fx\right)^2 \quad \text{or} \quad \Lxy = 0.5 \left(y-\fx\right)^2
+$$
+
+\vspace*{-2mm}
+
+\begin{itemize}
+\item Tries to reduce large residuals (if residual is twice as large, loss is 4 times as large), hence outliers in $y$ can become problematic
+\item Analytic properties: convex, differentiable (gradient no problem in loss minimization)
+\item Residuals = Pseudo-residuals: \begin{footnotesize} $\tilde \eps = - \pd{0.5 (y-\fx)^2}{\fx} = y - \fx = r$\end{footnotesize}
+\end{itemize}
+
+% <<loss-quadratic-plot, echo=FALSE, results='hide', fig.height=3>>=
+% x = seq(-2, 2, by = 0.01); y = x^2
+% qplot(x, y, geom = "line", xlab = expression(y-f(x)), ylab = expression(L(y-f(x))))
+% @
+
+% \framebreak
+
+\vspace*{-6mm}
+
+\begin{center}
+  \includegraphics[width = 9cm]{figure_man/loss_quadratic_plot1.png} \\
+\end{center}
+
+\end{vbframe}
+
+
+\begin{vbframe}{L2-Loss: Risk Minimizer}
+
+Let us consider the (true) risk for  $\Yspace = \R$ and the $L2$-Loss $\Lxy = \left(y-\fx\right)^2$ with unrestricted $\Hspace = \{f: \Xspace \to \R^g\}$. 
+
+\begin{itemize}
+\item By the law of total expectation
+  \begin{eqnarray*}
+    \riskf &=& \E_{xy} \left[\Lxy\right] 
+    \\ &=& \E_x \left[\E_{y|x}\left[\Lxy~|~\xv = \xv\right]\right] \\
+  &=& \E_x
+  \left[\E_{y|x}\left[(y-\fx)^2~|\xv = \xv\right]\right]. 
+  \end{eqnarray*}
+% \item As our hypothesis space is not restricted at all, we can proceed quite \enquote{arbitrarily} when constructing our model $\hat f$.  
+
+\item Since $\Hspace$ is unrestricted we can choose $f$ as we wish: At any point $\xv = \xv$ we can predict any value $c$ we want. The best point-wise prediction is the conditional mean
+$$
+  \fxh = \mbox{argmin}_c \E_{y|x}\left[(y - c)^2 ~|~ \xv = \xv \right]\overset{(*)}{=} \E_{y|x} \left[y ~|~ \xv \right]. 
+$$
+
+\begin{footnotesize}
+$^{(*)}$ follows from:
+  \begin{eqnarray*}
+  && \mbox{argmin}_c \E\left[(y - c)^2\right] = \mbox{argmin}_c \underbrace{\E\left[(y - c)^2\right] - \left(\E[y] - c\right)^2}_{= \var[y - c] = \var[y]} + \left(\E[y] - c\right)^2 \\ &=& \mbox{argmin}_c \var[y] + \left(\E[y] - c\right)^2 = \E[y]. 
+  \end{eqnarray*}
+\end{footnotesize}
+
+\end{itemize}
+
+
+\end{vbframe}
+
+\begin{vbframe}{L2-loss: Optimal Constant Model}
+
+The optimal constant model in terms of the theoretical risk for the L2 loss is the expected value over $y$: 
+  \begin{eqnarray*}
+    \fx &=& \E_{y~|~\xv}\left[y~|~\xv\right] \overset{\text{drop } \xv}{=} \E_y \left[y\right] 
+  \end{eqnarray*} 
+
+The optimizer of the empirical risk is $\bar y$ (the empirical mean over $\yi$), which is the empirical estimate for $\E_y \left[y\right]$. 
+
+\begin{center}
+\includegraphics[width = 0.5\textwidth ]{figure_man/L2-loss.png} \\
+\end{center}
+
+\framebreak 
+
+\textbf{Proof: }
+
+\vspace{0.2cm}
+
+For the optimal constant model $\fx = \thetab$ for the L2-loss $\Lxy = \left(y - \fx\right)^2$ we solve the optimization problem 
+$$
+  \argmin_{f \in \Hspace} \riskef. 
+$$
+
+
+We calculate the first derivative of $\riske$ w.r.t. $\thetab$ and set it to $0$: 
+
+
+\begin{eqnarray*}
+\frac{\partial \risket}{\partial \thetab} = 2 \sumin \left(\yi - \thetab\right) &\overset{!}{=}& 0 \\
+\sumin \yi - n \thetab&=& 0 \\
+\hat \thetab&=& \frac{1}{n} \sumin \yi =: \bar y.
+\end{eqnarray*}
+
+
+\end{vbframe}
+
+
+
+
+\endlecture
+
+\end{document}

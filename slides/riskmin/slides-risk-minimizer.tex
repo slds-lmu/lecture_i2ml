@@ -1,0 +1,159 @@
+%<<setup-child, include = FALSE>>=
+%library(knitr)
+%library(qrmix)
+%library(mlr)
+%library(quantreg)
+%library(reshape2)
+%set_parent("../style/preamble.Rnw")
+%@
+
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+\input{../../latex-math/ml-mbo}
+
+\newcommand{\titlefigure}{figure_man/optimization_steps.jpeg}
+\newcommand{\learninggoals}{
+	\item Know the concepts of the Bayes optimal model (also: Risk Minimizer, Population minimizer)
+	\item Know the concept of the Bayes risk
+	\item Know what a consistent learner is
+	\item Know the concept of the optimal constant model
+}
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+
+\begin{document}
+
+\lecturechapter{Risk Minimizers}
+\lecture{Introduction to Machine Learning}
+
+
+\begin{vbframe}{Risk Minimizer}
+
+The theoretical risk is the expected loss 
+
+$$ \riskf := \E_{xy} [\Lxy] = \int \Lxy \text{d}\Pxy. $$
+
+for a certain hypothesis $\fx \in \Hspace$ as measured by a loss $\Lxy$. 
+
+\lz 
+
+Our goal is to find a model $f$ that minimizes the risk $\riskf$.
+
+\lz 
+
+Let us assume we are in an \enquote{ideal world}: 
+
+\begin{itemize}
+	\item The hypothesis space $\Hspace$ is unrestricted. We can choose $f$ as we want. 
+	\item We don't care about the optimizer; every solution in the hypothesis space could be reached efficiently. 
+	\item We know $\Pxy$. 
+\end{itemize}
+
+How should $f$ be chosen? 
+
+\framebreak 
+
+We call the risk minimizer (for an unrestricted hypothesis space)
+
+\begin{eqnarray*}
+	f^\ast &=& \argmin_{f: \Xspace \to \Yspace} \riskf = \argmin_{f: \Xspace \to \Yspace}\Exy\left[\Lxy\right]\\ &=&  \argmin_{f: \Xspace \to \Yspace}\int \Lxy \text{d}\Pxy. 
+\end{eqnarray*}
+
+the \textbf{risk minimizer}, \textbf{population minimizer}, or \textbf{Bayes optimal model}. The resulting risk is called \textbf{Bayes risk}
+
+\begin{eqnarray*}
+	\risk^\ast_{L} = \inf_{f: \Xspace \to \Yspace} \riskf. 
+\end{eqnarray*}
+
+\textbf{Goal of Learning: } Train a model $\hat f$ for which the true risk $\riskf$ is close to the Bayes risk $\risk_L^\ast$. 
+
+\end{vbframe}
+
+\begin{vbframe}{optimal point-wise predictions}  
+
+To derive the population minimizer we usually make use of the following trick: 
+
+\begin{itemize}
+	\item We can choose $\fx$ as we want (unrestricted hypothesis space)
+	\item Consequently, for a fixed value $\xv \in \Xspace$ we can select \textbf{any} value $c$ we want to predict (we are not restricted by any functional form, e.g., a linear function)
+	\item Instead of looking for the optimal $f$ in function space (which is impossible), we compute the \textbf{point-wise optimizer} for every $\xv \in \Xspace$.
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Theoretical and Empirical Risk}  
+ 
+
+The concept of the population minimizer is an interesting concept, but does only allow for theoretical considerations on loss functions. 
+
+\begin{itemize}
+	\item In practice we need to restrict the hypothesis space $\Hspace$ such that we can efficiently search over it. 
+	\item In practice we (usually) do not know $\Pxy$. Instead of $\riskf$, we are optimizing the empirical risk and 
+
+	\begin{eqnarray*}
+		\hat f = \argmin_{f \in \Hspace} \riskef = \argmin_{f \in \Hspace} \sumin \Lxyi
+	\end{eqnarray*}
+
+\end{itemize}
+
+Note that according to the \textbf{Law of Large Numbers} (LLN), the empirical risk converges to the true risk: 
+
+\begin{eqnarray*}
+	\bar\risk(f) = \frac{1}{n} \sumin \Lxyi \overset{n \to \infty}{\longrightarrow} \riskf
+\end{eqnarray*}
+
+
+
+\end{vbframe}
+
+\begin{vbframe}{Universally Consistent Learners}
+
+Let $\inducer:\mathbb{D}\times \Lambda \to \Hspace$ be a learning method (with hyperparameters $\lambdab \in \Lambda$) that takes a training set $\Dtrain \sim \Pxy$ of size $n_\text{train}$ and produces a model $f: \Xspace \to \R^g$. 
+
+\lz 
+
+A learning method is called \textbf{universally consistent} if \textbf{for all} distributions $\Pxy$ the risk converges in probability to the Bayes risk when sample size $n
+_\text{train}$ increases: 
+
+$$
+	\risk\left(\inducer\left(\Dtrain, \lambdab\right)\right) \overset{p}{\longrightarrow} \risk^\ast_L \quad \text{for } n_\text{train} \to \infty.
+$$
+
+This means: A learner with this property can get arbitrarly close to the Bayes risk by increasing if the training data set is chosen large enough. 
+
+\lz 
+
+\textbf{Note } that this is obviously a desirable property - however, universal consisstency does not tell us anything about convergence rates ...
+
+\end{vbframe}
+
+\begin{vbframe}{Optimal Constant Model}
+
+While the population minimizer gives us the (theoretically) perfect solution, the \textbf{Optimal Constant Model} (also: featureless predictor) gives us an computable, empirical lower baseline solution.
+
+\vspace*{0.2cm}
+
+We restrict the hypothesis space $\Hspace$ to the simplest hypothesis space we can think of: the space of constant models $$\Hspace = \left\{f: \Xspace \to \R^g~|~ \fx = \thetab\right\}.$$
+
+\vspace*{-0.5cm}
+
+\begin{center}
+	\includegraphics[width = 0.5\textwidth]{figure_man/l1_vs_l2.png}
+\end{center}
+
+\end{vbframe}
+
+
+
+
+
+
+
+\endlecture
+
+\end{document} 

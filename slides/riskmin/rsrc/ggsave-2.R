@@ -24,11 +24,23 @@ df_outlier = rbind(df, data.frame(x = -1.8, y = 100))
 p = plotConstantModel(df, loss_type = "L2")
 p
 
+ggsave("figure_man/L2-loss.png", width = 4, height = 3)
+
 
 #############################################
-#L1-loss
+#L1-loss 
+p = plotConstantModel(df, loss_type = c("L1"))
+p
+
+ggsave("figure_man/L1-loss.png", width = 4, height = 3)
+
+
+#############################################
+#L1-loss vs. L2-loss
 p = plotConstantModel(df, loss_type = c("L1", "L2"))
 p
+
+ggsave("figure_man/l1_vs_l2.png", width = 4, height = 3)
 
 #############################################
 
@@ -39,9 +51,10 @@ ggarrange(p1, p2, nrow = 1, common.legend = TRUE, legend = "top")
 
 #############################################
 #Huber
-p = plotConstantModel(df, loss_type = c("L1", "L2", "Huber1"))
-p = p + ylim(c(-0.5, 0.5))
-p
+p1 = plotConstantModel(df_outlier, loss_type = c("L1", "L2", "Huber1"))
+p1 = p1 + ggtitle("Manually adding an outlier")
+p2 = p1 + ylim(c(-3, 3)) + ggtitle("Zoomed to -3 < y < 3")  
+ggarrange(p1, p2, nrow = 1, common.legend = TRUE, legend = "top")
 
 ggsave("figure_man/Huber1.png", width = 7, height = 4)
 
