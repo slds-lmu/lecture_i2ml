@@ -11,10 +11,10 @@
 \input{../../latex-math/basic-math}
 \input{../../latex-math/basic-ml}
 
-\newcommand{\titlefigure}{figure_man/optimization_steps.jpeg}
+\newcommand{\titlefigure}{figure_man/loss_absolute_plot2.png}
 \newcommand{\learninggoals}{
-  \item Know the risk minimizer of the L1-loss
-\item Know the optimal constant model for the L1-loss
+  \item Derive the risk minimizer of the L1-loss
+  \item Derive the optimal constant model for the L1-loss
 }
 
 \title{Introduction to Machine Learning}
@@ -65,28 +65,51 @@ We calculate the (true) risk for the $L1$-Loss $\Lxy = \left|y-\fx\right|$ with 
   \item As the functional form of $f$ is not restricted, we can just optimize point-wise at any point $\xv = \xv$. The best prediction at $\xv = \xv$ is then 
 
   $$
-    \fxh = \mbox{argmin}_c \E_{y|x}\left[|y - c|\right]\overset{(*)}{=} \text{med}_{y|x} \left[y ~|~ \xv \right]. 
+    \fxh = \mbox{argmin}_c \E_{y|x}\left[|y - c|\right]= \text{med}_{y|x} \left[y ~|~ \xv \right]. 
   $$
+
+\end{itemize}
 
   \framebreak 
 
-  \item $^{(*)}$ Let $p(y)$ be the density function of $y$. Then: 
+\begin{footnotesize}
+\textbf{Proof:} Let $p(y)$ be the density function of $y$. Then: 
   \begin{eqnarray*}
   && \mbox{argmin}_c \E\left[|y - c|\right] = \mbox{argmin}_c \int_{-\infty}^\infty |y - c| ~ p(y) \text{d}y \\
   &=& \mbox{argmin}_c \int_{-\infty}^c -(y - c)~p(y)~\text{d}y + \int_c^\infty (y - c)~p(y)~\text{d}y 
   \end{eqnarray*}
-  Setting the derivation w.r.t. $c$ to zero yields: 
-  \begin{eqnarray*}
-  0 &=& \int_{-\infty}^c p(y)~\text{d}y - \int_c^\infty p(y)~~\text{d}y \\
-  &=& \P_y (y \le c) - \left(1 - \P_y (y \le c)\right)\\
-  &=& 2 \cdot \P_y (y \le c) - 1 \\
-  \Leftrightarrow 0.5 &=& \P_y (y \le c),
-  \end{eqnarray*}
-  which yields $c = \text{med}_y(y)$.  
 
+We now compute the derivative of the above term and set it to $0$
 
+\begin{eqnarray*}
+0 &=& \frac{\partial}{\partial c} \left(\int_{-\infty}^c -(y - c)~p(y)~\text{d}y + \int_c^\infty (y - c)~p(y)~\text{d}y\right) \\ &\overset{^\ast\text{Leibniz}}{=}& \int_{-\infty}^c  ~p(y)~\text{d}y - \int_c^\infty ~p(y)~\text{d}y =   \P_y (y \le c) - \left(1 - \P_y (y \le c)\right) \\
+&=& 2 \cdot \P_y (y \le c) - 1 \\
+\Leftrightarrow 0.5 &=& \P_y (y \le c),
+\end{eqnarray*}
 
-\end{itemize}
+which yields $c = \text{med}_y(y)$. 
+
+\framebreak 
+
+$^\ast$ \textbf{Note} that since we are computing the derivative w.r.t. the integration boundaries, we need to use Leibniz integration rule 
+
+\begin{eqnarray*}
+  \frac{\partial}{\partial c} \left(\int_a^c g(c, y) ~\text{d}y\right) &=& g(c, c) + \int_a^c \frac{\partial}{\partial c} g(c, y) ~\text{d}y \\
+  \frac{\partial}{\partial c} \left(\int_c^a g(c, y) ~\text{d}y\right) &=& - g(c, c) + \int_c^a \frac{\partial}{\partial c} g(c, y) ~\text{d}y    
+\end{eqnarray*}
+
+We get 
+
+\vspace*{-0.3cm}
+
+\begin{eqnarray*}
+&&\frac{\partial}{\partial c} \left(\int_{-\infty}^c -(y - c)~p(y)~\text{d}y + \int_c^\infty (y - c)~p(y)~\text{d}y \right) \\
+&=& \frac{\partial}{\partial c} \left(\int_{-\infty}^c \underbrace{-(y - c)~p(y)}_{g_1(c, y)}~\text{d}y\right) + \frac{\partial}{\partial c} \left(\int_c^\infty \underbrace{(y - c)~p(y)}_{g_2(c, y)}~\text{d}y \right) \\
+&=& \underbrace{g_1(c, c)}_{=0} + \int_{-\infty}^c \frac{\partial}{\partial c}  \left(-(y - c)\right)~p(y)~\text{d}y - \underbrace{g_2(c, c)}_{= 0} + \int_c^\infty \frac{\partial}{\partial c}  (y - c)~p(y)~\text{d}y \\
+&=& \int_{-\infty}^c  ~p(y)~\text{d}y + \int_c^\infty -~p(y)~\text{d}y. 
+\end{eqnarray*}
+
+\end{footnotesize}
 
 \end{vbframe}
 
@@ -197,7 +220,7 @@ The optimizer of the empirical risk is $\text{med}(\yi)$ over $\yi$, which is th
 We see that the $L1$-Loss is more robust w.r.t. outliers than the $L2$-Loss. 
 \vspace{0.3cm}
 
-\begin{center}
+\begin{center}  
 \includegraphics[width = 9cm ]{figure_man/L1andL2-loss.png} \\
 \end{center}
 

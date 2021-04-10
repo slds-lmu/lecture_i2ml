@@ -11,4 +11,4 @@ losses = list(
 p = plotLoss(df, losses)
 p = p + scale_color_discrete(name = expression(delta), labels = c(2, 1, 0.5))
 
-ggsave(filename = "loss_huber_plot2.png", path = "figure_man", width = 200, height = 100, units = "mm")
+ggsave(filename = "loss_huber_plot2.png", path = "figure_man", width = 4, height = 3)
