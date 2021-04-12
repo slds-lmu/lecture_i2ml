@@ -22,12 +22,11 @@ p <- ggplot2::ggplot(scores, aes(x = ppv, y = tpr, fill = f_1)) +
   geom_text(aes(label = round(f_1, 2L)), color = "white") +
   scale_fill_gradient(
     low = "darkseagreen4",
-    high = "black",
-    name = expression(F[1])) +
+    high = "black") +
   scale_x_continuous(breaks = ppv) +
   scale_y_continuous(breaks = tpr) +
-  xlab("PPV") +
-  ylab("TPR") +
-  theme(text = element_text(size = 20), legend.position = "none")
+  xlab(expression(paste(italic(rho[PPV])))) +
+  ylab(expression(paste(italic(rho[TPR])))) +
+  theme(text = element_text(size = 20L), legend.position = "none")
 
 ggsave("../figure/eval_mclass_roc.pdf", p, height = 4L, width = 4L)
