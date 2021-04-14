@@ -40,13 +40,17 @@ $$ \risk_L\left(f\right) := \E_{xy} [\Lxy] = \int \Lxy \text{d}\Pxy. $$
 
 for a certain hypothesis $\fx \in \Hspace$ and a loss $\Lxy$. 
 
+{\tiny NB: As $\risk_L$ depends on loss $L$, we sometimes 
+make this explicit with a subscript if needed, and omit in other cases.}
+
 \lz 
 
 Let us assume we are in an \enquote{ideal world}: 
 
 \begin{itemize}
 	\item The hypothesis space $\Hspace$ is unrestricted. We can choose any $f: \Xspace \to \R^g$. 
-	\item We do not care about the optimizer; let us assume every solution in the hypothesis space can be reached efficiently. 
+	\item We also assume an ideal optimizer; the risk minimization can always be 
+        solved perfectly and efficiently.
 	\item We know $\Pxy$. 
 \end{itemize}
 
@@ -55,21 +59,23 @@ How should $f$ be chosen?
 
 \framebreak 
 
-We call the function $f: \Xspace \to \R^g$ that minimizes the risk
+The $f$ with minimal risk across all (measurable) functions 
+is called the \textbf{risk minimizer}, \textbf{population minimizer} or \textbf{Bayes optimal model}. 
 
 \begin{eqnarray*}
 	\fbayes &=& \argmin_{f: \Xspace \to \R^g} \risk_L\left(f\right) = \argmin_{f: \Xspace \to \R^g}\Exy\left[\Lxy\right]\\ &=&  \argmin_{f: \Xspace \to \R^g}\int \Lxy \text{d}\Pxy. 
 \end{eqnarray*}
 
-the \textbf{risk minimizer}, \textbf{population minimizer}, or \textbf{Bayes optimal model}. Note that we search over an unrestricted hypothesis space (that is over all possible functions $f: \Xspace \to \R^g$)!
+% Note that we search over an unrestricted hypothesis space (that is over all possible functions $f: \Xspace \to \R^g$)!
 
 \lz 
 
 The resulting risk is called \textbf{Bayes risk}
 
 \begin{eqnarray*}
-	\riskbayes_{L} = \inf_{f: \Xspace \to \R^g} \risk_L\left(f\right). 
+    \riskbayes_{L} = \inf_{f: \Xspace \to \R^g} \risk_L\left(f\right) 
 \end{eqnarray*}
+
 
 \end{vbframe}
 
@@ -78,15 +84,19 @@ The resulting risk is called \textbf{Bayes risk}
 To derive the risk minimizer we usually make use of the following trick: 
 
 \begin{itemize}
-	\item We can choose $\fx$ as we want (unrestricted hypothesis space)
-	\item Consequently, for a fixed value $\xv \in \Xspace$ we can select \textbf{any} value $c$ we want to predict (we are not restricted by any functional form, e.g., a linear function)
-	\item Instead of looking for the optimal $f$ in function space (which is impossible), we compute the \textbf{point-wise optimizer} for every $\xv \in \Xspace$.
+	\item We can choose $\fx$ as we want (unrestricted hypothesis space, no assumed functional form)
+	\item Consequently, for a fixed value $\xv \in \Xspace$ we can select \textbf{any} value $c$ we want to predict 
+        % (we are not restricted by any functional form, e.g., a linear function)
+	% \item Instead of looking for the optimal $f$ in function space (which is impossible), we compute the \textbf{point-wise optimizer} for every $\xv \in \Xspace$.
+	\item So we construct the \textbf{point-wise optimizer} for every $\xv \in \Xspace$.
 \end{itemize}
+
+\lz
 
 \begin{overlayarea}{\textwidth}{\textheight}
 \begin{center}
-	\only<1>{\includegraphics[width=0.5\textwidth]{figure_man/optimal_pointwise_1.png}}
-	\only<2>{\includegraphics[width=0.5\textwidth]{figure_man/optimal_pointwise_2.png}}
+	\only<1>{\includegraphics[width=0.55\textwidth]{figure_man/optimal_pointwise_1.png}}
+	\only<2>{\includegraphics[width=0.55\textwidth]{figure_man/optimal_pointwise_2.png}}
 \end{center}
 \end{overlayarea} 
 
@@ -97,11 +107,11 @@ To derive the risk minimizer we usually make use of the following trick:
 \begin{vbframe}{Theoretical and Empirical Risk}  
  
 
-The risk minimizer in general only allows for theoretical considerations: 
+The risk minimizer is mainly a theoretical tool: 
 
 \begin{itemize}
 	\item In practice we need to restrict the hypothesis space $\Hspace$ such that we can efficiently search over it. 
-	\item In practice we (usually) do not know $\Pxy$. Instead of $\riskf$, we are optimizing the empirical risk and 
+	\item In practice we (usually) do not know $\Pxy$. Instead of $\riskf$, we are optimizing the empirical risk
 
 	\begin{eqnarray*}
 		\hat f = \argmin_{f \in \Hspace} \riskef = \argmin_{f \in \Hspace} \sumin \Lxyi
@@ -109,7 +119,7 @@ The risk minimizer in general only allows for theoretical considerations:
 
 \end{itemize}
 
-Note that according to the \textbf{law of large numbers} (LLN), the empirical risk converges to the true risk: 
+Note that according to the \textbf{law of large numbers} (LLN), the empirical risk converges to the true risk (but beware of overfitting!): 
 
 \begin{eqnarray*}
 	\bar\risk_\text{emp}(f) = \frac{1}{n} \sumin \Lxyi \overset{n \to \infty}{\longrightarrow} \riskf. 
@@ -153,27 +163,11 @@ The Bayes regret can be decomposed as follows:
 
 \end{vbframe}
 
-\begin{vbframe}{A note on Notation} 
-
-The risk function $\risk_L$ depends on the choice of the loss function $\Lxy$. To make this clear we denote this as subscript: 
-
-$$
-	\risk_L
-$$
-
-To keep notation simple, we will omit the subscript most of the time. 
-
-\lz 
-
-Keep in mind that the risk $\risk$ always depends on the specific choice of the loss function $\Lxy$!
-
-\end{vbframe}
-
 
 \begin{vbframe}{(Universally) Consistent Learners}
 % https://mlweb.loria.fr/book/en/consistency.html
 
-\textbf{Consistency} is an asymptotic property of a learning algorithm, which ensures the algorithm returns \textbf{better models} when given \textbf{more data}.
+\textbf{Consistency} is an asymptotic property of a learning algorithm, which ensures the algorithm returns \textbf{the correct model} when given \textbf{unlimited data}.
 
 \lz 
 
@@ -190,21 +184,23 @@ $$
 \vfill
 
 
-\begin{footnotesize}$^{(*)}$ $\lambdab \in \Lambda$ denote hyperparameters of the learning algorithm.\end{footnotesize} 
+\begin{footnotesize}$^{(*)}$ $\lambdab \in \Lambda$ denotes hyperparameters of the learning algorithm.\end{footnotesize} 
 
 \framebreak 
 
-Consistency of an algorithm is a statement that is valid for only one particular distribution $\Pxy$.
+Consistency is defined w.r.t. a particular distribution $\Pxy$.
+But since we usually do not no $\Pxy$, consistency
+does not offer much help to choose an algorithm for a particular task. 
 
 \lz 
 
-But since we usually do not have any prior knowledge on $\Pxy$, consistency of algorithms does not offer much help to choose an algorithm for a particular task. 
+More interesting is the stronger concept of \textbf{universal consistency}: An algorithm is universally consistent if it is consistent for \textbf{any} distribution. 
 
 \lz 
 
-Thus we define the stronger concept of \textbf{universal consistency}: An algorithm is said to be universally consistent if it is consistent for \textbf{any} distribution $\Pxy$. 
+In Stone's famous consistency theorem from 1977, the universal consistency a weighted average estimator as KNN was proven. Many other ML model have since then been proven to be universally consistent (SVMs, ANNs, etc.).
 
-\lz 
+\lz
 
 \textbf{Note} that universal consistency is obviously a desirable property - however, (universal) consistency does not tell us anything about convergence rates ...
 
