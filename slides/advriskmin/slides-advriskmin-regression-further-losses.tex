@@ -13,9 +13,11 @@
 
 \newcommand{\titlefigure}{figure_man/optimization_steps.jpeg}
 \newcommand{\learninggoals}{
+  \item Know the Huber loss
   \item Know the Log-Barrier loss
   \item Know the $\eps$-Insensitive loss
   \item Know the Quantile loss
+  \item Know the Cauchy loss
 }
 
 \title{Introduction to Machine Learning}
@@ -31,17 +33,64 @@
 
 \begin{vbframe}{Advanced Loss Functions}
 \begin{itemize}
-\item More advanced or special loss functions are necessary in certain applications
+\item Advanced loss functions are designed to achieve special properties (e.g. robustness and smoothness for the Huber or Cauchy loss)
+\item Furthermore, special loss functions are necessary in certain applications
 \item Examples:
 \begin{itemize}
 \item Quantile loss: Overestimating a clinical parameter might not be as bad as underestimating it
 \item Log-Barrier loss: Extremely under- or overestimating demand in production would yield to bankruptcy
 \item $\eps$-Insensitive loss: A certain amount of deviation in production does no harm, larger deviations do
 \end{itemize}
-\item Some learning algorithms use specific loss function, e.g., the Hinge loss for SVMs
 \item Sometimes a custom loss must be designed specifically for the given application.
+\item Some learning algorithms use specific loss function, e.g., the Hinge loss for SVMs
 \end{itemize}
 \end{vbframe}
+
+\begin{vbframe}{Huber Loss}
+
+% Description
+\vspace*{-0.3cm}
+
+$$
+\Lxy = \begin{cases}
+  \frac{1}{2}(y - \fx)^2  & \text{ if } |y - \fx| \le \delta \\
+  \delta |y - \fx|-\frac{1}{2}\delta^2 \quad & \text{ otherwise }
+  \end{cases}, \delta > 0
+$$
+
+\begin{itemize}
+\item Piece-wise combination of $L1$ and $L2$ loss
+\item Analytic properties: Convex, differentiable, robust
+\item Combines advantages of $L1$ and $L2$ loss: differentiable + robust
+\end{itemize}
+
+\vspace*{-1cm}
+
+\begin{center}
+\includegraphics[width = 0.45\textwidth]{figure_man/loss_huber_plot3.png}~~\includegraphics[width = 0.45\textwidth]{figure_man/loss_huber_plot2.png}\\
+\end{center}
+
+\framebreak 
+
+\textbf{Risk minimizer:}
+\begin{itemize}
+\item There is no closed-form solution for the risk minimizer. 
+% https://stats.stackexchange.com/questions/298322/what-is-the-population-minimizer-for-huber-loss
+\item However, the risk minimizer for the Huber loss is a \textbf{trimmed mean}: The risk minimizer is the (conditional) mean of values between two (conditional) quantiles. The location of the quantiles depends on the distribution as well as 
+the value of $\delta$. 
+\end{itemize}
+
+\vspace*{0.2cm}
+
+\textbf{Optimal constant model:}
+\begin{itemize}
+\item Similarly, there is no closed-form solution for the optimal constant model. 
+\item Numerical optimization methods are necessary. 
+\item The \enquote{optimal} solution can only be approached to a certain degree of accuracy via iterative optimization.
+\end{itemize}
+
+\end{vbframe}
+
 
 
 \begin{vbframe}{Log-Barrier Loss}
@@ -107,17 +156,12 @@ $$
 \Lxy =  \begin{cases}
   0,  & \text{if } |y - \fx| \le \epsilon \\
   |y - \fx|-\epsilon, & \text{otherwise }
-  \end{cases}
+  \end{cases}, \quad \epsilon \in \R_{+}
 $$
-\vspace*{-0.3cm}
 \begin{itemize}
-\item $ \epsilon \in \R_{+}$
 \item Modification of L1-loss, errors below $\epsilon$ accepted without penalty
 \item Properties: convex and not differentiable for $ y - \fx \in \{-\epsilon, \epsilon\}$
-\item no-closed form solution
 \end{itemize}
-
-\vspace*{-1.1cm}
 
 \begin{center}
 \includegraphics[width = 10cm, height = 4.7cm]{figure_man/2_6_loss_epsilon_plot1.png} \\
@@ -133,9 +177,9 @@ What is the optimal constant model $\fx = \thetab$ w.r.t. the $\epsilon$-insensi
 
 \vspace{-0.2cm}
 \begin{eqnarray*}
-f &=& \argmin_{f \in \Hspace} \riskef\\
-\Leftrightarrow \quad\hat \thetab&=& \argmin_{\thetab\in \R}\sumin \Lxyi \\
-&=& \argmin_{\thetab\in \R} \sum_{i \in I_\eps} \left| \yi - \fx \right| - \eps  \\
+\hat \thetab&=& \argmin_{\thetab\in \R}\sumin \Lxyi \\
+&=& \argmin_{\thetab\in \R} \sum_{i \in I_\eps} \left| \yi - \thetab \right| - \eps  \\
+&=& \argmin_{\thetab\in \R} \sum_{i \in I_\eps} \left| \yi - \thetab \right| - \sum_{i \in I_\eps} \eps \\
 &=& \text{median}\left(\left\{\yi ~|~ i \in I_\eps\right\}\right) - |I_\eps| \cdot \eps \\
 \end{eqnarray*}
 
@@ -182,19 +226,39 @@ $$
 
 \framebreak
 
-What is the optimal constant model $\fx = \theta$ w.r.t.\ the Quantile Loss?
+What is the optimal constant model $\fx = \thetab$ w.r.t.\ the Quantile Loss?
 \vspace{-0.2cm}
 \begin{eqnarray*}
-f &=& \argmin_{f \in \Hspace} \riske \\
+\thetah&=& \argmin_{\thetab\in \R}\sumin \Lxyi \\
 \Leftrightarrow\quad 
-\hat \theta &=& \argmin_{\theta \in \R}\left\{ (1 - \alpha) \sum_{\yi<\theta}  \left|\yi-\theta\right| + \alpha \sum_{\yi \geq\theta}  \left|\yi-\theta\right|\right\} \\
-\Leftrightarrow\quad \hat \theta &=& Q_\alpha(\{\yi\})
+\thetah &=& \argmin_{\thetab \in \R}\left\{ (1 - \alpha) \sum_{\yi<\thetab}  \left|\yi-\thetab\right| + \alpha \sum_{\yi \geq\thetab}  \left|\yi-\thetab\right|\right\} \\
+\Leftrightarrow\quad \thetah &=& Q_\alpha(\{\yi\})
 \end{eqnarray*}
 
 where $Q_\alpha(.)$ computes the empirical $\alpha$-quantile of $\{\yi\}, i = 1, ..., n$.
 
 
 \end{vbframe}
+
+\begin{vbframe}{Cauchy loss}
+
+$$
+\Lxy = \log \left(\frac{1}{2} (x / c)^2 + 1\right), \quad c \in \R
+$$
+
+\normalsize
+\begin{itemize}
+\item Particularly robust towards outliers (controllable via $c$)
+\item Analytic properties: Differentiable, robust, but not convex! 
+\end{itemize}
+
+
+\begin{center}
+\includegraphics[width = 0.6\textwidth]{figure_man/loss_cauchy_plot1.png}
+\end{center}
+
+\end{vbframe}
+
 
 
 \endlecture

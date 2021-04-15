@@ -1,7 +1,9 @@
 set.seed(1)
+source("rsrc/loss_functions.R")
+library(mvtnorm)
 
 png(filename = "figure_man/loss_huber_plot1.png", bg = "transparent", width = 500, height = 250)
-par(mfrow = c(1, 2))
+par(mfrow = c(1, 1))
 
 sigma = matrix(c(1, 0.7, 0.7, 1), nrow = 2)
 mat   = as.data.frame(rmvnorm(50, mean = c(5,5), sigma = sigma, method = "chol"))
@@ -23,8 +25,10 @@ fitted = fit_lh$fitted.values[idx]
 u = mapply(function(x,y,r) if(abs(r) < 1) {rect(x, y, x-r, y-r, col = hsv(rgb2hsv(col2rgb("red")), alpha=0.1), border=NA)},
            x, y, residuals)               # Plot the squares
 
+
 for (i in 1:length(x))
   lines(x = c(x[i], x[i]), y = c(fitted[i], y[i]), col = "red", lty = 1)
+
 
 xx = seq(-2, 2, length.out = 400);
 yy =  Huber(xx, c = 1)
