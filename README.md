@@ -1,4 +1,4 @@
-# Introduction to Machine Learning (I2ML)
+# Introduction to Machine Learning (I2ML) 
 
 This Project offers a free, open source introductory and applied overview of supervised machine learning. 
 
