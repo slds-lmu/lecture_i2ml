@@ -48,8 +48,7 @@ make_line_plot = function(intercept, slope)  {
   triangle = data.table(
     group = c(1, 1, 1), 
     x = c(1, 2, 2), 
-    y = c(intercept + slope, intercept + slope, intercept + 2 * slope)
-    )
+    y = c(intercept + slope, intercept + slope, intercept + 2 * slope))
   
   p = p + geom_polygon(
     triangle, 
@@ -67,18 +66,16 @@ make_line_plot = function(intercept, slope)  {
   )
   
   # Labs
-
+  
   p = p + labs(
-    title = paste(
-      "f(x) = ",
-      ifelse(slope == 0, "", slope), 
-      "x", 
-      " + ", 
-      ifelse(intercept == 0, "", intercept)
+    title = ifelse(
+      slope == 0,
+      sprintf("f(x) = %.0f", intercept),
+      sprintf("f(x) = %.1fx + %.0f", slope, intercept)
     ),
     y = "f(x)"
   )
-  
+
   p = p + ylim(0, 5)
   p
 
@@ -88,7 +85,7 @@ make_line_plot = function(intercept, slope)  {
 
 pdf("../figure/hs-lin-functions.pdf", width = 8, height = 4)
 
-p_1 = make_line_plot(1, 2)
+p_1 = make_line_plot(1, 1.8)
 p_2 = make_line_plot(2, 0)
 p_3 = make_line_plot(3, -0.5)
 grid.arrange(p_1, p_2, p_3, ncol = 3)
