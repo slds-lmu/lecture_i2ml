@@ -22,7 +22,7 @@ geom_smooth(method = 'lm', se = FALSE, aes(color = "L2-loss")) +
 geom_quantile(quantiles = 0.5, aes(color = "L1-loss")) + 
 geom_smooth(method=MASS::rlm, se = FALSE, formula= y~x, aes(color = "Huber loss")) + 
 scale_color_manual(name = "Regression", values = c("L2-loss" = "darkgreen", "L1-loss" = "orange", "Huber loss" = "blue")) + 
-ylim(c(0, 10)) + theme(legend_position = "bottom")
+ylim(c(0, 10)) + theme(legend.position = "bottom")
 
 ggsave("figure_man/different_losses1.png", p1, width = 6, height = 4)
 
