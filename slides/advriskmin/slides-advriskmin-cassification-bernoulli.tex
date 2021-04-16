@@ -1,0 +1,328 @@
+%<<setup-child, include = FALSE>>=
+%library(knitr)
+%library(qrmix)
+%library(mlr)
+%library(quantreg)
+%library(reshape2)
+%set_parent("../style/preamble.Rnw")
+%@
+
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+\input{../../latex-math/ml-trees} % For the comparison of Brier and Gini index
+
+\newcommand{\titlefigure}{figure_man/optimization_steps.jpeg}
+\newcommand{\learninggoals}{
+  \item Know the Bernoulli loss and related losses (Log loss, logistic loss, Binomial loss)
+  \item Derive the risk minimizer
+  \item Derive the optimal constant model 
+}
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+
+
+\begin{document}
+
+\lecturechapter{Bernoulli Loss}
+\lecture{Introduction to Machine Learning}
+
+
+
+\begin{vbframe}{Bernoulli Loss}
+
+\vspace*{-0.5cm}
+\begin{eqnarray*}
+  L_{-1, +1}(y, \fx) &=& \ln(1+\exp(-y\fx)) \\
+  L_{0, 1}(y, \fx) &=& - y \cdot \fx + \log(1 + \exp(\fx)). 
+\end{eqnarray*}
+
+\begin{itemize}
+  \item Two equivalent formulations: Labels $y \in \{-1, 1\}$ or $y \in \{0, 1\}$
+  \item Negative log-likelihood of Bernoulli model, e.g., logistic regression
+  \item Convex, differentiable
+  \item Pseudo-Residuals (0,1 case): $\tilde{r} = y - \frac{1}{1+\exp(-\fx)}$\\   
+    Interpretation: $L1$ distance between 0/1-labels and posterior prob!
+\end{itemize}
+
+\vspace{0.2cm}
+\begin{center}
+\includegraphics[width = 9cm ]{figure_man/bernoulli.png} \\
+\end{center}
+
+\end{vbframe}
+
+
+
+
+\begin{vbframe}{Bernoulli loss on probabilities}
+
+If scores are transformed into probabilities by the logistic function  $\pix = \left(1 + \exp(- \fx)\right)^{-1}$, we arrive at another equivalent formulation of the loss
+
+  $$
+    L_{0,1}(y, \pix) = - y \log \left(\pix\right) - (1 - y) \log \left(1 - \pix\right). 
+  $$
+
+\begin{center}
+\includegraphics[width = 10cm ]{figure_man/bernoulli-loss.png} \\
+\end{center}
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{Bernoulli loss: Risk Minimizer}
+
+To derive the risk minimizer for the Bernoulli loss for the formulation 
+
+$$
+  L_{0,1}(y, \pix) = - y \log \left(\pix\right) - (1 - y) \log \left(1 - \pix\right)
+$$
+we again make use of the law of total expectation
+
+\begin{eqnarray*}
+  \riskf  & = & \Exy\left[\Lxy\right] = \E_x \left[ \E_{y|x} [ L(y, \fx) ] \right] \\
+          & = & \E_x \left[\sum_{k \in \Yspace} L(k, \fx) \P(y = k~|~ \xv = \xv)\right]\,. 
+          % & = & E_x \sum_{k \in \Yspace} L(k, \fx) \pikx,
+\end{eqnarray*}
+
+In the binary case this becomes 
+
+\begin{eqnarray*}
+  \riskf &=& \E_x \left[L(1, \pix) \eta(\xv) + L(0, \pix) \eta(\xv) \right],
+\end{eqnarray*}
+
+with $\eta(\xv) = \P(y = 1 ~|~ \xv = \xv)$. 
+
+\framebreak 
+
+We fix a specific $\xv$ and compute the point-wise optimal value $c$ by setting the derivative to $0$: 
+
+\begin{eqnarray*}
+  \frac{\partial }{\partial c} \left(- \log c  \cdot \eta(\xv)- \log (1 - c) \cdot (1 - \eta(\xv))\right) &=& 0 \\
+  - \frac{\eta(\xv)}{c} + \frac{1 - \eta(\xv)}{1 - c} &=& 0 \\
+  - \frac{\eta(\xv) (1 - c)}{c (1 - c)} + \frac{c(1 - \eta(\xv))}{c(1 - c)} &=& 0 \\
+  \frac{- \eta(\xv) + \eta(\xv) c + c - \eta(\xv) c}{c (1 - c)} &=& 0 \\
+  c &=& \eta(\xv). 
+\end{eqnarray*}
+
+The risk minimizer is $\pixbayes = \eta(\xv) = \P(y = 1 ~|~ \xv = \xv)$. 
+
+\framebreak 
+
+
+To derive the risk minimizer for the Bernoulli loss we again compute the point-wise optimum for a fixed $\xv$. The point-wise log-odds:
+
+\begin{eqnarray*}
+\fh(\xv) &=&  \ln \biggl(\frac{\P(y~|~\xv = \xv)}{1-\P(y~|~\xv = \xv)}\biggr).
+\end{eqnarray*}
+
+The function is undefined when $P(y~|~\xv = \xv) = 1$ or $P(y~|~\xv = \xv) = 0$, but predicts a smooth curve which grows when $P(y~|~\xv = \xv)$ increases and equals $0$ when $P(y~|~\xv = \xv) = 0.5$.
+
+\lz 
+
+\textbf{Proof: } We consider the case $\Yspace = \{-1, 1\}$. We have seen that the (theoretical) optimal prediction $c$ for an arbitrary loss function at fixed point $\xv$ is
+
+$$
+\argmin_{c} \sum_{k \in \Yspace} L(y, c) \P(y = k| \xv = \xv)\,.
+$$
+
+\framebreak 
+
+We plug in the Bernoulli loss
+
+\vspace*{-0.3cm}
+
+\begin{footnotesize}
+  \begin{eqnarray*}
+    && \argmin_c L(1, c) \underbrace{\P(y = 1| \xv = \xv)}_{\eta(\xv)} + L(-1, c) \underbrace{\P(y = -1| \xv = \xv)}_{1 - \eta(\xv)} \\ 
+    &=&  \argmin_c \ln(1 + \exp(-c)) \eta(\xv)+ \ln(1 + \exp(c)) (1 - \eta(\xv)).
+  \end{eqnarray*}
+\end{footnotesize}
+
+\vspace*{-0.3cm}
+
+Setting the derivative w.r.t. $c$ to zero yields
+
+\vspace*{-0.3cm}
+
+\begin{footnotesize}
+  \begin{eqnarray*}
+  0 &=& - \frac{\exp(-c)}{1 + \exp(-c)} \eta(\xv) + \frac{\exp(c)}{1 + \exp(c)} (1 - \eta(\xv)) \\ 
+   &=& - \frac{\exp(-c)}{1 + \exp(-c)} \eta(\xv) + \frac{1}{1 + \exp(- c)} (1 - \eta(\xv)) \\ 
+  % &=& -  \frac{\exp(-c)}{1 + \exp(-c)} p + \frac{1}{1 + \exp(-c)} - \frac{1}{1 + \exp(-c)} p \\
+  &=& - \eta(\xv) + \frac{1}{1 + \exp(-c)} \\
+  \Leftrightarrow \eta(\xv) &=& \frac{1}{1 + \exp(-c)} \\
+  \Leftrightarrow c &=& \ln\left(\frac{\eta(\xv)}{1 - \eta(\xv)}\right)
+  \end{eqnarray*}
+\end{footnotesize}
+
+
+% \framebreak 
+
+% Another common equivalent formulation of this loss function is defined on labels $y \in \{0, 1\}$ instead of $y \in \{-1, 1\}$
+
+% $$
+%   L_{0, 1}(y, \fx) = - y \cdot \fx + \log(1 + \exp(\fx)). 
+% $$
+
+% We indicate this by subscripts of the loss function. 
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{Bernoulli: Optimal constant Model}
+
+The optimal constant probability model $\pix = \theta$ w.r.t. the Bernoulli loss for labels from $\Yspace = \{0, 1\}$) is:
+
+\begin{eqnarray*}
+  \thetah = \argmin_{\theta} \risket = \frac{1}{n} \sumin \yi
+\end{eqnarray*}
+
+Again, this is the fraction of class-1 observations in the observed data.
+We can simply prove this again by setting the derivative of the risk to 0 and solving for $\theta$.
+
+\framebreak
+
+The optimal constant score model $\fx = \theta$ w.r.t. the Bernoulli loss labels from $\Yspace = \setmp$ or $\Yspace = \setzo$ is:
+
+\begin{eqnarray*}
+  \thetah = \argmin_{\theta} \risket = \ln \frac{n_{+1}}{n_{-1}} = \ln \frac{n_{+1}/n}{n_{-1}/n} 
+\end{eqnarray*}
+
+where $n_{-1}$ and $n_{+1}$ are the numbers of negative and positive observations, respectively.
+
+\lz
+
+This again shows a tight (and unsurprising) connection of this loss to log-odds.
+
+\lz
+
+Proving this is also a (quite simple) exercise.
+
+\end{vbframe}
+
+\begin{vbframe}{Bernoulli-Loss: Naming Convention}
+
+We have seen three loss functions that are closely related. In the literature, there are different names for the losses: 
+
+\begin{eqnarray*}
+  L_{-1+1}(y, \fx) &=& \ln(1+\exp(-y\fx)) \\
+  L_{0, 1}(y, \fx) &=& - y \cdot \fx + \log(1 + \exp(\fx)). 
+\end{eqnarray*}
+
+are referred to as Bernoulli, Binomial or logistic loss. 
+
+  $$
+    L_{0,1}(y, \pix) = - y \log \left(\pix\right) - (1 - y) \log \left(1 - \pix\right). 
+  $$
+
+is referred to as cross-entropy or log-loss. 
+
+\lz 
+
+For simplicity, we will call all of them \textbf{Bernoulli loss}, and rather make clear whether they are defined on labels $y \in \{0, 1\}$ or $y \in \{-1, 1\}$ and on scores $\fx$ or probabilities $\pix$. 
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{Log loss minimization = Entropy splitting}
+
+Entropy splitting in trees is equivalent to minimizing the log loss of a node. The logarithmic loss for multiple classes $y \in \{1, 2, ..., g\}$ is defined as
+$$ L(y, \pikx) = \sum_{k = 1}^g [y = k] \cdot \log \left(\pi_k(\xv)\right). $$
+\vspace{-0.4cm}
+\begin{eqnarray*}
+\risk(\Np) &=& \sum_{\xy \in \Np}  \sum_{k = 1}^g [y = k] \log \pi_k(\xv) \\
+&=& \sum_{k = 1}^g \sum_{\xy \in \Np} [y = k] \log \pikN \\
+&=& \sum_{k = 1}^g n_{\Np k} \log \pikN = n_{\Np} \sum_{k = 1}^g \pikN \log \pikN = n_\Np I(\Np), 
+\end{eqnarray*} 
+
+plugging in the optimal constant $\pi_k(\xv) = \pikN$.
+
+% \framebreak
+
+% \textbf{Conclusion}: 
+% \begin{itemize}
+%   \item Stumps/trees with entropy splitting use the same loss function as logistic regression (binary) / softmax regression (multiclass).
+%   \item    While logistic regression is based on the hypothesis space of \textbf{linear functions}, stumps/trees use \textbf{step functions} as hypothesis spaces. 
+
+% \end{itemize}  
+
+\end{vbframe}
+
+
+
+
+
+
+
+% \vspace*{-0.2cm}
+
+% \begin{eqnarray*}
+%   \Lxy = \log \left[1 + \exp \left(-y\fx\right)\right].
+% \end{eqnarray*}
+
+% We transform scores into probabilities by
+
+% $$
+% \pix = \P(y = 1 ~|~\xv) = s(\fx) = \frac{1}{1 + \exp(- \fx)},
+% $$
+
+% with $s(.)$ being the logistic sigmoid function as introduced in chapter 2.
+
+% \framebreak
+
+% As already shown before, an equivalent approach that directly outputs probabilities $\pix$ is minimizing the \textbf{Bernoulli loss}
+
+% \begin{eqnarray*}
+% \Lxy = -y \log \left(\pix\right) - (1 - y) \log \left(1 - \pix\right)
+% \end{eqnarray*}
+
+% for $\pix$ in the hypothesis space
+
+% \begin{eqnarray*}
+%   \Hspace = \left\{\pi: \Xspace \to [0, 1] ~|~\pix = s(\thetab^\top \xv)\right\}
+% \end{eqnarray*}
+
+% with $s(.)$ again being the logistic function.
+
+% \framebreak
+
+
+% Logistic Regression with one feature $\xv \in \R$. The figure shows how $\xv \mapsto \pix$.
+
+% <<fig.height=4>>=
+% set.seed(1234)
+% n = 20
+% x = runif(n, min = 0, max = 7)
+% y = x + rnorm(n) > 3.5
+% df = data.frame(x = x, y = y)
+
+% model = glm(y ~ x,family = binomial(link = 'logit'), data = df)
+% df$score = predict(model)
+% df$prob = predict(model, type = "response")
+% x = seq(0, 7, by = 0.01)
+% dfn = data.frame(x = x)
+% dfn$prob = predict(model, newdata = dfn, type = "response")
+% dfn$score = predict(model, newdata = dfn)
+
+% p2 = ggplot() + geom_line(data = dfn, aes(x = x, y = prob))
+% p2 = p2 + geom_point(data = df, aes(x = x, y = prob, colour = y), size = 2)
+% p2 = p2 + xlab("x") + ylab(expression(pi(x)))
+% p2 = p2 + theme(legend.position = "none")
+% p2
+% @
+
+% \framebreak
+
+% Logistic regression with two features:
+
+\endlecture
+
+\end{document}
