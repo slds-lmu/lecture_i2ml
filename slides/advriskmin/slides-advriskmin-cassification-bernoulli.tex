@@ -14,7 +14,7 @@
 
 \newcommand{\titlefigure}{figure_man/optimization_steps.jpeg}
 \newcommand{\learninggoals}{
-  \item Know the Bernoulli loss and related losses (Log loss, logistic loss, Binomial loss)
+  \item Know the Bernoulli loss and related losses (log-loss, logistic loss, Binomial loss)
   \item Derive the risk minimizer
   \item Derive the optimal constant model 
 }
@@ -37,21 +37,23 @@
 
 \vspace*{-0.5cm}
 \begin{eqnarray*}
-  L_{-1, +1}(y, \fx) &=& \ln(1+\exp(-y\fx)) \\
-  L_{0, 1}(y, \fx) &=& - y \cdot \fx + \log(1 + \exp(\fx)). 
+  L(y, \fx) &=& \ln(1+\exp(-y \cdot \fx)) \quad \text{for } y \in \setmp\\
+  L(y, \fx) &=& - y \cdot \fx + \log(1 + \exp(\fx)) \quad \text{for } y \in \setzo 
 \end{eqnarray*}
 
 \begin{itemize}
-  \item Two equivalent formulations: Labels $y \in \{-1, 1\}$ or $y \in \{0, 1\}$
+  % \item Two equivalent formulations: labels $y \in \setmp$ or $y \in \setzo$
+  \item Two equivalent formulations for different label encodings
   \item Negative log-likelihood of Bernoulli model, e.g., logistic regression
   \item Convex, differentiable
-  \item Pseudo-Residuals (0,1 case): $\tilde{r} = y - \frac{1}{1+\exp(-\fx)}$\\   
+  \item Pseudo-residuals (0/1 case): $\tilde{r} = y - \frac{1}{1+\exp(-\fx)}$\\   
     Interpretation: $L1$ distance between 0/1-labels and posterior prob!
 \end{itemize}
 
 \vspace{0.2cm}
 \begin{center}
-\includegraphics[width = 9cm ]{figure_man/bernoulli.png} \\
+% \includegraphics[width = 9cm ]{figure_man/bernoulli.png} \\
+\includegraphics[width = 8cm ]{figure/plot_bernoulli_plusmin_encoding.png}
 \end{center}
 
 \end{vbframe}
@@ -61,14 +63,15 @@
 
 \begin{vbframe}{Bernoulli loss on probabilities}
 
-If scores are transformed into probabilities by the logistic function  $\pix = \left(1 + \exp(- \fx)\right)^{-1}$, we arrive at another equivalent formulation of the loss
+If scores are transformed into probabilities by the logistic function  $\pix = \left(1 + \exp(- \fx)\right)^{-1}$, we arrive at another equivalent formulation of the loss, where $y$ is again encoded as $\setzo$:
 
   $$
-    L_{0,1}(y, \pix) = - y \log \left(\pix\right) - (1 - y) \log \left(1 - \pix\right). 
+    L(y, \pix) = - y \log \left(\pix\right) - (1 - y) \log \left(1 - \pix\right). 
   $$
 
 \begin{center}
-\includegraphics[width = 10cm ]{figure_man/bernoulli-loss.png} \\
+% \includegraphics[width = 10cm ]{figure_man/bernoulli-loss.png} \\
+\includegraphics[width = 10cm ]{figure/plot_bernoulli_prob.png}
 \end{center}
 
 \end{vbframe}
@@ -80,7 +83,7 @@ If scores are transformed into probabilities by the logistic function  $\pix = \
 To derive the risk minimizer for the Bernoulli loss for the formulation 
 
 $$
-  L_{0,1}(y, \pix) = - y \log \left(\pix\right) - (1 - y) \log \left(1 - \pix\right)
+  L(y, \pix) = - y \log \left(\pix\right) - (1 - y) \log \left(1 - \pix\right),
 $$
 we again make use of the law of total expectation
 
@@ -125,7 +128,7 @@ The function is undefined when $P(y~|~\xv = \xv) = 1$ or $P(y~|~\xv = \xv) = 0$,
 
 \lz 
 
-\textbf{Proof: } We consider the case $\Yspace = \{-1, 1\}$. We have seen that the (theoretical) optimal prediction $c$ for an arbitrary loss function at fixed point $\xv$ is
+\textbf{Proof: } We consider the case $\Yspace = \setmp$. We have seen that the (theoretical) optimal prediction $c$ for an arbitrary loss function at fixed point $\xv$ is
 
 $$
 \argmin_{c} \sum_{k \in \Yspace} L(y, c) \P(y = k| \xv = \xv)\,.
@@ -178,7 +181,7 @@ Setting the derivative w.r.t. $c$ to zero yields
 
 \begin{vbframe}{Bernoulli: Optimal constant Model}
 
-The optimal constant probability model $\pix = \theta$ w.r.t. the Bernoulli loss for labels from $\Yspace = \{0, 1\}$) is:
+The optimal constant probability model $\pix = \theta$ w.r.t. the Bernoulli loss for labels from $\Yspace = \setzo$ is:
 
 \begin{eqnarray*}
   \thetah = \argmin_{\theta} \risket = \frac{1}{n} \sumin \yi
@@ -192,10 +195,10 @@ We can simply prove this again by setting the derivative of the risk to 0 and so
 The optimal constant score model $\fx = \theta$ w.r.t. the Bernoulli loss labels from $\Yspace = \setmp$ or $\Yspace = \setzo$ is:
 
 \begin{eqnarray*}
-  \thetah = \argmin_{\theta} \risket = \ln \frac{n_{+1}}{n_{-1}} = \ln \frac{n_{+1}/n}{n_{-1}/n} 
+  \thetah = \argmin_{\theta} \risket = \ln \frac{\np}{\nn} = \ln \frac{\np / n}{\nn /n} 
 \end{eqnarray*}
 
-where $n_{-1}$ and $n_{+1}$ are the numbers of negative and positive observations, respectively.
+where $\nn$ and $\np$ are the numbers of negative and positive observations, respectively.
 
 \lz
 
@@ -212,21 +215,21 @@ Proving this is also a (quite simple) exercise.
 We have seen three loss functions that are closely related. In the literature, there are different names for the losses: 
 
 \begin{eqnarray*}
-  L_{-1+1}(y, \fx) &=& \ln(1+\exp(-y\fx)) \\
-  L_{0, 1}(y, \fx) &=& - y \cdot \fx + \log(1 + \exp(\fx)). 
+  L(y, \fx) &=& \ln(1+\exp(-y\fx)) \quad \text{for } y \in \setmp \\
+  L(y, \fx) &=& - y \cdot \fx + \log(1 + \exp(\fx)) \quad \text{for } y \in \setzo 
 \end{eqnarray*}
 
 are referred to as Bernoulli, Binomial or logistic loss. 
 
   $$
-    L_{0,1}(y, \pix) = - y \log \left(\pix\right) - (1 - y) \log \left(1 - \pix\right). 
+    L(y, \pix) = - y \log \left(\pix\right) - (1 - y) \log \left(1 - \pix\right) \quad \text{for } y \in \setzo
   $$
 
 is referred to as cross-entropy or log-loss. 
 
 \lz 
 
-For simplicity, we will call all of them \textbf{Bernoulli loss}, and rather make clear whether they are defined on labels $y \in \{0, 1\}$ or $y \in \{-1, 1\}$ and on scores $\fx$ or probabilities $\pix$. 
+For simplicity, we will call all of them \textbf{Bernoulli loss}, and rather make clear whether they are defined on labels $y \in \setzo$ or $y \in \setmp$ and on scores $\fx$ or probabilities $\pix$. 
 
 \end{vbframe}
 
@@ -234,8 +237,8 @@ For simplicity, we will call all of them \textbf{Bernoulli loss}, and rather mak
 
 \begin{vbframe}{Log loss minimization = Entropy splitting}
 
-Entropy splitting in trees is equivalent to minimizing the log loss of a node. The logarithmic loss for multiple classes $y \in \{1, 2, ..., g\}$ is defined as
-$$ L(y, \pikx) = \sum_{k = 1}^g [y = k] \cdot \log \left(\pi_k(\xv)\right). $$
+Entropy splitting in trees is equivalent to minimizing the log-loss of a node. The logarithmic loss for multiple classes $y \in \{1, 2, ..., g\}$ is defined as
+$$ L(y, \pikx) = \sum_{k = 1}^g [y = k] \log \left(\pi_k(\xv)\right). $$
 \vspace{-0.4cm}
 \begin{eqnarray*}
 \risk(\Np) &=& \sum_{\xy \in \Np}  \sum_{k = 1}^g [y = k] \log \pi_k(\xv) \\
