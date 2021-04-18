@@ -14,10 +14,10 @@ p <- ggplot2::qplot(
   y, 
   geom = "line",
   xlab = expression(r = yf(x)),
-  ylab = expression(L(yf(x))))
+  ylab = expression(L(y, f(x))))
 
 p <- p + theme_bw()
 p <- p + theme(text = element_text(size = 20L))
 
-ggplot2::ggsave("../figure/plot_loss_01.png", p)
+ggplot2::ggsave("../figure/plot_loss_01.png", p, height = 4L, width = 10L)
 
