@@ -73,19 +73,22 @@ p_1 <- ggplot2::ggplot(df_1, aes(x, y)) +
     color = "blue") +
   xlim(c(-1L, 3L)) +
   ylim(c(-1L, 3L)) +
+  theme_minimal() +
   theme(text = element_text(size = 20L))
 
 p_2 <- plotLoss(df_2, losses) + scale_color_viridis_d(
   end = 0.9,
   name = bquote(delta), 
   labels = c(2, 1, 0.5)) +
+  theme_minimal() +
   theme(text = element_text(size = 20L))
 
 p <- cowplot::plot_grid(
   p_1, 
+  ggplot2::ggplot(),
   p_2, 
-  ncol = 2L, 
+  ncol = 3L, 
   align = "h",
-  rel_widths = c(1L, 1.18))
+  rel_widths = c(1.1, 0.4, 1.5))
 
-ggplot2::ggsave("../figure/loss_huber_plot.png", p, width = 9L, height = 4L)
+ggplot2::ggsave("../figure/loss_huber_plot.png", p, width = 11L, height = 4L)

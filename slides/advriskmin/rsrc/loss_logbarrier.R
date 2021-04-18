@@ -20,10 +20,11 @@ p_1 <- ggplot2::qplot(
   x = x, 
   y = y, 
   geom = "line",
-  xlab = expression(r = y- f(x)),
-  ylab = expression(L(y, f(x))))
+  xlab = expression(y - f(x)),
+  ylab = expression(L(y, f(x)))) +
+  ylim(c(0L, 15L))
 
-p_1 <- p_1 + theme_bw()
+p_1 <- p_1 + theme_light()
 p_1 <- p_1 + theme(text = element_text(size = 20L))
 
 ggplot2::ggsave(
@@ -38,13 +39,13 @@ p_2 <- plotConstantModel(df, loss_type = c("L1", "L2", "log_barrier"), a = 1) +
     name = "Loss", 
     labels = c("L1", "L2", "log-barrier")) + 
   ggtitle("Not feasible for a = 1") + 
-  theme_bw() +
+  theme_minimal() +
   theme(text = element_text(size = 20L))
 
 p_3 <- plotConstantModel(df, loss_type = c("L1", "L2", "log_barrier"), a = 2) + 
   scale_color_viridis_d(end = 0.9) + 
   ggtitle("Feasible for a = 2") + 
-  theme_bw() +
+  theme_minimal() +
   theme(text = element_text(size = 20L))
 
 p_4 <- ggpubr::ggarrange(

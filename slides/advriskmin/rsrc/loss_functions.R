@@ -59,10 +59,12 @@ log_barrier = function(res, a = 2) {
 #   return(2 * res2 / (res2 + 4))
 # }
 
+# Confirmed with Bernd: use def from https://www.user.tu-berlin.de/mtoussai/teaching/15-MachineLearning/15-MachineLearning-script.pdf, p. 24
+
 cauchy = function(res, c = 2) {
   
-  res2 = (res / c)^2 
-  log(0.5 * res2 + 1)
+  0.5 * c^2 * log((res / c)^2 + 1L)
+  
 }
 
 

@@ -23,7 +23,7 @@ p <- ggplot2::ggplot(
     direction = -1L) + 
   xlab(expression(r = yf(x))) +
   ylab(expression(L(y, f(x)))) +
-  theme_bw() + 
+  theme_minimal() + 
   theme(text = element_text(size = 30L))
 
 ggplot2::ggsave("../figure/plot_loss_hinge.png", p, height = 4L, width = 12L)

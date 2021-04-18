@@ -55,7 +55,9 @@ p_1 <- add_markers(p_1, which(df_1$plot_neg > 0L)[1L])
 p_1 <- add_markers(p_1, which(df_1$plot_neg > 0L)[2L])
 p_1 <- add_markers(p_1, which(df_1$plot_pos > 0L)[1L], negative = FALSE)
 p_1 <- add_markers(p_1, which(df_1$plot_pos > 0L)[2L], negative = FALSE)
-p_1 <- p_1 + theme(text = element_text(size = 20L))
+p_1 <- p_1 + 
+  theme_minimal() +
+  theme(text = element_text(size = 20L))
 
 add_markers_2 <- function(plot, index, negative = TRUE) {
   
@@ -93,8 +95,10 @@ p_2 <- add_markers_2(p_2, which(df_1$plot_pos > 0L)[2L], negative = FALSE)
 p_2 <- p_2 +
   xlab(bquote(y - f(x))) +
   ylab(bquote(L(y, f(x)))) +
+  theme_minimal() +
   theme(text = element_text(size = 20L))
 
+# p <- gridExtra::grid.arrange(p_1, p_2, ncol = 2L)
 p <- cowplot::plot_grid(p_1, p_2, ncol = 2L, align = "h")
 
 ggplot2::ggsave(

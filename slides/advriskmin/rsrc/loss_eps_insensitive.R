@@ -51,6 +51,7 @@ p_1 <- ggplot2::ggplot(df_1, aes(x, y)) +
     label = bquote("|" ~ y - f(x) ~ "|" ~ ">" ~ epsilon),
     size = 7L,
     color = "blue") +
+  theme_minimal() +
   theme(text = element_text(size = 20L))
 
 p_2 <- ggplot2::qplot(df_2$x, df_2$y, geom = "line") +
@@ -75,6 +76,7 @@ p_2 <- ggplot2::qplot(df_2$x, df_2$y, geom = "line") +
     shape = 1L) +
   xlab(bquote(y - f(x))) +
   ylab(bquote(L(y, f(x)))) +
+  theme_minimal() +
   theme(text = element_text(size = 20L))
 
 p <- cowplot::plot_grid(p_1, p_2, ncol = 2L, align = "h")
