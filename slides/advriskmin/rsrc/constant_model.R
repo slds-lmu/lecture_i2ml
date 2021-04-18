@@ -1,7 +1,8 @@
 library("bmrm")
 library("MASS")
+library("data.table")
 
-source("rsrc/loss_functions.R")
+source("loss_functions.R")
 
 #1 Derive a dataframe with all optimal constant models
 
@@ -52,8 +53,9 @@ plotConstantModel = function(df, loss_type = c("L1", "L2", "quant25", "quant75",
   p = p + geom_line(data = dfm[loss %in% loss_type, ],
                     aes(x = x, y = y, colour = loss))
   if (!is.null(labels)) {
-    p = p + scale_color_discrete(name = "", labels =
-                                   labels[1:length(loss_type)])
+    p = p + scale_color_discrete(
+      name = "", 
+      labels = labels[1:length(loss_type)])
   }
   p = p + theme(legend.position = 'top', legend.direction = 'horizontal')
   

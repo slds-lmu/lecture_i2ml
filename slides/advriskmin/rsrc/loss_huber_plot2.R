@@ -86,6 +86,6 @@ p <- gridExtra::grid.arrange(
   p_2, 
   layout_matrix = rbind(c(1, 1, 2, 2, 2), c(1, 1, 2, 2, 2)))
 
-ggplot2::ggsave("../figure/loss_huber_plot.png", p, width = 11L, height = 4L)
+ggplot2::ggsave("../figure/loss_huber_plot.png", p, width = 10.5, height = 4L)
 
 
