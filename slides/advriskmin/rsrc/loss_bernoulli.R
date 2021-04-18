@@ -39,12 +39,16 @@ p_1 <- p_1 + theme(text = element_text(size = 20L))
 ggplot2::ggsave("../figure/plot_bernoulli_plusmin_encoding.png", p_1)
 
 p_2 <- ggplot2::ggplot(data = df, aes(x = x, y = pi, color = y)) + 
-  geom_line() + 
+  geom_line(size = 1.2) + 
   xlab(expression(pi(x))) + 
   ylab(expression(L(y, pi(x)))) + 
   theme_bw() +
   theme(text = element_text(size = 20L)) +
   scale_color_viridis_d(end = 0.9)
 
-ggplot2::ggsave("../figure/plot_bernoulli_prob.png", p_2)
+ggplot2::ggsave(
+  "../figure/plot_bernoulli_prob.png", 
+  p_2,
+  height = 4L,
+  width = 10L)
 

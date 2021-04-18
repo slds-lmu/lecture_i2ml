@@ -19,15 +19,16 @@ p <- ggplot2::qplot(
 p <- p + 
   ggplot2::geom_segment(
     mapping = aes(x = 0.5, xend = 2L, y = 0L, yend = 3L),
-    col = "red") +
+    size = 1.1,
+    col = "blue") +
   ggplot2::geom_segment(
     mapping = aes(x = 1L, xend = 1L, y = 0L, yend = 1L),
-    col = "red") +
+    size = 1.1,
+    col = "blue") +
   ggplot2::geom_point(
     mapping = aes(x = 1L, y = 1L),
-    col = "red",
-    size = 3L,
-    shape = 1L) +
+    col = "blue",
+    size = 3L) +
   ggplot2::annotate(
     "text", 
     x = 0L, 
