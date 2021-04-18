@@ -1,4 +1,4 @@
-source("rsrc/loss_functions.R")
+source("loss_functions.R")
 
 df = data.frame(res = seq(-10, 10, length.out = 800))
 
@@ -9,6 +9,10 @@ losses = list(
 )
 
 p = plotLoss(df, losses)
-p = p + scale_color_discrete(name = expression(delta), labels = c(2, 1, 0.5))
+p = p + scale_color_viridis_d(
+  end = 0.9,
+  name = bquote(delta), 
+  labels = c(2, 1, 0.5))
+p
 
 ggsave(filename = "loss_huber_plot2.png", path = "figure_man", width = 4, height = 3)

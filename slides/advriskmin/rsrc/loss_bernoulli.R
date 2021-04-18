@@ -23,7 +23,15 @@ p_1 <- ggplot2::qplot(
   y, 
   geom = "line",
   xlab = expression(r = yf(x)),
-  ylab = expression(L(yf(x))))
+  ylab = expression(L(y, f(x))))
+
+p_1 <- p_1 + 
+  ggplot2::annotate(
+    "text",
+    x = 2L,
+    y = 2L,
+    label = bquote(L(y, f(x)) ~ "=" ~ ln(1 + exp(-yf(x)))),
+    size = 7L)
 
 p_1 <- p_1 + theme_bw()
 p_1 <- p_1 + theme(text = element_text(size = 20L))
@@ -36,7 +44,7 @@ p_2 <- ggplot2::ggplot(data = df, aes(x = x, y = pi, color = y)) +
   ylab(expression(L(y, pi(x)))) + 
   theme_bw() +
   theme(text = element_text(size = 20L)) +
-  scale_color_viridis_d()
+  scale_color_viridis_d(end = 0.9)
 
 ggplot2::ggsave("../figure/plot_bernoulli_prob.png", p_2)
 
