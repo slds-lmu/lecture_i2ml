@@ -18,12 +18,17 @@ df$y <- as.factor(df$y)
 
 # PLOTS ------------------------------------------------------------------------
 
-p_1 <- ggplot2::qplot(
-  x_1, 
-  y, 
-  geom = "line",
-  xlab = expression(r = yf(x)),
-  ylab = expression(L(y, f(x))))
+# p_1 <- ggplot2::qplot(
+#   x_1, 
+#   y, 
+#   geom = "line",
+#   xlab = expression(r = yf(x)),
+#   ylab = expression(L(y, f(x))))
+
+p_1 <- ggplot2::ggplot(data.frame(x_1, y), aes(x = x_1, y = y)) + 
+  geom_line(size = 1.2) +
+  xlab(expression(yf(x))) +
+  ylab(expression(L(y, f(x))))
 
 p_1 <- p_1 + 
   ggplot2::annotate(
@@ -33,7 +38,7 @@ p_1 <- p_1 +
     label = bquote(L(y, f(x)) ~ "=" ~ ln(1 + exp(-yf(x)))),
     size = 7L)
 
-p_1 <- p_1 + theme_bw()
+p_1 <- p_1 + theme_minimal()
 p_1 <- p_1 + theme(text = element_text(size = 20L))
 
 ggplot2::ggsave("../figure/plot_bernoulli_plusmin_encoding.png", p_1)
@@ -42,7 +47,7 @@ p_2 <- ggplot2::ggplot(data = df, aes(x = x, y = pi, color = y)) +
   geom_line(size = 1.2) + 
   xlab(expression(pi(x))) + 
   ylab(expression(L(y, pi(x)))) + 
-  theme_bw() +
+  theme_minimal() +
   theme(text = element_text(size = 20L)) +
   scale_color_viridis_d(end = 0.9)
 

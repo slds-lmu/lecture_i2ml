@@ -9,13 +9,6 @@ y <- as.numeric(x < 0L)
 
 # PLOTS ------------------------------------------------------------------------
 
-# p <- ggplot2::qplot(
-#   x, 
-#   y, 
-#   geom = "line",
-#   xlab = expression(r = yf(x)),
-#   ylab = expression(L(y, f(x))))
-
 p <- ggplot2::ggplot(data.frame(x, y), aes(x = x, y = y)) + 
   geom_line(size = 1.2) +
   xlab(expression(yf(x))) +
