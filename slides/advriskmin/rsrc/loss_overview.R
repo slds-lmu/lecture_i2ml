@@ -45,7 +45,7 @@ p <- ggplot2::ggplot(df, aes(x = x, y = value, color = loss)) +
       "Huber (c = 1)",
       "Log-cosine",
       "Log-barrier (a = 1)",
-      "Quantile (alpha = 0.7)")) +
+      "Quant (alpha = 0.7)")) +
   ggplot2::guides(color = guide_legend(ncol = 2)) +
   ggplot2::ylim(c(0L, 2L)) +
   ggplot2::xlab(bquote(y - f(x))) +
@@ -55,4 +55,4 @@ p <- ggplot2::ggplot(df, aes(x = x, y = value, color = loss)) +
     text = element_text(size = 20L),
     legend.position = "bottom")
 
-ggplot2::ggsave("../figure/plot_loss_overview.png", p, width = 6L, height = 5L)
+ggplot2::ggsave("../figure/plot_loss_overview.png", p, width = 6L, height = 4L)
