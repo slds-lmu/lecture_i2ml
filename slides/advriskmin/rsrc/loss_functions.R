@@ -77,9 +77,9 @@ plotLoss = function(df, losses) {
 	p = ggplot()
 	p = p + geom_point(data = dfm, aes(x = res, y = value, color = loss), size = 0.1)
 	p = p + scale_x_continuous(name = expression(y - f(x)))
-	p = p + scale_y_continuous(name = expression(L(y - f(x))))
+	p = p + scale_y_continuous(name = expression(L(y,f(x))))
 	p = p + guides(colour = guide_legend(override.aes = list(size=3)))
-	p = p + theme(legend.title = element_blank(), plot.title = element_blank())
+	p = p + theme(plot.title = element_blank())
 
 	return(p)
 }
