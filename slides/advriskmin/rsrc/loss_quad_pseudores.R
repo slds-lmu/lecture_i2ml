@@ -36,7 +36,7 @@ p <- p +
     label = bquote(L(y, f(x)) ~ "=" ~ (y - f(x))^2), 
     size = 7L)
 
-p <- p + theme_bw()
+p <- p + theme_minimal()
 p <- p + theme(text = element_text(size = 20L))
 
 ggplot2::ggsave(
