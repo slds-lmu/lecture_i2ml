@@ -28,14 +28,14 @@ p_1 <- ggplot2::ggplot(df_1, aes(x, y)) +
     x = 0L,
     y = 2.5,
     label = bquote(delta ~ "=" ~ 0.8),
-    size = 10L,
-    color = "blue") +
+    size = 10L) +
   ggplot2::geom_segment(
     x = df_1[which.max(df_1[, "diff"]), "x"],
     xend = df_1[which.max(df_1[, "diff"]), "x"],
     y = df_1[which.max(df_1[, "diff"]), "x"],
     yend = df_1[which.max(df_1[, "diff"]), "y"],
-    color = "blue") + 
+    color = "blue",
+    size = 1.1) + 
   ggplot2::geom_point(
     mapping = aes(
       x = df_1[which.max(df_1[, "diff"]), "x"], 
@@ -77,15 +77,15 @@ p_1 <- ggplot2::ggplot(df_1, aes(x, y)) +
 
 p_2 <- plotLoss(df_2, losses) + scale_color_viridis_d(
   end = 0.9,
-  name = bquote(" " ~ delta), 
+  name = bquote(delta), 
   labels = c(2, 1, 0.5)) +
   theme(text = element_text(size = 20L))
 
-p <- gridExtra::grid.arrange(
+p <- cowplot::plot_grid(
   p_1, 
   p_2, 
-  layout_matrix = rbind(c(1, 1, 2, 2, 2), c(1, 1, 2, 2, 2)))
+  ncol = 2L, 
+  align = "h",
+  rel_widths = c(1L, 1.18))
 
-ggplot2::ggsave("../figure/loss_huber_plot.png", p, width = 10.5, height = 4L)
-
-
+ggplot2::ggsave("../figure/loss_huber_plot.png", p, width = 9L, height = 4L)

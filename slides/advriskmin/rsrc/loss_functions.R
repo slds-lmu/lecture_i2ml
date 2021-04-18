@@ -52,11 +52,17 @@ log_barrier = function(res, a = 2) {
   return(res2)
 }
 
+# cauchy = function(res, c = 2) {
+# 
+#   res2 = (res / c)^2 
+# 
+#   return(2 * res2 / (res2 + 4))
+# }
+
 cauchy = function(res, c = 2) {
-
+  
   res2 = (res / c)^2 
-
-  return(2 * res2 / (res2 + 4))
+  log(0.5 * res2 + 1)
 }
 
 
