@@ -52,11 +52,27 @@ ggsave("figure_man/bayes_error_3.png", width = 9, height = 5)
 
 p1 = ggplot() + geom_line(data = data.grid, aes(x = x1, y = prob, colour = class), alpha = 0.5, size = 2)
 p1 = p1 + geom_vline(xintercept = 0, colour = "orange", size = 2)
-p2 = p1 + geom_line(data = data.grid[data.grid$overlap == TRUE, ], aes(x = x1, y = prob), colour = "darkred", alpha = 1, size = 2)
-p2 = p2 + geom_vline(xintercept = 0, colour = "orange", size = 2)
+
+p2 <- ggplot2::ggplot() +
+  ggplot2::geom_line(
+    data = data.grid, 
+    aes(x = x1, y = prob, colour = class), 
+    alpha = 0.5, 
+    size = 2) + 
+  scale_color_viridis_d(end = 0.9) +
+  geom_line(
+    data = data.grid[data.grid$overlap == TRUE, ], 
+    aes(x = x1, y = prob), 
+    colour = "darkred", 
+    alpha = 1, size = 2) +
+  xlab("x") +
+  ylab("P(x|y)") +
+  geom_vline(xintercept = 0, colour = "orange", size = 2) +
+  theme_minimal() +
+  theme(legend.position = "none", text = element_text(size = 20L))
 
 ggsave("figure_man/bayes_error_4.png", p1, width = 9, height = 5)
-ggsave("figure_man/bayes_error_5.png", p2, width = 9, height = 5)
+ggsave("../figure_man/bayes_error_5.png", p2, width = 9, height = 4)
 
 
 
