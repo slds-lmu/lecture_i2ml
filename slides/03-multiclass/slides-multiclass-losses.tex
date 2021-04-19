@@ -1,0 +1,214 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/scenario.png}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{Know what multiclass means and which types exists}
+  \item \textcolor{blue}{0-1-Loss}
+  \item \textcolor{blue}{MC Brier score}
+  \item \textcolor{blue}{Logarithmic Loss}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Multiclass Classification and Losses}
+\lecture{Introduction to Machine Learning}
+
+
+\sloppy 
+
+\begin{vbframe}{Multiclass Classification}
+
+\textbf{Scenario:} Multiclass classification with $g > 2$ classes
+$$\D \subset \left(\Xspace \times \Yspace\right)^n, \Yspace = \{1, ..., g\}$$ 
+\textbf{Example:} Iris dataset with $g = 3$
+
+\vspace*{0.1cm}
+\begin{center}
+\includegraphics[width = 11cm ]{figure_man/scenario.png}
+\end{center}
+
+\end{vbframe}
+
+\begin{vbframe}{Revision: Risk for Classification}
+
+\textbf{Goal:} Find a model  $f: \Xspace \to \R^g$, where $g$ is the number of classes, that minimizes the expected loss over random variables $\xy \sim \Pxy$ 
+
+$$
+ \riskf = \E_{xy}[\Lxy] = \E_{x}\left[\sum_{k \in \Yspace} L(k, f(\bm{x})) \P(y = k| \xv = \xv)\right] 
+$$
+The optimal model for a loss function $\Lxy$ is
+$$
+  \fxh = \argmin_{f \in \Hspace} \sum_{k \in \Yspace} L(k, f(\bm{x})) \P(y = k| \xv = \xv)\,. $$
+Because we usually do not know $\Pxy$, we minimize the \textbf{empirical risk} as an approximation to the \textbf{theoretical} risk
+$$
+\fh = \argmin_{f \in \Hspace} \riske(f) = \argmin_{f \in \Hspace} \sumin \Lxyi.
+$$
+\end{vbframe}
+
+
+\begin{vbframe}{Types of Classifiers}
+\begin{itemize}
+  \item We already saw losses for binary classification tasks. 
+  Now we will consider losses for \textbf{multiclass classification} tasks.
+  \lz
+  \item For multiclass classification, loss functions will be defined on
+  \begin{itemize}
+    \item vectors of scores $$f(\xv) = \left(f_1(\xv), ..., f_g(\xv)\right)$$
+    \item vectors of probabilities $$\pi(\xv) = \left(\pi_1(\xv), ..., \pi_g(\xv)\right)$$
+    \item hard labels $$\hx = k, k \in \{1, 2, ..., g\}$$
+\end{itemize}
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{One-Hot Encoding}
+\begin{itemize}
+\item Multiclass outcomes $y$ with classes $1,\dots, g$ are often transformed to $g$ binary ($1$/$0$) outcomes 
+using 
+$$
+\text{with}\quad \mathds{1}_{\{y = k\}} = \begin{cases} 1 & \text{ if } y = k \\
+0 & \text{ otherwise}\end{cases}
+$$
+\item One-hot encoding does not lose any information contained in the outcome. 
+\end{itemize}
+\vspace{0.2cm}
+Example: Iris
+
+\vspace*{0.1cm}
+\begin{center}
+\includegraphics[width = 11cm ]{figure_man/Iris.png}
+\end{center}
+
+\end{vbframe}
+
+\section{0-1-Loss}
+
+\begin{vbframe}{0-1-Loss}
+
+We have already seen that optimizer $\hxh$ of the theoretical risk using the 0-1-loss 
+$$ 
+L(y, \hx) = \mathds{1}_{\{y \neq \hx\}} 
+$$
+is the Bayes optimal classifier, with
+$$ 
+\hxh = \argmax_{l \in \Yspace} \P(y = l~|~ \xv = \xv)
+$$
+and the optimal constant model (featureless predictor) 
+$$
+\hx = k, k \in \{1, 2, ..., g\} 
+$$
+is the classifier that predicts the most frequent class $k \in \{1, 2, ..., g\}$ in the data
+$$
+\hx = \text{mode} \left\{\yi\right\}.
+$$
+\framebreak
+
+
+
+\end{vbframe}
+
+
+
+\section{MC Brier Score}
+
+\begin{vbframe}{MC Brier Score}
+
+The (binary) Brier score generalizes to the multiclass Brier score that is defined on a vector of class probabilities $\left(\pi_1(\xv), ..., \pi_g(\xv)\right)$
+
+\begin{footnotesize}
+$$
+  L(y, \pi(x)) = \sum_{k = 1}^g \left(\mathds{1}_{\{y = k\}} - \pi_k(\xv)\right)^2.
+$$
+\end{footnotesize}
+
+The optimal constant model $\pix = \left(\theta_1, ..., \theta_g\right)$ (outputting a vector of constant class probabilities) is  
+
+\vspace*{-0.5cm}
+\begin{footnotesize}
+  \begin{eqnarray*}
+    \pikx =\text{arg min}_{\theta_k} \riske(\theta) = \text{arg min}_{\theta_k} \left(\sumin \sum_{k = 1}^g \left(\mathds{1}_{\{\yi = k\}} - \theta_k\right)^2\right) 
+      \end{eqnarray*}
+      \end{footnotesize}
+        We solve this by setting the derivative w.r.t. $\theta_k$ to 0
+        \begin{footnotesize}
+      \begin{eqnarray*}
+      \frac{\partial \riske(\theta)}{\partial \theta_k} = - 2 \cdot \sumin (\mathds{1}_{\{\yi = k\}} - \theta_k) = 0 \\
+    \pikxh = \thetah_k = \frac{1}{n} \sumin \mathds{1}_{\{\yi = k\}},   
+    \end{eqnarray*}
+\end{footnotesize}
+being the fraction of class-$k$ observations. 
+
+\framebreak
+
+\textbf{Claim:} For $g = 2$ the MC Brier score is exactly twice as high as the binary Brier score, defined as $(\pi_1(\xv) - y)^2$. \\
+\lz
+\textbf{Proof:}
+\begin{footnotesize}
+$$
+  L(y, \pi(x)) = \sum_{k = 0}^1 \left(\mathds{1}_{\{y = k\}} - \pi_k(\xv)\right)^2
+  $$
+  For $y = 0$:
+  \begin{eqnarray*}
+  L(y, \pi(x)) &=& (1-\pi_0(\xv))^2 + (0 - \pi_1(\xv))^2  = (1-(1 - \pi_1(\xv)))^2 + \pi_1(\xv)^2 \\
+  &=& \pi_1(\xv)^2 + \pi_1(\xv)^2 = 2 \cdot \pi_1(\xv)^2
+  \end{eqnarray*}
+
+    For $y = 1$:
+  \begin{eqnarray*}
+  L(y, \pi(x)) &=& (0-\pi_0(\xv))^2 + (1-\pi_1(\xv))^2 = (-(1 - \pi_1(\xv)))^2 + (1-\pi_1(\xv))^2 \\
+  &=& 1 - 2\cdot\pi_1(\xv)+ \pi_1(\xv)^2 + 1 - 2\cdot\pi_1(\xv)+ \pi_1(\xv)^2 \\
+  &=& 2 \cdot (1 - 2\cdot\pi_1(\xv)+ \pi_1(\xv)^2) = 2 \cdot (1 - \pi_1(\xv))^2 = 2 \cdot (\pi_1(\xv) - 1)^2
+  \end{eqnarray*}
+  $$L(y, \pi(x)) = \begin{cases}
+  2 \cdot \pi_1(\xv)^2 & \text{for } y = 0 \\
+  2 \cdot (\pi_1(\xv) - 1)^2 & \text{for } y = 1\\
+  \end{cases}
+    \hspace{0.5cm} = 2 \cdot (\pi_1(\xv) - y)^2 $$
+  \end{footnotesize}
+\end{vbframe}
+
+\section{Logarithmic Loss}
+
+\begin{vbframe}{Logarithmic Loss (log-loss)}
+The generalization of the Binomial loss (logarithmic loss) for two classes is the multiclass \textbf{logarithmic loss} / \textbf{cross-entropy loss}:
+
+\vspace*{-0.2cm}
+\begin{footnotesize}
+$$
+  L(y, \pi(x)) = - \sum_{k = 1}^g \mathds{1}_{\{y = k\}} \log\left(\pi_k(\xv)\right),
+$$
+\end{footnotesize}
+with $\pi_k(\xv)$ denoting the predicted probability for class $k$.
+
+\vspace*{0.2cm}
+ 
+The optimal constant model $\pix = \left(\theta_1, ..., \theta_g\right)$ (outputting a vector of constant class probabilities) is
+\begin{footnotesize}
+$$
+    \pikx = \thetah_k = \frac{1}{n} \sumin \mathds{1}_{\{\yi = k\}},   
+$$
+\end{footnotesize}
+ being the fraction of class-$k$ observations. \\
+\vspace*{0.5cm}
+\textbf{Proof:} Exercise. \\
+\vspace*{0.5cm}
+In the upcoming section we will see how this corresponds to the (multinomial) \textbf{softmax regression}. 
+
+\framebreak
+\textbf{Claim:} For $g = 2$ the log-loss is equal to the Bernoulli loss, defined as
+$$L_{0, 1}(y, \pi_1(\xv)) = -ylog(\pi_1(\xv)) - (1- y) log(1- \pi_1(\xv))$$
+\textbf{Proof:}
+\begin{eqnarray*}
+L_{0, 1}(y, \pi_1(\xv)) &=& -ylog(\pi_1(\xv)) - (1- y) log(1- \pi_1(\xv))\\[0.3cm]
+&=& -ylog(\pi_1(\xv)) - (1- y) log(\pi_0(\xv))\\[0.3cm]
+&=& -\mathds{1}_{\{y = 1\}} log(\pi_1(\xv)) - \mathds{1}_{\{y = 0\}} log(\pi_0(\xv))\\
+&=& - \sum_{k = 0}^1 \mathds{1}_{\{y = k\}} \log\left(\pi_k(\xv)\right) = L(y, \pi(x))
+\end{eqnarray*}
+\end{vbframe}
+
+\endlecture
+\end{document}

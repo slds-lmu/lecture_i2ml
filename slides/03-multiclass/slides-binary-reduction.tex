@@ -1,0 +1,152 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/one_vs_all.png}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{Know how to model-agnostic reduce a mutliclass problem to a problem with multiple binary problems}
+  \item \textcolor{blue}{One-vs-Rest}
+  \item \textcolor{blue}{One-vs-One}
+  \item \textcolor{blue}{Compare One-vs-One and One-vs-Rest}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{One-vs-Rest and One-vs-One}
+\lecture{Introduction to Machine Learning}
+
+
+
+\sloppy
+
+\begin{vbframe}{Multiclass to Binary Reduction}
+
+
+  \begin{itemize}
+    \item Assume we have a way to train binary classifiers, either outputting class labels $\hx$, scores $\fx$ or probabilities $\pix$.
+    \item We are now looking for a model-agnostic reduction principle to reduce a multiclass problem to the problem of solving \textbf{multiple binary problems}.
+    \item Two common approaches are \textbf{one-vs-rest}  and \textbf{one-vs-one} reductions.
+
+  \end{itemize}
+\end{vbframe}
+
+\frame{
+\frametitle{Codebooks}
+How binary problems are generated can be defined by a codebook.\\[0.3cm]
+\textbf{Example:}
+\begin{table}[]
+  \footnotesize
+  \begin{tabular}{|c|r|r|r|} \hline
+  \textbf{Class}  & \textbf{$f_1{(\xv)}$} & \textbf{$f_2{(\xv)}$}  & \textbf{$f_3{(\xv)}$} \\ \hline
+  \textbf{$1$}  &   1                 &  -1                   &  -1                   \\ \hline
+  \textbf{$2$}  &  -1                 &  1                   & 1                   \\ \hline
+  \textbf{$3$}  &  0                 & 1                   &  -1                   \\ \hline
+  \end{tabular}
+  \end{table}
+
+\begin{itemize}
+
+ \item The k-th column defines how classes of all observations are encoded in the binary subproblem / for binary classifier $f_k(\xv)$.
+    \item Entry $(m, l)$ takes values $\in \{-1, 0, +1\}$
+    \begin{itemize}
+      \item if $0$, observations of class $\yi = m$ are ignored.
+      \item if $1$, observations of class $\yi = m$ are encoded as $1$.
+      \item if $- 1$, observations of class $\yi = m$ are encoded as $- 1$.
+    \end{itemize}
+    \end{itemize}
+}
+
+\section{One-vs-Rest}
+
+\begin{vbframe}{One-vs-Rest }
+
+
+Create $g$ binary subproblems, where in each the $k$-th original class is encoded as $+1$, and all other classes (the \textbf{rest}) as $- 1$.
+
+
+\begin{table}[]
+  \footnotesize
+  \begin{tabular}{|c|r|r|r|} \hline
+  \textbf{Class}  & \textbf{$f_1{(\xv)}$} & \textbf{$f_2{(\xv)}$}  & \textbf{$f_3{(\xv)}$} \\ \hline
+  \textbf{$1$}  &   1                 &  -1                   &  -1                   \\ \hline
+  \textbf{$2$}  &  -1                 &  1                   & -1                   \\ \hline
+  \textbf{$3$}  &  -1                 & -1                   &  1                   \\ \hline
+  \end{tabular}
+  \end{table}
+
+
+    \begin{center}
+    \includegraphics[width=0.5\textwidth]{figure_man/one_vs_all.png}
+    \end{center}
+
+  \begin{itemize}
+    \item Making decisions means applying all classifiers to a sample $\xv \in \Xspace$ and predicting the label $k$ for which the corresponding classifier reports the highest confidence: 
+    $$
+      \hat y = \text{arg max}_{k \in \{1, 2, ..., g\}} \hat f_k(\xv). 
+    $$
+
+    \item Obtaining calibrated posterior probabilities is not completely trivial, we could
+
+    fit a second-stage, multinomial logistic regression model on our output scores, so with inputs $\left(\hat f_1(\xi), ..., \hat f_g(\xi)\right)$ and outputs $\yi$ as training data. 
+
+  \end{itemize}
+  \vspace*{0.2cm}
+
+
+\end{vbframe}
+
+
+\section{One-vs-One}
+
+\begin{vbframe}{One-vs-One}
+
+    We create $\frac{g(g - 1)}{2}$ binary sub-problems, where each $\D_{k, \tilde k} \subset \D$ only considers observations from a class-pair $\yi \in \{k, \tilde k\}$, other observations are omitted.
+
+    \begin{table}[]
+    \begin{tabular}{|c|r|r|r|} \hline
+    \textbf{Class}  & \textbf{$f_1{(\xv)}$} & \textbf{$f_2{(\xv)}$}  & \textbf{$f_3{(\xv)}$} \\ \hline
+    \textbf{$1$}  &   1                 & -1                   & 0                  \\ \hline
+    \textbf{$2$}  &  -1                 &  0                   & 1                   \\ \hline
+    \textbf{$3$}  & 0                  &  1                   &  -1                   \\ \hline
+    \end{tabular}
+    \end{table}
+
+
+    \begin{center}
+    \includegraphics[width=0.38\textwidth]{figure_man/one_vs_one.png}
+    \end{center}
+
+    \framebreak 
+
+  \begin{itemize}
+    \item Label prediction is done via \textbf{majority voting}. We predict the label of a new $\xv$ with all classifiers and select the class that occurred most often. 
+
+    \item \textbf{Pairwise coupling} (see \emph{Hastie, T. and Tibshirani, R. (1998). Classification by Pairwise Coupling}) is a heuristic to transform scores obtained by a one-vs-one reduction to probabilities. 
+
+  \end{itemize}
+  \end{vbframe}
+
+\begin{vbframe}{Comparison one-vs-one and one-vs-rest}
+\begin{itemize}
+       \item Note that each binary problem has now much less than $n$ observations! 
+    \item For classifiers that scale (at least) quadratically with the number of observations, that means that one-vs-one usually does not create quadratic extra effort in $g$, but often only approximately linear extra effort in $g$.
+    \item We experimentally investigate the train times of the one-vs-rest and one-vs-one approaches for an increasing number of classes $g$. 
+    \item We train a support vector machine classifier (SVMs will be covered later in the lecture) on an artificial dataset with $n = 1000$. 
+  \end{itemize}
+    \framebreak 
+    We see that the computational effort for one-vs-one is much higher than for one-vs-rest, but it does not scale proportionally to the (quadratic) number of trained classifiers. 
+    \begin{center}
+    \begin{figure}
+    \includegraphics[width=0.6\textwidth]{figure_man/onevsone_vs_onevsrest.png}
+    \caption{The number of classes vs. the training time (solid lines, left axis) and number of learners (dotted lines, right axis) for each of the two approaches.}
+    \end{figure}
+    \end{center}
+
+
+  \end{vbframe}
+
+\endlecture
+\end{document}

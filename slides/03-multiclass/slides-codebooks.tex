@@ -1,0 +1,217 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/hill-climbing.png}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{Know what a cookbook is}
+  \item \textcolor{blue}{Know how to define a good cookbook}
+  \item \textcolor{blue}{Know what ECOC is}
+  \item \textcolor{blue}{Know what the randomized hill-clmibing algorithm is}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Designing Codebooks and ECOC}
+\lecture{Introduction to Machine Learning}
+
+
+
+
+
+\sloppy
+
+\section{Designing Codebooks}
+
+\begin{vbframe}{Codebooks}
+
+  \begin{itemize}
+\item We have already seen that we can write down principles like one-vs-rest and one-vs-one reduction compactly by so-called \textbf{codebooks}. 
+\item During training, a scoring classifier is trained for each column.
+\item The k-th row is called \textbf{codeword} for class $k$.
+\item Knowing the principle of \textbf{codebooks}, we can define multiclass-to-binary reductions quite flexibly.
+\item We can now ask ourselves, how to create optimal codebooks.
+\end{itemize}
+
+  \begin{center}
+  \begin{footnotesize}
+  \begin{tabular}{ll}
+    \begin{tabular}{|c|r|r|r|} \hline
+    \textbf{Class}  & \textbf{$f_1{(\xv)}$} & \textbf{$f_2{(\xv)}$}  & \textbf{$f_3{(\xv)}$} \\ \hline
+    \textbf{$1$}  &   1                 & -1                   & -1                   \\ \hline
+    \textbf{$2$}  &  -1                 &  1                   & -1                   \\ \hline
+    \textbf{$3$}  & - 1                 & -1                   &  1                   \\ \hline
+
+    \end{tabular}
+    &
+    \begin{tabular}{|c|r|r|r|} \hline
+    \textbf{Class}  & \textbf{$f_1{(\xv)}$} & \textbf{$f_2{(\xv)}$}  & \textbf{$f_3{(\xv)}$} \\ \hline
+    \textbf{$1$}  &   1                 & -1                   & 0                  \\ \hline
+    \textbf{$2$}  &  -1                 &  0                   & 1                   \\ \hline
+    \textbf{$3$}  & 0                  &  1                   &  -1                   \\ \hline
+    \end{tabular}
+  \end{tabular} \\
+  \vspace*{0.1cm}
+    Left: one-vs-rest codebook. Right: one-vs-one codebook. 
+  \end{footnotesize}
+\end{center}
+
+
+
+\end{vbframe}
+
+\begin{vbframe}{Codebooks: Deciding Labels}
+
+
+For a general codebook, once we trained the classifiers, how to predict the class $\hat y$ for a new input $\xv$?
+
+\begin{itemize}
+\item When a new sample $\xv$ is going to be classified, all classifiers $f_k$ are applied to $\xv$, scores are potentially transformed and turned into binary labels by $\text{sgn}\left(f_k(\xv)\right)$. 
+
+\begin{table}[]
+\footnotesize
+\begin{tabular}{|c|r|r|r|} \hline
+\textbf{Class}  & \textbf{$f_1{(\xv)}$} & \textbf{$f_2{(\xv)}$}  & \textbf{$f_3{(\xv)}$} \\ \hline
+\textbf{$1$}              &   1                 & 1                   & 0                   \\ \hline
+\textbf{$2$}              &  -1                 &  1                   & 1                   \\ \hline
+\textbf{$3$}              &  0                 & -1                   &  -1                   \\ \hline
+{sgn($\hat{f}(\xv)$)}    & \textbf{-1}         &  \textbf{1}          &  \textbf{- 1}          \\ \hline
+\end{tabular}
+\end{table}
+
+\item We obtain a code for the observation $\xv$ for which we can calculate the distance to the codewords of the other classes. This can be done by \textbf{Hamming distance} (counting the number of bits that differ) or by $L_1$-distance.
+\item For example, the $L_1$-distance between $\text{sgn}\left(\hat f(\xv)\right) = \left(- 1, 1, -1\right)$ and the class $1$ codeword $\left(1, 1, 0\right)$ is $3$.
+\item We can do so for all the classes to obtain respective distances: 
+
+\begin{table}[]
+\footnotesize
+\begin{tabular}{|l|l|} \hline
+\textbf{Classes}    & Dist \\ \hline
+\textbf{$1$}        &   3       \\ \hline 
+\textbf{$2$}        &   2       \\ \hline 
+\textbf{$3$}        &   3       \\ \hline          
+\end{tabular}
+\end{table}
+
+The distance for class 2 is minimal, therefore we predict class $2$ for the input $\xv$. 
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Defining good Codebooks}
+
+\textbf{Question: } How to define a good codebook? 
+
+\begin{itemize}
+  \item Assume we are given a test observation $(\xv, y)$ with $y = 2$. 
+  \item Assume classifier $f_2(\xv)$ produces a false prediction: 
+
+
+  \begin{table}[]
+  \footnotesize
+  \begin{tabular}{|c|r|r|r|r} \hline
+  \textbf{Class}  & \textbf{$f_1{(\xv)}$} & \textbf{$f_2{(\xv)}$}  & \textbf{$f_3{(\xv)}$} & Dist \\ \hline
+  \textbf{$1$} & 1 & -1  & 0 & 3\\ \hline
+    \textbf{$2$} & -1 & 1 &  1 & \textbf{2}\\ \hline
+  \textbf{$3$} & 0 & -1 & -1 & 3\\ \hline
+  \boldsymbol{$|\hat{f}(\xv)|$}    & \textbf{\textcolor{green}{-1}}         &  \textbf{\textcolor{red}{-1}}       &  \textbf{\textcolor{green}{1}} \\ \hline
+  \end{tabular}
+  \end{table}
+  \item Even though $f_2(\xv)$ is wrong, the overall prediction will be correct in the above case, if we pick the best codeword w.r.t. distance from the predicted codeword. 
+  \item We effectively \textbf{corrected} for the error. 
+  \item This motivates a desirable characteristic of a codebook: we want to have codes that can correct for as many errors as possible. 
+  \item Which is called \textbf{error-correcting output codes} (ECOC). 
+\end{itemize}
+
+\framebreak 
+
+
+\end{vbframe}
+
+\section{Error-Correcting Codes (ECOC)}
+
+
+\begin{vbframe}{Error-correcting codes (ECOC)}
+
+The power of a code to correct errors is related to the \textbf{row separation}:
+
+\begin{itemize}
+  \item Each codeword should be well-separated in Hamming distance from each of the other codewords. 
+  \item Otherwise, if the class codewords are very similar, a prediction error in a single binary classifier easily results in an \enquote{overall} error.
+  \item If the minimum distance between any pair of codewords is $d$, the code can correct at least $\left\lfloor \frac{d - 1}{2}\right\rfloor$ single bit errors. 
+\end{itemize}
+
+\framebreak
+
+Another desirable property is \textbf{column separation}:
+
+\begin{itemize}
+  \item Columns should be uncorrelated.
+  \item If two columns $k$ and $l$ are similar or identical, a learning algorithm will make similar (correlated) mistakes in learning $f_k$ and $f_l$.
+  \item Error-correcting codes only succeed if the errors made in the individual classifiers are relatively uncorrelated, so that the number of simultaneous errors in many classifiers is small. 
+  \item Errors in classifiers $f_k$ and $f_l$ will also be highly correlated if the bits in those columns are complementary. 
+  \item Try to ensure that columns are neither identical nor complementary.
+\end{itemize}
+
+  $\to$ \textbf{We want to maximize distances between rows, and want the distances between columns to not be too small (identical columns) or too high (complementary columns).} 
+
+
+\framebreak 
+
+\textbf{Remark:}
+
+\begin{itemize}
+  \item In general, if there are $k$ classes, there will be at most $2^{k -1}- 1$ usable binary columns.  
+  \item For example for $k = 3$, there are only $2^3 = 8$ possible columns. Of these, half are complements of the other half. The columns that only contain $1$s or the one that only contains $-1s$ are also not usable.
+\begin{footnotesize}
+  \begin{table}[]
+  \begin{tabular}{|c|r|r|r|r|r|r|r|r|} \hline
+  \textbf{Class}  & \textbf{$f_1{(\xv)}$} & \textbf{$f_2{(\xv)}$}  & \textbf{$f_3{(\xv)}$} & \textbf{$f_4{(\xv)}$} & \textbf{$f_5{(\xv)}$} & \textbf{$f_6{(\xv)}$} & \textbf{$f_7{(\xv)}$} & \textbf{$f_8{(\xv)}$}\\ \hline
+  \textbf{$1$} & -1 & -1 & -1 & -1 & 1 & 1 & 1 & 1 \\ \hline
+  \textbf{$2$} & -1 & - 1 & 1 & 1 & -1 & -1 & 1 & 1 \\ \hline
+  \textbf{$3$} & -1 & 1 & -1 & 1 & -1 & 1 & -1 & 1\\ \hline
+  \end{tabular}
+  \end{table}
+\end{footnotesize}
+
+\end{itemize}
+
+\framebreak 
+
+Assume we have the budget to train $L$
+ binary classifiers and now want to find an error-correcting code with maximal row and column separation. 
+
+\begin{itemize}
+  \item For only few classes $g \le 11$, exhaustive search can be performed and a codebook that has good row and column separation is chosen. 
+  \item However, for many classes $g > 11$, it becomes more and more challenging to find the optimal codebook with codewords of length $L$.
+  \item \emph{Dietterich et al.} employed a randomized hill-climbing algorithm for this task. 
+
+\end{itemize}
+
+\end{vbframe}
+
+\frame{
+\frametitle{Ecoc: Randomized hill-climbing algorithm}
+
+    \begin{center}
+      \includegraphics[width=0.8\textwidth]{figure_man/hill-climbing.png}
+    \end{center}
+    
+  \begin{itemize}
+  \only<1>{
+    \item $g$ codewords of length $L$ are randomly drawn. 
+    \item Any pair of such random strings will be separated by a Hamming distance that is binomially distributed with mean $\frac{L}{2}$.
+    \item The algorithm now iteratively improves the code: The algorithm repeatedly finds the pair of rows closest together (in Hamming distance or any other distance) and the pair of columns that have the \enquote{most extreme} distance (i.e. too close, or too far apart).}
+    \only<2>{
+    \stepcounter{framenumber}
+    \item The algorithm then computes the four codeword bits where these rows and columns intersect and changes them to improve the row and column separations
+
+    \item When the procedure reaches a local maximum, the algorithm randomly chooses pairs of rows and columns and tries to improve their separation.} 
+  \end{itemize}
+}
+
+\endlecture
+\end{document}
