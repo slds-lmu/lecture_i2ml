@@ -1,0 +1,244 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+\input{../../latex-math/ml-gp}
+
+\newcommand{\titlefigure}{figure_man/question.png} % does not fit
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{The Bayesian Linear Model}
+\lecture{Introduction to Machine Learning}
+
+
+\begin{vbframe}{Review: The Bayesian Linear Model}
+
+Let $\D = \left\{(\xi[1], \yi[1]), ..., (\xi[n], \yi[n])\right\}$ be a training set of i.i.d. observations from some unknown distribution.
+
+\begin{figure}
+  \includegraphics[width=0.6\textwidth]{figure_man/bayes-lm/example.pdf}
+\end{figure}
+
+Let $\yv = (\yi[1], ..., \yi[n])^\top$ and $\Xmat \in \R^{n \times p}$ be the design matrix where the i-th row contains vector $\xi$.  
+
+\framebreak
+
+The linear regression model is defined as
+
+$$
+y = \fx + \epsilon = \thetab^T \xv + \epsilon 
+$$
+
+or on the data:
+
+\begin{eqnarray*}
+\yi &=& \fxi + \epsi = \thetab^T \xi + \epsi, \quad \text{for } i \in \{1, \ldots, n\}
+\end{eqnarray*}
+
+
+We now assume (from a Bayesian perspective) that also our parameter vector $\thetab$ is stochastic and follows a distribution.
+The observed values $\yi$ differ from the function values $\fxi$ by some additive noise, which is assumed to be i.i.d. Gaussian 
+$$
+\epsi \sim \mathcal{N}(0, \sigma^2)$$
+and independent of $\xv$ and $\thetab$.
+
+\framebreak
+
+Let us assume we have \textbf{prior beliefs} about the parameter $\thetab$ that are represented in a prior distribution $\thetab \sim \mathcal{N}(\zero, \tau^2 \id_p).$
+
+\lz 
+
+Whenever data points are observed, we update the parameters' prior distribution according to Bayes' rule 
+
+$$
+\underbrace{p(\thetab | \Xmat, \ydat)}_{\text{posterior}} = \frac{\overbrace{p(\ydat | \Xmat, \thetab)}^{\text{likelihood}}\overbrace{q(\thetab)}^{\text{prior}}}{\underbrace{p(\ydat|\Xmat)}_{\text{marginal}}}. 
+$$
+
+\framebreak 
+
+The posterior distribution of the parameter $\thetab$ is again normal distributed (the Gaussian family is self-conjugate): 
+
+$$
+\thetab ~|~ \Xmat, \ydat \sim \mathcal{N}(\sigma^{-2}\bm{A}^{-1}\Xmat^\top\ydat, \bm{A}^{-1})
+$$
+
+with $\bm{A}:= \sigma^{-2}\Xmat^\top\Xmat + \frac{1}{\tau^2} \id_p$.
+
+\lz 
+
+\begin{footnotesize}
+\textbf{Note:} If the posterior distribution $p(\thetab~|~\Xmat, \ydat)$ are in the same probability distribution family as the prior $q(\thetab)$ w.r.t. a specific likelihood function $p(\ydat~|~\Xmat, \thetab)$, they are called \textbf{conjugate distributions}. The prior is then called a \textbf{conjugate prior} for the likelihood. The Gaussian family is self-conjugate: Choosing a Gaussian prior for a Gaussian Likelihood ensures that the posterior is Gaussian. 
+\end{footnotesize}
+
+\framebreak 
+
+\begin{figure}
+  \includegraphics[width=0.5\textwidth]{figure_man/bayes-lm/prior-1.pdf}~\includegraphics[width=0.5\textwidth]{figure_man/bayes-lm/prior-2.pdf}
+\end{figure}
+
+\framebreak 
+
+\foreach \x in{5, 10, 20} {
+\begin{figure}
+  \includegraphics[width=0.5\textwidth]{figure_man/bayes-lm/posterior-\x-1.pdf}~  \includegraphics[width=0.5\textwidth]{figure_man/bayes-lm/posterior-\x-2.pdf}
+\end{figure}
+}
+
+\framebreak 
+
+\begin{footnotesize}
+\textbf{Proof:}\\
+We want to show that 
+\begin{itemize}
+  \item for a Gaussian prior on $\thetab \sim \mathcal{N}(\zero, \tau^2 \id_p)$
+  \item for a Gaussian Likelihood $y ~|~ \Xmat, \thetab \sim \mathcal{N}(\Xmat^\top \thetab, \sigma^2 \id_n)$ 
+\end{itemize}
+the resulting posterior is Gaussian $\mathcal{N}(\sigma^{-2}\bm{A}^{-1}\Xmat^\top\ydat, \bm{A}^{-1})$ with $\bm{A}:= \sigma^{-2}\Xmat^\top\Xmat + \frac{1}{\tau^2} \id_p$.
+
+Plugging in Bayes' rule and multiplying out yields
+\begin{eqnarray*}
+p(\thetab | \Xmat, \ydat) &\propto& p(\ydat | \Xmat, \thetab) q(\thetab) \propto \exp\biggl[-\frac{1}{2\sigma^2}(\ydat - \Xmat\thetab)^\top(\ydat - \Xmat\thetab)-\frac{1}{2\tau^2}\thetab^\top\thetab\biggr] \\
+&=& \exp\biggl[-\frac{1}{2}\biggl(\underbrace{\sigma^{-2}\ydat^\top\ydat}_{\text{doesn't depend on } \thetab} - 2 \sigma^{-2} \ydat^\top \Xmat \thetab + \sigma^{-2}\thetab^\top \Xmat^\top \Xmat \thetab  + \tau^{-2} \thetab^\top\thetab \biggr)\biggr] \\
+&\propto& \exp\biggl[-\frac{1}{2}\biggl(\sigma^{-2}\thetab^\top \Xmat^\top \Xmat \thetab  + \tau^{-2} \thetab^\top\thetab  - 2 \sigma^{-2} \ydat^\top \Xmat \thetab \biggr)\biggr] \\
+&=& \exp\biggl[-\frac{1}{2}\thetab^\top\underbrace{\biggl(\sigma^{-2} \Xmat^\top \Xmat + \tau^{-2} \id_p \biggr)}_{:= \Amat} \thetab + \textcolor{red}{\sigma^{-2} \ydat^\top \Xmat \thetab}\biggr]
+\end{eqnarray*}
+
+This expression resembles a normal density - except for the term in red!
+
+\framebreak
+
+\textbf{Note:} We need not worry about the normalizing constant since its mere role is to convert probability functions to density functions with a total probability of one.
+
+
+We subtract a (not yet defined) constant $c$ while compensating for this change by adding the respective terms (\enquote{adding $0$}), emphasized in green:
+
+\begin{eqnarray*}
+	p(\thetab | \Xmat, \ydat) &\propto&  \exp\biggl[-\frac{1}{2}(\thetab \textcolor{green}{- c})^\top\Amat  (\thetab \textcolor{green}{- c}) \textcolor{green}{- c^\top \Amat \thetab} + \underbrace{\textcolor{green}{\frac{1}{2}c^\top\Amat c}}_{\text{doesn't depend on } \thetab} +\sigma^{-2} \ydat^\top \Xmat \thetab\biggr] \\
+	&\propto& \exp\biggl[-\frac{1}{2}(\thetab \textcolor{green}{- c})^\top\Amat  (\thetab \textcolor{green}{- c}) \textcolor{green}{- c^\top \Amat \thetab} +\sigma^{-2} \ydat^\top \Xmat \thetab\biggr]
+\end{eqnarray*}
+
+If we choose $c$ such that $- c^\top \Amat \thetab +\sigma^{-2} \ydat^\top \Xmat \thetab = 0$, the posterior is normal with mean $c$ and covariance matrix $\Amat^{-1}$. Taking into account that $\Amat$ is symmetric, this is if we choose
+
+\begin{eqnarray*}
+&& \sigma^{-2} \ydat^\top \Xmat = c^\top\Amat \\
+&\Leftrightarrow & \sigma^{-2} \ydat^\top \Xmat \Amat^{-1} = c^\top \\
+&\Leftrightarrow& c = \sigma^{-2} \Amat^{-1} \Xmat^\top \ydat
+\end{eqnarray*}
+
+as claimed.
+
+\end{footnotesize}
+
+\framebreak 
+
+Based on the posterior distribution 
+
+$$
+\thetab ~|~ \Xmat, \ydat \sim \mathcal{N}(\sigma^{-2}\bm{A}^{-1}\Xmat^\top\ydat, \bm{A}^{-1})
+$$
+
+we can derive the predictive distribution for a new observations $\xv_*$. The predictive distribution for the Bayesian linear model, i.e. the distribution of $\thetab^\top \xv_*$, is 
+
+$$
+y_* ~|~ \Xmat, \ydat, \xv_* \sim \mathcal{N}(\sigma^{-2}\ydat^\top \Xmat \Amat^{-1}\xv_*, \xv_*^\top\Amat^{-1}\xv_*)
+$$
+
+(applying the rules for linear transformations of Gaussians). 
+
+\framebreak 
+
+
+\foreach \x in{5, 10, 20} {
+\begin{figure}
+  \includegraphics[width=0.5\textwidth]{figure_man/bayes-lm/posterior-\x-3.pdf} \\
+  \begin{footnotesize}
+    For every test input $\xv_*$, we get a distribution over the prediction $y_*$. In particular, we get a posterior mean (orange) and a posterior variance (grey region equals $+/-$ two times standard deviation). 
+  \end{footnotesize}
+\end{figure}
+}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Summary: The Bayesian Linear Model}
+
+\begin{itemize}
+  \item By switching to a Bayesian perspective, we do not only have point estimates for the parameter $\thetab$, but whole \textbf{distributions}
+  \item From the posterior distribution of $\thetab$, we can derive a predictive distribution for $y_* = \thetab^\top \xv_*$.  
+  \item We can perform online updates: Whenever datapoints are observed, we can update the \textbf{posterior distribution} of $\thetab$
+\end{itemize}
+
+Next, we want to develop a theory for general shape functions, and not only for linear function. 
+
+\end{vbframe}
+
+
+
+
+
+
+
+% \framebreak
+% 
+% Let $\Xspace = \R$. In the simplest case, the features are not modified: $\phi(x) = x$.
+% 
+% \lz
+% 
+% In the above example we might assume that the function has a quadratic shape. We would project our one-dimensional features into a two-dimensional feature space via
+% 
+% $$
+% \phi(x) = (x, x^2).
+% $$
+% 
+% The resulting model is
+% 
+% $$
+% f(x) = \theta^\top \phi(x) = \theta_1 x + \theta_2 x^2.
+% $$
+% 
+% The following plots show the posterior distribution of $\theta_1, \theta_2$ for the observed data. The more observations we have the \enquote{surer} we are about the parameters value.
+% 
+% \framebreak
+% 
+% \vspace*{1cm}
+% <<eval = FALSE, echo = F, fig.height=3>>=
+% plots = list()
+% titles = c("a)", "b)", "c)")
+% nobs = c(1, 5, 50)
+
+% for (j in 1:3) {
+%   i = nobs[j]
+%   A = 1 / sigma^2 * t(as.matrix(d[1:i, 1:2])) %*% as.matrix(d[1:i, 1:2]) + diag(c(1, 1))
+%   probs$posterior = mvtnorm::dmvnorm(data.grid, mean = 1 / sigma^2 * solve(A) %*% t(d[1:i, c("x1", "x2")])
+% d[1:i, ]$y, sigma = solve(A))
+%   p = ggplot(probs, aes(x = theta1, y = theta2, z = posterior)) + geom_contour( colour = i)
+%   p = p + coord_fixed(xlim = c(-2, 2), ylim = c(-2, 2), ratio = 1)
+%   p = p + xlab(expression(theta[1])) + ylab(expression(theta[2]))
+%   p = p + geom_raster(aes(fill = posterior)) + geom_contour(colour = "white", bins = 5)
+%   p = p + guides(fill = FALSE) + ggtitle(titles[j])
+%   p
+
+%   plots[[paste("n = ", i, sep = "")]] = p
+% }
+
+% do.call("grid.arrange", c(plots, ncol = 3))
+% @
+% % \vspace*{-0.6cm}
+% % 
+% % \begin{center}
+% % \begin{footnotesize}
+% % Contour lines of the posterior distribution of $(\theta_0, \theta_1)$ after a) 1 observation, b) 5 observations and c) 50 observations.
+% % \end{footnotesize}
+% % \end{center}
+
+% \end{vbframe}
+
+\endlecture
+\end{document}

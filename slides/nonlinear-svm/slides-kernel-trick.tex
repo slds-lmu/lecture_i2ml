@@ -1,0 +1,259 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+\input{../../latex-math/ml-svm}
+
+\newcommand{\titlefigure}{figure_man/linear_kernel.png}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{The Kernel Trick}
+\lecture{Introduction to Machine Learning}
+
+
+\begin{vbframe}{Dual SVM Problem with Feature Map}
+
+
+The dual (soft-margin) SVM is: 
+\begin{footnotesize}
+\begin{eqnarray*}
+    & \max_{\alpha} & \sum_{i=1}^n \alpha_i - \frac{1}{2}\sum_{i=1}^n\sum_{j=1}^n\alpha_i\alpha_j\yi y^{(j)} \textcolor{blue}{\scp{\phi\left(\xi\right)}{\phi\left(\xv^{(j)}\right)}}  \\
+    & \text{s.t. } & 0 \le \alpha_i \le C, \\
+    & \quad & \sum_{i=1}^n \alpha_i \yi = 0, 
+\end{eqnarray*}
+\end{footnotesize}
+
+Here we replaced all features $\xi$ with feature-generated, transformed versions $\phi(\xi)$. 
+
+\lz 
+
+We see: The optimization problem only depends on \textbf{pair-wise inner products} of the inputs. 
+
+\lz
+
+This now allows a trick to enable efficient solving.
+
+
+
+\end{vbframe}
+
+\begin{vbframe}{Kernel = Feature Map + Inner product}
+
+
+Instead of first mapping the features to the higher-dimensional space and calculating the inner products afterwards,
+
+\begin{figure}
+\begin{tikzpicture}[scale=0.6,transform shape]
+
+  \tikzset{input/.style={}} % <= this can be avoided but then use simply \node[name=input]{};
+
+  \node [input, name=input] {};
+  \node [input, right=0.5cm of input, above = 0.5 of input] (a) {$\xi$};
+  \node [input, right = 1 cm of a] (b) {$\phi(\xi)$};
+  \node [input, right=0.5cm of input, below = 0.5 of input] (c) {$\xv^{(j)}$};
+  \node [input, right = 1 cm of c] (d) {$\phi(\xv^{(j)})$};
+  \node [input, right = 4cm of input] (e) {$\scp{\phi(\xi)}{\phi(\xv^{(j)})}$};
+
+    \begin{scope}[->]
+        \draw (a) -- (b);
+        \draw (b) -- (e);
+        \draw (c) -- (d);
+        \draw (d) -- (e);
+    \end{scope} 
+\end{tikzpicture}
+\end{figure}
+
+it would be nice to have an efficient \enquote{shortcut} computation: 
+
+\begin{figure}
+\begin{tikzpicture}[scale=0.6,transform shape]
+
+  \tikzset{input/.style={}} % <= this can be avoided but then use simply \node[name=input]{};
+
+  \node [input, name=input] {};
+  \node [input, right=0.5cm of input, above = 0.5 of input] (a) {$\xi$};
+  \node [input, right=0.5cm of input, below = 0.5 of input] (b) {$\xv^{(j)}$};
+  \node [input, right = 4cm of input] (e) {$k(\xi, \xv^{(j)})$};
+
+    \begin{scope}[->]
+        \draw[blue] (a) -- (e);
+        \draw[blue] (b) -- (e);
+    \end{scope} 
+\end{tikzpicture}
+\end{figure}
+
+
+We will see: \textbf{Kernels} give us such a \enquote{shortcut}.
+\end{vbframe}
+
+
+\begin{vbframe}{Mercer Kernel}
+
+
+  \textbf{Definition:} A \textbf{(Mercer) kernel} on a space~$\Xspace$ is a
+  continuous function
+  $$ k : \Xspace \times \Xspace \to \R $$
+  of two arguments with the properties
+  \begin{itemize}
+    \item Symmetry: $k(\xv, \tilde \xv) = k(\tilde \xv, \xv)$ for all
+    $\xv, \tilde \xv \in \Xspace$.
+    \item Positive definiteness: For each finite subset $\left\{\xv^{(1)}, \dots, \xv^{(n)}\right\}$
+    the \textbf{kernel Gram matrix} $\bm{K} \in \R^{n \times n}$ with entries
+    $K_{ij} = k(\xi, \xv^{(j)})$ is positive semi-definite.
+  \end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Constant and Linear Kernel}
+
+  \begin{itemize}
+    \item Every constant function taking a non-negative value is a
+    (very boring) kernel.
+    \item An inner product is a kernel.
+    We call the standard inner product $k(\xv, \tilde \xv) = \xv^\top \tilde \xv$
+    the \textbf{linear kernel}. This is simply our usual linear SVM as discussed.
+  \end{itemize}
+  
+
+\begin{center}
+\includegraphics[width = 11cm ]{figure_man/linear_kernel.png}
+\end{center}
+
+\end{vbframe}
+
+\begin{vbframe}{Sum and Product Kernels}
+    A kernel can be constructed from other kernels $k_1$ and~$k_2$:
+  \begin{itemize}
+      \item For $\lambda \geq 0$, $\lambda \cdot k_1$ is a kernel.
+      \item $k_1 + k_2$ is a kernel.
+      \item $k_1 \cdot k_2$ is a kernel (thus also $k_1^n$).
+    \end{itemize}
+    
+    \lz
+
+    The proofs remain as (simple) exercises.
+\end{vbframe}
+
+\begin{vbframe}{Polynomial Kernel}
+ % This allows us to construct the \textbf{polynomial kernel}
+  $$k(\xv, \tilde \xv) = (\xv^\top \tilde \xv + b)^d, \text{ for } b\geq 0, d \in \N$$
+
+\begin{center}
+\includegraphics[width = 10cm ]{figure_man/polynom_kernel0.png}
+\end{center}
+
+From the sum-product rules it directly follows that this is a kernel.
+\end{vbframe}
+
+\begin{vbframe}{RBF Kernel}
+
+The \enquote{radial} \textbf{Gaussian kernel} is defined as
+$$k(\xv, \tilde \xv) = \exp(-\frac{\|\xv - \tilde \xv\|^2}{2\sigma^2})$$ 
+or 
+$$k(\xv, \tilde \xv) = \exp(-\gamma \|\xv - \tilde \xv\|^2), ~ \gamma>0$$
+
+\begin{center}
+\includegraphics[width = 11cm ]{figure_man/rbf_kernel0.png}
+\end{center}
+\end{vbframe}
+
+
+\begin{frame}{Kernel SVM}
+
+
+We kernelize the dual (soft-margin) SVM problem by replacing all inner products $\scp{\phi\left(\xi\right)}{\phi\left(\xv^{(j)}\right)}$ by kernels $k(\xi, \xv^{(j)})$
+\only<1>{
+\begin{eqnarray*}
+    & \max_{\alpha} & \sum_{i=1}^n \alpha_i - \frac{1}{2}\sum_{i=1}^n\sum_{j=1}^n\alpha_i\alpha_j\yi y^{(j)} \textcolor{blue}{\scp{\phi\left(\xi\right)}{\phi\left(\xv^{(j)}\right)}}  \\
+    & \text{s.t. } & 0 \le \alpha_i \le C, \\
+    & \quad & \sum_{i=1}^n \alpha_i \yi = 0. 
+\end{eqnarray*}
+}
+\only<2->{
+\begin{eqnarray*}
+    & \max_{\alpha} & \sum_{i=1}^n \alpha_i - \frac{1}{2}\sum_{i=1}^n\sum_{j=1}^n\alpha_i\alpha_j\yi y^{(j)} \textcolor{blue}{k(\xi, \xv^{(j)})}  \\
+    & \text{s.t. } & 0 \le \alpha_i \le C, \\
+    & \quad & \sum_{i=1}^n \alpha_i \yi = 0. 
+\end{eqnarray*}
+}
+\only<3>{
+In more compact matrix notation with $\bm{K}$ denoting the kernel matrix:  
+\vspace*{-.5cm}
+\begin{eqnarray*}
+  & \max\limits_{\alpha \in \R^n} & \one^\top \alpha - \frac{1}{2} \alpha^\top \diag(\ydat) \bm{K} \diag(\ydat) \alpha \\
+  & \text{s.t.} & \alpha^\top \ydat = 0, \\
+  & \quad & 0 \leq \alpha \leq C.
+\end{eqnarray*}
+}
+This problem is still convex because $\bm{K}$ is psd!
+
+\end{frame}
+
+\begin{frame}{Kernel SVM: Predictions}
+
+For the linear soft-margin SVM we had:
+  $$ \fx = \thetah^T \xv + \theta_0 \quad \text{ and } \quad \thetah = \sumin \alpha_i \yi \xi $$  
+After the feature map this becomes:
+$$ \fx = \scp{\thetah}{\phi(\xv)} + \theta_0 \quad \text{ and } \quad \thetah = \sumin \alpha_i \yi \phi(\xi) $$  
+Assuming that the dot-product still follows its bi-linear rules in the mapped space and using the kernel
+trick again:
+$$ 
+\scp{\thetah}{\phi(\xv)} = 
+\scp{\sumin \alpha_i \yi \phi(\xi)}{\phi(\xv)} =
+\sumin \alpha_i \yi \scp{\phi(\xi)}{\phi(\xv)} =
+$$
+$$
+= \sumin \alpha_i \yi k(\xi, \xv), \qquad \text{ so: } \qquad \fx = \sumin \alpha_i \yi k(\xi, \xv)  + \theta_0
+$$  
+  
+
+\end{frame}
+
+\begin{vbframe}{MNIST Example}
+
+    \begin{itemize}
+      \item Through this kernelization we can now conveniently perform feature generation even
+        for higher-dimensional data. Actually, this is how we computed all previous examples, too.
+      \item We again consider MNIST with $28 \times 28$ bitmaps of gray values.
+      \item A polynomial kernel extracts $\mat{d + p \\ d}-1$ features and for the RBF kernel the dimensionality would be infinite.
+      \item We train SVMs again on 700 observations of the MNIST data set and use the rest of the data for testing; and use C=1.
+
+    \end{itemize}
+
+\begin{center}
+\includegraphics[width = 3.5cm ]{figure_man/introduction/mnist-eps-converted-to.pdf} ~~~ \includegraphics[width=5cm]{figure_man/error.png}
+\end{center}
+
+
+\end{vbframe}
+
+
+
+
+\begin{vbframe}{Final Comments}
+
+\begin{itemize}
+\item The kernel trick allows us to make linear machines non-linear in a very
+  efficient manner.
+\item Linear separation in high-dimensional spaces is \textbf{very flexible}.
+
+  \item Learning takes place in the feature space, while predictions are computed in the input space.
+  \item Both the polynomial and Gaussian kernels can be computed in linear time. Computing inner products of features is \textbf{much faster} than computing the features themselves.
+\item What if a good feature map~$\phi$ is already available?
+Then this feature map canonically induces a kernel by
+defining $k(\xv, \tilde \xv) = \scp{\phi(\xv)}{\phi(\tilde \xv)}$.
+There is no problem with an explicit feature representation
+as long as it is efficiently computable.
+\end{itemize}
+\end{vbframe}
+
+
+\endlecture
+\end{document}

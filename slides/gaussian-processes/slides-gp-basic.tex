@@ -1,0 +1,563 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+\input{../../latex-math/ml-gp}
+
+\newcommand{\titlefigure}{figure_man/discrete/marginalization-more.png} %not best picture
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Gaussian Processes}
+\lecture{Introduction to Machine Learning}
+
+
+\begin{vbframe}{Weight-Space View}
+
+\begin{itemize}
+  \item Until now we considered a hypothesis space $\Hspace$ of parameterized functions $\fxt$ (in particular, the space of linear functions). 
+  \item Using Bayesian inference, we derived distributions for $\thetab$ after having observed data $\D$. 
+  \item Prior believes about the parameter are expressed via a prior distribution $q(\thetab)$, which is updated according to Bayes' rule 
+
+  $$
+  \underbrace{p(\thetab | \Xmat, \ydat)}_{\text{posterior}} = \frac{\overbrace{p(\ydat | \Xmat, \thetab)}^{\text{likelihood}}\overbrace{q(\thetab)}^{\text{prior}}}{\underbrace{p(\ydat|\Xmat)}_{\text{marginal}}}. 
+  $$
+\end{itemize}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Function-space View}
+
+Let us change our point of view: 
+
+\begin{itemize}
+  \item Instead of \enquote{searching} for a parameter  $\thetab$ in the parameter space, we directly search in a space of \enquote{allowed} functions $\Hspace$.  
+  \item We still use Bayesian inference, but instead specifying a prior distribution over a parameter, we specify a prior distribution \textbf{over functions} and update it according to the data points we have observed. 
+\end{itemize}
+
+\framebreak 
+
+Intuitively, imagine we could draw a huge number of functions from some prior distribution over functions $^{(*)}$. 
+
+\begin{figure}
+  \includegraphics[width=0.8\textwidth]{figure_man/gp-sample/gp-sample-1-1.pdf}
+\end{figure}
+
+\vspace*{-0.5cm}
+
+\begin{footnotesize}
+  $^{(*)}$ We will see in a minute how distributions over functions can be specified. 
+\end{footnotesize}
+
+\framebreak 
+
+\foreach \x in{1,2,3} {
+    After observing some data points, we are only allowed to sample those functions, that are consistent with the data. \\
+  \begin{figure}
+    \includegraphics[width=0.8\textwidth]{figure_man/gp-sample/gp-sample-2-\x.pdf}
+  \end{figure}
+}
+
+\framebreak 
+
+As we observe more and more data points, the variety of functions consistent with the data shrinks. 
+  \begin{figure}
+    \includegraphics[width=0.8\textwidth]{figure_man/gp-sample/gp-sample-2-4.pdf}
+  \end{figure}
+
+\framebreak 
+
+Inutitively, there is something like \enquote{mean} and a \enquote{variance} of a distribution over functions. 
+
+  \begin{figure}
+    \includegraphics[width=0.8\textwidth]{figure_man/gp-sample/gp-sample-2-4.pdf}
+  \end{figure}
+
+\end{vbframe}
+
+\begin{frame}{Weight-space vs. Function-space View}
+
+\begin{table}
+  \begin{tabular}{cc}
+  \textbf{Weight-Space View} & \textbf{Function-Space View} \vspace{4mm}\\ 
+  Parameterize functions & \vspace{1mm}\\
+  \footnotesize Example: $\fxt = \thetab^\top \xv$ & \vspace{3mm}\\
+  Define distributions on $\thetab$ & Define distributions on $f$ \vspace{4mm}\\
+  Inference in parameter space $\Theta$ & Inference in function space $\Hspace$
+  \end{tabular}
+\end{table}  
+
+\lz
+
+Next, we will see how we can define distributions over functions mathematically. 
+
+
+\end{frame}
+
+\section{Distributions on Functions}
+
+\begin{vbframe}{Discrete Functions}
+
+For simplicity, let us consider functions with finite domains first. 
+
+\lz 
+
+
+Let $\mathcal{X} = \left\{\xv^{(1)}, \dots , \xv^{(n)}\right\}$ be a finite set of elements and $\Hspace$ the set of all functions from $\mathcal{X} \to \R$.
+
+\lz
+
+Since the domain of any $h(.) \in \Hspace$ has only $n$ elements, we can represent the function $h(.)$ compactly as a $n$-dimensional vector $$\bm{h} = \left[h\left(\xv^{(1)}\right), \dots, h\left(\xv^{(n)}\right)\right].$$
+\end{vbframe}
+
+
+\begin{frame}{Discrete Functions}
+
+\textbf{Example 1:} Let us consider $h: \Xspace \to \Yspace$ where the input space consists of \textbf{two} points $\Xspace = \{0, 1\}$. 
+
+\lz 
+
+Examples for functions that live in this space: 
+
+\begin{figure}[h]
+\foreach \x in{1,2,3} {
+  \includegraphics<\x>[width=0.7\linewidth]{figure_man/discrete/example_2_\x.pdf} \par
+}
+\end{figure}
+
+
+\end{frame}
+
+\begin{frame}{Discrete Functions}
+
+\textbf{Example 2:} Let us consider $h: \Xspace \to \Yspace$ where the input space consists of \textbf{five} points $\Xspace = \{0, 0.25, 0.5, 0.75, 1\}$.
+
+\lz 
+
+Examples for functions that live in this space: 
+
+\begin{figure}[h]
+\foreach \x in{1,2,3} {
+  \includegraphics<\x>[width=0.7\linewidth]{figure_man/discrete/example_5_\x.pdf}\par
+}
+\end{figure}
+
+\end{frame}
+
+
+\begin{frame}{Discrete Functions}
+
+\textbf{Example 3:} Let us consider $h: \Xspace \to \Yspace$ where the input space consists of \textbf{ten} points. 
+
+\lz 
+
+Examples for functions that live in this space: 
+
+\begin{figure}[h]
+\foreach \x in{1,2,3} {
+  \includegraphics<\x>[width=0.7\linewidth]{figure_man/discrete/example_10_\x.pdf}\par
+}
+\end{figure}
+
+\end{frame}
+
+
+\begin{vbframe}{Distributions on Discrete Functions}
+
+\vspace*{0.5cm}
+
+One natural way to specify a probability function on discrete function $h \in \Hspace$ is to use the vector representation 
+$$
+  \bm{h} = \left[h\left(\xi[1]\right), h\left(\xi[2]\right), \dots, h\left(\xi[n]\right)\right]
+$$ 
+
+
+of the function.
+
+\lz
+
+Let us see $\bm{h}$ as a $n$-dimensional random variable. We will further assume the following normal distribution: 
+
+$$
+  \bm{h} \sim \mathcal{N}\left(\bm{m}, \bm{K}\right).
+$$ 
+
+\textbf{Note: } For now, we set $\bm{m} = \bm{0}$ and take the covariance matrix $\bm{K}$ as given. We will see later how they are chosen / estimated. 
+
+\end{vbframe}
+
+\begin{frame}{Discrete Functions}
+
+\textbf{Example 1 (continued):} Let $h: \Xspace \to \Yspace$ be a function that is defined on \textbf{two} points $\Xspace$. We sample functions by sampling from a two-dimensional normal variable
+
+$$
+\bm{h} = [h(1), h(2)] \sim \mathcal{N}(\bm{m}, \bm{K})
+$$
+
+
+\begin{figure}[H]
+\foreach \x in{1,2,3} {
+  \includegraphics<\x>[width=0.4\linewidth]{figure_man/discrete/example_norm_2_\x-a.pdf} ~  \includegraphics<\x>[width=0.4\linewidth]{figure_man/discrete/example_norm_2_\x-b.pdf} 
+} \par
+\begin{footnotesize}
+In this example, $m = (0, 0)$ and $K = \begin{pmatrix} 1 & 0.5 \\ 0.5 & 1 \end{pmatrix}$. 
+\end{footnotesize}
+\end{figure}
+
+\end{frame}
+
+
+\begin{frame}{Discrete Functions}
+
+\textbf{Example 2 (continued):} Let us consider $h: \Xspace \to \Yspace$ where the input space consists of \textbf{five} points. We sample functions by sampling from a five-dimensional normal variable
+
+
+$$
+\bm{h} = [h(1), h(2), h(3), h(4), h(5)] \sim \mathcal{N}(\bm{m}, \bm{K})
+$$
+
+\begin{figure}[h]
+\foreach \x in{1,2,3} {
+  \includegraphics<\x>[width=0.4\linewidth]{figure_man/discrete/example_norm_5_\x-a.pdf} ~  \includegraphics<\x>[width=0.4\linewidth]{figure_man/discrete/example_norm_5_\x-b.pdf}
+}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}{Discrete Functions}
+
+\textbf{Example 3 (continued):} Let us consider $h: \Xspace \to \Yspace$ where the input space consists of \textbf{ten} points. We sample functions by sampling from ten-dimensional normal variable
+
+$$
+\bm{h} = [h(1), h(2), \dots, h(10)] \sim \mathcal{N}(\bm{m}, \bm{K})
+$$
+
+\begin{figure}[h]
+\foreach \x in{1,2,3} {
+  \includegraphics<\x>[width=0.4\linewidth]{figure_man/discrete/example_norm_10_\x-a.pdf} ~  \includegraphics<\x>[width=0.4\linewidth]{figure_man/discrete/example_norm_10_\x-b.pdf}
+}
+\end{figure}
+
+\end{frame}
+
+
+\begin{vbframe}{Role of the Covariance Function}
+
+Note that the covariance controls the \enquote{shape} of the drawn function. Consider two extreme cases where function values are
+
+\begin{enumerate}
+  \item[a)] strongly correlated: $\bm{K} = \begin{footnotesize}\begin{pmatrix} 1 & 0.99 & \dots & 0.99 \\
+  0.99 & 1 & \dots & 0.99 \\
+  0.99 & 0.99 & \ddots & 0.99 \\
+  0.99 & \dots & 0.99 & 1 \end{pmatrix}\end{footnotesize}$
+  \item[b)] uncorrelated: $\bm{K} = \id$
+\end{enumerate}
+
+\begin{figure}
+  \includegraphics[width=0.35\linewidth]{figure_man/discrete/example_extreme_50-1.pdf} ~~  \includegraphics[width=0.35\linewidth]{figure_man/discrete/example_extreme_50-2.pdf}
+\end{figure}
+
+
+\framebreak 
+
+\begin{itemize}
+  \item \enquote{Meaningful} functions (on a numeric space $\Xspace$) may be characterized by a spatial property: \vspace*{0.2cm}
+  \begin{itemize}
+    \item[] If two points $\xi, \xi[j]$ are close in $\Xspace$-space, their function values $f(\xi), f(\xi[j])$ should be close in $\Yspace$-space. 
+  \end{itemize} \vspace*{0.2cm}
+  In other words: If they are close in $\Xspace$-space, their functions values should be \textbf{correlated}! \vspace*{0.4cm}
+  \item We can enforce that by choosing a covariance function with  
+  $$
+    \bm{K}_{ij} \text{ high, if } \xi[i], \xi[j] \text{ close.}
+  $$
+
+  \framebreak 
+
+  \item We can compute the entries of the covariance matrix by a function that is based on the distance between $\xi, \xi[j]$, for example: 
+  
+  \vspace*{0.2cm}
+  \begin{enumerate}
+    \item[c)] Spatial correlation: \begin{footnotesize}$K_{ij} = k(\xi[i], \xi[j]) = \exp\left(-\frac{1}{2}\left|\xi - \xi[j]\right|^2\right)$\end{footnotesize}
+  \end{enumerate}
+  
+\begin{figure}
+  \includegraphics[width=0.45\linewidth]{figure_man/discrete/example_extreme_50-4.pdf} ~~  \includegraphics[width=0.45\linewidth]{figure_man/discrete/example_extreme_50-3.pdf}
+\end{figure}
+
+\end{itemize}
+
+\begin{footnotesize}
+\textbf{Note}: $k(\cdot,\cdot)$ is known as the \textbf{covariance function} or \textbf{kernel}. It will be studied in more detail later on.
+\end{footnotesize}
+
+\end{vbframe}
+
+
+
+
+% \begin{vbframe}
+% \begin{figure}
+% 	\centering
+% 	\includegraphics{figure_man/discrete/sample2.png} \\
+% 	\begin{footnotesize} If we sample again, we get another function. 
+% 	\end{footnotesize}
+% \end{figure}
+
+
+% However, we are usually interested in functions with infinite domain size. 
+
+% \lz 
+
+% This idea is extended to infinite domain size via \textbf{Gaussian processes}. 
+
+% \end{vbframe}
+
+
+\section{Gaussian Processes}
+
+\begin{vbframe}{From Discrete to Continuous Functions}
+
+\begin{itemize}
+  \item We defined distributions on functions with discrete domain by defining a Gaussian on the vector of the respective function values 
+  $$
+    \mathbf{h} = [h(\xi[1]), h(\xi[2]), \dots, h(\xi[n])] \sim \mathcal{N}(\bm{m}, \bm{K})
+  $$
+
+  \item We can do this for $n \to \infty$ (as \enquote{granular} as we want)
+  \begin{figure}
+    \includegraphics[width = 0.9\textwidth]{figure_man/discrete/example_limit.pdf}
+  \end{figure}
+\end{itemize}
+
+\end{vbframe}
+
+\begin{frame}{From Discrete to Continuous Functions}
+
+
+\begin{itemize}
+  \item No matter how large $n$ is, we are still considering a function over a discrete domain. 
+  \item How can we extend our definition to functions with \textbf{continuous domain} $\Xspace \subset \R$?
+\end{itemize}
+
+\end{frame}
+
+
+\begin{frame}{Gaussian Processes: Intuition}
+
+\begin{itemize}
+  \only<1>{
+    \item Intuitively, a function $f$ drawn from \textbf{Gaussian process} can be understood as an \enquote{infinite} long Gaussian random vector. 
+    \item It is unclear how to handle an \enquote{infinite} long Gaussian random vector!
+  \lz 
+  \begin{figure}
+    \includegraphics[width=0.3\textwidth]{figure_man/question.png}
+  \end{figure}
+  }
+  \only<2-4>{
+    \item Thus, it is required that for \textbf{any finite set} of inputs $\{\xi[1], \dots, \xi[n]\} \subset \Xspace$, the vector $\mathbf{f}$ has a Gaussian distribution
+    $$
+      \bm{f} = \left[f\left(\xi[1]\right), \dots, f\left(\xi[n]\right)\right] \sim \mathcal{N}\left(\bm{m}, \bm{K}\right),
+    $$ 
+    with $\bm{m}$ and $\bm{K}$ being calculated by a mean function $m(.)$ / covariance function $k(.,.)$.
+    \item This property is called \textbf{Marginalization Property}. 
+    \begin{figure}
+      \only<2>{\includegraphics[width=0.4\textwidth]{figure_man/discrete/example_marginalization_5.pdf}\includegraphics[width=0.5\textwidth]{figure_man/discrete/marginalization-5.png}}
+      \only<3>{\includegraphics[width=0.4\textwidth]{figure_man/discrete/example_marginalization_10.pdf}\includegraphics[width=0.5\textwidth]{figure_man/discrete/marginalization-more.png}}
+      \only<4>{\includegraphics[width=0.4\textwidth]{figure_man/discrete/example_marginalization_50.pdf}\includegraphics[width=0.5\textwidth]{figure_man/discrete/marginalization-more.png}}
+   \end{figure}
+    }
+\end{itemize}
+
+\end{frame}
+
+
+\begin{vbframe}{Gaussian Processes}
+
+This intuitive explanation is formally defined as follows: 
+
+\lz 
+
+A function $\fx$ is generated by a GP $\gp$ if for \textbf{any finite} set of inputs $\left\{\xv^{(1)}, \dots, \xv^{(n)}\right\}$, the associated vector of function values $\bm{f} = \left(f(\xv^{(1)}), \dots, f(\xv^{(n)})\right)$ has a Gaussian distribution
+
+$$
+\bm{f} = \left[f\left(\xi[1]\right),\dots, f\left(\xi[n]\right)\right] \sim \mathcal{N}\left(\bm{m}, \bm{K}\right),
+$$
+
+with 
+
+
+\begin{eqnarray*}
+\textbf{m} &:=& \left(m\left(\xi\right)\right)_{i}, \quad
+\textbf{K} := \left(k\left(\xi, \xv^{(j)}\right)\right)_{i,j}, 
+\end{eqnarray*}
+ 
+where $m(\xv)$ is called mean function and $k(\xv, \xv^\prime)$ is called covariance function. 
+
+
+\framebreak 
+
+\vspace*{0.5cm} 
+
+A GP is thus \textbf{completely specified} by its mean and covariance function
+
+\vspace*{-0.2cm}
+\begin{eqnarray*}
+m(\xv) &=& \E[f(\xv)] \\
+k(\xv, \xv^\prime) &=& \E\biggl[\left( f(\xv) - \E[f(\xv)] \right) \left( f(\xv^\prime) - \E[f(\xv^\prime)] \right)\biggr]
+\end{eqnarray*}
+
+\vfill
+
+\textbf{Note}: For now, we assume $m(\xv) \equiv 0$. This is not necessarily a drastic limitation - thus it is common to consider GPs with a zero mean function. 
+
+% \framebreak
+
+% \vspace*{0.5cm}
+
+% Intuitively, one can think of a function $f$ drawn from a Gaussian process prior as a Gaussian distribution with an \enquote{infinitely} long mean vector and an \enquote{infinite by infinite} covariance matrix.
+
+% \lz
+
+% Each dimension of the Gaussian corresponds to an element $\xv$ from the domain $\mathcal{X}$. The corresponding component of the random vector represents the value of $f(\xv)$.
+
+% \lz
+
+% The \textbf{marginalization property} makes it possible to handle this \enquote{infinite} representation: evaluations of the process on any finite number of points follow a multivariate normal distribution.
+
+\end{vbframe}
+
+\begin{vbframe}{Sampling from a Gaussian process Prior}
+
+We can draw functions from a Gaussian process prior. Let us consider $\fx \sim \mathcal{GP}\left(0, k(\xv, \xv^\prime)\right)$ with the squared exponential covariance function $^{(*)}$
+
+$$
+k(\xv, \xv^\prime) = \exp\left(-\frac{1}{2\ls^2}\|\xv - \xv^\prime\|^2\right), ~~ \ls = 1.
+$$
+\vspace{-4cm}
+This specifies the Gaussian process completely. 
+
+\vspace{8cm}
+\footnotesize
+$^{(*)}$ We will talk later about different choices of covariance functions. 
+
+\normalsize
+
+\framebreak 
+
+To visualize a sample function, we 
+
+\begin{itemize}
+  \item choose a high number $n$ (equidistant) points $\left\{\xv^{(1)}, \dots, \xv^{(n)}\right\}$
+  \item compute the corresponding covariance matrix $\Kmat = \left(k\left(\xi, \xv^{(j)}\right)\right)_{i,j}$ by plugging in all pairs $\xv^{(i)}, \xv^{(j)}$ 
+  \item sample from a Gaussian $\bm{f} \sim \mathcal{N}(\bm{0}, \bm{K})$. 
+\end{itemize}
+
+We draw $10$ times from the Gaussian, to get $10$ different samples.  
+
+% Using $100$ equidistant points, we repeat the process of generating the Gaussian $10$ times ($10$ different functions) and draw each function by connecting the sampled values. 
+
+% \lz
+
+\begin{figure}
+  \includegraphics[width=0.9\textwidth]{figure_man/different-samples.png}
+\end{figure}
+
+\vspace{-0.2cm}
+Since we specified the mean function to be zero $m(\xv) \equiv 0$, the drawn functions have zero mean.
+
+\end{vbframe}
+
+
+\section{Gaussian Processes as Indexed Family}
+
+
+
+
+\begin{vbframe}{Gaussian processes as an Indexed Family}
+
+% \begin{block}{Definition}
+% A \textbf{Gaussian process} is a (infinite) collection of random variables, any \textbf{finite} number of which have a \textbf{joint Gaussian distribution}.
+% \end{block}
+
+% \lz
+
+A Gaussian process is a special case of a \textbf{stochastic process} which is defined as a collection of random variables indexed by some index set (also called an \textbf{indexed family}). What does it mean? 
+
+\lz 
+
+An \textbf{indexed family} is a mathematical function (or \enquote{rule}) to map indices $t \in T$ to objects in $\mathcal{S}$. 
+
+\begin{block}{Definition}
+A \textbf{family of elements in $\mathcal{S}$ indexed by $T$} (indexed family) is a surjective function 
+\vspace*{-0.3cm}
+\begin{eqnarray*}
+s: T &\to& \mathcal{S} \\
+   t &\mapsto& s_t = s(t) 
+\end{eqnarray*}
+\end{block}
+
+\end{vbframe}
+
+\begin{vbframe}{Indexed Family}
+
+Some simple examples for indexed families are:
+
+\vspace*{0.3cm}
+
+\begin{minipage}{0.43\linewidth}
+  \begin{itemize}
+  \item finite sequences (lists): $T = \{1, 2, \dots, n\}$ and $\left(s_t\right)_{t \in T} \in \R$ \vspace{1cm}
+  \item infinite sequences: $T = \N$ and $\left(s_t\right)_{t \in T} \in \R$
+  \end{itemize}
+\end{minipage}
+\begin{minipage}{0.55\linewidth}
+\includegraphics{figure_man/indexed_family/indexed_family_1.png} \\
+\includegraphics{figure_man/indexed_family/indexed_family_2.png}
+\end{minipage}
+
+
+\framebreak
+
+But the indexed set $\mathcal{S}$ can be something more complicated, for example functions or \textbf{random variables} (RV):
+
+\begin{minipage}{0.43\linewidth}
+  \vspace*{0.5cm}
+  \begin{itemize}
+    \item $T = \{1, \dots, m\}$, $Y_t$'s are RVs: Indexed family is a random vector. \vspace*{0.2cm}
+    \item $T = \{1, \dots, m\}$, $Y_t$'s are RVs: Indexed family is a stochastic process in discrete time \vspace*{0.2cm}
+    \item $T = \Z^2$, $Y_t$'s are RVs: Indexed family is a 2D-random walk.
+  \end{itemize}
+\end{minipage}\hfill
+\begin{minipage}{0.5\linewidth}
+\includegraphics{figure_man/indexed_family/indexed_family_4.png} \\
+\includegraphics{figure_man/indexed_family/indexed_family_3.png}
+\end{minipage}
+
+\end{vbframe}
+
+\begin{frame}{Indexed Family}
+
+\begin{itemize}
+  \item A Gaussian process is also an indexed family, where the random variables $f(\xv)$ are indexed by the input values $\xv \in \Xspace$. 
+  \item Their special feature: Any indexed (finite) random vector has a multivariate Gaussian distribution (which comes with all the nice properties of Gaussianity!). 
+\end{itemize}
+
+\begin{figure}
+  \includegraphics<1>[width=0.7\textwidth]{figure_man/indexed_family/indexed_family_5.png} \par
+  \only<1>{\begin{footnotesize} Visualization for a one-dimensional $\Xspace$. \end{footnotesize}}
+  \includegraphics<2>[width=0.6\textwidth]{figure_man/indexed_family/indexed_family_6.png}\par
+  \only<2>{\begin{footnotesize} Visualization for a two-dimensional $\Xspace$. \end{footnotesize}}
+\end{figure}
+
+\end{frame}
+
+
+\endlecture
+\end{document}
