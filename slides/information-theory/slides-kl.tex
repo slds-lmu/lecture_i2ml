@@ -1,0 +1,202 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/KL-log-diff.png}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Kullback-Leibler Divergence}
+\lecture{Introduction to Machine Learning}
+
+
+\begin{vbframe} {Kullback-Leibler Divergence}
+
+We now want to establish a measure of distance between (discrete or continuous) distributions with the same support:
+
+  $$ D_{KL}(p \| q) = \E_p \left[\log \frac{p(X)}{q(X)}\right] = \sum_{x \in \Xspace} p(x) \cdot \log \frac{p(x)}{q(x)}, $$
+  
+  or: 
+  
+  $$ D_{KL}(p \| q) = \E_p \left[\log \frac{p(X)}{q(X)}\right] = \int_{x \in \Xspace} p(x) \cdot \log \frac{p(x)}{q(x)}. $$
+
+In the above definition, we use the convention that $0 \log (0/0) = 0$ and the
+convention (based on continuity arguments) that $0 \log (0/q) = 0$ and $p \log(p/0) = \infty$. 
+Thus, if there is any symbol $x \in \Xspace$ such that $p(x) > 0$ and $q(x) = 0$,
+then $D_{KL}(p \| q) = \infty.$
+  
+\framebreak
+
+$$ D_{KL}(p \| q) = \E_p \left[\log \frac{p(X)}{q(X)}\right] $$
+
+\begin{itemize}
+  \item  What is the intuition behind this formula?  
+  \item  We will soon see that KL has quite some value in measuring \enquote{differences} but is not a true distance. 
+  \item  We already see that the formula is not symmetric and it often makes sense to think of $p$ as the first or original form of the data,
+    and $q$ as something that we want to measure the quality of with reference to $p$.
+  \end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe} {Information Inequality}
+
+$ D_{KL}(p \| q) \geq 0$ holds always true for any pair of distributions, and holds with equality if and only if $p=q$. 
+
+\lz  
+
+We use Jensen's inequality. Let $A$ be the support of $p$:
+\begin{equation*}
+    \begin{aligned} 
+-D_{KL}(p \| q) &= -\sum_{x \in A} p(x) \log \frac{p(x)}{q(x)} \\
+                &=  \sum_{x \in A} p(x) \log \frac{q(x)}{p(x)} \\
+                &\leq \log \sum_{x \in A} p(x) \frac{q(x)}{p(x)} \\
+                &\leq \log \sum_{x \in \Xspace} q(x) = log(1) = 0 
+    \end{aligned} 
+  \end{equation*}
+As $\log$ is strictly concave, Jensen also tells us that equality can only happen if $q(x)/p(x)$ is constant everywhere. That implies $p=q$.
+\end{vbframe}
+
+\begin{vbframe} {KL as Log-Difference}
+Suppose that data is being generated from an unknown distribution $p(x)$. 
+Suppose we modeled $p(x)$ using an approximating distribution $q(x)$. 
+
+\lz
+
+First, we could simply see KL as the expected log-difference between $p(x)$ and $q(x)$:
+
+  $$ D_{KL}(p \| q) = \E_p(\log(p(x)) - \log(q(x)).$$
+
+This is why we integrate out with respect to the data distribution $p$.
+A \enquote{good} approximation $q(x)$ should minimize the difference to $p(x)$.
+
+\framebreak
+
+In machine learning, KL divergence is commonly used to quantify how different one distribution is from another.\\
+\lz
+\textbf{Example}:
+Let $q(x)$ be a binomial distribution with $N = 2$ and $p = 0.3$ and let $p(x)$ be a discrete uniform distribution. Both distributions have the same support $\Xspace = \{0, 1, 2\}$.
+
+\begin{figure}
+\includegraphics[width = 5cm ]{figure_man/KL-log-diff.png} 
+\end{figure}
+
+\framebreak
+
+\begin{equation*}
+  \begin{split}
+ D_{KL}(p \| q) &= \sum_{x \in \Xspace} p(x) \ln \left( \frac{p(x)}{q(x)} \right)
+ \\ &= 0.333 \ln \left( \frac{0.333}{0.49} \right) + 0.333 \ln \left( \frac{0.333}{0.42} \right) + 0.333 \ln \left( \frac{0.333}{0.09} \right) \\ &= 0.23099 \text{    (nats)}
+  \end{split}
+\end{equation*}
+
+\begin{equation*}
+  \begin{split}
+ D_{KL}(q \| p) &= \sum_{x \in \Xspace} q(x) \ln \left( \frac{q(x)}{p(x)} \right)
+ \\ &= 0.49 \ln \left( \frac{0.49}{0.333} \right) + 0.42 \ln \left( \frac{0.42}{0.333} \right) + 0.09 \ln \left( \frac{0.09}{0.333} \right) \\ &= 0.16801 \text{    (nats)}
+  \end{split}
+\end{equation*}
+
+Again, note that $D_{KL}(p \| q) \neq D_{KL}(q \| p)$.
+\end{vbframe}
+
+\begin{vbframe} {KL in Fitting}
+
+Because KL quantifies the difference between distributions, it can be used as a loss function to find a good fit for the observed data.
+
+\begin{figure}
+    \centering
+      \scalebox{0.9}{\includegraphics{figure/binom1.png}}
+      \tiny{\\ Credit: Will Kurt}
+      \caption{ \footnotesize{\textit{Left}: Histogram of observed frequencies of a random variable $X$ which takes values between 0 and 10. \textit{Right}: The KL divergence between the observed data and Binom(10,p) is minimized when $p \approx 0.57$.}}
+\end{figure}
+
+{\tiny Will Kurt (2017): Kullback-Leibler Divergence Explained. 
+\emph{\url{https://www.countbayesie.com/blog/2017/5/9/kullback-leibler-divergence-explained}}\par}
+
+\framebreak
+
+Because KL quantifies the difference between distributions, it can be used as a loss function to find a good fit for the observed data.
+
+\begin{figure}
+    \centering
+      \scalebox{0.9}{\includegraphics{figure/binom2.png}}
+      \tiny{\\ Credit: Will Kurt}
+      \caption{\footnotesize{\textit{Left}: Histogram of observed frequencies of a random variable which takes values between 0 and 10. \textit{Right}: Fitted Binomial distribution ($p \approx 0.57$).}}
+\end{figure}
+
+On the right is the Binomial distribution that minimizes the KL divergence.
+\end{vbframe}
+
+\begin{vbframe}{KL as likelihood ratio}
+
+\begin{itemize}
+\item Let us assume we have some data and want to figure out whether $p(x)$ or $q(x)$ matches it better.
+\item How do we usually do that in stats? Likelihood ratio! 
+\end{itemize}
+
+$$ LR = \frac{p(x)}{q(x)} $$
+  
+In the above, if for $x$ we have $LR>1$, then $p$ seems better, for $LR < 1$ $q$ seems better.
+
+\framebreak
+
+Or we can compute LR for a complete set of data (as always, logs make our life easier):
+$$ LR = \prod_i \frac{p(\xi)}{q(\xi)} \qquad LLR = \sum_i \log \frac{p(\xi)}{q(\xi)} $$
+Now let us assume that our data already come from $p$. It does not really make sense anymore to ask 
+whether $p$ or $q$ fit the data better.
+
+But maybe we want to pose the question "How different is $q$ from $p$?" by formulating it as:
+"If we sample many data from $p$, how easily can we see that $p$ is better than $q$ through LR, on average?"
+$$ \E_p \left[\log \frac{p(x)}{q(x)}\right] $$
+That expected LR is really KL!
+
+\framebreak 
+
+In summary we could say for KL:
+\begin{itemize}
+\item It measures how much "evidence" each sample provides on average to distinguish $p$ from $q$, 
+  if you sample from $p$.
+\item If $p$ and $q$ are very similar, most samples will not help much, and vice versa for very different distributions.
+\item In practice, we often want to make the approximation $q$ as indistinguishable from the real $p$ (our data) as possible. We already did that when we fitted (in our log-difference perspective).
+\end{itemize}
+
+\end{vbframe}
+
+
+%\begin{vbframe} {Kullback-Leibler Divergence - Summary}
+%  \begin{itemize}
+%    \item For discrete probability distributions 
+%    %$p(x)$ and $q(x)$, 
+%    the KL divergence %$D_{KL}(p \| q)$ from $p$ to $q$ 
+%    is:
+%    $$D_{KL}(p \| q) :=  \sum_{x \in \Xspace} p(x) \cdot \log \frac{p(x)}{q(x)}$$
+%    \item For probability densities: 
+%    %$p(x)$ and $q(x)$, 
+%    %the KL divergence 
+%    %$D_{KL}(p \| q)$ from $p$ to $q$ is :
+%  $$D_{KL}(p \| q) :=  \int_{-\infty}^{\infty} p(x) \cdot \log \frac{p(x)}{q(x)} dx $$
+%  \item $D_{KL}(p \| q)$ is only defined if, for all $x$, $q(x) = 0$ implies $p(x) = 0$.
+  
+%  \item $D_{KL}(p \| q) \geq 0$ and $D_{KL}(p \| q) = 0$ only if $p(x) = q(x)$ almost everywhere.
+%  %\framebreak
+%  \item KL divergence is a measure of the difference between distributions/densities that is in general not symmetric and not a true distance metric.
+%  % \item In general: $D_{KL}(p \| q) \neq D_{KL}(q \| p)$ (no symmetry). Therefore, it is not a true \enquote{distance metric}.
+%  % \item In machine learning, minimizing the KL divergence between the data distribution and the model distribution is equivalent to maximum likelihood estimation.
+%  % \item Relationship to cross-entropy;
+%  %   \begin{align*}
+%  %        D_{KL}(p||q) &= H_q(p) - H(p)  \\
+%  %        D_{KL}(q||p) &= H_p(q) - H(q)
+%  %     \end{align*}
+%  \end{itemize}
+%\end{vbframe}
+
+
+\endlecture
+\end{document}

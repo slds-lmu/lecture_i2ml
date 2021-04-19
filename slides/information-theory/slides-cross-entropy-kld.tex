@@ -1,0 +1,169 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/shift.png}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Cross-Entropy, KL and Source Coding}
+\lecture{Introduction to Machine Learning}
+
+
+\begin{vbframe} {Cross-Entropy - Discrete Case}
+
+\begin{itemize}
+  \item For a random source / distribution $p$, the minimal number of bits to optimally encode messages from is the entropy $H(p)$.
+  \item If the optimal code for a different distribution $q(x)$ is instead used to encode messages from $p(x)$, expected code length will grow.
+%  (Note: Both distributions are assumed to have the same support.)
+\end{itemize}
+  \vspace{-0.3cm}
+  \begin{figure}
+    \centering
+      \scalebox{0.5}{\includegraphics{figure_man/shift.png}}
+      \scalebox{1}{\includegraphics{figure_man/xent_pq.png}}
+      \caption{\footnotesize{$L_p(x)$, $L_q(x)$ are the optimal code lengths for $p(x)$ and $q(x)$}}
+  \end{figure}
+
+\framebreak
+\textbf{Cross-entropy} is the average length of communicating an event from one distribution with the optimal code for another distribution (assume they have the same domain $\Xspace$ as in KL).
+  $$ H_q(p) = \sum_{x \in \Xspace} p(x) \log\left(\frac{1}{q(x)}\right) = - \sum_{x \in \Xspace} p(x) \log\left(q(x)\right) $$
+
+\begin{figure}
+    \centering
+      \scalebox{1}{\includegraphics{figure_man/xent_pq.png}}
+      \caption{\footnotesize{$L_p(x)$, $L_q(x)$ are the optimal code lengths for $p(x)$ and $q(x)$}}
+  \end{figure}
+  
+We directly see: cross-entropy of $p$ with itself is entropy: $H_p(p) = H(p)$.
+  
+\framebreak
+  \begin{figure}
+    \centering
+      \scalebox{0.8}{\includegraphics{figure_man/crossent.png}}
+      \tiny{\\ Credit: Chris Olah}
+  \end{figure}
+  
+  \begin{itemize}
+    \item \small{In top, $H_q(p)$ is greater than $H(p)$ primarily because the blue event that is very likely under $p$ has a very long codeword in $q$.
+    \item Same, in bottom, for pink when we go from $q$ to $p$.
+    \item Note that $H_q(p) \neq H_p(q)$}. 
+  \end{itemize}
+
+  \framebreak
+
+  \begin{figure}
+    \centering
+      \scalebox{1}{\includegraphics{figure_man/xent_pq.png}}
+      \caption{\footnotesize{$L_p(x)$, $L_q(x)$ are the optimal code lengths for $p(x)$ and $q(x)$}}
+  \end{figure}
+  
+  \begin{itemize}
+   \item Let $x^\prime$ denote the symbol "dog". The difference in code lengths is:
+  $$ \log \left ( \frac{1}{q(x^\prime)} \right ) - \log \left( \frac{1}{p(x^\prime)} \right) = \log \frac{p(x^\prime)}{q(x^\prime)} $$
+  
+\item If $p(x^\prime) > q(x^\prime)$, this is positive, if $p(x^\prime) < q(x^\prime)$, it is negative. 
+    \item The expected difference is KL, if we encode symbols from $p$:
+  $$ D_{KL}(p \| q) = \sum_{x \in \Xspace} p(x) \cdot \log \frac{p(x)}{q(x)} $$
+  \end{itemize}
+
+\framebreak 
+
+\begin{itemize}
+\item Entropy = Avg. nr. of bits if we optimally encode $p$
+\item Cross-Entropy = Avg. nr. of bits if we suboptimally encode $p$ with $q$
+\item $DL_ {KL}(p \| q)$: Difference in bits between the two
+\end{itemize}
+
+\lz
+
+We can summarize this also through this identity: 
+
+$$
+H_q(p) = H(p) + D_{KL}(p \| q)
+$$
+This is because: 
+\begin{eqnarray*}
+H(p) + D_{KL}(p \| q) &=& - \sum_{x \in \Xspace} p(x) \log p(x) + \sum_{x \in \Xspace} p(x) \log \frac{p(x)}{q(x)} \\
+                      &=& \sum_{x \in \Xspace} p(x) (-\log p(x) +  \log p(x) - \log q(x) \\
+&=& - \sum_{x \in \Xspace} p(x) \log q(x) = H_q(p) \\
+\end{eqnarray*}
+   
+\framebreak
+\end{vbframe}
+
+\begin{vbframe} {Cross-Entropy - Continuous Case}
+
+For continuous density functions $p(x)$ and $q(x)$: 
+
+$$ H_p(q) = \int q(x) \ln\left(\frac{1}{p(x)}\right) dx = - \int q(x) \ln\left(p(x)\right) dx $$
+
+\begin{itemize}
+\item It is not symmetric.
+\item As for the discrete case, $H_p(q) = h(q) + D_{KL}(q \| p)$ holds.
+\item Can now become negative, as the $h(q)$ can be negative! 
+\end{itemize}
+\end{vbframe}
+ 
+\begin{vbframe}{Proof: Maximum of Differential Entropy}
+  \textbf{Claim}: For a given variance, the distribution that maximizes differential entropy is the Gaussian.
+
+  \lz
+
+  \textbf{Proof}: Let $g(x)$ be a Gaussian with mean $\mu$ and variance $\sigma^2$ and $f(x)$ an arbitrary density function with the same variance. Since differential entropy is translation invariant, we can assume $f(x)$ and $g(x)$ have the same mean.
+
+  \lz
+  
+  The KL divergence (which is non-negative) between $f(x)$ and $g(x)$ is:
+  \begin{equation}
+    \begin{aligned}
+       0 \leq D_{KL}(f \| g) & = -h(f) + H_g(f) \\
+                             & =-h(f)-\int_{-\infty}^{\infty} f(x) \ln (g(x)) dx
+    \end{aligned}
+  \end{equation}
+  
+  \framebreak
+  
+The second term in (1) is, 
+  
+\begin{footnotesize}
+\begin{eqnarray}
+& & \int_{-\infty}^{\infty} f(x) \log (g(x)) d x =\int_{-\infty}^{\infty} f(x) \log \left(\frac{1}{\sqrt{2 \pi \sigma^{2}}} e^{-\frac{(x-\mu)^{2}}{2 \sigma^{2}}}\right) d x \nonumber\\ 
+& &=\int_{-\infty}^{\infty} f(x) \log \left(\frac{1}{\sqrt{2 \pi \sigma^{2}}}\right) d x+\log (e) \int_{-\infty}^{\infty} f(x)\left(-\frac{(x-\mu)^{2}}{2 \sigma^{2}}\right) d x \nonumber\\ 
+& &= -\frac{1}{2} \log \left(2 \pi \sigma^{2}\right)-\log (e) \frac{\sigma^{2}}{2 \sigma^{2}} = -\frac{1}{2} (\log \left(2 \pi \sigma^{2}\right)+\log (e) ) \nonumber\\ 
+& &=-\frac{1}{2} \log \left(2 \pi e \sigma^{2}\right) = -h(g) \,,
+\end{eqnarray}
+\end{footnotesize}
+
+where the last equality follows from the normal distribution example of the entropy chapter. Combining (1) and (2) results in
+$$h(g) - h(f) \geq 0$$
+with equality when $f(x) = g(x)$ (following from the properties of Kullback-Leibler divergence).
+\end{vbframe}
+
+
+% \begin{vbframe} {Cross-Entropy - Summary}
+%   \begin{itemize}
+%     \item For discrete probability distributions $p(x)$ and $q(x)$, the cross-entropy is: 
+%      $$ H_p(q) = \sum_{x \in \Xspace} q(x) \log_2\left(\frac{1}{p(x)}\right) = - \sum_{x \in \Xspace} q(x) log_2(p(x))$$
+%      \item For probability densities $p(x)$ and $q(x)$, it is: 
+%      $$ H_p(q) = \int_{\Xspace} q(x) \ln\left(\frac{1}{p(x)}\right) dx = - \int_{\Xspace} q(x) \ln\left(p(x)\right) dx $$
+%     \item It is not symmetric: $ H_p(q) \neq H_q(p)$.
+%     \item Relationship to KL divergence:
+%       \begin{align*}
+%         H_q(p) &= H(p) + D_{KL}(p \| q) \\
+%         H_p(q) &= H(q) + D_{KL}(q \| p)
+%       \end{align*}
+%     \item It is non-negative. If the two distributions are the same, cross-entropy equals entropy and KL divergence is zero. 
+%     % \item Often used as a loss function for classification tasks. 
+%   \end{itemize}
+
+% \end{vbframe}
+\endlecture
+\end{document}

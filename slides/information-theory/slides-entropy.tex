@@ -1,0 +1,206 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/entropy.png}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Entropy}
+\lecture{Introduction to Machine Learning}
+
+
+\begin{vbframe}{Information Theory}
+
+\begin{itemize}
+  \item \textbf{Information Theory} is a field of study based on probability theory.
+  \item The foundation of the field was laid by Claude Shannon in 1948 and it has since found applications in areas as diverse as communication theory, computer science, optimization, cryptography, machine learning and statistical inference.
+  \item In addition to quantifying information, it also deals with efficiently storing and transmitting the information.
+  \item Information theory tries to quantify the "amount" of information gained or 
+    uncertainty reduced when a random variable is observed.
+\end{itemize}
+
+\framebreak
+
+\begin{itemize}
+  \item We introduce the basic concepts from a probabilistic perspective, without referring too much to communication, channels or coding.
+  \item We will show some proofs, but not for everything. We recommend 
+    \textit{Elements of Information Theory} by Cover and Thomas as a reference for more. 
+  \item The application of information theory to the concepts of statistics and ML can sometimes be confusing, we will try to make the connection as clear as possible.
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Entropy}
+\begin{itemize}
+  \item We develop in this unit entropy as a measure of uncertainty.
+  \item Entropy is often introduced in IT as a measure of
+    expected information or in terms of bits needed for efficient coding, 
+  but for us in stats and ML the first type of intuition seems most useful.
+\end{itemize}
+
+
+For a discrete random variable $X$ with domain $x \in \Xspace$ and pmf $p(x)$:
+\begin{equation*}
+\begin{aligned} 
+  H(X) := H(p) &= - \E[\log_2(p(X))]           &= -\sum_{x \in \Xspace} p(x) \log_2 p(x)\\ 
+               &=   \E\left[\log_2\left(\frac{1}{p(X)}\right)\right] &= \sum_{x \in \Xspace} p(x) \log_2 \frac{1}{p(x)} 
+\end{aligned} 
+\end{equation*}
+    \begin{itemize}
+  \item \textbf{Definition:}
+Base $2$ means the information is measured in bits, but you can use any number $>1$ as base of the logarithm.
+    \item \textbf{Note:} Because $\lim _{p \rightarrow 0} p \log_2 p=0$, if $p(x) = 0$, $p(x) \log_2 p(x)$ is taken to be zero.
+  \end{itemize}
+
+\framebreak
+
+\begin{itemize}
+    \item We have encountered various other measures of spread or uncertainty in statistics before.
+    \item Furthermore, the formula does not seem to make intuitive sense?
+    \item We will now do the following:
+    \begin{itemize}
+      \item Approach it by various simple examples.
+      \item Note some basic properties - which seem desirable for an uncertainty measure.
+      \item Note that if we require these measures axiomatically, entropy drops out automatically as the result.
+      \item Note even more nice properties.
+  \end{itemize}
+\end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{Entropy Examples}
+    
+\begin{center}
+\includegraphics[width = 8cm ]{figure_man/entropy.png} \\
+\end{center}
+
+Naive observations: Uniform seems maximal, re-ordering does not matter, and the more peaked, the less entropy.
+\end{vbframe}
+
+\begin{vbframe}{Entropy of Bernoulli distribution}
+
+Let $X$ be Bernoulli / a coin with $\P(X=1) = s$ and $\P(X=0) = 1 - s$.
+
+$$ H(X)= -s \cdot \log_2(s)-(1-s)\cdot \log_2(1-s). $$
+
+\begin{center}
+\includegraphics[width = 6.5cm ]{figure_man/coin-entropy.png} \\
+\end{center}
+
+We note: If the coin is deterministic, so $s=1$ or $s=0$, then $H(s)=0$; 
+$H(s)$ is maximal for $s = 0.5$, a fair coin. 
+$H(s)$ becomes monotonically larger the closer we get to $s=0.5$.
+This all seems plausible.
+
+\end{vbframe}
+  
+\begin{vbframe}{Entropy of Uniform Distributions}
+
+Let $X$ be a uniform, discrete RV with $g$ outcomes ($g$-sided fair die).
+
+$$H(X) = - \sum_{i=1}^g \frac{1}{g} \log_2 \left(\frac{1}{g}\right) = \log_2 g$$
+
+\vspace{0.2cm}
+\begin{center}
+\includegraphics[width = 11cm ]{figure_man/entropy-uniform.png} \\
+\end{center}
+
+The more sides a die has, the harder it is to predict the outcome. 
+Unpredictability grows \textit{monotonically} with the number of potential outcomes.
+\end{vbframe}
+
+\begin{vbframe}{Properties of Discrete Entropy}
+  \begin{enumerate}
+    \item Entropy is non-negative, so $H(X) >= 0$.
+    \item If one event has probability $p(x) = 1$, then $H(X)=0$. 
+    \item Symmetry. If the values $p(x)$ in the pmf are re-ordered, entropy does not change.
+    \item Adding or removing an event with $p(x)=0$ does not change entropy.
+    \item $H(X)$ is continuous in probabilities $p(x)$.
+    \item Entropy is additive for independent RVs.
+    \item Entropy is maximal for a uniform distribution, so for a domain with $g$ elements:  
+      $H(X) \leq -g\frac{1}{g} \log_2(\frac{1}{g}) = log_2(g)$.
+  \end{enumerate}
+\lz
+All properties except the last 2 follow trivially from the definition.
+\end{vbframe}
+
+\begin{vbframe} {Joint entropy}
+\begin{itemize}
+  \item The \textbf{joint entropy} of two discrete random variables $X$ and $Y$ is:
+    $$ H(X,Y) = H(p_{X,Y}) = - \sum_{x \in \Xspace} \sum_{y \in \Yspace}  p(x,y) \log_2(p(x,y))$$
+  % where $I(x,y)$ is the self-information of $(x,y)$.
+  \item Intuitively, the joint entropy is a measure of the total uncertainty in the two variables $X$ and $Y$. In other words, it is simply the entropy of the joint distribution $p(x,y)$.
+  \item There is nothing really new in this definition because $H(X, Y)$ can be considered to be a single vector-valued random variable.
+  \item More generally:
+    \begin{footnotesize}  
+  $$ H(X_1, X_2, \ldots, X_n) = - \sum_{x_1 \in \Xspace_1} \ldots \sum_{x_n \in \Xspace_n} p(x_1,x_2, \ldots, x_n) \log_2(p(x_1,x_2, \ldots, x_n)) $$ 
+    \end{footnotesize}  
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe} {Entropy is additive under independence}
+Let $X$ and $Y$ be two independent RVs. Then:
+  \begin{footnotesize}
+  \begin{equation*}
+    \begin{aligned} 
+     H(X,Y) &= - \sum_{x \in \Xspace} \sum_{y \in \Yspace}  p(x,y) \log_2(p(x,y)) \\ 
+            &= - \sum_{x \in \Xspace} \sum_{y \in \Yspace}  p_X(x)p_Y(y) \log_2(p_X(x)p_Y(y)) \\
+            &= - \sum_{x \in \Xspace} \sum_{y \in \Yspace}  p_X(x)p_Y(y)\log_2(p_X(x)) + p_X(x)p_Y(y)\log_2(p_Y(y)) \\
+            &= - \sum_{x \in \Xspace} \sum_{y \in \Yspace}  p_X(x)p_Y(y)\log_2(p_X(x)) - \sum_{y \in \Yspace} \sum_{x \in \Xspace} p_X(x)p_Y(y)\log_2(p_Y(y)) \\
+            &= - \sum_{x \in \Xspace} p_X(x)\log_2(p_X(x)) - \sum_{y \in \Yspace} p_Y(y)\log_2(p_Y(y)) = H(X) + H(Y)
+    \end{aligned} 
+  \end{equation*}
+\end{footnotesize}
+% \begin{itemize}
+% \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Entropy of Uniform Distributions}
+\textbf{Claim}: The entropy of a discrete random variable $X$ which takes on values in $\{x_1,x_2, \ldots, x_g\}$ with associated probabilities $\{p_1,p_2, \ldots, p_g\}$ is maximal when the distribution over $X$ is uniform.
+
+\lz
+\textbf{Proof}: The entropy $H(X)$ is $- \sum_{i=1}^g p_i \log_2 p_i$ and our goal is to find:
+  $$\underset{p_{1}, p_{2}, \ldots, p_{g}}{\operatorname{argmax}}-\sum_{i=1}^{g} p_{i} \log _{2} p_{i}$$
+  subject to
+  $$\sum_{i=1}^g p_i = 1.$$
+  
+  \framebreak
+  The Lagrangian $L(p_1, \ldots, p_g, \lambda)$ is :
+  $$L(p_1, \ldots, p_g, \lambda) = - \sum_{i=1}^g p_i \log_2(p_i) - \lambda \left( \sum_{i=1}^g p_i - 1 \right)$$
+  
+  Solving for $\nabla L = 0$,
+  \begin{gather*}
+    \frac{\partial L(p_1, \ldots, p_g, \lambda)}{\partial p_i} = 0 = - \log_2(p_i) - 1 - \lambda \\
+    \implies p_i = 2^{(-1 - \lambda)} \implies p_i = \frac{1}{g},
+  \end{gather*}
+  where the last step follows from the fact that all $p_i$ are equal and the constraint.
+
+\end{vbframe}
+
+\begin{vbframe}{The Uniqueness Theorem}
+
+Khinchin (1957) showed that the only family of functions satisfying
+\begin{itemize}
+  \item $H(p)$ is continuous in probabilities $p(x)$
+  \item adding or removing an event with $p(x)=0$ does not change it
+  \item is additive for independent RVs
+  \item is maximal for a uniform distribution.
+\end{itemize}
+
+is of the following form:
+
+$$ H(p) = - \lambda \sum_{x \in \Xspace} p(x) \log p(x) $$ 
+
+where $\lambda$ is a positive constant. Setting $\lambda = 1$ and using the binary logarithm gives us the Shannon entropy.
+\end{vbframe}
+
+
+\endlecture
+\end{document}

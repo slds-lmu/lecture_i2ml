@@ -1,0 +1,150 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/equal_decode.png}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Entropy and Optimal Code Length}
+\lecture{Introduction to Machine Learning}
+
+
+\begin{vbframe} {Source Coding}
+\begin{itemize}
+  \item There is an interesting connection between entropy and a subfield of information theory known as \textbf{source coding}.
+  \item Abstractly, a source is any system or process that generates messages or information.
+  \item A code is simply a way to represent the message so that it can be stored or transmitted over a communication channel (such as radio or fiber-optic cables).
+  \item For example, one could use binary strings (0's and 1's) to encode messages.
+  \item Because it may be expensive to transmit or store information, an important problem addressed by source coding is efficient coding schemes of minimal average length.
+\end{itemize}
+
+\framebreak
+
+\begin{itemize}
+ %https://www.icmla-conference.org/icmla08/slides1.pdf
+  \item Formally, given a discrete alphabet/dictionary X of message symbols, a \textbf{binary code} is a mapping
+from symbols in X to a set of codewords of binary strings.
+ \item For example, if our dictionary only consists of the words "dog", "cat", "fish" and "bird", each word can be encoded as a binary string of length 2 : "dog" $\rightarrow$ $\mathbf{00}$, "cat" $\rightarrow$ $\mathbf{01}$, "fish" $\rightarrow$ $\mathbf{10}$ and "bird" $\rightarrow$ $\mathbf{11}$.
+ \item For this code, a binary string can be decoded by replacing each successive pair of digits with the associated word.
+\begin{figure}
+    \centering
+      \scalebox{0.60}{\includegraphics{figure_man/equal_decode.png}}
+      \tiny{\\ Credit: Chris Olah\\}
+  \end{figure}
+\end{itemize}
+ {\tiny{Chris Olah (2015): Visual Information Theory. \emph{\url{http://colah.github.io/posts/2015-09-Visual-Information/}}}\par}
+\framebreak
+
+\begin{itemize}
+  \item Encoded messages are emitted by a source which can be modeled as a probability distribution over the message symbols in the dictionary. 
+  \item Let $X$ be a random variable that represents a symbol from our data source and let $p(x) = \P(X = x)$, for symbol $x$ in our dictionary.
+  \begin{figure}
+    \centering
+      \scalebox{1.05}{\includegraphics{figure_man/length_same.png}}
+      \tiny{\\ Credit: Chris Olah}
+  \end{figure}
+  \item The length $L(x)$ is simply the number of bits in the corresponding codeword. In this example, all codewords have length 2.
+\end{itemize}
+\framebreak
+
+  \begin{figure}
+    \centering
+      \scalebox{1}{\includegraphics{figure_man/length_same.png}}
+  \end{figure}
+  
+  \begin{itemize}
+    \item For this code, the expected length of a message emitted by the source is, naturally:
+
+      $$\E[L(X)] = \frac{1}{2} \cdot 2 + \frac{1}{4} \cdot 2 + \frac{1}{8} \cdot 2 + \frac{1}{8} \cdot 2 = 2 \text{ bits.}$$
+
+    \item The area of a rectangle in the image on the right reflects the size of the corresponding term in the expectation.
+
+  \end{itemize}
+  
+\framebreak
+
+\begin{itemize}
+  \item Maybe we can create better average-length coding schemes with \textbf{variable-length} codes by assigning shorter codes to more likely messages and longer one to less likely messages.
+  \item However, this can be problematic because we want the receiver to be able to unambiguously decode the encoded string.
+  \item Let us say the words in our dictionary are encoded in this way: "dog" $\rightarrow$ $\mathbf{0}$, "cat" $\rightarrow$ $\mathbf{1}$, "fish" $\rightarrow$ $\mathbf{01}$ and "bird" $\rightarrow$ $\mathbf{11}$.
+  \item In this case, the string 00110101 can be decoded in multiple ways.
+  \begin{figure}
+    \centering
+      \scalebox{0.75}{\includegraphics{figure_man/ambiguity.png}}
+  \end{figure}
+    \item One way to make variable-length messages unambiguous is by ensuring that no codeword is a prefix (initial segment) of any other codeword. Such a code is known as a \textbf{prefix code}.
+\end{itemize}
+
+\framebreak
+
+  \begin{itemize}
+    \item In general, the number of possible codewords grows exponentially in length $L$.
+    \item For binary codes, there are two possible words of length one, four possible words of length two and $2^L$ possible words of length $L$.
+    \begin{figure}
+      \centering
+        \scalebox{0.45}{\includegraphics{figure_man/codetree1.png}}
+    \end{figure}
+    \item In total, there are ($2^{L+1}-2$) codewords of length $\leq$ L.
+  \end{itemize}
+
+\framebreak
+  
+  \begin{figure}
+      \centering
+        \scalebox{0.65}{\includegraphics{figure_man/codetree2.png}}
+  \end{figure}
+    
+  \begin{itemize}
+    \item Here, if the codeword $\mathbf{01}$ is assigned to a symbol, then  $\mathbf{010}$ and  $\mathbf{011}$ cannot be assigned to any other symbol because that would break the prefix property.
+    \item If a codeword of length $L$ is assigned to a symbol, then $\frac{1}{2^L}$ of the possible codewords of length $> L$ must be discarded.
+    % \item Therefore, shorter codewords incur a greater "cost" than longer codewords.
+    \item If some symbols are assigned short codewords, due to the prefix property,  many marginally longer codewords cannot be assigned to other symbols.
+  \end{itemize} 
+  
+\framebreak
+  
+  % \begin{figure}
+      % \centering
+        % \scalebox{0.65}{\includegraphics{figures/codetree2.png}}
+  % \end{figure}
+  
+  \begin{itemize}
+    % \item Again, our goal is to reduce the expected length of a codeword emitted by a source.
+    % \item This means our coding strategy must be based on this type of cost/benefit analysis.
+    % \framebreak
+    % \item It makes intuitive sense that the expected length will be low if symbols that have high probability are assigned shorter codewords and those that have low probability are assigned longer ones.
+    \item An example of prefix code:\\
+      "dog" $\rightarrow$ $\mathbf{0}$, "cat" $\rightarrow$ $\mathbf{10}$, "fish" $\rightarrow$ $\mathbf{110}$ and "bird" $\rightarrow$ $\mathbf{111}$.
+  \begin{figure}
+    \centering
+      \scalebox{0.85}{\includegraphics{figure_man/length_var.png}}
+  \end{figure}
+  \item \small{Here, the expected code length is :
+  \begin{equation*}
+  \scriptsize
+    \begin{split}
+    \E[L(X)] & = \frac{1}{2} \cdot 1 + \frac{1}{4} \cdot 2 + \frac{1}{8} \cdot 3 + \frac{1}{8} \cdot 3 \\
+     & = - \frac{1}{2} \cdot \log_2\left(\frac{1}{2}\right) - \frac{1}{4} \cdot \log_2\left(\frac{1}{4}\right) - \frac{1}{8} \cdot \log_2\left(\frac{1}{8}\right) - \frac{1}{8} \cdot \log_2\left(\frac{1}{8}\right) \\ & =  H(X) = \textcolor{red}{1.75} \text{ bits. (< 2 bits)}
+    \end{split}
+  \end{equation*}
+  \item Actually, this coding scheme is the most efficient way to store and transmit these messages. It is simply not possible to do better!}
+    \item In fact, Shannon's \textbf{source coding theorem} (or \textbf{noiseless coding theorem}) tells us that the optimal trade-off is made when the code length of a symbol with probability $p$ is $\log(1/p)$.
+    \item In other words, the entropy of the source distribution is the theoretical lower bound on the average code length.
+    \item If it is any lower, some information will be distorted or lost.
+    \item In practice, algorithms such as Huffman Coding can be used to find variable-length codes that are close (in terms of expected length) to the theoretical limit.
+  \end{itemize}
+  
+\end{vbframe}
+
+
+\endlecture
+\end{document}
+
