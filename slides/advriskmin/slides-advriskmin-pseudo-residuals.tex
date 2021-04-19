@@ -1,0 +1,132 @@
+%<<setup-child, include = FALSE>>=
+%library(knitr)
+%library(qrmix)
+%library(mlr)
+%library(quantreg)
+%library(reshape2)
+%set_parent("../style/preamble.Rnw")
+%@
+
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/pseudo_residual_1.png}
+\newcommand{\learninggoals}{
+\item Know the concept of pseudo-residuals 
+\item Understand the relationship between pseudo-residuals and gradient descent 
+}
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+
+\begin{document}
+
+\lecturechapter{Pseudo-Residuals and Gradient Descent}
+\lecture{Introduction to Machine Learning}
+
+\begin{vbframe}{Pseudo-Residuals}
+
+\begin{itemize}
+	\item In regression, residuals are defined as $
+			r := y - \fx.$
+\item We further define \textbf{pseudo-residuals} as the negative first derivatives of loss functions w.r.t. $\fx$
+
+\vspace*{-0.3cm}
+  \begin{eqnarray*}
+    % \tilde r &:=& - \frac{\partial \Lxy}{\partial \fx} \qquad 
+    % \tilde r^{(i)} := - \frac{\partial \Lxyi}{\partial \fxi} 
+    \tilde r &:=& - \frac{\partial \Lxy}{\partial \fx}.  % \qquad 
+    % \tilde r^{(i)} := - \frac{\partial \Lxyi}{\partial f} 
+  \end{eqnarray*}
+\item Note that pseudo-residuals are actually functions of $y$ and $\fx$ and depend on the loss function $L$. % To keep notation short we write $\tilde r = \tilde r\left(x, \fx\right)$ and $\tilde r^{(i)} := \tilde r\left(\yi, \fxi\right)$. 
+
+\vfill
+
+% \includegraphics[width=0.7\textwidth]{figure_man/loss.png}
+\includegraphics[width=0.7\textwidth]{figure/plot_quad_pseudores.png}
+
+\end{itemize}
+
+\end{vbframe}
+
+
+\begin{frame}[t]{Best point-wise update}
+
+Assume we have fitted a model $\fx$ to data $\D$. 
+
+\lz 
+
+Assume we could update $\fx$ point-wise as we like. For a fixed $\xv \in \Xspace$, the best point-wise update is the direction of the residual $r = y - \fx$
+
+$$
+	\fx \leftarrow \fx + r
+$$
+
+
+\begin{overlayarea}{\textwidth}{\textheight}
+\only<2>{\vfill The point-wise error at this specific $\xv$ becomes $0$. \vfill}
+\begin{center}
+	\only<1>{\vfill \includegraphics[width=0.5\textwidth]{figure_man/pseudo_residual_1.png}}
+	\only<2>{\includegraphics[width=0.5\textwidth]{figure_man/pseudo_residual_2.png}}
+\end{center}
+\end{overlayarea} 
+
+\end{frame}
+
+\begin{vbframe}{Approximate Best point-wise update}
+
+When applying gradient descent to compute a point-wise update of $\fx$, we would go a step into the direction of the negative gradient
+
+$$
+	\fx \leftarrow \fx - \frac{\partial \Lxy}{\partial \fx}. 
+$$
+
+which is the direction of the pseudo-residual
+
+\begin{eqnarray*}
+	\fx &\leftarrow& \fx + \tilde r\\ 
+\end{eqnarray*}
+
+Iteratively stepping towards the direction of the pseudo-residuals is the underlying idea of gradient boosting, which is a learning algorithm that will be covered in a later chapter. 
+
+
+\end{vbframe}
+
+
+\begin{vbframe}{GD in ML and Pseudo-Residuals}
+
+\begin{itemize}
+	\item In gradient descent, we try to move in the direction of the negative gradient in each step by updating the model accordingly 
+	$$
+	 \thetab^{[t + 1]} = \thetab^{[t]} - \alpha^{[t]} \cdot \nabla_{\thetab} \left.\risket\right|_{\thetab = \thetab^{[t]}}	
+	$$
+	with step size $\alpha^{[t]}$. 
+	\item This can be seen as approximating the unexplained information (measured by the loss) through a model update. 
+	\framebreak 
+	\item By using the chain rule we see that the pseudo-residuals are input to the update direction
+	\begin{eqnarray*}
+	\nabla_{\thetab} \risket &=&\sumin \underbrace{\left.\frac{\partial L\left(\yi, f\right)}{\partial f} \right|_{f = \fxit} }_{= - \tilde r^{(i)}}
+	\cdot \nabla_{\thetab} \fxit \\ 
+	&=& - \sumin \tilde r^{(i)} \cdot \nabla_{\thetab} \fxit.
+	\end{eqnarray*}
+	\item The unexplained information -- the negative gradient -- can be thought of as residuals, which is therefore also called pseudo-residuals. 
+\end{itemize}	
+
+% For risk minimization, the update rule for the parameter $\thetab$ is 
+% \begin{footnotesize}
+% \begin{eqnarray*}
+% \thetab^{[t+1]} &\leftarrow & \thetab^{[t]} - \alpha^{[t]}  \sumin \nabla_{\thetab} \left. \Lxyit \right|_{\thetab = \thetab^{[t]}} \\
+% \thetab^{[t+1]} &\leftarrow & \thetab^{[t]} + \alpha^{[t]} \sumin \tilde r^{(i)} \cdot \left. \nabla_{\thetab} \fxit \right|_{\thetab = \thetab^{[t]}} 
+% \end{eqnarray*}
+% \end{footnotesize}
+% $\alpha^{[t]} \in [0,1]$ is called \enquote{learning rate} in this context.
+\end{vbframe}
+
+
+\endlecture
+
+\end{document}

@@ -1,0 +1,315 @@
+%<<setup-child, include = FALSE>>=
+%library(knitr)
+%library(qrmix)
+%library(mlr)
+%library(quantreg)
+%library(reshape2)
+%set_parent("../style/preamble.Rnw")
+%@
+
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure/plot_loss_overview.png}
+\newcommand{\learninggoals}{
+  \item Know the Huber loss
+  \item Know the log-barrier loss
+  \item Know the $\eps$-insensitive loss
+  \item Know the quantile loss
+  \item Know the Cauchy loss
+}
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+
+\begin{document}
+
+\lecturechapter{Advanced Regression Losses}
+\lecture{Introduction to Machine Learning}
+
+\begin{vbframe}{Advanced Loss Functions}
+\begin{itemize}
+\item Advanced loss functions are designed to achieve special properties (e.g., robustness and smoothness for the Huber or Cauchy loss).
+\item Furthermore, special loss functions are necessary in certain applications.
+\item Examples:
+\begin{itemize}
+\item Quantile loss: Overestimating a clinical parameter might not be as bad as underestimating it.
+\item Log-barrier loss: Extremely under- or overestimating demand in production would put company profit at risk.
+\item $\eps$-insensitive loss: A certain amount of deviation in production does no harm, larger deviations do.
+\end{itemize}
+\item Sometimes a custom loss must be designed specifically for the given application.
+\item Some learning algorithms use specific loss functions, e.g., the hinge loss for SVMs.
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Huber Loss}
+
+% Description
+\vspace*{-0.3cm}
+
+$$
+\Lxy = \begin{cases}
+  \frac{1}{2}(y - \fx)^2  & \text{ if } |y - \fx| \le \delta \\
+  \delta |y - \fx|-\frac{1}{2}\delta^2 \quad & \text{ otherwise }
+  \end{cases}, \quad \delta > 0
+$$
+
+\begin{itemize}
+\item Piece-wise combination of $L1$ and $L2$ loss
+\item Analytic properties: convex, differentiable, robust
+\item Combines advantages of $L1$ and $L2$ loss: differentiable + robust
+\end{itemize}
+
+% \vspace*{-1cm}
+
+% \begin{center}
+% \includegraphics[width = 0.45\textwidth]{figure/loss_huber_plot.png}~~\includegraphics[width = 0.45\textwidth]{figure_man/loss_huber_plot2.png}\\
+% \end{center}
+
+\begin{center}
+\includegraphics[width = 0.65\textwidth]{figure/loss_huber_plot.png}
+\end{center}
+
+\begin{itemize}
+\item xxx \textcolor{red}{@BB: pls insert text}
+\item xxx
+\item xxx
+\end{itemize}
+
+\framebreak 
+
+\textbf{Risk minimizer:}
+\begin{itemize}
+\item There is no closed-form solution for the risk minimizer. 
+% https://stats.stackexchange.com/questions/298322/what-is-the-population-minimizer-for-huber-loss
+\item However, the risk minimizer for the Huber loss is a \textbf{trimmed mean}: The risk minimizer is the (conditional) mean of values between two (conditional) quantiles. The location of the quantiles depends on the distribution as well as 
+the value of $\delta$. 
+\end{itemize}
+
+\vspace*{0.2cm}
+
+\textbf{Optimal constant model:}
+\begin{itemize}
+\item Similarly, there is no closed-form solution for the optimal constant model. 
+\item Numerical optimization methods are necessary. 
+\item The \enquote{optimal} solution can only be approached to a certain degree of accuracy via iterative optimization.
+\end{itemize}
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{Log-Barrier Loss}
+
+\begin{small}
+\[
+  \Lxy = \left\{\begin{array}{lr}
+        -a^{2} \cdot \log \Bigl( 1 - \Bigl(\frac{\left|y - \fx\right|}{a}\Bigr)^2 \Bigr) & \text{if } \left|y-\fx\right| \leq a \\
+        \infty & \text{if } \left|y-\fx\right|  > a
+        \end{array}\right.
+  \]
+\end{small}
+
+\begin{itemize}
+\item Behaves like $L2$ loss for small residuals.
+\item We use this if we don't want residuals larger than $a$ at all.
+\item No guarantee that the risk minimization problem has a solution.
+\item Plot shows log-barrier loss for $a=2$:
+\end{itemize}
+
+\begin{center}
+% \includegraphics[width = 0.8\textwidth]{figure_man/log-barrier01.png}
+\includegraphics[width = 0.8\textwidth]{figure/loss_logbarrier_1.png}
+\end{center}
+
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{Log-Barrier: Optimal constant model}
+
+\begin{itemize}
+ \item Similarly to the Huber loss, there is no closed-form solution for the optimal constant model $\fx = \thetab$ w.r.t. the log-barrier loss. 
+ \item Again, numerical optimization methods are necessary.
+ \item Note that the optimization problem has no (finite) solution if there is no way to fit a constant where all residuals are smaller than $a$.  
+\end{itemize}
+
+\vspace{0.2cm}
+
+\begin{center}
+% \includegraphics[width = 9cm ]{figure_man/log_barrier2.png} 
+\includegraphics[width = \textwidth]{figure/loss_logbarrier_2.png}
+\end{center}
+
+
+% \framebreak 
+% 
+% 
+% Note that the optimization problem has no (finite) solution if there is no way to fit a constant where all residuals are smaller than $a$. 
+% 
+% \vspace{- 0.2cm}
+% 
+% 
+% \begin{center}
+% \includegraphics[width = 0.8\textwidth]{figure_man/log_barrier_2_1.png} \\
+% \end{center}
+
+% We see that the constant model fitted w.r.t. Huber loss in fact lies between L1- and L2-Loss.
+
+\end{vbframe}
+
+\begin{vbframe}{$\eps$-Insensitive loss}
+
+\vspace*{-0.3cm}
+$$
+\Lxy =  \begin{cases}
+  0  & \text{if } |y - \fx| \le \epsilon \\
+  |y - \fx|-\epsilon & \text{otherwise }
+  \end{cases}, \quad \epsilon \in \R_{+}
+$$
+\begin{itemize}
+\item Modification of $L1$ loss, errors below $\epsilon$ accepted without penalty.
+\item Properties: convex and not differentiable for $ y - \fx \in \{-\epsilon, \epsilon\}$.
+\end{itemize}
+
+\vfill
+
+\begin{center}
+% \includegraphics[width = 10cm, height = 4.7cm]{figure_man/2_6_loss_epsilon_plot1.png} \\
+\includegraphics[width = 0.8\textwidth]{figure/loss_eps_insensitive.png}
+\end{center}
+
+\end{vbframe}
+
+
+\begin{vbframe}{$\epsilon$-insensitive Loss: Optimal Constant}
+
+% % Derive Constant model and eps-insens loss
+What is the optimal constant model $\fx = \thetab$ w.r.t. the $\epsilon$-insensitive loss $\Lxy =  |y - \fx| ~ \mathds{1}_{ \left\{|y - \fx| > \epsilon \right\}}$?
+
+\vspace{-0.2cm}
+\begin{eqnarray*}
+\hat \thetab&=& \argmin_{\thetab\in \R}\sumin \Lxyi \\
+&=& \argmin_{\thetab\in \R} \sum_{i \in I_\eps} \left| \yi - \thetab \right| - \eps  \\
+&=& \argmin_{\thetab\in \R} \sum_{i \in I_\eps} \left| \yi - \thetab \right| - \sum_{i \in I_\eps} \eps \\
+&=& \text{median}\left(\left\{\yi ~|~ i \in I_\eps\right\}\right) - |I_\eps| \cdot \eps \\
+\end{eqnarray*}
+
+with $I_\eps := \left\{i: |\yi - \fxi| \le \eps \right\}$.
+
+% \framebreak
+
+% 
+% < <eps-loss-plot, fig.height = 5.5, include = FALSE>>=
+%   
+%   plotConstantModel(df, c("L2", "L1", "quant25", "quant75", "Huber1", "eps2"))
+% @
+% 
+% \begin{center}
+% \includegraphics[width = 10cm]{figure/eps-loss-plot-1.pdf} \\
+% \end{center}
+
+\end{vbframe}
+
+\begin{vbframe}{Quantile Loss}
+\vspace{-0.3cm}
+
+\small
+$$
+\Lxy = \begin{cases} (1 - \alpha) (\fx - y) & \text{ if } y < \fx\\
+\alpha (y - \fx) & \text{ if } y \ge \fx
+\end{cases}, \quad \alpha \in (0, 1)
+$$
+
+
+\normalsize
+\begin{itemize}
+\item Extension of $L1$ loss (equal to $L1$ for $\alpha = 0.5$).
+\item Weights either positive or negative residuals more strongly. 
+\item $\alpha<0.5$ $(\alpha>0.5)$ penalty to over-estimation (under-estimation)
+\item Also known as \textbf{pinball loss}.
+\end{itemize}
+
+\vfill
+
+\begin{center}
+% \includegraphics[width = 10cm, height = 4.7cm]{figure_man/2_3_loss_pinball_plot2.png}
+\includegraphics[width = 0.8\textwidth]{figure/loss_quantile.png}
+\end{center}
+
+\framebreak
+
+What is the optimal constant model $\fx = \thetab$ w.r.t.\ the quantile loss?
+\vspace{-0.2cm}
+\begin{eqnarray*}
+\thetah&=& \argmin_{\thetab\in \R}\sumin \Lxyi \\
+\Leftrightarrow\quad 
+\thetah &=& \argmin_{\thetab \in \R}\left\{ (1 - \alpha) \sum_{\yi<\thetab}  \left|\yi-\thetab\right| + \alpha \sum_{\yi \geq\thetab}  \left|\yi-\thetab\right|\right\} \\
+\Leftrightarrow\quad \thetah &=& Q_\alpha(\{\yi\})
+\end{eqnarray*}
+
+where $Q_\alpha(\cdot)$ computes the empirical $\alpha$-quantile of $\{\yi\}, i = 1, ..., n$.
+
+
+\end{vbframe}
+
+\begin{vbframe}{Cauchy loss}
+
+% Confirmed with Bernd: use def from https://www.user.tu-berlin.de/mtoussai/teaching/15-MachineLearning/15-MachineLearning-script.pdf, p. 24 
+
+$$
+\Lxy = \frac{c^2}{2} \log \left( 1 + \left( \frac{\left|y - \fx\right|}{c}\right)^2 \right), 
+\quad c \in \R
+% \log \left(\tfrac{1}{2} (\left|y - \fx\right| / c)^2 + 1\right), \quad c \in \R
+$$
+
+\normalsize
+\begin{itemize}
+\item Particularly robust toward outliers (controllable via $c$).
+\item Analytic properties: differentiable, robust, but not convex! 
+\end{itemize}
+
+\vfill
+
+\begin{center}
+% \includegraphics[width = 0.6\textwidth]{figure_man/loss_cauchy_plot1.png}
+\includegraphics[width = 0.6\textwidth]{figure/loss_cauchy.png}
+\end{center}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Log-cosh Loss}
+
+% Confirmed with Bernd: use def from https://heartbeat.fritz.ai/5-regression-loss-functions-all-machine-learners-should-know-4fb140e9d4b0
+
+$$
+\Lxy = \log \left( \cosh(\left|y - \fx\right|) \right)
+% \log \left(\tfrac{1}{2} (\left|y - \fx\right| / c)^2 + 1\right), \quad c \in \R
+$$
+
+\normalsize
+\begin{itemize}
+\item Lgarithm of the hyperbolic cosine of the residual.
+\item Approximately equal to $0.5 (\left|y - \fx\right|)^2$ for small $\xv$ and to $\left|y - \fx\right| - \log 2$ for large $\xv$, meaning it works mostly like $L2$ loss but is less outlier-sensitive.
+\item Has all the advantages of Huber loss and is, moreover, twice differentiable everywhere.
+\end{itemize}
+
+\vfill
+
+\begin{center}
+% \includegraphics[width = 0.6\textwidth]{figure_man/loss_cauchy_plot1.png}
+\includegraphics[width = 0.6\textwidth]{figure/loss_logcosh.png}
+\end{center}
+
+\end{vbframe}
+
+
+\endlecture
+
+\end{document}

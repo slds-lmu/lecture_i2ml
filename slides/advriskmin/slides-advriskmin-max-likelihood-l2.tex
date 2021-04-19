@@ -1,0 +1,130 @@
+%<<setup-child, include = FALSE>>=
+%library(knitr)
+%library(qrmix)
+%library(mlr)
+%library(quantreg)
+%library(reshape2)
+%set_parent("../style/preamble.Rnw")
+%@
+
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/optimization_steps.jpeg}
+\newcommand{\learninggoals}{
+\item Understand the connection between maximum likelihood and risk minimization
+\item Learn the correspondence of between a Gaussian error distributions and the L2 loss
+}
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Maximum Likelihood Estimation vs.
+Empirical Risk Minimization}
+\lecture{Introduction to Machine Learning}
+
+\begin{vbframe}{Maximum Likelihood}
+
+Let us approach regression from a maximum likelihood perspective. 
+
+\lz 
+
+We assume that 
+
+$$
+y = \ftrue(\xv) + \eps,
+$$
+where $\ftrue$ is a function that is parameterized by $\thetab$ with $\eps$ being a random variable that follows some distribution $\P_\eps$, with $\E[\eps] = 0$. Further, we assume $\epsilon$ to be independent of $\xv$. 
+
+\lz 
+
+It follows that 
+\begin{itemize}
+\item $y~|~\xv$ follows a distribution with mean $\ftrue(\xv)$ and variance $\var(\eps)$. 
+\item We denote the corresponding density function by $p(y~|~\xv, \thetab)$. 
+\end{itemize}
+
+
+\framebreak 
+
+\begin{itemize}
+\item Given data 
+$$
+\D = \Dset
+$$ 
+
+the maximum-likelihood principle is to maximize the \textbf{likelihood}
+
+$$ \LLt = \prod_{i=1}^n \pdfyigxit $$
+or to minimize the \textbf{negative log-likelihood}
+$$ -\llt = -\sumin \lpdfyigxit. $$
+
+\framebreak 
+
+\item Let us now simply define the negative log-likelihood as \textbf{loss function} 
+$$ \Lxyt := - \lpdfygxt $$
+\item Maximum-likelihood optimization can be formulated as an empirical risk minimization problem
+$$\risket = \sumin \Lxyit$$
+
+% \item Then the maximum-likelihood estimator $\thetah$, which we obtain by optimizing $\LLt$ is identical
+% to the loss-minimal $\thetah$ we obtain by minimizing $\risket$.
+\item We can even disregard multiplicative or additive constants in the loss as they do not change the minimizer.
+
+\framebreak 
+
+\item For every error distribution $\P_\eps$ we can derive an equivalent loss function, which leads to the same point estimator for the parameter vector $\thetab$ as maximum-likelihood.
+\lz
+\item \textbf{NB}: The other way around does not always work: We cannot derive a probability density function or error distribution corresponding to every loss function -- the Hinge loss is a prominent example.
+\end{itemize}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Gaussian Errors - L2-Loss} 
+
+Let us assume that errors are Gaussian, i.e. $\epsi \sim \mathcal{N}(0, \sigma^2)$. Then
+
+
+$$
+y = \ftrue(\xv) + \eps \sim N\left(\ftrue(\xv), \sigma^2\right). 
+$$
+
+The likelihood is then 
+
+\begin{eqnarray*}
+\LL(\thetab) &=& \prod_{i=1}^n \pdf\left(\yi ~\bigg|~ \fxit, \sigma^2\right) \\ &\propto& \exp\left(-\frac{1}{2\sigma^2}\sumin \left(\yi - \fxit\right)^2\right)\,.
+\end{eqnarray*}
+
+\framebreak 
+
+It is easy to see that minimizing the negative log-likelihood is equivalent to the $L2$-loss minimization approach since
+
+\begin{eqnarray*}
+- \llt &=& - \log\left(\LL(\thetab)\right) \\
+&=& - \log\left(\exp\left(-\frac{1}{2\sigma^2}\sumin \left(\yi - \fxit\right)^2\right)\right) \\
+&\propto& \sumin \left(\yi - \fxit\right)^2.
+\end{eqnarray*}
+
+
+\begin{footnotesize}
+\textbf{Note:} We use $\propto$ as \enquote{proportional to ... up to multiplicative and additive constants}. 
+\end{footnotesize}
+
+\framebreak 
+
+\begin{itemize}
+\item We can plot the empirical error distribution, i.e. the distribution of the residuals after fitting a model w.r.t. $L2$-loss.
+\item With the help of a Q-Q-plot we can compare the empirical residuals vs. the theoretical quantiles of a Gaussian distribution.  
+\end{itemize}
+
+\includegraphics{figure_man/residuals_plot_L2.pdf}
+
+\end{vbframe}
+
+\endlecture
+\end{document}

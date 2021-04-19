@@ -1,0 +1,194 @@
+%<<setup-child, include = FALSE>>=
+%library(knitr)
+%library(qrmix)
+%library(mlr)
+%library(quantreg)
+%library(reshape2)
+%set_parent("../style/preamble.Rnw")
+%@
+
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+\input{../../latex-math/ml-trees} % For the comparison of Brier and Gini index
+
+
+\newcommand{\titlefigure}{figure_man/optimization_steps.jpeg}
+\newcommand{\learninggoals}{
+  \item Know the Brier score 
+  \item Derive the risk minimizer
+  \item Derive the optimal constant model 
+}
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+
+\begin{document}
+
+\lecturechapter{Brier Score}
+\lecture{Introduction to Machine Learning}
+
+
+% \begin{vbframe}{Classification Losses: (Naive) L2-Loss}
+
+
+% $$
+% \Lxy = (1 - y\fx)^2,
+% $$
+
+
+% \begin{itemize}
+%   \item L2-loss defined on scores
+%   \item Predictions with high confidence $|f(x)|$ are penalized  regardless of whether the signs of $y$ and $f(x)$ match.
+%   \item Squared loss on the loss functions is thus not the best choice.
+
+%   <<loss-squareclass-plot, echo=FALSE, results='hide', fig.height= 1.8, fig.asp = 0.4>>=
+%  x = seq(-2, 5, by = 0.01)
+%  plot(x, (1-x)^2, type = "l", xlab = expression(y %.% f(x)), ylab = expression(paste((1-yf(x))^2)), main = "Square loss")
+%  box()
+% @
+
+%   \item The theoretical risk becomes
+%     \begin{eqnarray*}
+%     \risk(f) &=& \mathbb{E}_x [(1-\fx)^2 (P(1 | x)) + (1+\fx)^2 (1-P(1 | x))] \\
+%     &=& \mathbb{E}_x [1 + 2\fx + \fx^2-4\fx P(1 | x)].
+%     \end{eqnarray*}
+%   \item By differentiating w.r.t. $f(x)$ we get the minimizer of $\risk(f)$ for the square loss function
+
+%     \begin{eqnarray*}
+%     f(\xv) &=& 2\cdot P(1 | \xv) - 1.
+%     \end{eqnarray*}
+%     \item The empiricla optimzer is then
+%     $$
+%     \fh(\xv) = \frac{2}{n}\cdot \sumin \I[y^{(i)} = 1] - 1.
+%     $$
+
+
+% \end{itemize}
+
+% \end{vbframe}
+
+\begin{vbframe}{Brier Score}
+
+The binary Brier score is defined on probabilities $\pix \in [0, 1]$ and 0-1-encoded labels $y \in \{0, 1\}$ and measures their squared distance (L2 loss on probabilities).
+
+\begin{eqnarray*}
+L\left(y, \pix\right) &=& (\pix - y)^2
+\end{eqnarray*}
+
+\vspace{0.2cm}
+\begin{center}
+\includegraphics[width = 11cm ]{figure_man/Brier-score.png} \\
+\end{center}
+
+
+\end{vbframe}
+
+\begin{vbframe}{Brier Score: Risk Minimizer}
+
+The risk minimizer for the Brier score is 
+
+\begin{eqnarray*}
+\pixbayes &=& \eta(\xv) = \P(y~|~\xv = \xv),
+\end{eqnarray*}
+
+which means that the Brier score would reach its minimum if the prediction equals the \enquote{true} probability of the outcome. 
+
+\lz 
+
+\textbf{Proof: }We have seen that the (theoretical) optimal prediction $c$ for an arbitrary loss function at fixed point $\xv$ is
+
+$$
+\argmin_{c} \sum_{k \in \Yspace} L(k, c) ~ \P(y = k~|~ \xv = \xv)\,.
+$$
+
+We plug in the Brier score
+
+\vspace*{-0.3cm}
+
+\begin{eqnarray*}
+	&& \argmin_c L(1, c) \underbrace{\P(y = 1| \xv = \xv)}_{= \eta(\xv)} + L(0, c) \underbrace{\P(y = 0| \xv = \xv)}_{= 1 - \eta(\xv)} \\ 
+	&=&  \argmin_c \quad (c - 1)^2 \eta(\xv) + c^2 (1 - \eta(\xv))\\
+	&=&  \argmin_c \quad (c - \eta(\xv))^2.
+\end{eqnarray*}
+
+The expression is minimal if $c = \eta(\xv) = \P(y = 1~|~\xv = \xv)$.
+
+\end{vbframe}
+
+\begin{vbframe}{Brier Score: Optimal constant Model}
+
+The optimal constant probability model $\pix = \theta$ w.r.t. the Brier score for labels from $\Yspace = \setzo$ is:
+
+\begin{eqnarray*}
+  \min_{\theta} \riske(\theta) &=& \min_{\thetab} \sumin \left(\yi - \theta\right)^2 \\
+  \Leftrightarrow \frac{\partial \riske(\theta)}{\partial \theta} &=& - 2 \cdot \sumin (\yi - \theta) = 0 \\
+  \hat \theta &=& \frac{1}{n} \sumin \yi.   
+\end{eqnarray*}
+
+This is the fraction of class-1 observations in the observed data.\\
+(This also directly follows from our $L2$-proof for regression).
+
+\end{vbframe}
+
+\begin{vbframe}{Brier score minimization = Gini splitting}
+
+
+Splitting a classification tree w.r.t. the Gini index is equivalent to minimizing the Brier score in each node. 
+
+\lz 
+
+To prove this we show that 
+
+
+$$
+  \risk(\Np) = n_\Np I(\Np)
+$$
+  
+  where $I$ is the Gini impurity 
+
+$$I(\Np) = \sum_{k\neq k\prime} \pikN \pi^{(\Np)}_{k\prime} = \sum_{k=1}^g \pikN(1-\pikN),
+$$
+
+
+
+  and $\risk(\Np)$ is calculated w.r.t. the Brier score
+
+$$
+  L(y, \pix) = \sum_{k = 1}^g \left([y = k] - \pi_k(\xv)\right)^2.
+$$
+
+\framebreak
+
+
+\begin{eqnarray*}
+\risk(\Np) &=& \sum_{\xy \in \Np}  \sum_{k = 1}^g \left([y = k] - \pi_k(\xv)\right)^2 \\
+&=& \sum_{k = 1}^g \sum_{\xy \in \Np}   \left([y = k] - \pi_k(\xv)\right)^2 \\
+&=& \sum_{k = 1}^g n_{\Np,k}\left(1 - \frac{n_{\Np,k}}{n_{\Np }}\right)^2 + (n_{\Np } - n_{\Np,k})\left(\frac{n_{\Np,k}}{n_{\Np }}\right)^2
+\end{eqnarray*}
+
+
+In the last step, we plugged in the optimal prediction w.r.t. the Brier score (the fraction of class $k$ observations):
+
+$$\hat \pi_k(\xv)= \pikN = \frac{n_{\Np,k}}{n_{\Np }}.$$ 
+
+
+We further simplify the expression to
+
+% \begin{footnotesize}
+\begin{eqnarray*}
+\risk(\Np) &=&  \sum_{k = 1}^g n_{\Np,k}\left(\frac{n_{\Np } - n_{\Np,k}}{n_{\Np }}\right)^2 + (n_{\Np } - n_{\Np,k})\left(\frac{n_{\Np,k}}{n_{\Np }}\right)^2 \\
+&=& \sum_{k = 1}^g \frac{n_{\Np,k}}{n_{\Np }} \frac{n_{\Np } - n_{\Np,k}}{n_{\Np }} \left(n_{\Np } - n_{\Np,k } + n_{\Np,k}\right) \\
+&=& n_{\Np } \sum_{k = 1}^g \pikN \cdot (1 - \pikN) = n_\Np I(\Np).
+\end{eqnarray*}
+% \end{footnotesize}
+
+\end{vbframe}
+
+
+\endlecture
+
+\end{document}

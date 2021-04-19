@@ -1,0 +1,94 @@
+%<<setup-child, include = FALSE>>=
+%library(knitr)
+%library(qrmix)
+%library(mlr)
+%library(quantreg)
+%library(reshape2)
+%set_parent("../style/preamble.Rnw")
+%@
+
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+\input{../../latex-math/ml-trees} % For the comparison of Brier and Gini index
+
+
+\newcommand{\titlefigure}{figure_man/optimization_steps.jpeg}
+\newcommand{\learninggoals}{
+  \item Know the exponential loss
+  \item Know the AUC loss 
+}
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+
+\begin{document}
+
+\lecturechapter{Advanced Classification Losses}
+\lecture{Introduction to Machine Learning}
+
+\begin{vbframe}{Hinge Loss}
+
+\begin{itemize}
+  \item The intuitive appeal of the 0-1-loss is set off by its analytical
+  properties ill-suited to direct optimization.
+  \item The \textbf{hinge loss} is a continuous relaxation that acts as a convex 
+  upper bound on the 0-1-loss: 
+  $$\Lxy = \max \{ 0, 1 - y\fx \}.$$
+  \item Note that the hinge loss only equals zero for a margin $\geq 1$, 
+  encouraging confident (correct) predictions.
+  % \item A squared version exists for putting a sharper penalty on 
+  % misclassifications:
+  % $$\Lxy = \max \{ 0, (1 - y\fx)^2\}.$$
+  \item It resembles a door hinge, hence the name:
+\end{itemize}
+
+\begin{center}
+\includegraphics[width = 0.7\textwidth]{figure/plot_loss_hinge.png}
+\end{center}
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{Classification Losses: Exponential Loss}
+
+Another possible choice for a (binary) loss function that is a smooth approximation to the 0-1-loss:
+\begin{itemize}
+\item $\Lxy = \exp(-y\fx)$, used in AdaBoost
+\item Convex, differentiable (thus easier to optimize than 0-1-loss)
+\item The loss increases exponentially for wrong predictions with high confidence; if the prediction is right with a small confidence only, there, loss is still positive
+\item No closed-form analytic solution to (empirical) risk minimization
+\end{itemize}
+
+
+\begin{figure}
+\includegraphics[width = 0.8\textwidth]{figure_man/exponential-loss.png}
+\end{figure}
+
+\end{vbframe}
+
+\begin{vbframe}{Classification Losses: AUC-loss}
+
+\begin{itemize}
+\item Often AUC is used as an evaluation criterion for binary classifiers
+\item Let $Y \in \{-1, 1\}$ with observations $n_{-1}$ number of negative and $n_{1}$ of positive samples %$y_i, i = 1, \ldots, n_{-1} + n_1$.
+\item The AUC can then be defined as
+$$AUC = n_{-1}^{-1} n_1^{-1} \sum_{i: y_i = 1} \sum_{j: y_j = -1} I(f_i > f_j)$$
+\item This is not differentiable wrt $f$ due to $I(f_i > f_j)$
+\item But the indicator function can be approximated by the distribution function of the triangular distribution on $[-1, 1]$ with mean $0$
+\item However, direct optimization of the AUC is usually not as good as optimization wrt a common loss and tuning via AUC in practice 
+
+\end{itemize}
+\end{vbframe}
+
+
+
+
+
+\endlecture
+
+\end{document}
