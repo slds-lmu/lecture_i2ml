@@ -20,10 +20,18 @@ df_2$y <- ifelse(
     0L,
     df_2$x - epsilon))
 
+
+df_3 = data.frame(x = seq(0, 2, by = 0.01))
+df_3$ymin = - epsilon + df_3$x
+df_3$ymax = epsilon + df_3$x
+
 # PLOTS ------------------------------------------------------------------------
 
 p_1 <- ggplot2::ggplot(df_1, aes(x, y)) + 
   geom_point() + 
+  ggplot2::geom_abline(intercept = - epsilon, slope = 1L, colour = "blue", lty = 4) + 
+  ggplot2::geom_abline(intercept = epsilon, slope = 1L, colour = "blue", lty = 4) + 
+  ggplot2::geom_ribbon(data = df_3, aes(x = x, ymin = ymin, ymax = ymax), fill = "blue", alpha = .2, inherit.aes = FALSE,) + 
   geom_abline(intercept = 0L, slope = 1L) +
   ggplot2::annotate(
     "text",
