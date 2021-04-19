@@ -1,0 +1,324 @@
+
+\input{../../2021/style/preamble4tex}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\begin{document}
+
+\lecturechapter{12}{Advanced Performance Evaluation}
+\lecture{Fortgeschrittene Computerintensive Methoden}
+%
+% \begin{vbframe}{Introduction}
+% In predictive modeling, performance estimation can have different goals:
+%
+% \begin{itemize}
+%   \item \textbf{Performance estimation of a model:}
+%     Estimate \emph{generalization} error of a model on new (unseen) data, drawn from the same data generating process.
+%   \item \textbf{Performance estimation of an algorithm:}
+%     Estimate \emph{generalization} error of a learning algorithm, trained on a data set
+%     of a certain size, on new (unseen) data, all drawn from the same data generating process.
+%   \item \textbf{Model selection:}
+%     Select the best model from a set of potential candidate models (e.g., different model classes, different
+%     hyperparameter settings, different feature sets)
+%   \item \textbf{Learning curves}
+%     How does the generalization error scale when an algorithm is trained on training sets of different sizes?
+% \end{itemize}
+%
+% Obviously, these goals are closely related: achieving reliable estimates of (predictive) performance
+%
+% \end{vbframe}
+
+\begin{vbframe}{Generalization error of a model}
+
+The \textbf{generalization error of a model} (also known as \textbf{model performance}) is defined as the expected loss of a fixed model $\fhD$ over $\Pxy$:
+
+$$
+GE\left(\fhD\right) = \E_{\xy \sim \Pxy}\left( L(y, \fhD(\xv))\right),
+$$
+
+where
+
+\begin{itemize}
+\item $\D$ is a dataset of size $n$ drawn from the joint $\Pxy$.
+\item $\fhD = \mathcal{I}_{L, O}(\D)$ is a model induced by applying learning algorithm $\mathcal{I}_{L, O}$ to a fixed training set $\D$. Here, the index $L$ always denotes the inner loss and $O$ the optimizer used by the learning algorithm.
+\item The expectation is taken over the outer loss $L$ of independent observations $\xy$ to assess the performance of the model $\fhD$.
+\item $GE$ is conditional on the model $\fhD$ and hence also on $\D$. %It basically refers to the risk $\risk(\fhD)$ of $\fhD$ with regard to the outer loss.
+\end{itemize}
+\end{vbframe}
+
+
+% \begin{vbframe}{Inner vs. Outer Loss}
+%
+% We differentiate between two types of measures:
+%
+% %\lz
+% \begin{itemize}
+% \item the \emph{inner loss} which is optimized \emph{during} model fitting to obtain $\fh$.
+% \item the \emph{outer loss} which is used to assess the model \emph{afterwards}.
+% \end{itemize}
+%
+% Usually, it is desired that inner and outer loss match, however, this is not always possible,
+% as the outer loss is often numerically hard(er) to handle during optimization and we might
+% opt to approximate it.
+%
+% \lz \textbf{Examples}:
+% In logistic regression, we minimize the binomial loss and in SVMs the hinge loss.
+% But when evaluating the models we might be more interested in (cost-weighted) misclassification errors, or AUC, or partial AUC as more appropriate outer loss functions.
+%
+% \lz
+% \textbf{Note}:
+% \emph{Performance measures} are usually based on the outer loss, while \emph{empirical risk functions} are based on the inner loss.
+% \end{vbframe}
+%
+% \begin{vbframe}{Training Error}
+%
+% The \emph{training error} (also called \emph{apparent error} or \emph{re-substitution error}) is estimated by the average loss over the training set $\Dtrain$:
+%   $$\GEh{\Dtrain}(\fhDtrain) = \frac{1}{|\Dtrain|} \sum_{\xy \in \Dtrain} L(y, \fhDtrain(\xv))$$
+%
+% %The training error is usually a very unreliable and overly optimistic estimator of future performance.
+%
+%  \begin{blocki}{Remember: The training error}
+%   \vspace{-0.25cm}
+%     \item is an over-optimistic (biased) estimator as the performance is measured on the same data the learned prediction function $\fhDtrain(\xv)$ was trained for.
+%     \item decreases with smaller training set size as it is easier for the model to learn the underlying structure in the training set perfectly.
+%     \item decreases with increasing model complexity as the model is able to learn more complex structures.
+%   \end{blocki}
+% \end{vbframe}
+
+\begin{vbframe}{Test error}
+% To reliably assess a model, we need to define
+%
+% \begin{itemize}
+% \item how to simulate the scenario of "new unseen data" and
+% \item how to estimate the generalization error.
+% \end{itemize}
+%
+% \begin{blocki}{Hold-out splitting and evaluation}
+%   \item The fundamental idea behind test error estimation (and everything that will follow)
+%     is quite simple: To measure performance, let's simulate how our model will be applied on new, unseen data.
+%   \item So, to evaluate a given model do exactly that, predict only on data not used during training and measure performance there.
+%   \item That implies that for a given set $\D$, we have to preserve
+%     some data for testing that we cannot use for training, hence we need to define a training set $\Dtrain$ and a
+%     and a test set $\Dtest$, usually by randomly partitioning the original $\D$, with a given split rate.
+% \end{blocki}
+%
+% \framebreak
+
+The \textbf{test error} (i.e., the \textbf{generalization error} on unseen test data) is
+%the expected prediction error on unseen data for a given training set $\Dtrain$ and can be
+estimated by the average loss over an independent test set $\Dtest$:
+$$\GEh{\Dtest}(\fhDtrain) = \frac{1}{|\Dtest|} \sum_{\xy \in \Dtest} L(y, \fhDtrain(\xv)).$$
+% \begin{blocki}{The test error}
+%   \vspace{-0.25cm}
+%   \item will typically decrease when the training set increases as the model generalizes better with more data (more data to learn).
+%   \item will have higher variance with decreasing test set size.
+%   \item will have higher variance with increasing model complexity.
+% \end{blocki}
+%
+% \framebreak
+If we fix a training set $\Dtrain$ and a model $\fhDtrain$, we can estimate $\GEh{\Dtest}(\fhDtrain)$ through test sets of various sizes, yielding multiple point estimates for the test error.
+
+\lz
+As all $\xy$ of the test set will be i.i.d. (from $\Pxy$),
+ and as $|\Dtest| = n_{\text{test}}$ will usually not be too small, we can apply the central limit theorem (CLT) to
+ approximate its distribution, calculate approximate confidence intervals, and perform
+ sample size considerations.
+\end{vbframe}
+
+
+
+\begin{vbframe}{Test Error Confidence Intervals}
+\begin{itemize}
+  \item The test error is just a point estimate.
+  \item A confidence interval around such a point estimate provides additional information about its uncertainty.
+  \item Confidence intervals can be estimated in two ways:
+  \begin{itemize}
+    \item \textbf{Parametric}: %confidence interval for the misclassification error (or accuracy).
+    We need to make assumptions about the distribution of the test error (i.e., the underlying values of the outer loss) which is often unknown. \newline
+    $\rightarrow$ At least for misclassification error / classification accuracy, we can assume a binomial distribution.
+    % Based on the CLT, we approximate the distribution of the values with a normal distribution.
+    \item \textbf{Non-parametric}: Confidence intervals are calculated without any distributional assumption.
+  \end{itemize}
+\end{itemize}
+
+\framebreak
+
+Using the classification accuracy (or misclassification error rate) as measure allows us to compute a parametric confidence interval (CI):
+
+\begin{itemize}
+  \item Each prediction on the test set is a binary random variable (i.e., correctly / incorrectly classified instance). $\Rightarrow$ A Bernoulli trial.
+  \item The accuracy (or error rate) of the whole sample follows a binomial distribution as it is based on a sequence of Bernoulli trials.
+  \item The variance of a binomial distribution is $np(1-p)$ with sample size $n$ and accuracy (or error rate) $p$.
+  Hence, the variance of the average of $n$ Bernoulli distributed random variables is $\frac{p \cdot (1-p)}{n}$.
+  \item The binomial distribution can be approximated by a Gaussian distribution for large $n$ (e.g., for $n \geq 30$).
+  \item Thus, a $(1-\alpha)$-CI for accuracy (or error rate) of $\GEh{\Dtest}$ is:
+  $$\left[\GEh{\Dtest}(\fhDtrain) \pm z_{1-\frac{\alpha}{2}}  \cdot \sqrt{\frac{\GEh{\Dtest}(\fhDtrain) \cdot (1-\GEh{\Dtest}(\fhDtrain))}{n_{\text{test}}}} \right].$$
+
+\end{itemize}
+
+\framebreak
+
+The test error $\GEh{\Dtest}(\fhDtrain)$ is often (but not always) based on performance measures that aggregate (e.g., average) outer losses.
+
+\lz
+
+In such cases, we can calculate a $(1-\alpha)$-CI of the test error as
+$$\left[\GEh{\Dtest}(\fhDtrain) \pm z_{1-\frac{\alpha}{2}} \cdot \hat{\sigma}_{GE} \right],$$
+
+where $\hat{\sigma}_{GE} = \sqrt{\frac{1}{|\Dtest|-1} \sum_{\xy \in \Dtest}\left( L(\yi, \fhDtrain (\xi)) - \GEh{\Dtest}(\fhDtrain) \right)^2 }$ is the standard error of the test error.
+
+\lz
+
+\textbf{Note}: In the case of AUC as performance measure it is difficult to formulate the test error as an average of outer losses. In such settings we could still compute CI based on bootstrapping.
+
+\framebreak
+
+Bootstrapping allows for estimation of the sampling distribution of almost any statistic (i.e., not only for the average of losses) in a non-parametric fashion.
+As the test error based on any performance measure can be considered as such a statistic, we can calculate a CI of the test error: %
+
+\begin{itemize}
+  \item Consider a fixed model $\fhDtrain$, trained on a training set $\Dtrain$, whose performance is evaluated on an independent test set $\Dtest$ using an arbitrary performance measure.
+  \item Repeat the following steps $B$ times using the test set $\Dtest$:
+  \begin{itemize}
+  \small
+    \item[1.] Produce a bootstrap sample by drawing observations with replacement from the given test set $\Dtest$.
+    \item[2.] Estimate the test error by evaluating the model performance on this bootstrap sample.
+  \normalsize
+  \end{itemize}
+% \begin{center}
+% \includegraphics[width=0.7\textwidth]{figure_man/bootrap_concept.png}
+% \end{center}
+  \item From the resulting $B$ test errors, we can, for instance, use the 2.5~\%-quantile $q_{0.025}$ and the 97.5~\%-quantile $q_{0.975}$ to estimate a 95~\%-CI:
+$\left[q_{0.025}, q_{0.975}\right].$
+\end{itemize}
+
+\end{vbframe}
+
+
+%
+% \begin{vbframe}{Train vs. test error}
+%
+% <<overfitting-polynomial-prep, echo=FALSE, out.width="0.9\\textwidth", fig.height=5>>=
+% .h = function(x) 0.5 + 0.4 * sin(2 * pi * x)
+% h = function(x) .h(x) + rnorm(length(x), mean = 0, sd = 0.05)
+%
+%  set.seed(1234)
+% x.all = seq(0, 1, length = 21L)
+% ind = seq(1, length(x.all), by = 2)
+%
+%  x = x.all[ind]
+% y = h(x)
+% x.test = x.all[-ind]
+% y.test = h(x.all[-ind])
+%
+%  line.palette = pal_3
+% baseplot = function() {
+%   par(mar = c(2, 2, 1, 1))
+%   plot(.h, lty = 2L, xlim = c(0, 1), ylim = c(-0.1, 1), ylab = "y, f(x)", xlab = "")
+%   points(x, y, pch = 19L)
+%   points(x.test, y.test)
+%   legend(x = "bottomleft", inset= 0.1, legend = c("true relationship f(x)", "training set", "test set"),
+%     col = "black", lty = c(2L, NA, NA), pch = c(NA, 19L, 21L))
+% }
+%
+%  mods = list(
+%   p1 = lm(y ~ poly(x, 1, raw = TRUE)),
+%   p2 = lm(y ~ poly(x, 5, raw = TRUE)),
+%   p4 = lm(y ~ poly(x, 11, raw = TRUE)))
+% x.plot = seq(0, 1, length = 500L)
+% baseplot()
+% @
+% <<overfitting-polynomial-plot, echo=FALSE, out.width="0.9\\textwidth", fig.height=2.7>>=
+% baseplot()
+% for (i in seq_along(mods)) {
+%   lines(x.plot, predict(mods[[i]], newdata = data.frame(x = x.plot)),
+%     col = line.palette[i], lwd = 2L)
+% }
+% legend("topright", paste(sprintf("d = %s", c(1, 5, 11)), c("(underfit)", "(good)", "(overfit)")),
+%   col = line.palette, lwd = 2L)
+% @
+% \lz
+% Train and test error:
+% <<polynomial-train-test-plot, echo=FALSE, out.width="0.9\\textwidth", fig.height=2.7>>=
+% d = lapply(1:11, function(i) {
+%   mod = lm(y ~ poly(x, degree = i, raw = TRUE))
+%   list(
+%     train = mean((y - predict(mod, data.frame(x = x)))^2),
+%     test = mean((y.test - predict(mod, data.frame(x = x.test)))^2)
+%   )
+% })
+% par(mar = c(4, 4, 1, 1))
+% #par(mar = c(4, 4, 0, 0) + 0.1)
+% plot(1, type = "n", xlim = c(1, 11), ylim = c(0, 0.05),
+%   ylab = "MSE", xlab = "degree of polynomial")
+% lines(1:11, sapply(d, function(x) x$train), type = "b", lwd = 3, lty = 2)
+% lines(1:11, sapply(d, function(x) x$test), type = "b", col = "gray", lwd = 3, lty = 1)
+%
+%  legend("top", c("training error", "test error"), lty = c(2,1), col = c("black", "gray"), lwd = 3)
+% text(3.75, 0.02, "High Bias,\nLow Variance", bg = "white")
+% arrows(4.75, 0.02, 2.75, 0.02, code = 2L, lty = 2L, length = 0.1)
+%
+%  text(8, 0.02, "Low Bias,\nHigh Variance", bg = "white")
+% arrows(9, 0.02, 7, 0.02, code = 1, lty = 2, length = 0.1)
+% @
+%
+% \end{vbframe}
+
+
+\begin{vbframe}{Resampling Methods}
+
+\begin{itemize}
+  \item Aim: Assess the performance of an \textbf{algorithm} (not just a model).
+  \item Resampling methods use the available data more efficiently than a simple train-test split.
+  \item The data is split repeatedly into training and test sets. Later, we aggregate (e.g., average) the results.
+  \item The usual trick is to make training sets quite large (to keep the pessimistic bias small),
+  and to handle the variance introduced by smaller test sets through many repetitions and averaging
+  of results.
+\end{itemize}
+
+\begin{center}
+\includegraphics[width=5cm]{figure_man/ml_abstraction-crop.pdf}
+\end{center}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Generalization Error of Learning Algorithms}
+
+A learning algorithm (inducer) $\mathcal{I}_{L, O}(\Dtrain)$ that is applied to training data $\Dtrain$, consisting of $n$ randomly drawn observations from $\Pxy$, produces a prediction model $\fh_{\Dtrain}(\xv) = \mathcal{I}_{L, O}(\Dtrain)$.
+
+\lz
+
+The \textbf{generalization error of a learning algorithm} $\mathcal{I}_{L, O}$ is the expectation of the generalization error of $\fh_{\Dtrain}$ w.r.t. all possible training sets $\Dtrain$ of size $n$ that were drawn from $\Pxy$:
+\begin{eqnarray*}
+\GEind &=& \E_{\Dtrain \sim \Pxy}\left(GE(\fh_{\Dtrain})\right) \\
+&=& \E_{\Dtrain \sim \Pxy}\left( \E_{\xy \sim \Pxy}( L(y, \fh_{\Dtrain}(\xv)) | \Dtrain) \right).
+\end{eqnarray*}
+%&=& \frac{1}{B} \sum_{b = 1}^{B} \widehat{GE}(\fh_{\Dtrain^b}, \Dtest^b)\\
+%&=& \frac{1}{B} \sum_{b = 1}^{B} \frac{1}{|\Dtest^b|} \sum_{\xyi \in \Dtest^b} L(\yi, \fh_{\Dtrain^b}(\xi))
+%Note that the expectation $\EDn$ averages over the randomness caused by drawing the data sets $\D$ of size $n$ used to produce $\fh_{\D}$.
+%averages over everything that is random, including the randomness in the data $\D$ that produced $\fh_{\D}$.
+
+\lz
+
+$\Rightarrow$ Resampling methods estimate this so-called \textbf{expected generalization error} which is a property of the inducing algorithm $\mathcal{I}_{L, O}$ (i.e., \textbf{not} of a specific model $\fh_{\D}$).
+
+\framebreak
+
+Resampling methods are based on repeatedly splitting the observed dataset into training and test sets and fitting a learning algorithm to training sets of equal size $n$.
+
+\lz
+
+Consider $B$ sets of training and test data generated by a resampling method (denoted by $\Dtrain^b$ and $\Dtest^b$, $b=1,\dots,B$, respectively). The \textbf{expected generalization error} can then be estimated by
+\begin{eqnarray*}
+\widehat{\GEind} &=&
+\frac{1}{B} \sum_{b = 1}^{B} \GEh{\Dtest^b} (\fh_{\Dtrain^b})\\
+&=& \frac{1}{B} \sum_{b = 1}^{B} \frac{1}{|\Dtest^b|} \sum_{\xy \in \Dtest^b} L\left(y, \fh_{\Dtrain^b}(\xv)\right).
+\end{eqnarray*}
+\textbf{Note}: $\GEind$ depends on $n$, i.e., the size of the training sets.
+
+\end{vbframe}
+
+\endlecture
+\end{document}
+
