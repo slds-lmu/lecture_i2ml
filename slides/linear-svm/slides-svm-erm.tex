@@ -1,0 +1,111 @@
+\input{../../style/preamble} 
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+\input{../../latex-math/ml-svm}
+
+\newcommand{\titlefigure}{figure_man/other-losses.png}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{SVMs and Empirical Risk Minimization}
+\lecture{Introduction to Machine Learning}
+
+\sloppy 
+
+
+\begin{vbframe}{Regularized empirical risk minimization}
+
+  \begin{itemize}
+    \item We motivated SVMs from a geometrical point of view: The margin is a distance to be maximized.
+    \item This is not really true anymore under margin violations:
+    The slack variables are not really distances. 
+    Instead, $\gamma \cdot \sli$ is the distance by
+    which an observation violates the margin.
+    \item This already indicates that transferring the
+    geometric intuition from hard-margin SVMs to
+    the soft-margin case has its limits.
+    \item There is an alternative approach to understanding
+    soft-margin SVMs: They are \textbf{regularized
+    empirical risk minimizers}.
+  \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Soft-Margin SVM With ERM and Hinge Loss}
+
+We derived this QP for the soft-margin SVM: 
+  \begin{eqnarray*}
+    & \min\limits_{\thetab, \thetab_0,\sli} & \frac{1}{2} \|\thetab\|^2 + C   \sum_{i=1}^n \sli \\
+    & \text{s.t.} & \,\, \yi  \left( \scp{\thetab}{\xi} + \thetab_0 \right) \geq 1 - \sli \quad \forall\, i \in \nset,\\
+    & \text{and} & \,\, \sli \geq 0 \quad \forall\, i \in \nset.
+  \end{eqnarray*}
+
+  In the optimum, the inequalities will hold with equality (as we minimize the slacks), so $\sli = 1 - \yi \fxi$, but the lowest value $\sli$ can take is 0 (we do no get a bonus for points beyond the margin on the correct side).
+  So we can rewrite the above: 
+\begin{align*} 
+    \frac{1}{2} \|\thetab\|^2 + C \sumin \Lxyi ;\; \Lyf = 
+    \begin{cases} 
+      1 - y f & \text{ if } y f \leq 1 \\ 
+      0       & \text{ if } y f > 1 
+    \end{cases}
+\end{align*} 
+We can also write $\Lyf = \max(1-yf, 0)$.
+
+\framebreak
+  $$ \risket = \frac{1}{2} \|\thetab\|^2 + C \sumin \Lxyi ;\; \Lyf = \max(1-yf, 0)$$
+  \begin{itemize}
+    \item This now obviously L2-regularized empirical risk minimization.
+    \item Actually, a lot of ERM theory was established when Vapnik (co-)invented the SVM in the beginning of the 90s.
+    \item L is called hinge loss -- as it looks like a door hinge.
+    \item It is a continuous, convex, upper bound on the zero-one loss.
+      In a certain sense it is the best upper convex relaxation of the 0-1.
+  \end{itemize}
+
+
+\begin{center}
+\includegraphics[width = 9cm ]{figure_man/soft-margin.png} \\
+\end{center}
+
+\framebreak
+
+  $$ \frac{1}{2} \|\thetab\|^2 + C \sumin \Lxyi ;\; \Lyf = \max(1-yf, 0)$$
+\begin{itemize}
+ \item  The ERM interpretation does not require any of the terms -- the loss or the regularizer -- to be geometrically meaningful.
+  \item The above form is a very compact form to define the convex optimization problem of the SVM. 
+  \item It is "well-behaved" due to convexity, every minimum is global.
+  \item The above is convex, without constraints! We might see this as "easier to optimize" than the QP from before. But note it is non-differentiable due to the hinge. 
+    So specialized techniques (e.g. sub-gradient) would have to be used. 
+  \item Some literature claims this primal cannot be easily kernelized - which is not really true.
+  \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Other losses}
+
+  SVMs can easily be generalized by changing the loss function.
+  \begin{itemize}
+    \item Squared hinge loss / Least Squares SVM: $\Lyf = \max(0, (1 - yf)^2)$ 
+    \item Huber loss (smoothed hinge loss)
+    \item Bernoulli/Log loss. This is L2-regularized logistic regression!
+    \item NB: These other losses usually do not generate sparse solutions in terms of 
+      data weights and hence have no "support vectors".
+  \end{itemize}
+
+
+\begin{center}
+\includegraphics[width = 11cm ]{figure_man/other-losses.png} \\
+\end{center}
+
+
+\end{vbframe}
+
+
+\endlecture
+\end{document}
+
+

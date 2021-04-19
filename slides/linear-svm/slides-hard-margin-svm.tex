@@ -1,0 +1,393 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/svm-geometry02.png}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Linear Hard Margin SVM}
+\lecture{Introduction to Machine Learning}
+
+\sloppy
+
+
+\begin{vbframe}{Linear classifiers}
+
+
+\begin{center}
+\includegraphics[width =9cm]{figure_man/linear-classifiers01.png} \\
+\end{center}
+
+
+\vspace{-0.5em}
+
+\begin{itemize}
+    \item We want study how to build a binary, linear classifier 
+      from solid geometrical principles.  
+    \item Which of these two classifiers is \enquote{better}?
+\end{itemize}
+  
+  \framebreak
+  
+
+\begin{center}
+\includegraphics[width =9cm]{figure_man/linear-classifiers02.png} \\
+\end{center}
+
+
+\vspace{-0.5em}
+
+\begin{itemize}
+    \item We want study how to build a binary, linear classifier 
+      from solid geometrical principles.  
+    \item Which of these two classifiers is \enquote{better}?
+\end{itemize}
+  
+    $\quad \rightarrow$ The decision boundary on the right has a larger \textbf{safety margin.}
+
+
+\end{vbframe}
+
+
+% \begin{vbframe}{Recall: Hyperplanes}
+
+%   A hyperplane in $\Xspace = \R^p$ is a $p-1$ dimensional linear subspace defined by a normal vector $\thetab$ (usually with $||\thetab|| = 1$), perpendicular to the hyperplane, and an offset $\theta_0$.
+%   \lz
+% For $\fx := \scp{\thetab}{\xv} + \theta_0$, the hyperplane is defined as
+% \vspace{-0.3cm}
+%   $$
+%   \{\xv \in \Xspace: \scp{\thetab}{\xv} + \theta_0 = 0 \} = \{\xv \in \Xspace ~|~ \fx = 0 \}
+%   $$
+%   \begin{center}
+%   \includegraphics[width=3cm]{figure_man/introduction/hyperplane2d.pdf} ~~~~~
+%   \includegraphics[width=3cm]{figure_man/introduction/hyperplane3d.pdf} ~~~~~
+%   \includegraphics[width=2cm]{figure_man/introduction/hyperplane_posneg.pdf} \\
+%   % \footnotesize{Hyperplane in a 2-/3-dimensional space}
+% \end{center}
+
+% % \vspace{-0.5cm}
+
+% \framebreak
+
+% Positive halfspace: $\phantom{i}\{x \in \Xspace : f(x) > 0\}$ (in direction of $\thetab$)\\
+% Negative halfspace: $\{x \in \Xspace : f(x) < 0\}$
+
+% % \vspace{-0.5cm}
+
+% The distance between point $x$ and hyperplane is
+% $$d(f, x) = \frac{|\scp{\thetab}{x} + \theta_0|}{\|\thetab\|} = \frac{|f(x)|}{||\thetab||},$$\\
+% i.e., $d(f, 0) = |\theta_0| / ||\thetab||$.
+
+% For unit length $\thetab$, these simplify to $$d(f, x) = |f(x)|$$ and $d(f, 0) = |\theta_0|$ .
+
+%   % \frac{|\scp{\thetab}{x} + \theta_0|}{\|\thetab\|}.
+
+%   % $f(x)$
+
+% % Consider now labeled data, e. g. $\xyi$ with $\yi \in \{-1, +1\}$.
+
+% % \vspace{1.5cm}
+
+% \end{vbframe}
+
+\begin{vbframe}{Support Vector Machines: Geometry}
+
+For labeled data $\D = \Dset$, with $\yi \in \{-1, +1\}$:
+\begin{itemize}
+  \item Assume linear separation by $\fx = \thetab^\top \xv + \theta_0$, such that all $+$-observations are in the positive halfspace
+
+  $$
+  \phantom{i}\{\xi \in \Xspace: \fx > 0\}
+  $$
+
+  and all $-$-observations are in the negative halfspace
+
+  $$
+  \phantom{i}\{\xv \in \Xspace : \fx < 0\}.
+  $$
+
+  \item For a linear separating hyperplane, we have
+  $$
+    \yi \underbrace{\left(\thetab^\top \xi + \theta_0\right)}_{= \fxi} > 0 \quad \forall i \in \{1, 2, ..., n\}.
+  $$
+
+  \item 
+    % For correctly classified points $\left(\xi, \yi\right)$,
+  $$
+    d \left(f, \xi \right) = \frac{\yi \fxi}{\|\thetab\|} = \yi \frac{\thetab^T \xi + \theta_0}{\|\thetab\|}
+  $$
+  computes the (signed) distance to the separating hyperplane $\fx$,
+    positive for correct classifications, negative for incorrect.
+  \item This expression becomes negative for misclassified points.
+\end{itemize}
+
+
+\begin{center}
+\includegraphics[width =7cm]{figure_man/svm-geometry01.png} \\
+\end{center}
+
+
+\framebreak
+
+\begin{itemize}
+    \item The distance of $f$ to the whole dataset $\D$
+    is the smallest distance
+    $$
+    \gamma = \min\limits_i \Big\{ d \left(f, \xi \right) \Big\}.
+    $$
+    \item This represents the \enquote{safety margin}, it is positive if $f$ separates and we want to maximize it.
+\end{itemize}
+
+
+\begin{center}
+\includegraphics[width =7cm]{figure_man/svm-geometry02.png} \\
+\end{center}
+
+
+\end{vbframe}
+
+\begin{vbframe}{Maximum margin separation}
+
+  We formulate the desired property of a large \enquote{safety margin} as an optimization problem:
+  \begin{eqnarray*}
+    & \max\limits_{\thetab, \theta_0} & \gamma \\
+    & \text{s.t.} & \,\, d \left(f, \xi \right) \geq \gamma \quad \forall\, i \in \nset.
+    \end{eqnarray*}
+
+    \begin{itemize}
+      \item The constraints mean: We require that any instance $i$ should have a \enquote{safety} distance of at least $\gamma$ from the decision boundary defined by $f = \thetab^T + \theta_0 \xv$.
+      \item Our objective is to maximize the \enquote{safety} distance.
+    \end{itemize}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Maximum margin separation}
+
+We reformulate the problem:
+
+\begin{eqnarray*}
+   & \max \limits_{\thetab, \theta_0} & \gamma \\
+   & \text{s.t.} & \,\, \frac{\yi \left( \scp{\thetab}{\xi} + \theta_0 \right)}{\|\thetab\|} \geq \gamma \quad \forall\, i \in \nset.
+\end{eqnarray*}
+
+\begin{itemize}
+  \item The inequality is rearranged by multiplying both sides with $\|\thetab\|$:
+\end{itemize}
+
+\begin{eqnarray*}
+   & \max \limits_{\thetab, \theta_0} & \gamma \\
+   & \text{s.t.} & \,\,\yi  \left( \scp{\thetab}{\xi} + \theta_0 \right) \geq \|\thetab\| \gamma \quad \forall\, i \in \nset.
+\end{eqnarray*}
+
+\framebreak
+
+  \begin{itemize}
+    \item Note that the same hyperplane does not have a unique representation:
+    $$
+      \{\xv \in \Xspace ~|~ \thetab^\top \xv = 0\} = \{\xv \in \Xspace ~|~ c \cdot \thetab^\top \xv = 0\}
+    $$
+    for arbitrary $c \ne 0$.
+    \item To ensure uniqueness of the solution, we make a reference choice -- we only consider hyperplanes with $\|\thetab\| = 1 / \gamma$:
+  \end{itemize}
+
+  \begin{eqnarray*}
+     & \max \limits_{\thetab, \theta_0} & \gamma \\
+     & \text{s.t.} & \,\,\yi  \left( \scp{\thetab}{\xi} + \theta_0 \right) \geq 1 \quad \forall\, i \in \nset.
+  \end{eqnarray*}
+
+\framebreak
+
+  \begin{itemize}
+    \item Substituting $\gamma = 1 / \|\thetab\|$ in the objective yields:
+  \end{itemize}
+
+  \begin{eqnarray*}
+     & \max \limits_{\thetab, \theta_0} & \frac{1}{\|\thetab\|} \\
+     & \text{s.t.} & \,\,\yi  \left( \scp{\thetab}{\xi} + \theta_0 \right) \geq 1 \quad \forall\, i \in \nset.
+  \end{eqnarray*}
+
+ \begin{itemize}
+  \item Maximizing $1 / \|\thetab\|$ is the same as minimizing $\|\thetab\|$, which is the same as minimizing $\frac{1}{2}\|\thetab\|^2$:
+  \end{itemize}
+
+\begin{eqnarray*}
+  & \min\limits_{\thetab, \theta_0} \quad & \frac{1}{2} \|\thetab\|^2 \\
+   & \text{s.t.} & \,\,\yi  \left( \scp{\thetab}{\xi} + \theta_0 \right) \geq 1 \quad \forall\, i \in \nset.
+\end{eqnarray*}
+
+\end{vbframe}
+
+\begin{vbframe}{Quadratic Program}
+
+We derived the following optimization problem:
+
+  \begin{eqnarray*}
+  & \min\limits_{\thetab, \theta_0} \quad & \frac{1}{2} \|\thetab\|^2 \\
+  & \text{s.t.} & \,\,\yi  \left( \scp{\thetab}{\xi} + \theta_0 \right) \geq 1 \quad \forall\, i \in \nset.
+\end{eqnarray*}
+
+This turns out to be a \textbf{convex optimization problem} -- particularly, a \textbf{quadratic program}: The objective function is quadratic, and the constraints are linear inequalities.
+
+\lz
+
+This is called the \textbf{primal} problem. We will later show that we can also derive a dual problem from it.
+
+\lz
+
+We will call this the \textbf{linear hard-margin SVM}.
+\end{vbframe}
+
+% \frame{
+% \frametitle{Maximum margin separation}
+%    \begin{eqnarray*}
+%     \only<1-5>  {& \max \limits_{\thetab, \theta_0} & \gamma}
+%     \only<6->{& \min\limits_{\thetab, \theta_0} \quad & \frac{1}{2} \|\thetab\|^2} \\
+%     \only<1>{& \text{s.t.} & \,\, d(f, \xi) \geq \gamma \quad \forall\, i \in \nset}
+%     \only<2>{& \text{s.t.} & \,\, \frac{\yi \left( \scp{\thetab}{\xi} + \theta_0 \right)}{\|\thetab\|} \geq \gamma \quad \forall\, i \in \nset} \\
+%     \only<3-4> {& \text{s.t.} & \,\,\yi  \left( \scp{\thetab}{\xi} + \theta_0 \right) \geq \|\thetab\| \gamma \quad \forall\, i \in \nset} \\
+%     \only<5-> {& \text{s.t.} & \,\,\yi  \left( \scp{\thetab}{\xi} + \theta_0 \right) \geq 1 \quad \forall\, i \in \nset}
+%    \end{eqnarray*}
+%    \vspace{-1em}
+%   \pause
+%
+%    \begin{itemize}
+%     % \item<1-> We can get rid of the $\|\thetab\|=1$ constraint by dividing the inequality constraint by $\|\thetab\|$
+%     \pause
+%     \item<3-> The inequality is rearranged by multiplying both sides with $\|\thetab\|$
+%     \pause
+%     \item<4-> Remember: As we assume linear separability, any positively scaled $\thetab, \theta_0$ satisfies the constraint, too \\
+%     \item<5-> We substitute $\|\thetab\| = \frac{1}{\gamma} \Leftrightarrow \gamma = 1/\|\thetab\|$
+%     \item<6-> Maximizing $\gamma$ is the same as minimizing $\|\thetab\|$ which is the same as minimizing $\frac{1}{2}\|\thetab\|^2$
+%     % \item There are efficient ``off-the-shelf'' algorithms for solving
+%     % such problems.
+%    \end{itemize}
+%
+% }
+
+
+% \frame{
+% \frametitle{Maximum margin separation}
+%
+%   Now we will reformulate the optimization problem:
+%   \begin{eqnarray*}
+%     \only<1>  {& \max \limits_{\thetab, \theta_0} & \gamma}
+%     \only<2-3>  {& \min\limits_{\thetab, \theta_0} & 1 / (2 \gamma^2)}
+%     \only<4->{& \min\limits_{\thetab, \theta_0} \quad & \frac{1}{2} \|\thetab\|^2} \\
+%     \only<1-2>{& \text{s.t.} & \,\, \yi  \left( \scp{\thetab}{\xi} + \theta_0 \right) \geq \gamma \quad \forall\, i \in \nset}
+%     \only<3->{& \text{s.t.} & \,\, \yi  \left( \scp{\thetab}{\xi} + \theta_0 \right) \geq 1 \quad \forall\, i \in \nset} \\
+%     \only<-2>{& \quad & \|\thetab\| = 1}
+%     \only<3>{& \quad & \|\thetab\| = 1/\gamma}
+%     \only<4->{& \enspace & \enspace}
+%   \end{eqnarray*}
+%   \vspace{-1em}
+%   \pause
+%   \begin{itemize}
+%     \item Maximizing $\gamma$ is the same as minimizing $1 / (2 \gamma^2)$.
+%     \pause
+%     \item The solution $(\thetab, \theta_0)$ can be scaled without           changing the classifier. We scale it with the factor $1 / \gamma$.
+%     \pause
+%     \item The second constraint can be used to eliminate $\gamma$ from
+%     the optimization problem.
+%     It still holds $\gamma = 1 / \|\thetab\|$.
+%     \pause
+%     \item This turns out to be a convex optimization problem.
+%     This particular form is called a \textbf{quadratic program}:
+%     the objective function is quadratic, and the constraints are
+%     linear (equalities and) inequalities.
+%     % \item There are efficient ``off-the-shelf'' algorithms for solving
+%     % such problems.
+%   \end{itemize}
+%
+% }
+
+
+% --- ADDED FOR MUDS: THIS SHOULD BE REDUNDANT AS IT IS IN SLIDES-2-HARD-MARGIN SVM
+
+% Because we do not cover duality, slides-2-hard-margin-svm would only contain 2 slides. Thus I added it here.
+
+\begin{vbframe}{Support Vectors}
+% \vspace{1cm}
+
+% \begin{center}
+%   \includegraphics[width=5cm]{figure_man/kernels/separable-f.pdf}
+% \end{center}
+
+% \framebreak
+
+  \begin{itemize}
+    \item There exist instances $(\xi, \yi)$ with minimal margin
+    $\yi  \fxi = 1$, fulfilling the inequality constraints with equality.
+    \item They are called
+    \textbf{support vectors (SVs)}. They are located exactly at
+    a distance of $\gamma = 1 / \|\thetab\|$ from the separating hyperplane.
+    \item It is already geometrically obvious 
+      that the solution does not depend on the non-SVs! We could delete them from the data and would arrive at the same solution.
+    \vspace{0.5cm}
+    
+
+\begin{center}
+\includegraphics[width =6cm]{figure_man/support-vectors.png} \\
+\end{center}
+
+
+  \end{itemize}
+
+
+\end{vbframe}
+
+
+% \begin{vbframe}{Dual Hard-Margin SVM}
+% 
+% It can be shown that \textbf{dual} representation is an equivalent representation of the problem:
+% 
+% \vspace*{-0.5cm}
+% \begin{eqnarray*}
+%     & \max\limits_{\alpha \in \R^n} & \sum_{i=1}^n \alpha_i - \frac{1}{2}\sum_{i=1}^n\sum_{j=1}^n\alpha_i\alpha_j\yi y^{(j)} \scp{\xi}{\xv^{(j)}} \\
+%     & \text{s.t.} & \sum_{i=1}^n \alpha_i \yi = 0, \\
+%     & \quad & \alpha_i \ge 0~\forall i \in \nset,
+% \end{eqnarray*}
+% 
+% or, defining $\bm{K}:= \Xmat \Xmat^\top$,   equivalently in matrix notation:
+% 
+% \vspace*{-.5cm}
+% \begin{eqnarray*}
+%   & \max\limits_{\alpha \in \R^n} & \one^\top \alpha - \frac{1}{2} \alpha^\top \diag(\ydat)\bm{K} \diag(\ydat) \alpha \\
+%   & \text{s. t.} & \alpha^\top \ydat = 0, \\
+%   & \quad & \alpha \geq 0.
+% \end{eqnarray*}
+% 
+% 
+% \framebreak
+% 
+% It can be shown that the solution of a hard-margin support vector machine can be written as follows:
+% 
+%   $$
+%     \thetah = \sumin \alpha_i \yi \xi \quad \text{ and }\quad \theta_0 = y^{(i^\star)} - \scp{\thetab}{\xv^{(i^\star)}},
+%   $$
+% 
+%   where $(\xv^{(i^\star)}, y^{(i^\star)})$ can be any support vector.
+% 
+% \lz
+% 
+% Class predictions for a new observation $\xv$ are constructed by
+% $$h(\xv) = \text{sgn}(f(\xv)) = \text{sgn}\left(\sumin \alpha_i \yi {\xi}^{\top} \xv + \theta_0 \right),$$
+% 
+% which is essentially a weighted sum of the
+% \begin{itemize}
+% \item dot products ${\xi}^{\top} \xv$ (i.e., the similarity of $\xi$ and $\xv$), with
+% \item weights $\alpha_i \yi$, where $\alpha_i = 0$ for all non-SVs.
+% \end{itemize}
+% \end{vbframe}
+
+
+\endlecture
+\end{document}
