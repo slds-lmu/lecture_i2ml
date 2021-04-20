@@ -33,18 +33,20 @@
 \lecture{Introduction to Machine Learning}
 
 \begin{vbframe}{Advanced Loss Functions}
-\begin{itemize}
-\item Advanced loss functions are designed to achieve special properties (e.g., robustness and smoothness for the Huber or Cauchy loss).
-\item Furthermore, special loss functions are necessary in certain applications.
-\item Examples:
+Special loss functions can be used to estimate non-stanard posterior components, 
+    to measure errors in a custom way or are designed to have special properties like robustness.
+
+\vspace{1cm}
+
+Examples:
 \begin{itemize}
 \item Quantile loss: Overestimating a clinical parameter might not be as bad as underestimating it.
 \item Log-barrier loss: Extremely under- or overestimating demand in production would put company profit at risk.
 \item $\eps$-insensitive loss: A certain amount of deviation in production does no harm, larger deviations do.
 \end{itemize}
-\item Sometimes a custom loss must be designed specifically for the given application.
-\item Some learning algorithms use specific loss functions, e.g., the hinge loss for SVMs.
-\end{itemize}
+% \item Sometimes a custom loss must be designed specifically for the given application.
+% \item Some learning algorithms use specific loss functions, e.g., the hinge loss for SVMs.
+% \end{itemize}
 \end{vbframe}
 
 \begin{vbframe}{Huber Loss}
@@ -54,14 +56,14 @@
 
 $$
 \Lxy = \begin{cases}
-  \frac{1}{2}(y - \fx)^2  & \text{ if } |y - \fx| \le \delta \\
-  \delta |y - \fx|-\frac{1}{2}\delta^2 \quad & \text{ otherwise }
-  \end{cases}, \quad \delta > 0
+  \frac{1}{2}(y - \fx)^2  & \text{ if } |y - \fx| \le \epsilon \\
+  \epsilon |y - \fx|-\frac{1}{2}\epsilon^2 \quad & \text{ otherwise }
+  \end{cases}, \quad \epsilon > 0
 $$
 
 \begin{itemize}
 \item Piece-wise combination of $L1$/$L2$ to have robustness/smoothness
-\item Analytic properties: convex, differentiable, robust
+\item Analytic properties: convex, differentiable (once)
 % \item Combines advantages of $L1$ and $L2$ loss: differentiable + robust
 \end{itemize}
 
@@ -79,7 +81,7 @@ $$
 
 \begin{itemize}
 \item Risk minimizer and optimal constant do not have a closed-form solution. To fit a model numerical optimization is necessary. 
-\item The solution is a \textbf{trimmed mean}: a (conditional) mean between two (conditional) quantiles. % (the location depends on the distribution and the value of $\delta$).  
+\item Solution behaves like \textbf{trimmed mean}: a (conditional) mean of two (conditional) quantiles. % (the location depends on the distribution and the value of $\epsilon$).  
 \end{itemize}
 
 % \vspace*{0.2cm}
@@ -93,6 +95,55 @@ $$
 
 \end{vbframe}
 
+\begin{vbframe}{Log-cosh Loss}
+
+% Confirmed with Bernd: use def from https://heartbeat.fritz.ai/5-regression-loss-functions-all-machine-learners-should-know-4fb140e9d4b0
+
+$$
+\Lxy = \log \left( \cosh(\left|y - \fx\right|) \right)
+% \log \left(\tfrac{1}{2} (\left|y - \fx\right| / c)^2 + 1\right), \quad c \in \R
+$$
+
+\normalsize
+\begin{itemize}
+\item Logarithm of the hyperbolic cosine of the residual.
+\item Approximately equal to $0.5 (\left|y - \fx\right|)^2$ for small $\xv$ and to $\left|y - \fx\right| - \log 2$ for large $\xv$, meaning it works mostly like $L2$ loss but is less outlier-sensitive.
+\item Has all the advantages of Huber loss and is, moreover, twice differentiable everywhere.
+\end{itemize}
+
+\vfill
+
+\begin{center}
+% \includegraphics[width = 0.6\textwidth]{figure_man/loss_cauchy_plot1.png}
+\includegraphics[width = 0.6\textwidth]{figure/loss_logcosh.png}
+\end{center}
+
+\end{vbframe}
+
+\begin{vbframe}{Cauchy loss}
+
+% Confirmed with Bernd: use def from https://www.user.tu-berlin.de/mtoussai/teaching/15-MachineLearning/15-MachineLearning-script.pdf, p. 24 
+
+$$
+\Lxy = \frac{c^2}{2} \log \left( 1 + \left( \frac{\left|y - \fx\right|}{c}\right)^2 \right), 
+\quad c \in \R
+% \log \left(\tfrac{1}{2} (\left|y - \fx\right| / c)^2 + 1\right), \quad c \in \R
+$$
+
+\normalsize
+\begin{itemize}
+\item Particularly robust toward outliers (controllable via $c$).
+\item Analytic properties: differentiable, but not convex! 
+\end{itemize}
+
+\vfill
+
+\begin{center}
+% \includegraphics[width = 0.6\textwidth]{figure_man/loss_cauchy_plot1.png}
+\includegraphics[width = 0.6\textwidth]{figure/loss_cauchy.png}
+\end{center}
+
+\end{vbframe}
 
 
 \begin{vbframe}{Log-Barrier Loss}
@@ -123,7 +174,7 @@ $$
 
 
 
-\begin{vbframe}{Log-Barrier: Optimal constant model}
+\begin{vbframe}{Log-Barrier loss}
 
 \begin{itemize}
  \item Similarly to the Huber loss, there is no closed-form solution for the optimal constant model $\fx = \thetab$ w.r.t. the log-barrier loss. Numerical optimization is necessary.
@@ -164,6 +215,7 @@ $$
 $$
 \begin{itemize}
 \item Modification of $L1$ loss, errors below $\epsilon$ accepted without penalty.
+\item Used in SVM regression.
 \item Properties: convex and not differentiable for $ y - \fx \in \{-\epsilon, \epsilon\}$.
 \end{itemize}
 
@@ -177,34 +229,35 @@ $$
 \end{vbframe}
 
 
-\begin{vbframe}{$\epsilon$-insensitive Loss: Optimal Constant}
+%% BB: der beweis hier sieht falsch aus...!
+%% \begin{vbframe}{$\epsilon$-insensitive Loss: Optimal Constant}
 
-% % Derive Constant model and eps-insens loss
-What is the optimal constant model $\fx = \thetab$ w.r.t. the $\epsilon$-insensitive loss $\Lxy =  |y - \fx| ~ \mathds{1}_{ \left\{|y - \fx| > \epsilon \right\}}$?
+%% % Derive Constant model and eps-insens loss
+%What is the optimal constant model $\fx = \thetab$ w.r.t. the $\epsilon$-insensitive loss $\Lxy =  |y - \fx| ~ \mathds{1}_{ \left\{|y - \fx| > \epsilon \right\}}$?
 
-\vspace{-0.2cm}
-\begin{eqnarray*}
-\hat \thetab&=& \argmin_{\thetab\in \R}\sumin \Lxyi \\
-&=& \argmin_{\thetab\in \R} \sum_{i \in I_\eps} \left| \yi - \thetab \right| - \eps  \\
-&=& \argmin_{\thetab\in \R} \sum_{i \in I_\eps} \left| \yi - \thetab \right| - \sum_{i \in I_\eps} \eps \\
-&=& \text{median}\left(\left\{\yi ~|~ i \in I_\eps\right\}\right) - |I_\eps| \cdot \eps \\
-\end{eqnarray*}
+%\vspace{-0.2cm}
+%\begin{eqnarray*}
+%\hat \thetab&=& \argmin_{\thetab\in \R}\sumin \Lxyi \\
+%&=& \argmin_{\thetab\in \R} \sum_{i \in I_\eps} \left| \yi - \thetab \right| - \eps  \\
+%&=& \argmin_{\thetab\in \R} \sum_{i \in I_\eps} \left| \yi - \thetab \right| - \sum_{i \in I_\eps} \eps \\
+%&=& \text{median}\left(\left\{\yi ~|~ i \in I_\eps\right\}\right) - |I_\eps| \cdot \eps \\
+%\end{eqnarray*}
 
-with $I_\eps := \left\{i: |\yi - \fxi| \le \eps \right\}$.
+%with $I_\eps := \left\{i: |\yi - \fxi| \le \eps \right\}$.
 
-% \framebreak
+%% \framebreak
 
-% 
-% < <eps-loss-plot, fig.height = 5.5, include = FALSE>>=
-%   
-%   plotConstantModel(df, c("L2", "L1", "quant25", "quant75", "Huber1", "eps2"))
-% @
-% 
-% \begin{center}
-% \includegraphics[width = 10cm]{figure/eps-loss-plot-1.pdf} \\
-% \end{center}
+%% 
+%% < <eps-loss-plot, fig.height = 5.5, include = FALSE>>=
+%%   
+%%   plotConstantModel(df, c("L2", "L1", "quant25", "quant75", "Huber1", "eps2"))
+%% @
+%% 
+%% \begin{center}
+%% \includegraphics[width = 10cm]{figure/eps-loss-plot-1.pdf} \\
+%% \end{center}
 
-\end{vbframe}
+%\end{vbframe}
 
 \begin{vbframe}{Quantile Loss}
 \vspace{-0.3cm}
@@ -248,56 +301,7 @@ where $Q_\alpha(\cdot)$ computes the empirical $\alpha$-quantile of $\{\yi\}, i 
 
 \end{vbframe}
 
-\begin{vbframe}{Cauchy loss}
 
-% Confirmed with Bernd: use def from https://www.user.tu-berlin.de/mtoussai/teaching/15-MachineLearning/15-MachineLearning-script.pdf, p. 24 
-
-$$
-\Lxy = \frac{c^2}{2} \log \left( 1 + \left( \frac{\left|y - \fx\right|}{c}\right)^2 \right), 
-\quad c \in \R
-% \log \left(\tfrac{1}{2} (\left|y - \fx\right| / c)^2 + 1\right), \quad c \in \R
-$$
-
-\normalsize
-\begin{itemize}
-\item Particularly robust toward outliers (controllable via $c$).
-\item Analytic properties: differentiable, robust, but not convex! 
-\end{itemize}
-
-\vfill
-
-\begin{center}
-% \includegraphics[width = 0.6\textwidth]{figure_man/loss_cauchy_plot1.png}
-\includegraphics[width = 0.6\textwidth]{figure/loss_cauchy.png}
-\end{center}
-
-\end{vbframe}
-
-
-\begin{vbframe}{Log-cosh Loss}
-
-% Confirmed with Bernd: use def from https://heartbeat.fritz.ai/5-regression-loss-functions-all-machine-learners-should-know-4fb140e9d4b0
-
-$$
-\Lxy = \log \left( \cosh(\left|y - \fx\right|) \right)
-% \log \left(\tfrac{1}{2} (\left|y - \fx\right| / c)^2 + 1\right), \quad c \in \R
-$$
-
-\normalsize
-\begin{itemize}
-\item Logarithm of the hyperbolic cosine of the residual.
-\item Approximately equal to $0.5 (\left|y - \fx\right|)^2$ for small $\xv$ and to $\left|y - \fx\right| - \log 2$ for large $\xv$, meaning it works mostly like $L2$ loss but is less outlier-sensitive.
-\item Has all the advantages of Huber loss and is, moreover, twice differentiable everywhere.
-\end{itemize}
-
-\vfill
-
-\begin{center}
-% \includegraphics[width = 0.6\textwidth]{figure_man/loss_cauchy_plot1.png}
-\includegraphics[width = 0.6\textwidth]{figure/loss_logcosh.png}
-\end{center}
-
-\end{vbframe}
 
 
 \endlecture
