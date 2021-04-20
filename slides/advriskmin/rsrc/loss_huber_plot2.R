@@ -90,7 +90,7 @@ p_2 <- plotLoss(df_2, losses) + scale_color_viridis_d(
 
 p <- cowplot::plot_grid(
   p_1, 
-  ggplot2::ggplot(),
+  NULL,
   p_2, 
   ncol = 3L, 
   align = "h",
