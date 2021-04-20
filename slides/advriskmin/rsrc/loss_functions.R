@@ -79,7 +79,7 @@ plotLoss = function(df, losses) {
 
 	dfp = cbind(dfp, df)
 
-	dfm = melt(dfp, id.vars = c("res"))
+	dfm = reshape2::melt(dfp, id.vars = c("res"))
 	names(dfm) = c("res", "loss", "value")
 
 	p = ggplot()

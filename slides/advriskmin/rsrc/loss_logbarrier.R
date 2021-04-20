@@ -38,13 +38,13 @@ p_2 <- plotConstantModel(df, loss_type = c("L1", "L2", "log_barrier"), a = 1) +
     end = 0.9, 
     name = "Loss", 
     labels = c("L1", "L2", "log-barrier")) + 
-  ggtitle("Not feasible for a = 1") + 
+  ggtitle(bquote("Not feasible for " ~ epsilon ~ "=" ~ 1)) + 
   theme_minimal() +
   theme(text = element_text(size = 20L))
 
 p_3 <- plotConstantModel(df, loss_type = c("L1", "L2", "log_barrier"), a = 2) + 
   scale_color_viridis_d(end = 0.9) + 
-  ggtitle("Feasible for a = 2") + 
+  ggtitle(bquote("Feasible for " ~ epsilon ~ "=" ~ 2)) + 
   theme_minimal() +
   theme(text = element_text(size = 20L))
 
