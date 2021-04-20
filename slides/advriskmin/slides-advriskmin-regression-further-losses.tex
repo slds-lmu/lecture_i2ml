@@ -14,11 +14,11 @@
 \newcommand{\titlefigure}{figure/plot_loss_overview.png}
 \newcommand{\learninggoals}{
   \item Know the Huber loss
+  \item Know the log-cosh loss
+  \item Know the Cauchy loss
   \item Know the log-barrier loss
   \item Know the $\eps$-insensitive loss
   \item Know the quantile loss
-  \item Know the Cauchy loss
-  \item Know the log-cosh loss
 }
 
 \title{Introduction to Machine Learning}
@@ -151,17 +151,17 @@ $$
 \begin{small}
 \[
   \Lxy = \left\{\begin{array}{lr}
-        -a^{2} \cdot \log \Bigl( 1 - \Bigl(\frac{\left|y - \fx\right|}{a}\Bigr)^2 \Bigr) & \text{if } \left|y-\fx\right| \leq a \\
-        \infty & \text{if } \left|y-\fx\right|  > a
+        -\epsilon^{2} \cdot \log \Bigl( 1 - \Bigl(\frac{\left|y - \fx\right|}{\epsilon}\Bigr)^2 \Bigr) & \text{if } \left|y-\fx\right| \leq \epsilon \\
+        \infty & \text{if } \left|y-\fx\right|  > \epsilon
         \end{array}\right.
   \]
 \end{small}
 
 \begin{itemize}
 \item Behaves like $L2$ loss for small residuals.
-\item We use this if we don't want residuals larger than $a$ at all.
+\item We use this if we don't want residuals larger than $\epsilon$ at all.
 \item No guarantee that the risk minimization problem has a solution.
-\item Plot shows log-barrier loss for $a=2$:
+\item Plot shows log-barrier loss for $\epsilon=2$:
 \end{itemize}
 
 \begin{center}
@@ -177,7 +177,7 @@ $$
 \begin{vbframe}{Log-Barrier loss}
 
 \begin{itemize}
- \item Similarly to the Huber loss, there is no closed-form solution for the optimal constant model $\fx = \thetab$ w.r.t. the log-barrier loss. Numerical optimization is necessary.
+ % \item Similarly to the Huber loss, there is no closed-form solution for the optimal constant model $\fx = \thetab$ w.r.t. the log-barrier loss. Numerical optimization is necessary.
  \item Note that the optimization problem has no (finite) solution if there is no way to fit a constant where all residuals are smaller than $a$.  
 \end{itemize}
 
@@ -259,7 +259,7 @@ $$
 
 %\end{vbframe}
 
-\begin{vbframe}{Quantile Loss}
+\begin{vbframe}{Quantile Loss / Pinball Loss}
 \vspace{-0.3cm}
 
 \small
@@ -275,7 +275,8 @@ $$
 \item Extension of $L1$ loss (equal to $L1$ for $\alpha = 0.5$).
 \item Weights either positive or negative residuals more strongly. 
 \item $\alpha<0.5$ $(\alpha>0.5)$ penalty to over-estimation (under-estimation)
-\item Also known as \textbf{pinball loss}.
+\item Risk minimizer is (conditional) 
+    $\alpha$-quantile (median for $\alpha=0.5$).
 \end{itemize}
 
 \vfill
@@ -285,19 +286,19 @@ $$
 \includegraphics[width = 0.8\textwidth]{figure/loss_quantile.png}
 \end{center}
 
-\framebreak
+% \framebreak
 
-What is the optimal constant model $\fx = \thetab$ w.r.t.\ the quantile loss?
-\vspace{-0.2cm}
-\begin{eqnarray*}
-\thetah&=& \argmin_{\thetab\in \R}\sumin \Lxyi \\
-\Leftrightarrow\quad 
-\thetah &=& \argmin_{\thetab \in \R}\left\{ (1 - \alpha) \sum_{\yi<\thetab}  \left|\yi-\thetab\right| + \alpha \sum_{\yi \geq\thetab}  \left|\yi-\thetab\right|\right\} \\
-\Leftrightarrow\quad \thetah &=& Q_\alpha(\{\yi\})
-\end{eqnarray*}
+% BB: this proof cannot be true, it simply states what it claimed???
+% What is the optimal constant model $\fx = \thetab$ w.r.t.\ the quantile loss?
+% \vspace{-0.2cm}
+% \begin{eqnarray*}
+% \thetah&=& \argmin_{\thetab\in \R}\sumin \Lxyi \\
+% \Leftrightarrow\quad 
+% \thetah &=& \argmin_{\thetab \in \R}\left\{ (1 - \alpha) \sum_{\yi<\thetab}  \left|\yi-\thetab\right| + \alpha \sum_{\yi \geq\thetab}  \left|\yi-\thetab\right|\right\} \\
+% \Leftrightarrow\quad \thetah &=& Q_\alpha(\{\yi\})
+% \end{eqnarray*}
 
-where $Q_\alpha(\cdot)$ computes the empirical $\alpha$-quantile of $\{\yi\}, i = 1, ..., n$.
-
+% where $Q_\alpha(\cdot)$ computes the empirical $\alpha$-quantile of $\{\yi\}, i = 1, ..., n$.
 
 \end{vbframe}
 
