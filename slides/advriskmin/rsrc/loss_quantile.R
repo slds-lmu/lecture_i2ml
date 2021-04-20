@@ -50,7 +50,8 @@ p_1 <- ggplot2::ggplot(df_1, aes(x, y)) +
     "text",
     x = 1.5,
     y = 0L,
-    label = bquote(alpha ~ "=" ~ 0.7),
+    label = deparse(bquote(alpha ~ "=" ~ 0.7)),
+    parse = TRUE,
     size = 10L) 
 
 p_1 <- add_markers(p_1, which(df_1$plot_neg > 0L)[1L])
@@ -100,7 +101,6 @@ p_2 <- p_2 +
   theme_minimal() +
   theme(text = element_text(size = 20L))
 
-# p <- gridExtra::grid.arrange(p_1, p_2, ncol = 2L)
 p <- cowplot::plot_grid(p_1, p_2, ncol = 2L, align = "h")
 
 ggplot2::ggsave(

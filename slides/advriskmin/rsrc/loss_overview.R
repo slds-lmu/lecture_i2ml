@@ -46,7 +46,7 @@ p <- ggplot2::ggplot(df, aes(x = x, y = value, color = loss)) +
       "Epsilon-ins (eps = 0.8)",
       "Huber (c = 1)",
       "Log-cosine",
-      "Log-barrier (a = 1)",
+      "Log-barrier (eps = 1)",
       "Quant (alpha = 0.7)")) +
   ggplot2::guides(color = guide_legend(ncol = 2)) +
   ggplot2::ylim(c(0L, 2L)) +

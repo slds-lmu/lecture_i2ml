@@ -39,7 +39,8 @@ p_1 <- ggplot2::ggplot(df_1, aes(x, y)) +
     "text",
     x = 0.5,
     y = 2L,
-    label = bquote(epsilon ~ "=" ~ 0.8),
+    label = deparse(bquote(epsilon ~ "=" ~ 0.8)),
+    parse = TRUE,
     size = 10L) +
   ggplot2::geom_segment(
     x = df_1[which.max(df_1[, "diff"]), "x"],
@@ -58,8 +59,9 @@ p_1 <- ggplot2::ggplot(df_1, aes(x, y)) +
     x = df_1[which.max(df_1[, "diff"]), "x"] + 0.75,
     y = df_1[which.max(df_1[, "diff"]), "y"] + 
       0.5 * (df_1[which.max(df_1[, "diff"]), "diff"]),
-    label = bquote("|" ~ y - f(x) ~ "|" ~ ">" ~ epsilon),
+    label = deparse(bquote("|" ~ y - f(x) ~ "|" ~ ">" ~ epsilon)),
     size = 7L,
+    parse = TRUE,
     color = "blue") +
   theme_minimal() +
   theme(text = element_text(size = 20L))
