@@ -2,6 +2,8 @@
 # FIG: BERNOULLI LOSS
 # ------------------------------------------------------------------------------
 
+library(ggplot2)
+
 # DATA -------------------------------------------------------------------------
 
 x_1 <- seq(-4L, 4L, by = 0.01)
@@ -17,13 +19,6 @@ df <- rbind(df, data.frame(x = x_2, y = 0L, pi = bernoulli(0L, x_2)))
 df$y <- as.factor(df$y)
 
 # PLOTS ------------------------------------------------------------------------
-
-# p_1 <- ggplot2::qplot(
-#   x_1, 
-#   y, 
-#   geom = "line",
-#   xlab = expression(r = yf(x)),
-#   ylab = expression(L(y, f(x))))
 
 p_1 <- ggplot2::ggplot(data.frame(x_1, y), aes(x = x_1, y = y)) + 
   geom_line(size = 1.2) +
