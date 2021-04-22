@@ -4,37 +4,36 @@ library(gridExtra)
 library(MASS)
 library(ggplot2)
 library(rmutil)
-set.seed(1234)
-
+library(jmuOutlier)
+set.seed(1111)
 fun1 = function(x) return(.2*x) 
 
 
 losses = list(
-  L1 = list(fun = function(r) abs(r), distribution = qlaplace),  
-  L2 = list(fun = function(r) r^2, distribution = qnorm), 
-  Huber = list(fun = function(r) ifelse(r > 1 | r < -1, abs(r)-.5, .5 * r^2), distribution = qnorm),
-  Eps_Insensitive_1 = list(fun = function(r) ifelse(r > 1 | r < -1, abs(r) - 1, 0)),
-  Quantile_75 = list(fun = function(r) ifelse(r > 0, abs(r) * 3 / 4, abs(r) * 1 / 4)))
+  L1 = list(fun = function(r) abs(r), distribution = qlaplace, sample = rlaplace),  
+  L2 = list(fun = function(r) r^2, distribution = qnorm, sample = rnorm), 
+  Huber_Gaussian = list(fun = function(r) ifelse(r > 1 | r < -1, abs(r)-.5, .5 * r^2), distribution = qnorm, sample = rnorm),
+  Huber_L1 = list(fun = function(r) ifelse(r > 1 | r < -1, abs(r)-.5, .5 * r^2), distribution = qlaplace, sample = rlaplace)
+)
   
 
 plotResiduals = function(loss) {
 
   design = matrix(rnorm(40000), ncol = 100, nrow = 400)
   dimnames(design) = list(rownames(design, do.NULL = FALSE, prefix = ""), colnames(design, do.NULL = FALSE, prefix = "x"))
-  df = data.frame(y = fun1(seq(-2, 2, length.out = 400)) + rnorm(400), as.data.frame(design))
 
   lf = losses[[loss]][["fun"]]
   dist = losses[[loss]][["distribution"]]
+  sample = losses[[loss]][["sample"]]
+
+  df = data.frame(y = fun1(seq(-2, 2, length.out = 400)) + sample(400), as.data.frame(design))
+
 
   residuals = switch(loss, 
     "L1" = rq(y~., data = df, .5)$residuals,
     "L2" = lm(y~., data = df)$residuals,
-    "Huber" = rlm(y~., data = df, scale.est = "Huber", k2 = 1, maxit = 100)$residuals,
-    "epsilon" = {
-      lmRes5 = nrbm(epsilonInsensitiveRegressionLoss(x = design, y = df$y, epsilon = 1))
-      lmRes5 = data.frame(target = df$y, prediction = predict(lmRes5, design))
-      lmRes5$target - lmRes5$w   
-      }
+    "Huber_Gaussian" = rlm(y~., data = df, scale.est = "Huber", k2 = 1, maxit = 100)$residuals,
+    "Huber_L1" = rlm(y~., data = df, scale.est = "Huber", k2 = 1, maxit = 100)$residuals
     )
 
   df = cbind(df, residuals)
@@ -52,12 +51,20 @@ plotResiduals = function(loss) {
 }
 
 p = plotResiduals("L1")
-ggsave("figure_man/residuals_plot_L1.pdf", p, width = 9, height = 5)
+ggsave("figure_man/residuals_plot_L1.pdf", p, width = 8, height = 4)
+# Title figures 
+ggsave("figure/residuals_plot_L1_title.png", grid::grid.draw(p$grobs[[1]]) , width = 4, height = 3)
 
 p = plotResiduals("L2")
-ggsave("figure_man/residuals_plot_L2.pdf", p, width = 9, height = 5)
+ggsave("figure_man/residuals_plot_L2.pdf", p, width = 8, height = 4)
+# Title figures 
+ggsave("figure/residuals_plot_L2_title.png", grid::grid.draw(p$grobs[[1]]) , width = 4, height = 3)
 
-p = plotResiduals("Huber")
-ggsave("figure_man/residuals_plot_Huber.pdf", p, width = 9, height = 5)
+p = plotResiduals("Huber_Gaussian")
+ggsave("figure_man/residuals_plot_Huber_Gaussian.pdf", p, width = 8, height = 4)
 
+p = plotResiduals("Huber_L1")
+ggsave("figure_man/residuals_plot_Huber_L1.pdf", p, width = 8, height = 4)
+
+ggsave("figure/residuals_plot_L2_title.png", grid::grid.draw(p$grobs[[1]]) , width = 4, height = 3)
 
