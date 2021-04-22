@@ -90,7 +90,7 @@ L\left(y, \pix\right) &=& (\pix - y)^2
 
 \begin{vbframe}{Brier Score: Risk Minimizer}
 
-The risk minimizer for the Brier score is 
+The risk minimizer for the (binary) Brier score is 
 
 \begin{eqnarray*}
 \pixbayes &=& \eta(\xv) = \P(y~|~\xv = \xv),
@@ -100,18 +100,22 @@ which means that the Brier score will reach its minimum if the prediction equals
 
 \lz 
 
-\textbf{Proof: }We have seen that the (theoretical) optimal prediction $c$ for an arbitrary loss function at fixed point $\xv$ is
+The risk minimizer for the multiclass Brier score is 
+$$\pi^\ast(\xv) = \P(y = k ~|~ \xv = \xv). $$
+ 
+
+\textbf{Proof: } We only show the proof for the binary case. We need to minimize 
 
 $$
-\argmin_{c} \sum_{k \in \Yspace} L(k, c) ~ \P(y = k~|~ \xv = \xv)\,.
+\E_x \left[L(1, \pix) \cdot \eta(\xv) + L(0, \pix) \cdot (1 - \eta(\xv)) \right],
 $$
 
-We plug in the Brier score
+which we do point-wise for every $\xv$. We plug in the Brier score
 
 \vspace*{-0.3cm}
 
 \begin{eqnarray*}
-	&& \argmin_c L(1, c) \underbrace{\P(y = 1| \xv = \xv)}_{= \eta(\xv)} + L(0, c) \underbrace{\P(y = 0| \xv = \xv)}_{= 1 - \eta(\xv)} \\ 
+	&& \argmin_c L(1, c) \eta(\xv) + L(0, c) (1 - \eta(\xv)) \\ 
 	&=&  \argmin_c \quad (c - 1)^2 \eta(\xv) + c^2 (1 - \eta(\xv))\\
 	&=&  \argmin_c \quad (c - \eta(\xv))^2.
 \end{eqnarray*}
@@ -124,6 +128,8 @@ The expression is minimal if $c = \eta(\xv) = \P(y = 1~|~\xv = \xv)$.
 
 The optimal constant probability model $\pix = \theta$ w.r.t. the Brier score for labels from $\Yspace = \setzo$ is:
 
+\vspace*{-0.2cm}
+
 \begin{eqnarray*}
   \min_{\theta} \riske(\theta) &=& \min_{\theta} \sumin \left(\yi - \theta\right)^2 \\
   \Leftrightarrow \frac{\partial \riske(\theta)}{\partial \theta} &=& - 2 \cdot \sumin (\yi - \theta) = 0 \\
@@ -133,28 +139,37 @@ The optimal constant probability model $\pix = \theta$ w.r.t. the Brier score fo
 This is the fraction of class-1 observations in the observed data.\\
 (This also directly follows from our $L2$ proof for regression).
 
+\vspace*{0.2cm}
+
+Similarly, for the multiclass brier score the optimal constant is $\thetah_k = \frac{1}{n}\sumin [y = k]$. 
+
 \end{vbframe}
 
 \begin{vbframe}{Brier score minimization = Gini splitting}
 
-When fitting a tree we find splits that minimize node impurity (measured by a criterion). In each node $\Np \subseteq \D$ we predict the optimal constant. 
+When fitting a tree we minimize the risk within each node $\Np$ by risk minimization and predict the optimal constant. Another approach that is common in literature is to minimize the average node impurity $\text{Imp}(\Np)$. 
 
 \vspace*{0.2cm}
 
-\textbf{Claim:} Gini splitting is equivalent to the Brier score minimization. 
+\textbf{Claim:} Gini splitting $\text{Imp}(\Np) = \sum_{k=1}^g \pikN \left(1-\pikN \right)$ is equivalent to the Brier score minimization. 
+
+\begin{footnotesize}
+Note that $\pikN := \frac{1}{n_{\Np}} \sum\limits_{(\xv,y) \in \Np} [y = k]$ 
+\end{footnotesize}
 
 \vspace*{0.2cm}
 
-\textbf{Proof: } To prove this we show that the risk related to a subset of observations $\Np \subseteq \D$ fulfills 
+\begin{footnotesize}
+
+\textbf{Proof: } We show that the risk related to a subset of observations $\Np \subseteq \D$ fulfills 
 
 
 $$
-  \risk(\Np) = n_\Np I(\Np),
+  \risk(\Np) = n_\Np \text{Imp}(\Np),
 $$
   
-  where $I$ is the Gini impurity with $I(\Np) = \sum_{k=1}^g \pikN \left(1-\pikN \right),$
+  where $\text{Imp}$ is the Gini impurity and $\risk(\Np)$ is calculated w.r.t. the (multiclass) Brier score
 
-and $\risk(\Np)$ is calculated w.r.t. the Brier score
 
 $$
   L(y, \pix) = \sum_{k = 1}^g \left([y = k] - \pi_k(\xv)\right)^2.
@@ -162,17 +177,23 @@ $$
 
 \framebreak
 
-
+\vspace*{-0.5cm}
 \begin{eqnarray*}
-\risk(\Np) &=& \sum_{\xy \in \Np}  \sum_{k = 1}^g \left([y = k] - \pi_k(\xv)\right)^2 \\
-&=& \sum_{k = 1}^g \sum_{\xy \in \Np}   \left([y = k] - \pi_k(\xv)\right)^2 \\
-&=& \sum_{k = 1}^g n_{\Np,k}\left(1 - \frac{n_{\Np,k}}{n_{\Np }}\right)^2 + (n_{\Np } - n_{\Np,k})\left(\frac{n_{\Np,k}}{n_{\Np }}\right)^2
+\risk(\Np) &=& \sum_{\xy \in \Np}  \sum_{k = 1}^g \left([y = k] - \pi_k(\xv)\right)^2 
+= \sum_{k = 1}^g \sum_{\xy \in \Np} \left([y = k] - \frac{n_{\Np,k}}{n_{\Np }}\right)^2,
 \end{eqnarray*}
 
+by plugging in the optimal constant prediction w.r.t. the Brier score ($n_{\Np,k}$ is defined as the number of class $k$ observations in node $\Np$): 
+$$\hat \pi_k(\xv)= \pikN = \frac{1}{n_{\Np}} \sum\limits_{(\xv,y) \in \Np} [y = k] = \frac{n_{\Np,k}}{n_{\Np }}. $$ 
 
-In the last step we plugged in the optimal prediction w.r.t. the Brier score (the fraction of class-$k$ observations):
+ We split the inner sum and further simply the expression
 
-$$\hat \pi_k(\xv)= \pikN = \frac{1}{n_{\Np}} \sum\limits_{(\xv,y) \in \Np} [y = k] = \frac{n_{\Np,k}}{n_{\Np }}.$$ 
+\begin{eqnarray*}
+&=& \sum_{k = 1}^{g} \left(\sum_{\xy \in \Np: ~ y = k} \left(1 - \frac{n_{\Np,k}}{n_{\Np }}\right)^2 + \sum_{\xy \in \Np: ~ y \ne k} \left(0 - \frac{n_{\Np,k}}{n_{\Np }}\right)^2\right) \\
+&=& \sum_{k = 1}^g n_{\Np,k}\left(1 - \frac{n_{\Np,k}}{n_{\Np }}\right)^2 + (n_{\Np } - n_{\Np,k})\left(\frac{n_{\Np,k}}{n_{\Np }}\right)^2, 
+\end{eqnarray*}
+
+since for $n_{\Np,k}$ observations the condition $y = k$ is met, and for the remaining $(n_\Np - n_{\Np,k})$ observations it is not. 
 
 
 We further simplify the expression to
@@ -181,9 +202,11 @@ We further simplify the expression to
 \begin{eqnarray*}
 \risk(\Np) &=&  \sum_{k = 1}^g n_{\Np,k}\left(\frac{n_{\Np } - n_{\Np,k}}{n_{\Np }}\right)^2 + (n_{\Np } - n_{\Np,k})\left(\frac{n_{\Np,k}}{n_{\Np }}\right)^2 \\
 &=& \sum_{k = 1}^g \frac{n_{\Np,k}}{n_{\Np }} \frac{n_{\Np } - n_{\Np,k}}{n_{\Np }} \left(n_{\Np } - n_{\Np,k } + n_{\Np,k}\right) \\
-&=& n_{\Np } \sum_{k = 1}^g \pikN \cdot \left(1 - \pikN \right) = n_\Np I(\Np).
+&=& n_{\Np } \sum_{k = 1}^g \pikN \cdot \left(1 - \pikN \right) = n_\Np \text{Imp}(\Np).
 \end{eqnarray*}
 % \end{footnotesize}
+
+\end{footnotesize}
 
 \end{vbframe}
 
