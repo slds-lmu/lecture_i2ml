@@ -28,7 +28,7 @@ p_1 <- ggplot2::ggplot(
     name = "Loss",
     labels = c("0-1", "hinge"),
     direction = -1L) + 
-  xlab(expression(r = yf(x))) +
+  xlab(expression(yf(x))) +
   ylab(expression(L(y, f(x)))) +
   theme_minimal() + 
   theme(text = element_text(size = 30L))
