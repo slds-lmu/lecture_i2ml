@@ -1,4 +1,28 @@
+library(reshape2)
+library(mvtnorm)
+library(gridExtra)
 
+################################################################################
+# add CIM2 scheme
+
+library(ggplot2)
+library(viridis)
+theme_set(theme_minimal(base_size = 17))
+scale_c_d <- scale_colour_discrete <- scale_color_discrete <-
+  function(...) viridis::scale_color_viridis(..., end = .9, discrete = TRUE, drop = TRUE)
+scale_f_d <- scale_fill_discrete <-
+  function(...) viridis::scale_fill_viridis(..., end = .9,  discrete = TRUE, drop = TRUE)
+scale_c <- scale_colour_continuous <- scale_color_continuous <-
+  function(...) viridis::scale_color_viridis(..., end = .9)
+scale_f <- scale_fill_continuous <-
+  function(...) viridis::scale_fill_viridis(..., end = .9)
+
+pal_2 <- viridisLite::viridis(2, end = .9)
+pal_3 <- viridisLite::viridis(3, end = .9)
+pal_4 <- viridisLite::viridis(4, end = .9)
+pal_5 <- viridisLite::viridis(5, end = .9)
+
+################################################################################
 plotSVM = function(tsk, par.vals) {
   
   lrn = makeLearner("classif.ksvm", par.vals = par.vals)
@@ -49,7 +73,7 @@ dist_p <- function(dims, n_per_dim = 1e4, k = 1) {
 ############################################################################
 
 library(xtable)
-distances <- readRDS("rsrc/distances.rds")
+distances <- readRDS("distances.rds")
 names(distances) <- c("$p$", "$\\min(d(\\xv,\\tilde{\\xv}))$",  "$\\overline{d(\\xv,\\tilde{\\xv})}$", "$\\max(d(\\xv,\\tilde{\\xv}))$",
                       "$\\overline{d_{NN1}(\\xv)}$", "$\\max(d_{NN1}(\\xv))$")
 print(xtable(signif(distances, 2), digits = 2, display = rep("fg", 7), align = "rr|lllll"),
@@ -58,7 +82,7 @@ print(xtable(signif(distances, 2), digits = 2, display = rep("fg", 7), align = "
 
 ############################################################################
 
-distances <- readRDS("rsrc/distances.rds")
+distances <- readRDS("distances.rds")
 
 distances$contr <- (distances$max - distances$min)/distances$max
 distances$local <- ( distances$mean - distances$mean_nn) / distances$mean
@@ -183,7 +207,7 @@ bres = readRDS("code/cod_knn.rds")
 p = ggplot(data = bres[bres$learner == "Bayes Optimal Classifier", ], aes(x = d, y = mmce.test.mean, colour = learner))
 p = p + theme_bw()
 p = p + geom_line()
-p = p + xlab("d") + ylab("Mean Misclassification Error") + labs(colour = "Learner")
+p = p + xlab("p") + ylab("Mean Misclassification Error") + labs(colour = "Learner")
 p = p + ylim(c(0, 0.4))
 p
 
@@ -193,9 +217,11 @@ p
 p = ggplot(data = bres, aes(x = d, y = mmce.test.mean, colour = learner))
 p = p + theme_bw()
 p = p + geom_line()
-p = p + xlab("d") + ylab("Mean Misclassification Error") + labs(colour = "Learner")
+p = p + xlab("p") + ylab("Mean Misclassification Error") + labs(colour = "Learner")
 p = p + ylim(c(0, 0.4))
-p
+p 
+
+ggsave("../figure_man/knn_misclassification.png", width = 7.5, height= 2.5)
 
 ############################################################################
 
@@ -208,57 +234,20 @@ p = p + ylim(c(0, 300))
 p
 
 
+ggsave("../figure_man/MSE.png", width = 7.5, height= 2.5)
+
+
 ############################################################################
 
 noise_prop = readRDS("code/cod_lm_noise.rds")
 
-ggplot(noise_prop, aes(x=X2, y=value)) +
-  geom_boxplot() + ylab(expression(kappa)) + 
+plot_noise <- ggplot(noise_prop, aes(x=X2, y=value)) +
+  geom_boxplot() + 
+  ylab(expression(kappa)) + 
   xlab("Number of noise features added")
-############################################################################
 
+plot_noise
 
-
-############################################################################
-
-############################################################################
-
-
-
-############################################################################
-
-############################################################################
-
-
-
-############################################################################
-
-############################################################################
-
-
-
-############################################################################
-
-############################################################################
-
-
-
-############################################################################
-
-############################################################################
-
-
-
-############################################################################
-
-############################################################################
-
-
-
-############################################################################
-
-############################################################################
-
-
+ggsave("../figure_man/added_noise.png",width = 7.5, height= 4)
 
 ############################################################################
