@@ -7,19 +7,22 @@
 %set_parent("../style/preamble.Rnw")
 %@
 
+
 \input{../../style/preamble}
 \input{../../latex-math/basic-math}
 \input{../../latex-math/basic-ml}
 
-\newcommand{\titlefigure}{figure_man/optimization_steps.jpeg}
+\usepackage{booktabs}
+
+\newcommand{\titlefigure}{figure/robustness.png}
 \newcommand{\learninggoals}{
   % \item Understand why you should care about properties of loss functions
-  \item Learn about robust loss functions
-  \item Learn about analytical properties important for optimization 
+  \item Know the concept of robustness 
+  \item Learn about analytical and computational properties of loss functions 
 }
 
 \title{Introduction to Machine Learning}
-% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+% \author{Bernd Bi{}schl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
 \institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
 \date{}
 
@@ -29,30 +32,28 @@
 \lecturechapter{Properties of Loss Functions}
 \lecture{Introduction to Machine Learning}
 
-
 \begin{vbframe}{The role of Loss Functions}
 
 Why should we care about how to choose the loss function $\Lxy$?
 
 \begin{itemize}
 % \item For regression, the loss usually only depends on residual $\Lxy = L\left(y - \fx\right) = L(\eps)$, this is a \emph{translation invariant} loss
-\item \textbf{Statistical} properties of $f$: Choice of loss implies statistical properties of $f$ like robustness and an implicit error distribution (not covered here)
-\item \textbf{Robustness}: Some loss functions are more robust towards outliers than others. 
-\item \textbf{Computational / Optimization} complexity of the optimization problem: The complexity of the optimization problem
+\item \textbf{Statistical} properties: Choice of loss implies statistical assumptions on the distribution of $y ~|~ \xv = \xv$ (see \emph{Maximum Likelihood Estimation vs.
+Empirical Risk Minimization})
+\item \textbf{Robustness} properties: Some loss functions are more robust towards outliers than others
+\item \textbf{Analytical} properties: The computational / optimization complexity of the problem
 $$
 \argmin_{\thetab \in \Theta} \risket
 $$
 is influenced by the choice of the loss function. 
 \end{itemize}
 
-
 \end{vbframe}
 
 
+\begin{vbframe}{Basic Types of Regression Losses}
 
-
-
-\begin{vbframe}{Types of Regression Losses}
+% https://davidrosenberg.github.io/mlcourse/Archive/2017/Lectures/3b.loss-functions.pdf
 
 \begin{itemize}
   \item Regression losses usually only depend on the \textbf{ residuals}
@@ -60,7 +61,7 @@ is influenced by the choice of the loss function.
   \vspace*{-0.5cm}
 
   \begin{eqnarray*}
-    \eps &:=& y - \fx %\\
+    r &:=& y - \fx %\\
     %r^{(i)} &:=& \yi - \fxi .
   \end{eqnarray*}
 
@@ -68,9 +69,9 @@ is influenced by the choice of the loss function.
   \begin{itemize}
     \item it can be written in terms of the residual
     $$
-      \Lxy = \psi (\eps) \text{ for some } \psi: \R \to \R
+      \Lxy = \psi (r) \text{ for some } \psi: \R \to \R
     $$
-    \item $\psi(\eps) = 0 \Leftrightarrow \eps = 0$ .
+    \item $\psi(r) = 0 \Leftrightarrow r = 0$ .
   \end{itemize}
   \item A loss is \textbf{translation-invariant}, if $L(y + a, \fx + a) = \Lxy$.
   \item Losses are called \textbf{symmetric} if $\Lxy = L\left(\fx, y\right)$. 
@@ -79,40 +80,66 @@ is influenced by the choice of the loss function.
 
 \end{vbframe}
 
-\begin{frame}[t]{Robustness}
+\begin{vbframe}{Robustness}
 
-Many problems in machine learning require \textbf{robustness} -- that a model is less influenced by outliers then inliers. 
-\vspace*{0.2cm}
+Outliers (in $y$) have large residuals. For some losses large residuals impact the value of the risk much more than for other losses. 
+
+\begin{table}[]
+\begin{tabular}{lllll}
+\toprule
+$y$  & $\fxh$ & L1 & L2 & Huber ($\eps = 5$) \\ \midrule 
+1 & 0 & 1 & 1 & 0.5 \\ 
+5 & 0 & 5 & 25 & 12.5 \\ 
+10 & 0 & 10 & 100 & 37.5 \\ 
+50 & 0 & 50 & 2500  & 237.5 \\ \bottomrule
+\end{tabular}
+\end{table}
+
+As a consequence, a model is less influenced by outliers than by inliers if ths loss is robust. 
+
+\framebreak 
 
 The L2 loss is an example for a loss function that is not very robust towards outliers. It penalizes large residuals more than the L1 or the Huber loss. The L1 and the Huber loss are thus regarded robust. 
 
-\begin{overlayarea}{\textwidth}{\textheight}
 \begin{center}
-  \only<1>{\includegraphics[width = 0.7\textwidth]{figure_man/different_losses1.png}}
-  \only<2>{\includegraphics[width = 0.7\textwidth]{figure_man/different_losses2.png}}
+\includegraphics[width=0.8\textwidth]{figure/robustness.png}
 \end{center}
-\end{overlayarea} 
 
-\end{frame}
-
+\end{vbframe}
 
 \begin{vbframe}{Analytical Properties}
 
+
+
+
 \begin{itemize}
-  \item Smoothness of the objective \\
-  \begin{footnotesize} 
-  Some optimization methods require smoothness (e.g. gradient methods).
-  \end{footnotesize}
-  \item Uni- or multimodality of the problem \\
-  \begin{footnotesize} 
-  If $\Lxy$ is convex in its second argument, and $\fxt$ is linear in $\thetab$, then $\risket$ is convex; every local minimum of $\risket$ is a global one. If $L$ is not convex, $\risket$ might have multiple local minima (bad!).
-  \end{footnotesize}
+  \item Smoothness of the loss function \\
+  \begin{itemize}
+    \item In contrast do derivative-free methods, derivative-based methods require a certain level of smoothness  
+    \item For example gradient descent requires differentiability of the problem, Newton-Raphson requires the problem to be twice differentiable
+    \item A function is said to be $\mathcal{C}^k$ if it is $k$ times continuously differentiable. We call a function $\mathcal{C}^\infty$ if all higher order derivatives exist and are continuous. 
+    \item If the loss function is not smooth, the risk minimization problem is not smooth either. 
+    \item The L2 loss is smooth $\mathcal{C}^\infty$, L1 loss is $\mathcal{C}^0$ (continuous, not differentiable). 0-1-loss for classification is not even continuous. 
+  \end{itemize}
+  \framebreak 
+  \item Convexity of loss functions
+  \begin{itemize}
+    \item Convex loss functions are desirable 
+    \item Depending on the choice of the hypothesis space $\Hspace$, convexity of the loss function ensures convexity of the risk minimization problem. 
+    \item If the problem is convex, local minima are global ones; we do not need to worry to get stuck in a local minimum
+    \item For example, if $\Lxy$ is convex in its second argument, and $\fxt$ is linear in $\thetab$, then $\risket$ is convex; every local minimum of $\risket$ is a global one. If $L$ is not convex, $\risket$ might have multiple local minima (bad!).
+  \end{itemize} 
 \end{itemize}
 
 
 \end{vbframe}
 
+\begin{vbframe}{Convergence for separable problems}
 
+The choice of the loss function may have further implications on the optimization of the problem. 
+
+
+\end{vbframe}
 
 
 
@@ -143,26 +170,6 @@ The L2 loss is an example for a loss function that is not very robust towards ou
 
 
 
-% \begin{vbframe}{Risk Minimization}
-
-% Now, we will discuss the most common loss functions and the optimal solution with respect to 
-
-
-% \begin{itemize}
-%   \item the theoretical risk 
-%   $$
-%   \riskf =  \E[\Lxy] = \int_{\Xspace \times \Yspace} \Lxy ~ d\Pxy
-%   $$ 
-%   and
-%   \item the empirical risk 
-%   $$
-%  \riskef = \sumin \Lxyi. 
-%   $$
-% \end{itemize}
-
-% \end{vbframe}
-
-
 
 
 
@@ -190,58 +197,6 @@ The L2 loss is an example for a loss function that is not very robust towards ou
 % \end{center}
 % 
 % \end{vbframe}
-
-
-
-\section{Summary}
-
-\begin{vbframe}{Summary of Loss Functions}
-
-\begin{table}[]
-\begin{tabular}{c|cccc}
-
-& $L2$ & $L1$ & Huber & Log-Barrier \\ \hline 
-Point-wise optimum & $\E_{y|x}\left[y ~|~ \xv\right]$ & $\text{med}_{y~|~\xv}\left[y ~|~ \xv\right]$ & n.a. & n.a. \\
-Best constant & $\frac{1}{n}\sumin \yi$ & $\text{med}\left(\yi\right)$ & n.a. & n.a.\\
-Differentiable & \checkmark & \xmark & \checkmark & \checkmark \\
-Convex & \checkmark & \checkmark & \checkmark & \checkmark \\
-Robust & \xmark & \checkmark & \checkmark & \xmark \\
-\end{tabular}
-\end{table}
-
-There are many other loss functions for regression tasks, for example:
-
-\begin{itemize}
-  \item Quantile-Loss
-  \item $\epsilon$-insensitive-Loss  
-  % \item Log-Barrier-Loss
-\end{itemize}
-
-Loss functions might also be customized to an objective that is defined by an application. 
-
-% \framebreak 
-% \begin{itemize}
-  % \item In future chapters, we will talk about different learning algorithms.
-  % \lz
-  % \item We will come back to loss functions introduced in this chapter or we will introduce new ones. 
-  % \lz
-  % \item We will see how learning algorithms are composed into specific hypothesis classes and loss functions; we will come back to the loss functions introduced in this chapter or introduce new ones.
-% \end{itemize}
-
-
-% When introducing different learning algorithms, we will come back to the loss functions introduced in this chapter or even introduce new ones. For example:  
-
-% \begin{itemize}
-%   \item Ordinary Linear Regression: L2-loss
-%   \item Logistic Regression: Logistic loss
-%   \item Support Vector Machine Classification: Hinge-Loss (to be introduced) (see \textbf{SVM} chapter)
-%   \item Support Vector Machine Regression: $\epsilon$-insensitive loss (see \textbf{SVM} chapter)
-%   \item AdaBoost: Exponential loss (see \textbf{Boosting} chapter)
-% \end{itemize}
-
-% Once knowing the theory of risk minimization and properties of loss functions, we can combine model classes and loss functions as needed or even tailor loss functions to our needs. 
-
-\end{vbframe}
 
 
 
