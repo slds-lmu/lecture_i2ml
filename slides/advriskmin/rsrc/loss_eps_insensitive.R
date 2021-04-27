@@ -2,6 +2,8 @@
 # FIG: EPSILON-INSENSITIVE LOSS
 # ------------------------------------------------------------------------------
 
+library(ggplot2)
+
 # DATA -------------------------------------------------------------------------
 
 set.seed(123L)
@@ -20,16 +22,25 @@ df_2$y <- ifelse(
     0L,
     df_2$x - epsilon))
 
+
+df_3 = data.frame(x = seq(0, 2, by = 0.01))
+df_3$ymin = - epsilon + df_3$x
+df_3$ymax = epsilon + df_3$x
+
 # PLOTS ------------------------------------------------------------------------
 
 p_1 <- ggplot2::ggplot(df_1, aes(x, y)) + 
   geom_point() + 
+  ggplot2::geom_abline(intercept = - epsilon, slope = 1L, colour = "blue", lty = 4) + 
+  ggplot2::geom_abline(intercept = epsilon, slope = 1L, colour = "blue", lty = 4) + 
+  ggplot2::geom_ribbon(data = df_3, aes(x = x, ymin = ymin, ymax = ymax), fill = "blue", alpha = .2, inherit.aes = FALSE,) + 
   geom_abline(intercept = 0L, slope = 1L) +
   ggplot2::annotate(
     "text",
     x = 0.5,
     y = 2L,
-    label = bquote(epsilon ~ "=" ~ 0.8),
+    label = deparse(bquote(epsilon ~ "=" ~ 0.8)),
+    parse = TRUE,
     size = 10L) +
   ggplot2::geom_segment(
     x = df_1[which.max(df_1[, "diff"]), "x"],
@@ -48,8 +59,9 @@ p_1 <- ggplot2::ggplot(df_1, aes(x, y)) +
     x = df_1[which.max(df_1[, "diff"]), "x"] + 0.75,
     y = df_1[which.max(df_1[, "diff"]), "y"] + 
       0.5 * (df_1[which.max(df_1[, "diff"]), "diff"]),
-    label = bquote("|" ~ y - f(x) ~ "|" ~ ">" ~ epsilon),
+    label = deparse(bquote("|" ~ y - f(x) ~ "|" ~ ">" ~ epsilon)),
     size = 7L,
+    parse = TRUE,
     color = "blue") +
   theme_minimal() +
   theme(text = element_text(size = 20L))

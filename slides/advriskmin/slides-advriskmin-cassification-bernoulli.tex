@@ -17,6 +17,7 @@
   \item Know the Bernoulli loss and related losses (log-loss, logistic loss, Binomial loss)
   \item Derive the risk minimizer
   \item Derive the optimal constant model 
+  \item Understand the connection between log-loss and entropy splitting 
 }
 
 \title{Introduction to Machine Learning}
@@ -63,14 +64,12 @@
 
 \begin{vbframe}{Bernoulli loss on probabilities}
 
-If scores are transformed into probabilities by the logistic function  $\pix = \left(1 + \exp(- \fx)\right)^{-1}$, we arrive at another equivalent formulation of the loss, where $y$ is again encoded as $\setzo$:
+If scores are transformed into probabilities by the logistic function  $\pix = \left(1 + \exp(- \fx)\right)^{-1}$ (or equivalently if $f(x) = \log\left(\frac{\pix}{1 - \pix}\right)$ are the log-odds of $\pix$), we arrive at another equivalent formulation of the loss, where $y$ is again encoded as $\setzo$:
 
   $$
     L(y, \pix) = - y \log \left(\pix\right) - (1 - y) \log \left(1 - \pix\right). 
   $$
   
-\lz
-
 \begin{center}
 % \includegraphics[width = 10cm ]{figure_man/bernoulli-loss.png} \\
 \includegraphics[width = 10cm ]{figure/plot_bernoulli_prob.png}
@@ -82,100 +81,86 @@ If scores are transformed into probabilities by the logistic function  $\pix = \
 
 \begin{vbframe}{Bernoulli loss: Risk Minimizer}
 
-To derive the risk minimizer for the Bernoulli loss for the formulation 
+The risk minimizer for the Bernoulli loss defined for probabilistic classifiers $\pix$ and on $y \in \{0, 1\}$ is
 
 $$
-  L(y, \pix) = - y \log \left(\pix\right) - (1 - y) \log \left(1 - \pix\right),
+  \pixbayes = \eta(\xv) = \P(y = 1 ~|~ \xv = \xv). 
 $$
-we again make use of the law of total expectation
+
+\vspace*{0.2cm}
+
+\begin{footnotesize}
+\textbf{Proof:} We can write the risk for binary $y$ as follows: 
+
+% Again, we make use of the law of total expectation
+
+% \begin{eqnarray*}
+%   \riskf  & = & \Exy\left[\Lxy\right] = \E_x \left[ \E_{y|x} [ L(y, \fx) ] \right] \\
+%           & = & \E_x \left[\sum_{k \in \Yspace} L(k, \fx) \P(y = k~|~ \xv = \xv)\right]\,. 
+%           % & = & E_x \sum_{k \in \Yspace} L(k, \fx) \pikx,
+% \end{eqnarray*}
+
+% In the binary case this becomes 
+
+% \vspace*{-0.3cm}
+
+\vspace*{-0.3cm}
 
 \begin{eqnarray*}
-  \riskf  & = & \Exy\left[\Lxy\right] = \E_x \left[ \E_{y|x} [ L(y, \fx) ] \right] \\
-          & = & \E_x \left[\sum_{k \in \Yspace} L(k, \fx) \P(y = k~|~ \xv = \xv)\right]\,. 
-          % & = & E_x \sum_{k \in \Yspace} L(k, \fx) \pikx,
+  \riskf &=& \E_x \left[L(1, \pix) \cdot \eta(\xv) + L(0, \pix) \cdot (1 - \eta(\xv)) \right],
 \end{eqnarray*}
 
-In the binary case this becomes 
+with $\eta(\xv) = \P(y = 1 ~|~ \xv = \xv)$ (see chapter on the 0-1-loss for more details). 
 
-\begin{eqnarray*}
-  \riskf &=& \E_x \left[L(1, \pix) \eta(\xv) + L(0, \pix) \eta(\xv) \right],
-\end{eqnarray*}
+For a fixed $\xv$ we compute the point-wise optimal value $c$ by setting the derivative to $0$: 
 
-with $\eta(\xv) = \P(y = 1 ~|~ \xv = \xv)$. 
-
-\framebreak 
-
-We fix a specific $\xv$ and compute the point-wise optimal value $c$ by setting the derivative to $0$: 
+\vspace*{-0.3cm}
 
 \begin{eqnarray*}
   \frac{\partial }{\partial c} \left(- \log c  \cdot \eta(\xv)- \log (1 - c) \cdot (1 - \eta(\xv))\right) &=& 0 \\
   - \frac{\eta(\xv)}{c} + \frac{1 - \eta(\xv)}{1 - c} &=& 0 \\
-  - \frac{\eta(\xv) (1 - c)}{c (1 - c)} + \frac{c(1 - \eta(\xv))}{c(1 - c)} &=& 0 \\
+  % - \frac{\eta(\xv) (1 - c)}{c (1 - c)} + \frac{c(1 - \eta(\xv))}{c(1 - c)} &=& 0 \\
   \frac{- \eta(\xv) + \eta(\xv) c + c - \eta(\xv) c}{c (1 - c)} &=& 0 \\
   c &=& \eta(\xv). 
 \end{eqnarray*}
 
-The risk minimizer is $\pixbayes = \eta(\xv) = \P(y = 1 ~|~ \xv = \xv)$. 
+\end{footnotesize}
 
 \framebreak 
 
-
-To derive the risk minimizer for the Bernoulli loss we again compute the point-wise optimum for a fixed $\xv$. The point-wise log-odds:
+The risk minimizer for the Bernoulli loss defined on $y \in \{-1, 1\}$ and scores $\fx$ is the point-wise log-odds:
 
 \begin{eqnarray*}
-\fh(\xv) &=&  \ln \biggl(\frac{\P(y~|~\xv = \xv)}{1-\P(y~|~\xv = \xv)}\biggr).
+\fxbayes &=&  \ln \biggl(\frac{\P(y~|~\xv = \xv)}{1-\P(y~|~\xv = \xv)}\biggr).
 \end{eqnarray*}
 
 The function is undefined when $P(y~|~\xv = \xv) = 1$ or $P(y~|~\xv = \xv) = 0$, but predicts a smooth curve which grows when $P(y~|~\xv = \xv)$ increases and equals $0$ when $P(y~|~\xv = \xv) = 0.5$.
 
 \lz 
 
-\textbf{Proof: } We consider the case $\Yspace = \setmp$. We have seen that the (theoretical) optimal prediction $c$ for an arbitrary loss function at fixed point $\xv$ is
+\textbf{Proof: } As before we minimize 
 
-$$
-\argmin_{c} \sum_{k \in \Yspace} L(y, c) \P(y = k| \xv = \xv)\,.
-$$
+\begin{eqnarray*}
+  \riskf &=& \E_x \left[L(1, \fx) \cdot \eta(\xv) + L(-1, \fx) \cdot (1 - \eta(\xv)) \right] \\
+  &=&  \ln(1 + \exp(- \fx)) \eta(\xv)+ \ln(1 + \exp(\fx)) (1 - \eta(\xv)). 
+\end{eqnarray*}
 
 \framebreak 
 
-We plug in the Bernoulli loss
+For a fixed $\xv$ we compute the point-wise optimal value $c$ by setting the derivative to $0$: 
 
-\vspace*{-0.3cm}
-
-\begin{footnotesize}
-  \begin{eqnarray*}
-    && \argmin_c L(1, c) \underbrace{\P(y = 1| \xv = \xv)}_{\eta(\xv)} + L(-1, c) \underbrace{\P(y = -1| \xv = \xv)}_{1 - \eta(\xv)} \\ 
-    &=&  \argmin_c \ln(1 + \exp(-c)) \eta(\xv)+ \ln(1 + \exp(c)) (1 - \eta(\xv)).
-  \end{eqnarray*}
-\end{footnotesize}
-
-\vspace*{-0.3cm}
-
-Setting the derivative w.r.t. $c$ to zero yields
-
-\vspace*{-0.3cm}
 
 \begin{footnotesize}
   \begin{eqnarray*}
-  0 &=& - \frac{\exp(-c)}{1 + \exp(-c)} \eta(\xv) + \frac{\exp(c)}{1 + \exp(c)} (1 - \eta(\xv)) \\ 
-   &=& - \frac{\exp(-c)}{1 + \exp(-c)} \eta(\xv) + \frac{1}{1 + \exp(- c)} (1 - \eta(\xv)) \\ 
+  \frac{\partial }{\partial c} \ln(1 + \exp(-c)) \eta(\xv)+ \ln(1 + \exp(c)) (1 - \eta(\xv)) &=& 0 \\
+  - \frac{\exp(-c)}{1 + \exp(-c)} \eta(\xv) + \frac{\exp(c)}{1 + \exp(c)} (1 - \eta(\xv)) &=& 0 \\ 
+   - \frac{\exp(-c)}{1 + \exp(-c)} \eta(\xv) + \frac{1}{1 + \exp(- c)} (1 - \eta(\xv)) &=& 0\\ 
   % &=& -  \frac{\exp(-c)}{1 + \exp(-c)} p + \frac{1}{1 + \exp(-c)} - \frac{1}{1 + \exp(-c)} p \\
-  &=& - \eta(\xv) + \frac{1}{1 + \exp(-c)} \\
-  \Leftrightarrow \eta(\xv) &=& \frac{1}{1 + \exp(-c)} \\
-  \Leftrightarrow c &=& \ln\left(\frac{\eta(\xv)}{1 - \eta(\xv)}\right)
+  - \eta(\xv) + \frac{1}{1 + \exp(-c)} &=& 0\\
+  \eta(\xv) &=& \frac{1}{1 + \exp(-c)} \\
+   c &=& \ln\left(\frac{\eta(\xv)}{1 - \eta(\xv)}\right)
   \end{eqnarray*}
 \end{footnotesize}
-
-
-% \framebreak 
-
-% Another common equivalent formulation of this loss function is defined on labels $y \in \{0, 1\}$ instead of $y \in \{-1, 1\}$
-
-% $$
-%   L_{0, 1}(y, \fx) = - y \cdot \fx + \log(1 + \exp(\fx)). 
-% $$
-
-% We indicate this by subscripts of the loss function. 
 
 \end{vbframe}
 
@@ -231,25 +216,50 @@ is referred to as cross-entropy or log-loss.
 
 \lz 
 
-For simplicity, we will call all of them \textbf{Bernoulli loss}, and rather make clear whether they are defined on labels $y \in \setzo$ or $y \in \setmp$ and on scores $\fx$ or probabilities $\pix$. 
+We usually refer to all of them as \textbf{Bernoulli loss}, and rather make clear whether they are defined on labels $y \in \setzo$ or $y \in \setmp$ and on scores $\fx$ or probabilities $\pix$. 
 
 \end{vbframe}
 
 
 
-\begin{vbframe}{Log loss minimization = Entropy splitting}
+\begin{vbframe}{Bernoulli loss min = Entropy splitting}
 
-Entropy splitting in trees is equivalent to minimizing the log-loss of a node. The logarithmic loss for multiple classes $y \in \{1, 2, ..., g\}$ is defined as
-$$ L(y, \pikx) = \sum_{k = 1}^g [y = k] \log \left(\pi_k(\xv)\right). $$
-\vspace{-0.4cm}
+When fitting a tree we minimize the risk within each node $\Np$ by risk minimization and predict the optimal constant. Another approach that is common in literature is to minimize the average node impurity $\text{Imp}(\Np)$. 
+
+\vspace*{0.2cm}
+
+\textbf{Claim:} Entropy splitting $\text{Imp}(\Np) = \sum_{k = 1}^g \pikN \log \pikN$ is equivalent to minimize risk measured by the Bernoulli loss. 
+
+\begin{footnotesize}
+Note that $\pikN := \frac{1}{n_{\Np}} \sum\limits_{(\xv,y) \in \Np} [y = k]$. 
+\end{footnotesize}
+
+\vspace*{0.2cm}
+
+\textbf{Proof: } To prove this we show that the risk related to a subset of observations $\Np \subseteq \D$ fulfills 
+
+\vspace*{- 0.2cm}
+
+
+$$
+  \risk(\Np) = n_\Np \text{Imp}(\Np),
+$$
+  
+  where $I$ is the entropy criterion $\text{Imp}(\Np)$ and $\risk(\Np)$ is calculated w.r.t. the (multiclass) Bernoulli loss  
+
+$$
+  L(y, \pikx) = \sum_{k = 1}^g [y = k] \log \left(\pi_k(\xv)\right).
+$$
+
+\framebreak 
+
 \begin{eqnarray*}
-\risk(\Np) &=& \sum_{\xy \in \Np}  \sum_{k = 1}^g [y = k] \log \pi_k(\xv) \\
-&=& \sum_{k = 1}^g \sum_{\xy \in \Np} [y = k] \log \pikN \\
-&=& \sum_{k = 1}^g n_{\Np k} \log \pikN = n_{\Np} \sum_{k = 1}^g \pikN \log \pikN = n_\Np I(\Np), 
+\risk(\Np) &=& \sum_{\xy \in \Np}  \sum_{k = 1}^g [y = k] \log \pi_k(\xv) \overset{(*)}{=} \sum_{k = 1}^g \sum_{\xy \in \Np} [y = k]\log \pikN \\
+&=& \sum_{k = 1}^g \log \pikN \underbrace{\sum_{\xy \in \Np} [y = k]}_{n_{\Np}\cdot \pikN } \\
+ &=& n_{\Np} \sum_{k = 1}^g \pikN \log \pikN = n_\Np \text{Imp}(\Np), 
 \end{eqnarray*} 
 
-plugging in the optimal constant $\pi_k(\xv) = \pikN$.
-
+where in $^{(*)}$ the optimal constant per node $\pikN = \frac{1}{n_{\Np}} \sum\limits_{(\xv,y) \in \Np} [y = k]$ was plugged in. 
 % \framebreak
 
 % \textbf{Conclusion}: 

@@ -2,6 +2,8 @@
 # FIG: HUBER LOSS
 # ------------------------------------------------------------------------------
 
+library(ggplot2)
+
 # DATA -------------------------------------------------------------------------
 
 source("loss_functions.R")
@@ -27,8 +29,9 @@ p_1 <- ggplot2::ggplot(df_1, aes(x, y)) +
     "text",
     x = 0L,
     y = 2.5,
-    label = bquote(delta ~ "=" ~ 0.8),
-    size = 10L) +
+    label = deparse(bquote(epsilon ~ "=" ~ 0.8)),
+    size = 10L,
+    parse = TRUE) +
   ggplot2::geom_segment(
     x = df_1[which.max(df_1[, "diff"]), "x"],
     xend = df_1[which.max(df_1[, "diff"]), "x"],
@@ -47,8 +50,9 @@ p_1 <- ggplot2::ggplot(df_1, aes(x, y)) +
     x = df_1[which.max(df_1[, "diff"]), "x"] + 1.2,
     y = df_1[which.max(df_1[, "diff"]), "y"] + 
       0.5 * (df_1[which.max(df_1[, "diff"]), "diff"]),
-    label = bquote("|" ~ y - f(x) ~ "|" ~ ">" ~ delta),
+    label = deparse(bquote("|" ~ y - f(x) ~ "|" ~ ">" ~ epsilon)),
     size = 7L,
+    parse = TRUE,
     color = "blue") +
   ggplot2::annotate(
     "rect", 
@@ -68,8 +72,9 @@ p_1 <- ggplot2::ggplot(df_1, aes(x, y)) +
     "text",
     x = df_1[21, "x"] + 0.4, 
     y = df_1[21, "y"] - 0.5,
-    label = bquote("|" ~ y - f(x) ~ "|" ~ "<" ~ delta),
+    label = deparse(bquote("|" ~ y - f(x) ~ "|" ~ "<" ~ epsilon)),
     size = 7L,
+    parse = TRUE,
     color = "blue") +
   xlim(c(-1L, 3L)) +
   ylim(c(-1L, 3L)) +
@@ -78,14 +83,14 @@ p_1 <- ggplot2::ggplot(df_1, aes(x, y)) +
 
 p_2 <- plotLoss(df_2, losses) + scale_color_viridis_d(
   end = 0.9,
-  name = bquote(delta), 
+  name = expression(epsilon), 
   labels = c(2, 1, 0.5)) +
   theme_minimal() +
   theme(text = element_text(size = 20L))
 
 p <- cowplot::plot_grid(
   p_1, 
-  ggplot2::ggplot(),
+  NULL,
   p_2, 
   ncol = 3L, 
   align = "h",
