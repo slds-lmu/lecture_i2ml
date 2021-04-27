@@ -13,8 +13,10 @@
 \input{../../latex-math/ml-trees} % For the comparison of Brier and Gini index
 
 
-\newcommand{\titlefigure}{figure_man/optimization_steps.jpeg}
+\newcommand{\titlefigure}{figure/plot_loss_overview_classif.png}
 \newcommand{\learninggoals}{
+  \item Know the (squared) hinge loss
+  \item Know the $L2$ loss defined on scores
   \item Know the exponential loss
   \item Know the AUC loss 
 }
@@ -36,7 +38,7 @@
   \item The intuitive appeal of the 0-1-loss is set off by its analytical
   properties ill-suited to direct optimization.
   \item The \textbf{hinge loss} is a continuous relaxation that acts as a convex 
-  upper bound on the 0-1-loss: 
+  upper bound on the 0-1-loss (for $y \in \setmp$): 
   $$\Lxy = \max \{ 0, 1 - y\fx \}.$$
   \item Note that the hinge loss only equals zero for a margin $\geq 1$, 
   encouraging confident (correct) predictions.
@@ -53,20 +55,62 @@
 \end{vbframe}
 
 
+\begin{vbframe}{Squared Hinge Loss}
+
+\begin{itemize}
+  \item We can also specify a \textbf{squared} version for the hinge loss:
+  $$\Lxy = \max \{ 0, (1 - y\fx)^2 \}.$$
+  \item The $L2$ form punishes margins $y \fx \in (0, 1)$ less severely but puts 
+  a high penalty on more confidently wrong predictions. 
+  \item Therefore, it is smoother yet more outlier-sensitive than the 
+  non-squared hinge loss.
+\end{itemize}
+
+\begin{center}
+\includegraphics[width = 0.7\textwidth]{figure/plot_loss_hinge_squared.png}
+\end{center}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Squared Loss on Scores}
+
+% Source: https://davidrosenberg.github.io/mlcourse/Archive/2017Fall/Lectures/04a.loss-functions.pdf
+
+\begin{itemize}
+  \item Analogous to the Brier score defined on probabilities we can specify a 
+  \textbf{squared loss on classification scores} (again, $y \in \setmp$, using 
+  that $y^2 \equiv 1$):
+  \begin{eqnarray*}
+  \Lxy = &(y - \fx)^2 = y^2 - 2y\fx + (\fx)^2 =\\
+  = &1 - 2y\fx + (y\fx)^2 = (1 - y\fx)^2
+  \end{eqnarray*}
+  \item This loss behaves just like the squared hinge loss for $y \fx < 1$, but 
+  is zero only for $y \fx = 1$ and actually increases again for larger margins.
+\end{itemize}
+
+\begin{center}
+\includegraphics[width = 0.7\textwidth]{figure/plot_loss_squared_scores.png}
+\end{center}
+
+\end{vbframe}
+
+
 
 \begin{vbframe}{Classification Losses: Exponential Loss}
 
-Another possible choice for a (binary) loss function that is a smooth approximation to the 0-1-loss:
+Another possible choice for a (binary) loss function that is a smooth 
+approximation to the 0-1-loss is the \textbf{exponential loss}:
 \begin{itemize}
-\item $\Lxy = \exp(-y\fx)$, used in AdaBoost
-\item Convex, differentiable (thus easier to optimize than 0-1-loss)
-\item The loss increases exponentially for wrong predictions with high confidence; if the prediction is right with a small confidence only, there, loss is still positive
-\item No closed-form analytic solution to (empirical) risk minimization
+\item $\Lxy = \exp(-y\fx)$, used in AdaBoost.
+\item Convex, differentiable (thus easier to optimize than 0-1-loss).
+\item The loss increases exponentially for wrong predictions with high confidence; if the prediction is right with a small confidence only, there, loss is still positive.
+\item No closed-form analytic solution to (empirical) risk minimization.
 \end{itemize}
 
 
 \begin{figure}
-\includegraphics[width = 0.8\textwidth]{figure_man/exponential-loss.png}
+\includegraphics[width = 0.8\textwidth]{figure/plot_loss_exponential.png}
 \end{figure}
 
 \end{vbframe}
@@ -74,13 +118,13 @@ Another possible choice for a (binary) loss function that is a smooth approximat
 \begin{vbframe}{Classification Losses: AUC-loss}
 
 \begin{itemize}
-\item Often AUC is used as an evaluation criterion for binary classifiers
-\item Let $y \in \{-1, 1\}$ with observations $n_{-1}$ number of negative and $n_{1}$ of positive samples %$y_i, i = 1, \ldots, n_{-1} + n_1$.
+\item Often AUC is used as an evaluation criterion for binary classifiers.
+\item Let $y \in \setmp$ with $\nn$ negative and $\np$ positive samples. %$y_i, i = 1, \ldots, n_{-1} + n_1$.
 \item The AUC can then be defined as
-$$AUC = \frac{1}{n_{1}} \frac{1}{n_{-1}} \sum_{i: y_i = 1} \sum_{j: y_j = -1} [f^{(i)} > f^{(j)}]$$
-\item This is not differentiable wrt $f$ due to $[f^{(i)} > f^{(j)}]$
-\item But the indicator function can be approximated by the distribution function of the triangular distribution on $[-1, 1]$ with mean $0$
-\item \textcolor{red}{@BB: Check!!} However, direct optimization of the AUC is usually not as good as optimization wrt a common loss and tuning via AUC in practice 
+$$AUC = \frac{1}{\np} \frac{1}{\nn} \sum_{i: \yi = 1} \sum_{j: \yi[j] = -1} [f^{(i)} > f^{(j)}]$$
+\item This is not differentiable w.r.t $f$ due to $[f^{(i)} > f^{(j)}]$.
+\item But the indicator function can be approximated by the distribution function of the triangular distribution on $[-1, 1]$ with mean $0$.
+\item \textcolor{red}{@BB: Check!!} However, direct optimization of the AUC does usually not work as well as optimization w.r.t a common loss and tuning via AUC in practice.
 
 \end{itemize}
 \end{vbframe}
