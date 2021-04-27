@@ -19,25 +19,25 @@
 
 
 \begin{vbframe}{KL vs Maximum Likelihood}
-Minimizing KL between the true distribution $p(x)$ and approximating model $q(x|\theta)$ is equivalent to maximizing the log-likelihood.
+Minimizing KL between the true distribution $p(x)$ and approximating model $q(x|\thetab)$ is equivalent to maximizing the log-likelihood.
   \begin{align*}
-    D_{KL}(p \| q_\theta)) &= \E_{x \sim p} \left[ \log \frac{p(x)}{q(x|\theta)}\right] \\
-     &= \E_{x \sim p} \log p(x) - \E_{x \sim p} \log q(x|\theta)
+    D_{KL}(p \| q_{\thetab})) &= \E_{x \sim p} \left[ \log \frac{p(x)}{q(x|\thetab)}\right] \\
+     &= \E_{x \sim p} \log p(x) - \E_{x \sim p} \log q(x|\thetab)
   \end{align*}
-  The first term above does not depend on $\theta$. Therefore,
+  The first term above does not depend on $\thetab$. Therefore,
   \begin{align*}
-    \argmin_{\theta} D_{KL}(p \| q_\theta) &= \argmin_{\theta} -\E_{x \sim p} \log q(x|\theta)\\ 
-                                           &= \argmax_{\theta} \E_{x \sim p} \log q(x|\theta)
+    \argmin_{\thetab} D_{KL}(p \| q_{\thetab}) &= \argmin_{\thetab} -\E_{x \sim p} \log q(x|\thetab)\\ 
+                                           &= \argmax_{\thetab} \E_{x \sim p} \log q(x|\thetab)
   \end{align*}
   For a finite dataset of $n$ samples from $p$, this is approximated as 
-  $$\argmax_{\theta} \E_{x \sim p} \log q(x|\theta) \approx \argmax_{\theta} \frac{1}{n} \sumin \log q(\xi|\theta)\,.$$
+  $$\argmax_{\thetab} \E_{x \sim p} \log q(x|\thetab) \approx \argmax_{\thetab} \frac{1}{n} \sumin \log q(\xi|\thetab)\,.$$
 
 % This demonstrates that density estimation and optimal coding are closely related. If the estimated distribution is different from the true one, any code based on the estimated distribution will necessarily be suboptimal (in terms of the expected length of \enquote{messages} from the true distribution).
 \end{vbframe}
 
 \begin{vbframe}{KL vs Cross-Entropy}
 From this here we can actually see much more:
-$$ \argmin_{\theta} D_{KL}(p \| q_\theta) = \argmin_{\theta} -\E_{x \sim p} \log q(x|\theta) = H_{q_\theta}(p) $$
+$$ \argmin_{\thetab} D_{KL}(p \| q_{\thetab}) = \argmin_{\thetab} -\E_{x \sim p} \log q(x|\thetab) = H_{q_{\thetab}}(p) $$
   \begin{itemize}
     \item So minimizing with respect to KL is the same as minimizing with respect to cross-entropy! 
     \item That implies minimizing with respect to cross-entropy is the same as maximum likelihood!
@@ -52,7 +52,7 @@ $$ \argmin_{\theta} D_{KL}(p \| q_\theta) = \argmin_{\theta} -\E_{x \sim p} \log
     \item Consider a multi-class classification task with dataset $\D = \Dset$.
 %    \item More concretely, let us assume this is an image classification task where each $\xi$ is an image and $\yi$ is the corresponding label.
     \item For $g$ classes, each $\yi$ can be one-hot-encoded as a vector $d^{(i)}$ of length $g$. $d^{(i)}$ can be interpreted as a categorical distribution which puts all its probability mass on the true label $\yi$ of $\xi$.
-    \item $\pi(\xv^{(i)}|\theta)$ is the probability output vector of the model, and also a categorical distribution over the classes.
+    \item $\pi(\xv^{(i)}|\thetab)$ is the probability output vector of the model, and also a categorical distribution over the classes.
 
   \end{itemize}
 \lz
@@ -64,18 +64,18 @@ $$ \argmin_{\theta} D_{KL}(p \| q_\theta) = \argmin_{\theta} -\E_{x \sim p} \log
     \framebreak
 
     
-To train the model, we minimize KL between $d^{(i)}$ and $\pi(\xv^{(i)}|\theta)$ :
-$$ \argmin_{\theta} \sum_{i=1}^n D_{KL} (d^{(i)} \| \pi(\xv^{(i)}|\theta)) = \argmin_{\theta} \sum_{i=1}^n  H_{\pi(\xv^{(i)}|\theta)}(d^{(i)}) $$
-    % where the entropy $H(d^{(i)})$ was dropped because it is not a function of $\theta$.
+To train the model, we minimize KL between $d^{(i)}$ and $\pi(\xv^{(i)}|\thetab)$ :
+$$ \argmin_{\thetab} \sum_{i=1}^n D_{KL} (d^{(i)} \| \pi(\xv^{(i)}|\thetab)) = \argmin_{\thetab} \sum_{i=1}^n  H_{\pi(\xv^{(i)}|\thetab)}(d^{(i)}) $$
+    % where the entropy $H(d^{(i)})$ was dropped because it is not a function of $\thetab$.
   
 We see that this is equivalent to log-loss risk minimization!
   \begin{footnotesize}
     \begin{equation*}
       \begin{split}
-               R &= \sumin  H_{\pi_k(\xv^{(i)}|\theta)}(d^{(i)}) \\
-                 &= \sumin \left( - \sum_k d^{(i)}_k \log\pi_k(\xv^{(i)}|\theta) \right) \\
-                 & = \sumin \underbrace{ \left( -\sum_{k = 1}^g [\yi = k]\log \pi_{k}(\xv^{(i)}|\theta) \right) }_{\text{log loss}} \\
-                 & = \sumin (-\log\pi_{y^{(i)}}(\xv^{(i)}|\theta)) 
+               R &= \sumin  H_{\pi_k(\xv^{(i)}|\thetab)}(d^{(i)}) \\
+                 &= \sumin \left( - \sum_k d^{(i)}_k \log\pi_k(\xv^{(i)}|\thetab) \right) \\
+                 & = \sumin \underbrace{ \left( -\sum_{k = 1}^g [\yi = k]\log \pi_{k}(\xv^{(i)}|\thetab) \right) }_{\text{log loss}} \\
+                 & = \sumin (-\log\pi_{y^{(i)}}(\xv^{(i)}|\thetab)) 
       \end{split}
     \end{equation*}
   \end{footnotesize}
