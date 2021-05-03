@@ -1,0 +1,302 @@
+
+\input{../../2021/style/preamble4tex}
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-bagging.tex}
+\input{../../latex-math/ml-boosting.tex}
+\input{../../latex-math/ml-trees.tex}
+
+\begin{document}
+
+\lecturechapter{11}{Gradient Boosting for Classification}
+\lecture{Fortgeschrittene Computerintensive Methoden}
+
+
+\begin{vbframe}{Binary classification}
+
+
+For $\Yspace = \{0, 1\}$, we simply have to select an appropriate loss function, so let us
+use Bernoulli loss as in logistic regression:
+
+$$ \Lxy = - y \cdot \fx + \log(1 + \exp(\fx)).$$
+
+Then,
+
+\vspace{-0.5cm}
+
+\begin{align*}
+\tilde{r} &=-\fp{\Lxy}{\fx} \\
+&= y - \frac{\exp(\fx)}{1 + \exp(\fx)} \\
+&= y - \frac{1}{1 + \exp(-\fx)} = y - s(\fx).
+\end{align*}
+
+Here, $s(\fx)$ is the logistic function, applied to a scoring model.
+Hence, effectively, the pseudo-residuals are $y - \pix$.
+
+Through $\pix = s(\fx)$ we can also estimate posterior probabilities.
+
+\framebreak
+%
+
+\begin{itemize}
+\item Using this loss function, we can simply run GB as for regression.
+  NB: Also here, we fit regression base learners against our numerical 
+  vector of pseudo-residuals with L2 loss. 
+\item The tree extension for boosting for the binary case works exactly as in regression.
+\item  We could also have used the exponential loss for classification with 
+  GB. It can be shown that the resulting GB algorithm is basically equivalent 
+    to AdaBoost. In practice there is no big difference, although Bernoulli loss 
+    makes a bit more sense from a theoretical (maximum likelihood) perspective.
+\item It follows that GB is a generalization of AdaBoost which can also use other loss functions and be used for different ML scenarios.
+\end{itemize}
+
+
+\end{vbframe}
+
+
+
+% \section{Interactive Playgrounds}
+% 
+% \begin{vbframe}{Gradient Boosting Playground}
+% \begin{center}
+% 
+% \includegraphics[width=0.7\textwidth]{figure_man/gbm_playground.png}
+% 
+% \href{http://arogozhnikov.github.io/2016/07/05/gradient_boosting_playground.html}{\beamergotobutton{Open in browser.}}
+% 
+% \end{center}
+% \end{vbframe}
+% 
+% \begin{vbframe}{mlrPlayground}
+% \begin{center}
+% 
+% \includegraphics[width=\linewidth]{figure_man/mlrplayground_welcome.png}
+% 
+% \href{https://compstat-lmu.shinyapps.io/mlrPlayground/}{\beamergotobutton{Open in browser.}}
+% 
+% \end{center}
+% \end{vbframe}
+
+% \section{Gradient Boosting for Multiclass Problems}
+
+\begin{vbframe}{Multiclass problems}
+
+We proceed as in softmax regression and model a categorical distribution with multinomial / log loss.
+For $\Yspace = \{1, \ldots, g\}$, we create $g$ discriminant functions $\fxk$, one for each class and each one being an \textbf{additive} model of base learners.
+
+We define the $\pi_k(\xv)$ through the softmax function:
+$$ \pikx = s_k(f_1(\xv), \ldots, f_g(\xv)) = \exp(\fxk) / \sum_{j=1}^g \exp(f_j(\xv)). $$
+
+Multinomial loss $L$:
+$$ L(y, f_1(\xv), \ldots f_g(\xv)) = - \sumkg \mathds{1}_{\{y = k\}} \ln \pikx. $$
+
+Pseudo-residuals:
+$$-\fp{L(y, f_1(\xv), \ldots, f_g(\xv))}{\fxk} =  \mathds{1}_{\{y = k\}} - \pikx. $$
+
+
+\framebreak
+
+\begin{algorithm}[H]
+  \begin{footnotesize}
+  \begin{center}
+  \caption{GB for Multiclass}
+    \begin{algorithmic}[1]
+      \State Initialize $f_{k}^{[0]}(\xv) = 0,\ k = 1,\ldots,g$
+      \For{$m = 1 \to M$}
+      \State Set $\pik^{[m]}(\xv) = \frac{\exp(f_k^{[m]}(\xv))}{\sum_j \exp(f_j^{[m]}(\xv))}, k = 1,\ldots,g$
+            \For{$k = 1 \to g$}
+            \State For all $i$: Compute $\rmi_k = \mathds{1}_{\{\yi = k\}} - \pik^{[m]}(\xi)$
+              \State Fit a regression base learner $\hat{b}^{[m]}_k$ to the pseudo-residuals $\rmi_k$.
+              \State Obtain $\betamh_k$ by constant learning rate or line-search.
+              \State Update $\hat{f}_k^{[m]} = \hat{f}_k^{[m-1]} + \betamh_k \hat{b}^{[m]}_k$
+            \EndFor
+      \EndFor
+    \State Output $\hat{f}_1^{[M]}, \ldots, \hat{f}_g^{[M]}$
+    \end{algorithmic}
+    \end{center}
+    \end{footnotesize}
+\end{algorithm}
+
+\end{vbframe}
+
+\begin{vbframe}{GB Multiclass with Trees}
+
+\begin{itemize}
+  \item From Friedman, J. H. - Greedy Function Approximation: A Gradient Boosting Machine (1999)
+  \item Determining the tree structure for each $\hat{b}^{[m]}_k$ by L2 loss works just like before in the 2-class problem.
+\item In the estimation of the $c$ values, so the heights of the terminal regions, however, all models depend on each other because of the definition
+of $L$. Optimizing this is more difficult, so we will skip some details and present the main idea and results.
+\end{itemize}
+
+\framebreak
+
+\begin{itemize}
+  \item The post-hoc, loss optimal heights of the terminals $\hat{c}_{tk}^{[m]}$ are:
+  $$ 
+  \hat{c}_{tk}^{[m]} = - \argmin_{c_{tk}^{[m]} } \sum_{i=1}^n \sum_{k=1}^g \mathds{1}_{\{y = k\}} \ln \pi_k^{[m]}(\xv^{(i)}) \,,
+  $$
+\item Softmax trafo: $\pi_k^{[m]}(\xv) = \frac{\exp(f_k^{[m]}(\xv))}{\sum_j \exp(f_j^{[m]}(\xv))},$ with 
+\item The k-th model:
+  $
+  \hat{f}_k^{[m]}(\xv^{(i)})) = \hat{f}_k^{[m-1]}(\xv^{(i)}) + \sum_{t=1}^{T_k^{[m]}} \hat{c}_{tk}^{[m]} \mathds{1}_{\{\xv^{(i)} \in R_{tk}^{[m]}\}} 
+  $
+  % resulting from the multinomial loss function $L(y, f_1(\xv), \ldots f_g(\xv)) = - \sumkg \mathds{1}_{\{y = k\}} \ln \pikx$.
+  %and $\pikx = \frac{\exp(f_k(\xv))}{\sum_j \exp(f_j(\xv))}$ as before.\medskip
+
+\end{itemize}
+
+
+  % \item In each iteration $m$ we calculate the pseudo-residuals
+        % $$\rmi_k = \mathds{1}_{\{\yi = k\}} - \pi_k^{[m-1]}(\xi),$$
+        % where $\pi_k^{[m-1]}(\xi)$ is derived from $f^{[m-1]}(\mathbf{x}).$
+
+  % \item Thus, $g$ trees are induced at each iteration $m$ to predict the corresponding current pseudo-residuals for each class on the probability scale.
+
+  % \item Each of these trees has $T$ terminal nodes with corresponding regions $R_{tk}^{[m]}$.
+
+
+\framebreak
+
+
+\begin{itemize}
+
+  \item There is no closed-form solution for finding the optimal $\hat{c}_{tk}^{[m]}$ values. Additionally, the regions corresponding to the different class trees overlap, so that the solution does not reduce to a separate calculation within each region of each tree.
+
+  \item Hence, we approximate the solution with a single Newton-Raphson step, using a diagonal approximation to the Hessian (we leave out the details here).
+
+  \item This decomposes the problem into a separate calculation for each terminal node of each tree.
+
+  \item The result is
+
+  $$\hat{c}_{tk}^{[m]} =
+      \frac{g-1}{g}\frac{\sum_{\xi \in R_{tk}^{[m]}} \rmi_k}{\sum_{\xi \in R_{tk}^{[m]}} \left|\rmi_k\right|\left(1 - \left|\rmi_k\right|\right)}.$$
+
+  % \item The update is then done by
+  % $$
+  % \hat{f}_k^{[m]}(\xv) = \hat{f}_k^{[m-1]}(\xv) + \sum_t \hat{c}_{tk}^{[m]} \mathds{1}_{\{\xv \in R_{tk}^{[m]}\}}.
+  % $$
+
+\end{itemize}
+
+\framebreak
+
+\input{algorithms/gradient_boosting_for_k_classification.tex}
+
+
+\end{vbframe}
+
+
+% \begin{vbframe}{Additional information}
+% 
+% By choosing a suitable loss function it is also possible to model a large number of different problem domains:
+% \begin{itemize}
+%   \item Regression
+%   \item (Multiclass) Classification
+%   \item Count data
+%   \item Survival data
+%   \item Ordinal data
+%   \item Quantile regression
+%   \item Ranking problems
+%   \item ...
+% \end{itemize}
+% 
+% \lz
+% 
+% % Boosting is closely related to L1 regularization.
+% 
+% % \lz
+% 
+% Different base learners increase flexibility (see componentwise gradient boosting).
+% If we model only individual variables, the resulting regularized variable selection
+% is closely related to $L1$ regularization.
+% 
+% \framebreak
+% 
+% For example, using the pinball loss in boosting
+% $$
+% L(y, f(\xv)) = \left\{
+% \begin{array}{lc}
+% (1 - \alpha)(f(\xv) - y), & \text{if}\ y < f(\xv) \\
+% \alpha(y - f(\xv)),       & \text{if}\ y \geq f(\xv)
+% \end{array}
+% \right.
+% $$
+% models the $\alpha$-quantiles:
+% 
+% \begin{center}
+% \includegraphics[scale=0.5]{figure_man/quantile_boosting.png}
+% \end{center}
+% 
+% \framebreak
+% 
+% The AdaBoost fit has the structure of an additive model with \enquote{basis functions} $\bmm (x)$.
+% 
+% \lz
+% 
+% It can be shown (see Hastie et al. 2009, Chapter 10) that AdaBoost corresponds to minimizing the empirical risk in each iteration $m$ using the \textbf{exponential} loss function:
+% \begin{align*}
+%   L(y, \fmh(\mathbf{x}))    &= \exp\left(-y\fmh(\mathbf{x})\right) \\
+%   \riske(\fmh)              &= \sumin L(\yi, \fmh(\xi)) \\
+%                             &= \sumin L(\yi, \fmdh(\xi) + \beta b(\xi))\,,
+% \end{align*}
+% 
+% 
+% % \begin{align*}
+% %   \sum_{i=1}^n \exp\left(-\yi \cdot \left(\beta b\left(\xi\right)
+% %   + \fmdh\left(\xi\right)\right)\right),
+% % \end{align*}
+% with minimization over $\beta$ and $b$ and where $\fmdh$ is the boosting fit in iteration $m-1$.
+% 
+% % \framebreak
+% 
+% % AdaBoost is the empirical equivalent to the forward piecewise solution of the minimization problem
+% 
+% % \begin{align*}
+% %   \text{arg} \min_{f} \E_{y|x}( \exp (- y \cdot \fx))\ .
+% % \end{align*}
+% 
+% % \lz
+% 
+% % Therefore, the boosting fit is an estimate of function
+% % \begin{align*}
+% %   f^*(x) = 0.5 \cdot \log \left( \frac{\text{P} (y = 1 | x)}
+% %   {\text{P} (y = -1 | x)}\right) \ ,
+% % \end{align*}
+% % which solves the former problem theoretically.
+% 
+% % \lz
+% 
+% % Obvious idea: generalization on other loss functions, use of alternative basis methods.
+% 
+% \end{vbframe}
+
+% 
+% \begin{vbframe}{Take home message}
+% Gradient boosting is a statistical reinterpretation of the older AdaBoost algorithm.
+% 
+% \lz
+% 
+% Base learners are added in a \enquote{greedy} fashion, so that they point in the direction of the negative gradient of the empirical risk.
+% 
+% \lz
+% 
+% Regression base learners are fitted even for classification problems.
+% 
+% \lz
+% 
+% Often the base learners are (shallow) trees, but arbitrary base learners are possible.
+% 
+% \lz
+% 
+% The method can be adjusted flexibly by changing the loss function, as long as it's differentiable.
+% 
+% \lz
+% 
+% Methods to evaluate variable importance and to do variable selection exist.
+% 
+% \end{vbframe}
+
+
+\endlecture
+\end{document}
+

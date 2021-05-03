@@ -1,0 +1,305 @@
+
+\input{../../2021/style/preamble4tex}
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-bagging.tex}
+\input{../../latex-math/ml-boosting.tex}
+\input{../../latex-math/ml-trees.tex}
+
+\begin{document}
+
+\lecturechapter{11}{Gradient Boosting with Trees}
+\lecture{Fortgeschrittene Computerintensive Methoden}
+
+
+\begin{vbframe}{Gradient boosting with trees}
+
+Trees are mainly used as base learners for gradient boosting in ML.
+A great deal of research has been done on this combination so far, and it often provides the best results.
+
+\begin{blocki}{Reminder: Advantages of trees}
+\item No problems with categorical features.
+\item No problems with outliers in feature values.
+\item No problems with missing values.
+\item No problems with monotone transformations of features.
+\item Trees (and stumps!) can be fitted quickly, even for large $n$.
+\item Trees have a simple built-in type of variable selection.
+%\item Interpretation of Trees is rather easy.
+\end{blocki}
+The gradient-boosted trees method retains all of them, and strongly improves the trees' predictive power.
+Furthermore, it is possible to adapt gradient boosting to tree learners in a targeted manner.
+
+\framebreak
+
+One can write a tree as: $ b(\xv) = \sum_{t=1}^{T} c_t \mathds{1}_{\{\xv \in R_t\}} $,
+where $R_t$ are the terminal regions and $c_t$ the corresponding constant parameter.
+
+\vspace*{0.2cm}
+
+For a fitted tree with regions $R_t$, the special additive structure can be exploited in boosting:  %Finished here
+
+\begin{align*}
+  \fm(\xv) &= \fmd(\xv) +  \betam \bmm(\xv) \\
+         &= \fmd(\xv) +  \betam \sum_{t=1}^{\Tm} \ctm \mathds{1}_{\{\xv \in \Rtm\}}.
+\end{align*}
+
+Actually, we do not have to find $\ctm$ and $\betam$ in two separate steps
+(fitting against pseudo-residuals, then line search) but find optimal $\ctm$ (including $\betam$).
+Also note that the $\ctm$ will not really be loss-optimal as we used squared error loss
+to fit them against the pseudo-residuals.
+
+\framebreak
+\begin{footnotesize}
+We do the same steps as before: (1) calculate the pseudo-residuals, (2) fit a tree against pseudo-residuals, \textbf{but now} we keep only the structure of the tree and optimize the $c$ parameter in a (further) post-hoc step.
+
+$$
+\fm(\xv) = \fmd(\xv) +  \sum_{t=1}^{\Tm} \ctmt \mathds{1}_{\{\xv \in \Rtm\}}. 
+$$
+
+We want to find the constant value $c$ that drives down risk the most w.r.t the squared error loss,
+when added to the respective terminal region.
+We can determine/change all $\ctmt$ individually and directly $L$-optimally:
+
+
+%\vspace{-0.2cm}
+
+$$ \ctmt = \argmin_{c} \sum_{\xi \in \Rtm} L(\yi, \fmd(\xi) + c). $$
+
+\vspace{-0.5cm}
+
+\begin{center}
+
+\includegraphics[width=0.38\textwidth]{figure_man/gbm_leaf_adjustment.pdf}
+
+\end{center}
+
+\end{footnotesize}
+
+\framebreak
+
+\input{algorithms/gradient_tree_boosting_algorithm.tex}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Visualization 1}
+\begin{footnotesize}
+\textbf{Simulation Setting:}
+\begin{itemize}
+\item Given: One feature $\xv$ and one numeric target variable $y$ of 50 observations.
+\item $\xv$ is uniformly distributed between 0 and 10.
+\item $y$ depends on $\xv$ as follows: $y^{(i)} = \sin{(x^{(i)})} + \epsilon^{(i)}$ with $\epsilon^{(i)} \sim \mathcal{N}(0,0.2)$, $\forall i \in 1,\dots,50$.
+\end{itemize}
+
+\vspace*{0.2cm}
+
+\begin{columns}
+
+\column{5cm}
+\begin{figure}
+  \includegraphics{figure_man/gbm_anim_data.png}
+\end{figure}
+
+\column{5cm}
+\textbf{Aim:} We want to fit a gradient boosting model to the data by using stumps as base learners.
+\begin{itemize}
+\item Since we are facing a regression problem, we use L2 loss.
+%\item Self-implementation of GB where learning rate found by line search.
+\end{itemize}
+
+
+\end{columns}
+\end{footnotesize}
+\framebreak
+
+\begin{footnotesize}
+\textbf{Iteration 0:} Initialization by optimal constant (mean) prediction $\hat f^{[0](i)}(\xv) = \overline{y} \approx 0.2$
+
+\vspace*{0.2cm}
+
+\begin{columns}
+
+\column{5cm}
+\begin{center}
+\begin{tabular}{c|c|c|c}
+$i$ & $x^{(i)}$ & $y^{(i)}$ & $\hat{f}^{[0]}$ \\ \hline
+1 & 0.03 &  0.03 & 0.20 \\
+2 & 0.03 & -0.01 & 0.20 \\
+3 & 0.06 &  0.08 & 0.20 \\
+\vdots & \vdots & \vdots & \vdots \\
+50 & 9.69 & -0.29 & 0.20\\
+\end{tabular}
+\end{center}
+
+\column{5cm}
+\begin{figure}
+  \includegraphics[width=\textwidth]{figure_man/gbm_anim_init.png}
+\end{figure}
+
+\end{columns}
+
+\end{footnotesize}
+
+\framebreak
+\begin{footnotesize}
+\textbf{Iteration 1:} (1) Calculate residuals $\tilde{r}^{[m](i)}$ and (2) fit a regression stump $b^{[m]}$ %which is multiplied by the learning rate $\beta$% (here: $\hat \beta^{[1]} = 1$).
+
+\begin{columns}
+
+\column{5cm}
+\begin{center}
+\begin{tabular}{c|c|c|c|c|c}
+$i$ & $x^{(i)}$ & $y^{(i)}$ & $\hat{f}^{[0]}$ & $\tilde{r}^{[1](i)}$ & $\hat{b}^{[1](i)}$\\ \hline
+1 & 0.03 &  0.03 & 0.20 & -0.17 & -0.18\\
+2 & 0.03 & -0.01 & 0.20 & -0.21 & -0.18 \\
+3 & 0.06 &  0.08 & 0.20 & -0.12 & -0.18 \\
+\vdots & \vdots & \vdots & \vdots  & \vdots & \vdots \\
+50 & 9.69 & -0.29 & 0.20 & -0.49 & 0.34\\
+\end{tabular}
+\end{center}
+
+\column{4.9cm}
+\begin{figure}
+  \includegraphics[width=\textwidth]{figure_man/gbm_anim_01.png}
+\end{figure}
+
+\end{columns}
+
+\vspace*{0.2cm}
+
+%(3) Update model by $\hat{f}^{[1]}(\xv) = \hat{f}^{[0]}(\xv) + \hat{\beta}^{[1]} \hat{b}^{[1]$
+(3) Update model by $\hat{f}^{[1]}(\xv) = \hat{f}^{[0]}(\xv) + \hat{b}^{[1]$
+\end{footnotesize}
+
+
+\end{vbframe}
+
+\begin{frame}{Visualization 1}
+Repeat step (1) to (3):
+\begin{center}
+\only<1>{ \includegraphics[width=0.6\textwidth]{figure_man/gbm_anim_02.png} }
+\only<2>{ \includegraphics[width=0.6\textwidth]{figure_man/gbm_anim_03.png} }
+\only<3>{ \includegraphics[width=0.6\textwidth]{figure_man/gbm_anim_04.png} }
+\only<4>{ \includegraphics[width=0.6\textwidth]{figure_man/gbm_anim_05.png} }
+\only<5>{ \includegraphics[width=0.6\textwidth]{figure_man/gbm_anim_31.png} }
+\end{center}
+
+\end{frame}
+% 
+% \begin{columns}
+% \begin{column}{0.6\textwidth}
+% \begin{center}
+% \only<1>{ \includegraphics[width=\textwidth]{figure_man/gbm_anim_01.png} }
+% \only<2>{ \includegraphics[width=\textwidth]{figure_man/gbm_anim_02.png} }
+% \only<3>{ \includegraphics[width=\textwidth]{figure_man/gbm_anim_03.png} }
+% \only<4>{ \includegraphics[width=\textwidth]{figure_man/gbm_anim_04.png} }
+% \only<5>{ \includegraphics[width=\textwidth]{figure_man/gbm_anim_05.png} }
+% \only<6>{ \includegraphics[width=\textwidth]{figure_man/gbm_anim_31.png} }
+% \end{center}
+% \end{column}
+% \begin{column}{0.4\textwidth}
+% \begin{itemize}
+% \item L2 loss and stumps.
+% \item Left = current additive model.
+% \item Right = Residuals and fitted base learner.
+% \item Plot is created by a self-implementation of GB where step size found by line search.
+% \end{itemize}
+% \end{column}
+% \end{columns}
+% \end{frame}
+
+\begin{vbframe}{Visualization 2}
+
+\vspace{-0.6cm}
+\begin{center}
+\includegraphics[width=0.6\textwidth]{figure_man/gbm_sine.pdf}
+\end{center}
+
+\vspace{-0.8cm}
+\footnotesize
+\begin{itemize}
+
+  \item
+    Iterating this very simple base learner yields a rather nice approximation of a smooth model in the end.
+
+  \item
+    Severe overfitting apparent in the noisy case. We will discuss and solve this problem later.
+
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Visualization 3}
+\begin{center}
+\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm1.jpg}
+\href{http://arogozhnikov.github.io/2016/06/24/gradient_boosting_explained.html}{\beamergotobutton{Open in browser.}}
+\end{center}
+\end{vbframe}
+
+% \begin{vbframe}{Gradient Boosting Visualization}
+% \begin{center}
+% \includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm2.jpg}
+% \href{http://arogozhnikov.github.io/2016/06/24/gradient_boosting_explained.html}{\beamergotobutton{Open in browser.}}
+% \end{center}
+% \addtocounter{framenumber}{-1}
+% \end{vbframe}
+
+\begin{vbframe}{Visualization 3}
+\begin{center}
+\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm3.jpg}
+\href{http://arogozhnikov.github.io/2016/06/24/gradient_boosting_explained.html}{\beamergotobutton{Open in browser.}}
+\end{center}
+\addtocounter{framenumber}{-1}
+\end{vbframe}
+
+% \begin{vbframe}{Gradient Boosting Visualization}
+% \begin{center}
+% \includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm4.jpg}
+% \href{http://arogozhnikov.github.io/2016/06/24/gradient_boosting_explained.html}{\beamergotobutton{Open in browser.}}
+% \end{center}
+% \addtocounter{framenumber}{-1}
+% \end{vbframe}
+
+\begin{vbframe}{Visualization 3}
+\begin{center}
+\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm5.jpg}
+\href{http://arogozhnikov.github.io/2016/06/24/gradient_boosting_explained.html}{\beamergotobutton{Open in browser.}}
+\end{center}
+\addtocounter{framenumber}{-1}
+\end{vbframe}
+
+\begin{vbframe}{Visualization 3}
+\begin{center}
+\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm7.jpg}
+\href{http://arogozhnikov.github.io/2016/06/24/gradient_boosting_explained.html}{\beamergotobutton{Open in browser.}}
+\end{center}
+\addtocounter{framenumber}{-1}
+\end{vbframe}
+
+% \begin{vbframe}{Gradient Boosting Visualization}
+% \begin{center}
+% \includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm8.jpg}
+% \href{http://arogozhnikov.github.io/2016/06/24/gradient_boosting_explained.html}{\beamergotobutton{Open in browser.}}
+% \end{center}
+% \addtocounter{framenumber}{-1}
+% \end{vbframe}
+
+% \begin{vbframe}{Gradient Boosting Visualization}
+% \begin{center}
+% \includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm9.jpg}
+% \href{http://arogozhnikov.github.io/2016/06/24/gradient_boosting_explained.html}{\beamergotobutton{Open in browser.}}
+% \end{center}
+% \addtocounter{framenumber}{-1}
+% \end{vbframe}
+
+\begin{vbframe}{Visualization 3}
+\begin{center}
+\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm10.jpg}
+\href{http://arogozhnikov.github.io/2016/06/24/gradient_boosting_explained.html}{\beamergotobutton{Open in browser.}}
+\end{center}
+\addtocounter{framenumber}{-1}
+\end{vbframe}
+
+
+\endlecture
+\end{document}

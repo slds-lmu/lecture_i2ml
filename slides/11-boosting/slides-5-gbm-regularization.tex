@@ -1,0 +1,185 @@
+
+\input{../../2021/style/preamble4tex}
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-bagging.tex}
+\input{../../latex-math/ml-boosting.tex}
+\input{../../latex-math/ml-trees.tex}
+
+\begin{document}
+
+\lecturechapter{11}{Gradient Boosting: Regularization}
+\lecture{Fortgeschrittene Computerintensive Methoden}
+
+
+\begin{vbframe}{Regularization and shrinkage}
+
+If GB runs for a large number of iterations, it can overfit due to its aggressive loss
+minimization.
+
+\begin{blocki}{Options for regularization:}
+\item Limit the number of boosting iterations $M$ (\enquote{early stopping}), i.e., limit the number of additive components.
+\item Limit the depth of the trees. This can also be interpreted as choosing the order of interaction.
+\item Shorten the step length $\betam$ of each iteration.
+\end{blocki}
+
+The latter is achieved by multiplying $\betam$ with a small $\nu \in (0,1]$:
+$$ 
+\fm(\xv) = \fmd(\xv) + \nu \betam b(\xv, \thetam) \,.
+$$
+
+The factor $\nu$ is called \textbf{shrinkage parameter} or \textbf{learning rate}.
+
+
+\framebreak
+
+Obviously, the optimal values for $M$ and $\nu$ strongly depend on each other:
+By increasing $M$ one can use a smaller value for $\nu$ and vice versa.
+
+\lz
+
+In practice, a common recommendation to find a good first model without tuning both parameters is thus to choose $\nu$ quite small and determine $M$ by cross-validation. 
+
+\lz
+
+It is probably best to tune all three parameters ($M, \nu$ and the tree depths) jointly based on the training data
+via cross-validation or a related method.
+
+\end{vbframe}
+
+
+%\begin{vbframe}{Variable importance}
+
+%As for random forests, we can construct a variable importance measure to help
+%interpret the model.
+
+%\lz
+%For a regression tree $b$, we can define such a measure $I^2_j(b)$ as the sum over the reduction of
+%impurity ($\rightarrow$ reduction of variance) at all inner knots where the tree splits with respect to feature $x_j$.
+
+%\framebreak
+
+%For an additive boosting model one just takes
+
+%$$ I^2_j = \frac{1}{M} \sum_{m=1}^M I^2_j(\bmm) $$
+
+%%From those importance values we take the squared root and scale them so that the most important feature gets the value 100.
+%To get the relative influence measures, the resulting $I^2_j, j = 1, \dots, p$ are scaled so that they sum to 1.
+
+%\lz
+%For a $g$-class problem one has $g$
+
+%$$ \fxk = \sum_{m=1}^M b_k^{[m]}(x), \quad
+%  I^2_{jk} = \frac{1}{M} \sum_{m=1}^M I^2_j(b_k^{[m]}) $$
+
+%$$ I^2_j = \frac{1}{g} \sum_{k=1}^g I^2_{jk} $$
+
+%\end{vbframe}
+
+
+\begin{vbframe}{Example: Spam detection}
+
+% The data set we will examine briefly in the following was collected at the Hewlett Packard laboratories
+% to train a personalized spam mail detector.
+
+% \lz
+
+% It contains data of 4601 emails. 2788 mails were regular mails and 1813 were spam.
+% There are 57 numerical predictors available measuring e.g. the frequency of the most frequent words
+% and special characters as well as runlengths of words in all capitals.
+
+% \lz
+
+% We use the R package \pkg{gbm}, which implements the introduced version of gradient boosting.
+
+% \framebreak
+
+% <<gbm-spam-example, eval = FALSE, echo = TRUE>>=
+% library(gbm)
+% data(spam, package = "ElemStatLearn")
+% spam$spam = as.numeric(spam$spam) - 1 # gbm requires target to be 0/1
+% gbm(spam ~ ., data = spam,
+%   distribution = "bernoulli", # classification
+%   n.trees = 100, # M = 100
+%   interaction.depth = 2, # max. tree depth = 2
+%   shrinkage = 0.001, # nu = 0.001
+% )
+% @
+%
+% \lz
+
+We fit a gradient boosting model for different parameter values:
+
+\begin{table}[]
+\centering
+\begin{tabular}{l|l}
+Parameter name      & Values                         \\
+\hline
+Distribution        & Bernoulli (for classification) \\
+Shrinkage $\nu$     & ${0.001, 0.01, 0.1}$           \\
+Number of trees $M$ & $[0,\dots,20000]$              \\
+Max.\ tree depth     & ${1,4,7,10,13,16}$
+\end{tabular}
+\end{table}
+
+\vspace{0.4cm}
+We observe the error on a separate test set to find the optimal parameters.
+
+
+\framebreak
+
+Misclassification rates for different hyperparameter settings (shrinkage and maximum tree depth) of gradient boosting:
+
+\begin{center}
+\includegraphics[width=0.9\textwidth]{figure_man/spam-detection.png}
+\end{center}
+
+% \begin{figure}
+%   \includegraphics[width=10cm, height=6cm]{figure_man/gbm_spam_effects.pdf}
+% \end{figure}
+
+% \framebreak
+
+% \begin{figure}
+  % \includegraphics[width=8cm]{figure_man/gbm_spam_imp_ggplot.pdf}
+  % \caption{\footnotesize Variable Importance for model with $\nu = 0.1, M = 1380$ and tree depth of $4$.}
+% \end{figure}
+
+% \framebreak
+
+% \begin{figure}
+%  \includegraphics[width=6cm]{figure_man/gbm_spam_gbmperf.pdf}
+%  \caption{\footnotesize Deviance}
+% \end{figure}
+
+%
+% \begin{figure}
+%   \includegraphics[width=8cm, height=5cm]{figure_man/gbm_spam_partdep.pdf}
+%   \caption{\footnotesize Partial Dependency Plot for 2 important features.
+%   Plotted is f in dependency of one feature, if all other features are integrated over.}
+% \end{figure}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Stochastic gradient boosting}
+
+This is a minor modification to boosting to incorporate the advantages of bagging into the method.
+The idea was formulated quite early by Breiman.
+
+\lz
+
+Instead of fitting on all the data points, a random subsample is drawn in each iteration.
+
+\lz
+
+Especially for small training sets, this simple modification often leads to
+substantial empirical improvements.
+How large the improvements are depends on data structure, size of the dataset,
+base learner and size of the subsamples (so this is another tuning parameter).
+
+
+\end{vbframe}
+
+\endlecture
+\end{document}

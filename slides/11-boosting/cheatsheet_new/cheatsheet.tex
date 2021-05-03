@@ -1,0 +1,397 @@
+\documentclass{beamer}
+
+\usepackage[orientation=landscape,size=a0,scale=1.4,debug]{beamerposter}
+\mode<presentation>{\usetheme{mlr}}
+
+\usepackage[utf8]{inputenc} % UTF-8
+\usepackage[english]{babel} % Language
+\usepackage{hyperref} % Hyperlinks
+\usepackage{ragged2e} % Text position
+\usepackage[export]{adjustbox} % Image position
+\usepackage[most]{tcolorbox}
+%\usepackage{nomencl}
+%\makenomenclature
+\usepackage{amsmath}
+\usepackage{bm}
+\usepackage{mathtools}
+\usepackage{dsfont}
+\usepackage{verbatim}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{csquotes}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{enumerate}
+\usepackage[absolute,overlay]{textpos}
+\usepackage{psfrag}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{eqnarray}
+\usepackage{arydshln}
+\usepackage{tabularx}
+\usepackage{placeins}
+\usepackage{tikz}
+\usepackage{setspace}
+\usepackage{colortbl}
+\usepackage{mathtools}
+\usepackage{wrapfig}
+
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-boosting.tex}
+{}
+
+\title{CIM2 - Boosting :\,: CHEAT SHEET} % Package title in header, \, adds thin space between ::
+\newcommand{\packagedescription}{ % Package description in header
+	The \textbf{I2ML}: Introduction to ML course offers an introductory and applied overview of "supervised" ML. It is organized as a digital lecture.
+}
+
+\newlength{\columnheight} % Adjust depending on header height
+\setlength{\columnheight}{84cm}
+
+\newtcolorbox{codebox}{%
+	sharp corners,
+	leftrule=0pt,
+	rightrule=0pt,
+	toprule=0pt,
+	bottomrule=0pt,
+	hbox}
+
+\newtcolorbox{codeboxmultiline}[1][]{%
+	sharp corners,
+	leftrule=0pt,
+	rightrule=0pt,
+	toprule=0pt,
+	bottomrule=0pt,
+	#1}
+
+\begin{document}
+\begin{frame}[fragile]{}
+\begin{columns}
+	\begin{column}{.31\textwidth}
+		\begin{beamercolorbox}[center]{postercolumn}
+			\begin{minipage}{.98\textwidth}
+				\parbox[t][\columnheight]{\textwidth}{
+					\vspace{1cm}
+					\textbf{Note: } The lectures covers a wide range of topics and uses a variety of examples from different areas within mathematics, statistics and ML. Therefore notation may overlap. The context should make clear how to uncerstand the notation. % For example, $L$ denotes the likelihood function $L$ in a statistical context, while it denotes the loss function $L$ in ML context).  \\
+					If you notice ambiguities that do not clarify if the context is taken into account, please contact the instructors.
+					\begin{myblock}{Boosting - General}
+						\begin{codebox}
+							$\mathcal{B}$ : Hypothesis space of base learners
+						\end{codebox}
+						\hspace*{1ex}
+						\begin{codebox}
+						    $\thetam$ : Model parameter vector of $m$-th iteration
+						\end{codebox}
+						\hspace*{1ex}
+						\begin{codebox}
+							 $\bmm$ or $\bmm (\xv)$ or $\bmmxth \in \mathcal{B}$: Base learner of iteration $m$
+						\end{codebox}
+						\hspace*{1ex}
+						\begin{codebox}
+						    $\betam$ :  Weights in AdaBoost algorithm of iteration m
+						\end{codebox}
+						\hspace*{1ex}
+						\begin{codebox}
+							$\beta$ : Learning rate / step size in gradient boosting
+						\end{codebox}
+						\hspace*{1ex} 
+						\begin{codebox}
+						    $\thetamh , \bmmh , \betamh$
+						\end{codebox}
+						\hspace*{1ex} The hat symbol denotes \textbf{learned} parameters and functions\\
+					\end{myblock}
+			
+						\begin{myblock}{Forward Stagewise Additive Modelling}
+						\begin{codebox}
+							 $\fx = \sum_{m=1}^M \betam \bmmxth$ : Additive model of base learners
+						\end{codebox}
+						\hspace*{1ex}  
+						\begin{codebox}
+							 $(\betamh, \thetamh) = \argmin \limits_{\beta, \bm{\theta}} \sum \limits_{i=1}^n
+                 L\left(\yi, \fmdh\left(\xi\right) + \beta b\left(\xi, \bm{\theta}\right)\right)$ 
+						\end{codebox}
+						\hspace*{1ex} Empirical risk is minimized sequentially w.r.t the next additive component \\
+						\begin{codebox}
+							 $\fmh(\xv) = \fmdh(\xv) + \betamh b\left(\xv, \thetamh\right)$ 
+						\end{codebox}
+						\hspace*{1ex} Update of learned additive model \\
+					\end{myblock}					
+					\vfill
+					}
+			\end{minipage}
+		\end{beamercolorbox}
+	\end{column}
+	\begin{column}{.31\textwidth}
+		\begin{beamercolorbox}[center]{postercolumn}
+			\begin{minipage}{.98\textwidth}
+				\parbox[t][\columnheight]{\textwidth}{
+				\begin{myblock}{Gradient Boosting - Regression}
+						\begin{codebox}
+							 $\hat{f}^{[0]}(\xv) = \argmin_{\bm{\theta}} \sumin L(\yi, b(\xi, \bm{\theta}))$ 
+						\end{codebox}
+						\hspace*{1ex}Initialize by the optimal constant value depending on the loss function\\
+						\begin{codebox}
+							 $\rmi = -\left[\fp{\Lxyi}{\fxi}\right]_{f=\fmdh}$
+						\end{codebox}
+						\hspace*{1ex} Pseudo-residuals (negative gradient) of iteration $m$ and observation $i$\\
+							\begin{codebox}
+							 $\thetamh = \argmin \limits_{\bm{\theta}} \sumin (\rmi - b(\xi, \bm{\theta}))^2$
+						\end{codebox}
+						\hspace*{1ex} Fit a regression base learner to the pseudo-residuals to determine new parameter estimates.\\
+						\begin{codebox}
+							 $\fmh(\xv) = \fmdh(\xv) + \beta b(\xv, \thetamh)$
+						\end{codebox}
+						\hspace*{1ex} Update step of boosting model by adding fitted base model of current iteration multiplied by constant learning rate to $\fmdh(\xv)$. \\
+						\end{myblock}
+					\begin{myblock}{Gradient Boosting with Trees}
+						\begin{codebox}
+							$R_t^{[m]}$ : Terminal region $t$ of iteration $m$
+						\end{codebox}
+						\hspace*{1ex}
+						\begin{codebox}
+							 $\hat{c}_t^{[m]}$ : Loss optimal constant parameter of region $t$ and iteration $m$
+						\end{codebox}
+						\hspace*{1ex} 
+						\begin{codebox}
+							 $\bmmh(\xv) = \sum_{t=1}^{T} \ctmh \mathds{1}_{\{x \in R_t\}}$ : Tree base learner in iteration $m$
+						\end{codebox}
+						\hspace*{1ex}
+						\begin{codebox}
+							 $\fmh(\xv) = \fmdh(\xv) + \bmmh(\xv)$ : Model parameter and its estimate
+						\end{codebox}
+						\hspace*{1ex} Update step of boosting model by adding fitted base model of current iteration. Note that the learning rate has been included in $\hat{c}_t^{[m]}$ since we assume a constant learning rate. \\
+					\end{myblock}					
+				}
+			\end{minipage}
+		\end{beamercolorbox}
+	\end{column}
+
+
+	\begin{column}{.31\textwidth}
+		\begin{beamercolorbox}[center]{postercolumn}
+			\begin{minipage}{.98\textwidth}
+				\parbox[t][\columnheight]{\textwidth}{
+				\begin{myblock}{Gradient Boosting - Classification}
+						
+					\end{myblock}					
+				}
+			\end{minipage}
+		\end{beamercolorbox}
+	\end{column}
+\end{columns}
+
+
+\end{frame}
+
+% \newpage
+% 
+% \begin{frame}[fragile]{}
+% \begin{columns}
+% 	\begin{column}{.31\textwidth}
+% 		\begin{beamercolorbox}[center]{postercolumn}
+% 			\begin{minipage}{.98\textwidth}
+% 				\parbox[t][\columnheight]{\textwidth}{
+% 					\vspace{1cm}
+% 					\begin{myblock}{Numerical Analysis}
+% 						\begin{codebox}
+% 							$\xv, \tilde \xv \in \R^n$ : Un-disturbed / disturbed input
+% 						\end{codebox}
+% 						\hspace*{1ex}
+% 						\begin{codebox}
+% 							$\Delta \xv, \delta \xv$ : Absolute / relative error in the computation of $\xv$
+% 						\end{codebox}
+% 						\hspace*{1ex}
+% 						\begin{codebox}
+% 						$\kappa$ : Smallest $\kappa \geq 0$, so that
+% 						$\frac{|f(x+\Delta x)-y|}{|y|} \leq \kappa \ \frac{|\Delta x|}{|x|} \text{ for } \Delta x \to 0.$
+% 						\end{codebox}
+% 						\hspace*{1ex} $\kappa$ is called condition number.\\
+% 						\begin{codebox}
+% 							$f, \tilde f: \R^n \to \R^m$ : A problem $f$ and an algorithm $\tilde f$ to solve $f$
+% 						\end{codebox}
+% 					\end{myblock}
+% 					\begin{myblock}{Big-O}
+% 						\textbf{Note}: In this chapter, all functions are real-valued functions.
+% 						\vspace*{3ex}
+% 						\begin{codebox}
+% 							$f \in \order(g) \text{ for } x \to \infty$ : $\lim\limits_{x \to \infty} \sup \frac{f(x)}{g(x)} < \infty$
+% 						\end{codebox}
+% 						\hspace*{1ex} \enquote{Big-O-Notation}. $f$ runs in the order of $g$. \\
+% 						% \begin{codebox}
+% 						% 	$f \in o(g) \text{ for } x \to \infty$ : $\lim\limits_{x \to \infty} \frac{f(x)}{g(x)} = 0$
+% 						% \end{codebox}
+% 						% \hspace*{1ex} \enquote{Little-O-Notation}. $g$ grows much faster than $f$. \\
+% 						\begin{codebox}
+% 						$f \in \order(1)\}$ : $f$ has constant runtime complexity
+% 						\end{codebox}
+% 						\hspace*{1ex}
+% 						\begin{codebox}
+% 						$f \in \order(\log(n)) $ : $f$ has logarithmic runtime complexity
+% 						\end{codebox}
+% 						\hspace*{1ex}
+% 						\begin{codebox}
+% 						$f \in \order(n^c) $ : $f$ has polynomial runtime complexity
+% 						\end{codebox}
+% 						\hspace*{1ex} It is called linear for $c = 1$, quadratic for $c = 2$ and cubic for $c = 3$. \\
+% 						\begin{codebox}
+% 						$f \in \order(c^n) $ : $f$ has exponential runtime complexity
+% 						\end{codebox}
+% 					\end{myblock}
+% 					\begin{myblock}{Quadrature}
+% 						\textbf{Note}: In this chapter, all functions are real-valued functions.
+% 						\vspace*{3ex}
+% 						\begin{codebox}
+% 							$I(f) = \int_a^b f(x)~dx$ : (Riemann) integral of $f$
+% 						\end{codebox}
+% 						\hspace*{1ex}
+% 						\begin{codebox}
+% 							$Q(f)$ : Numerical approximation of $I(f)$ based on a quadrature rule $Q$
+% 						\end{codebox}
+% 						\hspace*{1ex}
+% 						\begin{codebox}
+% 							$|\Delta I(f)| = |Q(f) - I(f)|$ : Error of the numerical approximation
+% 						\end{codebox}
+% 					\end{myblock}		
+% 					% \begin{myblock}{Matrix Decomposition}
+% 					% 	\begin{codebox}
+% 					% 		$\sum_{k = 1}^n k = \frac{n(n+1)}{2}$ : Sum of natural numbers by Carl Friedrich Gauss
+% 					% 	\end{codebox}
+% 					% 	\hspace*{1ex}
+% 					% 	\begin{codebox}
+% 					% 		$\sum_{k = 1}^n k^2 = \frac{n(n+1)(2n + 1)}{6}$ : Sum of squares of first n numbers
+% 					% 	\end{codebox}
+% 					% \end{myblock}													
+% 					\vfill
+% 				}
+% 			\end{minipage}
+% 		\end{beamercolorbox}
+% 	\end{column}
+% 	\begin{column}{.31\textwidth}
+% 		\begin{beamercolorbox}[center]{postercolumn}
+% 			\begin{minipage}{.98\textwidth}
+% 				\parbox[t][\columnheight]{\textwidth}{
+% 					\vspace*{0.75cm}
+% 					\begin{myblock}{Optimization (General)}
+% 						\begin{codebox}
+% 							$\min\limits_{\xv \in \mathcal{S}} f(\xv)$ : Optimization Problem
+% 						\end{codebox}
+% 						\hspace*{1ex} General formulation of a (constrained) optimization problem. \\
+% 						\begin{codebox}
+% 							$\xv \in \mathcal{S}$: Decision variable $\xv$ in the decision space $\mathcal{S}$. 
+% 						\end{codebox}
+% 						\begin{codebox}
+% 							 $f: \mathcal{S} \to \R^m$ : Function with domain $\mathcal{S} \subseteq \R^d$ and codomain $\R^m$
+% 						\end{codebox}
+% 						\hspace*{1ex} 
+% 						\begin{codebox}
+% 							$\min\limits_{\thetab \in \Theta} \risket$ : Empirical Risk Minimization (ERM) Problem
+% 						\end{codebox}
+% 						\hspace*{1ex} \textbf{Note:} We often consider the ERM problem in ML as an example of an optimization problem. In this case, we switch from the general optimization notation to the ML notation: 
+% 						\begin{itemize}
+% 							\item We optimize the function $\risket$ (instead of $f$); $f$ instead denotes the ML model. 
+% 							\item We optimize over $\thetab \in \Theta$ (instead over $\xv \in \mathcal{S}$). 
+% 						\end{itemize}
+% 						All further notation changes accordingly. \\
+% 						\hspace*{1ex}			
+% 						\begin{codebox}
+% 							 $\xv^\ast \in \argmin\limits_{\xv \in \mathcal{S}} f(x)$, $y^\ast = \min\limits_{\xv \in \mathcal{S}} f(x)$
+% 						\end{codebox}
+% 						\hspace*{1ex} Theoretical optimum of a function $f$; $y^\ast = f(\xv^\ast)$. \\
+% 						\begin{codebox}
+% 							 $\hat\xv \in \mathcal{S}, \hat y \in \R$ : Estimation for the optimal point and optimal value
+% 						\end{codebox}
+% 						\hspace*{1ex} Returned output of an optimizer; $(\hat\xv, \hat y) = \mathcal{A}(f,\mathcal{S})$ with algorithm $\mathcal{A}$. \\
+% 						\begin{codebox}
+% 							 $\xv^{[t]} \in \mathcal{S}$ : $t$-th step of an optimizer in the decision space
+% 						\end{codebox}
+% 						\vspace*{2ex} \textbf{Multivariate Optimization}\\
+% 							\begin{codebox}
+% 								 $\alpha \in \R_+$ : Step-size / learning rate
+% 							\end{codebox}
+% 							\hspace*{1ex}
+% 							\begin{codebox}
+% 								 $\bm{d} \in \R^d$ : Descent direction in $\xv$
+% 							\end{codebox}
+% 							\hspace*{1ex}
+% 							% \begin{codebox}
+% 							% 	 $\bm{\nu} \in \R^d$ : Velocity
+% 							% \end{codebox}
+% 							% \hspace*{1ex}
+% 							\begin{codebox}
+% 								 $\varphi \in [0, 1]$ : Momentum
+% 							\end{codebox}
+% 						\end{myblock}	
+% 					\begin{myblock}{Optimization (Constrained Optimization)}
+% 					\begin{codebox}
+% 							$\min\limits_{\xv \in \mathcal{S}} f(\xv)$ s.t. $h(\xv) = 0, g(\xv) \le 0$ : Constrained Optimization Problem
+% 						\end{codebox}
+% 						\begin{itemize}
+% 							\item \quad $h: \mathcal{S} \to \R^k$ : equality constraints; $k$: number of constraints\\
+% 							\item \quad $g: \mathcal{S} \to \R^l$ : inequality constraints; $l$: number of constraints
+% 						\end{itemize} \hspace{1ex} 
+% 						\begin{codebox}
+% 							 $\mathcal{L}: \mathcal{S} \times \R^k \times \R^l$ : Lagrangian
+% 						\end{codebox}
+% 						\hspace*{1ex} $(\xv, \bm{\alpha}, \bm{\beta}) \mapsto \mathcal{L}(\xv, \bm{\alpha}, \bm{\beta})$; $\bm{\alpha}, \bm{\beta}$ are called Lagrange multiplier. \\
+% 					\end{myblock}											
+% 					}
+% 			\end{minipage}
+% 		\end{beamercolorbox}
+% 	\end{column}
+% 	\begin{column}{.31\textwidth}
+% 		\begin{beamercolorbox}[center]{postercolumn}
+% 			\begin{minipage}{.98\textwidth}
+% 				\parbox[t][\columnheight]{\textwidth}{
+% 					\begin{myblock}{Optimization (Evolutionary Algorithms)}
+% 						\begin{codebox}
+% 							 $P$ : Population (of solution candidates)
+% 						\end{codebox}
+% 						\hspace*{1ex} 
+% 						\begin{codebox}
+% 							 $\mu \in \N$ : Size of a population
+% 						\end{codebox}
+% 						\hspace*{1ex} 
+% 						\begin{codebox}
+% 							 $\lambda \in \N$ : Offspring size
+% 						\end{codebox}
+% 						\hspace*{1ex} 
+% 						\begin{codebox}
+% 							 $(\mu, \lambda)$-selection : Survival selection strategy
+% 						\end{codebox}
+% 						\hspace*{1ex} The best $\mu$ individuals from $\lambda$ candidates are chosen ($\lambda \ge \mu$ required). \\
+% 						\begin{codebox}
+% 							 $(\mu + \lambda)$-selection : Survival selection strategy
+% 						\end{codebox}
+% 						\hspace*{1ex} The best $\mu$ individuals are chosen from the pool of the current population of size $\mu$ and the offspring of size $\lambda$. \\
+% 						\begin{codebox}
+% 							 $\xv_{i:\lambda}$ : $i$-th ranked candidate
+% 						\end{codebox}
+% 						\hspace*{1ex} $\lambda$ solution candidates are ranked according to some criterion (e.g. by a fitness function); $\xv_{i:\lambda}$ means that this candidate has rank $i$. \\
+% 						\begin{codebox}
+% 							 $\bm{m}^{[g]}, \bm{C}^{[g]}, \sigma^{[g]}$ : configurations in generation $g$
+% 						\end{codebox}
+% 						\hspace*{1ex} The superscript $[g]$ denotes the $g$-th generation. \\
+% 						\begin{codebox}
+% 							 $\xv^{[g](k)}$ : $k$-th individual in the population in generation $g$.
+% 						\end{codebox}
+% 						\end{myblock}
+% 						\begin{myblock}{Optimization (Multi-Objective)}
+% 						\begin{codebox}
+% 							 $\mathcal{P}$ : Pareto set
+% 						\end{codebox}
+% 						\hspace*{1ex} Set of nondominated solutions (in the decision space $\mathcal{S}$) \\
+% 						\begin{codebox}
+% 							 $\mathcal{F}$ : Pareto front
+% 						\end{codebox}
+% 						\hspace*{1ex} Image of the Pareto set $\mathcal{P}$ under a multi-objective function $f$ \\
+% 					\end{myblock}
+% 
+% 				}
+% 			\end{minipage}
+% 		\end{beamercolorbox}
+% 	\end{column}
+% \end{columns}
+% \end{frame}
+
+\end{document}

@@ -1,0 +1,437 @@
+
+\input{../../2021/style/preamble4tex}
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-bagging.tex}
+\input{../../latex-math/ml-boosting.tex}
+\input{../../latex-math/ml-trees.tex}
+
+\begin{document}
+
+\lecturechapter{11}{Gradient Boosting}
+\lecture{Fortgeschrittene Computerintensive Methoden}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \section{Gradient Boosting}
+
+% \begin{vbframe}{Gradient descent}
+% % \begin{vbframe}{Forward stagewise additive modeling}
+% 
+% % Let's recall gradient descent from numerical optimization.
+% Let $\risk(\theta)$ be (just for the next few slides) an arbitrary, differentiable, unconstrained objective function, which we want to minimize. The gradient $\nabla \risk(\theta)$ is the direction of the steepest ascent, $-\nabla \risk(\theta)$ of \textbf{steepest descent}.
+% 
+% \lz
+% 
+% For an intermediate solution $\theta^{[k]}$ during minimization, we can iteratively improve by updating
+% $$
+% \theta^{[k+1]} = \theta^{[k]} - \beta \nabla \risk(\theta^{[k]}) \qquad  \text{for } 0 < \beta \leq c\left(\theta^{[k]}\right)
+% $$
+% % \enquote{Walking down the hill, towards the valley.}
+% 
+% % $f(x_1, x_2) = -\sin(0.8 x_1) \cdot \frac{1}{2\pi} \exp\left( (x_2 x_1 + \pi / 2)^2 \right)$
+% <<sd-plot>>=
+% #modified from ../../../cim1/2017/11-Optimierung/functions.
+% 
+% sd_plot = function(col = terrain_hcl, theta = 40, phi = 40, xlab = "x", ylab = "y") {
+%   if (is.function(col)) col = col(nrow(z) * ncol(z))
+% 
+%   par(mfrow = c(1, 2))
+% 
+%   par(mar = rep(0.5, 4))
+%   require("colorspace")
+%   pmat = persp2(x, y, z, theta = theta, phi = phi, ticktype = "detailed",
+%       xlab = xlab, ylab = ylab, zlab = "", col = col, lwd = 0.3, border = NA)
+% 
+%   for (j in seq_along(p)) {
+%     t3d = trans3d(p[[j]][[1]], p[[j]][[2]], do.call(foo, p[[j]]), pmat)
+%     if (j > 1) {
+%       t3d2 = trans3d(p[[j - 1]][[1]], p[[j - 1]][[2]], do.call(foo, p[[j- 1]]), pmat)
+%       lines(c(t3d$x, t3d2$x), c(t3d$y, t3d2$y))
+%       points(x = t3d2$x, y = t3d2$y, pch = 16, col = heat_hcl(1))
+%     }
+%     points(x = t3d$x, y = t3d$y, pch = 16, col = heat_hcl(1))
+%   }
+%   par(mar = c(4.1, 4.1, 1.1, 1.1))
+%   image(x, y, z, col = col, xlab = xlab, ylab = ylab, useRaster = TRUE)
+%   contour(x, y, z, add = TRUE, nlevels = 15)
+%   for (j in seq_along(p)) {
+%     if (j > 1) {
+%       lines(c(p[[j]][1], p[[j - 1]][1]), c(p[[j]][2], p[[j - 1]][2]))
+%       points(p[[j - 1]][1], p[[j - 1]][2], pch = 16, col = heat_hcl(1))
+%     }
+%     points(p[[j]][1], p[[j]][2], pch = 16, col = heat_hcl(1))
+%   }
+%   invisible(NULL)
+% }
+% 
+% @
+% <<gradient-descent, fig.align="center", echo=FALSE, fig.width=8, fig.height=4, out.height="3cm", out.width="6cm">>=
+% foo = function(x, y) {
+%   -1 * sin(.8 * pi*x) * dnorm(-y * x, mean = pi / 2, sd = 0.8)
+% }
+% 
+% x = seq(0, 2.5, length = 50)
+% y = seq(-3, 1, length = 50)
+% z = outer(x, y, foo)
+% p = c(list(list(1.8, -.5)), optim0(1.8, -.5, FUN = foo, maximum = FALSE, maxit = 19))
+% 
+% sd_plot(phi = 35, theta = -20, xlab = "x_1", ylab = "x_2", col = viridis::viridis)
+% @
+% 
+% % {\scriptsize step size  $\beta = 1$}
+% 
+% % \framebreak
+% 
+% % $\beta$ is called \textbf{step size}, and can be set by
+% % \begin{itemize}
+% % \item fixing it to a (smallish) constant
+% % \item adapting it according to previous gradient values, the local Hessian, etc.
+% % \item line search methods, which solve $\beta^{[k]} = \argmin_{\beta} f\left(x^{[k]} - \beta \nabla f\left(x^{[k]}\right)\right)$. Only one real parameter $\beta$, i.e, \enquote{easy} to solve\dots
+% % \end{itemize}
+% 
+% 
+% 
+% 
+% \end{vbframe}
+
+
+\begin{vbframe}{Forward stagewise additive modeling}
+
+Assume a regression problem for now (as this is simpler to explain);
+and assume a space of base learners $\mathcal{B}$.
+
+\lz
+
+% A weak learner should have the property that it delivers better predictions than by random chance (e.g. for a balanced training set a misclassification error less than 1/2).
+
+% \lz
+
+We want to learn an additive model:
+
+$$
+\fx = \sum_{m=1}^M \betam \bmmxth.
+$$
+
+Hence, we minimize the empirical risk:
+
+$$
+\riskef = \sum_{i=1}^n L\left(\yi,\fxi \right) =
+\sum_{i=1}^n L\left(\yi, \sum_{m=1}^M \betam b\left(\xi, \thetam\right)\right)
+$$
+
+
+% \framebreak
+
+% A common \textbf{loss} for \textbf{regression} is the \textbf{squared error} with
+% $\Lxy = (y-\fx)^2$.
+
+% \lz
+
+% Apparently, $\risk$ depends on the \textbf{base learners} $b(x, \thetam)$,
+% or rather their parameters $\thetam$ and weights $\betam$. Hence, we have to optimize these.
+
+% \lz
+
+\framebreak
+\textbf{Why is gradient boosting a good choice for this problem?}
+\begin{itemize}
+\item Because of the additive structure it is difficult to jointly minimize $\riskef$ w.r.t. $\left(\left(\beta^{[1]}, \bm{\theta}^{[1]}\right), \ldots, \left(\beta^{[M]}, \bm{\theta}^{[M]}\right)\right)$, which is a very high-dimensional parameter space - however, this is nowadays especially in the case of numeric parameter spaces not a real problem anymore.
+\item Considering trees as base learners is worse as we would have to grow $M$ trees in parallel so they
+  work optimally together as an ensemble.
+\item Stagewise additive modeling has nice properties, which we want to make use of, e.g. for regularization, early stopping, \dots
+\end{itemize}
+
+\framebreak
+
+Hence, we add additive components in a greedy fashion by sequentially minimizing the risk only w.r.t. the next additive component:
+
+$$ \min \limits_{\beta, \bm{\theta}} \sum_{i=1}^n L\left(\yi, \fmdh\left(\xi\right) + \beta b\left(\xi, \bm{\theta}\right)\right) $$
+
+\lz
+
+Doing this iteratively is called \textbf{forward stagewise additive modeling}.
+
+\input{algorithms/forward_stagewise_additive_modeling.tex}
+
+\end{vbframe}
+
+
+% \section{Gradient Boosting}
+
+\begin{vbframe}{Gradient boosting}
+
+\begin{footnotesize}
+The algorithm we just introduced is not really an algorithm, but rather an abstract principle.
+We need to find the new additive component $b\left(\xv, \thetam\right)$ and its
+weight coefficient $\betam$ in each iteration $m$.
+This can be done by gradient descent, but in function space.
+
+\lz
+\begin{columns}
+\column{5cm}
+\textbf{Thought experiment:}
+Consider a completely non-parametric model $f$ whose predictions we can arbitrarily define on every point of the training data $\xi$. So we basically specify
+$f$ as a discrete, finite vector.
+
+  $$\left(f\left(\xv^{(1)}\right), \ldots,  f\left(\xv^{(n)}\right)\right)^\top $$
+
+This implies $n$ parameters $\fxi$ (and the model would provide no generalization...).
+
+Furthermore, we assume our loss function $L(\cdot)$ to be differentiable.
+
+\column{5cm}
+\begin{center}
+  \includegraphics[width=1\textwidth]{figure_man/forward-stagewise-expl.png}
+\end{center}
+
+\end{columns}
+\end{footnotesize}
+\end{vbframe}
+
+\begin{vbframe}{Gradient boosting}
+
+\textbf{Aim:} Define a movement in function space so we can push our current function towards the data points.
+
+\vspace*{0.1cm}
+\textbf{Given:} Regression problem with one feature $\xv$ and target variable $y$.
+
+\vspace*{0.1cm}
+\textbf{Initialization:} Set all parameters to the optimal constant value (e.g. mean of $y$ for L2).
+
+\begin{figure}
+  \includegraphics[width=0.47\textwidth]{figure_man/gradient-boosting.png}
+\end{figure}
+
+
+
+\end{vbframe}
+
+\begin{vbframe}{Gradient boosting}
+\begin{footnotesize}
+How do we have to distort this function to move it towards the observations and drive loss down?
+
+\vspace*{0.2cm}
+We minimize the risk of such a model with gradient descent (yes, this makes no sense,
+suspend all doubts for a few seconds).
+
+So, we calculate the gradient at a point of the parameter space, that is, the derivative w.r.t. each component of the parameter vector:\footnote{The gradient of all terms with $i \neq j$ are 0.}
+
+$$
+  \fp{\riske}{\fxi} = \fp{\sum_j L(y^{(j)}, f(\xv^{(j)}))}{\fxi} = \fp{\Lxyi}{\fxi}.
+$$
+
+\vspace*{0.2cm}
+
+The gradient descent update for each vector component of $f$ is:
+
+$$
+  \fm (\xi) =  \fmd (\xi) - \beta \fp{\Lxyim}{\fmd (\xi)}.
+$$
+
+This tells us how we could \enquote{nudge} our whole function $f$ in the direction of the data to
+reduce its empirical risk.
+\end{footnotesize}
+
+
+
+\end{vbframe}
+
+\begin{vbframe}{Gradient boosting}
+\begin{footnotesize}
+\textbf{Pseudo-residuals}
+
+\vspace*{0.2cm}
+Combining this with the iterative additive procedure
+of \enquote{forward stagewise modeling}, we are at the spot $\fmd$ during minimization.
+At this point, we now calculate the direction of the negative gradient or also called pseudo-residuals $\rmi$:
+
+$$ \rmi = -\left[\fp{\Lxyi}{f(\xi)}\right]_{f=\fmd} $$
+
+\lz
+
+\begin{columns}
+\column{5cm}
+\textbf{Reminder:} The pseudo-residuals $\rmi$ match the usual residuals for the squared loss:
+
+
+\begin{align*}
+- \fp{\Lxy}{\fx} & = - \fp{0.5(y - \fx)^2}{\fx}\\ 
+                 & = y - \fx
+\end{align*}
+
+\column{5cm}
+\begin{center}
+  \includegraphics[width=1\textwidth]{figure/pseudo_residual_1.png}
+\end{center}
+
+\end{columns}
+\end{footnotesize}
+\framebreak
+
+\textbf{Iteration 1:}
+
+Let's move our function $\fxi$ a fraction towards the pseudo-residuals with a learning rate of $\beta = 0.6$.
+
+
+\begin{figure}
+  \includegraphics[width=0.55\textwidth]{figure_man/pseudo-resi01.png}
+\end{figure}
+
+\framebreak
+
+\textbf{Iteration 2:}
+
+Let's move our function $\fxi$ a fraction towards the pseudo-residuals with a learning rate of $\beta = 0.6$.
+
+
+\begin{figure}
+  \includegraphics[width=0.55\textwidth]{figure_man/pseudo-resi02.png}
+\end{figure}
+
+\framebreak
+\begin{footnotesize}
+% We find our $\betam$ by minimizing with line search:
+
+% $$
+  % \betam = \argmin_{\beta} \sumin L(\yi, \fmdh(x) + \beta b(x, \thetamh)),
+% $$
+
+% where $h(x, \thetam) = \rmm$.
+
+% \lz
+
+%What is the point of doing all this? 
+To parameterize a model in this way is pointless,
+as it just memorizes the instances of the training data.
+
+\vspace*{0.3cm}
+
+
+So, we restrict our additive components to $b\left(\xv, \thetam\right) \in \mathcal{B}$.
+
+% \framebreak
+
+The pseudo-residuals are calculated exactly as stated above,
+then we fit a simple model $b(\xv, \thetam)$ to them:
+$$ \thetamh = \argmin_{\bm{\theta}} \sum_{i=1}^n \left(\rmi - b(\xi, \bm{\theta})\right)^2. $$
+
+\lz
+
+\begin{columns}
+\column{5cm}
+So, evaluated on the training data,
+our $b(\xv, \thetam)$ corresponds as closely as possible to the negative
+loss function gradient and generalizes over the whole space.
+
+
+\column{5cm}
+\vspace*{-1cm}
+\begin{figure}[th]
+  \includegraphics[width=0.9\textwidth]{figure_man/gradient-boosting01.png}
+\end{figure}
+
+
+\end{columns}
+\end{footnotesize}
+
+\framebreak
+\begin{footnotesize}
+\textbf{In a nutshell}: One boosting iteration is exactly one approximated gradient descent step in function space,
+which minimizes the empirical risk as much as possible.
+
+
+\vspace*{0.1cm}
+\textbf{Iteration 1:}
+\begin{figure}
+  \includegraphics[width=0.55\textwidth]{figure_man/gradient-boosting01.png}
+\end{figure}
+\end{footnotesize}
+\framebreak
+\begin{footnotesize}
+Instead of moving the function values for each observation by a fraction closer to the observed data, we fit a regression base learner to the pseudo-residuals (right plot). 
+
+
+\vspace*{0.1cm}
+\textbf{Iteration 2:}
+\begin{figure}
+  \includegraphics[width=0.55\textwidth]{figure_man/gradient-boosting02.png}
+\end{figure}
+\end{footnotesize}
+\framebreak
+\begin{footnotesize}
+This base learner is then added to the current state of the ensemble weighted by the learning rate (here: $\beta = 0.4$) and for the next iteration again the pseudo-residuals of the adapted ensemble are calculated and a base learner is fitted to them.
+
+
+\vspace*{0.1cm}
+\textbf{Iteration 3:}
+\begin{figure}
+  \includegraphics[width=0.55\textwidth]{figure_man/gradient-boosting03.png}
+\end{figure}
+
+% \begin{footnotesize}
+% This procedure is continued stepwise until the boosting algorithm terminates.
+% \end{footnotesize}
+\end{footnotesize}
+\end{vbframe}
+%% Combining this with the iterative additive procedure
+%% of \enquote{forward stagewise modelling}, we are at the spot $\fmd$ during minimization.
+%% At this point, we now calculate the direction of the negative gradient:
+%%
+%% $$ \rmi = -\left[\fp{\Lxyi}{f(\xi)}\right]_{f=\fmd} $$
+%%
+%% We will call these $\rmi$ \textbf{pseudo residuals}. For squared loss they match the usual residuals
+%%
+%%
+%% $$
+%% - \fp{\Lxy}{\fx} = - \fp{0.5(y - \fx)^2}{\fx} = y - \fx
+%% $$
+%%
+%%
+%% \framebreak
+%%
+%% % We find our $\betam$ by minimizing with line search:
+%%
+%% % $$
+%%   % \betam = \argmin_{\beta} \sumin L(\yi, \fmdh(x) + \beta b(x, \thetamh)),
+%% % $$
+%%
+%% % where $h(x, \thetam) = \rmm$.
+%%
+%% % \lz
+%%
+%% What is the point in doing all this? A model parameterized in this way is senseless,
+%% as it is just memorizing the instances of the training data...?
+%%
+%% \lz
+%%
+%% So, we restrict our additive components to $b\left(x, \thetam\right) \in \mathcal{B}$.
+%%
+%% % \framebreak
+%%
+%% The pseudo-residuals are calculated exactly as stated above,
+%% then we fit a regression model $b(\bm{x}, \thetam)$ to them:
+%% $$ \thetamh = \argmin_{\thetab} \sum_{i=1}^n (\rmi - b(\xi, \thetab))^2 $$
+%% So, evaluated on the training data,
+%% our $b(x, \thetam)$ corresponds as closely as possible to the negative
+%% loss function gradient and generalizes to the whole space.
+%%
+%% \lz
+%%
+%% \textbf{In a nutshell}: One boosting iteration is exactly one approximated gradient step in function space,
+%% which minimizes the empirical risk as much as possible.
+%%
+%% \end{vbframe}
+
+\begin{vbframe}{Gradient boosting algorithm}
+
+\input{algorithms/gradient_boosting_general.tex}
+
+Note that we also initialize the model in a loss-optimal manner. Also, the constant learning rate can be replaced by a line-search, however a small constant learning rate is commonly used.
+
+\end{vbframe}
+
+
+\endlecture
+\end{document}
+
