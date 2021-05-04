@@ -1,0 +1,244 @@
+\input{../../style/preamble} 
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+\input{../../latex-math/ml-bagging.tex}
+\input{../../latex-math/ml-boosting.tex}
+\input{../../latex-math/ml-trees.tex}
+
+\newcommand{\titlefigure}{figure_man/illustration_tdist_L2_2.png}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Gradient Boosting - Illustration}
+\lecture{Introduction to Machine Learning}
+
+
+
+\begin{vbframe}{Gradient boosting illustration - GAM}
+
+We now compare different loss functions and base learners.
+We start with a GAM as base learner and compare the $L2$ loss with
+the $L1$ loss.\\
+\vspace*{0.1cm}
+
+\textbf{Reminder:} Pseudo-residuals
+\begin{itemize}
+\item $L2$: $\tilde{r} = r = y - f(\xv)$
+\item $L1$: $\tilde{r} = sign(y - f(\xv))$
+\end{itemize}
+We are looking at a regression task with one feature $\xv$ and a target $y$ with the following
+underlying true relationship:
+\vspace{-0.2cm}
+\begin{align*}
+y^{(i)} = & 4 + 3\xv^{(i)} + 5 \cdot sin(\xv^{(i)}) + \epsilon^{(i)} \quad \forall i \in \nset\\
+&\text{with } n = 50 \text{ and } \epsilon \sim \mathcal{N}(0,2)
+\end{align*}
+
+\vspace{-0.3cm}
+\begin{figure}
+  \includegraphics[width=0.35\textwidth]{figure_man/illustration_data_normal.png}
+\end{figure}
+
+\framebreak
+\begin{enumerate}
+
+  \item
+    We start with the simplest model, the optimal constant -- mean of the target variable in the case of $L2$ loss and median in the case of $L1$ loss ($y$ is being scaled beforehand).
+
+  \item
+    To improve the model we calculate the pointwise the pseudo-residuals on the training data, and fit a GAM on the residuals.
+
+  \item
+    The GAM fitted on the residuals is then multiplied by a constant learning rate of $0.2$ and added to the previous model.
+
+  \item
+    This procedure is repeated multiple times.
+
+\end{enumerate}
+
+\vspace{-0.3cm}
+\begin{figure}
+  \includegraphics[width=0.4\textwidth]{figure_man/illustration_data_normal_scaled.png}
+\end{figure}
+
+
+\end{vbframe}
+
+\begin{frame}{GAM illustration 1}
+Top: L2 loss; Bottom: L1 loss
+\begin{center}
+\only<1>{ 
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L2_1.png}
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L1_1.png}
+
+
+Iteration 1
+}
+\only<2>{ 
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L2_2.png}
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L1_2.png}
+
+
+Iteration 2
+}
+\only<3>{ 
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L2_3.png}
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L1_3.png}
+
+
+Iteration 3
+}
+\only<4>{ 
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L2_10.png}
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L1_10.png}
+
+
+Iteration 10
+}
+\end{center}
+
+\end{frame}
+
+
+\begin{frame}{GAM illustration 1}
+We can also use Huber loss which is closer to $L2$ for large $\delta$ values and closer to $L1$ for 
+smaller $\delta$ values. Top: $\delta$ = 0.5; Bottom: $\delta$ = 2.
+\begin{center}
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_huber0.5_5.png}
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_huber2_5.png}
+
+
+Iteration 5
+\end{center}
+
+\end{frame}
+
+
+
+\begin{frame}{GAM illustration 2}
+Instead of normally distributed noise, we can assume a t-distribution leading to outliers in the observed target values.
+Top: $L2$; Bottom: $L1$.
+\begin{center}
+\only<1>{ 
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_tdist_L2_1.png}
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_tdist_L1_1.png}
+
+
+Iteration 1
+}
+\only<2>{ 
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_tdist_L2_2.png}
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_tdist_L1_2.png}
+
+
+Iteration 2
+}
+\only<3>{ 
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_tdist_L2_3.png}
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_tdist_L1_3.png}
+
+
+Iteration 3
+}
+\only<4>{ 
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_tdist_L2_10.png}
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_tdist_L1_10.png}
+
+
+Iteration 10
+}
+\end{center}
+\end{frame}
+
+\begin{frame}{LM illustration}
+Instead of using a GAM as base learner, we now use a simple linear model.
+It follows that this is equivalent to applying gradient descent on linear regression.
+Top: $L2$; Bottom: $L1$.
+\begin{center}
+\only<1>{ 
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L2_linear_1.png}
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L1_linear_1.png}
+
+
+Iteration 1
+}
+\only<2>{ 
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L2_linear_2.png}
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L1_linear_2.png}
+
+
+Iteration 2
+}
+\only<3>{ 
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L2_linear_3.png}
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L1_linear_3.png}
+
+
+Iteration 3
+}
+\only<4>{ 
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L2_linear_10.png}
+\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L1_linear_10.png}
+
+
+Iteration 10
+}
+\end{center}
+\end{frame}
+% 
+% \textbf{Iteration 1:} Step 1 to 3
+% \begin{figure}
+%   \includegraphics[width=0.7\textwidth]{figure_man/illustration2.png}
+% \end{figure}
+% 
+% 
+% \framebreak
+% \textbf{Iteration 2:} Repeat Step 2 and 3
+% \begin{figure}
+%   \includegraphics[width=0.7\textwidth]{figure_man/illustration3.png}
+% \end{figure}
+% 
+% 
+% \framebreak
+% \textbf{Iteration 3:} Repeat Step 2 and 3
+% \begin{figure}
+%   \includegraphics[width=0.7\textwidth]{figure_man/illustration4.png}
+% \end{figure}
+% 
+% 
+% \framebreak
+% \textbf{Iteration 5:} Repeat Step 2 and 3
+% \vspace{0.2cm}
+% \begin{figure}
+%   \includegraphics[width=0.7\textwidth]{figure_man/illustration5.png}
+% \end{figure}
+% 
+% 
+% \framebreak
+% \textbf{Iteration 10:} Repeat Step 2 and 3
+% \vspace{0.2cm}
+% \begin{figure}
+%   \includegraphics[width=0.7\textwidth]{figure_man/illustration6.png}
+% \end{figure}
+% 
+% 
+% \framebreak
+% \textbf{Iteration 100:} Repeat Step 2 and 3
+% \vspace{0.2cm}
+% \begin{figure}
+%   \includegraphics[width=0.7\textwidth]{figure_man/illustration7.png}
+% \end{figure}
+% 
+% 
+% \end{vbframe}
+
+\endlecture
+\end{document}
+

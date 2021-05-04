@@ -1,0 +1,417 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/rect_upper_x.png}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{PAC Learning and VC Dimension}
+\lecture{Introduction to Machine Learning}
+
+
+\begin{vbframe}{PAC Learning}
+A hypothesis space $\Hspace$ over a data space $\Xspace \times \Yspace$ is agnostic PAC learnable, if there exists a function $n_\Hspace: (0,1)^2 \rightarrow \N$
+and a learning algorithm with the following property: 
+  
+  For every $\epsilon, \delta$ and for \textbf{every data distribution} $\Pxy$, when running the algorithm on $n \geq n_\Hspace(\epsilon, \delta)$ i.i.d. examples from $\Pxy$, the learner returns a model $\fh$ such that, which probability at least $1-\delta$ (over the choice of the $n$ training examples), it holds
+$$\risk(\fh) \leq \min_{f \in \Hspace} \risk(f) + \epsilon$$
+
+\begin{itemize}
+  \item PAC = Probably ($\delta$) Approximately ($\epsilon$) Correct learning.
+  \item It implies that our learner, given enough samples, always return an "approximately" correct function.
+  \item $n_\Hspace(\epsilon, \delta)$ is the sample complexity of our learner, how many samples do we need to obtain a PAC solution.
+  \item PAC gives us finite-sample bounds on \textbf{arbitrary} data distributions!
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Finite Spaces are agnostic PAC learnable}
+Every finite hypothesis space is agnostic PAC learnable, using empirical risk minimization, with sample complexity
+
+  $$ n_\Hspace(\epsilon, \delta) \leq \lceil \frac{2 \log (2|\Hspace| / \delta)}{\epsilon^2} \rceil$$ 
+
+\begin{itemize}
+  \item Proof: See "Understanding Machine Learning", chapter 4.
+  \item While many spaces $\Hspace$ are infinite, we can discretize them to get a certain impression of their sample complexity.
+\begin{itemize}
+  \item Assume that parameters are floats on a 32bit machine, then there are at most $2^{32}$ different values for each parameter.
+  \item If we have $d$ parameters, that's $2^{32d}$ functions in $\Hspace$.
+  \item That gives us $n_\Hspace \leq \frac{64d + \log{2/\delta}}{\epsilon^2}$
+  \item For 10 parameters and $\epsilon = \delta = 0.05$ that is ca. $n = 250.000$.
+\end{itemize}
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{No Free Lunch}
+Let $\inducer$ be any learning algorithm for binary classification, with respect to 0-1 loss over domain $\Xspace$. Let the training set size $n \leq |\Xspace|/2$. Then a data distribution $\Pxy$ exists, such that
+
+\begin{enumerate}
+  \item There exists a function f with $\risk_{\P}(f) = 0$
+  \item With probability at least $1/7$ (over the choice of $\D_n$) we have that $\risk_\P(I(\D_n)) \geq 1/8$.
+\end{enumerate}
+
+\lz
+
+\begin{itemize}
+  \item Proof: See "Understanding Machine Learning", chapter 5.
+  \item This implies that for every learner, there is a task on which it fails, even though it could be learned by another learner. So there is no "universal" learner.
+  \item This implies that if $\Xspace$ is infinite, the space $\Hspace$ of all functions is not PAC learnable. Learning without any assumptions does not work.
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{VC dimension}
+
+A general measure of the complexity of a function space is the \textbf{Vapnik-Chervonenkis (VC)} dimension.
+
+\lz
+
+The \textbf{VC dimension} of a class of binary-valued functions $\Hspace = \{h: \Xspace \to \{0, 1\}\}$ is defined to be the largest number of points in $\Xspace$ (in some configuration) that can be \enquote{shattered} by members of $\Hspace$. We write $VC_p(\Hspace)$, where $p$ denotes the dimension of the input space.
+
+\lz
+
+A set of points is said to be \textbf{shattered} by a class of functions if  a member of this class can perfectly separate them no matter how we assign binary labels to the points.
+
+\lz
+
+\textbf{Note:} If the VC dimension of a hypothesis class is $d$, it does not mean that \textbf{all} sets of size $d$ can be shattered. Rather, it simply means that there is at least \textbf{one} such set which can be shattered and \textbf{no} set of size $d+1$ which can be shattered.
+\end{vbframe}
+
+
+\begin{vbframe}{VC dimension of Hyperplanes}
+
+\center
+\includegraphics{figure_man/vcdim3.png}
+
+\flushleft
+
+For $\xv\in\R^2$, the class of linear indicator functions $\Hspace = \{h: \R^2 \to \{0, 1\} \text{ | } h(\xv~|~\theta_0, \bm{\theta}) = \I[\xv^T\bm{\theta} - \theta_0 > 0]\}$
+
+\begin{itemize}
+  \item can shatter $3$ points: No matter how we assign labels to the configuration of three points shown above, we can find a linear line separating them perfectly;
+  \item cannot shatter a configuration of $4$ points. 
+\end{itemize}
+
+Hence, $VC_2(\Hspace) = 3$.
+
+% \framebreak
+% 
+% \textbf{Claim:} The hypothesis space of separating hyperplanes $\Hspace = \{h(\xv) = \I[\bm{x}^\top\bm{\theta} - \theta_0 > 0]\}$ in a $p$-dimensional space $\Xspace \subset \R^p$ has VC-dimension $p + 1$. 
+% 
+% \lz 
+% 
+% % \
+% 
+% % In general: A hyperplane in a $p$-dimensional space can shatter $p+1$ points. So the VC dimension of $\I[x^T\theta - \theta_0 > 0]$ for $x\in\R^p$ is $p+1$.
+% 
+% 
+% For a (brief) sketch of the proof we need to show that $\I[\bm{x}^\top\bm{\theta} - \theta_0 > 0]$ can shatter $p + 1$ points.
+% 
+% \lz
+% 
+% \begin{enumerate}
+%   \item $p+1$ as a lower bound: 
+%   \begin{itemize}
+%     \item for any $p$, $p + 1$ points can be chosen such that they can be shattered by a $p$-dimensional hyperplane.\\
+%     Example configuration: Axis-aligned unit vectors and the origin 
+%   \end{itemize}
+% 
+% \item $p+1$ as an upper bound : For any $p$, no set of $p+2$ points can be shattered by a $p$-dimensional hyperplane.
+% \begin{itemize}
+%   \item \small{Fact \#1 : For any group of points belonging to a particular class, a separating hyperplane always assigns the same class to all points that lie in the convex hull formed by the points.
+%   \item Fact \#2 : An interesting result known as Radon's Theorem shows that for any set of $p+2$ points in a $p$-dimensional space, it is possible to form a partition of the points into two disjoint sets whose convex hulls intersect.
+%   \begin{figure}
+%     \centering
+%       \scalebox{0.15}{\includegraphics{figure_man/convexhull.png}}
+%       \tiny{\\source: Wikipedia}
+%       \caption{\footnotesize A convex hull of a set of points is the smallest convex set that contains the points. Here, the convex hull of the red set is the blue and red convex set.}
+%   \end{figure}
+%   \item Assume the two sets are associated with different classes. For any point in the feature space that lies in this intersection, a hyperplane would assign both classes to it simultaneously. This is, of course, a contradiction which means no such hyperplane exists and the labelling associated with that partition cannot be realized.}
+% \end{itemize}
+% \end{enumerate}
+% 
+% Therefore, the VC-dimension of a $p$-dimensional hyperplane is $p+1$.
+
+\framebreak
+
+\textbf{Theorem}: The VC dimension of the class of homogeneous halfspaces, $\Hspace = \{h: \R^p \to \{-1, 1\} \text{ | } h(\xv) =  \sign (\xv^T\bm{\theta})\}$, in $\R^p$ is $p$.
+
+\lz
+
+\textbf{Proof}: $p$ as a lower bound: 
+
+Consider the set of standard basis vectors $\mathbf{e}^{(1)},\mathbf{e}^{(2)},\ldots,\mathbf{e}^{(p)}$ in $\R^p$. For every possible labeling $y^{(1)},y^{(2)},\ldots, y^{(p)} \in \{-1,+1\}$, if we set $\bm{\theta} = (y^{(1)},y^{(2)},\ldots, y^{(p)})^\top$ , then $h(\mathbf{e}^{(i)}) = \text{sgn}\left(\bm{\theta}^\top \mathbf{e}^{(i)}\right) = \text{sgn}\left(y^{(i)}\right) = y^{(i)}$ for all $i$. Therefore, the $p$ points are shattered.
+
+\lz
+
+$p$ as an upper bound: 
+\begin{itemize}
+  \item Let $\xv^{(1)},\xv^{(2)},\ldots,\xv^{(p+1)}$ be a set of $p+1$ vectors in $\R^p$.
+  \item Because any set of $p+1$ vectors in $\R^p$ is linearly dependent, there must exist real numbers $a_1,a_2, \ldots,a_{p+1} \in \R$, not all of them zero, such that $\sum_{i=1}^{p+1} a_i\xv^{(i)} = 0$.
+\end{itemize}
+
+Let $I=\left\{i: a_{i}>0\right\} \text { and } J=\left\{j: a_{j}<0\right\}$. Either $I$ or $J$ is nonempty. If we assume both $I$ and $J$ are nonempty, then:
+\begin{itemize}
+  \item $\sum_{i \in I} a_i \xv^{(i)} = \sum_{j \in J} |a_j| \xv^{(j)}$
+  \item Let us assume $\xv^{(1)},\xv^{(2)},\ldots,\xv^{(p + 1)}$ are shattered by $\Hspace$.
+  \item There must exist a vector $\bm{\theta}\in \R^p$ such that 
+
+  \begin{eqnarray*}
+    h(\xv^{(i)}~|~\bm{\theta}) = 1 &\Leftrightarrow& \bm{\theta}^\top \xv^{(i)} > 0 \quad \text{ for all } i \in I \\
+    h(\xv^{(j)}~|~\bm{\theta}) = - 1 &\Leftrightarrow& \bm{\theta}^\top \xv^{(j)} < 0 \quad \text{ for all } j \in J
+  \end{eqnarray*}
+  
+  % \begin{equation*}
+  %   \begin{split}
+  % 0<\sum_{i \in I} a_{i}\left\langle \xv^{(i)}, \bm{\theta} \right\rangle & = \left\langle\sum_{i \in I} a_{i} \xv^{(i)}, \bm{\theta} \right\rangle \\ 
+  % & = \left\langle\sum_{j \in J}\left|a_{j}\right| \xv^{(j)}, \bm{\theta} \right\rangle=\sum_{j \in J}\left|a_{j}\right| \xv^{(j)}, \bm{\theta}^\top  \right\rangle< 0
+  %   \end{split}
+  % \end{equation*} which is a contradiction.
+  
+  \item This implies
+  
+  \begin{equation*}
+    \begin{split}
+  0<\sum_{i \in I} a_{i} \cdot \bm{\theta}^\top \xv^{(i)} & = \left(\sum_{i \in I} a_{i} \xv^{(i)}\right)^\top \bm{\theta} \\ 
+  & = \left(\sum_{j \in J}\left|a_{j}\right| \xv^{(j)}\right)^\top \bm{\theta} =\sum_{j \in J}\left|a_{j}\right| \cdot \bm{\theta}^\top \xv^{(j)} < 0
+    \end{split}
+  \end{equation*} which is a contradiction.
+\end{itemize}
+
+On the other hand, if we assume $J$ (respectively, $I$) is empty, then the rightmost (respectively, leftmost) inequality should be replaced by an equality, which is still a contradiction.\\
+\hspace*{\fill}   $\qed$
+
+\framebreak
+
+\textbf{Theorem}: The VC dimension of the class of non-homogeneous halfspaces, $\Hspace = \{h: \R^p \to \{-1, 1\} \text{ | } h(\xv~|~\bm{\theta}) = \sign(\xv^T\bm{\theta} + \theta_0)\}$, in $\R^p$ is $p+1$.
+
+\textbf{Proof}:
+$p+1$ as a lower bound: Similar to the proof of the previous theorem, the set of basis vectors and the origin, that is, $0,\mathbf{e}^{(1)},\ldots,\mathbf{e}^{(p)}$ can be shattered by non-homogenous halfspaces.
+
+\lz
+
+$p+1$ as an upper bound: 
+\begin{itemize}
+  \item Assume that $p+2$ vectors $\xv^{(1)}, \ldots \xv^{(p+2)}$ are shattered. 
+    % tby the class of non-homogeneous halfspaces.
+  \item If we denote $\bm{\tilde \theta} = (\theta_0, \ldots, \theta_p)^\top \in \R^{p+1}$ , where $\theta_0$ is the bias/intercept, and $\bm{\tilde x} = (1,x_1,\ldots x_{p})^\top \in \R^{p+1}$, then $h(\xv~|~\thetab)=\text{sgn}\left(\xv^\top \thetab+ \theta_0\right)=\text{sgn}\left(\bm{\tilde x}^\top\bm{\tilde\theta}\right)$. Any affine function in $\R^p$ can be rewritten as a homogeneous linear function in $\R^{p+1}$.
+  \item By the previous theorem, the set of homogeneous halfspaces in $\R^{p+1}$ cannot shatter any $p+2$ points. Contradiction.
+\end{itemize}
+\end{vbframe}
+
+% \framebreak
+% 
+% 
+% 
+% The definition is extended to real-valued functions:
+% 
+% \lz
+% 
+% The \emph{VC dimension} of a class of of real-valued functions $\{f(x, \theta)\}$ is defined to be the VC dimension of the indicator class $\I[f(x, \theta) - \theta_0 > 0 ]$.
+% 
+% \lz
+% 
+% The \emph{VC dimension} of a finite classification model, which can return at most $2^d$ different classifiers, is at most $d$.
+
+% \textbf{Example}: For $k$-nearest neighbors with $k = 1$, the VC dimension is infinite.
+
+% \lz
+
+
+\begin{vbframe}{VC dimension of Rectangles}
+
+\textbf{Example}: Let $\Hspace$ be the class of axis-aligned rectangles in $\R^2$
+
+$$\Hspace=\left\{h_{\left(a_{1}, a_{2}, b_{1}, b_{2}\right)}: \R^2 \to \{0, 1\}: a_{1} \leq a_{2} \text { and } b_{1} \leq b_{2}\right\}$$
+
+where
+
+% \begin{equation}
+%    h_{\left(a_{1}, a_{2}, b_{1}, b_{2}\right)}\left(x_{1}, x_{2}\right) = \begin{cases}
+%     1 & a_{1} \leq x_{1} \leq a_{2} \text { and } b_{1} \leq x_{2} \leq b_{2}
+%     0 & \text{ otherwise }
+%   \end{cases}
+% \end{equation}
+
+$$
+   h_{\left(a_{1}, a_{2}, b_{1}, b_{2}\right)}\left(\bm{x}\right) = \begin{cases}
+    1 & a_{1} \leq x_{1} \leq a_{2} \text { and } b_{1} \leq x_{2} \leq b_{2} \\
+    0 & \text{ otherwise }
+  \end{cases}
+$$
+
+%   h_{\left(a_{1}, a_{2}, b_{1}, b_{2}\right)}\left(x_{1}, x_{2}\right)=\left\{\begin{array}{ll}{1} & {\text { if } a_{1} \leq x_{1} \leq a_{2} \text { and } b_{1} \leq x_{2} \leq b_{2}} \\ {0} & {\text { otherwise }}\end{array}\right
+% $$
+
+% {\begin{array}{ll}{1} & {\text { if } a_{1} \leq x_{1} \leq a_{2} \text { and } b_{1} \leq x_{2} \leq b_{2}} \\ {0} & {\text { otherwise }}\end{array}
+
+\lz
+
+\textbf{Claim}: $VC_2(\Hspace) = 4$
+
+\lz 
+
+\textbf{Proof}: (next slide)
+
+\framebreak
+
+$4$ as a lower bound: There exists a set of $4$ points that can be shattered.
+
+  \begin{figure}
+      \centering
+        \scalebox{0.8}{\includegraphics{figure_man/rect_lower.png}}
+    \end{figure}
+
+\framebreak
+
+4 as an upper bound: For any set of $5$ points $\xv^{(1)}, \xv^{(2)}, \xv^{(3)}, \xv^{(4)}, \xv^{(5)} \in \R^2$:
+
+\begin{itemize}
+  \item Assign the leftmost point (lowest $x_1$), rightmost point (highest $x_1$), highest point (highest $x_2$), and lowest point (lowest $x_2$)  to class $1$.
+  \item The point not chosen, $\xv^{(5)}$, is assigned to class $0$.
+  \item The rectangle must contain $\xv^{(1)}$, $\xv^{(2)}$, $\xv^{(3)}$ and $\xv^{(4)}$.
+  \item $\xv^{(5)}$ is classified as $1$ as well since its coordinates are within the intervals defined by the other $4$.
+\end{itemize}
+
+    \begin{figure}
+      \centering
+        \scalebox{0.2}{\includegraphics{figure_man/rect_upper_x.png}}
+        \tiny{\\Credit: Shalev-Shwartz, Ben-David. Understanding Machine Learning.}
+    \end{figure}
+\vspace{-0.3cm}
+Therefore, the VC dimension of axis-aligned rectangles is 4.
+\hspace*{\fill}   $\qed$ \\[0.2cm]
+\framebreak
+
+\end{vbframe}
+
+\begin{vbframe}{Infinite VC dimension}
+
+
+\begin{itemize}
+\item We can show that if $\Hspace$ has a VC dimension of $2n$, we cannot reliably learn $\Hspace$ from only $n$ examples. Similar to our first statement of the NFL theorem, we can now show that an adversarial data distribution exists, on which our learner fails. But also a function with risk 0 exists, but because of the shattering, this will be in $\Hspace$. 
+\item This directly implies that spaces of infinite VC dimension are not PAC learnable.
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Fundamental theorem of PAC learning}
+  Assume hypothesis space $\Hspace$, classification, and 0-1 loss. Then:
+
+\lz
+
+\begin{itemize}
+    \item $\Hspace$ is agnostic PAC learnable if and only if $\Hspace$ has finite VC dimension.
+    \item Any ERM algorithm is a successful agnostic PAC learner for $\Hspace$.
+    \item For finite VC dimension $d$, the sample complexity is
+      $$ C_1 \frac{d + log(1/\delta)}{\epsilon} \leq
+      n_\Hspace(\epsilon, \delta) \leq 
+         C_2 \frac{d \log(1/\epsilon) + log(1/\delta)}{\epsilon} 
+      $$
+      with positive, absolute constants $C_1$ and $C_2$.
+\end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{Probabilistic Bound on Test Error}
+
+\small{Recall that the training error is an optimistic estimate of the generalization (or test) error. For a classification model with VC dimension $d$, 0-1-loss, and a training set of size $n$, the VC dimension can predict a probabilistic upper bound on the test error (with probability $1-\delta$): 
+
+$$
+\risk(f) \le \riske(f) + \sqrt{\frac{1}{n}\left[d\left(\log \frac{2n}{d}+ 1 \right)- \log \frac{\delta}{4}\right]}
+$$
+
+if the training data set is large enough ($d < n$ required).
+}
+
+\lz
+
+\begin{itemize}
+    \item So for finite VC dimension we could increase our sample size $n$ so much, that the training error
+      would give a close estimate of the test error, with high probability.
+    \item Usually such a bound is too loose for practical relevance, and we would have to use an enormous
+      amount of data.
+\end{itemize}
+\end{vbframe}
+  
+% \begin{vbframe}{Probabilistic Bound on Test Error}
+
+% \small{Recall that the training error is an optimistic estimate of the generalization (or test) error. For a classification model with VC dimension $d$, the VC dimension can predict a probabilistic upper bound on the test error.
+
+% $$
+% \P \left(\risk(f) \le \riske(f) + \underbrace{\sqrt{\frac{1}{|\Dtrain|}\left[d\left(\log \frac{2|\Dtrain|}{d}+ 1 \right)- \log \frac{\delta}{4}\right]}}_{\epsilon}\right) = 1 - \delta,
+% $$
+
+% for $\delta \in [0, 1]$ if the training data set is large enough ($d < |\Dtrain|$ required).
+% }
+  % \begin{itemize}
+    % \item \small{As a corollary, if the training error is low, the test error is also (probably) low. 
+    % \item In other words, an algorithm which minimizes training error reliably picks a "good" hypothesis from the hypothesis set.
+    % \item Such an algorithm is known as a \textbf{Probably Approximately Correct} (or \textbf{PAC}) algorithm.
+    % }
+  % \end{itemize}
+
+% \framebreak
+% \end{vbframe}
+
+% \textbf{Example 1:}
+% A constant classifier $h$ (no parameters) has VC dimension $0$: it cannot shatter even a single point.
+
+\begin{vbframe}{VC dimension vs Nr of Parameters}
+
+Often, VC dimension of a hypothesis space increases with the number of learnable parameters. However, there are counterexamples. 
+
+\lz
+
+\textbf{Example:}
+A single-parametric threshold classifier ($h(x) = \I[x \ge \theta]$) has VC dimension $1$:
+\begin{itemize}
+\item It can shatter a single point.
+\item It cannot shatter any set of $2$ points (for every set of $2$ numbers, if the smaller is labeled $1$, the larger must also be labeled $1$).
+\end{itemize}
+
+
+\begin{center}
+\includegraphics[width = 10cm ]{figure_man/VC-example.png} \\
+\end{center}
+
+
+\framebreak
+
+
+
+A single-parametric sine classifier $h(x) = \I[\sin(\theta x) > 0]\text{, for }x \in \R $, however, has infinite VC dimension, since it can shatter any set of points if the frequency $\theta$ is chosen large enough.
+
+\center
+\includegraphics{figure_man/vcdim_sine.png}\\
+\tiny{Credit: Trevor Hastie (2019). The Elements of Statistical Learning.}
+\normalsize
+\end{vbframe}
+
+% \begin{vbframe}{Final comments}
+%   \begin{itemize}
+%     \item The bounds derived by the VC analysis are extremely loose and pessimistic.
+%     \item Because they have to hold for an arbitrary $\Pxy$, tightening the bounds to a desired level requires the training sets to be extremely large.
+%     \item In practice, complex models (such as neural networks) often perform much better than these bounds suggest.
+%     \item Other measures of model capacity such as \textbf{Rademacher complexity} may be easier to compute or provide tighter bounds.
+%     \item In addition to the hypothesis space, the effective capacity of a learning algorithm also depends, in a complicated way, on the optimizer.
+%     \item A better estimate of the generalization error can be obtained simply by evaluating the learned hypothesis on the test set.
+%   \end{itemize}
+% \end{vbframe}
+
+
+
+\endlecture
+\end{document}
+
+
+

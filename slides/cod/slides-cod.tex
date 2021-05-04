@@ -1,0 +1,287 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/hypercube.png}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Curse of Dimensionality}
+\lecture{Introduction to Machine Learning}
+
+
+
+\begin{vbframe}{Curse of dimensionality}
+
+
+\begin{itemize}
+\item The phenomenon of data becoming sparse in high-dimensional spaces is one effect of the \textbf{curse of dimensionality}.
+\item The \textbf{curse of dimensionality} refers to various phenomena that arise when analyzing data in high-dimensional spaces that do not occur in low-dimensional spaces.
+\item Our intuition about the geometry of a space is formed in two and three dimensions. 
+\item We will see: This intuition is often misleading in high-dimensional spaces.
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Curse of Dimensionality: Example}
+To illustrate one of the problematic phenomena of data in high dimensional data, we look at an introductory example: \\ \lz
+We are given $20$ emails, $10$ of them are spam and $10$ are not. \\
+Our goal is to predict if a new incoming mail is spam or not. 
+
+\medskip
+
+For each email, we extract the following features:
+
+\begin{itemize}
+\item frequency of exclamation marks (in \%)
+\item the length of the longest sequence of capital letters
+\item the frequency of certain words, e.g., \enquote{free} (in \%)
+\item ... 
+\end{itemize}
+
+... and we could extract many more features!
+
+\framebreak
+
+
+
+\vspace*{0.1cm}
+\begin{center}
+\includegraphics[width = 11cm ]{figure_man/exclamation_marks.png}
+\end{center}
+
+Based on the frequency of exclamation marks, we train a very simple classifier (a decision stump with split point $\xv = 0.25$):
+
+\begin{itemize}
+\item We divide the input space into $2$ equally sized regions.
+\item In the second region $[0.25, 0.5]$, $7$ out of $10$ are spam.
+\item Given that at least $0.25\%$ of all letters are exclamation marks, an email is spam with a probability of $\frac{7}{10} = 0.7$.
+\end{itemize}
+\framebreak
+
+
+Let us feed more information into our classifier. We include a feature that contains the length of the longest sequence of capital letters.
+\medskip
+
+\vspace*{0.1cm}
+\begin{center}
+\includegraphics[width = 10cm ]{figure_man/capital_letters.png}
+\end{center}
+
+\begin{itemize}
+\item In the 1D case we had $20$ observations across $2$ regions.
+\item The same number is now spread across $4$ regions.
+\end{itemize}
+\framebreak
+
+
+Let us further increase the dimensionality to 3 by using the frequency of the word \enquote{your} in an email.
+
+\vspace*{0.1cm}
+\begin{center}
+\includegraphics[width = 10cm]{figure_man/capital_letters2.png}
+\end{center}
+
+\vspace*{-.3cm}
+
+\framebreak
+
+\begin{itemize}
+\item When adding a third dimension, the same number of observations is spread across $8$ regions.
+\item In $4$ dimensions the data points are spread across $16$ cells, in $5$ dimensions across $32$ cells and so on ...
+\item As dimensionality increases, the data become \textbf{sparse}; some of the cells become empty.
+\item There might be too few data in each of the blocks to understand the distribution of the data and to model it.
+\end{itemize}
+
+
+\vspace*{-.2cm}
+
+\begin{center}
+\includegraphics[width = 0.5\textwidth]{figure_man/exponentialcubes.png}\\
+\scriptsize{Bishop, Pattern Recognition and Machine Learning, 2006}
+\end{center}
+
+\end{vbframe}
+
+
+
+
+\section{Geometry of High-Dimensional Spaces}
+
+\begin{vbframe}{The high-dimensional cube}
+
+\begin{itemize}
+  \item We embed a small cube with edge length $a$ inside a unit cube.
+  \item How long does the edge length $a$ of this small hypercube have to be so that the hypercube covers $10\%, 20\%, ...$ of the volume of the unit cube (volume 1)?
+
+  \medskip
+  \begin{center}
+    \includegraphics[height = 4cm, width = 4cm]{figure_man/hypercube.png}
+  \end{center}
+
+\framebreak
+
+\vspace*{0.1cm}
+\begin{center}
+\includegraphics[width = 10cm ]{figure_man/high-dim-cube.png}
+\end{center}
+
+\medskip 
+
+  \begin{footnotesize}
+  \begin{eqnarray*}
+    a^p &=& \frac{1}{10} \Leftrightarrow a = \frac{1}{\sqrt[p]{10}}
+  \end{eqnarray*}
+  \end{footnotesize}
+  \vspace*{-0.5cm}
+  \item  So: covering $10\%$ of total volume in a cell requires cells with almost $50\%$ of the entire range in $3$ dimensions, $80\%$ in $10$ dimensions. 
+\end{itemize}
+
+\end{vbframe}
+
+
+\begin{vbframe}{The high-dimensional sphere}
+
+
+Another manifestation of the \textbf{curse of dimensionality} is that the majority of data points are close to the outer edges of the sample.
+ 
+
+Consider a hypersphere of radius $1$. The fraction of volume that lies in the $\epsilon$-\enquote{edge}, $\epsilon := R - r$, of this hypersphere can be calculated by the formula
+
+\vspace*{-0.7cm}
+
+$$
+1-\left(1-\frac{\epsilon}{R}\right)^p.
+$$
+
+\vspace*{-0.5cm}
+
+\begin{center}
+\includegraphics[width=0.9\textwidth]{figure_man/orange.png}
+\end{center}
+
+\vspace*{-0.5cm}
+
+If we peel a high-dimensional orange, there is almost nothing left. 
+
+\flushleft
+
+
+\framebreak
+
+Consider a $20$-dimensional sphere. Nearly all of the volume lies in its outer shell of thickness $0.2$:
+\medskip
+
+\vspace*{0.1cm}
+\begin{center}
+\includegraphics[width = 10cm ]{figure_man/cursedim-fractionedge-plot-1.pdf}
+\end{center}
+
+\end{vbframe}
+
+\begin{vbframe}{Hyphersphere within hypercube}
+Consider a p-dimensional hypersphere of radius $r$ and volume $S_p(r)$ inscribed in a p-dimensional hypercube with sides of length $2r$ and volume $C_p(r)$. Then it holds that 
+\begin{footnotesize}
+$$\lim_{p\rightarrow \infty} \frac{S_p(r)}{C_p(r)} = \lim_{p\rightarrow \infty}
+\frac{\left( \frac{\pi^{\frac{p}{2}}}{\Gamma(\frac{p}{2}+1)} \right)r^p}{(2r)^p} =
+ \lim_{p\rightarrow \infty} \frac{\pi^{\frac{p}{2}}}{2^p\Gamma(\frac{p}{2}+1)} = 0,$$
+\end{footnotesize}
+i.e., as the dimensionality increases, most of the volume of the hypercube can be found in its corners.
+
+\begin{center}
+\includegraphics[height = 3cm, keepaspectratio]{figure_man/sphere_in_cube.png}\\
+\scriptsize{Mohammed J. Zaki, Wagner Meira, Jr., Data Mining and Analysis: Fundamental Concepts and Algorithms, 2014}
+\end{center}
+
+\framebreak
+
+Consider a $10$-dimensional sphere inscribed in a $10$-dimensional cube. Nearly all of the volume lies in the corners of the cube:
+\medskip
+
+\vspace*{0.1cm}
+\begin{center}
+\includegraphics[width = 10cm ]{figure_man/vol_dim.png}
+\end{center}
+
+\begin{footnotesize}
+Note: For $r > 0$, the volume fraction $\frac{S_p(r)}{C_p(r)}$ is independent of 
+$r$.
+\end{footnotesize}
+
+\end{vbframe}
+
+\begin{vbframe}{Uniformly distributed data}
+The consequences of the previous results for uniformly distributed data in the high-dimensional hypercube are:
+
+\medskip
+
+\begin{itemize}
+\item Most of the data points will lie on the boundary of the space.
+\item The points will be mainly scattered on the large number of corners of the hypercube, which themselves will become very long spikes.
+\item Hence the higher the dimensionality, the more similar the minimum and maximum distances between points will become.
+\item This degrades the effectiveness of most distance functions.
+\item Neighborhoods of points will not be local anymore.
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Gaussians in high dimensions}
+
+A further manifestation of the \textbf{curse of dimensionality} appears if we consider a standard Gaussian $N_p(\bm{0}, \id_p)$ in $p$ dimensions.
+
+\begin{itemize}
+    \item After transforming from Cartesian to polar coordinates and integrating out the directional variables, we obtain an expression for the density $p(r)$ as a function of the radius $r$ (i.e., the point's distance from the origin), s.t.
+    $$ p(r) = \frac{S_p(r)r^{p-1}}{(2 \pi \sigma^2)^{p/2}} \exp \left( -\frac{r^2}{2\sigma^2}\right),$$
+    where $S_p(r)$ is the surface of the $p$-dimensional hypersphere of radius $r$.
+    \item Thus $p(r) \delta r$ is the \textcolor{red}{(approximate)} probability mass inside a thin shell of thickness $\delta r$ located at radius $r$. 
+    
+  
+\framebreak 
+\item To verify this functional relationship empirically, we draw $10^4$ points from the p-dimensional standard normal distribution and plot $p(r)$ over the histogram of the points' distances to the origin:
+
+\begin{center}
+\includegraphics[width = 11cm ]{figure_man/histograms.png}
+\end{center}
+
+\item We can see that for large $p$ the probability mass of the Gaussian is concentrated in a fairly thin \enquote{shell} rather far away from the origin. \\
+This may seem counterintuitive, but:
+
+\framebreak
+
+  \item For the probability mass of a hyperspherical shell it follows that
+    $$\int^{r + \frac{\delta r}{2}}_{r - \frac{\delta r}{2}}p(\tilde{r})d\tilde{r} = \int_{r - \frac{\delta r}{2} \; \leq \; ||\xv||_2 \; \leq \; r + \frac{\delta r}{2}} f_p(\tilde{\xv}) d\tilde{\xv},$$
+    where $f_p(\xv)$ is the density of the $p$-dimensional standard normal distribution and $p(r)$ the associated radial density.
+
+\begin{center}
+\includegraphics[width = 11cm ]{figure_man/2d_normal.png}
+\end{center}
+
+\item While $f_p$ becomes smaller with increasing $r$, the region of the integral -the hyperspherical shell- becomes bigger.
+\end{itemize}
+
+\normalsize
+
+\end{vbframe}
+
+\begin{vbframe}{Intermediate Remarks}
+However, we can find effective techniques applicable to high-dimensional spaces if we exploit these properties of real data: 
+\begin{itemize}
+\item Often the data is restricted to a manifold of a lower dimension. \\ (Or at least the directions in the feature space over which significant changes in the target variables occur may be confined.)
+\item At least locally small changes in the input variables usually will result in small changes in the target variables. 
+\end{itemize}
+
+\begin{center}
+\includegraphics[width = 11cm ]{figure_man/manifold.png}
+\end{center}
+
+\end{vbframe}
+
+\endlecture
+\end{document}

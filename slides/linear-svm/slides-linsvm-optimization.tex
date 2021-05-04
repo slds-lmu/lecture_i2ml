@@ -1,0 +1,204 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+\input{../../latex-math/ml-svm}
+
+\newcommand{\titlefigure}{figure_man/SVM02.png}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Support Vector Machine Training}
+\lecture{Introduction to Machine Learning}
+
+\sloppy 
+
+
+
+\begin{vbframe}{Support vector machine training}
+
+  \begin{itemize}
+    \item Until now, we have ignored the issue of solving the
+    various convex optimization problems.
+    \item The first question is whether we should solve the \textbf{primal} or the \textbf{dual problem}.
+    \item In the literature SVMs are usually trained in the dual.
+    \item However, SVMs can be trained both in the primal and the dual -- each approach has its advantages and disadvantages.
+    \item It is not easy to create an efficient SVM solver, and often specialized appraoches have been developed, 
+      we only cover basic ideas here.
+  \end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Training SVM in the primal}
+
+Unconstrained formulation of soft-margin SVM:
+% \begin{eqnarray*}
+$$
+\min\limits_{\thetab, \theta_0} \quad \frac{\lambda}{2} \|\thetab\|^2 + \sumin \Lxyit
+$$
+where $\Lyf = \max(0, 1 -  y f)$ and $\fxt = \thetab^T \xv + \theta_0$.\\ 
+(We inconsequentially changed the regularization constant.)
+
+\vspace*{2mm}
+
+We cannot directly use GD, as the above is not differentiable.
+
+\vspace*{2mm}
+
+\textbf{Solutions:}
+\begin{enumerate}
+\item Use smoothed loss (squared hinge, huber), then do GD.\\
+  NB: Will not  create a sparse SVM if we do not add extra tricks.
+\item Use \textbf{subgradient} methods.
+\item Do stochastic subgradient descent.\\
+  Pegasos: Primal Estimated sub-GrAdient SOlver for SVM.
+\end{enumerate}
+\end{vbframe}
+
+% \begin{vbframe}{Subgradients}
+
+% Let $f: U \rightarrow \R$ be a real-valued convex function $f$, defined on an open convex set $U$.
+% A vector $\bm{v}$ is a \textbf{subgradient} of $f$ at $\xv_0$ if
+% $$\fx - f(\xv_0) \geq \bm{v}^\top  (\xv-\xv_0).$$
+% The set of all subgradients at $\xv_0$ is called the subdifferential $\partial f(\xv_0)$.
+% The subdifferential is always a nonempty convex compact set.
+
+% \lz
+
+% \begin{center}
+%   \includegraphics[width=3.5cm]{figure_man/optimization/subgradient.png} \\
+% \end{center}
+
+% \footnotesize
+% The figure illustrates two exemplary subgradients $\bm{v_1}, \bm{v_2}$ (yellow) of $f(\xv)$ (pink) at $\xv_0$.
+% \normalsize
+
+% \end{vbframe}
+
+\begin{vbframe}{Pegasos: SSGD in the Primal}
+
+Approximate the risk by a stochastic 1-sample version: 
+\vspace{-0.3cm}
+$$ \frac{\lambda}{2} \|\thetab\|^2 + \Lxyit $$
+With: $\fxt = \thetab^T \xv + \theta_0$ and $\Lyf = \max(0, 1 -  y f)$\\
+The subgradient for $\thetab$ is $\lambda \thetab - \yi \xi \I_{yf < 1}$
+
+\vspace{-0.1cm}
+
+\begin{algorithm}[H]
+  % \setstretch{1.25}
+  \caption*{Stochastic subgradient descent (without intercept $\theta_0$)}
+  \begin{algorithmic}[1]
+    \For {$t = 1, 2, ...$}
+      \State Pick step size $\alpha$
+      \State Randomly pick an index $i$
+      \State If $\yfi < 1$ set $\thetatn = (1 - \lambda \alpha) \thetat + \alpha \yi \xi$ 
+      \State If $\yfi \geq 1$ set $\thetatn = (1 - \lambda \alpha) \thetat$ 
+      \EndFor
+  \end{algorithmic}
+\end{algorithm}
+\vspace{-0.2cm}
+Note the weight decay due to the L2-regularization.
+\end{vbframe}
+
+\begin{vbframe}{Training SVM in the dual}
+
+The dual problem of the soft-margin SVM is
+
+\begin{eqnarray*}
+    & \max_{\alpha} & \sum_{i=1}^n \alpha_i - \frac{1}{2}\sum_{i=1}^n\sum_{j=1}^n\alpha_i\alpha_j\yi y^{(j)} \scp{\xi}{\xv^{(j)}}  \\
+    & \text{s.t. } & 0 \le \alpha_i \le C \quad \sum_{i=1}^n \alpha_i \yi = 0
+\end{eqnarray*}
+
+We could solve this problem using coordinate ascent. That means we optimize w.r.t. $\alpha_1$, for example, while holding $\alpha_2, ..., \alpha_n$ fixed.
+
+\lz
+
+But: We cannot make any progress since $\alpha_1$ is determined by $\sum_{i=1}^n \alpha_i \yi = 0$!
+
+\framebreak
+\textbf{Solution:} Update two variables simultaneously
+\vspace{-0.2cm}
+\begin{footnotesize}  
+\begin{eqnarray*}
+    & \max_{\alpha} & \sum_{i=1}^n \alpha_i - \frac{1}{2}\sum_{i=1}^n\sum_{j=1}^n\alpha_i\alpha_j\yi y^{(j)} \scp{\xi}{\xv^{(j)}}  \\
+    &  \text{s.t. } & 0 \le \alpha_i \le C \quad \sum_{i=1}^n \alpha_i \yi = 0
+\end{eqnarray*}
+\end{footnotesize}  
+\vspace{-0.6cm}
+\begin{algorithm}[H]
+  \caption*{\small Pairwise coordinate ascent in the dual}
+  \begin{algorithmic}[1]
+    \State Initialize $\alphav = 0$ (or more cleverly)
+    \For {$t = 1, 2, ...$}
+      \State Select some pair $\alpha_i, \alpha_j$ to update next
+      \State Optimize dual w.r.t. $\alpha_i, \alpha_j$, while holding $\alpha_k$ ($k\ne i, j$) fixed
+      \EndFor
+  \end{algorithmic}
+\end{algorithm}
+\small
+The objective is quadratic in the pair, and $s:=y^{(i)}\alpha_i  + y^{(j)}\alpha_j$ must stay constant.
+So both $\alpha$ are changed by same (absolute) amount, the signs of the change depend on the labels.
+% so the linear constraint does not change. We basically have to solve a univariate quadratic over an
+% interval. This is easy.
+
+\framebreak
+\normalsize
+Assume we are in a valid state, $0 \leq \alpha_i \leq C$. Then we chose\footnote{There are heuristics to pick the observations to speed up convergence.} two observations (encircled in red) for the next iteration.
+Note they have opposite labels so the sign of their change is equal.
+
+\vspace{0.2cm}
+\begin{center}
+\includegraphics[width = 10cm ]{figure_man/SVM.png} \\
+\end{center}
+
+   
+\end{vbframe}
+
+\begin{vbframe}{Training SVM in the dual}
+\vspace{-0.5cm}
+\begin{footnotesize}  
+\begin{eqnarray*}
+    & \max_{\alpha} & \sum_{i=1}^n \alpha_i - \frac{1}{2}\sum_{i=1}^n\sum_{j=1}^n\alpha_i\alpha_j\yi y^{(j)} \scp{\xi}{\xv^{(j)}}  \\
+    & \text{s.t. } & 0 \le \alpha_i \le C \quad \sum_{i=1}^n \alpha_i \yi = 0
+\end{eqnarray*}
+We move on the linear constraint until the pair-optimum or the bounday (here: $C=1$).
+% Both $\alpha$ are changed by same (unsigned) amount, solution is either at minimum of parabola,
+% or boundary, so we need to check only 3 points (here: C=1).
+% Iwith linear constraints, s.t. for $C=1$ and $K:=y^{(1)}\alpha_1^{[\text{old}]} + y^{(18)}\alpha_{18}^{[\text{old}]}$ we can find $(\alpha_{1},\alpha_{18})^{[\text{new}]}$ as shown below:
+\end{footnotesize}  
+
+\vspace{0.1cm}
+
+\begin{center}
+\includegraphics[width = 9 cm ]{figure_man/SVM01.png} \\
+\end{center}
+
+    
+\framebreak    
+Sequential Minimal Optimization (SMO) exploits the fact that effectively 
+we only need to solve a one-dimensional quadratic problem, over in interval, 
+for which an analytical solution exists.
+    
+\vspace{0.2cm}    
+\begin{center}
+\includegraphics[width = 9.5cm ]{figure_man/SVM02.png} \\
+\end{center}
+
+
+\end{vbframe}
+
+
+% \begin{vbframe}{Soft-margin SVMs}
+% This idea motivates the SMO (Sequential Minimal Optimization) algorithm. The key reason that SMO is an efficient algorithm is that the updates on $\alpha_i, \alpha_j$ can be computed very efficiently.
+% \end{vbframe}
+
+\endlecture
+\end{document}
+

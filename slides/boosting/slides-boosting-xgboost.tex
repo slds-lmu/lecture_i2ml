@@ -1,0 +1,406 @@
+\input{../../style/preamble} 
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+\input{../../latex-math/ml-bagging.tex}
+\input{../../latex-math/ml-boosting.tex}
+\input{../../latex-math/ml-trees.tex}
+
+\newcommand{\titlefigure}{figure_man/split-finding02.png}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{XGBoost}
+\lecture{Introduction to Machine Learning}
+
+% sources: https://homes.cs.washington.edu/~tqchen/pdf/BoostedTree.pdf
+% sources: https://towardsdatascience.com/boosting-algorithm-xgboost-4d9ec0207d
+% sources: https://devblogs.nvidia.com/parallelforall/gradient-boosting-decision-trees-xgboost-cuda/
+
+\begin{vbframe}{Motivation}
+
+\textbf{Chen and Guestrin (2016)}:
+
+\pkg{XGBoost} (short for eXtreme Gradient Boosting) is an open-source software
+library with R/Python/Julia/Spark interface.
+
+\lz
+
+A scalable regularized tree boosting system:
+\begin{itemize}
+  \item Efficient implementation in \emph{C++}.
+  \item Parallel (approximate) split finding.
+  \item Handling of \emph{sparse data}.
+  \item Support of cluster-computing frameworks.
+\end{itemize}
+
+\lz
+
+State-of-the-art machine learning method:
+\begin{itemize}
+  \item Many winning solutions at Kaggle use XGBoost.
+  \item KDDCup 2015 Top 10 used XGBoost.
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Loss minimization}
+
+\pkg{XGBoost} uses a risk function with 3 regularization terms:
+\vskip -1em
+\begin{multline*}
+  \riskr^{[m]} = \sum_{i=1}^{n} L\left(\yi, \fmd(\xi) + \bmm(\xi)\right)\\
+   + \gamma J_1(\bmm) + \lambda J_2(\bmm) + \alpha J_3(\bmm),
+\end{multline*}
+
+
+with $J_1(\bmm) = T^{[m]}$ to regularize tree depth, where $T^{[m]}$ is the number of leaves in the tree.
+
+\lz
+
+$J_2(\bmm) = \left\|\mathbf{c}^{[m]}\right\|^2_2$ and $J_3(\bmm) = \left\|\mathbf{c}^{[m]}\right\|_1$ are $L2$ and $L1$ regularizers of the terminal region scores $c_t^{[m]}, t=1,\dots,T^{[m]}$.
+
+\lz
+
+\textbf{Note:} In the following we define $J(\bmm) := \gamma J_1(\bmm) + \lambda J_2(\bmm) + \alpha J_3(\bmm)$ to simplify the notation.
+
+\framebreak
+
+Recall the way a tree base learner $\bmm(\xv)$ can be fitted loss-optimally in gradient boosting:
+
+$$
+\tilde{\mathbf{c}}^{[m]} = \argmin_{(c_1,\dots,c_{T^{[m]}})}\sum_{i = 1}^n L(\yi, \fmd(\xi) + \bmm(\xi, c_1,\dots,c_{T^{[m]}})).
+$$
+
+The direction of steepest descent for the update is then
+
+$$
+-\frac{\partial L(y, \fmd(\xv) + \bmm(\xv))}{\partial \bmm(\xv)}
+$$
+
+for each $\xi, i = 1,\dots, n$.
+
+\lz
+
+\textbf{Note:} $J(\bmm)$ is omitted for now but will be re-introduced later.
+
+\framebreak
+
+To approximate the loss in iteration $m$, use a second-order Taylor expansion around $\fmd(\xv)$:
+\vskip  -1em
+\begin{align*}
+  &L(y, \fmd(\xv) + \bmm(\xv)) \approx \\
+  &\qquad L(y, \fmd(\xv)) + g^{[m]}(\xv)\bmm(\xv) + \frac12 h^{[m]}(\xv)\bmm(\xv)^2,
+\end{align*}
+
+with gradient
+
+$$
+g^{[m]}(\xv) = \frac{\partial L(y, \fmd(\xv))}{\partial \fmd(\xv)}
+$$
+
+and Hessian
+
+$$
+h^{[m]}(\xv) = \frac{\partial^2 L(y, \fmd(\xv))}{\partial {\fmd(\xv)}^2}.
+$$
+
+\textbf{Note:} $g^{[m]}(\xv)$ are the negative pseudo-residuals $-\rmm$ we use in standard gradient boosting to determine the direction of the update.
+
+\framebreak
+
+Since $L(y, \fmd(\xv))$ is a constant, the optimization criterion simplifies to
+
+\begin{align*}
+\riskr^{[m]} \approx &\sum_{i = 1}^n g^{[m]}(\xi)\bmm(\xi) + \frac12 h^{[m]}(\xi)\bmm(\xi)^2 + J(\bmm) + const\\
+\propto&\sum_{t=1}^{T^{[m]}}\sum_{\xi\in R_t^{[m]}} g^{[m]}(\xi)c^{[m]}_t + \frac12 h^{[m]}(\xi)(c^{[m]}_t)^2 + J(\bmm).\intertext{Defining $G^{[m]}_t$ and $H^{[m]}_t$ as the sum of the gradients and Hessians, respectively, in terminal node $t$ yields
+}
+=& \sum_{t=1}^{T^{[m]}}G^{[m]}_t c^{[m]}_t+\frac12 H^{[m]}_t (c^{[m]}_t)^2 + J(\bmm).
+\end{align*}
+
+
+
+\framebreak
+
+Expanding $J(\bmm)$, we get
+\begin{align*}
+\riskr^{[m]} = &\sum_{t=1}^{T^{[m]}}\left(G^{[m]}_t c^{[m]}_t+\frac12 H^{[m]}_t (c^{[m]}_t)^2 + \frac12\lambda(c^{[m]}_t)^2 + \alpha |c^{[m]}_t|\right) + \gamma T^{[m]}\\
+=&\sum_{t=1}^{T^{[m]}}\left(G^{[m]}_t c^{[m]}_t+\frac12 (H^{[m]}_t + \lambda) (c^{[m]}_t)^2 + \alpha |c_t^{[m]}|\right) + \gamma T^{[m]}.
+\end{align*}
+
+\lz
+
+\textbf{Note:} The factor $\frac12$ is added to the $L2$ regularization to simplify the notation as shown in the second step.
+This does not impact estimation since we can just define $\lambda = 2\tilde\lambda$.
+
+\framebreak
+
+Since
+
+$$
+\frac{\partial \riskr^{[m]}}{\partial c^{[m]}_t} =
+\begin{cases}
+  (G^{[m]}_t - \alpha) + (H^{[m]}_t + \lambda) c^{m}_t &\text{ for } c^{m}_t < 0 \\
+  (G^{[m]}_t + \alpha) + (H^{[m]}_t + \lambda) c^{m}_t &\text{ for } c^{m}_t > 0, \\
+\end{cases}
+$$
+
+the optimal weights $\tilde{c}^{[m]}_1,\dots, \tilde{c}^{[m]}_{T^{[m]}}$ can then be calculated as
+
+\lz
+$$
+\tilde{c}^{[m]}_t = - \frac{t_\alpha\left(G^{[m]}_t\right)}{H^{[m]}_t + \lambda}, t=1,\dots T^{[m]},
+$$
+with $$t_\alpha(x) = \begin{cases}
+  x - \alpha &\text{ for } x > \alpha \\
+  x + \alpha &\text{ for } x < - \alpha \\
+  0  &\text{ for } |x| \leq \alpha.
+\end{cases}$$
+
+\end{vbframe}
+
+\begin{vbframe}{Loss minimization - split finding}
+
+To evaluate the performance of a candidate split that divides the instances in region $R_t^{[m]}$ into a left and right node we use the \textbf{risk reduction} achieved by that split:
+$$
+\tilde S_{LR} =
+ \frac12 \left[\frac{t_\alpha\left(G^{[m]}_{tL}\right)^2}{H^{[m]}_{tL} + \lambda} + \frac{t_\alpha\left(G^{[m]}_{tR}\right)^2}{H^{[m]}_{tR} + \lambda} - \frac{t_\alpha\left(G^{[m]}_{t}\right)^2}{H^{[m]}_{t} + \lambda}\right] - \gamma,
+$$
+where the subscripts $L$ and $R$ denote the left and right leaves after the split.
+
+% derivation for this: write out change in loss function, case distinction acording to sign of t_a(G)/(H + lambda)
+
+\lz
+
+\framebreak
+
+\begin{algorithm}[H]
+
+\begin{footnotesize}
+\begin{center}
+
+  \begin{algorithmic}[1]
+    \State \textbf{Input} $I$: \emph{instance set of current node}
+    \State \textbf{Input} $p$: \emph{dimension of feature space}
+    \State $gain \gets 0$
+    \State $G \gets \sum_{i \in I} g(\xi), {H} \gets \sum_{i \in I} h(\xi)$
+    \For{$j = 1 \to p$}
+      \State $G_L \gets 0, {H}_L \gets 0$
+      \For{$i$ in sorted($I$, by $x_{j}$)}
+        \State ${G}_L \gets {G}_L + g(\xi), {H}_L \gets {H}_L + h(\xi)$
+        \State ${G}_R \gets G - {G}_L, {H}_R \gets {H} - {H}_L$
+        \State compute $\tilde S_{LR}$
+      \EndFor
+    \EndFor
+    \State \textbf{Output} Split with maximal $\tilde S_{LR}$
+  \end{algorithmic}
+\end{center}
+\end{footnotesize}
+\caption{(Exact) Algorithm for split finding}
+\end{algorithm}
+
+\end{vbframe}
+
+\begin{vbframe}{Approximate split-finding algorithms}
+
+Three different algorithms to search for these splits are implemented in XGBoost.
+
+\lz
+
+\begin{itemize}
+\item[] The \textbf{exact greedy algorithm} iterates over all possible splits of all features.
+\lz
+\item[] The \textbf{global approximate algorithm} iterates over percentiles of the empirical distribution of each feature.
+\lz
+\item[] The \textbf{local approximate algorithm} does the same as the global, but recalculates the percentiles after each split.
+\end{itemize}
+
+\framebreak
+
+\begin{algorithm}[H]
+\begin{footnotesize}
+\begin{center}
+  \begin{algorithmic}[1]
+    \For{$j = 1 \to p$}
+      \State Define possible split proposals $S_j = \{s_{j}^{(1)}, s_{j}^{(2)}, \hdots, s_{j}^{(l)}\}$ by percentiles on feature $j$.
+      \State Proposal can be done once per tree (global), or in each node (local).
+    \EndFor
+    \For{$j = 1 \to p$}
+      \State ${G}_{kv} \gets \sum_{i \in \{i|s_j^{(v)} \geq x_j^{(i)} > s_{k}^{(v - 1)}\}} g(\xi)$
+      \State ${H}_{kv} \gets \sum_{i \in \{i|s_j^{(v)} \geq x_j^{(i)} > s_{k}^{(v - 1)}\}} h(\xi)$
+    \EndFor
+    \State Follow same steps as exact algorithm to find max score only among proposed splits.
+  \end{algorithmic}
+\end{center}
+\end{footnotesize}
+\caption{Approximate algorithm for split finding}
+\end{algorithm}
+
+\framebreak
+
+\vspace{0.2cm}
+
+\begin{center}
+\includegraphics[width=0.9\textwidth]{figure_man/split-finding01.png}
+\end{center}
+
+Approximate \textbf{global} split finding.\\
+Blue lines indicate percentiles, red line is the chosen split.
+Proposals are not recomputed, allowing the right node only two possibilities.
+
+\framebreak
+
+\vspace{0.2cm}
+
+\begin{center}
+\includegraphics[width=0.9\textwidth]{figure_man/split-finding02.png}
+\end{center}
+
+Approximate \textbf{local} split finding.\\
+Blue lines indicate percentiles, red line is the chosen split.
+Percentiles are recalculated after each split.
+
+\framebreak
+
+Both approximate splitting algorithms are useful for large datasets as iteration over all splits becomes very expensive.
+
+\lz
+
+XGBoost also allows for sparsity-aware split finding, which means that for a large number of zero (or missing) values, a default direction in each node is introduced.
+
+\lz
+
+The calculation of the percentiles in the feature distributions can be parallelized, allowing parallel split finding for the approximate algorithms.
+
+\end{vbframe}
+
+\begin{vbframe}{Even more regularization}
+
+Besides the regularization terms discussed above, XGBoost also incorporates a step length $\nu$ for the updates.
+
+\lz
+
+Furthermore, it uses \textbf{feature subsampling} similar to the random forest. Only a random subset of all features is considered for each split.
+
+\lz
+
+Stochastic gradient boosting, as introduced before, is utilized as well,
+which means that in each iteration only a subset of the observations is used.
+
+\lz
+
+A final possibility for regularization is DART (Dropout Additive Regression Trees).
+For each iteration only a fraction of previously fitted trees is considered.
+After an update the joint contribution of the dropped tree and the tree new to the ensemble are scaled to avoid overshooting.
+
+\end{vbframe}
+
+\begin{vbframe}{Storage and out-of-memory calculation}
+
+The data is stored in \textbf{blocks.}
+Each of these blocks is stored in a compressed column format.
+
+\lz
+
+Depending on the split finding algorithm, these blocks contain the complete (sorted) data, or subsets of rows.
+
+\lz
+
+These blocks can be stored out-of-memory (on disk) to save memory and distributed across multiple machines for parallel computations.
+
+\lz
+
+For more details on this see \emph{Chen and Guestrin (2016)}.
+
+\end{vbframe}
+
+\begin{vbframe}{Summary}
+
+XGBoost is an extremely powerful method, but also hard to configure correctly.
+Overall, eight hyperparameters have to be set, which is difficult to do in practice and almost always requires tuning.
+
+\lz
+
+Different split finding algorithms can be selected, which allows XGBoost to be efficient even on very large datasets.
+
+\lz
+
+A large number of different regularization strategies is included to prevent overfitting.
+
+
+\end{vbframe}
+
+\begin{vbframe}{Comparison of major boosting systems}
+
+\begin{tiny}
+\begin{table}[]
+\centering
+\begin{tabular}{l|c|c|c|c|c|c}
+System       & Exact algo. & Approx. algo. & Sparsity-aware & Variable importance & Parallel & Language   \\
+\hline
+ada          & yes         & no            & no             & no                  & no       & R          \\
+GBM          & yes         & no            & partially      & yes                 & no       & R          \\
+mboost       & yes         & no            & no             & no                  & no       & R          \\
+compboost    & yes         & no            & yes            & yes                 & yes      & R          \\
+H2O          & no          & yes           & partially      & yes                 & yes      & R (Java)   \\
+XGBoost      & yes         & yes           & yes            & yes                 & yes      & R + Python \\
+lightGBM     & no          & yes           & yes            & yes                 & yes      & R + Python \\
+catboost     & no          & yes           & no             & yes                 & yes      & R + Python \\
+scikit-learn & yes         & no            & no             & yes                 & no       & Python     \\
+pGBRT        & no          & no            & no             & no                  & yes      & Python     \\
+Spark MLLib  & no          & yes           & partially      & yes                 & yes      & R, Python, \\
+             &             &               &                &                     &          & Java, Scala\\
+
+\end{tabular}
+\label{my-label}
+\end{table}
+\end{tiny}
+
+\lz
+
+\textbf{Note:} H2O is a commercial software written in Java with a solid R interface.
+In the free version only two CPUs can be used.
+
+%\framebreak
+%
+%We compare the performance in terms of accuray and runtime on five example data sets from OpenML.
+%
+%\lz
+%
+%All boosting algorithms use $100$ iterations, a learning rate of $0.1$ and a maximum tree depth of $4$ (except for mboost which uses linear models as base-learner).
+%
+%\lz
+%
+%We also compare to a random forest as a base-line.
+%
+%\framebreak
+%<<echo=FALSE, fig.height=5>>=
+%load("rsrc/benchmark.RData")
+%plotBMRBoxplots(bmr, facet.wrap.ncol = 4)
+%plotBMRBoxplots(bmr, measure = timetrain, facet.wrap.ncol = 4)
+%@
+
+%\framebreak
+
+%Overall XGBoost performs well and is on par with commercial software like H2O.
+
+%\lz
+
+%The random forest is hard to beat in this benchmark. This is due to the fact that we did not do any tuning of the boosting hyperparameters.
+%While this is quite important for boosting algorithms, a random forest is not as sensitive to its hyperparameters.
+
+%\lz
+
+%mboost with boosted linear models is overall worse than the other algorithms, but has the advantage of better interpretability.
+
+\end{vbframe}
+
+\endlecture
+\end{document}
+

@@ -1,0 +1,83 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/L1-regul01.png}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Geometric Analysis of L1-regularization}
+\lecture{Introduction to Machine Learning}
+
+\begin{vbframe} {L1-Regularization}
+  
+
+  \begin{itemize}
+    \item The L1-regularized risk of a model $\fxt$ is
+
+      \[
+      \min_{\thetab} \riskrt = \risket + \lambda ||\thetab||_1
+      \] 
+      
+      and the (sub-)gradient is:
+      
+      $$\nabla_{\theta} \mathcal{R}_{\text{reg}}(\thetab) = \lambda \sign(\thetab) + \nabla_{\theta} \risket$$
+
+    \item Note that, unlike in the case of L2, the contribution of the L1 penalty to the gradient doesn't scale linearly with each $\theta_j$. 
+    \item Let us now make (again) a quadratic Taylor approximation of $\mathcal{R}_{\text{emp}}(\thetab)$ around its minimizer $\thetah$. To get a clean algebraic expression, we further assume the Hessian of $\mathcal{R}_{\text{emp}}(\thetab)$ is diagonal, i.e. $\bm{H} = \text{diag}([H_{1,1}, \ldots , H_{d,d}])$, where each $H_{j,j} \geq 0$.
+    \item This assumption holds, for example, if the input features for a linear regression task have been decorrelated using PCA.
+  \end{itemize}
+  
+  \framebreak
+  
+  \begin{itemize}
+    \item If we plug this approximation into $\mathcal{R}_{\text{reg}}(\thetab)$, the result nicely decomposes into a sum over the parameters:
+  $$\mathcal{\tilde R}_{\text{reg}}(\thetab) = \mathcal{R}_{\text{emp}}(\thetah) + \sum_j \left[ \frac{1}{2} H_{j,j} (\theta_j - \hat{\theta}_j)^2 \right] + \sum_j \lambda |\theta_j|$$
+  % where $\thetah$ is the minimizer of the unregularized risk $\risket$.
+    \item We can minimize analyically:
+     \begin{align*}\hat{\theta}_{\text{Lasso},j} &= \sign(\hat{\theta}_j) \max \left\{ |\hat{\theta}_j| - \frac{\lambda}{H_{j,j}},0 \right\} \\
+     &= \begin{cases} 
+     \hat{\theta}_j + \frac{\lambda}{H_{j,j}} &, \text{if}   \;\hat{\theta}_j < -\frac{\lambda}{H_{j,j}} \\
+       0 &, \text{if}   \;\hat{\theta}_j \in [-\frac{\lambda}{H_{j,j}}, \frac{\lambda}{H_{j,j}}] \\
+     \hat{\theta}_j - \frac{\lambda}{H_{j,j}} &, \text{if}   \;\hat{\theta}_j > \frac{\lambda}{H_{j,j}} \\
+     \end{cases}
+     \end{align*}
+  \item If $H_{j,j} = 0$ exactly, $\thetah_{\text{Lasso},j} = 0$.
+% This is also called the \textbf{soft thresholding}.
+
+\framebreak
+
+\item If  $0 < \hat{\theta}_j \leq \frac{\lambda}{H_{j,j}}$ or $0 > \hat{\theta}_j \geq -\frac{\lambda}{H_{j,j}}$, the optimal value of $\theta_j$ (for the regularized risk) is $0$ because the contribution of  $\risket$ to $\riskrt$ is overwhelmed by the L1 penalty, which forces it to be $0$.
+
+\begin{figure}
+\includegraphics[width=0.8\textwidth]{figure_man/L1-regul01.png}\\
+\end{figure}
+
+  \end{itemize}
+\framebreak
+  \begin{itemize}
+  
+    \item If $0 < \frac{\lambda}{H_{j,j}} < \hat{\theta}_j$ or  $0 > -\frac{\lambda}{H_{j,j}} > \hat{\theta}_j$, the $L1$ penalty shifts the optimal value of $\theta_j$ toward 0 by the amount $\frac{\lambda}{H_{j,j}}$.
+
+\vfill
+
+
+\begin{figure}
+\includegraphics[width=0.8\textwidth]{figure_man/L1-regul02.png}\\
+\end{figure}
+
+    \item Therefore, the L1 penalty induces sparsity in the parameter vector.
+  \end{itemize}
+
+  
+\end{vbframe}
+
+\endlecture
+\end{document}

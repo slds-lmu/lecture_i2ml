@@ -1,0 +1,193 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/L2-regularization01.png}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Geometric Analysis of L2-Regularization and Weight Decay}
+\lecture{Introduction to Machine Learning}
+
+
+
+\begin{vbframe}{Weight decay vs. L2 Regularization}
+Let us optimize the L2-regularized risk of a model $\fxt$
+
+\[
+\min_{\thetab} \riskrt = \min_{\thetab} \risket + \frac{\lambda}{2} \|\thetab\|^2_2
+\]
+
+by gradient descent. The gradient is
+
+\[
+\nabla_{\thetab} \riskrt = \nabla_{\thetab} \risket + \lambda \thetab.
+\]
+
+We iteratively update $\thetab$ by step size \(\alpha\) times the
+negative gradient
+
+\begin{align*}
+\thetab^{[\text{new}]} &= \thetab^{[\text{old}]} - \alpha \left(\nabla_{\thetab} \riske(\thetab^{[\text{old}]}) + \lambda \thetab^{[\text{old}]}\right) \\&=
+\thetab^{[\text{old}]} (1 - \alpha \lambda) - \alpha \nabla_{\thetab} \riske(\thetab^{[\text{old}]}).
+\end{align*}
+The term \(\lambda \thetab^{[old]}\) causes the parameter
+(\textbf{weight}) to \textbf{decay} in proportion to its size. This is a very well-known technique in deep learning - and simply L2-regularization in disguise.
+
+\framebreak
+
+When we use weight decay, we follow the steepest slope of $\riske$ as for gradient descent, but in every step, we are pulled back to the origin.
+
+\begin{figure}
+\includegraphics[width=0.9\textwidth]{figure_man/L2-regularization01.png}\\
+\end{figure}
+
+
+\framebreak
+
+How strong we are pulled back to the origin for a fixed stepsize $\alpha$ depends only on $\lambda$ (as long as the procedure converges):
+
+\begin{figure}
+\includegraphics[width=0.9\textwidth]{figure_man/L2-regularization02.png}\\
+\end{figure}
+
+
+\framebreak
+
+Weight decay can be interpreted \textbf{geometrically}. 
+
+\lz 
+
+Let's use a quadratic Taylor approximation of the unregularized objective $\risket$ in the neighborhood of its minimizer $\thetah$,  
+
+$$ \mathcal{\tilde R}_{\text{emp}}(\thetab)= \mathcal{R}_{\text{emp}}(\thetah) + \nabla_{\thetab} \mathcal{R}_{\text{emp}}(\thetah)\cdot(\thetab - \thetah) + \ \frac{1}{2} (\thetab - \thetah)^T \bm{H} (\thetab - \thetah), $$
+
+where $\bm{H}$ is the Hessian matrix of $\risket$ evaluated at $\thetah$. 
+
+\lz
+
+% Because $\thetah = \argmin_{\thetab}\risket$,
+\begin{itemize}
+  \item The first order term is 0 in the expression above because the gradient is $0$ at the minimizer.
+  \item $\bm{H}$ is positive semidefinite.
+\end{itemize}
+
+\lz
+
+\framebreak
+
+\normalsize
+
+The minimum of $\mathcal{\tilde R}_{\text{emp}}(\thetab)$ occurs where $\nabla_{\thetab}\mathcal{\tilde R}_{\text{emp}}(\thetab) = \bm{H}(\thetab - \thetah)$ is $0$.
+
+\lz
+
+Now we L2-regularize $\mathcal{\tilde R}_{\text{emp}}(\thetab)$, such that 
+\[
+\mathcal{\tilde R}_{\text{reg}}(\thetab) = \mathcal{\tilde R}_{\text{emp}}(\thetab) + \frac{\lambda}{2} \|\thetab\|^2_2\]
+and solve this approximation of $\riskr$ for the minimizer $\hat{\thetab}_{\text{Ridge}}$:
+\begin{align*}
+ \nabla_{\thetab}\mathcal{\tilde R}_{\text{reg}}(\thetab) = 0,\\
+%  \lambda \thetab + \nabla_{\thetab}\mathcal{\tilde R}_{\text{emp}}(\thetab) = 0,\\
+  \lambda \thetab + \bm{H}(\thetab - \thetah) = 0,\\
+      (\bm{H} + \lambda \id) \thetab = \bm{H} \thetah,\\
+      \hat{\thetab}_{\text{Ridge}} = (\bm{H} + \lambda \id)^{-1}\bm{H} \thetah,
+\end{align*}
+
+% where $\id$ is the identity matrix.
+This give us a formula to see how the minimizer of the L2-regularized version is a transformation of the minimizer of the unpenalized version.
+
+
+\framebreak
+
+  \begin{itemize}
+    \item As $\lambda$ approaches $0$, the regularized solution $\hat{\thetab}_{\text{Ridge}}$ approaches $\thetah$. What happens as $\lambda$ grows?
+    \item Because $\bm{H}$ is a real symmetric matrix, it can be decomposed as $\bm{H} = \bm{Q} \bm{\Sigma} \bm{Q}^\top$ where $\bm{\Sigma}$ is a diagonal matrix of eigenvalues and $\bm{Q}$ is an orthonormal basis of eigenvectors.
+    \item Rewriting the transformation formula with this:
+  \begin{equation*}
+    \begin{aligned} 
+    \hat{\thetab}_{\text{Ridge}} &=\left(\bm{Q} \bm{\Sigma} \bm{Q}^{\top}+\lambda \id\right)^{-1} \bm{Q} \bm{\Sigma} \bm{Q}^{\top} \thetah \\ 
+              &=\left[\bm{Q}(\bm{\Sigma}+\lambda \id) \bm{Q}^{\top}\right]^{-1} \bm{Q} \bm{\Sigma} \bm{Q}^{\top} \thetah \\ 
+              &=\bm{Q}(\bm{\Sigma} + \lambda \id)^{-1} \bm{\Sigma} \bm{Q}^{\top} \thetah 
+    \end{aligned}
+  \end{equation*}
+    \item Therefore, weight decay rescales $\thetah$ along the axes defined by the eigenvectors of $\bm{H}$. The component of $\thetah$ that is aligned with the $i$-th eigenvector of $\bm{H}$ is rescaled by a factor of $\frac{\sigma_j}{\sigma_j + \lambda}$, where $\sigma_j$ is the corresponding eigenvalue.
+\end{itemize}
+
+\framebreak
+
+\begin{footnotesize}
+Firstly, $\thetah$ is rotated by $\bm{Q}^{\top}$, which we can interpret as a projection of $\thetah$ on the rotated coordinate system defined by the principal directions of $\bm{H}$:
+\end{footnotesize}
+
+\begin{figure}
+\includegraphics[width=0.9\textwidth]{figure_man/L2-regularization03.png}\\
+\end{figure}
+
+\framebreak
+
+\begin{footnotesize}
+Since, for $\lambda = 0$, the transformation matrix $(\bm{\Sigma} + \lambda \id)^{-1} \bm{\Sigma} = \bm{\Sigma}^{-1} \bm{\Sigma} = \id$, we simply arrive at $\thetah$ again after projecting back.
+\end{footnotesize}
+
+\begin{figure}
+\includegraphics[width=0.9\textwidth]{figure_man/L2-regularization04.png}\\
+\end{figure}
+
+
+\framebreak
+  
+\begin{footnotesize}
+If $\lambda > 0$, the component projected on the $i$-th axis gets rescaled by $\frac{\sigma_j}{\sigma_j + \lambda}$ before $\hat{\thetab}_{\text{Ridge}}$ is rotated back.
+\end{footnotesize}
+
+\begin{figure}
+\includegraphics[width=0.9\textwidth]{figure_man/L2-regularization05.png}\\
+\end{figure}
+
+
+\framebreak
+
+  
+\begin{itemize} 
+  \item Along directions where the eigenvalues of $\bm{H}$ are relatively large, for example, where $\sigma_j >> \lambda$, the effect of regularization is quite small.
+  \item On the other hand, components with $\sigma_j << \lambda$ will be shrunk to have nearly zero magnitude.
+  \item In other words, only directions along which the parameters contribute significantly to reducing the objective function are preserved relatively intact.
+  \item In the other directions, a small eigenvalue of the Hessian means that moving in this direction will not significantly increase the gradient. For such unimportant directions, the corresponding components of $\thetab$ are decayed away.
+  \end{itemize}
+  
+  \framebreak
+  
+  \begin{figure}
+    \centering
+      \scalebox{0.36}{\includegraphics{figure_man/wt_decay_hat.png}}
+      \tiny{\\ Credit: Goodfellow et al. (2016), ch. 7}
+      \caption{\footnotesize The solid ellipses represent the contours of the unregularized objective and the dashed circles represent the contours of the L2 penalty. At $\hat{\thetab}_{\text{Ridge}}$, the competing objectives reach an equilibrium.}
+  \end{figure}
+  \small
+  
+   In the first dimension, the eigenvalue of the Hessian of $\risket$ is small. The objective function does not increase much when moving horizontally away from $\thetah$. Therefore, the regularizer has a strong effect on this axis and $\theta_1$ is pulled close to zero.
+    
+\framebreak
+    
+    \begin{figure}
+    \centering
+      \scalebox{0.36}{\includegraphics{figure_man/wt_decay_hat.png}}
+      \tiny{\\ Credit: Goodfellow et al. (2016), ch. 7}
+      \caption{\footnotesize The solid ellipses represent the contours of the unregularized objective and the dashed circles represent the contours of the L2 penalty. At $\hat{\thetab}_{\text{Ridge}}$, the competing objectives reach an equilibrium.}
+  \end{figure}
+  
+    In the second dimension, the corresponding eigenvalue is large indicating high curvature. The objective function is very sensitive to movement along this axis and, as a result, the position of $\theta_2$ is less affected by the regularization.
+  
+\end{vbframe}
+
+\endlecture
+\end{document}
+

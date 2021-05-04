@@ -1,0 +1,314 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+\input{../../latex-math/ml-svm}
+
+\newcommand{\titlefigure}{figure_man/svm-geometry01}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Hard-Margin SVM Dual}
+\lecture{Introduction to Machine Learning}
+
+\sloppy 
+
+
+
+%\begin{vbframe}{Constrained Optimization}
+
+%\small
+%\textbf{Remark:} \emph{In this section, $f: \R^n \to \R$ and $h: \R^n \to \R^l$ are arbitrary differentiable functions and not specifically prediction functions.}
+%
+%\vspace*{0.1cm}
+%
+%\normalsize
+%A general constrained minimization problem has the form
+%
+%\vspace*{-0.5cm}
+%
+%  \begin{align*}
+%     \min\limits_{\thetab} &\, f(\thetab)  \\
+%    \text{s.t. } & \quad g_i(\thetab)  \le 0 \quad\forall\, i \in \{1, ..., k \} &\quad(\text{inequality constraints}) \\
+%    h_j(\thetab) & = 0 \quad\forall\, j \in \{1, ..., l \} &\quad(\text{equality constraints})
+%  \end{align*}
+%
+%This is called the \textbf{primal form}. \\
+%Let $\fh_P$ be the minimal value of $f(\thetab)$ satisfying all of the constraints.
+%
+%\framebreak
+%
+%The corresponding \textbf{Lagrangian} is
+%
+%$$
+%L(\thetab, \alpha, \beta) = f(\thetab) + \sum_{i=1}^k \alpha_i g_i(\thetab) + \sum_{j=1}^l \beta_j h_j(\thetab)
+%$$
+
+%with the \textbf{Lagrange Multipliers} $\alpha_i, \beta_j \ge 0$.
+
+%\lz 
+
+%Minimizing the Lagrangian is minimizing $f(\thetab)$ under the constraints:\\ 
+%Since $\frac{\partial L(\thetab, \alpha, \beta)}{\partial \beta_j}= h_j(\thetab)$,
+%setting the partial derivative of $L(\thetab, \beta)$ w.r.t. $\beta_j$ to 0 just restates the constraints.\\
+%Since $\frac{\partial L(\thetab, \alpha, \beta)}{\partial \thetab} = \nabla f(\thetab) + \sum_{i=1}^k \alpha_i \nabla g_i(\thetab) + \sum_{j=1}^l \beta_j \nabla h_j(\thetab)$, setting the partial derivative of $L(\%theta, \beta)$ w.r.t. $\thetab$ to 0 also aligns the gradients of the objective and constraint functions (see following slides).\\
+
+
+%\end{vbframe}
+%
+%\begin{vbframe}{Intuition behind the Lagrangian function}
+%
+%% https://www.khanacademy.org/math/multivariable-calculus/applications-of-multivariable-derivatives/constrained-optimization/a/lagrange-multipliers-single-constraint
+%
+%Assume a very simple optimization problem
+
+%\vspace*{-0.5cm}
+%
+%  \begin{eqnarray*}
+%    \min\limits_{\thetab_1, \thetab_2} &  \thetab_1 + \thetab_2 & \\
+%    \text{s.t.} & \thetab_1^2 + \thetab_2^2 & = 1
+%  \end{eqnarray*}
+%
+%\lz
+%
+%The Lagrangian function is
+%$$
+%L(\thetab, \beta) = f(\thetab) + \beta h(\thetab) = (\thetab_1 + \thetab_2) + \beta(\thetab_1^2 + \thetab_2^2 - 1)
+%$$
+%
+%You can think of the optimization problem $L(\thetab, \beta) \to \min$ as moving the (linear) contours of the objective forward and backward until you find a point $(\thetab_1, \thetab_2)$ that fulfills the %constraint \emph{and} minimizes the objective function or as moving around the feasible region given by the constraint until you are at the minimum of the objective function.
+% 
+% \center
+%   \includegraphics{figure_man/optimization/constraints_violated.pdf}
+% 
+% \framebreak
+% 
+%   \includegraphics{figure_man/optimization/constraints_satisfied.pdf}
+% 
+% \framebreak
+% 
+%   \includegraphics{figure_man/optimization/constraints_opt.pdf}
+
+%<<constraints_opt-3d, fig.height = 8, fig.width = 8, out.height = '.8\\textheight', out.width = '.8\\textheight'>>=
+%g = seq(-1, 1, l = 200)
+%xc1 = c(g, rev(g))
+%xc2 = c(sqrt((1 - g^2)), -sqrt((1 - g^2)))
+%circle = data.frame(x1 = xc1, x2 = xc2)
+%x1 = x2 = seq(-2.5, 1.5, l = 250)
+%circle = data.frame(x1 = xc1, x2 = xc2)
+%x1 = x2 = seq(-1.5, 2.5, l = 250)
+% p <- persp(x1, x2, outer(x1, x2, `+`), col = rgb(0,0,0,.5), border = NA, shade = TRUE,
+%   xlab = "theta_1", ylab = "theta_2", zlab = "f(theta)", ticktype = "detailed", 
+%   theta = 20, phi = 30)
+% lines(trans3d(x = xc1, y = xc2, z = xc1+xc2, p), col = "red", lwd = 2)
+% @
+% 
+% <<constraints_opt, fig.height = 8, fig.width = 8, out.height = '.8\\textheight', out.width = '.8\\textheight'>>=
+% image(x1, x2, outer(x1, x2, `+`), asp = 1, col = viridis::viridis(45), 
+%   xlab = expression(theta[1]), ylab = expression(theta[2]), useRaster = TRUE)
+% contours <- c(-4, -3, round(-sqrt(2), 2), 0, round(sqrt(2), 2), 2, 3)
+% contour(x1, x2, outer(x1, x2, `+`), add = TRUE, levels = contours,
+%   labels = paste0("theta_1 + theta_2 =", contours), labcex = 1, col = "white")
+% lines(circle, col = "red", lwd = 2)
+% text(x = -1.3, y = 0.8, labels = expression(theta[1]^2 + theta[2]^2 == 1), col = "red", cex = 1.3)
+% points(x = -sqrt(2)/2, y = -sqrt(2)/2, col = "white", pch = 19)
+% f_gradient = data.frame(x0 = c(1, -2, -sqrt(2)/2), y0 = c(2, -1, -sqrt(2)/2))
+% with(f_gradient, arrows(x0, y0, x1 = x0+.2, y1 = y0+.2,  col= "white", length = .1))
+% g_gradient = data.frame(x0 = c(0, -1, 0, -sqrt(2)/2), y0 = c(-1, 0, 1, -sqrt(2)/2))
+% with(g_gradient, arrows(x0, y0, x1 = x0 + .2*x0, y1 = y0 + .2*y0,  col= "red", length = .1))
+% @
+% 
+% 
+% 
+% 
+% \framebreak
+%  
+% \flushleft
+% At the optima, the contour lines of the objective function $f(\thetab)$ are tangential to the constraint $h(\thetab)$.
+% 
+% \lz
+% 
+% This means that the gradients of $f(\thetab)$ and $h(\thetab)$ are parallel (since the gradient is orthogonal to the contour line), so $\nabla f(\thetab) \propto \nabla h(\thetab)$, so:
+% 
+% \begin{align*}
+% \exists \beta:  \nabla f(\thetab) &= - \beta \nabla h(\thetab) \text{ for optimal $\thetab$}\\
+% \intertext{which is equivalent to}
+%   \nabla f(\thetab) + \beta \nabla h(\thetab) &= 0 \\
+%   \text{i.e., }\qquad \frac{\partial}{\partial \thetab} L(\thetab, \beta) &= 0,
+% \end{align*}
+% so finding a minimum of the Lagrangian solves the constrained optimization problem.\\
+% This idea is extended to more complex objective functions and constraints.
+% 
+% \end{vbframe}
+
+
+% \begin{vbframe}{Lagrangian Duality}
+% 
+% Using the Lagrangian, we can write the primal problem equivalently as
+% $$
+% \min\limits_{\thetab} \max\limits_{\alpha, \beta} L(\thetab, \alpha, \beta).
+% $$
+% For any given  $\thetab$:\\
+% If $\thetab$ satisfies the constraints, $L(\thetab, \alpha, \beta) \equiv f(\thetab)$ so $\alpha, \beta$ are irrelevant.\linebreak 
+% If $\thetab$ doesn't, we want $L(\thetab, \alpha, \beta) \to \infty$, because the constraints \emph{need} to be satisfied.
+% 
+% \framebreak
+% 
+% The primal problem is a \textbf{really} hard problem for complicated $f(), g(), h()$.  
+% We obtain the \textbf{dual} optimization problem by switching $\max$ and $\min$, i. e.
+% 
+% $$
+% \max\limits_{\alpha, \beta} \min\limits_{\thetab} L(\thetab, \alpha, \beta).
+% $$
+% Since $L(\thetab, \alpha, \beta)$ is a simple sum over $\alpha, \beta$ for fixed $\thetab$, the
+% optimzation here is much easier.
+% 
+% Let $\fh_D$ be the optimal value of the dual problem.
+% It always provides a lower bound to the optimal value of the primal problem
+% 
+% $$\fh_D \le \fh_P \quad \text{(weak duality)}$$
+% 
+% and for convex optimization problems (under regularity) we have
+% 
+% $$\fh_D = \fh_P \quad \text{(strong duality)}$$
+% 
+% % Slater's condition
+% 
+% \framebreak
+% 
+% In case of strong duality, a necessary and sufficient condition for a solution to the primal and dual problem $\thetabh, \hat \alpha, \hat \beta$ are the \textbf{Karush-Kuhn-Tucker-Conditions}
+% 
+% \begin{align*}
+% \left.\fp{L(\thetab, \alpha, \beta)}{\thetab}\right|_{(\thetabh, \hat\alpha, \hat\beta)} &= 0  &\text{(Stationarity)}\\
+% g_i(\thetabh) &\le 0 \quad \forall ~ i \in \{1, ..., k \} &\text{(Primal feasibility I)}\\
+% h_j(\thetabh) &= 0 \quad \forall ~ j \in \{1, ..., l \} & \text{(Primal feasibility II)}\\
+% \hat \alpha_i &\ge 0 \quad \forall ~ i \in \{1, ..., k \} &\text{(Dual feasibility)}\\
+% \hat \alpha_i g_i(\thetabh) &= 0 \quad \forall ~ i \in \{1, ..., k \} &\text{(Complementarity)}
+% \end{align*}
+% 
+% Particularly for SVMs, the KKT conditions are necessary and sufficient for a solution.
+% 
+% \end{vbframe}
+
+\begin{vbframe}{Hard Margin SVM Dual}
+
+We before derived the primal quadratic program for the hard margin SVM. We could directly solve this, but traditionally the SVM is solved in the dual and this has some advantages. In any case, many algorithms and derivations are based on it, so we need to know it.
+  \begin{eqnarray*}
+  & \min\limits_{\thetab, \theta_0} \quad & \frac{1}{2} \|\thetab\|^2 \\
+  & \text{s.t.} & \,\,\yi  \left( \scp{\thetab}{\xi} + \theta_0 \right) \geq 1 \quad \forall\, i \in \nset.
+\end{eqnarray*}
+
+
+% \end{vbframe}
+
+
+% \begin{vbframe}{Duality in SVM}
+
+% \begin{footnotesize}
+% \textbf{Remark:} For a recap on constrained optimization and duality see CIM1 - Statistical Computing. 
+% \end{footnotesize}
+
+% \lz 
+
+The Lagrange function of the SVM optimization problem is
+
+\vspace*{-.5cm}
+
+\small
+\begin{eqnarray*}
+&L(\thetab, \theta_0, \alphav) = & \frac{1}{2}\|\thetab\|^2  -  \sum_{i=1}^n \alpha_i \left[\yi  \left( \scp{\thetab}{\xi} + \theta_0 \right) - 1\right]\\
+ & \text{s.t.} & \,\, \alpha_i \ge 0 \quad \forall\, i \in \nset.
+\end{eqnarray*}
+\small
+
+The \textbf{dual} form of this problem is
+$$\max\limits_{\alpha} \min\limits_{\thetab, \theta_0}  L(\thetab, \theta_0,\alphav).$$
+
+\framebreak 
+
+Notice how the (p+1) decision variables $(\thetab,\theta_0)$ have become $n$ decisions variables $\alphav$, as constraints turned into variables and vice versa.
+Now every data point has an associated non-negative weight.
+\begin{eqnarray*}
+&L(\thetab, \theta_0, \alphav) = & \frac{1}{2}\|\thetab\|^2  -  \sum_{i=1}^n \alpha_i \left[\yi  \left( \scp{\thetab}{\xi} + \theta_0 \right) - 1\right]\\
+ & \text{s.t.} & \,\, \alpha_i \ge 0 \quad \forall\, i \in \nset.
+\end{eqnarray*}
+We find the stationary point of $L(\thetab, \theta_0,\alphav)$ w.r.t. $\thetab, \theta_0$ and obtain
+\begin{eqnarray*}
+    \thetab & = & \sum_{i=1}^n \alpha_i \yi \xi, \\
+    0 & = & \sum_{i=1}^n \alpha_i \yi \quad \forall\, i \in \nset.\\
+\end{eqnarray*}
+
+
+\framebreak 
+
+By inserting these expressions 
+% 1/2 \sum_{i,j}\alpha_i\alpha_j y_i y_j <x_i, x_j> - \sum_{i,j}\alpha_i\alpha_j y_i y_j <x_i, x_j> - \sum_i alpha_i y_i \thetab0 + \sum_i \alpha_i
+\& simplifying we obtain the dual problem
+
+\vspace*{-0.5cm}
+\begin{eqnarray*}
+    & \max\limits_{\alphav \in \R^n} & \sum_{i=1}^n \alpha_i - \frac{1}{2}\sum_{i=1}^n\sum_{j=1}^n\alpha_i\alpha_j\yi y^{(j)} \scp{\xi}{\xv^{(j)}} \\
+    & \text{s.t.} & \sum_{i=1}^n \alpha_i \yi = 0, \\
+    & \quad & \alpha_i \ge 0~\forall i \in \nset,
+\end{eqnarray*}
+
+or, equivalently, in matrix notation:
+
+\vspace*{-.5cm}
+\begin{eqnarray*}
+  & \max\limits_{\alphav \in \R^n} & \one^T \alphav - \frac{1}{2} \alphav^T \diag(\ydat)\bm{K} \diag(\ydat) \alphav \\
+  & \text{s.t.} & \alphav^T \ydat = 0, \\
+  & \quad & \alphav \geq 0,
+\end{eqnarray*}
+
+with $\bm{K}:= \Xmat \Xmat^T$.
+
+\framebreak
+
+If $(\thetab, \theta_0, \alphav)$ fulfills the KKT conditions (stationarity, primal/dual feasibility, complementary slackness), it solves both the primal and dual problem (strong duality). 
+
+
+Under these conditions, and if we solve the dual problem and obtain $\alphavh$, we know that $\thetab$ is a linear combination of our data points:
+  
+$$
+   \thetah = \sumin \alphah_i \yi \xi 
+$$
+
+Complementary slackness means:
+
+$$
+\alphah_i \left[\yi  \left( \scp{\thetab}{\xi} + \theta_0 \right) - 1\right] = 0 \quad \forall ~ i \in \{1, ..., n \}.
+$$
+
+\framebreak
+
+$$
+   \thetah = \sumin \alphah_i \yi \xi 
+$$
+$$
+\alphah_i \left[\yi  \left( \scp{\thetab}{\xi} + \theta_0 \right) - 1\right] = 0 \quad \forall ~ i \in \{1, ..., n \}.
+$$
+
+\begin{itemize}
+  \item So either $\alphah_i = 0$, and is not active in the linear combination,
+    or $\alphah_i > 0$, then $\yi \left( \scp{\thetab}{\xi} + \theta_0 \right) = 1$, and $(\xi, \yi)$ has minimal margin and is a support vector!
+  \item We see that we can directly extract the support vectors from the dual variables and the $\thetab$ solution only depends on them.
+  \item We can reconstruct the bias term $\theta_0$ from any support vector:
+  $$
+  \theta_0 = \yi - \scp{\thetab}{\xi}.
+  $$
+\end{itemize}
+
+\end{vbframe}
+
+
+\endlecture
+\end{document}
+
+

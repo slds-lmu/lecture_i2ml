@@ -1,0 +1,102 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/undet-problem01.png}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Regularization for Underdetermined Problems}
+\lecture{Introduction to Machine Learning}
+
+
+\begin{vbframe} {Underdetermined problems}
+
+Regularization can also be motivated from a numerical perspective: 
+
+  \begin{itemize}
+    \item Regularization can sometimes be necessary to make certain ill-posed problems well defined. Linear models such as (linear) regression and PCA depend "inverting" / solving a linear system, which not always works.
+    \item When we solve linear systems like $\Xmat \thetab = \bm{y}$, there are 3 cases:  
+  \begin{enumerate}
+  \begin{footnotesize}
+    \item $\Xmat$ is of square form and has full rank. This is normal linear system solving and irrelevant for us here, now. 
+   \item $\Xmat$ has more rows than columns. The system is "overdetermined". We now try to solve
+      $\Xmat \thetab \approx \bm{y}$, by minimizing $|| \Xmat \thetab - \bm{y}||$. Ideally, this difference would be zero, but due to the too many rows this is often not possible. This is equivalent to linear regression!
+   \item $\Xmat$ has more columns than rows / linear dependence between columns exists. Now there are usually an infinite number of solutions. We have to define a "preference" for them to make the problem well-defined (sounds familiar?). Such problems are called $"$underdetermined$"$.
+  \end{footnotesize}
+  \end{enumerate}
+  \end{itemize}
+
+\framebreak
+  \begin{itemize}
+   \item A very old and well-known approach in underdetermined cases is to still reduce the problem to optimization by minimizing $|| \Xmat \thetab - \bm{y}||$, but adding a small positiv constant to the diagonal of $\Xmat^T \Xmat$.
+   \item In optimization / numerical analysis this is known as \textbf{Tikhonov} regularization. 
+   \item But as you should be able to see now: This is completely equivalent to Ridge regression!
+  \end{itemize}
+
+\framebreak
+\begin{footnotesize}
+We now study not the normal LM (which we could), but logistic regression applied to a linearly separable dataset for a more subtle example:
+
+\medskip
+First, we take a look at logistic regression for an almost linearly separable dataset consisting of the observations $\xv^{(1)}, \dots, \xv^{(8)}$.
+\vfill
+
+\begin{figure}
+\includegraphics[width=0.9\textwidth]{figure_man/undet-problem01.png}\\
+\end{figure}
+
+
+Note: WLOG we estimate the
+model without intercept, s.t. we can visualize the regression coefficient 
+$\bm{\theta}$ in 2D. Also, the symmetry of the data does not influence the generality of our conclusions.
+\end{footnotesize}
+
+\framebreak
+\begin{footnotesize}
+Because of the symmetry of the data, the direction\footnote[frame]{$\bm{\theta}$ is perpendicular to the decision boundary and points to the "1"-space.} of $\bm{\theta}$ is $\tilde\thetab := (\frac{1}{\sqrt{2}}, -\frac{1}{\sqrt{2}})^\top$.
+
+\medskip
+
+To find $\overline{\theta} := ||\bm{\theta}||_2$, we consider the empirical risk $\riske$ along $\tilde\thetab$:
+\begin{align*}
+\riske &= \sum^8_{i=1} \log \left[1 + \exp \left(-y^{(i)}\thetab^\top \xv^{(i)}\right)\right] \\
+&= \underbrace{\sum^6_{i=1} \log \left[1 + \exp \left(- \overline{\theta} \left|\tilde{\thetab}^\top \xv^{(i)}\right|\right)\right]}_{=: \; f_{\text{cor}}(\overline{\theta}) \;\text{(correctly classified)}} +
+\underbrace{\sum^8_{i=7}\log \left[1 + \exp \left( \overline{\theta} \left| \tilde{\thetab}^\top \xv^{(i)}\right|\right)\right]}_{=:\; f_{\text{incor}}(\overline{\theta}) \;\text{(incorrectly classified)}}.
+\end{align*}
+Clearly, $f_{\text{cor}}$ / $f_{\text{incor}}$ are monotonically decreasing/increasing with rising length of $\thetab$:
+
+\begin{figure}
+\includegraphics[width=0.8\textwidth]{figure_man/undet-problem02.png}\\
+\end{figure}
+
+
+\end{footnotesize}
+\end{vbframe}
+\begin{vbframe} {Underconstrained problems}
+\begin{footnotesize}
+\begin{itemize}
+\item By removing the 7th and 8th observation, we get a linearly separable dataset. \\
+\item This also means that we lose our "counterweight", i.e., if a parameter vector $\thetab$ is able to classify the samples perfectly, the vector $2\thetab$ also classifies the samples perfectly, with decreased risk.
+    \item Therefore, an iterative optimizer such as stochastic gradient descent (SGD) will continually increase $\thetab$ and never halt (in theory).
+    \item In such cases, regularization can guarantee convergence: 
+    
+    
+\begin{figure}
+\includegraphics[width=0.9\textwidth]{figure_man/undercons-problem.png}\\
+\end{figure}
+
+    
+\end{itemize}
+\end{footnotesize}
+\end{vbframe}
+
+\endlecture
+\end{document}

@@ -1,0 +1,241 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/biasvariance_scheme.png}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Introduction to Regularization}
+\lecture{Introduction to Machine Learning}
+
+\section{Motivation for Regularization}
+
+
+\begin{vbframe}{Example: Overfitting}
+
+\begin{itemize}
+\item Assume we want to predict the daily maximum \textbf{ozone level} in LA given a data set containing $50$ observations.
+\item The data set contains $12$ features describing time conditions (e.g., weekday, month),
+the weather (e.g., temperature at different weather stations, humidity, wind speed) or geographic variables (e.g., the pressure gradient).
+\item We fit a linear regression model using \textbf{all} of the features
+
+$$
+\fxt = \thetab^T\xv = \theta_0 + \theta_1 x_1 + \theta_2 x_2 + ... + \theta_{12} x_{12}
+$$
+
+with the $L2$ loss.
+
+\item We evaluate the performance with $10$ times $10$-fold CV.
+
+\end{itemize}
+
+\vfill
+
+\begin{footnotesize} 
+We use (a subset of) the \texttt{Ozone} data set from the \texttt{mlbench} package. This way, we artificially create a \enquote{high-dimensional} dataset by reducing the number of observations drastically while keeping the number of features fixed. 
+\end{footnotesize}
+
+\framebreak 
+
+
+While our model fits the training data almost perfectly (left), it generalizes poorly
+to new test data (right). We overfitted.
+
+\lz 
+
+\begin{figure}
+\includegraphics[width=0.8\textwidth]{figure_man/example01.png}\\
+\end{figure}
+
+\end{vbframe}
+
+\begin{vbframe}{Avoid Overfitting} 
+
+Why can \textbf{overfitting} happen? And how to avoid it?
+
+\begin{enumerate}
+\item Not enough data \\
+$\to$ collect \textbf{more data} 
+\item Data is noisy \\
+$\to$ collect \textbf{better data} (reduce noise) 
+\item Models are too complex \\
+$\to$ use \textbf{less complex models}
+\item Aggressive loss optimization \\
+$\to$ \textbf{optimize less}
+\end{enumerate}
+
+
+\framebreak 
+
+\textbf{Approach 1: Collect more data}
+
+\lz 
+
+We explore our results for increased dataset size by $10$ times $10$-fold CV.
+The fit worsens slightly, but the test error decreases.
+
+\begin{figure}
+\includegraphics[width=0.7\textwidth]{figure_man/avoid-overfitting01.png}\\
+\end{figure}
+
+Good idea, but often not feasible in practice.
+
+\framebreak
+
+\textbf{Approach 3: Reduce complexity}
+
+\lz 
+
+We try the simplest model we can think of: the constant model. For the $L2$ loss, the optimal constant model is
+
+$$
+\fxt = \frac{1}{n}\sumin \yi
+$$
+
+We then increase the complexity of the model step-by-step by adding one feature at a time.
+
+\framebreak 
+
+We can control the complexity of the model by including/excluding features.
+We can try out all feature combinations and investigate the model fit.
+
+
+\begin{figure}
+\includegraphics[width=0.7\textwidth]{figure_man/avoid-overfitting02.png}\\
+\end{figure}
+
+\vfill
+
+\begin{footnotesize}
+Note: For simplicity, we added the features in one specific (clever) order, so we cheated a bit. Also note there are $2^{12} = 4096$ potential feature combinations.
+\end{footnotesize}
+
+\framebreak
+
+\textbf{Approach 4: Optimize less}
+
+\lz 
+
+Now we use polynomial regression with temperature as the only feature to predict the ozone level, i.e.,
+
+$$\fxt = \sum^{d}_{i=0} \theta_i (x_T)^{i} .$$
+We choose $d = 15$, for which we get a very flexible model, which can be prone to overfitting for small data sets. \\
+\medskip
+In this example, we don't solve for $\hat\theta$ directly, but instead, we use the gradient descent algorithm to find $\hat\theta$ stepwise.
+
+\framebreak
+
+We want to stop the optimization early when the generalization error starts to degrade.
+
+
+\begin{figure}
+\includegraphics[width=0.7\textwidth]{figure_man/mean-squ-error.png}\\
+\end{figure}
+
+\footnotesize{Note: For polynomial regression, gradient descent usually needs many iterations before it starts to overfit. Hence a very small training set was chosen to accelerate this effect.}
+
+\framebreak 
+
+We have contradictory goals
+
+\begin{itemize}
+\item \textbf{maximizing the fit} (minimizing the train loss)
+\item \textbf{minimizing the complexity} of the model.
+\end{itemize}
+
+We need to find the \enquote{sweet spot}.
+
+\begin{center}
+\begin{figure}
+\includegraphics[width=0.6\textwidth]{figure_man/complexity-vs-fit.png}
+\end{figure}
+\end{center}
+
+\framebreak 
+
+Until now, we can either add a feature completely or not at all.
+
+\lz 
+
+Instead of controlling the complexity in a discrete way by specifying the number of features,
+we might prefer to control the complexity  \textbf{on a continuum} from simple to complex.
+
+\begin{center}
+\begin{figure}
+\includegraphics[width=0.6\textwidth]{figure_man/complexity-vs-fit-continuous.png}
+\end{figure}
+\end{center}
+
+\end{vbframe}
+
+\section{Regularized Empirical Risk Minimization}
+
+\begin{vbframe}{Regularized Empirical Risk Minimization}
+
+  
+Recall, empirical risk minimization with a complex hypothesis set tends to overfit. A major tool to handle overfitting is \textbf{regularization}.
+  
+  \lz
+  
+In the broadest sense, regularization refers to any modification made to a learning algorithm that is intended to reduce its generalization error but not its training error.
+  
+  \lz
+  
+Explicitly or implicitly, such modifications represent the preferences we have regarding the elements of the hypothesis set. 
+
+  \framebreak
+  
+  Commonly, regularization takes the following form:
+  
+  $$
+  \riskrf = \riskef + \lambda \cdot J(f) = \sumin \Lxyi + \lambda \cdot J(f)
+  $$
+\begin{itemize}
+
+  \item $J(f)$ is called \textbf{complexity penalty}, \textbf{roughness penalty} or \textbf{regularizer}.
+  \item $\lambda > 0$ is called \textbf{complexity control} parameter. 
+  \item It measures the \enquote{complexity} of a model and penalizes it in the fit.
+  \item As for $\riske$, often $\riskr$ and $J$ are defined on $\thetab$ instead of $f$, so $\riskrt = \risket + \lambda \cdot J(\thetab)$. 
+\end{itemize}
+
+\framebreak
+
+\textbf{Remarks:}
+
+\begin{itemize}
+  \item Note that we now face an optimization problem with two criteria: 
+    \begin{enumerate}
+      \item models should fit well (low empirical risk),
+      \item but not be too complex (low $J(f)$). 
+    \end{enumerate}
+  \item We decide to combine the two in a weighted sum and to control
+  the trade-off via the complexity control parameter $\lambda$.
+  \item $\lambda$ is hard to set manually and is usually selected via cross-validation (see later).
+  \item $\lambda = 0$: The regularized risk $\riskrf$ reduces to the simple empirical $\riskef$.
+
+  \item If $\lambda$ goes to infinity, we stop caring about the loss/fit and models become as \enquote{simple} as possible.
+\end{itemize}
+
+\framebreak
+
+
+\center
+\vspace*{0.5cm}
+\includegraphics[width=0.6\textwidth]{figure_man/biasvariance_scheme.png} \\
+\footnotesize{Hastie, The Elements of Statistical Learning, 2009 (p. 225)}
+
+
+\end{vbframe}
+
+
+
+\endlecture
+\end{document}

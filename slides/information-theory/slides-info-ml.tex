@@ -1,0 +1,138 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/multinoulli.png}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Information Theory for Machine Learning}
+\lecture{Introduction to Machine Learning}
+
+
+
+\begin{vbframe}{KL vs Maximum Likelihood}
+Minimizing KL between the true distribution $p(x)$ and approximating model $q(x|\thetab)$ is equivalent to maximizing the log-likelihood.
+  \begin{align*}
+    D_{KL}(p \| q_{\thetab})) &= \E_{x \sim p} \left[ \log \frac{p(x)}{q(x|\thetab)}\right] \\
+     &= \E_{x \sim p} \log p(x) - \E_{x \sim p} \log q(x|\thetab)
+  \end{align*}
+  The first term above does not depend on $\thetab$. Therefore,
+  \begin{align*}
+    \argmin_{\thetab} D_{KL}(p \| q_{\thetab}) &= \argmin_{\thetab} -\E_{x \sim p} \log q(x|\thetab)\\ 
+                                           &= \argmax_{\thetab} \E_{x \sim p} \log q(x|\thetab)
+  \end{align*}
+  For a finite dataset of $n$ samples from $p$, this is approximated as 
+  $$\argmax_{\thetab} \E_{x \sim p} \log q(x|\thetab) \approx \argmax_{\thetab} \frac{1}{n} \sumin \log q(\xi|\thetab)\,.$$
+
+% This demonstrates that density estimation and optimal coding are closely related. If the estimated distribution is different from the true one, any code based on the estimated distribution will necessarily be suboptimal (in terms of the expected length of \enquote{messages} from the true distribution).
+\end{vbframe}
+
+\begin{vbframe}{KL vs Cross-Entropy}
+From this here we can actually see much more:
+$$ \argmin_{\thetab} D_{KL}(p \| q_{\thetab}) = \argmin_{\thetab} -\E_{x \sim p} \log q(x|\thetab) = H_{q_{\thetab}}(p) $$
+  \begin{itemize}
+    \item So minimizing with respect to KL is the same as minimizing with respect to cross-entropy! 
+    \item That implies minimizing with respect to cross-entropy is the same as maximum likelihood!
+    \item Remember, how we only characterized cross-entropy through source coding / bits? We could now motivate cross-entropy as the "relevant" term that you have to minimize, when you minimize KL - after you drop $\E_p \log p(x)$, which is simply the entropy H(p)!
+    \item Or we could say: Cross-entropy between $p$ and $q$ is simply the expected negative log-likelihood of $q$, when our data comes from $p$!
+  \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Cross-Entropy vs. Log-Loss}
+
+  \begin{itemize}
+    \item Consider a multi-class classification task with dataset $\D = \Dset$.
+%    \item More concretely, let us assume this is an image classification task where each $\xi$ is an image and $\yi$ is the corresponding label.
+    \item For $g$ classes, each $\yi$ can be one-hot-encoded as a vector $d^{(i)}$ of length $g$. $d^{(i)}$ can be interpreted as a categorical distribution which puts all its probability mass on the true label $\yi$ of $\xi$.
+    \item $\pi(\xv^{(i)}|\thetab)$ is the probability output vector of the model, and also a categorical distribution over the classes.
+
+  \end{itemize}
+\lz
+\begin{figure}
+\includegraphics[width=0.4\textwidth]{figure_man/multinoulli.png}
+~~
+\includegraphics[width=0.4\textwidth]{figure_man/multiclass-predictive.png}
+\end{figure}
+    \framebreak
+
+    
+To train the model, we minimize KL between $d^{(i)}$ and $\pi(\xv^{(i)}|\thetab)$ :
+$$ \argmin_{\thetab} \sum_{i=1}^n D_{KL} (d^{(i)} \| \pi(\xv^{(i)}|\thetab)) = \argmin_{\thetab} \sum_{i=1}^n  H_{\pi(\xv^{(i)}|\thetab)}(d^{(i)}) $$
+    % where the entropy $H(d^{(i)})$ was dropped because it is not a function of $\thetab$.
+  
+We see that this is equivalent to log-loss risk minimization!
+  \begin{footnotesize}
+    \begin{equation*}
+      \begin{split}
+               R &= \sumin  H_{\pi_k(\xv^{(i)}|\thetab)}(d^{(i)}) \\
+                 &= \sumin \left( - \sum_k d^{(i)}_k \log\pi_k(\xv^{(i)}|\thetab) \right) \\
+                 & = \sumin \underbrace{ \left( -\sum_{k = 1}^g [\yi = k]\log \pi_{k}(\xv^{(i)}|\thetab) \right) }_{\text{log loss}} \\
+                 & = \sumin (-\log\pi_{y^{(i)}}(\xv^{(i)}|\thetab)) 
+      \end{split}
+    \end{equation*}
+  \end{footnotesize}
+\end{vbframe}
+
+  % \framebreak
+
+  % Therefore, we went from KL divergence to cross-entropy to log-loss to log-likelihood!
+  
+  % \framebreak
+  % \begin{itemize}
+  %   \item It is interesting to note that the $\log$ in self-information has a completely different motivation from the $\log$ in log-likelihood.
+  %   \item In the case of self-information, it was derived from first principles about the properties that need to be satisfied by any such quantity. In particular, products of probabilities had to be transformed into sums of amounts of information.
+  %   \item On the other hand, the purpose of the $\log$ in log-likelihood is merely to make the computations simpler as sums are easier than products.
+  %   \item Even though the reasons are different, the result is the same.
+  %   \item As an added benefit, cross-entropy and log-likelihood undo the $\exp$ operation of the softmax which is beneficial when optimizing with stochastic gradient descent (SGD) because it reduces the risk of gradients saturating (i.e. becoming zero).
+  % \end{itemize}
+  
+
+\begin{vbframe}{Cross-Entropy vs. Bernoulli loss}
+    
+For completeness sake:\\
+  Let us use the Bernoulli loss for binary classification: 
+
+  $$L(y,\pix) = -y \ln(\pix) - (1 - y) \ln (1 - \pix)$$
+
+\lz
+
+  If $p$ represents a $\text{Ber}(y)$ distribution (so deterministic, where the true label receives probability mass 1) and we also interpret $\pix$ as a Bernoulli distribution $\text{Ber}(\pix)$, the Bernoulli loss $L(y,\pix)$ is the cross-entropy $H_{\pix}(p)$.
+%    \item If $\hat{y}$ is a Bernoulli random variable with distribution defined by $\pi(x)$, $L(y,\pix)$ is the cross-entropy $H_{\hat{y}}(y)$.
+    % \item For a given training set with $n$ samples, the cost function is computed by taking the average of all the cross-entropies in the sample
+    %   $$-\frac{1}{n} \sum_{i=1}^{n}\left[\yi \log \pi(\xi)+\left(1-\yi\right) \log \left(1-\pi(\xi)\right)\right].$$
+\end{vbframe}
+
+\begin{vbframe}{Entropy as prediction loss}
+Assume log-loss for a situation where you only model with a constant probability vector $\pi$. We know the optimal model under that loss: 
+$$\pik = \frac{n_k}{n} = \frac{\sumin [\yi = 1]}{n}$$
+
+What is the (average) risk of that minimal constant model?
+
+\framebreak
+
+\begin{align*}
+  \risk &= \frac{1}{n} \sumin \left( -\sumkg [\yi = k]\log \pik \right)  \\
+        &= - \frac{1}{n} \sumkg \sumin [\yi = k]\log \pik  \\
+        &= -\sumkg \frac{n_k}{n}\log \pik \\
+        &= -\sumkg \pi_k \log \pik = H(\pi) 
+\end{align*}
+
+So entropy is the (average) risk of the optimal "observed class frequency" model under log-loss! 
+ 
+\end{vbframe}
+
+ % \item $D_{KL}$ is often called the \emph{information gain} achieved if we use $p$ instead of $q$.
+  % \item Same fact, different words: It is the \emph{reduction in entropy} when moving from $q$ to $p$:\\ 
+  % $D_{KL}(p||q) = \underbrace{- \sum_{k} p(k) \cdot \log q(k)}_{\text{cross-entropy of p(x) and q(x)}} - \underbrace{-\sum_{k} p(k) \cdot \log p(k)}_{\text{entropy $H(x)$ w.r.t. $p(x)$}}$ 
+  
+\endlecture
+\end{document}
+
