@@ -1,6 +1,9 @@
 # ------------------------------------------------------------------------------
-# FIG: BAGGING VS BOOSTING STUMPS
+# FIG: BAGGING VS BOOSTING
 # ------------------------------------------------------------------------------
+
+# Purpose: create plots comparing random forest & adaboost on spirals data, 
+# first using only stumps, then allowing for more flexibility
 
 library(data.table)
 library(ggplot2)
@@ -9,14 +12,15 @@ library(mlbench)
 library(mlr3verse)
 library(paradox)
 remotes::install_github("mlr3learners/mlr3learners.gbm")
+requireNamespace("gbm")
 
 # DATA -------------------------------------------------------------------------
 
 data_1 <- mlbench::mlbench.spirals(n = 200L)
 data_dt_1 <- data.table::data.table(data_1$x, data_1$classes)
 
-set.seed(1L)
-data_2 <- mlbench::mlbench.spirals(n = 200L, sd = 0.5)
+set.seed(2L)
+data_2 <- mlbench::mlbench.spirals(n = 200L, sd = 0.3)
 data_dt_2 <- data.table::data.table(data_2$x, data_2$classes)
 
 data <- list(data_dt_1, data_dt_2)
@@ -27,17 +31,35 @@ invisible(lapply(
 
 # TRAINING ---------------------------------------------------------------------
 
+# Set up tasks
+
 tasks <- lapply(
-  data, 
-  function(i) mlr3::TaskClassif$new("spirals", backend = i, target = "class"))
+  seq_along(data), 
+  function(i) {
+    mlr3::TaskClassif$new(
+      c("spirals", "noisy_spirals")[i], 
+      backend = data[[i]], 
+      target = "class")})
+
+# Set up learners: {rf, ada} x {stump, deeper}
 
 learners <- list(
-  rf = mlr3::lrn("classif.ranger", max.depth = 1L),
-  ada = mlr3learners.gbm::LearnerClassifGBM$new())
+  stumps = list(
+    rf = mlr3::lrn("classif.ranger", max.depth = 1L),
+    ada = mlr3::lrn(
+      "classif.gbm", 
+      distribution = "adaboost", 
+      interaction.depth = 1L)),
+  deep = list(
+    rf = mlr3::lrn("classif.ranger"),
+    ada = mlr3::lrn(
+      "classif.gbm", 
+      distribution = "adaboost",
+      shrinkage = 0.1,  
+      interaction.depth = 8L, 
+      bag.fraction = 1L)))
 
-learners$ada$param_set$values <- list(
-  distribution = "adaboost",
-  interaction.depth = 1L)
+# Define search spaces (tuning over number of trees)
 
 search_spaces <- list(
   rf = paradox::ParamSet$new(list(
@@ -45,7 +67,11 @@ search_spaces <- list(
   ada = paradox::ParamSet$new(list(
     paradox::ParamInt$new("n.trees", lower = 1L, upper = 1000L))))
 
+# Define resampling strategy
+
 resampling_strategy <- mlr3::rsmp("repeated_cv", folds = 5L, repeats = 5L)
+
+# Define tuners (explicitly evaluating at given configurations)
 
 n_trees <- c(1L, seq(100L, 1000L, by = 100L))
 
@@ -57,35 +83,39 @@ design_ada <- data.table::data.table(
 tuner_rf <- mlr3tuning::tnr("design_points", design = design_rf)
 tuner_ada <- mlr3tuning::tnr("design_points", design = design_ada)
 
+# Create tuning instances: {rf, ada} x {(stump, data), (deeper, noisy data)}
+
 instances <- lapply(
-  
-  seq_along(data),
-  
+  seq_along(tasks),
   function(i) {
-    
     instances <- lapply(
       seq_along(learners),
       function(j) {
         mlr3tuning::TuningInstanceSingleCrit$new(
           task = tasks[[i]],
-          learner = learners[[j]],
+          learner = learners[[i]][[j]],
           resampling = resampling_strategy,
           measure = mlr3::msr("classif.ce"),
           search_space = search_spaces[[j]],
           terminator = mlr3tuning::trm("none"))})
-    
     names(instances) <- c("rf", "ada")
-    
     instances})
 
+# Conduct tuning
+
 invisible(lapply(
-  seq_along(data), 
+  seq_along(tasks), 
   function(i) {
     tuner_rf$optimize(instances[[i]]$rf)
     tuner_ada$optimize(instances[[i]]$ada)}))
 
-learners$rf$param_set$values$num.trees <- 1000L
-learners$ada$param_set$values$n.trees <- 1000L
+# Set number of trees to upper bound of tuning interval
+
+invisible(lapply(
+  seq_along(learners),
+  function(i) {
+    learners[[i]]$rf$param_set$values$num.trees <- 1000L
+    learners[[i]]$ada$param_set$values$n.trees <- 1000L}))
 
 # PLOTS ------------------------------------------------------------------------
 
@@ -122,12 +152,12 @@ p_1 <- lapply(
       ggplot2::scale_x_continuous(breaks = n_trees)})
 
 p_2 <- lapply(
-  tasks,
+  seq_along(tasks),
   function(i) {
     lapply(
       seq_along(learners),
       function(j) {
-        mlr3viz::plot_learner_prediction(learners[[j]], i) +
+        mlr3viz::plot_learner_prediction(learners[[i]][[j]], tasks[[i]]) +
           ggplot2::theme_bw() +
           ggplot2::ggtitle("") +
           ggplot2::xlab(expression(x[1])) +
@@ -135,7 +165,7 @@ p_2 <- lapply(
           ggplot2::theme(
             text = element_text(size = 15L),
             legend.title = element_blank()) +
-          ggplot2::ggtitle(c("Random forest", "AdaBoost")[j]) +
+          ggplot2::ggtitle(c("RF (1000 trees)", "AdaBoost (1000 trees)")[j]) +
           ggplot2::guides(shape = FALSE, alpha = FALSE)})})
 
 p_3 <- 
