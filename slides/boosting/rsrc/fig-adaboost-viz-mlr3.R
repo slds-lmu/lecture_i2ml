@@ -2,6 +2,8 @@
 # FIG: ADABOOST
 # ------------------------------------------------------------------------------
 
+# Purpose: visualize adaboost functionality with toy data
+
 library(ggplot2)
 library(mlr3verse)
 
