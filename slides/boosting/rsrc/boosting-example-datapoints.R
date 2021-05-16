@@ -13,5 +13,5 @@ pl_data = data.frame(x=x, y=y)
 y_lim = c(-1.3,1.3)
 
 theme_set(theme_minimal())
-options(ggplot2.continuous.colour="viridis")
-options(ggplot2.discrete.colour="viridis")
+#options(ggplot2.continuous.colour="viridis")
+#options(ggplot2.discrete.colour="viridis")

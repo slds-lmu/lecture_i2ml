@@ -27,6 +27,16 @@ pseudo_pred = function(coefs, i){
     return(r)
 }
 
+
+#extract legend
+#https://github.com/hadley/ggplot2/wiki/Share-a-legend-between-two-ggplot2-graphs
+g_legend<-function(a.gplot){
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)}
+
+
 plot_pseudo_boosting_step = function(coefs, its = c(1,2), y_lim = c(-1.3,1.3)){
   y_pred0 = pseudo_pred(coefs, its[1])
   y_pred1 = pseudo_pred(coefs, its[2])
@@ -70,7 +80,14 @@ plot_pseudo_boosting_step = function(coefs, its = c(1,2), y_lim = c(-1.3,1.3)){
     ylab("Residuals of current model") +
     xlab(expression("Feature"~x))
   
-  return(grid.arrange(p_fit, p_res, ncol=2))
+  mylegend<-g_legend(p_fit)
+  
+  p3 <- grid.arrange(arrangeGrob(p_fit + theme(legend.position="none"),
+                                 p_res + theme(legend.position="none"),
+                                 nrow=1),
+                     mylegend, nrow=2,heights=c(10, 1))
+  
+  return(p3)
 }
 
 

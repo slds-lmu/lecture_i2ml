@@ -11,7 +11,7 @@ source("pseudo_boosting.R")
 coefs = pseudo_boosting(y, 3)
 p1 = plot_pseudo_boosting_step(coefs, c(1,2))
 
-ggsave("../figure/fig-gb-concept-pseudo-resi-1.png", p1)
+ggsave("../figure/fig-gb-concept-pseudo-resi-1.png", p1, height = 3.5, width = 7)
 
 
 #-------------------------------------------------------------------------------
@@ -19,4 +19,5 @@ ggsave("../figure/fig-gb-concept-pseudo-resi-1.png", p1)
 
 coefs = pseudo_boosting(y, 3)
 p2 = plot_pseudo_boosting_step(coefs, c(2,3))
-ggsave("../figure/fig-gb-concept-pseudo-resi-2.png", p2)
+ggsave("../figure/fig-gb-concept-pseudo-resi-2.png", p2, height = 3.5, width = 7)
+
