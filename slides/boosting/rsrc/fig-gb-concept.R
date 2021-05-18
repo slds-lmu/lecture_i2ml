@@ -23,7 +23,8 @@ pred_data = data.frame(x=x, y=mean(y), c="1")
 pl2 = pl1 + 
   geom_line(data=pred_data, aes(x=x, y=y, col="blue"), lty = "dotted") +
   geom_point(data=pred_data, aes(x=x, y=y, col ="blue"))+
-  theme(legend.position = "none")
+  theme(legend.position = "none") +
+  scale_color_viridis_d(begin = 0.5)
 
 ggsave("../figure/fig-gb-concept-1.png", pl2, width = 7, height = 3)
 # ggsave("figure_man/gradient-boosting.png", pl2)

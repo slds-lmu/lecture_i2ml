@@ -1,4 +1,5 @@
 library(gridExtra)
+library(viridis)
 
 pseudo_boosting = function(y, nboost=2, learning_rate = 0.6){
   overall_pred = rep(mean(y), length(y))
@@ -59,9 +60,9 @@ plot_pseudo_boosting_step = function(coefs, its = c(1,2), y_lim = c(-1.3,1.3)){
     ggplot(pl_data, aes(x=x, y=y)) + 
     geom_point() + 
     geom_point(data = pl_pred_data, aes(x=x, y=value, colour=variable)) + 
-    geom_line(data = pl_pred_data, aes(x=x, y=value, colour=variable), lty = "dotted") +
-    scale_colour_discrete(name = "Iteration", labels = 
-                            c(as.expression(bquote(f^{'['*.(its[1]-1)*']'})),
+    geom_line(data = pl_pred_data, aes(x=x, y=value, colour=variable), lty = "dotted") + 
+    scale_colour_viridis_d(end=0.9, name = "Iteration", 
+                          labels = c(as.expression(bquote(f^{'['*.(its[1]-1)*']'})),
                             as.expression(bquote(f^{'['*.(its[2]-1)*']'})))) +
     geom_segment(data=pl_arrow, aes(x=x, y=y, xend=x, yend=y_end),
                  alpha=0.2, arrow=arrow()) +
@@ -70,7 +71,7 @@ plot_pseudo_boosting_step = function(coefs, its = c(1,2), y_lim = c(-1.3,1.3)){
     xlab(expression("Feature"~x)) +
 #    annotate("label", label="frac(partialdiff~L,partialdiff~f(x^'(i)'))", 
 #             parse=TRUE, x=11, y=-0.7)  +
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom") 
   
   p_res = ggplot(pl_res_data, aes(x=x, y=res0)) +
     geom_point() +
@@ -78,7 +79,8 @@ plot_pseudo_boosting_step = function(coefs, its = c(1,2), y_lim = c(-1.3,1.3)){
               aes(x=x, y=y_pred1-y_pred0), lty = "dotted") +
     ylim(y_lim) +
     ylab("Residuals of current model") +
-    xlab(expression("Feature"~x))
+    xlab(expression("Feature"~x)) + 
+    scale_color_viridis_d(end = .9)
   
   mylegend<-g_legend(p_fit)
   
