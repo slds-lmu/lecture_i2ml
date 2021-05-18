@@ -32,13 +32,13 @@ plot_linear_boosting <- function(x,
   
   for (i in seq_len(iteration)) {
     
+    # Pre-define these, otherwise lazy eval will call updated plots in final
+    # grid.arrange (where overall_pred is already at i + 1)
+    
+    df_pred <- data.frame(x = x, y = overall_pred)
+    df_seg <- data.frame(x = x, y = y, xend = x, yend = overall_pred)
+    
     if (i == iteration) {
-      
-      # Pre-define these, otherwise lazy eval will call updated plots in final
-      # grid.arrange (where overall_pred is already at i + 1)
-      
-      df_pred <- data.frame(x = x, y = overall_pred)
-      df_seg <- data.frame(x = x, y = y, xend = x, yend = overall_pred)
       
       # Plot model & residuals
       
@@ -60,16 +60,12 @@ plot_linear_boosting <- function(x,
       
       if (i > 1L) {
         
-        p_1 <- p_1 + 
-          ggplot2::geom_line(
-            mapping = ggplot2::aes(x = x, y = overall_pred),
-            col = "blue")
-        
         # Create accumulated data in long format (ggplot does not support adding
         # layers via for loops due to lazy eval, only ever adds final layer)
         
         cum_coefs <- apply(coefs[seq_len(i), ], 2L, cumsum)
-        alphas <- seq(0.5, 0.9, length.out = nrow(cum_coefs))
+        alphas <- seq(0.7, 0.9, length.out = nrow(cum_coefs))
+        cum_coefs[1L, ] <- 0L
         
         cum_y <- data.table::data.table(tcrossprod(X, cum_coefs))
         names(cum_y) <- sprintf("y_%i", seq_len(iteration))
@@ -89,7 +85,7 @@ plot_linear_boosting <- function(x,
               y = value, 
               group = variable, 
               alpha = alpha),
-            col = "blue") +
+            col = "red") +
           ggplot2::guides(alpha = FALSE)
 
       }
@@ -113,7 +109,7 @@ plot_linear_boosting <- function(x,
     
     baselearner_pred <- X %*% coefs[i, ]
     overall_pred <- overall_pred + baselearner_pred
-    
+
     if (i == iteration) {
       
       p_2 <- ggplot2::ggplot(
