@@ -19,14 +19,14 @@ plot_linear_boosting <- function(x,
   
   overall_pred <- rep(init_constant, length(y))
   pseudo_res <- y
-  coefs <- matrix(0L, nrow = iteration, ncol = ncol(X))
+  coefs <- matrix(0L, nrow = iteration + 1L, ncol = ncol(X))
   ylim <- c(min(y) - mean(y), max(y))
   
   preds <- list(overall_pred)
   
-  # Plot boosting procedure
+  # Compute boosting procedure
   
-  for (i in seq_len(iteration)) {
+  for (i in (seq_len(iteration) + 1L)) {
     
     # Update step
     
@@ -46,29 +46,55 @@ plot_linear_boosting <- function(x,
     baselearner_pred <- X %*% coefs[i, ]
     
     overall_pred <- c(overall_pred + baselearner_pred)
-    preds[[i + 1L]] <- overall_pred
+    preds[[i]] <- overall_pred
 
   }
   
-  cum_y <- data.table::data.table(do.call(cbind, preds))
-  names(cum_y) <- sprintf("y_%i", c(0L, seq_len(iteration)))
+  # Collect predictions
   
-  cum_data <- data.table::melt.data.table(
-    data.table::data.table(x = x, cum_y),
+  preds_dt <- data.table::data.table(do.call(cbind, preds))
+  data.table::setnames(preds_dt, sprintf("y_%i", seq_along(preds)))
+  
+  dt <- data.table::melt.data.table(
+    data.table::data.table(x = x, preds_dt),
     id = c("x"),
-    measure = sprintf("y_%i", c(0L, seq_len(iteration))))
+    measure = sprintf("y_%i", seq_along(preds)))
   
-  alphas <- seq(0.9, 1L, length.out = length(names(cum_y)))
-  cum_data$alpha <- c(sapply(alphas, rep, length(x)))
-  
-  p <- ggplot2::ggplot(data.frame(x = x, y = y), ggplot2::aes(x, y)) +
+  # Create plots
+
+  p_1 <- ggplot2::ggplot(data.frame(x = x, y = y), ggplot2::aes(x, y)) +
     ggplot2::geom_point()
   
-  p <- p + ggplot2::geom_line(
-    cum_data,
-    mapping = ggplot2::aes(x = x, y = value, group = variable, alpha = variable), 
-    col = "blue") +
-    ggplot2::scale_alpha_discrete(range = c(0.1, 1L)) +
+  p_1 <- p_1 + ggplot2::geom_line(
+    dt[variable != sprintf("y_%i", iteration + 1L)],
+    mapping = ggplot2::aes(
+      x = x, y = value, group = variable, alpha = variable), 
+    col = "blue", 
+    size = 1.05) +
+    ggplot2::scale_alpha_discrete(range = c(0.3, 1L)) +
     ggplot2::guides(alpha = FALSE)
+  
+  res_dt <- data.table::data.table(
+    x = x, 
+    y = y, 
+    xend = x, 
+    yend = preds[[iteration]])
+  
+  p_1 <- p_1 + ggplot2::geom_segment(
+    res_dt,
+    mapping = ggplot2::aes(x = x, y = y, xend = x, yend = yend),
+    col = "darkgray")
+  
+  p_2 <- ggplot2::ggplot(
+    data.frame(x = x, y = pseudo_res), ggplot2::aes(x, y)) +
+    ggplot2::geom_point(col = "blue", shape = 4L, size = 2L) +
+    ggplot2::ylab("residuals of current model") +
+    ggplot2::ylim(ylim) +
+    ggplot2::geom_line(
+      mapping = ggplot2::aes(x = x, y = baselearner_pred / learning_rate),
+      color = "darkgray",
+      size = 1.05)
+  
+  gridExtra::grid.arrange(p_1, p_2, ncol = 2L)
 
 }
