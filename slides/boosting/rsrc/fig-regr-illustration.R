@@ -180,3 +180,24 @@ plot_boosting(
   distribution = "laplace",
   basis_fun = basis_trafo_linear,
   boosting_iters = boosting_iters)
+
+
+
+plot_linear_boosting(
+  x = x, 
+  y = y_gaussian, 
+  iteration = 100L,
+  learning_rate = 0.2,
+  alpha = 0.2, 
+  distribution = "gaussian", 
+  basis_fun = basis_trafo_linear)
+
+plot_boosting(
+  x = x,
+  y = y_gaussian,
+  loss = "L2_lin", 
+  eps = "gaussian", 
+  distribution = "gaussian",
+  basis_fun = basis_trafo_linear,
+  boosting_iters = c(1:2),
+  learning_rate = 1)
