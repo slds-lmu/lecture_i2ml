@@ -7,7 +7,8 @@
 
 \newcommand{\titlefigure}{figure/gbm_sine_title.png}
 \newcommand{\learninggoals}{
-  \item General introduction to gradient boosting with trees
+  \item Adapting gradient boosting process for trees
+  \item Understanding how model structure influences interaction depth
   \item Gradient boosting for multiclass with trees
 }
 
@@ -38,115 +39,9 @@ A great deal of research has been done on this combination so far, and it often 
 The gradient-boosted trees method retains all of them, and strongly improves the trees' predictive power.
 Furthermore, it is possible to adapt gradient boosting to tree learners in a targeted manner.
 
-\framebreak
-
-% ------------------------------------------------------------------------------
-As before, we want to minimize the empirical risk defined by
-$$
-\riskef = \sum_{i=1}^n L\left(\yi,\fxi \right) =
-\sum_{i=1}^n L\left(\yi, \sum_{m=1}^M \bmm(\xv^{(i)})\right)
-$$
-
-with trees as base learners $ b(\xv) = \sum_{t=1}^{T} c_t \mathds{1}_{\{\xv \in R_t\}} $,
-where $R_t$ are the terminal regions and $c_t$ the corresponding constant parameters.\\
-\lz
-The additive structure of the boosting model can be written as follows:
-$$
-\fm(\xv) = \fmd(\xv) +  \bmm(\xv) = \fmd(\xv) +  \sum_{t=1}^{\Tm} \ctm \mathds{1}_{\{\xv \in \Rtm\}}. 
-$$
-
-\framebreak
-
-While the parameters we need to learn e.g. for an LM are the respective coefficients, for trees we need to learn the tree structure which is usually harder. It follows that we want to add at each iteration step $m$ the tree $\bmm(\xv)$ which minimizes the chosen loss function.
-
-$$
-\hat{\mathbf{c}}^{[m]} = \argmin_{(c_1,\dots,c_{T^{[m]}})}\sum_{i = 1}^n L(\yi, \fmd(\xi) + \bmm(\xi, c_1,\dots,c_{T^{[m]}})).
-$$
-
-\begin{center}
-
-\includegraphics[width=0.38\textwidth]{figure_man/gbm_leaf_adjustment.pdf}
-
-\end{center}
-
-\framebreak
-
-The direction of steepest descent for the update is then
-
-$$
--\frac{\partial L(y, \fmd(\xv) + \bmm(\xv))}{\partial \bmm(\xv)}
-$$
-
-Using MSE as loss function, a direct solution is possible. However, for other loss functions a Taylor approximation is necessary which will be discussed in more detailed in the xgboost chapter.
-
-
-
-\framebreak
-
-\input{algorithms/gradient_tree_boosting_algorithm2.tex}
-
-\framebreak
-
-% ------------------------------------------------------------------------------
-
-One can write a tree as: $ b(\xv) = \sum_{t=1}^{T} c_t \mathds{1}_{\{\xv \in R_t\}} $,
-where $R_t$ are the terminal regions and $c_t$ the corresponding constant parameters.
-
-\vspace*{0.2cm}
-
-For a fitted tree with regions $R_t$, the special additive structure can be exploited in boosting:  %Finished here
-
-\begin{align*}
-  \fm(\xv) &= \fmd(\xv) +  \betam \bmm(\xv) \\
-         &= \fmd(\xv) +  \betam \sum_{t=1}^{\Tm} \ctm \mathds{1}_{\{\xv \in \Rtm\}}.
-\end{align*}
-
-Actually, we do not have to find $\ctm$ and $\betam$ in two separate steps
-(fitting against pseudo-residuals, then line search) but find optimal 
-\textcolor{blue}{$\ctmt$} (including $\betam$).
-Also note that the \textcolor{blue}{$\ctmt$} will not really be loss-optimal as 
-we used squared error loss
-to fit them against the pseudo-residuals.
-
-% ------------------------------------------------------------------------------
-
-\framebreak
-\begin{footnotesize}
-We do the same steps as before: (1) calculate the pseudo-residuals, (2) fit a tree against pseudo-residuals, \textbf{but now} we keep only the structure of the tree and optimize the $c$ parameter in a (further) post-hoc step.
-
-$$
-\fm(\xv) = \fmd(\xv) +  \sum_{t=1}^{\Tm} \ctmt \mathds{1}_{\{\xv \in \Rtm\}}. 
-$$
-
-We want to find the constant value $c$ that drives down risk the most w.r.t the squared error loss,
-when added to the respective terminal region.
-We can determine/change all $\ctmt$ individually and directly $L$-optimally:
-
-
-%\vspace{-0.2cm}
-
-$$ \ctmt = \argmin_{c} \sum_{\xi \in \Rtm} L(\yi, \fmd(\xi) + c). $$
-
-\vspace{-0.5cm}
-
-\begin{center}
-
-\includegraphics[width=0.38\textwidth]{figure_man/gbm_leaf_adjustment.pdf}
-
-\end{center}
-
-\end{footnotesize}
-
-\framebreak
-
-% ------------------------------------------------------------------------------
-
-\input{algorithms/gradient_tree_boosting_algorithm.tex}
-
+%\framebreak
 \end{vbframe}
-
 % ------------------------------------------------------------------------------
-
 \begin{vbframe}{Visualization 1}
 \begin{footnotesize}
 \textbf{Simulation setting:}
@@ -255,7 +150,7 @@ fit a regression stump $b^{[m]}.$ %which is multiplied by the learning rate $\be
 
 % ------------------------------------------------------------------------------
 
-\begin{frame}{Visualization 1}
+\begin{frame}{Example 1}
 
 \footnotesize
 Repeat step (1) to (3):
@@ -263,116 +158,291 @@ Repeat step (1) to (3):
 \begin{center}
   \only<1>{ \includegraphics[width=\textwidth]{figure/gbm_anim_02.png} }
   \only<2>{ \includegraphics[width=\textwidth]{figure/gbm_anim_03.png} }
-  \only<3>{ \includegraphics[width=\textwidth]{figure/gbm_anim_04.png} }
-  \only<4>{ \includegraphics[width=\textwidth]{figure/gbm_anim_05.png} }
-  \only<5>{ \includegraphics[width=\textwidth]{figure/gbm_anim_06.png} }
-  \only<6>{ \includegraphics[width=\textwidth]{figure/gbm_anim_51.png} }
+  %\only<3>{ \includegraphics[width=\textwidth]{figure/gbm_anim_04.png} }
+  %\only<4>{ \includegraphics[width=\textwidth]{figure/gbm_anim_05.png} }
+  %\only<5>{ \includegraphics[width=\textwidth]{figure/gbm_anim_06.png} }
+  \only<3>{ \includegraphics[width=\textwidth]{figure/gbm_anim_51.png} }
 \end{center}
 
 \end{frame}
-
 % ------------------------------------------------------------------------------
-
-\begin{vbframe}{Visualization 2}
-
-\begin{center}
-  \includegraphics[width=\textwidth]{figure/gbm_sine.png}
-\end{center}
-
-\vfill
-
-\footnotesize
-\begin{itemize}
-  \item Iterating this very simple tree-stump base learner yields a rather nice
-  approximation of a smooth model in the end.
-  \item Severe overfitting apparent in the noisy case. We will discuss and solve 
-  this problem later.
-\end{itemize}
-
-\end{vbframe}
-
-% ------------------------------------------------------------------------------
-\begin{vbframe}{Visualization 3}
+\begin{vbframe}{Example 2}
 
 \textbf{Simulation setting:}
 \begin{itemize}
   \item Given: 2-dimensional regression problem
   \item Aim: reconstruct $ y = \fx = f (x_1, x_2) $
+  \item Link: \href{http://arogozhnikov.github.io/2016/06/24/gradient_boosting_explained.html}{Open in browser}
 \end{itemize}
 
-\href{http://arogozhnikov.github.io/2016/06/24/gradient_boosting_explained.html}{\beamergotobutton{Open in browser.}}
+\begin{center}
+\includegraphics[width=0.45\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_2_target_3.png}
+\end{center}
+
 
 
 \end{vbframe}
 
-\begin{frame}{Visualization 3}
-Tree depth: 2 \\
-Number of trees: 
-\only<1>{1}
-\only<2>{3}
-\only<3>{5}
-\only<4>{7}
-\only<5>{10}
+% \begin{frame}{Visualization 3}
+% Tree depth: 2 \\
+% Number of trees: 
+% \only<1>{1}
+% \only<2>{3}
+% \only<3>{5}
+% \only<4>{7}
+% \only<5>{10}
+% 
+% \begin{columns}
+%   \begin{column}{0.49\textwidth}
+%     \begin{center}
+%     Prediction of previous trees 
+%         \only<1>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_2_target_1.png}}
+%         \only<2>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_2_target_3.png}}
+%         \only<3>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_2_target_5.png}}
+%         \only<4>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_2_target_7.png}}
+%         \only<5>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_2_target_10.png}}
+%         
+%     \end{center}  
+%   \end{column}
+%   \begin{column}{0.49\textwidth}
+%     \begin{center}
+%     Residuals 
+%         \only<1>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_2_res_1.png}}
+%         \only<2>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_2_res_3.png}}
+%         \only<3>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_2_res_5.png}}
+%         \only<4>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_2_res_7.png}}
+%         \only<5>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_2_res_10.png}}
+%     \end{center}
+%   \end{column}
+% \end{columns}
+% \end{frame}
+% 
+% 
+% \begin{frame}{Visualization 3}
+% Tree depth: 1 \\
+% Number of trees: 
+% \only<1>{1}
+% \only<2>{3}
+% \only<3>{5}
+% \only<4>{7}
+% \only<5>{10}
+% 
+% \begin{columns}
+%   \begin{column}{0.49\textwidth}
+%     \begin{center}
+%     Prediction of previous trees 
+%         \only<1>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_1_target_1.png}}
+%         \only<2>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_1_target_3.png}}
+%         \only<3>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_1_target_5.png}}
+%         \only<4>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_1_target_7.png}}
+%         \only<5>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_1_target_10.png}}
+%         
+%     \end{center}  
+%   \end{column}
+%   \begin{column}{0.49\textwidth}
+%     \begin{center}
+%     Residuals 
+%         \only<1>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_1_res_1.png}}
+%         \only<2>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_1_res_3.png}}
+%         \only<3>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_1_res_5.png}}
+%         \only<4>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_1_res_7.png}}
+%         \only<5>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_1_res_10.png}}
+%     \end{center}
+%   \end{column}
+% \end{columns}
+% \end{frame}
 
-\begin{columns}
-  \begin{column}{0.49\textwidth}
-    \begin{center}
-    Prediction of previous trees 
-        \only<1>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_2_target_1.png}}
-        \only<2>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_2_target_3.png}}
-        \only<3>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_2_target_5.png}}
-        \only<4>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_2_target_7.png}}
-        \only<5>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_2_target_10.png}}
-        
-    \end{center}  
-  \end{column}
-  \begin{column}{0.49\textwidth}
-    \begin{center}
-    Residuals 
-        \only<1>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_2_res_1.png}}
-        \only<2>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_2_res_3.png}}
-        \only<3>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_2_res_5.png}}
-        \only<4>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_2_res_7.png}}
-        \only<5>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_2_res_10.png}}
-    \end{center}
-  \end{column}
+%--------------------------------------------------------------------------------------------------------
+% \begin{vbframe}{Visualization 1}
+% 
+% As before, we want to minimize the empirical risk defined by
+% $$
+% \riskef = \sum_{i=1}^n L\left(\yi,\fxi \right) =
+% \sum_{i=1}^n L\left(\yi, \sum_{m=1}^M \bmm(\xv^{(i)})\right)
+% $$
+% 
+% with trees as base learners $ b(\xv) = \sum_{t=1}^{T} c_t \mathds{1}_{\{\xv \in R_t\}} $,
+% where $R_t$ are the terminal regions and $c_t$ the corresponding constant parameters.\\
+% \lz
+% The additive structure of the boosting model can be written as follows:
+% $$
+% \fm(\xv) = \fmd(\xv) +  \bmm(\xv) = \fmd(\xv) +  \sum_{t=1}^{\Tm} \ctm \mathds{1}_{\{\xv \in \Rtm\}}. 
+% $$
+% 
+% \framebreak
+% 
+% While the parameters we need to learn e.g. for an LM are the respective coefficients, for trees we need to learn the tree structure which is usually harder. It follows that we want to add at each iteration step $m$ the tree $\bmm(\xv)$ which minimizes the chosen loss function.
+% 
+% $$
+% \hat{\mathbf{c}}^{[m]} = \argmin_{(c_1,\dots,c_{T^{[m]}})}\sum_{i = 1}^n L(\yi, \fmd(\xi) + \bmm(\xi, c_1,\dots,c_{T^{[m]}})).
+% $$
+% 
+% \begin{center}
+% 
+% \includegraphics[width=0.38\textwidth]{figure_man/gbm_leaf_adjustment.pdf}
+% 
+% \end{center}
+% 
+% \framebreak
+% 
+% The direction of steepest descent for the update is then
+% 
+% $$
+% -\frac{\partial L(y, \fmd(\xv) + \bmm(\xv))}{\partial \bmm(\xv)}
+% $$
+% 
+% Using MSE as loss function, a direct solution is possible. However, for other loss functions a Taylor approximation is necessary which will be discussed in more detailed in the xgboost chapter.
+% 
+% 
+% 
+% \framebreak
+% 
+% \input{algorithms/gradient_tree_boosting_algorithm2.tex}
+% 
+% \framebreak
+
+\begin{vbframe}{Model structure and Interaction Depth}
+
+The model structure of a gradient boosting model with trees depends highly on the chosen
+tree or interaction depth.
+$$
+f(\xv) =  \sum_{m=1}^M \betam \bmm(\xv)
+$$
+
+\lz
+\begin{footnotesize}
+\begin{columns}[T]
+\begin{column}{0.6\textwidth}
+When using stumps (depth = 1), the resulting model is an additive model without any interactions:\\
+$$
+f(\xv) = \sum_{j=1}^p f(x_j)
+$$
+When also including trees with depth of 2, also 2-way interactions are included and we get:\\
+$$
+f(\xv) = \sum_{j=1}^p f(x_j) + \sum_{j \neq k} f(x_j, x_k)
+$$
+\end{column}
+\begin{column}{0.4\textwidth}
+\includegraphics[width=0.8\textwidth]{figure/boosting_interact_expl1.PNG}
+\includegraphics[width=\textwidth]{figure/boosting_interact_expl2.PNG}
+\end{column}
 \end{columns}
-\end{frame}
+\end{footnotesize}
+
+\framebreak
+
+\textbf{Simulation setting:}
+\begin{itemize}
+\item Given: two features $x_1$ and $x_2$ and one numeric target variable $y$ of 50 observations.
+\item $x_1$ and $x_2$ are uniformly distributed between -1 and 1.
+\item Target function: $y^{(i)} = x_1^{(i)} -  x_2^{(i)} + 5\cos(5 x_2^{(i)}) \cdot x_1^{(i)} + \epsilon^{(i)}$ with $\epsilon^{(i)} \sim \mathcal{N}(0, 1)$, $\forall i \in \{1, \dots, 500\}$.
+\end{itemize} 
+
+We fit two tree-based GBMs, one with interaction depth of 1 (GAM) and one with interaction depth of 2 (all possible interactions included) and compare the results on 1D-, 2D-PDPs and 3D surface plots.
+
+\framebreak
+
+\textbf{GBM with interaction depth of 1}\\
+No interactions are modelled: ICE curves show only additive shifts.
+
+\begin{center}
+\includegraphics[width=0.8\textwidth]{figure_man/boosting_interaction_example_gam.PNG}
+\end{center}
+
+\textbf{GBM with interaction depth of 2}\\
+Interactions between $x_1$ and $x_2$ are modelled: ICE curves show that interactions are present and 2D plot shows joint effect.
+
+\begin{center}
+\includegraphics[width=0.8\textwidth]{figure_man/boosting_interaction_example_ID2.PNG}
+\end{center}
+
+\framebreak
+Comparison of ID = 1 (left), ID =2 (right) and target function (bottom).
+\begin{center}
+\includegraphics[width=0.47\textwidth]{figure_man/boosting_interaction_depth1fit3D.PNG}
+\includegraphics[width=0.47\textwidth]{figure_man/boosting_interaction_depth2fit3D.PNG}
+\includegraphics[width=0.47\textwidth]{figure_man/boosting_interaction_targetfunction3D.PNG}
+\end{center}
+
+\end{vbframe}
+% ------------------------------------------------------------------------------
+\begin{vbframe}{Theoretical Background}
+ 
+One can write a tree as: $ b(\xv) = \sum_{t=1}^{T} c_t \mathds{1}_{\{\xv \in R_t\}} $,
+where $R_t$ are the terminal regions and $c_t$ the corresponding constant parameters.
+
+\vspace*{0.2cm}
+
+For a fitted tree with regions $R_t$, the special additive structure can be exploited in boosting:  %Finished here
+
+\begin{align*}
+  \fm(\xv) &= \fmd(\xv) +  \betam \bmm(\xv) \\
+         &= \fmd(\xv) +  \betam \sum_{t=1}^{\Tm} \ctm \mathds{1}_{\{\xv \in \Rtm\}}\\
+         &= \fmd(\xv) +  \sum_{t=1}^{\Tm} \ctmt \mathds{1}_{\{\xv \in \Rtm\}}.
+\end{align*}
+
+With $\ctmt = \betam \cdot \ctm$ in the case that $\betam$ is a constant learning rate
+%Actually, we do not have to find $\ctm$ and $\betam$ in two separate steps
+%(fitting against pseudo-residuals, then line search) but find optimal 
+%\textcolor{blue}{$\ctmt$} (including $\betam$).
+%Also note that the \textcolor{blue}{$\ctmt$} will not really be loss-optimal as 
+%we used squared error loss
+%to fit them against the pseudo-residuals.
+
+% ------------------------------------------------------------------------------
+
+\framebreak
+\begin{footnotesize}
+We do the same steps as before: (1) calculate the pseudo-residuals, (2) fit a tree against pseudo-residuals, \textbf{but now} we keep only the structure of the tree and optimize the $c$ parameter in a (further) post-hoc step.
+
+$$
+\fm(\xv) = \fmd(\xv) +  \sum_{t=1}^{\Tm} \ctmt \mathds{1}_{\{\xv \in \Rtm\}}. 
+$$
+
+%We want to find the constant value $c$ that drives down risk the most w.r.t the squared error loss,
+%when added to the respective terminal region.
+We can determine/change all $\ctmt$ individually and directly $L$-optimally:
 
 
-\begin{frame}{Visualization 3}
-Tree depth: 1 \\
-Number of trees: 
-\only<1>{1}
-\only<2>{3}
-\only<3>{5}
-\only<4>{7}
-\only<5>{10}
+%\vspace{-0.2cm}
 
-\begin{columns}
-  \begin{column}{0.49\textwidth}
-    \begin{center}
-    Prediction of previous trees 
-        \only<1>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_1_target_1.png}}
-        \only<2>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_1_target_3.png}}
-        \only<3>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_1_target_5.png}}
-        \only<4>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_1_target_7.png}}
-        \only<5>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_1_target_10.png}}
-        
-    \end{center}  
-  \end{column}
-  \begin{column}{0.49\textwidth}
-    \begin{center}
-    Residuals 
-        \only<1>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_1_res_1.png}}
-        \only<2>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_1_res_3.png}}
-        \only<3>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_1_res_5.png}}
-        \only<4>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_1_res_7.png}}
-        \only<5>{\includegraphics[width=\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_1_res_10.png}}
-    \end{center}
-  \end{column}
-\end{columns}
-\end{frame}
+$$ \ctmt = \argmin_{c} \sum_{\xi \in \Rtm} L(\yi, \fmd(\xi) + c). $$
+
+\vspace{-0.5cm}
+
+\begin{center}
+
+\includegraphics[width=0.38\textwidth]{figure_man/gbm_leaf_adjustment.pdf}
+
+\end{center}
+
+\end{footnotesize}
+
+\framebreak
+
+An alternative approach ist to directly fit a loss optimal tree.
+The loss function is then defined by:
+$$
+\mathcal{R}(\mathcal{N}') = \sum_{i \in \mathcal{N}'} L(\yi, \fmd(\xi) + c)
+$$
+
+with $\mathcal{N}'$ being the indeces of a specific (left or right) node after splitting.
+
+Thus, instead of having a two-step approach of first fitting a tree for the pseudo-residuals of the current model and then finding the optimal value for $c$, we now directly build tree that finds $c$ loss optimally. Since $c$ is unknown, it needs to be determined, which can either be done by a line search or by taking the derivative:
+$$
+\frac{\delta{\mathcal{R}(\mathcal{N}')}}{\delta c} = \sum_{i \in \mathcal{N}'} \frac{\delta{L(\yi, \fmd(\xi) + c)}}{\delta f | f = \fmd + c} = 0
+$$
+% ------------------------------------------------------------------------------
+\framebreak
+\input{algorithms/gradient_tree_boosting_algorithm2.tex}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+
+
+
 
 \begin{vbframe}{GB Multiclass with Trees}
 
