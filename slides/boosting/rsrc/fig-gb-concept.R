@@ -4,6 +4,7 @@
 
 # Dependencies------------------------------------------------------------------
 library(ggplot2)
+library(ggrepel)
 
 # Load data --------------------------------------------------------------------
 source("boosting-example-datapoints.R")
@@ -33,8 +34,14 @@ ggsave("../figure/fig-gb-concept-1.png", pl2, width = 7, height = 3)
 # former: figure_man/forward-stagewise-expl.png
 
 res = y #- mean(y)
-res_data = data.frame(x = x, y = res)
+number = seq_along(x)
+label = as.character(sapply(number, function(x) bquote(f~( bold(x) ^.(x)))))
+
+res_data = data.frame(x = x, y = res, label = label)
 pl_arrow = data.frame(x = x, x_end=x, y = res-0.15, y_end=res+0.15)
+
+
+
 pl3 = ggplot(res_data, aes(x=x, y=y)) +
   geom_point(col="blue") +
   geom_line(lty = "dotted", col="blue") +
@@ -43,8 +50,17 @@ pl3 = ggplot(res_data, aes(x=x, y=y)) +
   ylim(y_lim) +
   ylab(expression("Target"~y)) +
   xlab(expression("Feature"~x))
-ggsave("../figure/fig-gb-concept-2.png", pl3, height = 4, width = 3.5)
 
+# add labels
+
+pl4 <- pl3 + geom_label_repel(data = res_data[res_data$x<5.5, ],aes(label = label),
+  #geom_label_repel(aes(label = deparse(bquote(f~( bold(x) ^.(number))))),
+                   box.padding   = 0.35, 
+                   point.padding = 1,
+                   segment.color = 'grey50', parse= TRUE)
+
+
+ggsave("../figure/fig-gb-concept-2.png", pl4, height = 4, width = 3.3)
 
 
 
