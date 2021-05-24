@@ -6,15 +6,19 @@
 
 library(ggplot2)
 
+source("boosting_animation_gam.R")
+
 # DATA -------------------------------------------------------------------------
 
 n_sim <- 50L
+x <- seq(0L, 10L, length.out = n_sim)
+y_noiseless <- -1L + 0.2 * x + 0.1 * sin(x)
 
 set.seed(31415L)
-x <- seq(0L, 10L, length.out = n_sim)
-y_gaussian <- 4L + 3L * x + 5L * sin(x) + rnorm(n_sim, 2L)
+y_gaussian <- y_noiseless + rnorm(n_sim, sd = 0.1)
+
 set.seed(1L)
-y_tdist <- 4L + 3L * x + 5L * sin(x) + rt(n_sim, 2L)
+y_tdist <- y_noiseless + rt(n_sim, df = 2L)
 
 # FUNCTIONS --------------------------------------------------------------------
 
@@ -39,7 +43,9 @@ plot_boosting <- function(x,
                           basis_fun, 
                           boosting_iters,
                           learning_rate = 0.1,
-                          alpha = 0.2) {
+                          alpha = 0.2,
+                          height = 3L, 
+                          width = 12L) {
   
   for (iteration in boosting_iters) {
     
@@ -54,7 +60,7 @@ plot_boosting <- function(x,
       distribution = distribution, 
       basis_fun = basis_fun)
     
-    invisible(ggplot2::ggsave(name, plot, height = 3L, width = 12L))
+    invisible(ggplot2::ggsave(name, plot, height = height, width = width))
     
   }
   
@@ -66,7 +72,7 @@ plot_boosting <- function(x,
 
 p_title <- plot_linear_boosting(
   x = x, 
-  y = scale(y_gaussian), 
+  y = y_gaussian, 
   iteration = 3L,
   learning_rate = 0.1,
   alpha = 0.2, 
@@ -89,28 +95,13 @@ ggplot2::ggsave(
   height = 3L, 
   width = 6L)
 
-# Scaled data
-
-p_2 <- ggplot2::ggplot(
-  data.frame(x = x, y = scale(y_gaussian)), 
-  ggplot2::aes(x, y)) +
-  ggplot2::geom_point() +
-  ggplot2::theme_minimal() +
-  ggplot2::theme(text = ggplot2::element_text(size = 20L))
-
-ggplot2::ggsave(
-  "../figure/illustration_data_normal_scaled.png", 
-  p_2, 
-  height = 3L, 
-  width = 6L)
-
 # Boosting animation for L1 & L2 loss
 
-boosting_iters <- c(1L:3L, 10L)
+boosting_iters <- c(1L:3L, 10L, 100L)
 
 plot_boosting(
   x = x,
-  y = scale(y_gaussian),
+  y = y_gaussian,
   loss = "L2", 
   eps = "gaussian", 
   distribution = "gaussian",
@@ -119,7 +110,7 @@ plot_boosting(
 
 plot_boosting(
   x = x,
-  y = scale(y_gaussian),
+  y = y_gaussian,
   loss = "L1", 
   eps = "gaussian", 
   distribution = "laplace",
@@ -130,49 +121,51 @@ plot_boosting(
 
 plot_boosting(
   x = x,
-  y = scale(y_gaussian),
-  loss = "huber_05",
+  y = y_gaussian,
+  loss = "huber_02",
   eps = "gaussian",
   distribution = "huber",
-  alpha = 0.5,
+  alpha = 0.2,
   basis_fun = basis_trafo,
-  boosting_iters = 5L)
+  boosting_iters = 10L,
+  height = 2.5)
 
 plot_boosting(
   x = x,
-  y = scale(y_gaussian),
+  y = y_gaussian,
   loss = "huber_2",
   eps = "gaussian",
   distribution = "huber",
   alpha = 2L,
   basis_fun = basis_trafo,
-  boosting_iters = 5L)
+  boosting_iters = 10L,
+  height = 2.5)
 
 # Boosting animation for t-distributed errors
 
 plot_boosting(
   x = x,
-  y = scale(y_tdist),
+  y = y_tdist,
   loss = "L2", 
   eps = "tdist", 
   distribution = "gaussian",
   basis_fun = basis_trafo,
-  boosting_iters = boosting_iters)
+  boosting_iters = c(10L, 100L))
 
 plot_boosting(
   x = x,
-  y = scale(y_tdist),
+  y = y_tdist,
   loss = "L1", 
   eps = "tdist", 
   distribution = "laplace",
   basis_fun = basis_trafo,
-  boosting_iters = boosting_iters)
+  boosting_iters = c(10L, 100L))
 
 # Boosting animation for LM
 
 plot_boosting(
   x = x,
-  y = scale(y_gaussian),
+  y = y_gaussian,
   loss = "L2_lin", 
   eps = "gaussian", 
   distribution = "gaussian",
@@ -181,7 +174,7 @@ plot_boosting(
 
 plot_boosting(
   x = x,
-  y = scale(y_gaussian),
+  y = y_gaussian,
   loss = "L1_lin", 
   eps = "gaussian", 
   distribution = "laplace",

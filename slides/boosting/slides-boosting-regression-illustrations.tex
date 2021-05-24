@@ -30,22 +30,22 @@ the $L1$ loss.\\
 
 \textbf{Reminder:} Pseudo-residuals
 \begin{itemize}
-\item $L2$: $\tilde{r} = r = y - f(\xv)$
-\item $L1$: $\tilde{r} = sign(y - f(\xv))$
+\item $L2$: $\tilde{r}(\xv) = r = y - f(\xv)$
+\item $L1$: $\tilde{r}(\xv) = sign(y - f(\xv))$
 \end{itemize}
-We are looking at a regression task with one feature $x$ and a target $y$ with the following
-underlying true relationship:
+We consider a regression task with a single feature $x$ and target $y$, with 
+the following true underlying relationship:
 \vspace{-0.2cm}
 \begin{align*}
-y^{(i)} &=  4 + 3x^{(i)} + 5 \cdot sin(x^{(i)}) + \epsilon^{(i)} \\
-&\text{with } n = 50 \text{ and } \epsilon \sim \mathcal{N}(0,2) \quad \forall i 
-\in \nset
+y^{(i)} &=  -1 + 0.2 \cdot x^{(i)} + 0.1 \cdot sin(x^{(i)}) + \epsilon^{(i)} \\
+&\text{with } n = 50 \text{ and } \epsilon \sim \mathcal{N}(0, 0.1) \quad 
+\forall i \in \nset
 \end{align*}
 
 \vfill
 
 \begin{figure}
-  \includegraphics[width=0.4\textwidth]{figure/illustration_data_normal.png}
+  \includegraphics[width = 0.45\textwidth]{figure/illustration_data_normal.png}
 \end{figure}
 
 \framebreak
@@ -53,27 +53,20 @@ y^{(i)} &=  4 + 3x^{(i)} + 5 \cdot sin(x^{(i)}) + \epsilon^{(i)} \\
 % ------------------------------------------------------------------------------
 
 \begin{enumerate}
-
-  \item
-    We start with the simplest model, the optimal constant -- mean of the target variable in the case of $L2$ loss and median in the case of $L1$ loss ($y$ is being scaled beforehand).
-
-  \item
-    To improve the model we calculate the pointwise pseudo-residuals on the 
-    training data, and fit a GAM on the residuals.
-
-  \item
-    The GAM fitted on the residuals is then multiplied by a constant learning rate of $0.2$ and added to the previous model.
-
-  \item
-    This procedure is repeated multiple times.
-
+  \item We start with the simplest model, the optimal constant -- mean of the 
+  target variable in the case of $L2$ loss and median in the case of $L1$ loss.
+  \item We improve the model by calculating the pointwise 
+  pseudo-residuals on the training data, and fit a GAM on the residuals.
+  \begin{enumerate}
+    \item The GAM base learners model the conditional mean via cubic B-splines, 
+    i.e., $\bmmxth = \sum_{k = 1}^{K + \ell} B_k^{(3)}(\xv)$, with $\ell = 3$ 
+    and $K = 40$ knots.
+    \item In each step, the GAM fitted on the current pseudo-residuals is
+    multiplied by a constant learning rate of $0.2$ and added to the previous
+    model.
+    \item This procedure is repeated multiple times.
+  \end{enumerate}
 \end{enumerate}
-
-\vfill
-
-\begin{figure}
-  \includegraphics[width=0.5\textwidth]{figure/illustration_data_normal_scaled.png}
-\end{figure}
 
 \end{vbframe}
 
@@ -119,76 +112,75 @@ Iteration 3
 
 Iteration 10
 }
-% \end{center}
+
+\only<5>{ 
+\includegraphics[width=\textwidth]{figure/illustration_gaussian_L2_100.png}
+\includegraphics[width=\textwidth]{figure/illustration_gaussian_L1_100.png}
+
+\vfill
+
+Iteration 100
+}
 
 \end{frame}
 
 % ------------------------------------------------------------------------------
 
 \begin{frame}{GAM illustration 1}
-We can also use Huber loss which is closer to $L2$ for large $\delta$ values and closer to $L1$ for 
-smaller $\delta$ values. Top: $\delta$ = 0.5, bottom: $\delta$ = 2.
+We can also use Huber loss, which is closer to $L2$ for large $\delta$ values and closer to $L1$ for 
+smaller $\delta$ values. Top: $\delta$ = 2, bottom: $\delta$ = 0.2.
 
 \vfill
 
-\includegraphics[width=\textwidth]{figure/illustration_gaussian_huber_05_5.png}
-\includegraphics[width=\textwidth]{figure/illustration_gaussian_huber_2_5.png}
+\includegraphics[width=\textwidth]{figure/illustration_gaussian_huber_2_10.png}
+\includegraphics[width=\textwidth]{figure/illustration_gaussian_huber_02_10.png}
 
 \vfill
 
-Iteration 5
+Iteration 10
 
 \vfill
 
-The lower right plot shows that pseudo-residuals often take values of the upper and lower
-bounds (depending on $\delta$) and thus the behaviour is closer to the $L1$ loss while the upper plots show a
-similar behavior to the $L2$ loss. 
+\footnotesize
+We see how for smaller $\delta$ (bottom) pseudo-residuals are often effectively
+bounded, resulting in $L1$-like behavior, while the upper plot more closely 
+resembles $L2$ loss.
+% The lower right plot shows that pseudo-residuals often take values of the upper and lower
+% bounds (depending on $\delta$) and thus the behaviour is closer to the $L1$ loss while the upper plots show a
+% similar behavior to the $L2$ loss. 
 
 \end{frame}
 
 % ------------------------------------------------------------------------------
 
 \begin{frame}{GAM illustration 2}
-Instead of normally distributed noise, we can assume a t-distribution leading to 
+Instead of normally distributed noise we can assume a t-distribution, leading to 
 outliers in the observed target values.
 Top: $L2$, bottom: $L1$.
 
 \vfill
 
 \only<1>{ 
-\includegraphics[width=\textwidth]{figure/illustration_tdist_L2_1.png}
-\includegraphics[width=\textwidth]{figure/illustration_tdist_L1_1.png}
-
-\vfill
-Iteration 1
-}
-\only<2>{ 
-\includegraphics[width=\textwidth]{figure/illustration_tdist_L2_2.png}
-\includegraphics[width=\textwidth]{figure/illustration_tdist_L1_2.png}
-
-\vfill
-Iteration 2
-}
-\only<3>{ 
-\includegraphics[width=\textwidth]{figure/illustration_tdist_L2_3.png}
-\includegraphics[width=\textwidth]{figure/illustration_tdist_L1_3.png}
-
-\vfill
-Iteration 3
-}
-\only<4>{ 
 \includegraphics[width=\textwidth]{figure/illustration_tdist_L2_10.png}
 \includegraphics[width=\textwidth]{figure/illustration_tdist_L1_10.png}
 
 \vfill
 Iteration 10
 }
+\only<2>{ 
+\includegraphics[width=\textwidth]{figure/illustration_tdist_L2_100.png}
+\includegraphics[width=\textwidth]{figure/illustration_tdist_L1_100.png}
+
+\vfill
+Iteration 100
+}
+
 \end{frame}
 
 % ------------------------------------------------------------------------------
 
 \begin{frame}{LM illustration}
-Instead of using a GAM as base learner, we now use a simple linear model.
+Instead of using a GAM as base learner we now use a simple linear model.
 It follows that this is equivalent to applying gradient descent on linear 
 regression.
 Top: $L2$, bottom: $L1$.

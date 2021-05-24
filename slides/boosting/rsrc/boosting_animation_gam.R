@@ -22,13 +22,17 @@ plot_linear_boosting <- function(x,
     distribution,
     gaussian = mean(y),
     laplace = median(y),
-    quantile = quantile(y, probs = alpha),
     huber = median(y))
   
   overall_pred <- rep(init_constant, length(y))
   pseudo_res <- y
   coefs <- matrix(0L, nrow = iteration + 1L, ncol = ncol(X))
-  ylim <- c(min(y) - mean(y), max(y))
+  
+  ylim <- switch(
+    distribution,
+    gaussian = c(min(y) - mean(y), max(y)),
+    laplace = c(-1.5, 1.5),
+    huber = c(min(y) - mean(y), max(y)))
   
   preds <- list(overall_pred)
   
@@ -42,7 +46,6 @@ plot_linear_boosting <- function(x,
       distribution,
       gaussian = y - overall_pred,
       laplace = sign(y - overall_pred),
-      quantile = ifelse(y > overall_pred, alpha, -(1L - alpha)),
       huber = ifelse(
         abs(y - overall_pred) <= alpha, 
         y - overall_pred, 
@@ -99,6 +102,8 @@ plot_linear_boosting <- function(x,
     y = y, 
     xend = x, 
     yend = preds[[iteration]])
+  
+  res_dt[, len_vertical := yend - y]
   
   p_1 <- p_1 + ggplot2::geom_segment(
     res_dt,
