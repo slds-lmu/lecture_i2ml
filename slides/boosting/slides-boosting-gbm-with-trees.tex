@@ -8,7 +8,7 @@
 \newcommand{\titlefigure}{figure/gbm_anim_51.png}
 \newcommand{\learninggoals}{
   \item Adapting gradient boosting process for trees
-  \item Understanding how model structure influences interaction depth
+  \item Understanding the relationship between model structure and interaction depth
   \item Gradient boosting for multiclass with trees
 }
 
@@ -169,11 +169,11 @@ Repeat step (1) to (3):
 
 \begin{vbframe}{Example 2}
 
-\textbf{Simulation setting:}
+This \href{http://arogozhnikov.github.io/2016/06/24/gradient_boosting_explained.html}{\textcolor{blue}{website}} shows on various 3D examples how tree depth and number of iterations influence the model fit of a GBM with trees. 
 \begin{itemize}
   \item Given: 2-dimensional regression problem
   \item Aim: reconstruct $ y = \fx = f (x_1, x_2) $
-  \item Link: \href{http://arogozhnikov.github.io/2016/06/24/gradient_boosting_explained.html}{Open in browser}
+  %\item Link: \href{http://arogozhnikov.github.io/2016/06/24/gradient_boosting_explained.html}{Open in browser}
 \end{itemize}
 
 \begin{center}
@@ -304,8 +304,8 @@ Repeat step (1) to (3):
 
 \begin{vbframe}{Model structure and Interaction Depth}
 
-The model structure of a gradient boosting model with trees depends highly on the chosen
-tree or interaction depth.
+The model structure of a gradient boosting model with trees is influenced by the chosen
+tree / interaction depth of $\bmm(\xv)$.
 $$
 f(\xv) =  \sum_{m=1}^M \betam \bmm(\xv)
 $$
@@ -316,11 +316,11 @@ $$
 \begin{column}{0.6\textwidth}
 When using stumps (depth = 1), the resulting model is an additive model without any interactions:\\
 $$
-f(\xv) = \sum_{j=1}^p f(x_j)
+f(\xv) = \sum_{j=1}^p f_j(x_j)
 $$
-When also including trees with depth of 2, also 2-way interactions are included and we get:\\
+When also including trees with a depth of 2, 2-way interactions are included and we get:\\
 $$
-f(\xv) = \sum_{j=1}^p f(x_j) + \sum_{j \neq k} f(x_j, x_k)
+f(\xv) = \sum_{j=1}^p f_j(x_j) + \sum_{j \neq k} f_{j,k}(x_j, x_k)
 $$
 \end{column}
 \begin{column}{0.4\textwidth}
@@ -336,12 +336,12 @@ $$
 
 \textbf{Simulation setting:}
 \begin{itemize}
-\item Given: two features $x_1$ and $x_2$ and one numeric target variable $y$ of 50 observations.
+\item Given: two features $x_1$ and $x_2$ and one numeric target variable $y$ of 500 observations.
 \item $x_1$ and $x_2$ are uniformly distributed between -1 and 1.
 \item Target function: $y^{(i)} = x_1^{(i)} -  x_2^{(i)} + 5\cos(5 x_2^{(i)}) \cdot x_1^{(i)} + \epsilon^{(i)}$ with $\epsilon^{(i)} \sim \mathcal{N}(0, 1)$, $\forall i \in \{1, \dots, 500\}$.
 \end{itemize} 
-
-We fit two tree-based GBMs, one with interaction depth of 1 (GAM) and one with interaction depth of 2 (all possible interactions included) and compare the results on 1D-, 2D-PDPs and 3D surface plots.
+\vspace*{1cm}
+We fit two tree-based GBMs, one with an interaction depth (ID) of 1 (GAM) and one with an interaction depth of 2 (all possible interactions included) and compare the results on 1D-, 2D-PDPs and 3D surface plots.
 
 \framebreak
 
@@ -424,12 +424,12 @@ $$ \ctmt = \argmin_{c} \sum_{\xi \in \Rtm} L(\yi, \fmd(\xi) + c). $$
 \framebreak
 
 An alternative approach ist to directly fit a loss optimal tree.
-The loss function is then defined by:
+The risk function is then defined by:
 $$
 \mathcal{R}(\mathcal{N}') = \sum_{i \in \mathcal{N}'} L(\yi, \fmd(\xi) + c)
 $$
 
-with $\mathcal{N}'$ being the indeces of a specific (left or right) node after splitting.
+with $\mathcal{N}'$ being the indeces of a specific (left or right) node after splitting and $c$ being a constant value added to the current model for this node.
 
 Thus, instead of having a two-step approach of first fitting a tree for the pseudo-residuals of the current model and then finding the optimal value for $c$, we now directly build tree that finds $c$ loss optimally. Since $c$ is unknown, it needs to be determined, which can either be done by a line search or by taking the derivative:
 $$
@@ -439,6 +439,7 @@ $$
 \framebreak
 \input{algorithms/gradient_boosting_tree_algorithm_altern.tex}
 
+The algorithm based on the CART algorithm of Breiman shows one partitioning step. The constant $c$ is found for each node as described before. 
 \end{vbframe}
 
 % ------------------------------------------------------------------------------
