@@ -35,9 +35,16 @@ ggsave("../figure/fig-gb-concept-1.png", pl2, width = 7, height = 3)
 
 res = y #- mean(y)
 number = seq_along(x)
-label = as.character(sapply(number, function(x) bquote(f~( bold(x) ^.(x)))))
 
-res_data = data.frame(x = x, y = res, label = label)
+#label of the points
+label = as.character(sapply(number, function(x) bquote(f~( bold(x) ^(.(x))))))
+
+# show label only at some points 
+show_label = rep(FALSE, length(label))
+show_label[c(3,4,6)] = TRUE
+
+
+res_data = data.frame(x = x, y = res, label = label, show_label = show_label)
 pl_arrow = data.frame(x = x, x_end=x, y = res-0.15, y_end=res+0.15)
 
 
@@ -53,11 +60,16 @@ pl3 = ggplot(res_data, aes(x=x, y=y)) +
 
 # add labels
 
-pl4 <- pl3 + geom_label_repel(data = res_data[res_data$x<5.5, ],aes(label = label),
-  #geom_label_repel(aes(label = deparse(bquote(f~( bold(x) ^.(number))))),
-                   box.padding   = 0.35, 
-                   point.padding = 1,
-                   segment.color = 'grey50', parse= TRUE)
+pl4 <- pl3 + geom_label_repel(data = res_data[res_data$show_label, ],aes(label = label),
+                   box.padding   = 1, 
+                   point.padding = 0,
+                   #segment.color = 'grey50', 
+                   max.overlaps = Inf,
+                   nudge_x = 1,
+                   nudge_y = .1,
+                   segment.curvature = -1e-20,
+                   #arrow = arrow(length = unit(0.015, "npc")),
+                   parse= TRUE)
 
 
 ggsave("../figure/fig-gb-concept-2.png", pl4, height = 4, width = 3.3)
