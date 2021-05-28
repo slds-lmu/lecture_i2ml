@@ -50,10 +50,10 @@ plot_prediction <- function (learner, task) {
 
 #-------------------------------------------------------------------------------
 #spirals dataset
-spirals_generator = tgen("spirals")
+spirals_generator = tgen("spirals", sd = 0.1)
 
 # get spirals data 
-spirals_task = spirals_generator$generate(250) 
+spirals_task = spirals_generator$generate(n=100) 
 
 
 ################################################################################
