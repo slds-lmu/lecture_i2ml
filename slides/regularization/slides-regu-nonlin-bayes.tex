@@ -2,7 +2,7 @@
 \input{../../latex-math/basic-math}
 \input{../../latex-math/basic-ml}
 
-\newcommand{\titlefigure}{figure_man/bayes_reg.png}
+\newcommand{\titlefigure}{figure/fig-regu-nonlin-4.png}
 \newcommand{\learninggoals}{
   \item Know how regularization can be motivated from a Bayesian perspective
   \item Understand the correspondence between log-prior and regularization term
@@ -13,7 +13,7 @@
 
 \begin{document}
 
-\lecturechapter{non-linear and Bayes}
+\lecturechapter{Non-linear and Bayes Regularization}
 \lecture{Introduction to Machine Learning}
 
 %-------------------------------------------------------------------------------
@@ -87,7 +87,6 @@ network weights:
 
 %-------------------------------------------------------------------------------
 
-
 \section{Regularization from a Bayesian Perspective}
 
 \begin{vbframe} {Regularized Risk Minimization vs. Bayes}
@@ -118,7 +117,8 @@ $$
 The maximum a posteriori (MAP) estimator of $\thetab$ is now the minimizer of
 
 $$
-- \sumin \log p\left(\xi ~|~ \thetab\right) - \log q(\thetab).
+- \sumin \log p\left(\xi ~|~ \thetab\right) - \textcolor{blue}{\lambda} 
+\log q(\thetab).
 $$
 
 \begin{itemize}
@@ -140,10 +140,11 @@ $$
 \end{figure}
 
 \begin{itemize}
-  \item $L2$ regularization corresponds to a zero-centered Gaussian prior: 
-  $\theta_i \sim \mathcal{N}(0,\sigma^2)$.
-  \item $L1$ regularization corresponds to a zero-centered Laplace prior: 
-  $\theta_i \sim \mathit{Laplace}(0,b) = 
+  \item $L2$ regularization corresponds to a zero-mean Gaussian prior with 
+  identical variance in each dimension $j$: 
+  $\theta_j \sim \mathcal{N}(0, \tau^2)$.
+  \item The $L1$ analogue for is a zero-mean Laplace prior: 
+  $\theta_j \sim \mathit{Laplace}(0,b) = 
   \frac{1}{2b}\exp(-\frac{|\theta_i|}{b})$, where $b$ is a scale parameter.
   \item In both cases, as regularization strength $\lambda$ increases, the 
   variance of the prior decreases, which in turn shrinks the parameters.
@@ -151,7 +152,66 @@ $$
   
 \end{vbframe}
 
+% ------------------------------------------------------------------------------
 
+\begin{vbframe}{Example: Bayesian L2 regularization}
+
+\small
+
+We can easily see the equivalence of $L2$ regularization and assuming a Gaussian
+prior considering the example of \textbf{Ridge regression}.
+
+In the process, we repeatedly omit multiplicative and additive constants that 
+do not affect the minimization problem.
+
+\begin{itemize}
+  \small
+  \item We define a Gaussian prior with uncorrelated components for $\thetab$:
+  \begin{itemize}
+    \item $q(\thetab) = \prodjp \mathcal{N}(0, \tau^2)
+    \propto \exp \left( \frac{1}{2\tau^2} \sumjp \theta_j^2 \right),$ and
+  \item $- \log q(\thetab) \propto -\log \left( \exp \left( \frac{1}{2\tau^2} 
+  \sumjp \theta_j^2 \right)\right) \propto \sumjp \theta_j^2.$
+  \end{itemize}
+  \item The conditional distribution of $y ~|~ \xv$ in linear regression is
+  also Gaussian:
+  \begin{itemize}
+    \item $p\left(\xv ~|~ \thetab\right) \propto \exp \left( \frac{1}{2\sigma^2} 
+    \sumin \left(\yi - \fxit \right)^2 \right),$ and
+  \item $-\log p\left(\xv ~|~ \thetab\right) \propto \sumin \left(\yi - \fxit 
+  \right)^2.$
+  \end{itemize}
+  \item With this, the corresponding MAP estimation problem becomes:
+  \begin{eqnarray*}
+    \thetah^{\text{MAP}} &=& \argmin_{\thetab} \left(
+    - \sumin \log p\left(\xi ~|~ \thetab\right) - \lambda \cdot \sumjp \log
+    q(\theta_j)
+    \right) \\
+    &=& \argmin_{\thetab} \left(
+    \sumin \left(\yi - \fxit \right)^2 + \lambda \sumjp \theta_j^2
+    \right) \\
+    &=& \argmin_{\thetab} \left(\ydat - \Xmat \thetab\right)^\top \left(\ydat - 
+    \Xmat \thetab\right) + \lambda {\thetab}^T\thetab \\
+    &=& (\Xmat^T \Xmat  + \lambda \id)^{-1} \Xmat^T\ydat \\
+    &=& \thetah^{\text{Ridge}}.
+  \end{eqnarray*}
+\end{itemize}
+
+% ------------------------------------------------------------------------------
+
+  % \item We derive $\thetah_{\text{MAP}}$ as follows:
+  % \item Recall the Ridge estimator
+  % \begin{eqnarray*}
+  %   \thetah_{\text{Ridge}} &=& \argmin_{\thetab} \left(\ydat - \Xmat 
+  %   \thetab\right)^\top \left(\ydat - \Xmat \thetab\right) + \lambda 
+  %   \thetab^\top \thetab \\
+  %   &=& (\Xmat^T \Xmat  + \lambda \id)^{-1} \Xmat^T\ydat.
+  % \end{eqnarray*}
+% \end{itemize}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
 
 % \begin{vbframe} {Minimum Description Length}
 
