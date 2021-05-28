@@ -192,13 +192,15 @@ $$
 
 \begin{itemize}
   \item $L2$ regularization corresponds to a zero-mean Gaussian prior with 
-  identical variance in each dimension $j$: 
-  $\theta_j \sim \mathcal{N}(0, \tau^2)$.
+  constant variance:
+  $\theta_j \sim \mathcal{N}(0, \tau^2) ~ \forall j \in \{1, \dots , d\}$, 
+  $\tau > 0$.
   \item The $L1$ analogue for is a zero-mean Laplace prior: 
   $\theta_j \sim \mathit{Laplace}(0,b) = 
   \frac{1}{2b}\exp(-\frac{|\theta_i|}{b})$, where $b$ is a scale parameter.
-  \item In both cases, as regularization strength $\lambda$ increases, the 
-  variance of the prior decreases, which in turn shrinks the parameters.
+  \item In both cases, regularization strength $\lambda$ increases as the 
+  variance of the prior decreases: a prior probability mass more narrowly 
+  concentrated around 0 encourages shrinkage.
 \end{itemize}
   
 \end{vbframe}
@@ -207,85 +209,113 @@ $$
 
 \begin{vbframe}{Example: Bayesian L2 regularization}
 
-\small
-
-We can easily see the equivalence of $L2$ regularization and assuming a Gaussian
-prior considering the example of \textbf{Ridge regression}.
-
-\vfill
-
-In the process, we repeatedly omit multiplicative and additive constants that 
-do not affect the minimization problem.
-
-\vfill
+\small We can easily see the equivalence of $L2$ regularization and Gaussian 
+priors considering the example of a \textbf{Ridge} penalty term.
 
 \begin{itemize}
-
   \small
-  \item We define a Gaussian prior with uncorrelated components for $\thetab$, 
-  $\tau > 0$:
-  \begin{itemize}
-    \footnotesize
-    \item $q(\thetab) = \prodjp \mathcal{N}(0, \tau^2),$ and 
-    \item $- \log q(\thetab) = \frac{p}{2} \log(2\pi \tau^2) + \frac{1}{2\tau^2} 
-    \sumjp \theta_j^2$
-  \end{itemize}
-  
-  \item The conditional distribution of $\ydat$ in linear regression with 
-  Gaussian errors $\epsilon^{(i)} \sim \mathcal{N}(0, \sigma^2) ~ \forall i \in 
-  \setn$, $\sigma > 0$, is also Gaussian: 
+  \item We define a Gaussian prior with uncorrelated components for $\thetab$:
   \begin{footnotesize}
-  $$- \log p\left(\ydat ~|~ \xv, \thetab\right) = \frac{n}{2} \log (2\pi 
-  \sigma^2) + \frac{1}{2\sigma^2} \sumin \left(\yi - \fxit \right)^2.$$
-  \end{footnotesize}
-  
+    $$q(\thetab) = \mathcal{N}_d(\bm{0}, \mathit{diag}(\tau^2)) 
+    = \prod_{j = 1}^d  \mathcal{N}(0, \tau^2)  
+    = (2\pi\tau^2)^{-\frac{d}{2}} \exp \left( \frac{1}{2\tau^2} \sum_{j = 1}^d 
+    \theta_j^2 \right).$$
+  \end{footnotesize} 
+  \item With this, the MAP estimator becomes
+  \begin{footnotesize}
+  \begin{eqnarray*}
+    \thetah^{\text{MAP}} &=& argmin_{\thetab} \left(
+    - \log p\left(\xv ~|~ \thetab\right) - \log q(\thetab)
+    \right) \\
+    &=& \argmin_{\thetab} \left(
+    - \log p\left(\xv ~|~ \thetab\right) + \tfrac{d}{2} \log(2\pi \tau^2) +
+    \frac{1}{2\tau^2} \sum_{j = 1}^d \theta_j^2
+    \right) \\
+    &=& \argmin_{\thetab} \left(
+    - \log p\left(\xv ~|~ \thetab\right) + \frac{1}{2\tau^2} {\thetab}^T\thetab 
+    \right) \\
+    &=& \argmin_{\thetab} \left(
+    - \log p\left(\xv ~|~ \thetab\right) + \frac{1}{2\tau^2} \| \thetab \|_2^2
+    \right).
+  \end{eqnarray*}
+  \end{footnotesize} 
+  % \item $\frac{1}{\tau^2}$ controls prior precision, i.e., inverse variance, 
+  % and thus the amount of shrinkage.
+  \item We see how the inverse variance $\tau^2$ controls shrinkage.
+  % (e.g., for linear Ridge regression with 
+  % $\epsilon \sim \mathcal{N}(0, \sigma^2)$ we set 
+  % $\lambda = \frac{\sigma^2}{\tau^2}$).
 \end{itemize}
+  
+  % \item The conditional distribution of $\ydat$ in linear regression with 
+  % Gaussian errors $\epsilon^{(i)} \sim \mathcal{N}(0, \sigma^2) ~ \forall i \in 
+  % \setn$, $\sigma > 0$, is also Gaussian: 
+  % \begin{footnotesize}
+  % $$- \log p\left(\ydat ~|~ \xv, \thetab\right) = \frac{n}{2} \log (2\pi 
+  % \sigma^2) + \frac{1}{2\sigma^2} \sumin \left(\yi - \fxit \right)^2.$$
+  % \end{footnotesize}
 
-\framebreak
-\footnotesize
+% &=& \argmin_{\thetab} \left(
+% \tfrac{n}{2} \log (2\pi \sigma^2) + \frac{1}{2\sigma^2} \sumin \left(\yi -
+% \fxit \right)^2 + \tfrac{p}{2} \log(2\pi \tau^2) +
+% \frac{1}{2\tau^2} \sumjp \theta_j^2
+% \right) \\
+% &=& \argmin_{\thetab} \left( \frac{1}{\sigma^2} \sumin \left(\yi -
+% \fxit \right)^2 + \frac{1}{\tau^2} \sumjp \theta_j^2 \right) \\
+% &=& \argmin_{\thetab} \left(
+% \frac{1}{\sigma^2} \left(\ydat - \Xmat \thetab\right)^\top \left(\ydat - \Xmat
+% \thetab\right) + \frac{1}{\tau^2} {\thetab}^T\thetab
+% \right)
 
-With this, the MAP estimator becomes
+% \begin{eqnarray*}
+% \thetah^{\text{MAP}} &=& argmin_{\thetab} \left(
+% - \log p\left(\ydat ~|~ \xv, \thetab\right) - \log q(\thetab)
+% \right) \\
+% 
+% &=& \argmin_{\thetab} \left(
+% \tfrac{n}{2} \log (2\pi \sigma^2) + \frac{1}{2\sigma^2} \sumin \left(\yi -
+% \fxit \right)^2 + \tfrac{p}{2} \log(2\pi \tau^2) +
+% \frac{1}{2\tau^2} \sumjp \theta_j^2
+% \right) \\
+% &=& \argmin_{\thetab} \left( \frac{1}{\sigma^2} \sumin \left(\yi -
+% \fxit \right)^2 + \frac{1}{\tau^2} \sumjp \theta_j^2 \right) \\
+% &=& \argmin_{\thetab} \left(
+% \frac{1}{\sigma^2} \left(\ydat - \Xmat \thetab\right)^\top \left(\ydat - \Xmat
+% \thetab\right) + \frac{1}{\tau^2} {\thetab}^T\thetab
+% \right)
+% 
+% &=& \argmin_{\thetab} \left(
+% \tfrac{n}{2} \log (2\pi \sigma^2) + \frac{1}{2\sigma^2} \sumin \left(\yi -
+% \fxit \right)^2 + \tfrac{p}{2} \log(2\pi \tau^2) +
+% \frac{1}{2\tau^2} \sumjp \theta_j^2
+% \right) \\
+% &=& \argmin_{\thetab} \left( \frac{1}{\sigma^2} \sumin \left(\yi -
+% \fxit \right)^2 + \frac{1}{\tau^2} \sumjp \theta_j^2 \right) \\
+% &=& \argmin_{\thetab} \left(
+% \frac{1}{\sigma^2} \left(\ydat - \Xmat \thetab\right)^\top \left(\ydat - \Xmat
+% \thetab\right) + \frac{1}{\tau^2} {\thetab}^T\thetab
+% \right)
+% \end{eqnarray*}
 
-\begin{scriptsize}
-
-\begin{eqnarray*}
-\thetah^{\text{MAP}} &=& argmin_{\thetab} \left(
-- \log p\left(\ydat ~|~ \xv, \thetab\right) - \log q(\thetab)
-\right) \\
-&=& \argmin_{\thetab} \Bigg(
-\tfrac{n}{2} \log (2\pi \sigma^2) + \frac{1}{2\sigma^2} \sumin \left(\yi - 
-\fxit \right)^2 + \tfrac{p}{2} \log(2\pi \tau^2) + 
-\frac{1}{2\tau^2} \sumjp \theta_j^2
-\Bigg) \\
-&=& \argmin_{\thetab} \left( \frac{1}{\sigma^2} \sumin \left(\yi -
-\fxit \right)^2 + \frac{1}{\tau^2} \sumjp \theta_j^2 \right) \\
-&=& \argmin_{\thetab} \left(
-\frac{1}{\sigma^2} \left(\ydat - \Xmat \thetab\right)^\top \left(\ydat - \Xmat
-\thetab\right) + \frac{1}{\tau^2} {\thetab}^T\thetab
-\right)
-\end{eqnarray*}
-
-\end{scriptsize}
-
-\footnotesize
-Now, define $\lambda := \frac{\sigma^2}{\tau^2}$ -- note how higher prior 
-precision (i.e., lower variance) increases shrinkage! -- and set the derivative 
-to 0:
-
-\begin{scriptsize}
-\begin{eqnarray*}
-0 &=& \frac{1}{\lambda \tau^2} \left( - {\Xmat}^T \ydat + \thetab {\Xmat}^T \Xmat
-\right) + \frac{\lambda}{\sigma^2} \thetab
-\quad \Leftrightarrow \quad 0 = \frac{\sigma^2}{\tau^2} \left( - {\Xmat}^T \ydat 
-+ \thetab {\Xmat}^T \Xmat \right) + \lambda^2 \thetab \\
-0 &=&  - {\Xmat}^T \ydat + \thetab {\Xmat}^T \Xmat + \lambda \thetab 
-\quad \Leftrightarrow \quad 
-\thetab(\Xmat^T \Xmat  + \lambda \id) = {\Xmat}^T \ydat
-\end{eqnarray*}
-\end{scriptsize}
-
-$\Rightarrow \thetah^{\text{MAP}} = 
-(\Xmat^T \Xmat  + \lambda \id)^{-1} \Xmat^T\ydat  = \thetah^{\text{Ridge}}.$
+% \footnotesize
+% Now, define $\lambda := \frac{\sigma^2}{\tau^2}$ -- note how higher prior 
+% precision (i.e., lower variance) increases shrinkage! -- and set the derivative 
+% to 0:
+% 
+% \begin{scriptsize}
+% \begin{eqnarray*}
+% 0 &=& \frac{1}{\lambda \tau^2} \left( - {\Xmat}^T \ydat + \thetab {\Xmat}^T \Xmat
+% \right) + \frac{\lambda}{\sigma^2} \thetab
+% \quad \Leftrightarrow \quad 0 = \frac{\sigma^2}{\tau^2} \left( - {\Xmat}^T \ydat 
+% + \thetab {\Xmat}^T \Xmat \right) + \lambda^2 \thetab \\
+% 0 &=&  - {\Xmat}^T \ydat + \thetab {\Xmat}^T \Xmat + \lambda \thetab 
+% \quad \Leftrightarrow \quad 
+% \thetab(\Xmat^T \Xmat  + \lambda \id) = {\Xmat}^T \ydat
+% \end{eqnarray*}
+% \end{scriptsize}
+% 
+% $\Rightarrow \thetah^{\text{MAP}} = 
+% (\Xmat^T \Xmat  + \lambda \id)^{-1} \Xmat^T\ydat  = \thetah^{\text{Ridge}}.$
 
 \end{vbframe}
 
