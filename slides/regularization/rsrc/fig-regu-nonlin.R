@@ -97,7 +97,7 @@ decay = 0
 
 for(i in seq_along(size_list)){
   set.seed(1234)
-  learner = lrn("classif.nnet", size = size, decay = decay_list[[i]])
+  learner = lrn("classif.nnet", size = size_list[[i]], decay = decay )
   
   learner$train(spirals_task)
   weights <- learner$model$wts
