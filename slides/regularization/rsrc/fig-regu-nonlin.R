@@ -78,6 +78,8 @@ for(i in seq_along(decay_list)){
   
   prediction_plot <- plot_prediction(learner, spirals_task)
   
+  grid <- grid.arrange(prediction_plot,historgram_plot, weight_plot, ncol = 3, 
+                       top = textGrob(bquote(lambda==.(decay_list[[i]])), 
                                       gp = gpar(fontsize = 14))) 
   
   ggsave(filename = paste0("../figure/fig-regu-nonlin-", i ,".png"), 
