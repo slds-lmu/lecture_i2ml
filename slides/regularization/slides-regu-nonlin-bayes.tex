@@ -117,8 +117,7 @@ $$
 The maximum a posteriori (MAP) estimator of $\thetab$ is now the minimizer of
 
 $$
-- \sumin \log p\left(\xi ~|~ \thetab\right) - \textcolor{blue}{\lambda} 
-\log q(\thetab).
+- \log p\left(\xv ~|~ \thetab\right) - \log q(\thetab).
 $$
 
 \begin{itemize}
@@ -161,53 +160,77 @@ $$
 We can easily see the equivalence of $L2$ regularization and assuming a Gaussian
 prior considering the example of \textbf{Ridge regression}.
 
+\vfill
+
 In the process, we repeatedly omit multiplicative and additive constants that 
 do not affect the minimization problem.
 
+\vfill
+
 \begin{itemize}
+
   \small
-  \item We define a Gaussian prior with uncorrelated components for $\thetab$:
+  \item We define a Gaussian prior with uncorrelated components for $\thetab$, 
+  $\tau > 0$:
   \begin{itemize}
-    \item $q(\thetab) = \prodjp \mathcal{N}(0, \tau^2)
-    \propto \exp \left( \frac{1}{2\tau^2} \sumjp \theta_j^2 \right),$ and
-  \item $- \log q(\thetab) \propto -\log \left( \exp \left( \frac{1}{2\tau^2} 
-  \sumjp \theta_j^2 \right)\right) \propto \sumjp \theta_j^2.$
+    \footnotesize
+    \item $q(\thetab) = \prodjp \mathcal{N}(0, \tau^2),$ and 
+    \item $- \log q(\thetab) = \frac{p}{2} \log(2\pi \tau^2) + \frac{1}{2\tau^2} 
+    \sumjp \theta_j^2$
   \end{itemize}
-  \item The conditional distribution of $y ~|~ \xv$ in linear regression is
-  also Gaussian:
-  \begin{itemize}
-    \item $p\left(\xv ~|~ \thetab\right) \propto \exp \left( \frac{1}{2\sigma^2} 
-    \sumin \left(\yi - \fxit \right)^2 \right),$ and
-  \item $-\log p\left(\xv ~|~ \thetab\right) \propto \sumin \left(\yi - \fxit 
-  \right)^2.$
-  \end{itemize}
-  \item With this, the corresponding MAP estimation problem becomes:
-  \begin{eqnarray*}
-    \thetah^{\text{MAP}} &=& \argmin_{\thetab} \left(
-    - \sumin \log p\left(\xi ~|~ \thetab\right) - \lambda \cdot \sumjp \log
-    q(\theta_j)
-    \right) \\
-    &=& \argmin_{\thetab} \left(
-    \sumin \left(\yi - \fxit \right)^2 + \lambda \sumjp \theta_j^2
-    \right) \\
-    &=& \argmin_{\thetab} \left(\ydat - \Xmat \thetab\right)^\top \left(\ydat - 
-    \Xmat \thetab\right) + \lambda {\thetab}^T\thetab \\
-    &=& (\Xmat^T \Xmat  + \lambda \id)^{-1} \Xmat^T\ydat \\
-    &=& \thetah^{\text{Ridge}}.
-  \end{eqnarray*}
+  
+  \item The conditional distribution of $\ydat$ in linear regression with 
+  Gaussian errors $\epsilon^{(i)} \sim \mathcal{N}(0, \sigma^2) ~ \forall i \in 
+  \setn$, $\sigma > 0$, is also Gaussian: 
+  \begin{footnotesize}
+  $$- \log p\left(\ydat ~|~ \xv, \thetab\right) = \frac{n}{2} \log (2\pi 
+  \sigma^2) + \frac{1}{2\sigma^2} \sumin \left(\yi - \fxit \right)^2.$$
+  \end{footnotesize}
+  
 \end{itemize}
 
-% ------------------------------------------------------------------------------
+\framebreak
 
-  % \item We derive $\thetah_{\text{MAP}}$ as follows:
-  % \item Recall the Ridge estimator
-  % \begin{eqnarray*}
-  %   \thetah_{\text{Ridge}} &=& \argmin_{\thetab} \left(\ydat - \Xmat 
-  %   \thetab\right)^\top \left(\ydat - \Xmat \thetab\right) + \lambda 
-  %   \thetab^\top \thetab \\
-  %   &=& (\Xmat^T \Xmat  + \lambda \id)^{-1} \Xmat^T\ydat.
-  % \end{eqnarray*}
-% \end{itemize}
+With this, the MAP estimation becomes
+
+\begin{scriptsize}
+
+\begin{eqnarray*}
+&min_{\thetab}& \left(
+- \log p\left(\ydat ~|~ \xv, \thetab\right) - \log q(\thetab)
+\right) \\
+&=& min_{\thetab} \Bigg(
+\tfrac{n}{2} \log (2\pi \sigma^2) + \frac{1}{2\sigma^2} \sumin \left(\yi - 
+\fxit \right)^2 + \tfrac{p}{2} \log(2\pi \tau^2) + 
+\frac{1}{2\tau^2} \sumjp \theta_j^2
+\Bigg) \\
+&=& min_{\thetab} \left( \frac{1}{\sigma^2} \sumin \left(\yi -
+\fxit \right)^2 + \frac{1}{\tau^2} \sumjp \theta_j^2 \right) \\
+&=& min_{\thetab} \left(
+\frac{1}{\sigma^2} \left(\ydat - \Xmat \thetab\right)^\top \left(\ydat - \Xmat
+\thetab\right) + \frac{1}{\tau^2} {\thetab}^T\thetab
+\right)
+\end{eqnarray*}
+
+\end{scriptsize}
+
+Now, define $\lambda := \frac{\sigma^2}{\tau^2}$ and set the derivative to 0:
+
+\begin{scriptsize}
+\begin{eqnarray*}
+0 &=& \frac{1}{\lambda \tau^2} \left( - {\Xmat}^T \ydat + \thetab {\Xmat}^T \Xmat
+\right) + \frac{\lambda}{\sigma^2} \thetab
+\quad = \quad \frac{\sigma^2}{\tau^2} \left( - {\Xmat}^T \ydat + \thetab 
+{\Xmat}^T \Xmat \right) + \lambda^2 \thetab \\
+&=&  - {\Xmat}^T \ydat + \thetab {\Xmat}^T \Xmat + \lambda \thetab 
+% \quad = \quad
+% \thetab({\Xmat}^T \Xmat + \lambda \id) - {\Xmat}^T \ydat
+,
+\end{eqnarray*}
+\end{scriptsize}
+
+which yields the Ridge estimator 
+$\thetah^{\text{Ridge}} = (\Xmat^T \Xmat  + \lambda \id)^{-1} \Xmat^T\ydat.$
 
 \end{vbframe}
 
