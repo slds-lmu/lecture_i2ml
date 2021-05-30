@@ -170,14 +170,14 @@ Repeat step (1) to (3):
 \begin{vbframe}{Example 2}
 
 This \href{http://arogozhnikov.github.io/2016/06/24/gradient_boosting_explained.html}{\textcolor{blue}{website}} shows on various 3D examples how tree depth and number of iterations influence the model fit of a GBM with trees. 
-\begin{itemize}
-  \item Given: 2-dimensional regression problem
-  \item Aim: reconstruct $ y = \fx = f (x_1, x_2) $
-  %\item Link: \href{http://arogozhnikov.github.io/2016/06/24/gradient_boosting_explained.html}{Open in browser}
-\end{itemize}
+% \begin{itemize}
+%   \item Given: 2-dimensional regression problem
+%   \item Aim: reconstruct $ y = \fx = f (x_1, x_2) $
+%   %\item Link: \href{http://arogozhnikov.github.io/2016/06/24/gradient_boosting_explained.html}{Open in browser}
+% \end{itemize}
 
 \begin{center}
-\includegraphics[width=0.45\textwidth]{figure_man/gbm_anim/gbm_tree_anim_depth_2_target_3.png}
+\includegraphics[width=0.7\textwidth]{figure_man/gbm_anim/old/gbm5.jpg}
 \end{center}
 
 
@@ -314,14 +314,16 @@ $$
 \begin{footnotesize}
 \begin{columns}[T]
 \begin{column}{0.6\textwidth}
-When using stumps (depth = 1), the resulting model is an additive model without any interactions:\\
+When using stumps (depth = 1), the resulting model is an additive model (GAM) without any interactions:\\
 $$
-f(\xv) = \sum_{j=1}^p f_j(x_j)
+f(\xv) = f_0 + \sum_{j=1}^p f_j(x_j)
 $$
 When also including trees with a depth of 2, 2-way interactions are included and we get:\\
 $$
-f(\xv) = \sum_{j=1}^p f_j(x_j) + \sum_{j \neq k} f_{j,k}(x_j, x_k)
+f(\xv) = f_0 + \sum_{j=1}^p f_j(x_j) + \sum_{j \neq k} f_{j,k}(x_j, x_k)
 $$
+
+with $f_0$ being a constant intercept.
 \end{column}
 \begin{column}{0.4\textwidth}
 \includegraphics[width=0.8\textwidth]{figure/boosting_interact_expl1.PNG}
@@ -340,32 +342,47 @@ $$
 \item $x_1$ and $x_2$ are uniformly distributed between -1 and 1.
 \item Target function: $y^{(i)} = x_1^{(i)} -  x_2^{(i)} + 5\cos(5 x_2^{(i)}) \cdot x_1^{(i)} + \epsilon^{(i)}$ with $\epsilon^{(i)} \sim \mathcal{N}(0, 1)$, $\forall i \in \{1, \dots, 500\}$.
 \end{itemize} 
-\vspace*{1cm}
-We fit two tree-based GBMs, one with an interaction depth (ID) of 1 (GAM) and one with an interaction depth of 2 (all possible interactions included) and compare the results on 1D-, 2D-PDPs and 3D surface plots.
+\vspace*{0.3cm}
+\begin{columns}
+\column{4.5cm}
+We fit two tree-based GBMs, one with an interaction depth (ID) of 1 (GAM) and one with an interaction depth of 2 (all possible interactions included).
 
+\column{5.5cm}
+\vspace*{-0.3cm}
+\begin{center}
+\includegraphics[width=\textwidth]{figure_man/boosting_interaction_targetfunction3D.PNG}
+\end{center}
+\end{columns}
 \framebreak
 
-\textbf{GBM with interaction depth of 1}\\
-No interactions are modelled: ICE curves show only additive shifts.
+\textbf{GBM with interaction depth of 1 (GAM)}\\
+No interactions are modelled: Marginal effects of $x_1$ and $x_2$ add up to joint effect (plus the constant intercept $\hat{f_0} = -0.06$)
 
 \begin{center}
-\includegraphics[width=0.8\textwidth]{figure_man/boosting_interaction_example_gam.PNG}
+\includegraphics[width=0.4\textwidth]{figure_man/boosting_interaction_example_gam.png}
+\includegraphics[width=0.45\textwidth]{figure/interaction_td1_d3.png}
 \end{center}
+\begin{align*}
+\hat{f}(-0.999,-0.998) &= \hat{f_0} + \hat{f_1}(-0.999) + \hat{f_2}(-0.998)\\ 
+&= -0.06 + 0.24 + 0.85 = 1.03
+\end{align*}
 
+\framebreak
 \textbf{GBM with interaction depth of 2}\\
-Interactions between $x_1$ and $x_2$ are modelled: ICE curves show that interactions are present and 2D plot shows joint effect.
+Interactions between $x_1$ and $x_2$ are modelled: Marginal effects of $x_1$ and $x_2$ do NOT add up to joint effect due to interaction effects.
 
 \begin{center}
-\includegraphics[width=0.8\textwidth]{figure_man/boosting_interaction_example_ID2.PNG}
+\includegraphics[width=0.4\textwidth]{figure_man/boosting_interaction_example_ID2.PNG}
+\includegraphics[width=0.48\textwidth]{figure/interaction_td2_d3.png}
 \end{center}
 
-\framebreak
-Comparison of ID = 1 (left), ID =2 (right) and target function (bottom).
-\begin{center}
-\includegraphics[width=0.47\textwidth]{figure_man/boosting_interaction_depth1fit3D.PNG}
-\includegraphics[width=0.47\textwidth]{figure_man/boosting_interaction_depth2fit3D.PNG}
-\includegraphics[width=0.47\textwidth]{figure_man/boosting_interaction_targetfunction3D.PNG}
-\end{center}
+% \framebreak
+% Comparison of ID = 1 (left), ID =2 (right) and target function (bottom).
+% \begin{center}
+% \includegraphics[width=0.47\textwidth]{figure_man/boosting_interaction_depth1fit3D.PNG}
+% \includegraphics[width=0.47\textwidth]{figure_man/boosting_interaction_depth2fit3D.PNG}
+% \includegraphics[width=0.47\textwidth]{figure_man/boosting_interaction_targetfunction3D.PNG}
+% \end{center}
 
 \end{vbframe}
 % ------------------------------------------------------------------------------
