@@ -114,3 +114,26 @@ for(i in seq_along(size_list)){
          plot = grid, width = 3, height = 3) 
   
 }
+
+folds = 10; reps = 5; by = 3
+#folds = 2; reps = 1; by = 10
+decay = 0.01
+size_list = seq(1, 100, by = by)
+
+# this might run for 5 min
+rdesc = rsmp("repeated_cv", folds = folds, repeats = reps)
+lrns = lapply(size_list, function(s) lrn("classif.nnet", size = s, decay = decay))
+gg = benchmark_grid(tasks = spirals_task, resamplings = rdesc, learners = lrns)
+br = benchmark(gg)
+a = br$aggregate(measures = msr("classif.ce"), params = TRUE)
+a = mlr3misc::unnest(a, "params")
+p = ggplot(data = a, aes(x = size, y = classif.ce)) +
+  geom_line() + 
+  xlab("size hidden layer") + ylab("classif err")
+#print(p)
+
+ggsave(filename = paste0("../figure/fig-regu-nonlin-svr.png"), 
+  plot = p, width = 3, height = 3) 
+
+
+
