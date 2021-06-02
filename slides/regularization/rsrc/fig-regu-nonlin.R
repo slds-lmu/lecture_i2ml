@@ -92,8 +92,8 @@ for(i in seq_along(decay_list)){
 ################################################################################
 
 
-size_list = list(1, 5, 10, 15, 30, 60)
-decay = 0
+size_list = list(1, 2, 3, 5, 10, 100)
+decay = 0.001
 
 for(i in seq_along(size_list)){
   set.seed(1234)
@@ -115,10 +115,32 @@ for(i in seq_along(size_list)){
   
 }
 
-folds = 10; reps = 5; by = 3
-#folds = 2; reps = 1; by = 10
-decay = 0.01
-size_list = seq(1, 100, by = by)
+#-------------------------------------------------------------------------------
+
+folds = 10; reps = 5; 
+size = 10
+decay_list = seq(0, 0.02, length.out = 20)
+
+# this might run for 5 min
+rdesc = rsmp("repeated_cv", folds = folds, repeats = reps)
+lrns = lapply(decay_list, function(d) lrn("classif.nnet", size = size, decay = d))
+gg = benchmark_grid(tasks = spirals_task, resamplings = rdesc, learners = lrns)
+br = benchmark(gg)
+a = br$aggregate(measures = msr("classif.ce"), params = TRUE)
+a = mlr3misc::unnest(a, "params")
+p = ggplot(data = a, aes(x = decay, y = classif.ce)) +
+  geom_line() + 
+  xlab("lambda") + ylab("classif err")
+#print(p)
+
+ggsave(filename = paste0("../figure/fig-regu-nonlin-srm-1.png"), 
+  plot = p, width = 6, height = 3) 
+
+#-------------------------------------------------------------------------------
+
+folds = 10; reps = 5; by = 1
+decay = 0.001
+size_list = seq(1, 30, by = by)
 
 # this might run for 5 min
 rdesc = rsmp("repeated_cv", folds = folds, repeats = reps)
@@ -132,8 +154,7 @@ p = ggplot(data = a, aes(x = size, y = classif.ce)) +
   xlab("size hidden layer") + ylab("classif err")
 #print(p)
 
-ggsave(filename = paste0("../figure/fig-regu-nonlin-svr.png"), 
-  plot = p, width = 3, height = 3) 
-
+ggsave(filename = paste0("../figure/fig-regu-nonlin-srm-2.png"), 
+  plot = p, width = 6, height = 3) 
 
 
