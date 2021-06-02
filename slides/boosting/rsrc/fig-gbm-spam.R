@@ -63,19 +63,48 @@ trajectories_dt <- do.call(rbind, do.call(rbind, trajectories))
 trajectories_dt$tree_depth <- as.factor(trajectories_dt$tree_depth)
 
 saveRDS(trajectories_dt, "fig-gbm-spam-data.RDS")
+# trajectories_dt <- readRDS("fig-gbm-spam-data.RDS")
 
-p_1 <- ggplot2::ggplot(
-  trajectories_dt,
-  ggplot2::aes(x = trees, y = errors, col = tree_depth)) +
-  ggplot2::geom_line() +
-  ggplot2::theme_minimal() +
-  ggplot2::ylim(c(0.1, 1.5)) +
-  ggplot2::xlab("iterations") +
-  ggplot2::ylab("mean classification error") +
-  ggplot2::scale_color_viridis_d(end = 0.9, name = "tree depth") +
-  ggplot2::facet_grid(cols = vars(shrinkage)) +
-  ggplot2::ggtitle("shrinkage")
+plots <- lapply(
+  shrinkage_params,
+  function(i) {
+    ggplot2::ggplot(
+      trajectories_dt[shrinkage == i],
+      ggplot2::aes(x = trees, y = errors, col = tree_depth)) +
+      ggplot2::geom_line() +
+      ggplot2::theme_minimal() +
+      ggplot2::ylim(c(0.1, 1.5)) +
+      ggplot2::xlab("iterations") +
+      ggplot2::ylab("mean classification error") +
+      ggplot2::scale_color_viridis_d(end = 0.9, name = "tree depth") +
+      ggplot2::ggtitle(sprintf("shrinkage = %.3f", i))})
 
-# load("gbm_spam_results.RData")
+idx_best <- which.min(trajectories_dt$errors)
+trajectories_dt[idx_best]
 
-ggplot2::ggsave("../figure/gbm_spam.png", p_1, height = 3L, width = 8L)
+plots[[1]] <- plots[[1]] +
+  ggplot2::geom_segment(
+    x = 1000L,
+    xend = 2500L,
+    y = 0.1,
+    yend = 0.3,
+    color = "red",
+    arrow = ggplot2::arrow(length = ggplot2::unit(0.03, "npc"))) +
+  ggplot2::geom_point(
+    ggplot2::aes(
+      x = trajectories_dt[idx_best, trees],
+      y = trajectories_dt[idx_best, errors]),
+    size = 1.1,
+    color = "red")
+
+ggplot2::ggsave(
+  "../figure/gbm_spam.png",
+  ggpubr::ggarrange(
+    plots[[1]], 
+    plots[[2]],
+    plots[[3]],
+    ncol = 3L, 
+    common.legend = TRUE,
+    legend = "right"),
+  height = 3L,
+  width = 9L)
