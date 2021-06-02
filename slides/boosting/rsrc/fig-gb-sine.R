@@ -52,14 +52,13 @@ plot_gbm <- function(data, noise, shrinkage = 0.1) {
   
   data.table::setnames(data_pred, c("x", "M", "y"))
   
-  ggplot2::ggplot(data, aes(x = x, y = y)) +
+  ggplot2::ggplot(data, ggplot2::aes(x = x, y = y)) +
     ggplot2::geom_point() +
     ggplot2::geom_step(
       data_pred,
-      mapping = aes(x = x, y = y, col = M)) +
+      mapping = ggplot2::aes(x = x, y = y, col = M)) +
     ggplot2::ggtitle(sprintf("y = sin(x) + N(0, %.1f)", noise)) +
-    ggplot2::scale_color_manual(
-      values = c("darkgray", "red", "orange", "blue")) +
+    ggplot2::scale_color_viridis_d(end = 0.9, direction = -1L) +
     ggplot2::theme_minimal()
 
 }
@@ -69,7 +68,8 @@ p <- gridExtra::grid.arrange(
   plot_gbm(data, noise = 0.2),
   nrow = 1L)
 
-ggplot2::ggsave("../figure/gbm_sine.png", p, height = 4L, width = 8L)
+ggplot2::ggsave("../figure/gbm_sine.png", p, height = 3.2, width = 8L)
+
 ggplot2::ggsave(
   "../figure/gbm_sine_title.png", 
   plot_gbm(data, noise = 0.2) + ggplot2::ggtitle(""), 
