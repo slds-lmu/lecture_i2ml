@@ -21,6 +21,8 @@ task = makeRegrTask(data = dat, target = "y")
 learner = makeLearner("regr.gbm", par.vals = list(interaction.depth = 1))
 set.seed(123)
 mod = train(learner, task)
+
+# create PDP plots for x1 and x2
 model = Predictor$new(mod, data = dat)
 effect1 = FeatureEffect$new(model, method = "pdp", grid.size = 20, feature = "x1")
 p1 = effect1$plot() + ylab(expression(paste(hat(f)[1]))) + ylim(-0.75, 1) +
@@ -47,6 +49,7 @@ p2 = effect2$plot()+ ylab(expression(paste(hat(f)[2]))) + ylim(-0.9, 1.2) +
 #effect = FeatureEffect$new(model, method = "pdp", grid.size = 20, feature = c("x1","x2"))
 #p2d = effect$plot()
 
+# save PDP plots
 p = gridExtra::grid.arrange(p1,p2)#, layout_matrix = rbind(c(1,3),c(2,3)))
 ggsave(file = "figure_man/boosting_interaction_example_gam.png", plot = p, width = 6, height = 5)
 
@@ -88,6 +91,8 @@ p3d %>% layout(scene = list(xaxis = list(title = "x1"), yaxis = list(title = "x2
 learner = makeLearner("regr.gbm", par.vals = list(interaction.depth = 2))
 set.seed(123)
 mod = train(learner, task)
+
+# create PDP plots for x1 and x2
 model = Predictor$new(mod, data = dat)
 effect1 = FeatureEffect$new(model, method = "pdp", grid.size = 20, feature = "x1")
 p1 = effect1$plot() + ylab(expression(paste(hat(f)[1]))) + ylim(-1, 1.2) +
@@ -112,6 +117,7 @@ p2 = effect2$plot() + ylab(expression(paste(hat(f)[2]))) + ylim(-1, 1.2) +
 #effect = FeatureEffect$new(model, method = "pdp", grid.size = 20, feature = c("x1","x2"))
 #p2d = effect$plot()
 
+# save PDP plots
 pint = gridExtra::grid.arrange(p1,p2)#, p2d, layout_matrix = rbind(c(1,3),c(2,3)))
 ggsave(file = "figure_man/boosting_interaction_example_ID2.png", plot = pint, width = 6, height = 5)
 
