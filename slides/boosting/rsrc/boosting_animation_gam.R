@@ -113,7 +113,7 @@ plot_linear_boosting <- function(x,
   p_2 <- ggplot2::ggplot(
     data.frame(x = x, y = pseudo_res), ggplot2::aes(x, y)) +
     ggplot2::geom_point(col = "blue", shape = 4L, size = 2L) +
-    ggplot2::ylab("residuals of current model") +
+    ggplot2::ylab("current pseudo-residuals") +
     ggplot2::ylim(ylim) +
     ggplot2::geom_line(
       mapping = ggplot2::aes(x = x, y = baselearner_pred / learning_rate),
