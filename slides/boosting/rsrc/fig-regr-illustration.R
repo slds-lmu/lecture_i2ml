@@ -44,7 +44,7 @@ plot_boosting <- function(x,
                           boosting_iters,
                           learning_rate = 0.1,
                           alpha = 0.2,
-                          height = 3L, 
+                          height = 2.5, 
                           width = 12L) {
   
   for (iteration in boosting_iters) {
