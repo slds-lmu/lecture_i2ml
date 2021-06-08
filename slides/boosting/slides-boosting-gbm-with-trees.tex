@@ -7,9 +7,9 @@
 
 \newcommand{\titlefigure}{figure/gbm_anim_51.png}
 \newcommand{\learninggoals}{
-  \item Adapting gradient boosting process for trees
-  \item Understanding the relationship between model structure and interaction depth
-  \item Gradient boosting for multiclass with trees
+  \item See how gradient boosting process is adapted for trees
+  \item Understand relationship between model structure and interaction depth
+  \item Understand multiclass extension for gradient boosting with trees
 }
 
 \title{Introduction to Machine Learning}
@@ -113,7 +113,7 @@ $\hat f^{[0](i)}(x) = \bar{y} \approx 0.2$.
 
 \begin{footnotesize}
 
-\textbf{Iteration 1:} (1) Calculate residuals $\tilde{r}^{[m](i)}$ and (2) 
+\textbf{Iteration 1:} (1) Calculate pseudo-residuals $\tilde{r}^{[m](i)}$ and (2) 
 fit a regression stump $b^{[m]}.$ %which is multiplied by the learning rate $\beta$% (here: $\hat \beta^{[1]} = 1$).
 
 \vfill
@@ -412,7 +412,7 @@ With $\ctmt = \betam \cdot \ctm$ in the case that $\betam$ is a constant learnin
 % ------------------------------------------------------------------------------
 
 \framebreak
-\begin{footnotesize}
+\begin{small}
 We do the same steps as before: (1) calculate the pseudo-residuals, (2) fit a tree against pseudo-residuals, \textbf{but now} we keep only the structure of the tree and optimize the $c$ parameter in a (further) post-hoc step.
 
 $$
@@ -436,11 +436,11 @@ $$ \ctmt = \argmin_{c} \sum_{\xi \in \Rtm} L(\yi, \fmd(\xi) + c). $$
 
 \end{center}
 
-\end{footnotesize}
+\end{small}
 
 \framebreak
 
-An alternative approach ist to directly fit a loss optimal tree.
+An alternative approach ist to directly fit a loss-optimal tree.
 The risk function is then defined by:
 $$
 \mathcal{R}(\mathcal{N}') = \sum_{i \in \mathcal{N}'} L(\yi, \fmd(\xi) + c)
@@ -448,9 +448,9 @@ $$
 
 with $\mathcal{N}'$ being the index set of a specific (left or right) node after splitting and $c$ being a constant value added to the current model for this node.
 
-Thus, instead of having a two-step approach of first fitting a tree to the pseudo-residuals of the current model and then finding the optimal value for $c$, we now directly build a tree that finds $c$ loss optimally. Since $c$ is unknown, it needs to be determined, which can either be done by a line search or by taking the derivative:
+Thus, instead of having a two-step approach of first fitting a tree to the pseudo-residuals of the current model and then finding the optimal value for $c$, we now directly build a tree that finds $c$ loss-optimally. Since $c$ is unknown, it needs to be determined, which can either be done by a line search or by taking the derivative:
 $$
-\frac{\delta{\mathcal{R}(\mathcal{N}')}}{\delta c} = \sum_{i \in \mathcal{N}'} \frac{\delta{L(\yi, \fmd(\xi) + c)}}{\delta f | f = \fmd + c} = 0
+\frac{\partial{\mathcal{R}(\mathcal{N}')}}{\partial c} = \sum_{i \in \mathcal{N}'} \frac{\partial{L(\yi, \fmd(\xi) + c)}}{\partial f \rvert_{f = \fmd + c}} = 0
 $$
 % ------------------------------------------------------------------------------
 \framebreak
@@ -466,22 +466,22 @@ The tree algorithm based on the CART algorithm of Breiman shows one partitioning
 
 \begin{itemize}
   \item From Friedman, J. H. - Greedy Function Approximation: A Gradient Boosting Machine (1999)
-  \item Determining the tree structure for each $\hat{b}^{[m]}_k$ by L2 loss works just like before in the 2-class problem.
-\item In the estimation of the $c$ values, so the heights of the terminal regions, however, all models depend on each other because of the definition
+  \item Determining the tree structure for each $\hat{b}^{[m]}_k$ by $L2$ loss works just like before in the 2-class problem.
+\item In the estimation of the $c$ values, i.e., the heights of the terminal regions, however, all models depend on each other because of the definition
 of $L$. Optimizing this is more difficult, so we will skip some details and present the main idea and results.
 \end{itemize}
 
 \framebreak
 
 \begin{itemize}
-  \item The post-hoc, loss optimal heights of the terminals $\hat{c}_{tk}^{[m]}$ are:
+  \item The post-hoc, loss-optimal heights of the terminals $\hat{c}_{tk}^{[m]}$ are:
   $$ 
-  \hat{c}_{tk}^{[m]} = - \argmin_{c_{tk}^{[m]} } \sum_{i=1}^n \sum_{k=1}^g \mathds{1}_{\{y = k\}} \ln \pi_k^{[m]}(\xv^{(i)}) \,,
+  \hat{c}_{tk}^{[m]} = - \argmin_{c_{tk}^{[m]} } \sum_{i=1}^n \sum_{k=1}^g \mathds{1}_{\{y = k\}} \ln \pi_k^{[m]}(\xv^{(i)}) \,.
   $$
 \item Softmax trafo: $\pi_k^{[m]}(\xv) = \frac{\exp(f_k^{[m]}(\xv))}{\sum_j \exp(f_j^{[m]}(\xv))},$ with 
-\item The k-th model:
+\item The $k$-th model:
   $
-  \hat{f}_k^{[m]}(\xv^{(i)})) = \hat{f}_k^{[m-1]}(\xv^{(i)}) + \sum_{t=1}^{T_k^{[m]}} \hat{c}_{tk}^{[m]} \mathds{1}_{\{\xv^{(i)} \in R_{tk}^{[m]}\}} 
+  \hat{f}_k^{[m]}(\xv^{(i)})) = \hat{f}_k^{[m-1]}(\xv^{(i)}) + \sum_{t=1}^{T_k^{[m]}} \hat{c}_{tk}^{[m]} \mathds{1}_{\{\xv^{(i)} \in R_{tk}^{[m]}\}}. 
   $
   % resulting from the multinomial loss function $L(y, f_1(\xv), \ldots f_g(\xv)) = - \sumkg \mathds{1}_{\{y = k\}} \ln \pikx$.
   %and $\pikx = \frac{\exp(f_k(\xv))}{\sum_j \exp(f_j(\xv))}$ as before.\medskip
