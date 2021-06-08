@@ -73,7 +73,7 @@ y^{(i)} &=  -1 + 0.2 \cdot x^{(i)} + 0.1 \cdot sin(x^{(i)}) + \epsilon^{(i)} \\
 
 % ------------------------------------------------------------------------------
 
-\begin{frame}{GAM illustration 1}
+\begin{frame}{GAM with $L2$ VS $L1$ loss}
 
 Top: $L2$ loss, bottom: $L1$ loss
 
@@ -87,6 +87,7 @@ Top: $L2$ loss, bottom: $L1$ loss
 \vfill
 
 Iteration 1
+
 }
 
 \only<2>{ 
@@ -123,12 +124,21 @@ Iteration 10
 Iteration 100
 }
 
+\vfill
+
+\footnotesize
+
+The nature of the pseudo-residuals affects gradual model fit: as $L1$ only 
+considers residuals' sign, the corresponding base learners change more strongly 
+with each iteration than $L2$'s approximation of ever smaller residuals.
+
 \end{frame}
 
 % ------------------------------------------------------------------------------
 
-\begin{frame}{GAM illustration 1}
-We can also use Huber loss, which is closer to $L2$ for large $\delta$ values and closer to $L1$ for 
+\begin{frame}{GAM with Huber loss}
+We can also use Huber loss, which is closer to $L2$ for large $\delta$ values 
+and closer to $L1$ for 
 smaller $\delta$ values. Top: $\delta$ = 2, bottom: $\delta$ = 0.2.
 
 \vfill
@@ -154,9 +164,9 @@ resembles $L2$ loss.
 
 % ------------------------------------------------------------------------------
 
-\begin{frame}{GAM illustration 2}
-Instead of normally distributed noise we can assume a t-distribution, leading to 
-outliers in the observed target values.
+\begin{frame}{GAM with outliers}
+Instead of normally distributed noise we can assume a $t$-distribution, leading 
+to outliers in the observed target values.
 Top: $L2$, bottom: $L1$.
 
 \vfill
@@ -176,14 +186,21 @@ Iteration 10
 Iteration 100
 }
 
+\vfill
+
+\footnotesize
+
+$L2$ loss is affected by outliers rather strongly, whereas $L1$ solely considers 
+residuals' sign and not their magnitude, resulting in a much smoother model.
+
 \end{frame}
 
 % ------------------------------------------------------------------------------
 
-\begin{frame}{LM illustration}
+\begin{frame}{LM with $L2$ VS $L1$ loss}
 Instead of using a GAM as base learner we now use a simple linear model.
-It follows that this is equivalent to applying gradient descent on linear 
-regression.
+% It follows that this is equivalent to applying gradient descent on linear 
+% regression.
 Top: $L2$, bottom: $L1$.
 
 \vfill
@@ -195,21 +212,23 @@ Top: $L2$, bottom: $L1$.
 \vfill
 Iteration 1
 }
-\only<2>{ 
-\includegraphics[width=\textwidth]{figure/illustration_gaussian_L2_lin_2.png}
-\includegraphics[width=\textwidth]{figure/illustration_gaussian_L1_lin_2.png}
 
-\vfill
-Iteration 2
-}
-\only<3>{ 
-\includegraphics[width=\textwidth]{figure/illustration_gaussian_L2_lin_3.png}
-\includegraphics[width=\textwidth]{figure/illustration_gaussian_L1_lin_3.png}
+% \only<2>{ 
+% \includegraphics[width=\textwidth]{figure/illustration_gaussian_L2_lin_2.png}
+% \includegraphics[width=\textwidth]{figure/illustration_gaussian_L1_lin_2.png}
+% 
+% \vfill
+% Iteration 2
+% }
+% \only<3>{
+% \includegraphics[width=\textwidth]{figure/illustration_gaussian_L2_lin_3.png}
+% \includegraphics[width=\textwidth]{figure/illustration_gaussian_L1_lin_3.png}
+% 
+% \vfill
+% Iteration 3
+% }
 
-\vfill
-Iteration 3
-}
-\only<4>{ 
+\only<2>{
 \includegraphics[width=\textwidth]{figure/illustration_gaussian_L2_lin_10.png}
 \includegraphics[width=\textwidth]{figure/illustration_gaussian_L1_lin_10.png}
 
@@ -217,13 +236,21 @@ Iteration 3
 Iteration 10
 }
 
-\only<5>{ 
+\only<3>{ 
 \includegraphics[width=\textwidth]{figure/illustration_gaussian_L2_lin_100.png}
 \includegraphics[width=\textwidth]{figure/illustration_gaussian_L1_lin_100.png}
 
 \vfill
 Iteration 100
 }
+
+\vfill
+
+\footnotesize
+For $L2$, as $\tilde r(f) = r(f)$, we find the optimal model in the very
+first iteration; only the multiplicative learning rate slows down optimization.
+In the $L1$ case the base learner LMs fit pseudo-residuals that differ from 
+model residuals, leading to a less monotonic optimization path.
 
 \end{frame}
 % 
@@ -272,6 +299,55 @@ Iteration 100
 % 
 % 
 % \end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{LM: gb vs gd}
+
+\footnotesize
+
+\begin{itemize}
+  \item As we have seen, boosting with LMs and $L2$ 
+  loss simply approaches the closed-form OLS solution with a speed determined by 
+  the learning rate $\beta$.
+  \item This is perfectly equivalent to fitting an LM via 
+  \textbf{gradient descent}, as a gradient step in parameter space is a 
+  gradient step in function space for this specific case.
+  \item Recall the parameter update for GD with learning rate $\beta$:
+  $\thetab^{[m+1]} \leftarrow \thetam - \beta \nabla_{\thetam} 
+  \riske(\thetam) =  
+  \thetam + \beta (-\Xmat^T \ydat + \Xmat^T\Xmat \thetam).$ \\
+  % $\Rightarrow \fh^{[m+1]} = \Xmat \left( \thetam + \beta (-\Xmat^T \ydat + 
+  % \Xmat^T\Xmat \thetam) \right).$
+  \item Now compute the update for a boosted LM with current model 
+  $\Xmat \thetam$ (note that adding a linear base learner to an LM is 
+  equivalent to updating its parameters):
+  \begin{eqnarray*}
+    \footnotesize
+    % &\thetab^{[m+1]}& = \argmin_{\thetab} \| (\ydat - \Xmat \thetam) - 
+    % \Xmat \thetab^{[m+1]}) \|^2_2 \\
+    \frac{\partial}{\partial \thetab^{[m+1]}} 
+    \| (\ydat - \Xmat \thetam) - \Xmat \thetab^{[m+1]}) \|^2_2 &=& 0 \\
+    -\Xmat^T (\ydat - \Xmat \thetam) + \Xmat^T\Xmat 
+    \thetab^{[m+1]} &=& 0 \\
+    \thetab^{[m+1]} &=& (\Xmat^T\Xmat)^{-1} \Xmat^T 
+    (\ydat - \Xmat \thetam) \\
+    \thetab^{[m+1]} &=& (\Xmat^T\Xmat)^{-1} \Xmat^T \ydat
+    - (\Xmat^T\Xmat)^{-1} \Xmat^T \Xmat \thetam \\
+    \thetab^{[m+1]} &=& (\Xmat^T\Xmat)^{-1} \Xmat^T \ydat
+    - \thetam % \quad \quad \textcolor{gray}{\rvert \cdot (-\Xmat^T\Xmat)} 
+    \\
+    \thetab^{[m+1]} &=& - \Xmat^T \ydat + \Xmat^T\Xmat 
+    \thetam.
+  \end{eqnarray*}
+  $\Rightarrow \fh^{[m+1]} = \Xmat \tilde \thetab^{[m+1]} = 
+  \Xmat \left( \thetam + \beta (-\Xmat^T \ydat + 
+  \Xmat^T\Xmat \thetam) \right).$
+\end{itemize}
+
+
+
+\end{vbframe}
 
 % ------------------------------------------------------------------------------
 
