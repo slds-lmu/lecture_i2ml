@@ -5,10 +5,10 @@
 \input{../../latex-math/ml-boosting.tex}
 \input{../../latex-math/ml-trees.tex}
 
-\newcommand{\titlefigure}{figure_man/illustration_tdist_L2_2.png}
+\newcommand{\titlefigure}{figure/illustration_title.png}
 \newcommand{\learninggoals}{
-  \item \textcolor{blue}{XXX}
-  \item \textcolor{blue}{XXX}
+  \item Understand impact of different loss functions and
+  \item Understand impact of different base learners for regression
 }
 
 \title{Introduction to Machine Learning}
@@ -19,7 +19,7 @@
 \lecturechapter{Gradient Boosting - Illustration}
 \lecture{Introduction to Machine Learning}
 
-
+% ------------------------------------------------------------------------------
 
 \begin{vbframe}{Gradient boosting illustration - GAM}
 
@@ -30,167 +30,235 @@ the $L1$ loss.\\
 
 \textbf{Reminder:} Pseudo-residuals
 \begin{itemize}
-\item $L2$: $\tilde{r} = r = y - f(\xv)$
-\item $L1$: $\tilde{r} = sign(y - f(\xv))$
+\item $L2$: $\tilde{r}(f) = r(f) = y - f(\xv)$
+\item $L1$: $\tilde{r}(f) = sign(y - f(\xv))$
 \end{itemize}
-We are looking at a regression task with one feature $\xv$ and a target $y$ with the following
-underlying true relationship:
+We consider a regression task with a single feature $x$ and target $y$, with 
+the following true underlying relationship:
 \vspace{-0.2cm}
 \begin{align*}
-y^{(i)} = & 4 + 3\xv^{(i)} + 5 \cdot sin(\xv^{(i)}) + \epsilon^{(i)} \quad \forall i \in \nset\\
-&\text{with } n = 50 \text{ and } \epsilon \sim \mathcal{N}(0,2)
+y^{(i)} &=  -1 + 0.2 \cdot x^{(i)} + 0.1 \cdot sin(x^{(i)}) + \epsilon^{(i)} \\
+&\text{with } n = 50 \text{ and } \epsilon^{(i)} \sim \mathcal{N}(0, 0.1) \quad 
+\forall i \in \nset
 \end{align*}
 
-\vspace{-0.3cm}
+\vfill
+
 \begin{figure}
-  \includegraphics[width=0.35\textwidth]{figure_man/illustration_data_normal.png}
+  \includegraphics[width = 0.45\textwidth]{figure/illustration_data_normal.png}
 \end{figure}
 
 \framebreak
+
+% ------------------------------------------------------------------------------
+
 \begin{enumerate}
-
-  \item
-    We start with the simplest model, the optimal constant -- mean of the target variable in the case of $L2$ loss and median in the case of $L1$ loss ($y$ is being scaled beforehand).
-
-  \item
-    To improve the model we calculate the pointwise the pseudo-residuals on the training data, and fit a GAM on the residuals.
-
-  \item
-    The GAM fitted on the residuals is then multiplied by a constant learning rate of $0.2$ and added to the previous model.
-
-  \item
-    This procedure is repeated multiple times.
-
+  \item We start with the simplest model, the optimal constant -- mean of the 
+  target variable in the case of $L2$ loss and median in the case of $L1$ loss.
+  \item We improve the model by calculating the pointwise 
+  pseudo-residuals on the training data, and fit a GAM on the residuals.
+  \begin{enumerate}
+    \item The GAM base learners model the conditional mean via cubic $B$-splines 
+    with 40 knots. 
+    % i.e., $\bmmxth = \sum_{k = 1}^{K + \ell} B_k^{(3)}(\xv)$, with $\ell = 3$ 
+    % and $K = 40$ knots.
+    \item In each step, the GAM fitted on the current pseudo-residuals is
+    multiplied by a constant learning rate of $0.2$ and added to the previous
+    model.
+    \item This procedure is repeated multiple times.
+  \end{enumerate}
 \end{enumerate}
-
-\vspace{-0.3cm}
-\begin{figure}
-  \includegraphics[width=0.4\textwidth]{figure_man/illustration_data_normal_scaled.png}
-\end{figure}
-
 
 \end{vbframe}
 
-\begin{frame}{GAM illustration 1}
-Top: L2 loss; Bottom: L1 loss
-\begin{center}
-\only<1>{ 
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L2_1.png}
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L1_1.png}
+% ------------------------------------------------------------------------------
 
+\begin{frame}{GAM with $L2$ VS $L1$ loss}
+
+Top: $L2$ loss, bottom: $L1$ loss
+
+\vfill
+
+% \begin{center}
+\only<1>{ 
+\includegraphics[width=\textwidth]{figure/illustration_gaussian_L2_1.png}
+\includegraphics[width=\textwidth]{figure/illustration_gaussian_L1_1.png}
+
+\vfill
 
 Iteration 1
-}
-\only<2>{ 
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L2_2.png}
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L1_2.png}
 
+}
+
+\only<2>{ 
+\includegraphics[width=\textwidth]{figure/illustration_gaussian_L2_2.png}
+\includegraphics[width=\textwidth]{figure/illustration_gaussian_L1_2.png}
+
+\vfill
 
 Iteration 2
 }
 \only<3>{ 
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L2_3.png}
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L1_3.png}
+\includegraphics[width=\textwidth]{figure/illustration_gaussian_L2_3.png}
+\includegraphics[width=\textwidth]{figure/illustration_gaussian_L1_3.png}
 
+\vfill
 
 Iteration 3
 }
 \only<4>{ 
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L2_10.png}
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L1_10.png}
+\includegraphics[width=\textwidth]{figure/illustration_gaussian_L2_10.png}
+\includegraphics[width=\textwidth]{figure/illustration_gaussian_L1_10.png}
 
+\vfill
 
 Iteration 10
 }
-\end{center}
+
+\only<5>{ 
+\includegraphics[width=\textwidth]{figure/illustration_gaussian_L2_100.png}
+\includegraphics[width=\textwidth]{figure/illustration_gaussian_L1_100.png}
+
+\vfill
+
+Iteration 100
+}
+
+\vfill
+
+\footnotesize
+
+The nature of the pseudo-residuals affects gradual model fit: as $L1$ only 
+considers residuals' sign, the corresponding base learners are less affected by very large or small values
+compared to $L2$ and hence lead to more moderate changes.%'s approximation of ever smaller residuals.
 
 \end{frame}
 
+% ------------------------------------------------------------------------------
 
-\begin{frame}{GAM illustration 1}
-We can also use Huber loss which is closer to $L2$ for large $\delta$ values and closer to $L1$ for 
-smaller $\delta$ values. Top: $\delta$ = 0.5; Bottom: $\delta$ = 2.
-\begin{center}
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_huber0.5_5.png}
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_huber2_5.png}
+\begin{frame}{GAM with Huber loss}
+We can also use Huber loss, which is closer to $L2$ for large $\delta$ values 
+and closer to $L1$ for 
+smaller $\delta$ values. Top: $\delta$ = 2, bottom: $\delta$ = 0.2.
 
+\vfill
 
-Iteration 5
-\end{center}
+\includegraphics[width=\textwidth]{figure/illustration_gaussian_huber_2_10.png}
+\includegraphics[width=\textwidth]{figure/illustration_gaussian_huber_02_10.png}
+
+\vfill
+
+Iteration 10
+
+%\vfill
+
+\footnotesize
+\begin{columns}[c]
+\begin{column}{0.75\textwidth}
+We see how for smaller $\delta$ (bottom) pseudo-residuals are often effectively
+bounded, resulting in $L1$-like behavior, while the upper plot more closely 
+resembles $L2$ loss.
+\end{column}
+\begin{column}{0.24\textwidth}
+\includegraphics[width=1.2\textwidth]{figure/fig-loss-huber-delta.png}
+\end{column}
+\end{columns}
+% The lower right plot shows that pseudo-residuals often take values of the upper and lower
+% bounds (depending on $\delta$) and thus the behaviour is closer to the $L1$ loss while the upper plots show a
+% similar behavior to the $L2$ loss. 
 
 \end{frame}
 
+% ------------------------------------------------------------------------------
 
+\begin{frame}{GAM with outliers}
+Instead of normally distributed noise we can assume a $t$-distribution, leading 
+to outliers in the observed target values.
+Top: $L2$, bottom: $L1$.
 
-\begin{frame}{GAM illustration 2}
-Instead of normally distributed noise, we can assume a t-distribution leading to outliers in the observed target values.
-Top: $L2$; Bottom: $L1$.
-\begin{center}
+\vfill
+
 \only<1>{ 
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_tdist_L2_1.png}
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_tdist_L1_1.png}
+\includegraphics[width=\textwidth]{figure/illustration_tdist_L2_10.png}
+\includegraphics[width=\textwidth]{figure/illustration_tdist_L1_10.png}
 
-
-Iteration 1
+\vfill
+Iteration 10
 }
 \only<2>{ 
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_tdist_L2_2.png}
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_tdist_L1_2.png}
+\includegraphics[width=\textwidth]{figure/illustration_tdist_L2_100.png}
+\includegraphics[width=\textwidth]{figure/illustration_tdist_L1_100.png}
 
-
-Iteration 2
+\vfill
+Iteration 100
 }
-\only<3>{ 
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_tdist_L2_3.png}
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_tdist_L1_3.png}
 
+\vfill
 
-Iteration 3
-}
-\only<4>{ 
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_tdist_L2_10.png}
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_tdist_L1_10.png}
+\footnotesize
 
+$L2$ loss is affected by outliers rather strongly, whereas $L1$ solely considers 
+residuals' sign and not their magnitude, resulting in a more robust model.
 
-Iteration 10
-}
-\end{center}
 \end{frame}
 
-\begin{frame}{LM illustration}
-Instead of using a GAM as base learner, we now use a simple linear model.
-It follows that this is equivalent to applying gradient descent on linear regression.
-Top: $L2$; Bottom: $L1$.
-\begin{center}
+% ------------------------------------------------------------------------------
+
+\begin{frame}{LM with $L2$ vs $L1$ loss}
+Instead of using a GAM as base learner we now use a simple linear model.
+% It follows that this is equivalent to applying gradient descent on linear 
+% regression.
+Top: $L2$, bottom: $L1$.
+
+\vfill
+
 \only<1>{ 
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L2_linear_1.png}
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L1_linear_1.png}
+\includegraphics[width=\textwidth]{figure/illustration_gaussian_L2_lin_1.png}
+\includegraphics[width=\textwidth]{figure/illustration_gaussian_L1_lin_1.png}
 
-
+\vfill
 Iteration 1
 }
-\only<2>{ 
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L2_linear_2.png}
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L1_linear_2.png}
 
+% \only<2>{ 
+% \includegraphics[width=\textwidth]{figure/illustration_gaussian_L2_lin_2.png}
+% \includegraphics[width=\textwidth]{figure/illustration_gaussian_L1_lin_2.png}
+% 
+% \vfill
+% Iteration 2
+% }
+% \only<3>{
+% \includegraphics[width=\textwidth]{figure/illustration_gaussian_L2_lin_3.png}
+% \includegraphics[width=\textwidth]{figure/illustration_gaussian_L1_lin_3.png}
+% 
+% \vfill
+% Iteration 3
+% }
 
-Iteration 2
-}
-\only<3>{ 
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L2_linear_3.png}
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L1_linear_3.png}
+\only<2>{
+\includegraphics[width=\textwidth]{figure/illustration_gaussian_L2_lin_10.png}
+\includegraphics[width=\textwidth]{figure/illustration_gaussian_L1_lin_10.png}
 
-
-Iteration 3
-}
-\only<4>{ 
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L2_linear_10.png}
-\includegraphics[width=0.55\textwidth]{figure_man/illustration_normal_L1_linear_10.png}
-
-
+\vfill
 Iteration 10
 }
-\end{center}
+
+\only<3>{ 
+\includegraphics[width=\textwidth]{figure/illustration_gaussian_L2_lin_100.png}
+\includegraphics[width=\textwidth]{figure/illustration_gaussian_L1_lin_100.png}
+
+\vfill
+Iteration 100
+}
+
+\vfill
+
+\footnotesize
+For $L2$, as $\tilde r(f) = r(f)$, we find the optimal model in the very
+first iteration; only the multiplicative learning rate slows down optimization.
+In the $L1$ case the base learner LMs fit pseudo-residuals that differ from 
+model residuals, leading to a less monotonic optimization path.
+
 \end{frame}
 % 
 % \textbf{Iteration 1:} Step 1 to 3
@@ -238,6 +306,54 @@ Iteration 10
 % 
 % 
 % \end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{LM: gb vs gd}
+
+\footnotesize
+
+\begin{itemize}
+  \item As we have seen, boosting with LMs and $L2$ 
+  loss simply approaches the closed-form OLS solution with a speed determined by 
+  the learning rate $\beta$.
+  \item This is perfectly equivalent to fitting an LM via 
+  \textbf{gradient descent}, as a gradient step in parameter space is a 
+  gradient step in function space for this specific case.
+  \item Recall the parameter update for GD with learning rate $\beta$:
+  $\thetab^{[m+1]} \leftarrow \thetam - \beta \cdot \nabla_{\thetam} 
+  \riske(\thetam) =  
+  \thetam + \beta (-\Xmat^T \ydat + \Xmat^T\Xmat \thetam).$ \\
+  \item Now compute the update for a boosted LM with current model 
+  $\Xmat \thetam$ (note that adding a linear base learner to an LM is 
+  equivalent to summing parameters):
+  \begin{eqnarray*}
+    \footnotesize
+    \frac{\partial}{\partial \thetab^{[m+1]}} 
+    \left \| (\ydat - \Xmat \thetam) - \Xmat \thetab^{[m+1]}) \right \|^2_2 
+    &=& 0 \\
+    -2\Xmat^T (\ydat - \Xmat \thetam) + 2\Xmat^T\Xmat 
+    \thetab^{[m+1]} &=& 0 \\
+    \thetab^{[m+1]} &=& (\Xmat^T\Xmat)^{-1} \Xmat^T 
+    (\ydat - \Xmat \thetam) \\
+    \thetab^{[m+1]} &=& (\Xmat^T\Xmat)^{-1} \Xmat^T \ydat
+    - (\Xmat^T\Xmat)^{-1} \Xmat^T \Xmat \thetam \\
+    \thetab^{[m+1]} &=& (\Xmat^T\Xmat)^{-1} \Xmat^T \ydat
+    - \thetam % \quad \quad \textcolor{gray}{\rvert \cdot (-\Xmat^T\Xmat)} 
+    \\
+    \thetab^{[m+1]} &=& - \Xmat^T \ydat + \Xmat^T\Xmat 
+    \thetam.
+  \end{eqnarray*}
+  $\Rightarrow \fh^{[m+1]} = \Xmat \tilde \thetab^{[m+1]} = 
+  \Xmat \left( \thetam + \beta (-\Xmat^T \ydat + 
+  \Xmat^T\Xmat \thetam) \right).$
+\end{itemize}
+
+
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
 
 \endlecture
 \end{document}

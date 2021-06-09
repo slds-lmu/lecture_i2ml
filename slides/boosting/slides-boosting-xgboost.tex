@@ -56,7 +56,7 @@ State-of-the-art machine learning method:
 \vskip -1em
 \begin{multline*}
   \riskr^{[m]} = \sum_{i=1}^{n} L\left(\yi, \fmd(\xi) + \bmm(\xi)\right)\\
-   + \gamma J_1(\bmm) + \lambda J_2(\bmm) + \alpha J_3(\bmm),
+   + \lambda_1 J_1(\bmm) + \lambda_2 J_2(\bmm) + \lambda_3 J_3(\bmm),
 \end{multline*}
 
 
@@ -68,29 +68,29 @@ $J_2(\bmm) = \left\|\mathbf{c}^{[m]}\right\|^2_2$ and $J_3(\bmm) = \left\|\mathb
 
 \lz
 
-\textbf{Note:} In the following we define $J(\bmm) := \gamma J_1(\bmm) + \lambda J_2(\bmm) + \alpha J_3(\bmm)$ to simplify the notation.
+\textbf{Note:} In the following we define $J(\bmm) := \lambda_1 J_1(\bmm) + \lambda_2 J_2(\bmm) + \lambda_3 J_3(\bmm)$ to simplify the notation.
 
 \framebreak
 
-Recall the way a tree base learner $\bmm(\xv)$ can be fitted loss-optimally in gradient boosting:
+%Recall the way a tree base learner $\bmm(\xv)$ can be fitted loss-optimally in gradient boosting:
 
-$$
-\tilde{\mathbf{c}}^{[m]} = \argmin_{(c_1,\dots,c_{T^{[m]}})}\sum_{i = 1}^n L(\yi, \fmd(\xi) + \bmm(\xi, c_1,\dots,c_{T^{[m]}})).
-$$
+%$$
+%\tilde{\mathbf{c}}^{[m]} = \argmin_{(c_1,\dots,c_{T^{[m]}})}\sum_{i = 1}^n L(\yi, \fmd(\xi) + \bmm(\xi, c_1,\dots,c_{T^{[m]}})).
+%$$
 
-The direction of steepest descent for the update is then
+%The direction of steepest descent for the update is then
 
-$$
--\frac{\partial L(y, \fmd(\xv) + \bmm(\xv))}{\partial \bmm(\xv)}
-$$
+%$$
+%-\frac{\partial L(y, \fmd(\xv) + \bmm(\xv))}{\partial \bmm(\xv)}
+%$$
 
-for each $\xi, i = 1,\dots, n$.
+%for each $\xi, i = 1,\dots, n$.
 
-\lz
+%\lz
 
-\textbf{Note:} $J(\bmm)$ is omitted for now but will be re-introduced later.
+%\textbf{Note:} $J(\bmm)$ is omitted for now but will be re-introduced later.
 
-\framebreak
+%\framebreak
 
 To approximate the loss in iteration $m$, use a second-order Taylor expansion around $\fmd(\xv)$:
 \vskip  -1em
@@ -130,14 +130,14 @@ Since $L(y, \fmd(\xv))$ is a constant, the optimization criterion simplifies to
 
 Expanding $J(\bmm)$, we get
 \begin{align*}
-\riskr^{[m]} = &\sum_{t=1}^{T^{[m]}}\left(G^{[m]}_t c^{[m]}_t+\frac12 H^{[m]}_t (c^{[m]}_t)^2 + \frac12\lambda(c^{[m]}_t)^2 + \alpha |c^{[m]}_t|\right) + \gamma T^{[m]}\\
-=&\sum_{t=1}^{T^{[m]}}\left(G^{[m]}_t c^{[m]}_t+\frac12 (H^{[m]}_t + \lambda) (c^{[m]}_t)^2 + \alpha |c_t^{[m]}|\right) + \gamma T^{[m]}.
+\riskr^{[m]} = &\sum_{t=1}^{T^{[m]}}\left(G^{[m]}_t c^{[m]}_t+\frac12 H^{[m]}_t (c^{[m]}_t)^2 + \frac12\lambda_2(c^{[m]}_t)^2 + \lambda_3 |c^{[m]}_t|\right) + \lambda_1 T^{[m]}\\
+=&\sum_{t=1}^{T^{[m]}}\left(G^{[m]}_t c^{[m]}_t+\frac12 (H^{[m]}_t + \lambda_2) (c^{[m]}_t)^2 + \lambda_3 |c_t^{[m]}|\right) + \lambda_1 T^{[m]}.
 \end{align*}
 
 \lz
 
 \textbf{Note:} The factor $\frac12$ is added to the $L2$ regularization to simplify the notation as shown in the second step.
-This does not impact estimation since we can just define $\lambda = 2\tilde\lambda$.
+This does not impact estimation since we can just define $\lambda_2 = 2\tilde\lambda_2$.
 
 \framebreak
 
@@ -146,8 +146,8 @@ Since
 $$
 \frac{\partial \riskr^{[m]}}{\partial c^{[m]}_t} =
 \begin{cases}
-  (G^{[m]}_t - \alpha) + (H^{[m]}_t + \lambda) c^{m}_t &\text{ for } c^{m}_t < 0 \\
-  (G^{[m]}_t + \alpha) + (H^{[m]}_t + \lambda) c^{m}_t &\text{ for } c^{m}_t > 0, \\
+  (G^{[m]}_t - \lambda_3) + (H^{[m]}_t + \lambda_2) c^{m}_t &\text{ for } c^{m}_t < 0 \\
+  (G^{[m]}_t + \lambda_3) + (H^{[m]}_t + \lambda_2) c^{m}_t &\text{ for } c^{m}_t > 0, \\
 \end{cases}
 $$
 
@@ -155,12 +155,12 @@ the optimal weights $\tilde{c}^{[m]}_1,\dots, \tilde{c}^{[m]}_{T^{[m]}}$ can the
 
 \lz
 $$
-\tilde{c}^{[m]}_t = - \frac{t_\alpha\left(G^{[m]}_t\right)}{H^{[m]}_t + \lambda}, t=1,\dots T^{[m]},
+\tilde{c}^{[m]}_t = - \frac{t_{\lambda_3}\left(G^{[m]}_t\right)}{H^{[m]}_t + \lambda_2}, t=1,\dots T^{[m]},
 $$
-with $$t_\alpha(x) = \begin{cases}
-  x - \alpha &\text{ for } x > \alpha \\
-  x + \alpha &\text{ for } x < - \alpha \\
-  0  &\text{ for } |x| \leq \alpha.
+with $$t_{\lambda_3}(x) = \begin{cases}
+  x - \lambda_3 &\text{ for } x > \lambda_3 \\
+  x + \lambda_3 &\text{ for } x < - \lambda_3 \\
+  0  &\text{ for } |x| \leq \lambda_3.
 \end{cases}$$
 
 \end{vbframe}
@@ -170,11 +170,13 @@ with $$t_\alpha(x) = \begin{cases}
 To evaluate the performance of a candidate split that divides the instances in region $R_t^{[m]}$ into a left and right node we use the \textbf{risk reduction} achieved by that split:
 $$
 \tilde S_{LR} =
- \frac12 \left[\frac{t_\alpha\left(G^{[m]}_{tL}\right)^2}{H^{[m]}_{tL} + \lambda} + \frac{t_\alpha\left(G^{[m]}_{tR}\right)^2}{H^{[m]}_{tR} + \lambda} - \frac{t_\alpha\left(G^{[m]}_{t}\right)^2}{H^{[m]}_{t} + \lambda}\right] - \gamma,
+ \frac12 \left[ 
+ \frac{t_{\lambda_3} \left( G^{[m]}_{tL} \right)^2}{H^{[m]}_{tL} + \lambda_2} + \frac{t_{\lambda_3}\left(G^{[m]}_{tR}\right)^2}{H^{[m]}_{tR} + \lambda_2} - \frac{t_{\lambda_3}\left(G^{[m]}_{t}\right)^2}{H^{[m]}_{t} + \lambda_2}
+ \right] - \lambda_1,
 $$
 where the subscripts $L$ and $R$ denote the left and right leaves after the split.
 
-% derivation for this: write out change in loss function, case distinction acording to sign of t_a(G)/(H + lambda)
+% derivation for this: write out change in loss function, case distinction acording to sign of t_a(G)/(H + lambda_2)
 
 \lz
 

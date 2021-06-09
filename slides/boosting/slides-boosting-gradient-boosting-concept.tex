@@ -5,10 +5,10 @@
 \input{../../latex-math/ml-boosting.tex}
 \input{../../latex-math/ml-trees.tex}
 
-\newcommand{\titlefigure}{figure_man/gradient-boosting.png}
+\newcommand{\titlefigure}{figure/fig-gb-concept-2.png}
 \newcommand{\learninggoals}{
-  \item \textcolor{blue}{XXX}
-  \item \textcolor{blue}{XXX}
+  \item Understand idea of forward stagewise modelling
+  \item Understand fitting process of gradient boosting for regression problems
 }
 
 \title{Introduction to Machine Learning}
@@ -126,7 +126,7 @@ Hence, we minimize the empirical risk:
 
 $$
 \riskef = \sum_{i=1}^n L\left(\yi,\fxi \right) =
-\sum_{i=1}^n L\left(\yi, \sum_{m=1}^M \betam b\left(\xi, \thetam\right)\right)
+\sum_{i=1}^n L\left(\yi, \sum_{m=1}^M \betam \bmmxth\right)
 $$
 
 
@@ -145,7 +145,9 @@ $$
 \framebreak
 \textbf{Why is gradient boosting a good choice for this problem?}
 \begin{itemize}
-\item Because of the additive structure it is difficult to jointly minimize $\riskef$ w.r.t. $\left(\left(\beta^{[1]}, \bm{\theta}^{[1]}\right), \ldots, \left(\beta^{[M]}, \bm{\theta}^{[M]}\right)\right)$, which is a very high-dimensional parameter space - however, this is nowadays especially in the case of numeric parameter spaces not a real problem anymore.
+\item Because of the additive structure it is difficult to jointly minimize $\riskef$ w.r.t. $\left(\left(\beta^{[1]}, \bm{\theta}^{[1]}\right), \ldots, \left(\beta^{[M]}, \bm{\theta}^{[M]}\right)\right)$, which is a very high-dimensional parameter space (though this is less of a problem nowadays, especially in the
+case of numeric parameter spaces).
+% - however, this is nowadays especially in the case of numeric parameter spaces not a real problem anymore.
 \item Considering trees as base learners is worse as we would have to grow $M$ trees in parallel so they
   work optimally together as an ensemble.
 \item Stagewise additive modeling has nice properties, which we want to make use of, e.g. for regularization, early stopping, \dots
@@ -191,7 +193,8 @@ Furthermore, we assume our loss function $L(\cdot)$ to be differentiable.
 
 \column{5cm}
 \begin{center}
-  \includegraphics[width=1\textwidth]{figure_man/forward-stagewise-expl.png}
+  \vspace{-1cm}
+  \includegraphics[width=\textwidth]{figure/fig-gb-concept-2.png}
 \end{center}
 
 \end{columns}
@@ -203,20 +206,20 @@ Furthermore, we assume our loss function $L(\cdot)$ to be differentiable.
 \textbf{Aim:} Define a movement in function space so we can push our current function towards the data points.
 
 \vspace*{0.1cm}
-\textbf{Given:} Regression problem with one feature $\xv$ and target variable $y$.
+\textbf{Given:} Regression problem with one feature $x$ and target variable $y$.
 
 \vspace*{0.1cm}
-\textbf{Initialization:} Set all parameters to the optimal constant value (e.g. mean of $y$ for L2).
+\textbf{Initialization:} Set all parameters to the optimal constant value (e.g., the mean of $y$ for $L2$).
 
 \begin{figure}
-  \includegraphics[width=0.47\textwidth]{figure_man/gradient-boosting.png}
+  \includegraphics[width=\textwidth]{figure/fig-gb-concept-1.png}
 \end{figure}
 
 
 
 \end{vbframe}
 
-\begin{vbframe}{Gradient boosting}
+\begin{vbframe}{Pseudo Residuals}
 \begin{footnotesize}
 How do we have to distort this function to move it towards the observations and drive loss down?
 
@@ -224,32 +227,40 @@ How do we have to distort this function to move it towards the observations and 
 We minimize the risk of such a model with gradient descent (yes, this makes no sense,
 suspend all doubts for a few seconds).
 
-So, we calculate the gradient at a point of the parameter space, that is, the derivative w.r.t. each component of the parameter vector:\footnote{The gradient of all terms with $i \neq j$ are 0.}
+So, we calculate the gradient at a point of the parameter space, that is, the derivative w.r.t. each component of the parameter vector (which is 0 for all terms with $i \neq j$):
+% \footnote{The gradient of all terms with $i \neq j$ are 0.}
 
 $$
-  \fp{\riske}{\fxi} = \fp{\sum_j L(y^{(j)}, f(\xv^{(j)}))}{\fxi} = \fp{\Lxyi}{\fxi}.
+\tilde{r}^{(i)} = - \fp{\riske}{\fxi} = - \fp{\sum_j L(y^{(j)}, f(\xv^{(j)}))}{\fxi} = - \fp{\Lxyi}{\fxi}.
 $$
 
-\vspace*{0.2cm}
+\vspace*{0.5cm}
 
-The gradient descent update for each vector component of $f$ is:
+\begin{minipage}[b]{0.45\textwidth}
+  \raggedright
+  \textbf{Reminder:} The pseudo-residuals 
+  $\tilde{r}\left( f \right)$ 
+  match the usual residuals for 
+  the squared loss:
+  \begin{align*}
+  - \fp{\Lxy}{\fx} & = - \fp{0.5(y - \fx)^2}{\fx}\\ 
+                   & = y - \fx
+  \end{align*}
+\end{minipage}%
+\begin{minipage}[b]{0.05\textwidth}
+   \phantom{foo}
+\end{minipage}
+\begin{minipage}[b]{0.45\textwidth}
+  \includegraphics[width=0.9\textwidth]{figure/pseudo_residual_1.png}
+\end{minipage}
 
-$$
-  \fm (\xi) =  \fmd (\xi) - \beta \fp{\Lxyim}{\fmd (\xi)}.
-$$
-
-This tells us how we could \enquote{nudge} our whole function $f$ in the direction of the data to
-reduce its empirical risk.
 \end{footnotesize}
-
-
 
 \end{vbframe}
 
-\begin{vbframe}{Gradient boosting}
-\begin{footnotesize}
-\textbf{Pseudo-residuals}
+\begin{vbframe}{Boosting as Gradient Descent}
 
+%\begin{footnotesize}
 \vspace*{0.2cm}
 Combining this with the iterative additive procedure
 of \enquote{forward stagewise modeling}, we are at the spot $\fmd$ during minimization.
@@ -259,24 +270,20 @@ $$ \rmi = -\left[\fp{\Lxyi}{f(\xi)}\right]_{f=\fmd} $$
 
 \lz
 
-\begin{columns}
-\column{5cm}
-\textbf{Reminder:} The pseudo-residuals $\rmi$ match the usual residuals for the squared loss:
+The gradient descent update for each vector component of $f$ is:
+
+$$
+  \fm (\xi) =  \fmd (\xi) - \beta \fp{\Lxyim}{\fmd (\xi)}.
+$$
+
+This tells us how we could \enquote{nudge} our whole function $f$ in the direction of the data to
+reduce its empirical risk.
+
+%\end{footnotesize}
+\end{vbframe}
 
 
-\begin{align*}
-- \fp{\Lxy}{\fx} & = - \fp{0.5(y - \fx)^2}{\fx}\\ 
-                 & = y - \fx
-\end{align*}
-
-\column{5cm}
-\begin{center}
-  \includegraphics[width=1\textwidth]{figure/pseudo_residual_1.png}
-\end{center}
-
-\end{columns}
-\end{footnotesize}
-\framebreak
+\begin{vbframe}{Gradient boosting}
 
 \textbf{Iteration 1:}
 
@@ -284,7 +291,7 @@ Let's move our function $\fxi$ a fraction towards the pseudo-residuals with a le
 
 
 \begin{figure}
-  \includegraphics[width=0.55\textwidth]{figure_man/pseudo-resi01.png}
+  \includegraphics[width=\textwidth]{figure/fig-gb-concept-pseudo-resi-1.png}
 \end{figure}
 
 \framebreak
@@ -295,7 +302,7 @@ Let's move our function $\fxi$ a fraction towards the pseudo-residuals with a le
 
 
 \begin{figure}
-  \includegraphics[width=0.55\textwidth]{figure_man/pseudo-resi02.png}
+  \includegraphics[width=\textwidth]{figure/fig-gb-concept-pseudo-resi-2.png}
 \end{figure}
 
 \framebreak
@@ -337,7 +344,7 @@ loss function gradient and generalizes over the whole space.
 \column{5cm}
 \vspace*{-1cm}
 \begin{figure}[th]
-  \includegraphics[width=0.9\textwidth]{figure_man/gradient-boosting01.png}
+  \includegraphics[width=\textwidth]{figure/fig-gb-concept-idea.png}
 \end{figure}
 
 
@@ -353,7 +360,7 @@ which minimizes the empirical risk as much as possible.
 \vspace*{0.1cm}
 \textbf{Iteration 1:}
 \begin{figure}
-  \includegraphics[width=0.55\textwidth]{figure_man/gradient-boosting01.png}
+  \includegraphics[width=\textwidth]{figure/fig-gb-concept-idea-1.png}
 \end{figure}
 \end{footnotesize}
 \framebreak
@@ -364,7 +371,7 @@ Instead of moving the function values for each observation by a fraction closer 
 \vspace*{0.1cm}
 \textbf{Iteration 2:}
 \begin{figure}
-  \includegraphics[width=0.55\textwidth]{figure_man/gradient-boosting02.png}
+  \includegraphics[width=\textwidth]{figure/fig-gb-concept-idea-2.png}
 \end{figure}
 \end{footnotesize}
 \framebreak
@@ -375,7 +382,7 @@ This base learner is then added to the current state of the ensemble weighted by
 \vspace*{0.1cm}
 \textbf{Iteration 3:}
 \begin{figure}
-  \includegraphics[width=0.55\textwidth]{figure_man/gradient-boosting03.png}
+  \includegraphics[width=\textwidth]{figure/fig-gb-concept-idea-3.png}
 \end{figure}
 
 % \begin{footnotesize}
@@ -436,10 +443,20 @@ This base learner is then added to the current state of the ensemble weighted by
 
 \input{algorithms/gradient_boosting_general.tex}
 
-Note that we also initialize the model in a loss-optimal manner. Also, the constant learning rate can be replaced by a line-search, however a small constant learning rate is commonly used.
+Note that we also initialize the model in a loss-optimal manner. %Also, the constant learning rate can be replaced by a line-search, however a small constant learning rate is commonly used.
 
 \end{vbframe}
 
+\begin{vbframe}{Line Search}
+The learning rate in gradient boosting influences how fast the algorithm converges. 
+Although a small constant learning rate is commonly used in practice, it can also be replaced by a line search.\\\lz
+Line search is an iterative approach to find a local minimum. In the case of setting the learning rate, the following one-dimensional optimization problem has to be solved:
+$$\betamh = \argmin_{\beta} \sumin L(\yi, \fmd(\xv) + \beta b(\xv, \thetamh))$$
+
+Optionally, an (inexact) backtracking line search can be used to find the 
+$\betam$ that minimizes the above equation.
+
+\end{vbframe}
 
 \endlecture
 \end{document}

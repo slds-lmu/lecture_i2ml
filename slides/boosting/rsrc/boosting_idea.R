@@ -41,6 +41,15 @@ pred_boosting = function(coefs, x, basis_fun, it, offset=0){
   return(pred)
 }
 
+
+#extract legend
+#https://github.com/hadley/ggplot2/wiki/Share-a-legend-between-two-ggplot2-graphs
+g_legend<-function(a.gplot){
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)}
+
 plot_splines_boosting_step = function(coefs, its = c(1,2), y_lim = c(-1.3,1.3),
                                       basis_fun = bTrafo){
   #browser()
@@ -76,7 +85,8 @@ plot_splines_boosting_step = function(coefs, its = c(1,2), y_lim = c(-1.3,1.3),
     geom_point() + 
     geom_point(data = pl_pred_data, aes(x=x, y=value, colour=variable)) + 
     geom_line(data = pl_sm_pred_data, aes(x=x, y=value, colour=variable)) +
-    scale_colour_discrete(name = "Iteration", labels = 
+    scale_color_viridis_d(end = .9,
+                          name = "Iteration", labels = 
                             c(as.expression(bquote(f^{'['*.(its[1])*']'})),
                               as.expression(bquote(f^{'['*.(its[2])*']'})))) +
     geom_segment(data=pl_arrow, aes(x=x, y=y, xend=x, yend=y_end),
@@ -86,7 +96,7 @@ plot_splines_boosting_step = function(coefs, its = c(1,2), y_lim = c(-1.3,1.3),
     xlab(expression("Feature"~x)) +
 #    annotate("label", label="frac(partialdiff~L,partialdiff~f(x^'(i)'))", 
 #             parse=TRUE, x=11, y=-0.7) + 
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom") 
   
   p_res = ggplot(pl_res_data, aes(x=x, y=res0)) +
     geom_point() +
@@ -95,9 +105,18 @@ plot_splines_boosting_step = function(coefs, its = c(1,2), y_lim = c(-1.3,1.3),
               aes(x=x, y=y_pred)) +
     ylim(y_lim) +
     ylab("Residuals of current model") +
-    xlab(expression("Feature"~x))
+    xlab(expression("Feature"~x)) +
+    scale_color_viridis_d(end = .9)
   
-  return(grid.arrange(p_fit, p_res, ncol=2))
+  
+  mylegend<-g_legend(p_fit)
+  
+  p3 <- grid.arrange(arrangeGrob(p_fit + theme(legend.position="none"),
+                                 p_res + theme(legend.position="none"),
+                                 nrow=1),
+                     mylegend, nrow=2,heights=c(10, 1))
+  
+  return(p3)
 }
 
 # coefs = boosting(x, y, nboost = 100, learning_rate = 0.4, basis_fun = bTrafo)

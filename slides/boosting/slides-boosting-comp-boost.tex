@@ -7,8 +7,9 @@
 
 \newcommand{\titlefigure}{figure_man/componentwise-gb.png}
 \newcommand{\learninggoals}{
-  \item \textcolor{blue}{XXX}
-  \item \textcolor{blue}{XXX}
+  \item Learn the concept of componentwise boosting and its relation to GLM
+  \item Understand the built-in feature selection process
+  \item Understand the problem of fair base learner selection
 }
 
 \title{Introduction to Machine Learning}
@@ -18,6 +19,8 @@
 
 \lecturechapter{Componentwise Gradient Boosting}
 \lecture{Introduction to Machine Learning}
+
+% ------------------------------------------------------------------------------
 
 \begin{vbframe}{Componentwise gradient boosting}
 
@@ -44,89 +47,138 @@ The aim of componentwise gradient boosting is to find a model that:
 
 \lz
 
-This is achieved by using \enquote{nice} base learners, which yield familiar statistical models
+This is achieved by using \enquote{nice} base learners which yield familiar 
+statistical models
 in the end.
 
 \lz
 
 Because of this, componentwise gradient boosting is also often referred to as \textbf{model-based boosting}.
 
-\framebreak
+\end{vbframe}
 
-In classical gradient boosting only one kind of base learner is used, e.g., regression trees.
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Base learners}
+
+In classical gradient boosting only one kind of base learner is used, e.g., 
+regression trees.
 
 \lz
 
-For componentwise gradient boosting we define a whole set of base learners
+For componentwise gradient boosting we generalize this to multiple base learners 
 
 $$
-  b_j^{[m]}(\xv,\pmb\theta^{[m]}) \quad j = 1,\dots, J\,,
+  % b_j^{[m]}(\xv,\pmb\theta^{[m]}) \quad j = 1,\dots, J\,,
+  \{ \bmm_j(\xv, \thetam): j = 1, 2, \dots, J \},
 $$
 
 where $j$ indexes the type of base learner.
 
 \lz
 
-In each iteration, only the best base learner $b_{j^\ast}^{[m]}(\xv,\pmb\theta^{[m]})$ is selected and updated.
+Again, in each iteration, only the best base learner 
+$\bmm_{j^\ast}(\xv, \thetam)$ is selected and updated.
 
 \framebreak
+
+% ------------------------------------------------------------------------------
 
 We restrict these base learners to additive models, i.e.,
 
 $$
- b_j^{[m]}(\xv,\pmb\theta^{[m]}) + b_j^{[m^\prime]}(\xv,\pmb\theta^{[m^\prime]}) = b_j(\xv,\pmb\theta^{[m]} + \pmb\theta^{[m^\prime]}).
+ \bmm_j(\xv, \thetam) + b_j^{[m^\prime]}(\xv, \thetab^{[m^\prime]}) = 
+ b_j(\xv, \thetam + \thetab^{[m^\prime]}).
 $$
 
 \lz
 
-Often base learners are not defined on the full $\xv$, but only a single feature $x_j$:
+Often base learners are not defined on the entire feature vector $\xv$ but on 
+a single feature $x_j$:
 
 $$
-  b_j^{[m]}(x_j,\thetam) \quad j = 1,\dots, p.
+  \bmm_j(x_j, \thetam) \quad \text{for } j = 1, 2, \dots, p.
 $$
 
 \lz
-This directly incorporates a variable selection mechanism into the fitting process,
-since in each iteration only the best base learner is selected, and each base learner can be (substantially) more complex than a stump (e.g., univariate linear effects or splines).
+This directly incorporates a variable selection mechanism into the fitting 
+process, since in each iteration only the best base learner is selected in 
+combination with the associated feature, and each base learner can be 
+(substantially) more complex than a stump (e.g., univariate linear effects or 
+splines).
 
-\framebreak
+\end{vbframe}
 
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Componentwise boosting algorithm}
 
 \input{algorithms/componentwise_gradient_boosting.tex}
 
-\framebreak
+\end{vbframe}
 
-In the simplest case we use linear models (without intercept) on single features as base learners:
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{relation to glm}
+
+In the simplest case we use linear models (without intercept) on single features 
+as base learners:
 
 $$
-  b(x_j,\thetam) = x_j\beta^{[m]} \quad j = 1,\dots,p.
+  b(x_j,\thetam) = x_j \theta^{[m]} \quad \text{for } j = 1, 2, \dots, p.
 $$
 
-This definition will result in an ordinary \textbf{linear regression} model.\footnote{Note: a linear model base learner without intercept only makes sense if the covariates are centered (see \texttt{mboost} tutorial, page7)}
+This definition will result in an ordinary \textbf{linear regression} model 
+(note that linear base learners without intercept only make sense for covariates 
+that have been centered before).
+
+% .\footnote{Note: a linear model base learner without intercept only makes sense if the covariates are centered (see \texttt{mboost} tutorial, page7)}
 
 \lz
 
-If we let the boosting algorithm converge, i.e., let it run for a really long time, the parameters estimated by the boosting model will converge to the \textbf{same solution} as the ML estimate. This means that, by specifying a loss function according to the negative likelihood of a distribution from an exponential family and defining a link function accordingly, this kind of boosting is equivalent to a (regularized) \textbf{generalized linear model (GLM)}.
+\begin{itemize}
+  \item If we let the boosting algorithm converge, i.e., let it run for a really 
+  long time, the parameters estimated by the boosting model will converge to the 
+  \textbf{same solution} as the ML estimate.
+  \item This means that, by specifying a loss function according to the negative 
+  likelihood of a distribution from an exponential family and defining a link 
+  function accordingly, this kind of boosting is equivalent to a (regularized)
+  \textbf{generalized linear model (GLM)}.
+\end{itemize}
 
 \framebreak
 
-But: We do not \emph{need} an exponential family and thus are able to fit models to all kinds of other distributions and losses, as long as we can calculate (or approximate) a derivative of the loss. Note, however, that this does not imply that the algorithm does something meaningful (e.g., non-convex loss functions would still require some additional effort).
+% ------------------------------------------------------------------------------
+
+But: We do not \emph{need} an exponential family and thus are able to fit models 
+to all kinds of other distributions and losses, as long as we can calculate (or 
+approximate) a derivative of the loss. 
+% Note, however, that this does not imply that the algorithm does something 
+% meaningful (e.g., non-convex loss functions would still require some 
+% additional effort).
 
 \lz
 
-Usually we do not let the boosting model converge fully, but \textbf{stop early}, for regularization and feature selection.
+Usually we do not let the boosting model converge fully, but \textbf{stop 
+early} for the sake of regularization and feature selection.
 
 \lz
 
-Even though the resulting model looks like a GLM, we do not have valid standard errors for our coefficients,
+Even though the resulting model looks like a GLM, we do not have valid standard 
+errors for our coefficients,
 so cannot provide confidence or prediction intervals or perform tests etc.
-$\longrightarrow$ Post-selection inference
+$\rightarrow$ post-selection inference.
 
+\end{vbframe}
 
+% ------------------------------------------------------------------------------
 
-\framebreak
+\begin{vbframe}{feature selection}
 
-We can visualize the updates of the $\theta_j$ together with the number of iterations to see which base learner was selected when.
+We can visualize the updates of the $\theta_j$ together with the number of 
+iterations to see which base learner was selected when.
+
+\vfill
 
 \begin{center}
 \includegraphics[width=0.9\textwidth]{figure_man/componentwise-gb.png}
@@ -134,28 +186,62 @@ We can visualize the updates of the $\theta_j$ together with the number of itera
 
 \framebreak
 
-Depending on the value of $M$, a different number of features is included in the final model. $\rightarrow$ A sparse logistic regression is fitted
+% ------------------------------------------------------------------------------
+
+\begin{itemize}
+  \item We can further exploit the additive structure of the boosted ensemble to 
+  compute measures of \textbf{variable importance}.
+  \item To this end, we simply sum for each feature $x_j$ the improvements in 
+  empirical risk achieved over all iterations until 
+  $1 < m_{\text{stop}} \leq M$:
+  % \begin{align*}
+    $$VI_j = \sum_{m = 1}^{m_{\text{stop}}} \left( \riske \left(
+    \fmd(\xv) \right) - \riske \left(\fm(\xv) 
+    \right) \right) \cdot \I_{[j \in sel(m)]},$$
+  % \end{align*}
+  where $sel(m)$ denotes the index set of features selected in the $m$-th 
+  iteration.
+\end{itemize}
+
+\framebreak
+
+% ------------------------------------------------------------------------------
+
+The number of features effectively included in the final model depends on the 
+value of $M$. \\
+
+$\rightarrow$ A sparse logistic regression is fitted.
+
+\vfill
 
 \begin{center}
-\includegraphics[width=0.7\textwidth]{figure_man/mstop5.png}
+\includegraphics[width=0.8\textwidth]{figure_man/mstop5.png}
 \end{center}
 
+\vfill
 
 \begin{center}
-\includegraphics[width=0.7\textwidth]{figure_man/mstop12.png}
+\includegraphics[width=0.8\textwidth]{figure_man/mstop12.png}
 \end{center}
 
 \end{vbframe}
 
+% ------------------------------------------------------------------------------
+
 \begin{vbframe}{Nonlinear base learners}
 
-Nonlinear base learners like $P$- or $B$-splines make the model equivalent to a \textbf{generalized additive model (GAM)}, as long as the base learners keep their additive structure (which is the case for splines).
+Nonlinear base learners like $P$- or $B$-splines make the model equivalent to a
+\textbf{generalized additive model (GAM)}, as long as the base learners keep 
+their additive structure (which is the case for splines).
 \vspace{0.5cm}
+
+\vfill
 
 \begin{center}
 \includegraphics[width=1\textwidth]{figure_man/NBL01.png}
 \end{center}
 
+\vfill
 
 \begin{center}
 \includegraphics[width=1\textwidth]{figure_man/NBL02.png}
@@ -163,40 +249,55 @@ Nonlinear base learners like $P$- or $B$-splines make the model equivalent to a 
 
 \framebreak
 
-We are often interested in solutions that are as simple as possible. For example, we want to have a linear base learner if there is just a linear dependency and not an unnecessarily complex spline base learner.
+% ------------------------------------------------------------------------------
+
+Even when allowing for more complexity we typically want to keep solutions as 
+simple as possible.
 
 \lz
 
-A useful decomposition was proposed by Kneib~et~al. (2009): Each base learner is segmented into a constant, a linear and a nonlinear part. The boosting algorithm will automatically decide which feature to include -- linear, nonlinear, or none at all.
+Kneib~et~al. (2009) proposed a decomposition of each base learner into a 
+constant, a linear and a nonlinear part. 
+The boosting algorithm will automatically decide which feature to include -- 
+linear, nonlinear, or none at all:
 
 \vspace{-0.5cm}
 
 \begin{align*}
-b_j(x_j, \pmb\theta) & = b_{j,\text{const.}}(x_j, \pmb\theta) + b_{j,\text{lin.}}(x_j, \pmb\theta) + b_{j,\text{nonlin.}}(x_j, \pmb\theta)\\
- & = \theta_\text{const.} + x_j\cdot\theta_{j,\text{lin.}} + s_j(x_j, \pmb\theta_{j,\text{nonlin.}}),
+b_j(x_j, \thetam) & = b_{j, \text{const}}(x_j, \thetam) + b_{j, \text{lin}}
+(x_j, \thetam) + b_{j, \text{nonlin}}(x_j, \thetam)\\
+ & = \theta^{[m]}_\text{const} + x_j \cdot \theta^{[m]}_{j, \text{lin}} + 
+ s_j(x_j, \thetam_{j,\text{nonlin}}),
 \end{align*}
 
+\small
 where
 \begin{itemize}
-  \item $\theta_\text{const.}$ is a constant term over all base learners.
-  \item $x_j\cdot\theta_{j,\text{lin.}}$ is a feature-specific linear base learner.
-  \item $s_j(x_j, \pmb\theta_{j,\text{nonlin.}})$ is a (centered) nonlinear base learner capturing deviation from the linear effect.
+  \small
+  \item $\theta_\text{const}$ is a constant term over all base learners,
+  \item $x_j \cdot \theta^{[m]}_{j, \text{lin}}$ is a feature-specific linear 
+  base learner, and
+  \item $s_j(x_j, \thetam_{j,\text{nonlin}})$ is a (centered) nonlinear base 
+  learner capturing deviation from the linear effect.
 \end{itemize}
 
 \end{vbframe}
 
+% ------------------------------------------------------------------------------
+
 \begin{vbframe}{Spam example: continued}
 
-This time we fit a componentwise gradient boosting model to the spam dataset.
+\begin{itemize}
+  \item This time we fit a componentwise gradient boosting model to the spam 
+  dataset using the R package \texttt{mboost} with $M = 100$.
+  \item We specify a linear and nonlinear ($P$-spline) base learner for each 
+  feature and let the boosting model decide which to select.
+  \item The model selects $17$ different base learners (out of 114):
+\end{itemize}
 
-\lz
-
-We specify a linear and nonlinear ($P$-spline) base learner for each feature and let the boosting model decide which to select.
-
-
-\lz
-
-To fit such a model we use the R package \texttt{mboost}.
+\begin{center}
+\includegraphics[width=0.6\textwidth]{figure_man/spam-example.png}
+\end{center}
 
 % Unfortunately it's rather ugly to write down the decomposition
 
@@ -209,33 +310,21 @@ To fit such a model we use the R package \texttt{mboost}.
 % mboost(formula, data = spam, family = Binomial(), control = boost_control(mstop = 100))
 % @
 
-\lz
-
-With $M = 100$ the model selects $17$ different base learners (out of 114).
-
-\lz
-
-These can be visualized nicely.
-
-\framebreak
-
-\vspace{0.3cm}
-
-\begin{center}
-\includegraphics[width=0.9\textwidth]{figure_man/spam-example.png}
-\end{center}
-
 \end{vbframe}
+
+% ------------------------------------------------------------------------------
 
 \begin{vbframe}{Fair Base Learner Selection}
 
 \begin{itemize}
 
   \item
-    Using splines and linear base learners in componentwise boosting will select the more complex spline base learner over the linear base learner.
+    Using splines and linear base learners in componentwise boosting will favor 
+    the more complex spline base learner over the linear base learner.
 
   \item
-    This makes it harder to achieve the desired behavior of the base learner decomposition as explained previously.
+    This makes it harder to achieve the desired behavior of the base learner 
+    decomposition as explained previously.
 
   \item
     To conduct a fair base learner selection we set the degrees of freedom of all base learners equal.
@@ -247,28 +336,49 @@ These can be visualized nicely.
 
 \framebreak
 
+% ------------------------------------------------------------------------------
+
 Especially for linear models and GAMs it is possible to transform the degrees of freedom into a corresponding penalty term.
 \begin{itemize}
 
   \item
     Parameters of the base learners are estimated via:
     $$
-    \hat{\pmb\theta}_j^{[m]} = \left(\mathbf{Z}_j^T \mathbf{Z}_j + \lambda_j \mathbf{K}_j\right)^{-1}\mathbf{Z}_j^T \rmm\,,
+    \thetam_j = \left(\mathbf{Z}_j^T \mathbf{Z}_j + \lambda_j \mathbf{K}_j
+    \right)^{-1}\mathbf{Z}_j^T \rmm\,,
     $$
-    with $\mathbf{Z}_j$ the design matrix of the $j$-th base learner, $\lambda_j$ the penalty term, and $\mathbf{K}_j$ the penalty matrix.
+    with $\mathbf{Z}_j$ the design matrix of the $j$-th base learner, 
+    $\lambda_j$ the penalty term, and $\mathbf{K}_j$ the penalty matrix.
 
   \item
-    Having that kind of model, we use the hat matrix $\mathbf{S}_j = \mathbf{Z}_j\left(\mathbf{Z}_j^T \mathbf{Z}_j + \lambda_j \mathbf{K}_j\right)^{-1}\mathbf{Z}_j^T$ to define the degrees of freedom:
+    Having that kind of model, we use the hat matrix 
+    $\mathbf{S}_j = \mathbf{Z}_j\left(\mathbf{Z}_j^T \mathbf{Z}_j + 
+    \lambda_j \mathbf{K}_j\right)^{-1}\mathbf{Z}_j^T$ to define the degrees of 
+    freedom:
     $$
-    \operatorname{df}(\lambda_j) = \trace\left(2\mathbf{S}_j - \mathbf{S}_j^T \mathbf{S}_j\right).
+    \operatorname{df}(\lambda_j) = \trace\left(2\mathbf{S}_j - \mathbf{S}_j^T
+    \mathbf{S}_j\right).
     $$
-    \textbf{Note:} With $\lambda_j = 0$, $\mathbf{S}_j$ is the projection matrix into the target space with $\trace(\mathbf{S}_j) = \operatorname{rank}(\mathbf{X})$, which corresponds to the number of parameters in the model.
+    \textbf{Note:} With $\lambda_j = 0$, $\mathbf{S}_j$ is the projection matrix 
+    into the target space with 
+    $\trace(\mathbf{S}_j) = \operatorname{rank}(\Xmat)$, which corresponds to 
+    the number of parameters in the model.
 
 \end{itemize}
 
 \framebreak
 
-It is possible to calculate $\lambda_j$ by applying the Demmler-Reinsch orthogonalization (see Hofer et. al. (2011).\textit{\enquote{A framework for unbiased model selection based on boosting.}}). Suppose the following example with a GAM using splines with 24 parameters:
+% ------------------------------------------------------------------------------
+
+It is possible to calculate $\lambda_j$ by applying the Demmler-Reinsch 
+orthogonalization (see 
+\href{https://www.tandfonline.com/doi/abs/10.1198/jcgs.2011.09220}
+{Hofer et al. (2011)}).
+
+% (see Hofer et. al. (2011).\textit{\enquote{A framework for unbiased model selection based on boosting.}}). 
+
+Consider the following example of a GAM using splines with 24 parameters:
+
 \begin{itemize}
 
   \item
@@ -283,10 +393,12 @@ It is possible to calculate $\lambda_j$ by applying the Demmler-Reinsch orthogon
 \end{itemize}
 
 \begin{center}
-\includegraphics[width=0.6\textwidth]{figure_man/df_to_lambda.pdf}
+\includegraphics[width=0.7\textwidth]{figure_man/df_to_lambda.pdf}
 \end{center}
 
 \end{vbframe}
+
+% ------------------------------------------------------------------------------
 
 \begin{vbframe}{Available base learners}
 
@@ -303,11 +415,11 @@ There is a large amount of possible base learners, e.g.:
 
 \lz
 
-In combination with the flexible choice of loss functions, this allows boosting to fit  a huge number of different statistical models with the same algorithm. Recent extensions include GAMLSS-models, where multiple additive predictors are boosted to model different distribution parameters (e.g. conditional mean and variance for a Gaussian model).
+In combination with the flexible choice of loss functions, this allows boosting to fit  a huge number of different statistical models with the same algorithm. Recent extensions include GAMLSS-models, where multiple additive predictors are boosted to model different distribution parameters (e.g., conditional mean and variance for a Gaussian model).
 
 \end{vbframe}
 
-
+% ------------------------------------------------------------------------------
 
 % \begin{vbframe}{RF vs AdaBoost vs GBM vs Blackboost}
 
@@ -316,22 +428,26 @@ In combination with the flexible choice of loss functions, this allows boosting 
 
 \begin{vbframe}{Take-home message}
 
-Componentwise gradient boosting is the statistical re-interpretation of gradient boosting.
-
-\lz
-
-We can fit a large number of statistical models, even in high dimensions ($p \gg n$).
-
-\lz
-
-A drawback compared to statistical models is that we do not get valid inference for coefficients $\rightarrow$ Post-Selection Inference.
-% This can be (partially) solved by bootstrap inference or related methods.
-
-\lz
-
-In most cases, componentwise gradient boosting will have worse predictive performance than gradient boosting with trees. This is often because additive base learner motivated by regression models (LM, GLM, GAM) usually do not include higher-order interaction terms.
+\begin{itemize}
+  \item Componentwise gradient boosting is the statistical re-interpretation of 
+  gradient boosting.
+  \item We can fit a large number of statistical models, even in high dimensions 
+  ($p \gg n$).
+  \item A drawback compared to statistical models is that we do not get valid 
+  inference for coefficients $\rightarrow$ post-selection inference.
+  % This can be (partially) solved by bootstrap inference or related methods.
+  \item In most cases, gradient boosting with tree will dominate componentwise 
+  boosting in terms of performance due to its inherent ability to include 
+  higher-order interaction terms.
+  % In most cases, componentwise gradient boosting will have worse 
+  % predictive performance than gradient boosting with trees. This is often 
+  % because additive base learner motivated by regression models (LM, GLM, GAM) 
+  % usually do not include higher-order interaction terms.
+\end{itemize}
 
 \end{vbframe}
+
+% ------------------------------------------------------------------------------
 
 \endlecture
 \end{document}
