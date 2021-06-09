@@ -7,8 +7,7 @@
 
 \newcommand{\titlefigure}{figure_man/adaboost_example_adjusted.PNG}
 \newcommand{\learninggoals}{
-  \item Understand general idea of boosting
-  \item Learn AdaBoost algorithm 
+  \item Briefly cover the older AdaBoost and its general idea
   \item Understand difference between bagging and boosting
 }
 
@@ -25,7 +24,7 @@
 \begin{vbframe}{Introduction to boosting}
   \begin{itemize}
     \item
-      Boosting is considered to be one of the most powerful learning ideas within the last twenty years.
+      Boosting is one of the most powerful learning ideas since 1990.
     \item
       Originally designed for classification, (especially gradient) boosting handles regression (and many other supervised tasks) naturally nowadays.
     \item
@@ -41,18 +40,25 @@
 
 \begin{vbframe}{Boosting vs. Bagging}
 
+  \begin{itemize}
+      \item Homogeneous ensemble method (like bagging). 
+  \item {\bf Idea:} Take a weak classifier and sequentially apply it to modified versions of the training data.
+    \item Sequential not parallel model building, to minimize loss instead of variance reduction.
+  \end{itemize}
+
+
 % The general concept of boosting is a sequential fitting of weak learner on the error:
 \begin{center}
-\includegraphics[width=0.65\textwidth]{figure_man/bagging_vs_boosting.png}
+\includegraphics[width=0.40\textwidth]{figure_man/bagging_vs_boosting.png}
 \end{center}
 
 % In bagging, the models are fitted parallel and not sequential.
 
 \end{vbframe}
 
-\begin{vbframe}{The boosting question}
+\begin{vbframe}{Boosting as a theoretical problem}
 
-The first boosting algorithm ever was in fact no algorithm for practical purposes, but the solution for a theoretical problem:
+Boosting was developed as the answer to a theoretical problem:
 
 \lz
 
@@ -67,7 +73,15 @@ the existence of a strong learner?} (Kearns, 1988)
 
 \end{itemize}
 
-In practice it is typically easy to construct weak learners, but difficult to build a strong one.
+% In practice it is typically easy to construct weak learners, but difficult to build a strong one.
+
+% The proof of this ground-breaking idea generated the first boosting algorithm.
+
+\begin{itemize}
+    \item Any weak (base) learner can be iteratively boosted to become
+a strong learner (Schapire and Freund, 1990).
+  \item Idea was refined into \textbf{AdaBoost} (Adaptive Boosting).
+\end{itemize}
 
 \end{vbframe}
 
@@ -75,39 +89,32 @@ In practice it is typically easy to construct weak learners, but difficult to bu
 
 % \section{AdaBoost}
 
-\begin{vbframe}{The boosting answer - AdaBoost}
+\begin{vbframe}{AdaBoost}
 
-Any weak (base) learner can be iteratively boosted to become
-a strong learner (Schapire and Freund, 1990).
-The proof of this ground-breaking idea generated the first boosting algorithm.
+% Any weak (base) learner can be iteratively boosted to become
+% a strong learner (Schapire and Freund, 1990).
+% The proof of this ground-breaking idea generated the first boosting algorithm.
+
+
+% Leo Breiman (referring to the success of AdaBoost):
+% \enquote{Boosting is the best off-the-shelf classifier in the world.}
+
+% \framebreak
 
 \begin{itemize}
-  \item The \textbf{AdaBoost} (Adaptive Boosting) algorithm is a \textbf{boosting} method
-    for binary classification by Freund and Schapire (1997).
-  \item The base learner is sequentially applied to weighted training observations.
-  \item After each base learner fit, currently misclassified observations receive a higher weight for
+  \item Assume binary classification with $y$ encoded as $\setmp$.
+  \item We use binary classifiers as weak base learners (e.g., tree stumps) from a hypothesis space $\mathcal{B}$,
+      denoted $\bmm$ (or $\bmm(\xv)$ or $\bmmxth$), which are hard labelers and output from $\setmp$.
+  \item Decision score of the ensemble of size $M$ is weighted average:
+    $$
+    \fx = \sum_{m=1}^{M} \betam \bmmxth \in \R
+    $$
+  \item The base learner is sequentially applied to weighted training observations. 
+      After each base learner fit, currently misclassified observations receive a higher weight for
     the next iteration, so we focus more on instances that are harder to classify.
-\end{itemize}
-
-Leo Breiman (referring to the success of AdaBoost):
-
-\enquote{Boosting is the best off-the-shelf classifier in the world.}
-
-\framebreak
-
-\begin{itemize}
-  \item Assume a target variable $y$ encoded as $\setmp$,
-    and weak base learners (e.g., tree stumps) from a hypothesis space $\mathcal{B}$.
-  \item Base learner models $\bmm$ are binary classifiers that map to $\Yspace = \setmp$.
-    We might sometimes write $\bmmxth$ instead.
-  \item Predictions from all base models $\bmm$ over $M$ iterations are combined in an additive manner by the formula:
-    $$
-    \fx = \sum_{m=1}^{M} \betam \bmm(\xv).
-    $$
-  \item Weights $\betam$ are computed by the boosting algorithm.
-    Their purpose is to give higher weights to base learners with higher predictive accuracy.
-  \item The number of iterations $M$ is the main tuning parameter.
-  \item The discrete prediction function is $h(\xv) = \text{sign}(\fx) \in \setmp$.
+\item BLs with higher predictive accuracy receive higher weights $\betam$.
+  % \item The number of iterations $M$ is the main tuning parameter.
+  % \item The discrete prediction function is $h(\xv) = \text{sign}(\fx) \in \setmp$.
 \end{itemize}
 
 % \framebreak
@@ -160,7 +167,7 @@ Leo Breiman (referring to the success of AdaBoost):
 \begin{vbframe}{Adaboost illustration}
 \begin{footnotesize}
 
-\textbf{Example description}
+\textbf{Example}
 
 \begin{itemize}
   \item $n = 10$ observations and two features $x_1$ and $x_2$ 
@@ -257,8 +264,7 @@ With $\fxh = \sum_{m=1}^{M} \betamh \bmmh(\xv)$ and $h(\xv) = \text{sign}(\fx)
 \in \setmp$, \\we get:
 
 \begin{center}
-  \includegraphics[trim = 0 20 0 10, clip, width = 0.8\textwidth]{
-  figure_man/adaboost_example_adjusted.PNG}
+  \includegraphics[trim = 0 20 0 10, clip, width = 0.8\textwidth]{figure_man/adaboost_example_adjusted.png}
 \end{center}
 
 Hence, when all three base classifiers are combined, all samples are classified 
@@ -295,10 +301,10 @@ correctly.
   \textbf{Random forest}
   \begin{itemize}
     \item Base learners are typically deeper decision trees (not only stumps!)
-    \item Equal weights for base learners
-    \item Base learners independent of each other
+    \item Equal weights for BL
+    \item BLs fitted independently
     \item Aim: variance reduction
-    \item Tends \textbf{not} to overfit
+    \item Tends \textbf{not} to overfit if ensemble size grows
   \end{itemize}
 \end{minipage}%
 \begin{minipage}[t]{0.06\textwidth}
@@ -307,12 +313,11 @@ correctly.
 \begin{minipage}[t]{0.47\textwidth}
   \textbf{AdaBoost}
   \begin{itemize}
-    \item Base learners are weak learners, e.g., only stumps
-    \item Base learners have different weights depending on their predictive 
-    accuracy
-    \item Sequential algorithm, hence order matters
-    \item Aim: bias and variance reduction
-    \item Tends to overfit
+    \item BLs are weak learners, e.g., only stumps
+    \item BL are weighted
+    \item Sequential fitting of BLs
+    \item Aim: loss reduction
+    \item Tends to overfit with more iterations
   \end{itemize}
 \end{minipage}
 
@@ -322,7 +327,7 @@ correctly.
 
 \begin{vbframe}{Bagging vs Boosting Stumps}
 
-Random forest versus AdaBoost (both with stumps) on \texttt{Spirals} data from 
+Random forest versus AdaBoost (both with stumps) on \texttt{spirals} data from 
 \texttt{mlbench} ($n=200$, $sd=0$), with $5 \times 5$ repeated CV.
 
 % \begin{minipage}[c]{0.6\textwidth}
@@ -354,7 +359,7 @@ Weak learners do not work well with bagging as only variance, but no bias reduct
 Historically, the overfitting behavior of AdaBoost was often discussed.
 % Random Forest versus AdaBoost on \texttt{Spirals} data from \texttt{mlbench} ($n=200$, $sd=0.3$).
 % With $5 \times 5$ repeated CV
-Increasing standard deviation to $sd = 0.3$ and allowing for more flexibility in 
+Increasing standard deviation in \texttt{spirals} to $sd = 0.3$ and allowing for more flexibility in 
 the base learners, AdaBoost overfits with increasing number of trees while the 
 RF only saturates.
 The overfitting of AdaBoost here is quite typical as data is very noisy.
