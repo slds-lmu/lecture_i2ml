@@ -25,7 +25,7 @@
 
 \begin{vbframe}{Beyond XGboost}
 
-Next to XGBoost to other important modern boosting libraries exist:
+Next to XGBoost two other important modern boosting libraries exist:
 
 \lz
 
@@ -46,55 +46,60 @@ Both libraries extend the ideas of \pkg{XGBoost} in several areas:
   \item Feature compression
 \end{enumerate}
 
+\lz
+
+Many of the the proposed ideas have later been implemented in \pkg{XGBoost} as well.
+
+
 \end{vbframe}
 
 \begin{vbframe}{Tree Growing Efficiency}
 
-Recall: \pkg{XGBoost} grows a balanced tree with \texttt{max\_depth} and prunes leaves that do not improve the loss.
+Recall: \pkg{XGBoost} grows a balanced tree of \texttt{max\_depth} and prunes leaves that do not improve the risk.
 
 \lz
 
-\textbf{Leaf-wise (Best-first) Tree Growth} allows the growing of unbalanced trees as nodes are compared when deciding for a split.
+\textbf{Leaf-wise (Best-first) Tree Growth} allows the growing of unbalanced trees by comparing improvements between all possible leaves.
 
 \lz
 
-\textbf{Gradient Boosted Decision Tables} are a generalization of decision trees that map a sequence of bolean tests to a constant prediction, e.g.
-
-\begin{align*}
-x_4 < 2 \wedge &\dots \wedge x_7 < 5 \rightarrow \hat{b}^{[1]} \\
-&\dots \\
-x_1 < 9 \wedge &\dots \wedge x_5 < 0 \rightarrow \hat{b}^{[M]}
-\end{align*}.
-
-%These tables can be represented efficiently and allow for very fast predictions of large ensembles.
+\begin{figure}
+\includegraphics[trim=0 200 0 0, clip, width=\textwidth]{figure_man/trees_balance.pdf}
+\caption{Tree with \texttt{max\_depth}=3. Balanced tree (left), pruned balanced tree (middle), leave-wise grown tree (right)}
+\end{figure}
 
 \end{vbframe}
 
 \begin{vbframe}{Data Sampling}
 
-Gradient-based One-Side Sampling (GOSS) - \pkg{LightGBM}:
+Recall: \pkg{XGBoost} (and many other boosting libraries) use random data subsampling, i.e. stochastic gradient boosting.
 
 \lz
 
+Stochastic gradient boosting can be improved by \emph{smarter} sampling strategies based on the values of the pseudo residuals.
+
+\lz
+
+\textbf{Gradient-based One-Side Sampling (GOSS):}
 \begin{itemize}
-  \item To evaluate a split GOSS only uses the $a \times n$ observations with largest (absolute) gradients and $b \times n$ randomly sampled observations remaining.
+  \item To evaluate a split GOSS only uses the $a\cdot n$ observations with largest (absolute) gradients and samples $b\cdot n$ observations from the remaining.
   \item The randomly sampled observations with smaller gradients are weighted by $\frac{1 - a}{b}$.
   \item Default values are $a=0.2$ and $b=0.1$.
-  \item GOSS is only used after $m=\frac{1}{\nu}$ iterations of XGBoost type updates.
+  \item GOSS is only used after $\frac{1}{\nu}$ iterations of regular boosting steps.
 \end{itemize}
 
 \framebreak
 
-Minimal Variance Sampling (MVS) - \pkg{CatBoost}:
+\textbf{Minimal Variance Sampling (MVS)}:
 
 \lz
 
 \begin{itemize}
-  \item MVS computes weights and selection probabilities for observations on tree level from the gradients of $\fmd$.
+  \item MVS computes weights and selection probabilities for observations for a tree.
   \item The weighting is computed from the regularized absolute value $\hat{g}^{[m]}(\xi)=\sqrt{g^{[m]}(\xi)^2 + \lambda h^{[m]}(\xi)^2}$.
   \item Observations with a value of $\hat{g}^{[m]}(\xi) > \mu$ are always used and other observations are selected with probability $\frac{\hat{g}^{[m]}(\xi)}{\mu}$.
   \item $\mu$ has a closed-form nearly optimal solution for minimizing the risk of a tree base learner \textbf{(Ibragimov et al. 2019)}.
-  \item For the tree fit each observation is weighted inversily proportional to its selection probability.
+  \item For the tree fit each observation is weighted inversely proportional to its selection probability.
 \end{itemize}
 
 \end{vbframe}
@@ -102,25 +107,64 @@ Minimal Variance Sampling (MVS) - \pkg{CatBoost}:
 
 \begin{vbframe}{Feature compression}
 
-For high dimensional data it can be helpful to bundle similar features together to speed up split computations.
+For high dimensional (sparse) data it can be helpful to bundle similar features together to speed up split computations.
 
 \lz
 
-\textbf{Exclusive feature bundling} looks for mutually exclusive features, i.e. features that never take nonzero values simultaniously.
+\textbf{Exclusive feature bundling} looks for mutually exclusive features, i.e. features that never take nonzero values simultaneously.
 
 \lz
 
 \begin{itemize}
-  \item A single histogram for approximate split finding in boosting can be built from multiple mutually exclusive features without the loss of information.
-  \item Such an approach is only useful for sparse data.
-  \item This approach speeeds up the histogram building from $\mathcal{O}(np)$ to $\mathcal{O}(nb)$ where $b$ is the number of feature bundles.
-  \item While finding the optimal partitioning is np-hard, greedy approximations give good results empirically.
+  \item A single histogram for approximate split finding in boosting can be built from multiple mutually exclusive features nearly without loss of information.
+  \item Mutually exclusive features only occur in sparse data.
+  \item This approach speeds up the histogram building from $\mathcal{O}(np)$ to $\mathcal{O}(nb)$ where $b$ is the number of feature bundles.
+  \item While finding the optimal bundling is $np$-hard, greedy approximations give good results empirically.
 \end{itemize}
 
 \end{vbframe}
 
 
-\begin{vbframe}{Comparison of Boosting frameworks}
+\begin{vbframe}{Feature Comparison of Boosting frameworks}
+
+\lz
+
+\begin{tabular}{lcccc}
+  \toprule
+   & Parallel & GPU Support & Approx. splits & Categ. feats\\
+  \midrule
+  XGBoost  & $x$ & $x$ & $x$ &     \\
+  LightGBM & $x$ & $x$ & $x$ & $x$ \\
+  CatBoost & $x$ & $x$ & $x$ & $x$ \\
+  GBM      &     &     &     & $x$ \\
+  H2O      & $x$ & $x$ & $x$ & $x$ \\
+  sklearn  & $x$ &     & $x$ & $x$ \\
+  \bottomrule
+\end{tabular}
+
+\framebreak
+
+\lz
+
+\begin{small}
+
+\begin{tabular}{lccccc}
+  \toprule
+   & \multicolumn{2}{c}{Tree growing} & \multicolumn{3}{c}{Subsampling} \\
+  \midrule
+            &        &               & \multicolumn{2}{c}{Observations} & Feats \\
+            & Depth-wise & Leaf-wise & Regular & Gradient-based & \\
+  \midrule
+  XGBoost   & $x$ & $x$ & $x$ & $x$ & $x$ \\
+  LightGBM  & $x$ & $x$ & $x$ & $x$ & $x$ \\
+  CatBoost  & $x$ & $x$ & $x$ & $x$ & $x$ \\
+  GBM       &     & $x$ & $x$ &     &     \\
+  H2O       & $x$ &     & $x$ &     & $x$ \\
+  sklearn   & $x$ &     & $x$ &     & $x$ \\
+  \bottomrule
+\end{tabular}
+
+\end{small}
 
 \end{vbframe}
 
