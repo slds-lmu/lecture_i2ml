@@ -1,0 +1,214 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+\input{../../latex-math/ml-svm}
+
+\newcommand{\titlefigure}{figure_man/kernel_intro_1.png}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Reproducing Kernel Hilbert Space and Representer Theorem}
+\lecture{Introduction to Machine Learning}
+
+
+\begin{vbframe}{Kernels: Mercer's Theorem}
+  \begin{itemize}
+    \item Kernels are symmetric, positive definite functions
+      $k : \Xspace \times \Xspace \to \R$.
+   \item A kernel can be thought of as a shortcut computation for a two-step procedure: the feature map and the inner product.
+  \end{itemize}
+
+  \lz
+
+  Mercer's theorem says that for every kernel there exists an 
+  associated (well-behaved) feature space where the kernel acts as a dot-product.
+ 
+
+  \lz
+
+  \begin{itemize}
+    \item There exists a Hilbert space $\HS$ of continuous
+    functions $\Xspace \to \R$
+    {\small (think of it as a vector space with inner product
+    where all operations are meaningful, including taking limits of
+    sequences; this is non-trivial in the infinite-dimensional
+    case)}
+    \item and a continuous ``feature map'' $\phi : \Xspace \to \HS$,
+    \item so that the kernel computes the inner product of the features:
+    $$ k(\xv, \tilde \xv) = \scp{\phi(\xv)}{\phi(\tilde \xv)}.$$
+  \end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Reproducing kernel Hilbert space}
+
+  \begin{itemize}
+    \item There are many possible Hilbert spaces and feature maps for
+    the same kernel, but they are all ``equivalent'' (isomorphic).
+    \item It is often helpful to have a reference space for a kernel $k(\cdot,\cdot)$, called the \textbf{reproducing kernel Hilbert space (RKHS)}. 
+    \item The feature map of this space is
+    $$
+      \phi : \Xspace \to \continuous(\Xspace) \,;\quad \xv \mapsto k(\xv, \cdot)
+      \enspace,
+    $$
+    where $\continuous(\Xspace)$ is the space of continuous functions
+    $\Xspace \to \R$. The "features" of the RKHS are the kernel functions evaluated at an $\xv$. 
+    \item The Hilbert space is the completion of the span of the features:
+    $$
+      \HS = \overline{\spn\{\phi(\xv) \,|\, \xv \in \Xspace \}} \subset \continuous(\Xspace)
+      \enspace.
+    $$
+\item The so-called \textbf{reproducing property} states: 
+$$
+  \scp{k(\xv, \cdot)}{k(\bm{\tilde{x}}, \cdot)} = \scp{\phi(\xv)}{\phi(\bm{\tilde{x}})} = k(\xv, \bm{\tilde{x}}).
+$$
+  \end{itemize}
+
+\framebreak
+
+  \begin{itemize}
+    \item The RKHS provides us with a useful interpretation:\\
+    an input $\xv \in \Xspace$ mapped to the \textbf{basis function}
+    $\phi(\xv) = k(\xv, \cdot)$.
+    \item The kernel maps 2 points and computes the inner product:
+    $$
+      \langle k(\xv, \cdot), k( \tilde \xv, \cdot) \rangle = k(\xv, \tilde \xv)
+      \enspace.
+    $$
+    \item This is best illustrated with the Gaussian kernel.
+
+
+  \end{itemize}
+
+\begin{center}
+    \includegraphics[width=4cm]{figure_man/kernels/features-2.pdf}
+\end{center}
+
+\framebreak
+
+  \begin{itemize}
+    \item Caveat: Not all elements of the Hilbert space are of the
+    form $k(\xv, \cdot)$ for some $\xv \in \Xspace$!
+    \item A general element in the span takes the form
+    $$
+    \sum_{i=1}^n \alpha_i k\left(\xi, \cdot\right) \in \HS
+    \enspace.
+    $$
+    \item A general element in the closure of the span takes the form
+    $$
+    \sum_{i=1}^\infty \alpha_i k\left(\xi, \cdot\right) \in \HS
+    \enspace.
+    $$
+    with $\sum_{i=1}^\infty \alpha_i^2 < \infty$.
+  \end{itemize}
+
+\framebreak
+
+  What is $\scp{f}{g}$ for two elements
+  $$
+    f = \sum_{i=1}^n \alpha_i k\left(\xi, \cdot\right), \qquad g = \sum_{j=1}^m \beta_j k\left(\xv^{(j)}, \cdot\right)
+    \enspace?
+  $$
+  We use the bilinearity of the inner product:
+  \begin{small}
+  \begin{eqnarray*}
+    \scp{\sum_{i=1}^n \alpha_i k\left(\xi, \cdot\right)}{ \sum_{j=1}^m \beta_j k\left(\xv^{(j)}, \cdot\right)}
+    &=& \sum_{i=1}^n \alpha_i \scp{k\left(\xi, \cdot\right)}{\sum_{j=1}^m \beta_j k\left(\xv^{(j)}, \cdot\right)} \\
+    &=& \sum_{i=1}^n \sum_{j=1}^m \alpha_i \beta_j \scp{k\left(\xi, \cdot\right)}{k\left(\xv^{(j)}, \cdot\right)} \\
+    &=& \sum_{i=1}^n \sum_{j=1}^m \alpha_i \beta_j k\left(\xi, \xv^{(j)}\right)
+  \end{eqnarray*}
+  \end{small}
+  The kernel defines the inner products of all elements
+  in the span of the basis functions.
+
+\end{vbframe}
+
+\begin{vbframe}{Representer Theorem}
+
+The \textbf{representer theorem} tells us that the solution of a support vector machine problem 
+
+\vspace*{-0.5cm}
+
+\begin{eqnarray*}
+  & \min\limits_{\thetab, \theta_0,\sli} & \frac{1}{2} \thetab^\top \thetab + C   \sum_{i=1}^n \sli \\
+  & \text{s.t.} & \,\, \yi  \left( \scp{\thetab}{\phi\left(\xi\right)} + \theta_0 \right) \geq 1 - \sli \quad \forall\, i \in \nset,\\
+  & \text{and} & \,\, \sli \geq 0 \quad \forall\, i \in \nset\\
+\end{eqnarray*}
+
+\vspace*{-0.5cm}
+
+can be written as 
+
+\begin{eqnarray*}
+  \thetab &=& \sum_{j = 1}^n \beta_j \phi\left(\xv^{(j)}\right)
+  \end{eqnarray*}
+
+for $\beta_j \in \R$. 
+
+\end{vbframe}
+
+\begin{vbframe}{Representer Theorem}
+
+  \textbf{Theorem} (Representer Theorem):\\
+  The solution $\thetab, \theta_0$ of the support vector machine optimization problem fulfills $\thetab \in V = \spn\big\{\phi\left(\xv^{(1)}\right), \dots, \phi\left(\xv^{(n)}\right)\big\}$.\\
+
+  \vspace*{0.2cm}
+
+  \begin{footnotesize}
+  \textbf{Proof:} Let $V^\perp$ denote the space orthogonal to $V$,
+  so that $\HS = V \oplus V^\perp$. The vector $\thetab$ has a
+  unique decomposition into components $\bm{v} \in V$ and $\bm{v} ^\perp \in V^\perp$,
+  so that $\bm{v}  + \bm{v} ^\perp = \thetab$.\\[0.5em]
+
+  The regularizer becomes $\|\thetab\|^2 = \|\bm{v} \|^2 + \|\bm{v} ^\perp\|^2$.
+  The constraints $\yi  \left( \scp{\thetab}{\phi\left(\xi\right)} + \theta_0\right) \geq 1 - \sli$
+  do not depend on $\bm{v} ^\perp$ at all:
+  %, since $v^\perp$ is orthogonal to all $k\left(\xi, \cdot\right)$:
+  $$
+    \scp{\thetab}{\phi\left(\xi\right)} = \scp{\bm{v} }{\phi\left(\xi\right)} + \underbrace{\scp{\bm{v}^\perp}{\phi\left(\xi \right)}}_{= 0}
+    \enspace ~ \forall i \in \{1, 2, ..., n\}.
+  $$
+
+  Thus, we have two independent optimization problems, namely the
+  standard SVM problem for $v$ and the unconstrained minimization
+  problem of $\|v^\perp\|^2$ for $v^\perp$, with obvious solution
+  $v^\perp = 0$. Thus, $\thetab = v \in V$.
+  \end{footnotesize}
+
+  \framebreak
+
+  \begin{itemize}
+    \item Hence, we can restrict the SVM optimization problem
+    to the \textbf{finite-dimensional} subspace
+    $\spn\big\{\phi\left(\xv^{(1)}\right), \dots, \phi\left(\xv^{(n)}\right)\big\}$.\\
+    Its dimension grows with the size of the
+    training set.
+    \item More explicitly, we can assume the form
+    \begin{footnotesize}
+    $$ \thetab = \sum_{j=1}^n \beta_j \cdot \phi\left(\xv^{(j)}\right) $$
+    \end{footnotesize}
+    for the weight vector $\thetab\in \HS$.
+      \item The SVM prediction on $\xv \in \Xspace$ can be computed as
+    \begin{footnotesize}
+    $$
+    \fx = \sum_{j = 1}^n \beta_j \scp{\phi\left(\xv^{(j)}\right)}{\phi\left(\xv\right)} + \theta_0
+    \enspace.
+    $$
+    \end{footnotesize}
+
+
+    It can be shown that the sum is \textbf{sparse}: $\beta_j = 0$ for non-support vectors.
+
+  \end{itemize}
+
+\end{vbframe}
+
+\endlecture
+\end{document}

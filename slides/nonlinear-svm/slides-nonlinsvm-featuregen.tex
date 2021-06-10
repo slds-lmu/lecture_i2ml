@@ -1,0 +1,127 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+\input{../../latex-math/ml-svm}
+
+\newcommand{\titlefigure}{figure_man/kernel_intro_2.png}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Feature Generation for Nonlinear Separation}
+\lecture{Introduction to Machine Learning}
+
+
+\begin{vbframe}{Nonlinearity via Feature Maps}
+\begin{itemize}
+\item How to extend a linear classifier, e.g. the SVM, to nonlinear separation between classes? 
+\item We could project the data from 2D into a richer 3D feature space!
+\end{itemize}
+
+\vspace{1cm} 
+\begin{center}
+\includegraphics[width=9cm]{figure_man/kernels/svm_dummies_kernelling.PNG}
+\end{center}
+
+\framebreak 
+
+%http://www.eric-kim.net/eric-kim-net/posts/1/kernel_trick.html
+
+  In order to \enquote{lift} the data points into a higher dimension, we have to find a suitable \textbf{feature map} $\phi : \Xspace \to \Phi$.
+Let us consider another example where the classes lie on two concentric circles:
+
+\begin{center}
+\includegraphics[width=6cm]{figure_man/kernel_intro_1.png}
+\end{center}
+
+\framebreak
+
+\vspace*{0.5cm} 
+
+We apply the feature map $\phi(x_1, x_2) = (x_1, x_2, x_1^2+x_2^2)$ to map our points into a 3D space. Now our data can be separated by a hyperplane.
+
+
+\begin{center}
+  \includegraphics{figure_man/kernels/kernel_intro_4.png}
+\end{center}
+%  \includegraphics[width=5cm]{figure_man/kernels/kernel_intro_3.PNG}
+
+\framebreak 
+
+The hyperplane learned in $\HS \subset \R^3$ yields a nonlinear decision boundary when projected back to $\Xspace  = \R^2$.
+
+\begin{center}
+\includegraphics[width=6cm]{figure_man/kernel_intro_2.png}
+\end{center}
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{Feature Maps: Computational Limitations}
+
+Let us have a look at a similar nonlinear feature map $\phi: \R^2 \to \R^5$, where we collect all monomial feature extractors up to degree $2$ (pairwise interactions and quadratic effects):
+
+$$
+\phi(x_1, x_2) = (x_1^2, x_2^2, x_1  x_2, x_1, x_2).
+$$
+
+For $p$ features vectors, there are $k_1$ different monomials where the degree is exactly $d$, and $k_2$ different monomials up to degree $d$.
+
+
+$$
+k_1 = \mat{d + p - 1 \\ p} \qquad k_2 = \mat{d + p \\ p}-1
+$$
+
+Which is quite a lot, if $p$ is large.
+
+\framebreak 
+\begin{footnotesize}
+Let us see how well we can classify the $28 \times 28$-pixel images of the handwritten digits of the MNIST dataset (70K observations across 10 classes). 
+We use SVM with a nonlinear feature map which projects the images to a space of all monomials up to the degree $d$ and $C=1$:
+
+
+\begin{center}
+\includegraphics[width = 4cm ]{figure_man/introduction/mnist-eps-converted-to.pdf} ~~~ \includegraphics[width=4cm]{figure_man/computational_limits1.png}
+\end{center}
+
+
+
+
+\vspace{.3cm}
+For this scenario, with increasing degree $d$ the test mmce decreases.
+
+\vfill
+
+NB: We handle the multiclass task with the "one-against-one" approach. 
+We are somewhat lazy and only use 700 observations to train (rest for testing).
+We do not do any tuning - as we always should for the SVM!
+
+\end{footnotesize}
+
+\framebreak
+
+However, even a $16 \times 16$-pixel input image results in infeasible dimensions for our extracted features (monomials up to degree $d$).
+
+\begin{center}
+\includegraphics[width = 9cm ]{figure_man/computational_limits2.png}
+\end{center}
+
+In this case, training classifiers like a linear SVM via dataset transformations will incur serious \textbf{computational and memory problems}.
+
+\vspace*{0.2cm} 
+
+Are we at a \enquote{dead end}?
+
+Answer: No, this is why kernels exist!
+
+\end{vbframe}
+
+\endlecture
+\end{document}

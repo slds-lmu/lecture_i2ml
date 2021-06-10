@@ -1,0 +1,149 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+\input{../../latex-math/ml-gp}
+
+\newcommand{\titlefigure}{figure_man/gp-classification.png}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Gaussian Process Classification}
+\lecture{Introduction to Machine Learning}
+
+\begin{vbframe}{Gaussian process classification}
+
+\begin{itemize}
+\item Consider a binary classification problem where we want to learn $h: \Xspace \to \Yspace$, where $\Yspace = \{0, 1\}$. 
+\item The idea behind Gaussian process classification is very simple: a GP prior is placed over the score function $\fx$ and then transformed to a class probability via a sigmoid function $s(t)$
+
+$$
+p(y = 1 ~|~ \fx ) = s(\fx).
+$$
+
+\item This is a non-Gaussian likelihood, so we need to use approximate inference methods, e.g. Laplace approximation, expectation propagation, MCMC 
+\item For more details see \emph{Rasmussen, Gaussian Processes for Machine Learning, Chapter 3}.
+
+\end{itemize}
+
+\vspace*{1cm}
+
+\begin{figure}
+\includegraphics[width=1\textwidth]{figure_man/gp-classification.png}
+\end{figure}
+
+\framebreak 
+
+% Inference is divided into two steps
+
+% \begin{enumerate}
+% \item Computing the predictive distribution over the latent variable $f_*$ for a new observation $\xv_*$
+
+% \vspace*{-0.5cm}
+
+
+% $$
+% p(f_*~|~\bm{X}, \bm{y}, \bm{x}_*) = \int p(f_*~|~\bm{X}, \bm{x}_*, \bm{f})p(\bm{f}~|~\bm{X}, \bm{y})d\bm{f},
+% $$
+
+% where $p(\bm{f}~|~\bm{X, y})$ is the posterior over the latent variables. (We integrate out the unobserved latent variable $\bm{f}$). 
+% \item Using this distribution over $f_*$ to compute the posterior probability for class $1$
+
+% \vspace*{-0.5cm}
+
+% $$
+% p(y_* = 1~|~ \bm{X}, \bm{y}, \bm{x}_*) = \int \sigma(f_*)p(f_*~|~\bm{X}, \bm{y}, \bm{x}_*)df_*.
+% $$
+% \end{enumerate}
+
+% \begin{footnotesize}
+% Note that both expressions might be analytically intractable. Thus we need to use either analytic approximations of integrals (e. g. Laplace approximation) or solutions based on Monte Carlo sampling, which are not covered here. 
+% \end{footnotesize}
+
+According to Bayes' rule, the posterior (of the score function $\bm{f}$)
+
+\vspace*{-0.5cm}
+
+\begin{eqnarray*}
+  p(\bm{f} ~|~ \Xmat, \ydat) &=&  \frac{p(\ydat ~|~ \bm{f}, \Xmat) \cdot p(\bm{f} ~|~ \Xmat)}{p(\ydat ~|~\Xmat)} \propto p(\ydat ~|~ \bm{f}) \cdot p(\bm{f} ~|~ \Xmat)
+\end{eqnarray*}
+
+(the denominator is independent of $\bm{f}$ and thus dropped).
+
+\lz 
+
+Since $p(\bm{f} ~|~ \Xmat) \sim \mathcal{N}\left(0, \bm{K}\right)$ by the GP assumption, we have
+
+\vspace*{-0.2cm}
+
+$$
+  \log p(\bm{f} ~|~ \Xmat, y) \propto \log p(\ydat ~|~ \bm{f}) - \frac{1}{2} \bm{f}^\top \bm{K}^{-1} \bm{f} - \frac{1}{2} \log |\bm{K}| - \frac{n}{2} \log 2 \pi. 
+$$
+
+\framebreak  
+
+If the kernel is fixed, the last two terms are fixed. To obtain the maximum a-posteriori estimate (MAP) we minimize
+
+$$
+  \frac{1}{2} \bm{f}^\top \bm{K}^{-1} \bm{f} - \sumin \log p(\yi ~|~ f^{(i)}) + C.
+$$
+
+Note that $- \sumin \log p(\yi ~|~ f^{(i)})$
+is the logistic loss. We can see that Gaussian process classification corresponds to \textbf{kernel Bayesian logistic regression}! 
+
+\end{vbframe}
+
+\begin{vbframe}{Comparison: GP vs. SVM }
+
+The SVM 
+
+\begin{eqnarray*}
+  && \frac{1}{2} \|\thetab\|^2 + C \sumin \Lxyi, \\
+\end{eqnarray*}
+
+where $L(y, \fx) = \max\{0, 1-\fx\cdot y\}$ is the Hinge loss. 
+
+\lz 
+
+By the representer theorem we know that $\thetab = \sumin \beta_i \yi k\left(\xi, \cdot \right)$ and thus $\thetab^\top \thetab = \beta^\top \bm{K} \beta = \bm{f}^\top \bm{K}^{-1} \bm{f}$, as $\bm{K} \beta = \bm{f}$. Plugging that in, the optimization objective is
+
+\begin{eqnarray*}
+  && \frac{1}{2} \bm{f}^\top \bm{K}^{-1} \bm{f} + C \sumin \Lxyi. 
+\end{eqnarray*}
+
+\framebreak  
+
+For log-concave likelihoods $\log p(\ydat ~|~ \bm{f})$, there is a close correspondence between the MAP solution of the GP classifier
+
+$$
+  \argmin_f \frac{1}{2} \bm{f}^\top \bm{K}^{-1} \bm{f} - \sumin \log p(\yi ~|~ f^{(i)}) + C \quad \text{(GP classifier)}
+$$
+
+and the SVM solution
+
+\begin{eqnarray*}
+  \argmin_f && \frac{1}{2} \bm{f}^\top \bm{K}^{-1} \bm{f} + C \sumin \Lxyi \quad \text{(SVM classifier)}. 
+\end{eqnarray*}
+
+\framebreak 
+
+\begin{itemize}
+\item Both the Hinge loss and the Bernoulli loss are monotonically decreasing with increasing margin $y \fx$. 
+\item The key difference is that the hinge loss takes on the value $0$ for $y \fx \ge 1$, while the Bernoulli loss just decays slowly. 
+\item It is this flat part of the hinge function that gives rise to the sparsity of the SVM solution. \item We can see the SVM classifier as a \enquote{sparse} GP classifier.  
+\end{itemize}
+
+\begin{figure}
+\includegraphics[width=0.8\textwidth]{figure_man/gp-vs-svm.png}
+\end{figure}
+
+\end{vbframe}
+
+\endlecture
+\end{document}
