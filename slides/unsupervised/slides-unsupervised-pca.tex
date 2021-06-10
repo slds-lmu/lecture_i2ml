@@ -1,0 +1,596 @@
+## Normalizing Data
+```{r, include = FALSE, echo = FALSE, message = FALSE}
+ap = adjust_path(paste0(getwd(), "/figure"))
+```
+
+A variable $X$ can be normalized by substracting its values with the mean $\bar{X}$ and dividing by the standard deviation $s_X$, e.g. $\tilde{X} = \tfrac{X - \bar{X}}{s_X}.$
+
+**Example**:
+```{r, echo = FALSE, results='hide'}
+library(xtable)
+bh = t(data.frame(body.height = c("Person A" = 180, "Person B" = 172, "Person C" = 175)))
+```
+
+Consider the following body heights measured in different units:
+
+```{r, echo=FALSE, results='asis'}
+bh.m = bh/100
+bh.feet = round(bh/30.48, 4)
+
+options(xtable.comment = FALSE)
+tab = rbind(cbind(bh, "mean" = mean(bh), "sd" = sd(bh)),
+  cbind(bh.m, "mean" = mean(bh.m), "sd" = sd(bh.m)),
+  cbind(bh.feet, "mean" = mean(bh.feet), "sd" = sd(bh.feet)))
+row.names(tab) = c("body height (cm)", "body height (m)", "body height (feet)")
+
+xtable(tab, align = c("c|", "c", "c", "c", "|c", "c"))
+```
+
+After normalizing, we always obtain the normalized body height (no matter which unit was used):
+
+```{r, echo = FALSE, results='asis'}
+bh.norm = (bh - mean(bh))/sd(bh)
+bh.norm = cbind(bh.norm, "mean" = round(mean(bh.norm), 0), "sd" = sd(bh.norm))
+row.names(bh.norm) = "normalized body height"
+xtable(bh.norm, align = c("c|", "c", "c", "c", "|c", "c"))
+```
+
+## Normalizing Data
+
+Normalizing all variables in a data set can have several advantages:
+
+- It transforms all variables into a **comparable** unit with mean 0 and standard deviation of 1.
+- It can avoid numerical instabilities in several algorithms, e.g. if a variable has very low / high values.
+- It helps in computing meaningful **distances** between observations.
+
+## Normalizing Data: Distances
+
+There are many ways to define the distance between two points, e.g., $Z_i = (X_i, Y_i)$ and $Z_j = (X_j, Y_j)$:
+
+```{r,echo=FALSE, fig.align="center", fig.width=6, fig.height=4, out.width="0.5\\textwidth"}
+Colors = colorspace::rainbow_hcl(3)
+cbbPalette = c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+getCurrentAspect = function() {
+   uy <- diff(grconvertY(1:2,"user","inches"))
+   ux <- diff(grconvertX(1:2,"user","inches"))
+   uy/ux
+}
+
+par(mar = c(4,4,0,0))
+plot(x = c(1L,5L), y = c(1L,4L), ylim = c(0,5), xlim = c(0,6), pch = 19,
+  xlab = "Variable X (Dimension 1)", ylab = "Variable Y (Dimension 2)")
+lines(x = c(1L,5L), y = c(1L,4L))
+text(x = c(1L,5L), y = c(1L,4L), c(expression(Z[i]), expression(Z[j])), adj = c(1.5, 0), cex = 2)
+lines(x = c(1L, 5L, 5L, 5L), y = c(1L, 1L, 1L, 4L), col = Colors[1])
+legend("topleft", lty = 1, legend = c("manhattan", "euclidean"), col = c(Colors[1],1))
+
+text(x = 5, y = 1, expression(d(Z[i],Z[j])~"= |5-1| + |4-1| = 7"), adj = c(1,1), col = Colors[1])
+
+asp = getCurrentAspect()
+text(x = 3, y = 2.5, expression(d(Z[i],Z[j])~"="~sqrt((5-1)^2 + (4-1)^2)~"= 5"),
+  adj = c(0.5,0), col = 1, srt = 180/pi*atan(3/4*asp))
+```
+\vspace{-10pt}
+
+- \small manhattan: sum up the absolute distances in each dimension.
+
+- \small euclidean: remember Pythagoras theorem from school?
+
+## Normalizing Data: Distances
+
+It is often a good idea to *normalize* the data before computing distances, especially when the scale of variables is different, e.g. the euclidean distance between the point $Z_1$ and $Z_2$:
+
+```{r, echo=FALSE, fig.align="center", fig.height=4, fig.width=9}
+par(mar = c(3.5,3.5,1,1), mfrow = c(1,2), mgp = c(2.5,1,0))
+
+dat = data.frame(shoe.size = c(46, 40, 44), height = c(180, 172, 175))
+plot(x = dat$shoe.size, y = dat$height, xlab = "shoe size", ylab = "body height (in cm)",
+  pch = 19, xlim = range(dat$shoe.size)*c(0.95, 1.05), ylim = range(dat$height)*c(0.98, 1.02))
+lines(x = dat$shoe.size[-3], y = dat$height[-3])
+asp = getCurrentAspect()
+text(x = mean(dat$shoe.size[-3]), y = mean(dat$height[-3]),
+  bquote(paste(d(Z[1],Z[2])~"="~sqrt((46-40)^2 + (180-172)^2)~" = ", .(sqrt((46-40)^2 + (180-172)^2)))),
+  adj = c(0.5,-0.25), col = 1, srt = 180/pi*atan(diff(dat$height[-3])/diff(dat$shoe.size[-3])*asp))
+text(x = dat$shoe.size, y = dat$height, c(expression(Z[2]), expression(Z[1]), expression(Z[3])), adj = c(-1, 0.5))
+
+dat$height = dat$height/100
+plot(x = dat$shoe.size, y = dat$height, xlab = "shoe size", ylab = "body height (in m)",
+  pch = 19, xlim = range(dat$shoe.size)*c(0.95, 1.05), ylim = range(dat$height)*c(0.98, 1.02))
+lines(x = dat$shoe.size[-3], y = dat$height[-3])
+asp = getCurrentAspect()
+text(x = mean(dat$shoe.size[-3]), y = mean(dat$height[-3]),
+  bquote(paste(d(Z[1],Z[2])~"="~sqrt((46-40)^2 + (1.80-1.72)^2)~" = ", .(sqrt((46-40)^2 + (1.80-1.72)^2)))),
+  adj = c(0.5,-0.25), col = 1, srt = 180/pi*atan(diff(dat$height[-3])/diff(dat$shoe.size[-3])*asp))
+text(x = dat$shoe.size, y = dat$height, c(expression(Z[2]), expression(Z[1]), expression(Z[3])), adj = c(-1, 0.5))
+
+```
+
+On the right plot, the distance is dominated by `shoe size`.
+
+## Normalizing Data: Distances
+
+\small
+The normalized variable $\tilde{X}_{\texttt{shoe.size}}$ is computed by
+\[\tilde{X}_{\texttt{shoe.size}} = \tfrac{X_{\texttt{shoe.size}}-\bar{X}_{\texttt{shoe.size}}}{s_{X_{\texttt{shoe.size}}}}.\]
+Distances based on normalized data are better comparable and **robust** in terms of linear transformations (e.g., conversion of physical units).
+
+```{r, echo=FALSE, fig.align="center", fig.height=4, fig.width=6, out.width="0.6\\textwidth"}
+par(mar = c(3.5,3.5,0.1,0.1), mgp = c(2.5,1,0))
+
+#dat = data.frame(shoe.size = c(45, 40, 42), height = 1000*c(85, 70, 72))
+dat = as.data.frame(scale(dat))
+plot(x = dat$shoe.size, y = dat$height, xlab = "normalized shoe size", ylab = "normalized body height",
+  pch = 19, xlim = range(dat$shoe.size)*c(1.1, 1.2), ylim = range(dat$height)*c(1.1, 1.1))
+lines(x = dat$shoe.size[-3], y = dat$height[-3])
+asp = getCurrentAspect()
+text(x = mean(dat$shoe.size[-3]), y = mean(dat$height[-3]),
+  bquote(paste(d(Z[1],Z[2])~" = ", .(sqrt((dat$shoe.size[1]-dat$shoe.size[2])^2 + (dat$height[1]-dat$height[2])^2)))),
+  adj = c(0.5,0), col = 1, srt = 180/pi*atan(diff(dat$height[-3])/diff(dat$shoe.size[-3])*asp))
+text(x = dat$shoe.size, y = dat$height, c(expression(Z[2]), expression(Z[1]), expression(Z[3])), adj = c(-1, 0.5))
+```
+
+<!-- ## Normalizing: Covariance vs. Correlation -->
+
+<!-- The **covariance** $\sigma_{XY} = Cov(X,Y)$ of two variables $X$ and $Y$ can be estimated by the sample covariance -->
+<!-- $$s_{XY}=\dfrac{1}{n-1}\sum_{i=1}^{n}{(x_i-\bar{x})(y_i-\bar{y})}.$$ -->
+<!-- It can be interpreted as the \emph{average of the rectangle} with width $x_i - \bar{x}$ and height $y_i - \bar{y}$. -->
+
+<!-- ```{r, echo = FALSE, fig.height = 3, fig.width = 4, out.width="100%"} -->
+<!-- ind = 1 -->
+
+<!-- data = as.data.frame(matrix(c(0.4,-0.8,-0.5,0.7,0.7,0.8,-0.6,-0.9), ncol = 2)) -->
+<!-- data$label = paste0("Point ", 1:4) -->
+<!-- p = ggplot(data) + geom_point(aes(x = V1, y = V2)) + -->
+<!--   geom_hline(yintercept = mean((data$V2)), linetype = "dashed") +  -->
+<!--   geom_vline(xintercept = mean((data$V1)), linetype = "dashed")  + xlim(c(-1, 1)) + ylim(c(-1, 1)) + -->
+<!--   geom_text(aes(x=mean((data$V1)), label="bar(x)", y=1), parse = T, hjust = 0) + -->
+<!--   geom_text(aes(x=-1, label="bar(y)", y=mean(data$V2)), parse = T, vjust = 0) + -->
+<!--   theme(axis.title = element_text(size = 14), -->
+<!--     plot.title = element_text(size =  rel(4)))  -->
+
+<!-- inds = 1:4 -->
+<!-- for(ind in inds) { -->
+<!--   col = ifelse(ind%%2 == 0, "blue", "red") -->
+<!--   p = p + annotate("rect",xmin = mean((data$V1)), ymin = mean((data$V2)), -->
+<!--     xmax = (data$V1)[ind], ymax = (data$V2)[ind], alpha = .1, -->
+<!--     color = col, fill = col) + -->
+<!--     annotate("text", x = mean(c((data$V1)[ind], mean((data$V1)))),  -->
+<!--       y = (data$V2)[ind],  -->
+<!--       vjust = ifelse((data$V2)[ind]>0, -0.5, 1),  -->
+<!--       label = paste0("(x[", ind, "]-bar(x))"), parse = T, colour = col) + -->
+<!--     annotate("text", x = (data$V1)[ind],  -->
+<!--       vjust = ifelse((data$V1)[ind]>0, 1, -0.5),  -->
+<!--       y = mean(c((data$V2)[ind], mean((data$V2)))),  -->
+<!--       label = paste0("(y[", ind, "]-bar(y))"), -->
+<!--       parse = T, colour = col, angle = 90) + -->
+<!--     geom_point(x = (data$V1)[ind], y = (data$V2)[ind],  -->
+<!--       color = col, alpha = .1, size = 4) -->
+<!-- } -->
+
+<!-- p + geom_text_repel(aes(x = V1, y = V2, label = label)) + xlab("") + ylab("") -->
+
+<!-- ``` -->
+
+<!-- ## Normalizing: Covariance vs. Correlation -->
+
+<!-- The covariance is based on computing the area of the rectangles, which requires  computing differences: -->
+
+<!-- ```{r, echo=FALSE, fig.align="center", fig.height=4, fig.width=9} -->
+<!-- par(mar = c(3.5,3.5,1,1), mfrow = c(1,2), mgp = c(2.5,1,0)) -->
+
+<!-- dat = data.frame(shoe.size = c(46, 40, 43), height = c(180, 172, 179)) -->
+<!-- dat = rbind(dat, colMeans(dat)) -->
+<!-- plot(x = dat$shoe.size, y = dat$height, xlab = "shoe size", ylab = "body height (in cm)", -->
+<!--   pch = 19, xlim = range(dat$shoe.size)*c(0.95, 1.01), ylim = range(dat$height)*c(0.99, 1.01)) -->
+<!-- #lines(x = dat$shoe.size[-3], y = dat$height[-3]) -->
+<!-- text(x = dat$shoe.size, y = dat$height,  -->
+<!--   c(expression("("~X[2]~","~Y[2]~")"), -->
+<!--     expression("("~X[1]~","~Y[1]~")"),  -->
+<!--     expression("("~X[3]~","~Y[3]~")"),  -->
+<!--     expression("("~bar(X)~","~bar(Y)~")")), adj = c(1.1, 0)) -->
+<!-- lines(x = c(dat$shoe.size[2], dat$shoe.size[2], dat$shoe.size[4], dat$shoe.size[4]), y = c(dat$height[2], dat$height[2], dat$height[2], dat$height[4])) -->
+
+<!-- text(x = 40, y = 172, expression("(40-43) (172-177) = 15"), adj = c(0,1.1)) -->
+
+<!-- dat$height = dat$height/100 -->
+<!-- plot(x = dat$shoe.size, y = dat$height, xlab = "shoe size", ylab = "body height (in m)", -->
+<!--   pch = 19, xlim = range(dat$shoe.size)*c(0.95, 1.01), ylim = range(dat$height)*c(0.99, 1.01)) -->
+<!-- #lines(x = dat$shoe.size[-3], y = dat$height[-3]) -->
+
+<!-- text(x = dat$shoe.size, y = dat$height, c(expression("("~X[2]~","~Y[2]~")"), -->
+<!--     expression("("~X[1]~","~Y[1]~")"),  -->
+<!--     expression("("~X[3]~","~Y[3]~")"),  -->
+<!--     expression("("~bar(X)~","~bar(Y)~")")), adj = c(1.1, 0)) -->
+<!-- lines(x = c(dat$shoe.size[2], dat$shoe.size[2], dat$shoe.size[4], dat$shoe.size[4]), y = c(dat$height[2], dat$height[2], dat$height[2], dat$height[4])) -->
+
+<!-- text(x = 40, y = 1.72, expression("(40-43) (1.72-1.77) = 0.15"), adj = c(0,1.1)) -->
+<!-- ``` -->
+
+<!-- The correlation is just the scaled covariance and won't change if, e.g., the variables are measured in different physical units. -->
+
+## Normalizing: Covariance vs. Correlation
+
+The **variance** of a normalized variable is always 1, its mean is always 0.
+
+The **covariance** of two normalized variables $\tilde{X} = \tfrac{X - \bar{X}}{s_X}$ and $\tilde{Y} = \tfrac{Y - \bar{Y}}{s_Y}$ is the same as the **correlation** of the non-normalized variables $X$ and $Y$.
+
+One can proof this with the help of
+$$s_{\tilde{X}\tilde{Y}}=\tfrac{1}{n-1}\sum_{i=1}^{n}{(\tilde{x}_i-\bar{\tilde{x}})(\tilde{y}_i-\bar{\tilde{y}})} = \hdots =  \tfrac{1}{n-1}\sum_{i=1}^{n}{\tfrac{(x_i-\bar{x})}{s_{X}}\tfrac{(y_i-\bar{y})}{s_{Y}}} = r_{XY}.$$
+
+$\Rightarrow$ In contrast to the covariance, the correlation does not change if, e.g., the variables are measured in different physical units.
+
+<!-- ## Distances between Observations -->
+
+<!-- ```{r, echo=FALSE, fig.align="center", fig.height=4, fig.width=6, out.width="0.65\\textwidth"} -->
+<!-- par(mar = c(3.5,3.5,0.1,0.1), mgp = c(2.5,1,0)) -->
+
+<!-- dat = data.frame(shoe.size = c(46, 40, 43), height = c(180, 172, 179)) -->
+<!-- dat = as.data.frame(scale(dat)) -->
+<!-- dat = rbind(dat, colMeans(dat)) -->
+<!-- plot(x = dat$shoe.size, y = dat$height, xlab = "shoe size", ylab = "body height (in m)", -->
+<!--   pch = 19, xlim = range(dat$shoe.size)*c(0.95, 1.05), ylim = range(dat$height)*c(0.98, 1.02)) -->
+<!-- #lines(x = dat$shoe.size[-3], y = dat$height[-3]) -->
+
+<!-- text(x = dat$shoe.size, y = dat$height, c(expression("("~X[2]~","~Y[2]~")"), -->
+<!--     expression("("~X[1]~","~Y[1]~")"),  -->
+<!--     expression("("~X[3]~","~Y[3]~")"),  -->
+<!--     expression("("~bar(X)~","~bar(Y)~")")), adj = c(1.01, 0)) -->
+<!-- lines(x = c(dat$shoe.size[2], dat$shoe.size[2], dat$shoe.size[4], dat$shoe.size[4]), y = c(dat$height[2], dat$height[2], dat$height[2], dat$height[4])) -->
+
+<!-- text(x = 40, y = 1.72, expression("(40-43) (1.72-1.77) = 0.15"), adj = c(0,1)) -->
+
+<!-- ``` -->
+
+<!-- ## Summary -->
+
+<!--   - Categorical variables can be summarized by tables and visualized by bar plots. -->
+<!--   - For metric variables, -->
+<!--     - we can compute summary statistics such as the mean (location) and the standard deviation (spread). -->
+<!--     - we can use histograms or estimated density plots to visualize their distribution. -->
+<!--     - we can fit known density functions by estimating the density parameters (e.g., $\mu$ and $\sigma$ in case of a normal distribution). -->
+<!--   - The scatter plot is a powerful visualization tool for multivariate data. -->
+<!--   - The shape of a multivariate normal distribution is controlled by its covariance matrix. -->
+
+```{r, include=FALSE, echo=FALSE, message=FALSE}
+library("knitr")
+set.seed(1)
+options(scipen = 1, digits = 4, width=70)
+Colors = colorspace::rainbow_hcl(3)
+cbbPalette = c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+```
+
+## PCA
+
+```{r, include = FALSE, echo = FALSE, message = FALSE}
+ap = adjust_path(paste0(getwd(), "/figure"))
+library(MASS)
+library(GGally)
+library(factoextra)
+library(ggrepel)
+library(rafalib)
+library(colorspace)
+```
+
+**Goal**: Reduce a $p$-dimensional space of numeric variables to a lower dimensional space without losing much information **regarding the variability** in the data.
+
+**Problem**: How do we want to achieve this? Especially in case of correlated data, this is not easy.
+
+**Idea**: Transform the original (correlated) variables to a new set of uncorrelated (orthogonal) variables called principal components (PC), and use less than $p$ PCs to reduce the dimension.
+
+## PCA Intuition {.t}
+
+**Motivational example**: 2D $\rightarrow$ 1D (uncorrelated)
+
+- As $x_1$ and $x_2$ are uncorrelated, we can directly observe that $x_1$ explains most of the variation in the data.
+- Variable $x_2$ has a lower variance than $x_1$.
+- If we remove $x_2$ and project the 2D points into the 1D space of $x_1$, we do not lose much information regarding the variability in the data.
+
+\begin{center}
+  \includegraphics[width = \textwidth]{`r ap("pca1.png")`}
+\end{center}
+
+## PCA Intuition {.t}
+
+**Motivational example**: 2D $\rightarrow$ 1D (correlated)
+
+- $x_1$ and $x_2$ are correlated and have similar variances.
+- Find a new orthogonal axes that explain most of the variation in each dimension, e.g., PC1 and PC2.
+- Consider PC1 and PC2 as new coordinate system by rotating the points ($\Rightarrow$ same situation as in the previous example).
+- We can now project points onto PC1 and remove PC2 without losing much information.
+
+\begin{center}
+  \includegraphics[width = \textwidth]{`r ap("pca2.png")`}
+\end{center}
+
+<!-- [SEE THIS ANIMATION.](https://i.stack.imgur.com/Q7HIP.gif) -->
+
+## PCA General Procedure
+
+**General procedure**:
+
+1. Rotate the original $p$-dimensional coordinate system until the first PC that explains most of the variation is found.
+1. Fix the first PC and proceed with rotating the remaining $p-1$ coordinates until the second PC (which is orthogonal to the first PC) is found that explains most of the **remaining variation**, etc.
+1. We can reduce the dimensions by projecting the points onto the first, say $k<p$, PC.
+
+## PCA Animation: Find First PC
+
+```{r, results="asis", echo = FALSE, fig.height=7, fig.width=7, out.width="70%"}
+Colors = colorspace::rainbow_hcl(3)
+# code from https://github.com/genomicsclass/labs/blob/master/highdim/PCA.Rmd
+mypar()
+n = 50
+col = Colors[1]
+set.seed(123)
+
+Y=t(mvrnorm(n,c(0,0), matrix(c(1,0.9,0.9,1),2,2)))
+
+thelim = c(-3,3)
+#par(xaxs='i',yaxs='i',mar=c(1,1,3,3)+0.1)
+plot(Y[1,], Y[2,], xlim=thelim, ylim=thelim, axes=F ,ann=F)
+#box()
+arrows(c(0,thelim[1]),c(thelim[1],0),c(0,thelim[2]),c(thelim[2],0),0.05); ## draw custom axes
+mtext(expression(x[2]),3,-1,at=0,las=1); ## y label
+mtext(expression(x[1]),4,-0.75,at=0,las=1); ## x label
+
+for (rotate in c(0,-0.5,-1, -3, -300, 3, 1)) {
+  cat("  \n## ", "PCA Animation: Find First PC  \n \\addtocounter{framenumber}{-1}  \n")
+  u = matrix(c(1,rotate),ncol=1)
+  u = u/sqrt(sum(u^2))
+  w=t(u)%*%Y
+  mypar(1,1)
+  plot(t(Y), main=paste("Variance of projected points:",round(tcrossprod(w)/(n-1),2) ),
+    xlim=thelim, ylim=thelim, axes=F, xlab = "", ylab = "")
+  #box()
+  arrows(c(0,thelim[1]),c(thelim[1],0),c(0,thelim[2]),c(thelim[2],0),0.05); ## draw custom axes
+mtext(expression(x[2]),3,-1,at=0,las=1); ## y label
+mtext(expression(x[1]),4,-0.75,at=0,las=1); ## x label
+  #abline(h=0,lty=2)
+  #abline(v=0,lty=2)
+  abline(0,rotate,col=col)
+  abline(0,ifelse(rotate == 0, 300, -1/rotate),col=col)
+  Z = u%*%w
+  for(i in seq(along=w))
+    segments(Z[1,i],Z[2,i],Y[1,i],Y[2,i],lty=2)
+  points(t(Z), col=col, pch=16, cex=0.8)
+  legend("topleft", lty = c(1,2, NA), pch = c(NA,NA,16), legend = c("rotated coordinate system", "original coordinate system", "projected points"), col = c(col, "black", col))
+}
+text(3, 3, labels = "PC1", col = col, pos = 1)
+text(3, -3, labels = "PC2", col = col, pos = 3)
+```
+
+## PCA: Reduce dimensionality {.t}
+
+```{r, echo = FALSE, fig.height=6, fig.width=6, out.width="55%"}
+a = pi/4
+Yrotated = t(Y) %*% matrix(c(cos(a), -sin(a), sin(a), cos(a)), ncol = 2, byrow = T)
+mypar(1,1, mar = c(0,0,0,1))
+plot(Yrotated,
+  xlim = c(-3,3), ylim = c(-3,3), xlab = "PC1", ylab = "PC2", axes=F ,ann=F)
+#box()
+arrows(c(0,thelim[1]),c(thelim[1],0),c(0,thelim[2]),c(thelim[2],0),0.05, col = col, lwd = 1.5); ## draw custom axes
+mtext("PC2",3,-1,at=0,las=1, col = col, cex = 0.8); ## y label
+mtext("PC1",4,-1,at=0,las=1, col = col, cex = 0.8); ## x label
+```
+
+Consider PC1 and PC2 as new coordinate system by rotating the points.
+Here, the PC1 axis explains most of the variance.
+
+## PCA: Reduce dimensionality {.t}
+
+```{r, echo = FALSE, fig.height=6, fig.width=6, out.width="55%"}
+mypar(1,1, mar = c(0,0,0,1))
+plot(Yrotated,
+  xlim = c(-3,3), ylim = c(-3,3), xlab = "PC1", ylab = "PC2", axes=F ,ann=F)
+#box()
+arrows(c(0,thelim[1]),c(thelim[1],0),c(0,thelim[2]),c(thelim[2],0),0.05, col = col, lwd = 1.5); ## draw custom axes
+mtext("PC2",3,-1,at=0,las=1, col = col, cex = 0.8); ## y label
+mtext("PC1",4,-1,at=0,las=1, col = col, cex = 0.8); ## x label
+#abline(h=0,lty=2, col=col)
+#abline(v=0,lty=2, col=col)
+u = matrix(c(1,0),ncol=1)
+u = u/sqrt(sum(u^2))
+wrotated = t(u)%*%t(Yrotated)
+Zrotated = u%*%wrotated
+for(i in seq(along=w))
+  segments(Zrotated[1,i], Zrotated[2,i], t(Yrotated)[1,i], t(Yrotated)[2,i], lty=2)
+points(t(Zrotated), col=col, pch=16, cex=0.8)
+
+# plot(t(Zrotated), col=col, pch=16, cex=0.8, xlab = "PC1", ylab = "PC2", axes=F ,ann=F)
+# arrows(c(0,thelim[1]),c(thelim[1],0),c(0,thelim[2]),c(thelim[2],0),0.05, col = col, lwd = 1.5); ## draw custom axes
+# mtext("PC2",3,-1,at=0,las=1, col = col, cex = 0.8); ## y label
+# mtext("PC1",4,-1,at=0,las=1, col = col, cex = 0.8); ## x label
+```
+
+Dimensionality can be reduced by projecting the points onto the PC1 (and by removing PC2). The aim is to avoid losing much information regarding the total variability.
+
+## PCA: Reduce dimensionality
+
+Dimensionality reduction always results in information loss. PCA keeps this information loss as low as possible in terms of variability.
+
+```{r, echo = FALSE, fig.height=3, fig.width=7.75}
+Colors = colorspace::rainbow_hcl(3)
+# code from https://github.com/genomicsclass/labs/blob/master/highdim/PCA.Rmd
+mypar(1,1, mfrow = c(1,2), mar = c(1, 0.25, 2, 0.25))
+n = 50
+col = Colors[1]
+set.seed(123)
+
+Y=t(mvrnorm(n,c(0,0), matrix(c(1,0.9,0.9,1),2,2)))
+
+thelim = c(-3,3)
+
+#par(xaxs='i',yaxs='i',mar=c(1,1,3,3)+0.1)
+plot(t(Y), xlim=thelim, ylim=thelim, axes=F ,ann=F)
+#box()
+arrows(c(0,thelim[1]),c(thelim[1],0),c(0,thelim[2]),c(thelim[2],0),0.05); ## draw custom axes
+mtext(expression(x[2]),3,-1,at=0,las=1, adj = -0.5); ## y label
+mtext(expression(x[1]),4,-0.75,at=0,las=1, padj = -0.5); ## x label
+mtext("original data space (2D)", line = 1, cex = 0.8)
+mtext("(requires variables x1 and x2)", cex = 0.8)
+
+u = matrix(c(1,1),ncol=1)
+u = u/sqrt(sum(u^2))
+w=t(u)%*%Y
+#mypar(1,1)
+plot(t(Y), xlim=thelim, ylim=thelim, axes=F, xlab = "", ylab = "", col = "gray80")
+#box()
+arrows(c(0,thelim[1]),c(thelim[1],0),c(0,thelim[2]),c(thelim[2],0),0.05); ## draw custom axes
+mtext(expression(x[2]),3,-1,at=0,las=1, adj = -0.5); ## y label
+mtext(expression(x[1]),4,-0.75,at=0,las=1, padj = -0.5); ## x label
+#abline(h=0,lty=2)
+#abline(v=0,lty=2)
+abline(0,rotate,col=col)
+#abline(0,ifelse(rotate == 0, 300, -1/rotate),col=col)
+Z = u%*%w
+for(i in seq(along=w))
+  segments(Z[1,i],Z[2,i],Y[1,i],Y[2,i],lty=2, col = "gray80")
+points(t(Z), pch=16, cex=0.8)
+mtext("original data space (2D)", line = 1, cex = 0.8)
+mtext("(reconstruct 2D space using PC1)", cex = 0.8)
+text(2.75, 2.5, labels = "PC1", col = col, pos = 1)
+#text(3, -3, labels = "PC2", col = col, pos = 3)
+```
+
+```{r, eval = FALSE, echo = FALSE}
+n = 50
+set.seed(123)
+source('http://www.sthda.com/sthda/RDoc/functions/addgrids3d.r')
+
+Y=t(mvrnorm(n,c(0,0,0), matrix(c(
+  1, 0.7, 0.2,
+  0.7, 1, 0.4,
+  0.2, 0.4, 1), 3, 3)))
+
+pca = prcomp(Y, center = F, scale. = F)
+
+Y2 = pca$x[, 1:2] %*% t(pca$rotation[, 1:2])
+Y2
+
+pc1 = pca$rotation[, 1]
+pc2 = pca$rotation[, 2]
+
+grid = expand.grid(
+  seq(min(pc1), max(pc1), length.out = 10),
+  seq(min(pc2), max(pc2), length.out = 10))
+grid = pca$x[, 1:2] %*% t(grid)
+
+angle = 160
+scale.y = 0.25
+
+p1 = scatterplot3d(Y[1,], Y[2,], Y[3,], pch = 16, color="steelblue", grid=FALSE, box=FALSE,
+  angle = angle, scale.y=scale.y,
+  #type="h",   ## add vertical line from plane to data points with this #option
+  main="3D Scatterplot with Vertical Lines")
+addgrids3d(Y[1,], Y[2,], Y[3,], grid = c("xy", "xz", "yz"), angle = angle)
+pointsY = p1$xyz.convert(Y[1,], Y[2,], Y[3,])
+pointsY2 = p1$xyz.convert(Y2[1,], Y2[2,], Y2[3,])
+segments(pointsY$x,pointsY$y,pointsY2$x,pointsY2$y,lwd=2,col=2)
+p1$points3d(Y2[1,], Y2[2,], Y2[3,], type="h")
+#p1$points3d(grid[1,], grid[2,], grid[3,], angle = angle, col = "gray", pch = 3)
+m = lm(grid[3,] ~ grid[2,] + grid[1,])
+p1$plane3d(Intercept = 0, x.coef = -1/coef(m)[2], y.coef = -1/coef(m)[3], draw_polygon = T)
+
+plot_ly(x = ~Y[1,], y = ~Y[2,], z = ~Y[3,]) %>%
+  add_trace(x = c(Y[1,1], Y2[1,1]), y = c(Y[2,1], Y2[2,1]), z = c(Y[3,1], Y2[3,1]))
+
+pointsY = xyz.coords(Y[1,], Y[2,], Y[3,])
+pointsY2 = xyz.coords(Y2[1,], Y2[2,], Y2[3,])
+Yl = t(Y)
+Y2l = t(Y2)
+diff = Yl - Y2l
+lines3d(Yl[1,] + diff[1,],lwd=2,col=2)
+
+
+p2 = scatterplot3d(Y2[1,], Y2[2,], Y2[3,], pch = 16, color="steelblue", grid=FALSE, box=FALSE,
+  angle = angle, scale.y=scale.y,
+  type="h",   ## add vertical line from plane to data points with this #option
+  main="3D Scatterplot with Vertical Lines")
+addgrids3d(Y2[1,], Y2[2,], Y2[3,], grid = c("xy", "xz", "yz"), angle = angle)
+p2$points3d(grid[1,], grid[2,], grid[3,], angle = angle, col = "gray", pch = 3)
+```
+
+\begin{center}
+  \includegraphics[width = \textwidth]{`r ap("fig_pca_illu3d.png")`}\\
+\footnotesize Source: \href{http://phdthesis-bioinformatics-maxplanckinstitute-molecularplantphys.matthias-scholz.de/}{Matthias Scholz Ph.D. Dissertation CC BY 2.0 DE license} \normalsize
+\end{center}
+
+<!-- ## PCA Intuition: Animation -->
+
+<!-- Rotate back to see what kind of information we losed: -->
+
+<!-- ```{r, echo = FALSE} -->
+<!-- rotate = 1 -->
+<!-- u = matrix(c(1,rotate),ncol=1) -->
+<!-- u = u/sqrt(sum(u^2)) -->
+<!-- w=t(u)%*%Y -->
+<!-- mypar(1,1) -->
+<!-- plot(NA, main="",xlim=thelim,ylim=thelim, xlab=expression(x[1]), ylab=expression(x[2])) -->
+<!-- abline(0,rotate,col=col) -->
+<!-- abline(0,ifelse(rotate == 0, 300, -1/rotate),col=col) -->
+<!-- Z = u%*%w -->
+<!-- points(t(Z), col=col, pch=16, cex=0.8) -->
+<!-- ``` -->
+
+## PCA Intuition: Final Remarks
+
+- PCA is used for dimensionality reduction by removing dimensions with lower variability.
+- Information loss regarding other criteria can be dramatic.
+- E.g., the classification accuracy can be considerably worsened if the variable with lowest variability (which is removed) separates the classes perfectly:
+
+\begin{center}
+  \includegraphics[width = \textwidth]{`r ap("pca3.png")`}
+\end{center}
+
+<!-- ## PCA Intuition: Summary -->
+
+<!-- - Find principal components (PC) that not correlate and explain the variability in the data in a decreasing order. -->
+
+<!-- - The objective is to investigate if fewer PCs explain most of the variability in the original data. -->
+
+<!-- - If the objective is fulfilled, we can use fewer PCs to reduce the dimensionality. -->
+
+<!-- - The PCs remove collinearity of the input variables as they are orthogonal to each other. -->
+
+<!-- **Idea:** Transform an original set of correlated metric variables to a new set of uncorrelated (orthogonal) metric variables, called principal components (PC), that explain the variability in the data. -->
+
+<!-- ## Deriving the First PC Mathematically -->
+
+<!-- The first PC of the observations is the linear combination -->
+<!-- $$\mathbf{pc}_1 = a_{11} \mathbf{x}_1 + a_{12}\mathbf{x}_2 + \hdots + a_{1p}\mathbf{x}_p.$$ -->
+
+<!-- - The **loading vectors** $\mathbf{a}_1, \hdots, \mathbf{a}_p$ contain the coefficient weights of the linear combination of each PC, e.g. the loading vector of the $k$-th PC is $\mathbf{a}_k = (a_{k1}, \hdots, a_{kp})^\top$. -->
+
+<!-- - For identifiability reasons, a restriction must be placed on the loading vectors, i.e. the sum of squares should be one ($\mathbf{a}_k^\top \mathbf{a}_k = 1$). -->
+
+## Deriving the First PC Mathematically
+
+<!-- PCA works on the covariance matrix $\Sigma$ or correlation matrix. -->
+
+<!-- - We need an estimate of the covariance matrix $\Sigma$ of data matrix $\mathbf{X} = [\mathbf{x}_1, \hdots, \mathbf{x}_p]$ that contains only metric variables. -->
+
+**Aim**: Find a new set of variables (PC scores) $\mathbf{pc}_1, \ldots, \mathbf{pc}_p$ based on the original data $\mathbf{X} = [\mathbf{x}_1, \hdots, \mathbf{x}_p]$ so that
+
+- each PC score $\mathbf{pc}_1, \hdots, \mathbf{pc}_p$ is a linear combination of the original metric variables with coefficient weights (so-called **loading vectors**) $\mathbf{a}_1, \hdots, \mathbf{a}_p$, i.e.
+  \[
+  \mathbf{pc}_j = a_{j1}\mathbf{x}_1 + a_{j2}\mathbf{x}_2 + \ldots + a_{jp}\mathbf{x}_p = \mathbf{X} \mathbf{a}_j.
+  \]
+
+- the set is mutually uncorrelated: $Cov(\mathbf{pc}_j,\mathbf{pc}_k) = 0, \; \forall j \neq k.$
+
+- the variances of the PC scores decrease:
+  \[\lambda_1 > \lambda_2 > \ldots > \lambda_p, \;\;\;  \text{where } \lambda_k := Var(\mathbf{pc}_k). \]
+
+
+## Deriving the First PC Mathematically
+
+<!-- PCA works on the covariance matrix $\Sigma$ of the data matrix $\mathbf{X} = [\mathbf{x}_1, \hdots, \mathbf{x}_p]$. -->
+We look for the loading vector $\mathbf{a}_1 = (a_{11}, a_{21}, \hdots, a_{p1})^\top$ that maximizes the variance of $\mathbf{pc}_1$:
+  \[
+  \max_{\mathbf{a}_1} \ Var(\mathbf{pc}_1) = Var(\mathbf{X} \mathbf{a}_1) = \mathbf{a}_1^\top \Sigma \mathbf{a}_1
+  \]
+subject to the normalization constraint $\mathbf{a}_1^\top \mathbf{a}_1 = \sum_{k=1}^p a_{k1}^2 = 1$.
+
+The constraint is required for identifiability reasons, otherwise we could maximize the variance by just increasing the values in $\mathbf{a}_1$.
+
+Repeat this maximization step for the other PCs and additionally use the orthogonality constraint, i.e. for the second PC: $$\mathbf{a}_2^\top\mathbf{a}_1 = 0.$$

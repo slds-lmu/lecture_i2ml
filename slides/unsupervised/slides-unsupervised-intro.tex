@@ -1,0 +1,199 @@
+## Unsupervised Learning
+
+- **Supervised machine learning** deals with **labeled** data, i.e., we have input data $x$ and the outcome $y$ of past events.\
+Aim: **learn relationship** between $x$ and $y$ to make predictions.
+- **Unsupervised machine learning** deals with **unlabeled** data, i.e., the outcome $y$ is ignored or not present.\
+Aim: search for **patterns** within $x$ (e.g., similar groups).
+
+```{r, echo=FALSE, fig.height=3.5, fig.width=9, message=FALSE}
+library(ggplot2)
+library(factoextra)
+
+set.seed(1)
+df4 = mlr::getTaskData(mlr::iris.task)
+m = as.matrix(cbind(df4$Petal.Length, df4$Petal.Width), ncol = 2)
+cl = (kmeans(m, 3))
+df4$cluster = factor(cl$cluster, levels = c("3", "1", "2"))
+centers = as.data.frame(cl$centers)
+
+p1 = mlr::plotLearnerPrediction("classif.lda", mlr::iris.task, features = c("Petal.Length", "Petal.Width")) +
+   ggtitle("Classification (Supervised)") +
+  xlab("x1") + ylab("x2") +
+  labs(fill = "y", shape = "y") +
+  scale_fill_discrete(name = "y", labels = c("label 1", "label 2", "label 3")) +
+  scale_shape_discrete(name = "y", labels = c("label 1", "label 2", "label 3"))
+  #theme(legend.title = element_text("y: Species"))
+
+p2 = fviz_cluster(list(data = subset(df4, select = -c(Species, cluster)), cluster = df4$cluster),
+   choose.vars = c("Petal.Length", "Petal.Width"), geom = "point", stand = FALSE, ggtheme = theme_classic()) +
+  ggtitle("Clustering (Unsupervised)") +
+  theme(legend.position = "none", plot.title = element_text(hjust = 0.5)) +
+  xlab("x1") + ylab("x2")
+gridExtra::grid.arrange(p1, p2, ncol = 2, widths = c(1.25, 1))
+```
+
+## Clustering Task
+```{r include=FALSE, cache=FALSE}
+library(mlr)
+library(ggplot2)
+
+ap = adjust_path(paste0(getwd(), "/figure"))
+```
+
+**Goal**: Group observations into similar clusters (or estimate fuzzy membership probabilities based on the closeness of observations to clusters)
+
+```{r, echo=FALSE, fig.height=4}
+set.seed(1)
+df4 = getTaskData(iris.task)
+m = as.matrix(cbind(df4$Petal.Length, df4$Petal.Width), ncol = 2)
+cl = (kmeans(m,3))
+df4$cluster = factor(cl$cluster)
+centers = as.data.frame(cl$centers)
+ggplot(data = df4, aes(x = Petal.Length, y = Petal.Width, color = cluster)) +
+ geom_point(size = 4) +
+ geom_point(data = centers, aes(x = V1, y = V2, color = 'Center'), pch = 4, size = 4, col = "black") +
+   #stat_ellipse(type = "t", level = c(0.725, 0.925)) +
+  geom_point(data = centers, aes(x = V1, y = V2, color = 'Center'), size = c(60, 60, 45),   alpha = .2, pch = 21, fill = "blue", col = "black") +
+ theme(legend.position = "none")
+```
+
+## Clustering: Customer Segmentation
+
+```{r, include = FALSE, echo = FALSE, message = FALSE}
+ap = adjust_path(paste0(getwd(), "/figure"))
+```
+
+- In marketing, customer segmentation is an important task to understand customer behavior and needs.
+
+- Customer data is partitioned in terms of similarities, e.g., using variables that quantify the customer value such as RFM scores (Recency, Frequency, Monetary value).
+
+- Characteristics of each group are summarized and marketing strategies are designed according to the target group.
+
+\begin{center}
+\includegraphics[width=0.8\textwidth]{`r ap("rfm_segments.pdf")`}
+\end{center}
+
+<!-- Quelle: https://docs.google.com/spreadsheets/d/1IMCPWRZroOkPpl_y6qTV2k4Jqk5bdgZKcCd4SZ2Wqv0/edit?usp=sharing -->
+
+<!-- Example Use Cases: -->
+
+<!-- - Personalized ads (e.g., recommend articles). -->
+<!-- - Music/Movie recommendation systems. -->
+
+<!-- # ML Use Cases: Clustering -->
+
+<!-- - Initially define number of groups that are expected to have.  -->
+
+<!-- - Each data point is assigned to cluster centers and new cluster centers are calculated. -->
+
+<!-- - Iterative process is completed when the cluster centers converge/no significant change in cluster centers observed.  -->
+
+
+<!-- ## Clustering: Image Compression -->
+
+<!-- - An image consists of pixels arranged in rows and columns. -->
+<!-- - Each pixel contains **RGB** color information, i.e., a mix of the intensity of 3 **primary colors**: **R**ed, **G**reen and **B**lue. -->
+<!-- - Each primary color takes intensity values between 0 and 255. -->
+
+<!-- \begin{center} -->
+<!-- \includegraphics[width=0.45\textwidth]{`r ap("rgb-cube.png")`} -->
+
+<!-- \tiny Source: By Ferlixwangg \href{https://creativecommons.org/licenses/by-sa/4.0}{CC BY-SA 4.0}, from \href{https://commons.wikimedia.org/wiki/File:Rgb-cube.gif}{Wikimedia Commons}. -->
+<!-- \end{center} -->
+
+
+## Clustering: Image Compression
+
+An image can be compressed by reducing its color information, i.e., by replacing similar colors of each pixel with, say, $k$ distinct colors.
+
+**Example**:
+
+```{r, echo = FALSE, fig.height=5, fig.width=10, fig.retina=1, dev='png'}
+library(jpeg)
+set.seed(1)
+
+img = readJPEG(ap("colorful_bird.jpg")) # Read the image
+# writeJPEG(img, "full.jpg")
+
+imgDm = dim(img)
+# We re-arranged the 3D array into a dataset that has the coordinates of the pixel and the color information (R, G and B)
+imgRGB = data.frame(
+  x = rep(1:imgDm[2], each = imgDm[1]),
+  y = rep(imgDm[1]:1, imgDm[2]),
+  R = as.vector(img[,,1]),
+  G = as.vector(img[,,2]),
+  B = as.vector(img[,,3])
+)
+
+par(mfrow = c(1,2), mar = c(0,0,2,0))
+# We now plot the pixels (pch = 15) with its RGB color info
+plot(imgRGB$x, imgRGB$y, col = rgb(imgRGB[c("R", "G", "B")]), pch = 15, axes = F,
+  main = sprintf("Original Image (%s colors)", length(unique(rgb(imgRGB[c("R", "G", "B")])))), xlab = "", ylab = "")
+box()
+
+# k = 256
+# kMeans = kmeans(imgRGB[, c("R", "G", "B")], centers = k, iter.max = 10)
+# predRGB = kMeans$centers[kMeans$cluster,]
+#
+# plot(imgRGB$x, imgRGB$y, col = rgb(predRGB), pch = 15, axes = F,
+#   main = "Compressed Image (256 colors)", xlab = "", ylab = "")
+# box()
+#
+# img[,,1] = matrix(predRGB[,1], ncol = 300)
+# img[,,2] = matrix(predRGB[,2], ncol = 300)
+# img[,,3] = matrix(predRGB[,3], ncol = 300)
+# writeJPEG(img, "full_256.jpg")
+
+k = 16
+kMeans = kmeans(imgRGB[, c("R", "G", "B")], centers = k, iter.max = 10)
+predRGB = kMeans$centers[kMeans$cluster,]
+
+plot(imgRGB$x, imgRGB$y, col = rgb(predRGB), pch = 15, axes = F,
+  main = "Compressed Image (16 colors)", xlab = "", ylab = "")
+box()
+
+# img[,,1] = matrix(predRGB[,1], ncol = 300)
+# img[,,2] = matrix(predRGB[,2], ncol = 300)
+# img[,,3] = matrix(predRGB[,3], ncol = 300)
+# writeJPEG(img, "full_16.jpg")
+```
+
+
+
+## Dimensionality Reduction Task
+
+**Goal**: Describe data with fewer features (reduce number of columns) $\Rightarrow$ information loss.
+
+\begin{center}
+\begin{tabular}{ | c | c | c | c | c | c |}
+    \hline
+      & & & & & \\ \hline
+      & & & & & \\ \hline
+      & & & & & \\ \hline
+      & & & & & \\ \hline
+      & & & & & \\
+    \hline
+  \end{tabular} $\Rightarrow$
+    \begin{tabular}{ | c | c | c |}
+    \hline
+      & &  \\ \hline
+      & &  \\ \hline
+      & &  \\ \hline
+      & &  \\ \hline
+      & &  \\
+    \hline
+  \end{tabular}
+\end{center}
+
+- Unsupervised Methods: Principle Component Analysis (PCA).
+
+- Supervised Methods: Linear Discriminant Analysis (LDA).
+
+<!-- - Unsupervised Methods: -->
+<!--     - Principle Component Analysis (PCA). -->
+<!--     - Factor Analysis (FA). -->
+<!--     - Feature filter methods. -->
+
+<!-- - Supervised Methods: -->
+<!--     - Linear Discriminant Analysis (LDA). -->
+<!--     - Feature filter methods. -->
