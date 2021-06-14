@@ -16,7 +16,7 @@ library(mlbench)
 # Simulate Gaussian mixture
 
 set.seed(1L)
-data <- mlbench::mlbench.2dnormals(n = 100000L, cl = 2L, r = sqrt(2L), sd = 1L)
+data <- mlbench::mlbench.2dnormals(n = 100000L, cl = 2L, r = sqrt(2L), sd = 2L)
 data_dt <- data.table::as.data.table(data)
 
 # Set aside large test dataset
@@ -31,10 +31,11 @@ data_train <- data_dt[setdiff(data_dt[, .I], idx_test)]
 # Define portions of training data to be used
 
 train_sizes <- c(seq(5L, 50L, by = 5L), seq(100L, 10000L, by = 50L))
+# train_sizes <- c(5L, 50L, 100L, 10000L)
 
 # Define learner
 
-learner <- mlr3::lrn("classif.rpart")
+learner <- mlr3::lrn("classif.svm", kernel = "radial", gamma = 0.001)
 
 # Train and evaluate for each training set size
 
@@ -81,20 +82,20 @@ for (i in names(results_dt)) results_dt[[i]] <- unlist(results_dt[[i]])
 
 # PLOTS ------------------------------------------------------------------------
 
-p_1 <- ggplot2::ggplot(
-  data_dt, ggplot2::aes(x = x.1, y = x.2, col = classes)) +
-  ggplot2::geom_jitter(size = 0.8) +
-  ggplot2::theme_minimal() +
-  ggplot2::scale_color_viridis_d(end = 0.9) +
-  ggplot2::xlab(expr(x[1])) +
-  ggplot2::ylab(expr(x[2])) +
-  ggplot2::guides(color = FALSE)
+# p_1 <- ggplot2::ggplot(
+#   data_dt, ggplot2::aes(x = x.1, y = x.2, col = classes)) +
+#   ggplot2::geom_jitter(size = 0.8) +
+#   ggplot2::theme_minimal() +
+#   ggplot2::scale_color_viridis_d(end = 0.9) +
+#   ggplot2::xlab(expr(x[1])) +
+#   ggplot2::ylab(expr(x[2])) +
+#   ggplot2::guides(color = FALSE)
 
-ggplot2::ggsave(
-  "../figure/eval_delta_train_test_err_data.pdf", 
-  p_1, 
-  height = 2L,
-  width = 3.5)
+# ggplot2::ggsave(
+#   "../figure/eval_delta_train_test_err_data.pdf", 
+#   p_1, 
+#   height = 2L,
+#   width = 3.5)
 
 p_2 <- ggplot2::ggplot(
   results_dt, 
@@ -104,8 +105,8 @@ p_2 <- ggplot2::ggplot(
   ggplot2::xlab("training set size") +
   ggplot2::ylab("test error - train error")
 
-ggplot2::ggsave(
-  "../figure/eval_delta_train_test_err.pdf", 
-  p_2, 
-  height = 2L,
-  width = 8L)
+# ggplot2::ggsave(
+#   "../figure/eval_delta_train_test_err.pdf", 
+#   p_2, 
+#   height = 2L,
+#   width = 8L)
