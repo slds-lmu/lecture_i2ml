@@ -31,7 +31,6 @@ data_train <- data_dt[setdiff(data_dt[, .I], idx_test)]
 # Define portions of training data to be used
 
 train_sizes <- c(seq(5L, 50L, by = 5L), seq(100L, 10000L, by = 50L))
-# train_sizes <- c(5L, 50L, 100L, 10000L)
 
 # Define learner
 
@@ -72,7 +71,7 @@ results <- lapply(
       train_size = i,
       error_train = error_train, 
       error_test = error_test,
-      delta = error_test - error_train)
+      delta = abs(error_test - error_train))
     
   }
 )
@@ -99,11 +98,12 @@ for (i in names(results_dt)) results_dt[[i]] <- unlist(results_dt[[i]])
 
 p_2 <- ggplot2::ggplot(
   results_dt, 
-  ggplot2::aes(x = train_size, ymax = delta, ymin = 0)) +
+  ggplot2::aes(x = train_size, ymax = abs(delta), ymin = 0)) +
   ggplot2::geom_linerange() +
   ggplot2::theme_minimal() +
   ggplot2::xlab("training set size") +
-  ggplot2::ylab("test error - train error")
+  ggplot2::ylab("test error - train error") +
+  ggplot2::ylim(c(0, 0.15))
 
 # ggplot2::ggsave(
 #   "../figure/eval_delta_train_test_err.pdf", 
