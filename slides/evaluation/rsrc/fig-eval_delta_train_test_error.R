@@ -97,7 +97,7 @@ task_small <- mlr3::TaskClassif$new(
   backend = data_small_train, 
   target = "classes")
 
-tree_depths <- c(1L, 2L, 3L, 4L, seq(5L, 30L, by = 5L), 50L)
+tree_depths <- c(1L:4L, seq(5L, 30L, by = 5L), 50L)
 
 learners <- lapply(
   tree_depths,
@@ -143,10 +143,11 @@ ggplot2::ggsave(
 
 p_2 <- ggplot2::ggplot(
   results_dt, 
-  ggplot2::aes(x = train_size, ymax = abs(delta), ymin = 0)) +
+  ggplot2::aes(x = train_size, ymax = delta, ymin = 0)) +
   ggplot2::geom_linerange() +
   ggplot2::theme_minimal() +
-  ggplot2::xlab("training set size") +
+  ggplot2::scale_x_log10() +
+  ggplot2::xlab("training set size (log scale)") +
   ggplot2::ylab("test error - train error") 
 
 ggplot2::ggsave(
