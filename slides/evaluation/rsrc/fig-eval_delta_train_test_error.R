@@ -101,7 +101,7 @@ tree_depths <- c(1L, 2L, 3L, 4L, seq(5L, 30L, by = 5L), 50L)
 
 learners <- lapply(
   tree_depths,
-  function(i) mlr3::lrn("classif.ranger", max.depth = i, num.trees = 1000L))
+  function(i) mlr3::lrn("classif.ranger", max.depth = i, num.trees = 100L))
 
 invisible(lapply(learners, function(i) i$train(task_small)))
 
@@ -171,4 +171,4 @@ ggplot2::ggsave(
   "../figure/eval_delta_train_test_overfit.pdf",
   p_3,
   height = 2L,
-  width = 4.5L)
+  width = 4.5)
