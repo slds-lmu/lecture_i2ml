@@ -61,43 +61,49 @@ Because of this, componentwise gradient boosting is also often referred to as \t
 
 \begin{vbframe}{Base learners}
 
-In classical gradient boosting only one kind of base learner is used, e.g., 
+In classical gradient boosting only one kind of base learner $\mathcal{B}$ is used, e.g., 
 regression trees.
 
 \lz
 
-For componentwise gradient boosting we generalize this to multiple base learners 
-
-$$
-  % b_j^{[m]}(\xv,\pmb\theta^{[m]}) \quad j = 1,\dots, J\,,
-  \{ \bmm_j(\xv, \thetam): j = 1, 2, \dots, J \},
-$$
-
-where $j$ indexes the type of base learner.
-
-\lz
+For componentwise gradient boosting we generalize this to multiple base learner sets $\{ \mathcal{B}_1, ... \mathcal{B}_J \}$.
+% $$
+%   % b_j^{[m]}(\xv,\pmb\theta^{[m]}) \quad j = 1,\dots, J\,,
+%   \{ \bmm_j(\xv, \thetam): j = 1, 2, \dots, J \},
+% $$
+% 
+ where $j$ indexes the type of base learner.
+% 
+% \lz
 
 Again, in each iteration, only the best base learner 
-$\bmm_{j^\ast}(\xv, \thetam)$ is selected and updated.
+$\bmm_{\hat{j}}(\xv, \thetam)$ is selected and updated.
 
-\framebreak
-
+\end{vbframe}
 % ------------------------------------------------------------------------------
+
+\begin{vbframe}{Componentwise boosting algorithm}
+
+\input{algorithms/componentwise_gradient_boosting.tex}
+
+\end{vbframe}
+% ------------------------------------------------------------------------------
+\begin{vbframe}{Additive model structure}
 
 We restrict these base learners to additive models, i.e.,
 
 $$
- \bmm_j(\xv, \thetam) + b_j^{[m^\prime]}(\xv, \thetab^{[m^\prime]}) = 
- b_j(\xv, \thetam + \thetab^{[m^\prime]}).
+ b_1(\xv, \thetab_1) + b_2(\xv, \thetab_2) = 
+ b(\xv, \thetab_1 + \thetab_2).
 $$
-
+Thus, if $\{ b_1, b_2 \} \in \mathcal{B}_j$, then $b \in \mathcal{B}_j$.
 \lz
 
 Often base learners are not defined on the entire feature vector $\xv$ but on 
 a single feature $x_j$:
 
 $$
-  \bmm_j(x_j, \thetam) \quad \text{for } j = 1, 2, \dots, p.
+  b(x_j, \theta) \quad \text{for } j = 1, 2, \dots, p.
 $$
 
 \lz
@@ -109,13 +115,7 @@ splines).
 
 \end{vbframe}
 
-% ------------------------------------------------------------------------------
 
-\begin{vbframe}{Componentwise boosting algorithm}
-
-\input{algorithms/componentwise_gradient_boosting.tex}
-
-\end{vbframe}
 
 % ------------------------------------------------------------------------------
 
@@ -125,8 +125,9 @@ In the simplest case we use linear models (without intercept) on single features
 as base learners:
 
 $$
-  b(x_j,\thetam) = x_j \theta^{[m]} \quad \text{for } j = 1, 2, \dots, p.
+  b(x_j,\theta) = x_j \theta \quad \text{for } j = 1, 2, \dots, p \text{ and } with b \in \mathcal{B} = \{x_j \theta | \theta \in \mathbb{R} \}.
 $$
+
 
 This definition will result in an ordinary \textbf{linear regression} model 
 (note that linear base learners without intercept only make sense for covariates 
@@ -134,7 +135,6 @@ that have been centered before).
 
 % .\footnote{Note: a linear model base learner without intercept only makes sense if the covariates are centered (see \texttt{mboost} tutorial, page7)}
 
-\lz
 
 \begin{itemize}
   \item If we let the boosting algorithm converge, i.e., let it run for a really 
@@ -188,22 +188,7 @@ iterations to see which base learner was selected when.
 
 % ------------------------------------------------------------------------------
 
-\begin{itemize}
-  \item We can further exploit the additive structure of the boosted ensemble to 
-  compute measures of \textbf{variable importance}.
-  \item To this end, we simply sum for each feature $x_j$ the improvements in 
-  empirical risk achieved over all iterations until 
-  $1 < m_{\text{stop}} \leq M$:
-  % \begin{align*}
-    $$VI_j = \sum_{m = 1}^{m_{\text{stop}}} \left( \riske \left(
-    \fmd(\xv) \right) - \riske \left(\fm(\xv) 
-    \right) \right) \cdot \I_{[j \in sel(m)]},$$
-  % \end{align*}
-  where $sel(m)$ denotes the index set of features selected in the $m$-th 
-  iteration.
-\end{itemize}
 
-\framebreak
 
 % ------------------------------------------------------------------------------
 
@@ -399,6 +384,23 @@ Consider the following example of a GAM using splines with 24 parameters:
 \end{vbframe}
 
 % ------------------------------------------------------------------------------
+\begin{vbframe}{Feature importance}
+\begin{itemize}
+  \item We can further exploit the additive structure of the boosted ensemble to 
+  compute measures of \textbf{variable importance}.
+  \item To this end, we simply sum for each feature $x_j$ the improvements in 
+  empirical risk achieved over all iterations until 
+  $1 < m_{\text{stop}} \leq M$:
+  % \begin{align*}
+    $$VI_j = \sum_{m = 1}^{m_{\text{stop}}} \left( \riske \left(
+    \fmd(\xv) \right) - \riske \left(\fm(\xv) 
+    \right) \right) \cdot \I_{[j \in sel(m)]},$$
+  % \end{align*}
+  where $sel(m)$ denotes the index set of features selected in the $m$-th 
+  iteration.
+\end{itemize}
+
+\end{vbframe}
 
 \begin{vbframe}{Available base learners}
 
