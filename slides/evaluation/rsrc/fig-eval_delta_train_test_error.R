@@ -8,7 +8,8 @@
 library(data.table)
 library(ggplot2)
 library(mlr3)
-library(mlr3learners)
+library(mlr3extralearners)
+if (FALSE) mlr3extralearners::install_learners("classif.fnn")
 library(mlbench)
 
 # DATA -------------------------------------------------------------------------
@@ -16,36 +17,32 @@ library(mlbench)
 # Simulate spirals data
 
 set.seed(1L)
-data <- mlbench::mlbench.spirals(n = 100000L, cycles = 2L, sd = 0.3)
+data <- mlbench::mlbench.spirals(n = 100000L, cycles = 2L, sd = 0.1)
 data_dt <- data.table::as.data.table(data)
 
 # Set aside large test data set
 
 set.seed(2L)
-idx_test <- sample(data_dt[, .I], size = 0.9 * nrow(data_dt))
+idx_test <- sample(data_dt[, .I], size = 0.7 * nrow(data_dt))
 data_test <- data_dt[idx_test]
 data_train <- data_dt[setdiff(data_dt[, .I], idx_test)]
 
 # Reduce amount of data for contradictory example
 
 set.seed(3L)
-idx_small <- sample(data_dt[, .I], size = 0.05 * nrow(data_dt))
+idx_small <- sample(data_dt[, .I], size = 0.005 * nrow(data_dt))
 data_small <- data_dt[idx_small]
-
-set.seed(4L)
-idx_small_test <- sample(data_small[, .I], size = 0.3 * nrow(data_small))
-data_small_test <- data_small[idx_small_test]
-data_small_train <- data_small[setdiff(data_small[, .I], idx_small_test)]
 
 # TRAINING ---------------------------------------------------------------------
 
 # Define portions of training data to be used
 
-train_sizes <- c(seq(5L, 50L, by = 5L), seq(100L, 10000L, by = 50L))
+train_sizes <- c(16L, seq(20L, 50L, by = 5L), seq(100L, 30000L, by = 200L))
+# train_sizes <- c(21L, 50L, 10000L, 30000L)
 
 # Define learner
 
-learner <- mlr3::lrn("classif.ranger", max.depth = 5L, num.trees = 100L)
+learner <- mlr3::lrn("classif.fnn", k = 15L)
 
 # Train and evaluate for each training set size
 
@@ -94,14 +91,14 @@ for (i in names(results_dt)) results_dt[[i]] <- unlist(results_dt[[i]])
 
 task_small <- mlr3::TaskClassif$new(
   "spirals_small", 
-  backend = data_small_train, 
+  backend = data_small, 
   target = "classes")
 
-tree_depths <- c(1L:4L, seq(5L, 30L, by = 5L), 50L)
+n_neighbors <- c(1L:5L, 10L, 15L, 20L, 25L)
 
 learners <- lapply(
-  tree_depths,
-  function(i) mlr3::lrn("classif.ranger", max.depth = i, num.trees = 100L))
+  n_neighbors,
+  function(i) mlr3::lrn("classif.fnn", k = i))
 
 invisible(lapply(learners, function(i) i$train(task_small)))
 
@@ -110,16 +107,16 @@ errors_train <- sapply(preds_train, function(i) i$score())
 
 errors_test <- sapply(
   learners, 
-  function(i) i$predict_newdata(data_small_test)$score())
+  function(i) i$predict_newdata(data_test)$score())
 
 results_complexity <- data.table::data.table(
-  tree_depths,
+  n_neighbors,
   errors_train,
   errors_test)
 
 results_complexity <- data.table::melt(
   results_complexity,
-  id = "tree_depths", 
+  id = "n_neighbors", 
   measure = c("errors_train", "errors_test"))
 
 # PLOTS ------------------------------------------------------------------------
@@ -157,15 +154,16 @@ ggplot2::ggsave(
   width = 8L)
 
 p_3 <- ggplot2::ggplot(
-  results_complexity, 
-  ggplot2::aes(x = tree_depths, y = value, col = variable)) +
+  results_complexity,
+  ggplot2::aes(x = n_neighbors, y = value, col = variable)) +
   ggplot2::geom_line() +
   ggplot2::theme_minimal() +
+  ggplot2::scale_x_reverse() +
   ggplot2::scale_color_viridis_d(
     name = "error",
     labels = c("train", "test"),
     end = 0.85) +
-  ggplot2::xlab("maximum tree depth") +
+  ggplot2::xlab("number of neighbors") +
   ggplot2::ylab("MCE")
 
 ggplot2::ggsave(
