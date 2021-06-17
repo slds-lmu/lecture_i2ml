@@ -144,7 +144,7 @@ p_5 <- do.call(
 # ------------------------------------------------------------------------------
 
 ggplot2::ggsave(
-  "../figure/compboost-illustration-1.png", p_1, height = 4L, width = 8L)
+  "../figure/compboost-illustration-1.png", p_1, height = 4L, width = 10L)
 ggplot2::ggsave(
   "../figure/compboost-illustration-2.png", p_4, height = 4L, width = 8L)
 ggplot2::ggsave(
