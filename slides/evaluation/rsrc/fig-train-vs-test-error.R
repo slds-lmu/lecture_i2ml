@@ -135,19 +135,24 @@ for (j in seq_along(train_sizes)) {
 #   select(train_size, mean_error) %>%
 #   distinct()
 
-p2 <- ggplot(data= results_train2, aes(x = factor(train_size), y= error)) +
-  geom_boxplot() +
+results_train2 <- results_train2 %>% 
+  group_by(train_size) %>% 
+  mutate(mean_error = mean(error))  %>%
+  select(train_size, mean_error) %>%
+  distinct()
+
+p2 <- ggplot(data= results_train2, aes(x = train_size, y= mean_error)) +
+  geom_line() +
+  geom_point()+
   theme_minimal() +
   #scale_color_viridis_d(begin= 0.4, end = 0.9) +
-  xlab("size of trainig set") +
+  xlab("size of training set") +
   ylab("MSE (test error)")
+
 p2
 
 
-
 ggsave("../figure/fig-train-vs-test-error-2.pdf", p2, width = 8, height = 3.5)
-
-
 
 
 
