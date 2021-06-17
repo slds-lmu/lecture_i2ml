@@ -41,17 +41,21 @@ cboost_nonlinear <- compboost::Compboost$new(
   loss = compboost::LossBinomial$new(),
   oob_fraction = 0.3)
 
+# Center numeric covariates
+
 num_cols <- setdiff(names(df_train), fact_cols)
+
+# for (i in num_cols) df_train[[i]] <- df_train[[i]] - mean(df_train[[i]])
 
 for (i in colnames(df_train)) {
   
   if (i %in% num_cols) {
     
     cboost_linear$addBaselearner(
-      i, "linear", compboost::BaselearnerPolynomial, intercept = FALSE)
+      i, "linear", compboost::BaselearnerPolynomial)
     
     cboost_nonlinear$addBaselearner(
-      i, "linear", compboost::BaselearnerPolynomial, intercept = FALSE)
+      i, "linear", compboost::BaselearnerPolynomial)
     cboost_nonlinear$addBaselearner(
       i, "spline", compboost::BaselearnerPSpline, degree = 3L)
     
@@ -68,7 +72,7 @@ for (i in colnames(df_train)) {
 # Train
 
 learners <- list(cboost_linear, cboost_nonlinear)
-n_iters <- 500L
+n_iters <- 200L
 invisible(lapply(learners, function(i) i$train(n_iters)))
 
 # # PLOTS ------------------------------------------------------------------------
@@ -107,16 +111,16 @@ p_1 <- ggplot2::ggplot(
   ggplot2::ylab(ggplot2::expr(theta[j]))
 
 p_2 <- p_1 + 
-  ggplot2::geom_vline(xintercept = 100L, linetype = "dashed") +
+  ggplot2::geom_vline(xintercept = 50L, linetype = "dashed") +
   ggplot2::ggtitle(sprintf(
-    "mstop = 100: %i base learners selected",
-    sum(traces[[1]][iteration == 100]$value != 0)))
+    "mstop = 50: %i base learners selected",
+    sum(traces[[1]][iteration == 50]$value != 0)))
 
 p_3 <- p_1 + 
-  ggplot2::geom_vline(xintercept = 400L, linetype = "dashed") +
+  ggplot2::geom_vline(xintercept = 150L, linetype = "dashed") +
   ggplot2::ggtitle(sprintf(
-    "mstop = 400: %i base learners selected",
-    sum(traces[[1]][iteration == 400]$value != 0)))
+    "mstop = 150: %i base learners selected",
+    sum(traces[[1]][iteration == 150]$value != 0)))
 
 p_4 <- ggpubr::ggarrange(
   p_2, p_3, ncol = 1L, common.legend = TRUE, legend = "right")
@@ -129,10 +133,10 @@ nonlinear_bl <- unique(stringr::str_remove_all(nonlinear_bl, "[0-9]$"))
 p_nonlinear_spline <- lapply(
   nonlinear_bl[endsWith(nonlinear_bl, "spline")],
   function(i) {
-    cboost_nonlinear$plot(i, iters = seq(0L, n_iters, by = 50L)) +
+    cboost_nonlinear$plot(i, iters = seq(0L, n_iters, by = 20L)) +
       ggplot2::theme_minimal() +
       ggplot2::scale_color_viridis_d(
-        end = 0.9, direction = -1L, labels = seq(0L, n_iters, by = 50L)) +
+        end = 0.9, direction = -1L, labels = seq(0L, n_iters, by = 20L)) +
       ggplot2::labs(
         subtitle = "", 
         title = stringr::str_remove_all(i, "_spline"))})
