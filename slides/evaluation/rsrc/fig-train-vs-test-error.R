@@ -1,238 +1,237 @@
-# ------------------------------------------------------------------------------
-# Test vs Train Error
-# ------------------------------------------------------------------------------
-
 # PREREQ -----------------------------------------------------------------------
-
 
 library(mlr3)
 library(mlr3learners)
 library(ggplot2)
 
 # DATA -------------------------------------------------------------------------
+
 set.seed(123L)
 
-sd_spirals = 10
-n = 100L
-#spirals dataset
-spirals_generator = tgen("spirals", sd = sd_spirals)
-# get spirals data 
-task = spirals_generator$generate(n = n) 
+#n_reps = 2L #50 !!
+ss_iters = 50L
 
-complexity_k = seq(1,10)
-train_sizes = seq(0.1, 1, length.out = 15)
-test_sizes = seq(0.1, 1, length.out = 15)
+#n = 5000L
+#n_2 = 50L
+#data = data.table::as.data.table(mlbench::mlbench.spirals(n, sd = 1))
 
 # EXPERIMENT -------------------------------------------------------------------
+task = tsk("boston_housing")
+n = task$nrow
+#mlr3::TaskClassif$new("spirals", backend = data, target = "classes")
+learner = lrn("regr.kknn", k = 6)
+
+#-------------------------------------------------------------------------------
+# Increasing training set size
+#-------------------------------------------------------------------------------
+
+test_size = 206L
+train_sizes = as.integer(c(seq(7, n-test_size, length.out= 8)))
+#task_sizes = test_size + train_sizes
+
+length = 2*length(train_sizes)*ss_iters
+results_train = data.frame(error = numeric(length),
+                  type = character(length),
+                  train_size = numeric(length),
+                  rep = numeric(length),
+                  stringsAsFactors = FALSE)
+
+  
+for (j in seq_along(train_sizes)) {
+  
+  #task_subset = task$clone()$filter(sample(n, task_sizes[[j]]))
+  
+
+  for(k in seq_len(ss_iters)){
+    
+    train_set = sample(task$nrow, train_sizes[[j]])
+    test_set = setdiff(seq_len(task$nrow), train_set)
+    
+    learner$train(task, row_ids = train_set)
+    
+    #calculate training error
+    pred_train = learner$predict(task, row_ids = train_set)
+    train_err = pred_train$score() #classif.ce
+    
+    #calculate test error
+    pred_test = learner$predict(task, row_ids = test_set)
+    test_err = pred_test$score()
+    
+    
+    #fill data frame 
+    index = (j-1)*ss_iters+k
+    results_train$train_size[index] = train_sizes[[j]]
+    results_train$error[index] = train_err
+    results_train$type[index] = "train error"
+    results_train$rep[index] = k
+    
+    results_train$train_size[length/2+index] = train_sizes[[j]]
+    results_train$error[length/2+index] = test_err
+    results_train$type[length/2+index] = "test error"
+    results_train$rep[length/2+index] = k
+  }
+}
+  
+
+
+p1 <- ggplot(data= results_train, aes(x = factor(train_size), y= error, fill= type)) +
+  geom_boxplot() +
+  theme_minimal() +
+  scale_fill_viridis_d(begin= 0.4, end = 0.9) +
+  xlab("size of trainig set") +
+  ylab("MSE")
+p1
+
+ggsave("../figure/fig-train-vs-test-error-1.pdf", p1, width = 8, height = 3.5)
 
 
 
-#list of different learners with increasing complexity 
-learners_complexity = lapply(
-  complexity_k,
-  function(i) mlr3::lrn("classif.kknn", k = i))
-
-learner = learners_complexity[[10]]
-
-#split 
-train_set = sample(task$nrow, 0.66 * task$nrow)
-test_set = setdiff(seq_len(task$nrow), train_set)
-
-train_sets = lapply(
-  train_sizes,
-  function(i) sample(length(train_set), i * length(train_set)))
-
-test_sets = lapply(
-  test_sizes,
-  function(i) sample(length(test_set), i * length(test_set)))
 
 
 #-------------------------------------------------------------------------------
-# Varing Trainsize
+# Increasing test set size
+#-------------------------------------------------------------------------------
+train_size = 50
+tests_sizes = as.integer(c(seq(10L, n-train_size, length.out = 8)))
+#task_sizes = tests_sizes + train_size
 
-length = 2*length(train_sets)
 
-data = data.frame(error = numeric(length),
-                  type = character(length),
-                  train_size = numeric(length))
 
-for(i in seq_along(train_sets)) {
+length = 2*length(tests_sizes)*ss_iters
+results_test = data.frame(error = numeric(length),
+                           type = character(length),
+                           test_size = numeric(length),
+                           rep = numeric(length),
+                           stringsAsFactors = FALSE)
 
-    learner$train(task, row_ids = train_sets[[i]])
+
+
+for (j in seq_along(tests_sizes)) {
+  
+ #task_subset = task$clone()$filter(sample(n, task_sizes[[j]]))
+  
+
+  for(k in seq_len(ss_iters)){
+    
+    train_set = sample(task$nrow, train_size)
+    test_set = setdiff(seq_len(task$nrow), train_set)
+    
+    learner$train(task, row_ids = train_set)
     
     #calculate training error
-    pred_train = learner$predict(task, row_ids = train_sets[[i]])
+    pred_train = learner$predict(task, row_ids = train_set)
     train_err = pred_train$score()
     
     #calculate test error
     pred_test = learner$predict(task, row_ids = test_set)
     test_err = pred_test$score()
     
-    #fill data frame 
-    data$train_size[i] = train_sizes[[i]]*length(train_set)
-    data$error[i] = train_err
-    data$type[i] = "train error"
     
-    data$train_size[length/2+i] = train_sizes[[i]]*length(train_set)
-    data$error[length/2+i] = test_err
-    data$type[length/2+i] = "test error"
+    #fill data frame
+    index = (j-1)*ss_iters+k
+    results_test$test_size[index] = tests_sizes[[j]]
+    results_test$error[index] = train_err
+    results_test$type[index] = "train error"
+    results_test$rep[index] = k
+    
+    results_test$test_size[length/2+index] = tests_sizes[[j]]
+    results_test$error[length/2+index] = test_err
+    results_test$type[length/2+index] = "test error"
+    results_test$rep[length/2+index] = k
+  }
+}
+p2 <- ggplot(data= results_test, aes(x = factor(test_size), y= error, fill= type)) +
+  geom_boxplot() +
+  theme_minimal() +
+  scale_fill_viridis_d(begin= 0.4, end = 0.9) +
+  xlab("size of test set") +
+  ylab("MSE")
+p2 
+ggsave("../figure/fig-train-vs-test-error-2.pdf", p2, width = 8, height = 3.5)
+#-------------------------------------------------------------------------------
+# Variation of model complexity
+#-------------------------------------------------------------------------------
+
+complexity_k = c(1, 5,  10, 50, 100, 150)
+ 
+
+learners_complexity = lapply(
+   complexity_k,
+   function(i) mlr3::lrn("regr.kknn", k = i))
+
+train_size = as.integer(0.7*n)
+
+length = 2*length(learners_complexity)*ss_iters
+results_complexity = data.frame(error = numeric(length),
+                           type = character(length),
+                           complexity = factor(length, levels = complexity_k),
+                           rep = numeric(length),
+                           stringsAsFactors = FALSE)
+
+for (j in seq_along(learners_complexity)) {
+  
+  for(k in seq_len(ss_iters)){
+    
+    train_set = sample(task$nrow, train_size)
+    
+    test_set = setdiff(seq_len(task$nrow), train_set)
+    
+    learners_complexity[[j]]$train(task, row_ids = train_set)
+    
+    #calculate training error
+    pred_train = learners_complexity[[j]]$predict(task, row_ids = train_set)
+    train_err  = pred_train$score()
+    
+    #calculate test error
+    pred_test = learners_complexity[[j]]$predict(task, row_ids = test_set)
+    test_err = pred_test$score()
+    
+    
+    #fill data frame 
+    index = (j-1)*ss_iters+k
+    results_complexity$complexity[index] = complexity_k[[j]]
+    results_complexity$error[index] = train_err
+    results_complexity$type[index] = "train error"
+    results_complexity$rep[index] = k
+    
+    results_complexity$complexity[length/2+index] = complexity_k[[j]]
+    results_complexity$error[length/2+index] = test_err
+    results_complexity$type[length/2+index] = "test error"
+    results_complexity$rep[length/2+index] = k
+  }
 }
 
 
-
-p1 = ggplot(data= data, aes(x = train_size, y= error, color= type)) +
-  geom_line() +
+p3 <- ggplot(data= results_complexity, aes(x = complexity, y= error, fill= type)) +
+  geom_boxplot() +
   theme_minimal() +
-  scale_color_viridis_d(end = 0.9) +
-  xlab("Size of Trainigset") +
-  ylab("Error")
-            
-p1
+  scale_fill_viridis_d(begin= 0.4, end = 0.9) +
+  xlab("k") +
+  scale_x_discrete(limits = rev(unique(sort(results_complexity$complexity)))) +
+  ylab("MSE")
+p3
+
+ggsave("../figure/fig-train-vs-test-error-3.pdf", p3, width = 8, height = 3.5)
 
 
 
 
-#-------------------------------------------------------------------------------
+# #-------------------------------------------------------------------------------
+# # True Performance
+# #-------------------------------------------------------------------------------
+# resampling = mlr3::rsmp(
+#   "subsampling", 
+#   ratio = n_2 / n, 
+#   repeats = ss_iters * 10L) 
+# 
+# resampling_result = mlr3::resample(
+#   task, 
+#   learner, 
+#   resampling, 
+#   store_models = FALSE)
+# 
+# true_performance = resampling_result$aggregate(mlr3::msr("classif.ce"))
+# 
+# 
 
 
-
-
-
-
-
-
-
-
-
-# re-fit the model
-learner$train(task, row_ids = train_set)
-
-# rebuild prediction object
-pred_train = learner$predict(task, row_ids = train_set)
-error_train = pred_train$score()
-
-pred_test = learner$predict(task, row_ids = test_set)
-error_test = pred_test$score()
-
-
-
-
-
-p_1 = ggplot2::ggplot(
-  data_dt[sample(data_dt[, .I], 0.5 * nrow(data_dt))], 
-  ggplot2::aes(x = x.1, y = x.2, col = classes)) +
-  ggplot2::geom_jitter(size = 0.1) +
-  ggplot2::theme_minimal() +
-  ggplot2::scale_color_viridis_d(end = 0.9) +
-  ggplot2::xlab(expr(x[1])) +
-  ggplot2::ylab(expr(x[2])) +
-  ggplot2::guides(color = FALSE)
-
-
-
-# Purpose: visualize 
-
-library(data.table)
-library(ggplot2)
-library(mlr3)
-library(mlr3learners)
-library(mlbench)
-
-# DATA -------------------------------------------------------------------------
-
-# Simulate Gaussian mixture
-
-set.seed(1L)
-data = mlbench::mlbench.2dnormals(n = 100000L, cl = 2L, r = sqrt(2L), sd = 1L)
-data_dt = data.table::as.data.table(data)
-
-# Set aside large test dataset
-
-set.seed(2L)
-idx_test = sample(data_dt[, .I], size = 0.9 * nrow(data_dt))
-data_test = data_dt[idx_test]
-data_train = data_dt[setdiff(data_dt[, .I], idx_test)]
-
-# TRAINING ---------------------------------------------------------------------
-
-# Define portions of training data to be used
-
-train_sizes = c(seq(5L, 50L, by = 5L), seq(100L, 10000L, by = 50L))
-
-# Define learner
-
-learner = mlr3::lrn("classif.rpart")
-
-# Train and evaluate for each training set size
-
-results = lapply(
-  
-  train_sizes,
-  
-  function(i) {
-    
-    # Define task
-    
-    set.seed(1L)
-    
-    task = mlr3::TaskClassif$new(
-      "gauss2d", 
-      backend = data_train[
-        sample(data_train[, .I], size = i)], 
-      target = "classes")
-    
-    # Train learner and compute training error
-    
-    learner$train(task)
-    pred_train = learner$predict(task)
-    error_train = pred_train$score()
-    
-    # Compute test error
-    
-    pred_test = learner$predict_newdata(data_test)
-    error_test = pred_test$score()
-    
-    # Return
-    
-    list(
-      train_size = i,
-      error_train = error_train, 
-      error_test = error_test,
-      delta = error_test - error_train)
-    
-  }
-)
-
-results_dt = data.table::as.data.table(do.call(rbind, results))
-for (i in names(results_dt)) results_dt[[i]] = unlist(results_dt[[i]])
-
-# PLOTS ------------------------------------------------------------------------
-
-p_1 = ggplot2::ggplot(
-  data_dt, ggplot2::aes(x = x.1, y = x.2, col = classes)) +
-  ggplot2::geom_jitter(size = 0.8) +
-  ggplot2::theme_minimal() +
-  ggplot2::scale_color_viridis_d(end = 0.9) +
-  ggplot2::xlab(expr(x[1])) +
-  ggplot2::ylab(expr(x[2])) +
-  ggplot2::guides(color = FALSE)
-
-ggplot2::ggsave(
-  "../figure/eval_delta_train_test_err_data.pdf", 
-  p_1, 
-  height = 2L,
-  width = 3.5)
-
-p_2 = ggplot2::ggplot(
-  results_dt, 
-  ggplot2::aes(x = train_size, ymax = delta, ymin = 0)) +
-  ggplot2::geom_linerange() +
-  ggplot2::theme_minimal() +
-  ggplot2::xlab("training set size") +
-  ggplot2::ylab("test error - train error")
-
-ggplot2::ggsave(
-  "../figure/eval_delta_train_test_err.pdf", 
-  p_2, 
-  height = 2L,
-  width = 8L)
