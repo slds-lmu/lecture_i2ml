@@ -124,9 +124,9 @@ p_4 <- ggpubr::ggarrange(
 # ------------------------------------------------------------------------------
 
 nonlinear_bl <- as.character(traces[[2]][iteration == n_iters]$variable)
-nonlinear_bl <- unique(stringr::str_remove_all(nonlinear_bl, "[0-9]"))
+nonlinear_bl <- unique(stringr::str_remove_all(nonlinear_bl, "[0-9]$"))
 
-p_nonlinear <- lapply(
+p_nonlinear_spline <- lapply(
   nonlinear_bl[endsWith(nonlinear_bl, "spline")],
   function(i) {
     cboost_nonlinear$plot(i, iters = seq(0L, n_iters, by = 50L)) +
@@ -139,7 +139,31 @@ p_nonlinear <- lapply(
 
 p_5 <- do.call(
   ggpubr::ggarrange, 
-  args = list(plotlist = p_nonlinear, common.legend = TRUE, legend = "right"))
+  args = list(
+    plotlist = p_nonlinear_spline, 
+    common.legend = TRUE, 
+    legend = "right"))
+
+cboost_nonlinear$model$getParameterAtIteration(n_iters)
+
+# ------------------------------------------------------------------------------
+
+# p_nonlinear_cat <- lapply(
+#   nonlinear_bl[endsWith(nonlinear_bl, "categorical")],
+#   function(i) {
+#     dt <- traces[[2]][variable == i]
+#     ggplot2::ggplot(dt, ggplot2::aes(x = iteration, y = value)) +
+#       ggplot2::geom_point(size = 0.05) +
+#       ggplot2::geom_line() +
+#       ggplot2::theme_minimal()
+#     })
+# 
+# do.call(
+#   ggpubr::ggarrange, 
+#   args = list(
+#     plotlist = p_nonlinear_cat, 
+#     common.legend = TRUE, 
+#     legend = "right"))
 
 # ------------------------------------------------------------------------------
 
@@ -149,3 +173,5 @@ ggplot2::ggsave(
   "../figure/compboost-illustration-2.png", p_4, height = 4L, width = 8L)
 ggplot2::ggsave(
   "../figure/compboost-illustration-3.png", p_5, height = 4L, width = 10L)
+
+cboost_nonlinear$model$getParameterAtIteration(n_iters)
