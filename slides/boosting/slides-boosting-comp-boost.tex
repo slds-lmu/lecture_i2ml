@@ -89,30 +89,31 @@ $\bmm_{\hat{j}}(\xv, \thetam)$ is selected and updated.
 \end{vbframe}
 % ------------------------------------------------------------------------------
 \begin{vbframe}{Additive model structure}
-
-We restrict these base learners to additive models, i.e.,
+\begin{footnotesize}
+We restrict these base learners to additive models, i.e., having a base learner $ b_j(\xv, \thetab^{[1]})$ and another base learner $b_j$ of the same type but with a different parameter vector $\thetab^{[2]}$, then it is possible to combine them to a new base learner of the same type:
 
 $$
- b_1(\xv, \thetab_1) + b_2(\xv, \thetab_2) = 
- b(\xv, \thetab_1 + \thetab_2).
+ b_j(\xv, \thetab^{[1]}) + b_j(\xv, \thetab^{[2]}) = 
+ b_j(\xv, \thetab^{[1]} + \thetab^{[2]}).
 $$
-Thus, if $\{ b_1, b_2 \} \in \mathcal{B}_j$, then $b \in \mathcal{B}_j$.
+\vspace*{0.1cm}
+
+Thus, if $\{ b_j(\xv, \thetab^{[1]}), b_j(\xv, \thetab^{[2]}) \} \in \mathcal{B}_j$, then $b_j(\xv, \thetab^{[1]} + \thetab^{[2]}) \in \mathcal{B}_j$.
 \lz
 
 Often base learners are not defined on the entire feature vector $\xv$ but on 
 a single feature $x_j$:
 
 $$
-  b(x_j, \theta) \quad \text{for } j = 1, 2, \dots, p.
+  b_j(x_j, \theta) \quad \text{for } j = 1, 2, \dots, p.
 $$
 
-\lz
 This directly incorporates a variable selection mechanism into the fitting 
 process, since in each iteration only the best base learner is selected in 
 combination with the associated feature, and each base learner can be 
 (substantially) more complex than a stump (e.g., univariate linear effects or 
 splines).
-
+\end{footnotesize}
 \end{vbframe}
 
 
@@ -125,8 +126,8 @@ In the simplest case we use linear models (without intercept) on single features
 as base learners:
 
 $$
-  b(x_j,\theta) = \theta x_j  \quad \text{for } j = 1, 2, \dots, p \quad
-  \text{and with } b \in \mathcal{B} = \{\theta x_j  ~\rvert~ \theta \in 
+  b_j(x_j,\theta) = \theta x_j  \quad \text{for } j = 1, 2, \dots, p \quad
+  \text{and with } b_j \in \mathcal{B_j} = \{\theta x_j  ~\rvert~ \theta \in 
   \mathbb{R} \}.
 $$
 
@@ -395,7 +396,51 @@ Consider the following example of a GAM using splines with 24 parameters:
 
 \end{vbframe}
 
+\begin{vbframe}{Available base learners}
+
+There is a large amount of possible base learners, e.g.:
+
+\begin{itemize}
+  \item Linear effects and interactions (with or without intercept)
+  \item Uni- or multivariate splines and tensor product splines
+  \item Trees
+  \item Random effects and Markov random fields
+  \item Effects of functional covariates
+  \item ...
+\end{itemize}
+
+\lz
+
+In combination with the flexible choice of loss functions, this allows boosting to fit  a huge number of different statistical models with the same algorithm. Recent extensions include GAMLSS-models, where multiple additive predictors are boosted to model different distribution parameters (e.g., conditional mean and variance for a Gaussian model).
+
+\end{vbframe}
 % ------------------------------------------------------------------------------
+\begin{vbframe}{Partial Dependence Plots (PDP)}
+
+If we use single features in base learners, we think of each base learner as a wrapper around a feature which represents the effect of that feature on the target variable. Base learners can be selected more than once (with varying parameter estimates), signaling that this feature is more important.\\
+E.g. let $j \in \{ 1,2,3 \}$, the first three iterations might look as follows
+\begin{align*}
+m = 1: \quad & \hat{f}^{[1]}(\xv) = \hat{f}^{[0]} + \beta \textcolor{blue}{\hat{b}_2(x_2, \hat{\theta}^{[1]})}\\
+m = 2: \quad & \hat{f}^{[2]}(\xv) = \hat{f}^{[1]} + \beta  \textcolor{orange}{\hat{b}_3(x_3, \hat{\theta}^{[2]})}\\
+m = 3: \quad & \hat{f}^{[3]}(\xv) = \hat{f}^{[2]} + \beta \textcolor{blue}{\hat{b}_2(x_2, \hat{\theta}^{[3]})}
+\end{align*}
+
+Due to linearity, $\hat{b}_2$ base learners can be aggregated:
+$$
+\hat{f}^{[3]}(\xv) = \hat{f}^{[0]} + \beta (\textcolor{blue}{\hat{b}_2(x_2, \hat{\theta}^{[1]} + \hat{\theta}^{[3]})} + \textcolor{orange}{\hat{b}_3(x_3, \hat{\theta}^{[2]})})
+$$
+
+Which is equivalent to:
+$\hat{f}^{[3]}(\xv) = \hat{f}_0 + \textcolor{blue}{\hat{f}_2(x_2)} + \textcolor{orange}{\hat{f}_3(x_3)}$.\\
+Hence, $\hat{f}$ can be decomposed into the marginal feature effects (PDPs).
+
+
+
+\end{vbframe}
+
+
+
+
 \begin{vbframe}{Feature importance}
 \begin{itemize}
   \item We can further exploit the additive structure of the boosted ensemble to 
