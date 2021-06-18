@@ -148,7 +148,7 @@ p_5 <- do.call(
     common.legend = TRUE, 
     legend = "right"))
 
-cboost_nonlinear$model$getParameterAtIteration(n_iters)
+names(cboost_nonlinear$model$getParameterAtIteration(n_iters))
 
 # ------------------------------------------------------------------------------
 
