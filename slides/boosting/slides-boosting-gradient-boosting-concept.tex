@@ -119,14 +119,14 @@ and assume a space of base learners $\mathcal{B}$.
 We want to learn an additive model:
 
 $$
-\fx = \sum_{m=1}^M \betam \bmmxth.
+\fx = \sum_{m=1}^M \alpha^{[m]} \bmmxth.
 $$
 
 Hence, we minimize the empirical risk:
 
 $$
 \riskef = \sum_{i=1}^n L\left(\yi,\fxi \right) =
-\sum_{i=1}^n L\left(\yi, \sum_{m=1}^M \betam \bmmxth\right)
+\sum_{i=1}^n L\left(\yi, \sum_{m=1}^M \alpha^{[m]} \bmmxth\right)
 $$
 
 
@@ -145,7 +145,7 @@ $$
 \framebreak
 \textbf{Why is gradient boosting a good choice for this problem?}
 \begin{itemize}
-\item Because of the additive structure it is difficult to jointly minimize $\riskef$ w.r.t. $\left(\left(\beta^{[1]}, \bm{\theta}^{[1]}\right), \ldots, \left(\beta^{[M]}, \bm{\theta}^{[M]}\right)\right)$, which is a very high-dimensional parameter space (though this is less of a problem nowadays, especially in the
+\item Because of the additive structure it is difficult to jointly minimize $\riskef$ w.r.t. $\left(\left(\alpha^{[1]}, \bm{\theta}^{[1]}\right), \ldots, \left(\alpha^{[M]}, \bm{\theta}^{[M]}\right)\right)$, which is a very high-dimensional parameter space (though this is less of a problem nowadays, especially in the
 case of numeric parameter spaces).
 % - however, this is nowadays especially in the case of numeric parameter spaces not a real problem anymore.
 \item Considering trees as base learners is worse as we would have to grow $M$ trees in parallel so they
@@ -157,7 +157,7 @@ case of numeric parameter spaces).
 
 Hence, we add additive components in a greedy fashion by sequentially minimizing the risk only w.r.t. the next additive component:
 
-$$ \min \limits_{\beta, \bm{\theta}} \sum_{i=1}^n L\left(\yi, \fmdh\left(\xi\right) + \beta b\left(\xi, \bm{\theta}\right)\right) $$
+$$ \min \limits_{\alpha, \bm{\theta}} \sum_{i=1}^n L\left(\yi, \fmdh\left(\xi\right) + \alpha b\left(\xi, \bm{\theta}\right)\right) $$
 
 \lz
 
@@ -175,7 +175,7 @@ Doing this iteratively is called \textbf{forward stagewise additive modeling}.
 \begin{footnotesize}
 The algorithm we just introduced is not really an algorithm, but rather an abstract principle.
 We need to find the new additive component $b\left(\xv, \thetam\right)$ and its
-weight coefficient $\betam$ in each iteration $m$.
+weight coefficient $\alpha^{[m]}$ in each iteration $m$.
 This can be done by gradient descent, but in function space.
 
 \lz
@@ -273,7 +273,7 @@ $$ \rmi = -\left[\fp{\Lxyi}{f(\xi)}\right]_{f=\fmd} $$
 The gradient descent update for each vector component of $f$ is:
 
 $$
-  \fm (\xi) =  \fmd (\xi) - \beta \fp{\Lxyim}{\fmd (\xi)}.
+  \fm (\xi) =  \fmd (\xi) - \alpha \fp{\Lxyim}{\fmd (\xi)}.
 $$
 
 This tells us how we could \enquote{nudge} our whole function $f$ in the direction of the data to
@@ -287,7 +287,7 @@ reduce its empirical risk.
 
 \textbf{Iteration 1:}
 
-Let's move our function $\fxi$ a fraction towards the pseudo-residuals with a learning rate of $\beta = 0.6$.
+Let's move our function $\fxi$ a fraction towards the pseudo-residuals with a learning rate of $\alpha = 0.6$.
 
 
 \begin{figure}
@@ -298,7 +298,7 @@ Let's move our function $\fxi$ a fraction towards the pseudo-residuals with a le
 
 \textbf{Iteration 2:}
 
-Let's move our function $\fxi$ a fraction towards the pseudo-residuals with a learning rate of $\beta = 0.6$.
+Let's move our function $\fxi$ a fraction towards the pseudo-residuals with a learning rate of $\alpha = 0.6$.
 
 
 \begin{figure}
@@ -376,7 +376,7 @@ Instead of moving the function values for each observation by a fraction closer 
 \end{footnotesize}
 \framebreak
 \begin{footnotesize}
-This base learner is then added to the current state of the ensemble weighted by the learning rate (here: $\beta = 0.4$) and for the next iteration again the pseudo-residuals of the adapted ensemble are calculated and a base learner is fitted to them.
+This base learner is then added to the current state of the ensemble weighted by the learning rate (here: $\alpha = 0.4$) and for the next iteration again the pseudo-residuals of the adapted ensemble are calculated and a base learner is fitted to them.
 
 
 \vspace*{0.1cm}
@@ -451,10 +451,10 @@ Note that we also initialize the model in a loss-optimal manner. %Also, the cons
 The learning rate in gradient boosting influences how fast the algorithm converges. 
 Although a small constant learning rate is commonly used in practice, it can also be replaced by a line search.\\\lz
 Line search is an iterative approach to find a local minimum. In the case of setting the learning rate, the following one-dimensional optimization problem has to be solved:
-$$\betamh = \argmin_{\beta} \sumin L(\yi, \fmd(\xv) + \beta b(\xv, \thetamh))$$
+$$\hat{\alpha}^{[m]} = \argmin_{\alpha} \sumin L(\yi, \fmd(\xv) + \alpha b(\xv, \thetamh))$$
 
 Optionally, an (inexact) backtracking line search can be used to find the 
-$\betam$ that minimizes the above equation.
+$\alpha^{[m]}$ that minimizes the above equation.
 
 \end{vbframe}
 
