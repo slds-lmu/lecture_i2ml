@@ -28,6 +28,7 @@ n_iters <- 100L
 
 # Only linear base learners
 
+set.seed(1L)
 cwb_linear_bl <- compboost::boostLinear(
   data = data_bh,
   target = "medv",
@@ -50,6 +51,7 @@ for (i in names(data_bh)[names(data_bh) != "medv"]) {
   cwb_flexible_bl$addBaselearner(
     i, "spline", compboost::BaselearnerPSpline, degree = 3L)}
 
+set.seed(2L)
 cwb_flexible_bl$train(n_iters)
 
 # PLOTS ------------------------------------------------------------------------
@@ -92,14 +94,14 @@ p_2 <- p_1 +
   ggplot2::ggtitle(sprintf(
     "mstop = %i: %i base learners selected",
     markers[1L],
-    sum(traces[[1]][iteration == markers[1L]]$value != 0)))
+    sum(slopes_long[iteration == markers[1L]]$value != 0)))
 
 p_3 <- p_1 + 
   ggplot2::geom_vline(xintercept = markers[2L], linetype = "dashed") +
   ggplot2::ggtitle(sprintf(
     "mstop = %i: %i base learners selected",
     markers[2L],
-    sum(traces[[1]][iteration == markers[2L]]$value != 0)))
+    sum(slopes_long[iteration == markers[2L]]$value != 0)))
 
 p_4 <- ggpubr::ggarrange(
   p_2, p_3, ncol = 1L, common.legend = TRUE, legend = "right")
@@ -119,7 +121,8 @@ pdp <- lapply(
         end = 0.9, direction = -1L, labels = steps) +
       ggplot2::labs(
         subtitle = "", 
-        title = i)})
+        title = i,
+        y = "")})
 
 p_5 <- do.call(
   ggpubr::ggarrange, 
@@ -128,13 +131,11 @@ p_5 <- do.call(
     common.legend = TRUE, 
     legend = "right"))
 
-names(cboost_nonlinear$model$getParameterAtIteration(n_iters))
-
 # ------------------------------------------------------------------------------
 
 ggplot2::ggsave(
-  "../figure/compboost-illustration-1.png", p_1, height = 4L, width = 10L)
+  "../figure/compboost-illustration-1.png", p_1, height = 2.2, width = 7L)
 ggplot2::ggsave(
   "../figure/compboost-illustration-2.png", p_4, height = 4L, width = 8L)
 ggplot2::ggsave(
-  "../figure/compboost-illustration-3.png", p_5, height = 4L, width = 10L)
+  "../figure/compboost-illustration-3.png", p_5, height = 4.5, width = 10L)

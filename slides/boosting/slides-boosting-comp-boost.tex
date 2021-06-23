@@ -5,7 +5,7 @@
 \input{../../latex-math/ml-boosting.tex}
 \input{../../latex-math/ml-trees.tex}
 
-\newcommand{\titlefigure}{figure_man/componentwise-gb.png}
+\newcommand{\titlefigure}{figure/compboost-illustration-2.png}
 \newcommand{\learninggoals}{
   \item Learn the concept of componentwise boosting and its relation to GLM
   \item Understand the built-in feature selection process
@@ -176,33 +176,49 @@ $\rightarrow$ post-selection inference.
 
 % ------------------------------------------------------------------------------
 
-\begin{vbframe}{example: feature selection for titanic}
+\begin{vbframe}{example: boston housing}
 
-\small
-Consider the \texttt{titanic} data, for which we fit a componentwise gradient 
-boosting model with linear base learners, using the R package \texttt{compboost} 
-with $M = 200$, to predict passengers' survival.
-We can visualize the updates of the $\theta_j$ over time to see which base 
-learner was selected when.
+\begin{minipage}[c]{0.4\textwidth}
+  \small
+  \raggedright
+  Consider the \texttt{Boston housing} regression task, for which we fit a 
+  CWB model with linear base learners to predict the median home value.
+  Using the \texttt{compboost} package with $M = 100$ iterations, we can 
+  visualize which base learner was selected when:
+\end{minipage}%
+\begin{minipage}[c]{0.05\textwidth}
+  \phantom{foo}
+\end{minipage}%
+\begin{minipage}[c]{0.55\textwidth}
+  \tiny
+  \begin{tabular}{l|l}
+    \textbf{variable} & \textbf{description} \\
+    \hline
+    medv &	median value of owner-occupied homes in k USD \\
+    \hline
+    crim & per capita crime rate by town \\
+    zn &	proportion of residential land zoned for lots $>$ 25k sq.ft \\
+    indus &	proportion of non-retail business acres per town \\
+    chas &	Charles River dummy (1 if tract bounds river, 0 otherwise) \\
+    nox &	nitric oxides concentration (parts per 10m) \\
+    rm &	average number of rooms per dwelling \\
+    age &	proportion of owner-occupied units built prior to 1940 \\
+    dis &	weighted distances to five Boston employment centres \\
+    rad &	index of accessibility to radial highways \\
+    tax &	full-value property-tax rate per USD 10k \\
+    ptratio &	pupil-teacher ratio by town \\
+    b &	$1000(B - 0.63)^2$,  $B$ as proportion of blacks by town \\
+    lstat &	percentage of lower status of the population \\
+  \end{tabular}
+\end{minipage}%
 
 \vfill
 
 \begin{center}
 \includegraphics[width = \textwidth]{figure/compboost-illustration-1.png}
-% \includegraphics[width=0.9\textwidth]{figure_man/componentwise-gb.png}
 \end{center}
 
-\vfill
-
-\small
-New variables are added cautiously, yielding a rather parsimonious model.
-Being male and/or traveling in the bottom class clearly bodes ill for surival.
-
 \framebreak
-
-% ------------------------------------------------------------------------------
-
-
 
 % ------------------------------------------------------------------------------
 
@@ -211,7 +227,7 @@ number of total iterations $M$.
 
 \vfill
 
-$\rightarrow$ A sparse logistic regression is fitted.
+$\rightarrow$ A sparse linear regression is fitted.
 
 \vfill
 
@@ -223,15 +239,16 @@ $\rightarrow$ A sparse logistic regression is fitted.
 
 \begin{vbframe}{Nonlinear base learners}
 
-Nonlinear base learners like $P$- or $B$-splines make the model equivalent to a
-\textbf{generalized additive model (GAM)}, as long as the base learners keep 
-their additive structure (which is the case for splines).
+As an alternative we can use nonlinear base learners, such as $P$- or 
+$B$-splines, which make the model equivalent to a
+\textbf{generalized additive model (GAM)} (as long as the base learners keep 
+their additive structure, which is the case for splines).
 \vspace{0.5cm}
 
 \vfill
 
 \begin{center}
-\includegraphics[width=1\textwidth]{figure/bspline-basis.png}
+\includegraphics[width=0.9\textwidth]{figure/bspline-basis.png}
 \end{center}
 
 % \vfill
@@ -278,16 +295,16 @@ where
 
 % ------------------------------------------------------------------------------
 
-\begin{vbframe}{titanic example: continued}
+\begin{vbframe}{boston housing: continued}
 
 \begin{itemize}
   \small
   \item This time we offer our model both 
-  linear and nonlinear ($B$-spline) base learners for the numeric features.
-  \item By iteration 200, the model has selected 6 out of 16 features, 3 of 
-  which are categorical (concerning sex and passenger class).
-  \item For the 3 numeric ones, the model always picks the nonlinear option. 
-  We can trace how they evolve over the iterations:
+  linear and nonlinear ($P$-spline) base learners for the 13 features (all 
+  numeric).
+  \item By iteration 100, the model has selected 8 out of the resulting 26 base 
+  learners and consistently picked the nonlinear option.
+  We can trace how these spline predictors evolve over the iterations:
 \end{itemize}
 
 \vfill
