@@ -66,18 +66,20 @@ regression trees.
 
 \lz
 
-For componentwise gradient boosting we generalize this to multiple base learner sets $\{ \mathcal{B}_1, ... \mathcal{B}_J \}$.
+For componentwise gradient boosting we generalize this to multiple base learner sets $\{ \mathcal{B}_1, ... \mathcal{B}_J \}$ with associated parameter spaces 
+$\{ \bm{\Theta}_1, ... \bm{\Theta}_J \}$,
 % $$
 %   % b_j^{[m]}(\xv,\pmb\theta^{[m]}) \quad j = 1,\dots, J\,,
 %   \{ \bmm_j(\xv, \thetam): j = 1, 2, \dots, J \},
 % $$
 % 
- where $j$ indexes the type of base learner.
+ where $j \in \{ 1, 2, \dots, J \}$ indexes the type of base learner.
 % 
-% \lz
+\lz
 
 Again, in each iteration, only the best base learner 
-$\bmm_{\hat{j}}(\xv, \thetam)$ is selected and updated.
+% $\bmm_{\hat{j}}(\xv, \thetam)$ 
+is selected and updated.
 
 \end{vbframe}
 % ------------------------------------------------------------------------------
@@ -132,17 +134,17 @@ $$
 $$
 
 
-This definition will result in an ordinary \textbf{linear regression} model 
-(note that linear base learners without intercept only make sense for covariates 
-that have been centered before).
+This definition will result in an ordinary \textbf{linear regression} model.
 
 % .\footnote{Note: a linear model base learner without intercept only makes sense if the covariates are centered (see \texttt{mboost} tutorial, page7)}
 
 
 \begin{itemize}
+  \item Note that linear base learners without intercept only make sense for 
+  covariates that have been centered before.
   \item If we let the boosting algorithm converge, i.e., let it run for a really 
-  long time, the parameters estimated by the boosting model will converge to the 
-  \textbf{same solution} as the ML estimate.
+  long time, the parameters will converge to the \textbf{same solution} as the 
+  ML estimate.
   \item This means that, by specifying a loss function according to the negative 
   likelihood of a distribution from an exponential family and defining a link 
   function accordingly, this kind of boosting is equivalent to a (regularized)
@@ -176,14 +178,41 @@ $\rightarrow$ post-selection inference.
 
 % ------------------------------------------------------------------------------
 
+\begin{vbframe}{intercept handling}
+
+\textcolor{red}{@Janek}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{handling of categorical features}
+
+\textcolor{red}{@BB}
+
+\begin{itemize}
+  \item Basically, there are two options for encoding categorical features:
+  \begin{itemize}
+    \item Specifying a single base learner for the entire variable
+    \item One-hot encoding, i.e., creating a binary feature with associated 
+    base learner for each category
+  \end{itemize}
+  \item The \texttt{compboost} package currently implements the latter variant.
+\end{itemize}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
 \begin{vbframe}{example: boston housing}
 
 \begin{minipage}[c]{0.4\textwidth}
   \small
   \raggedright
   Consider the \texttt{Boston housing} regression task, for which we fit a 
-  CWB model with linear base learners to predict the median home value.
-  Using the \texttt{compboost} package with $M = 100$ iterations, we can 
+  CWB model with linear base learners (with intercept) to predict median home 
+  value.
+  Using \texttt{compboost} with $M = 100$ iterations, we can 
   visualize which base learner was selected when:
 \end{minipage}%
 \begin{minipage}[c]{0.05\textwidth}
@@ -300,8 +329,8 @@ where
 \begin{itemize}
   \small
   \item This time we offer our model both 
-  linear and nonlinear ($P$-spline) base learners for the 13 features (all 
-  numeric).
+  linear and nonlinear ($P$-spline) base learners (again, with intercept) for 
+  the 13 features.
   \item By iteration 100, the model has selected 8 out of the resulting 26 base 
   learners and consistently picked the nonlinear option.
   We can trace how these spline predictors evolve over the iterations:
@@ -354,6 +383,9 @@ where
 % ------------------------------------------------------------------------------
 
 Especially for linear models and GAMs it is possible to transform the degrees of freedom into a corresponding penalty term.
+
+\textcolor{red}{@BB nochmal nachlesen}
+
 \begin{itemize}
 
   \item
@@ -476,24 +508,24 @@ Hence, $\hat{f}$ can be decomposed into the marginal feature effects (PDPs).
 
 \end{vbframe}
 
-\begin{vbframe}{Available base learners}
-
-There is a large amount of possible base learners, e.g.:
-
-\begin{itemize}
-  \item Linear effects and interactions (with or without intercept)
-  \item Uni- or multivariate splines and tensor product splines
-  \item Trees
-  \item Random effects and Markov random fields
-  \item Effects of functional covariates
-  \item ...
-\end{itemize}
-
-\lz
-
-In combination with the flexible choice of loss functions, this allows boosting to fit  a huge number of different statistical models with the same algorithm. Recent extensions include GAMLSS-models, where multiple additive predictors are boosted to model different distribution parameters (e.g., conditional mean and variance for a Gaussian model).
-
-\end{vbframe}
+% \begin{vbframe}{Available base learners}
+% 
+% There is a large amount of possible base learners, e.g.:
+% 
+% \begin{itemize}
+%   \item Linear effects and interactions (with or without intercept)
+%   \item Uni- or multivariate splines and tensor product splines
+%   \item Trees
+%   \item Random effects and Markov random fields
+%   \item Effects of functional covariates
+%   \item ...
+% \end{itemize}
+% 
+% \lz
+% 
+% In combination with the flexible choice of loss functions, this allows boosting to fit  a huge number of different statistical models with the same algorithm. Recent extensions include GAMLSS-models, where multiple additive predictors are boosted to model different distribution parameters (e.g., conditional mean and variance for a Gaussian model).
+% 
+% \end{vbframe}
 
 % ------------------------------------------------------------------------------
 
