@@ -18,7 +18,7 @@ set.seed(120)
 
 # count the number of times ranked right
 right_ranked <- 0
-number_of_draws <- 4000
+number_of_draws <- 3500
 draws <- data.frame(no_draws=c(), prob=c())
 
 for (i in 1:number_of_draws){
@@ -33,12 +33,15 @@ for (i in 1:number_of_draws){
   draws <- rbind(draws, c(i, right_ranked/i))
 }
 
+real_probability = 0.9167
+
 ################################################################################
 colnames(draws) <- c("no_draws", "prob")
 ggplot(draws, aes(no_draws,prob)) +
   geom_point(size = 1,  fill = "#6BAED6", color = "#6BAED6") +
   theme_gray() +
-  scale_color_viridis() +
+  geom_hline(yintercept= real_probability, linetype="dashed", color = "black") +
+  geom_text(aes(3300,real_probability,label = real_probability, vjust = -1), color = "#000000",size = 3.5) +
   xlab("Number of draws") +
   ylab("Share of draws where the positive obs. is ranked higher")
 ################################################################################
