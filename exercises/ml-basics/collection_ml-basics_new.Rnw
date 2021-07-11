@@ -11,6 +11,8 @@ knitr::set_parent("../../style/preamble_ueb_coll.Rnw")
 \kopf{ML Basics}
 
 % ------------------------------------------------------------------------------
+% LECTURE EXERCISES
+% ------------------------------------------------------------------------------
 
 \exlect
 \lz
@@ -25,12 +27,142 @@ knitr::set_parent("../../style/preamble_ueb_coll.Rnw")
 @
 }
 
+\newpage
+
 \aufgabe{
-<<child="ex_rnw/ex_types.Rnw">>=
+<<child="ex_rnw/ex_lin_reg.Rnw">>=
 @
 }
 \dlz
 \loesung{
-<<child="ex_rnw/sol_types.Rnw">>=
+<<child="ex_rnw/sol_lin_reg.Rnw">>=
 @
 }
+
+\newpage
+
+\aufgabe{
+<<child="ex_rnw/ex_ml_basics.Rnw">>=
+@
+}
+\dlz
+\loesung{
+<<child="ex_rnw/sol_ml_basics.Rnw">>=
+@
+}
+
+\newpage
+
+% ------------------------------------------------------------------------------
+% PAST EXAMS
+% ------------------------------------------------------------------------------
+
+\dlz
+\exexams
+\lz
+
+\aufgabeexam{WS2020/21}{retry}{1}{
+
+\begin{centering}
+
+<<echo=FALSE, message=FALSE, warning = FALSE>>=
+x <- c(0,1,1.5,2.5,3.5,5,6,7,8)
+y <- c(0,4,5.5,7,6,3,2,3,8)
+df = data.frame(x = x, y = y)
+#knitr::kable(t(df))
+@
+
+\end{centering}
+
+<<echo=FALSE, message=FALSE, warning = FALSE, fig.width=5, fig.height=3>>=
+require(ggplot2)
+knn_plot = ggplot(df)+
+  geom_point(aes(x = x, y = y)) +
+  scale_x_continuous(
+    minor_breaks = seq(0, 8, by = 1), 
+    breaks = seq(0, 8, by = 1),
+    limits=c(0,8)) +
+  scale_y_continuous(
+    minor_breaks = seq(0, 8, by = 1),
+    breaks = seq(0, 8, by = 1),
+    limits=c(0,8)) +
+  #geom_label(aes(x=x-0.5, y=y, label=y)) +
+  theme_bw()
+
+knn5 = rbind(df, df, df, df)
+knn5$k = paste("k = ", rep(1:4, each = nrow(df)), sep = "")
+ggplot(knn5)+
+  geom_point(aes(x = x, y = y)) +
+  scale_x_continuous(
+    minor_breaks = seq(0, 8, by = 1),
+    breaks = seq(0, 8, by = 1),
+    limits=c(0,8)) +
+  scale_y_continuous(
+    minor_breaks = seq(0, 8, by = 1),
+    breaks = seq(0, 8, by = 1),
+    limits=c(0,8)) +
+  facet_wrap("k", ncol = 2, scales = "free") +
+  #geom_label(aes(x=x-0.5, y=y, label=y)) +
+  theme_bw()
+@
+
+Now we want to train a cubic polynomial, i.e., a polynomial regression 
+model with degree $d = 3$ on the data used in a). 
+\begin{enumerate}
+  \item[(i)] Define the hypothesis space of this model and state explicitly 
+  how many parameters have to be estimated for training the model.
+  \item[(ii)] Define the minimization problem that we have to optimize in 
+  order to train the polynomial regression model. Use L2 loss and be as 
+  explicit as possible - without plugging in the data.  
+  \item[(iii)] In order to estimate the parameters of the model, it is 
+  convenient to describe the model as a linear model. Compute the respective 
+  design matrix using the concrete values of $\xv$ given above. Additionally, 
+  state a formula for estimating the parameters using this design matrix. 
+  (You do not have to derive this formula.)
+\end{enumerate}
+}
+
+\dlz
+
+\loesung{
+\begin{enumerate}
+  \item[(i)] $$\Hspace = \{f: \fx = \theta_0 + \theta_1 \xv + \theta_2 \xv^2 + 
+  \theta_3 \xv^3 ~|~ \theta_0, \theta_1, \theta_2, \theta_3 \in \R\}$$
+  The four parameters $\theta_0, \theta_1, \theta_2, \theta_3$ have to be 
+  estimated
+  \item[(ii)] $$\thetabh \in \argmin \limits_{\thetab \in \Theta} \risket$$ 
+  This means we have to optimize the following minimization problem wrt 
+  $\thetab = (\theta_0, \theta_1, \theta_2, \theta_3)$:
+  $$\min \limits_{\thetab \in \Theta} \risket = \min \limits_{\thetab \in 
+  \Theta} \sum_{i=1}^9(\yi - (\theta_0 + \theta_1 \xi + \theta_2 (\xi)^2 + 
+  \theta_3 (\xi)^3))^2$$ 
+  \item[(iii)]   $$\thetah = (X^\top X )^{-1}X^\top y$$
+  <<echo=FALSE, message=FALSE, warning = FALSE>>=
+  X <- data.frame(1, x, x^2, x^3)
+  knitr::kable(X)
+  @
+\end{enumerate}
+}
+
+% ------------------------------------------------------------------------------
+
+\dlz
+\aufgabeexam{WS2020/21}{retry}{6}{
+
+Describe a real-life application in which classification might be useful and 
+where we want to “learn to explain”. Describe the response, as well as the 
+predictors. Explain your answer thoroughly.
+}
+
+\dlz
+\loesung{
+
+No model solution
+}
+
+% ------------------------------------------------------------------------------
+% INSPO
+% ------------------------------------------------------------------------------
+
+\dlz
+\exinspo
