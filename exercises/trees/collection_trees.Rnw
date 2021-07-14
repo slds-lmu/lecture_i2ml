@@ -32,6 +32,7 @@ knitr::set_parent("../../style/preamble_ueb_coll.Rnw")
 @
 }
 
+\dlz
 \aufgabe{split computation}{
 <<child="ex_rnw/ex_trees_1.Rnw">>=
 @
@@ -77,7 +78,344 @@ See
 \exexams
 \lz
 
-\aufgabeexam{WS2020/21}{retry}{1}{}
+\aufgabeexam{WS2020/21}{main}{1}{
+
+<<echo=FALSE, fig.align="center", fig.width=5, fig.height=3>>=
+library(ggplot2)
+set.seed(31415)
+
+
+x1 <- runif(49, 0.1, 1.9)
+x2 <- runif(98, 2.1, 5.9)
+x3 <- runif(49, 6.1, 7.9)
+x4 <- c(1,3,5,7)
+x <- c(x1, x2, x3, x4)
+
+y1 <- 2 + rnorm(49, 0, 0.02)
+y2 <- 4 + rnorm(98, 0, 0.02)
+y3 <- 3 + rnorm(49, 0, 0.02)
+y4 <- c(4, 2, 3, 4)
+y <- c(y1, y2, y3, y4)
+
+d = data.frame(x, y)
+
+ggplot(data = d, aes(x = x, y = y)) +
+  geom_point(alpha = 0.25)
+
+@
+
+The above plot shows $\D = \Dset $, a data set with %$n$ observations
+%data $\xv = (x^{(1)}, \dots, x^{(n)})^\top$ and $\ydat = \yvec$ for 
+$n$ = 200 observations of a continuous target variable $y$ and a continuous, 
+1-dimensional feature variable $\xv$. In the following, we aim at predicting 
+$y$ with a machine learning model that takes $\xv$ as input.
+
+\begin{enumerate}
+  \item Assume we trained a regression tree with L1 loss $\Lxy = |y-\fx|$. 
+  The training resulted in two splits of the feature $\xv$ which means that the 
+  resulting estimated model is 
+  \begin{align*}
+  \fh (\xv) &= \sum_{m=1}^3 \hat{c}_m \I(\xv \in \hat{Q}_m)\\
+   &= \hat{c}_1 \I(\xv \in (-\infty, \hat{q}_1]) + 
+   \hat{c}_2 \I(\xv \in (\hat{q}_1, \hat{q}_2]) +
+   \hat{c}_3 \I(\xv \in (\hat{q}_2, \infty))
+  \end{align*}
+  \begin{enumerate}
+    \item[(i)] Estimate the two split points $\hat{q}_1$ and $\hat{q}_2$ 
+    visually from the plot.
+    \item[(ii)] Estimate the three predicted labels $\hat{c}_1$, 
+    $\hat{c}_2$ and $\hat{c}_3$ visually from the plot.
+    \item[(iii)] How would the estimated model change if we used L2 loss \\ 
+    $\Lxy = 0.5 (y-\fx)^2$ instead of L1 loss? State for each split point 
+    $\hat{q}_1$ and $\hat{q}_2$ and for each predicted label $\hat{c}_1$, 
+    $\hat{c}_2$ and $\hat{c}_3$ 
+    \begin{itemize}
+      \item if it changes and
+      \item if it changes, in which direction it changes
+    \end{itemize}
+      and explain your decision thoroughly.
+  \end{enumerate}
+  \item Given are two new observations $\xv_{*1} = -10$ and $\xv_{*2} = 7$. 
+  State the prediction for each of the two models 
+  \begin{enumerate}
+    \item[(i)] regression tree
+    \item[(ii)] QDA
+  \end{enumerate}
+  and explain how you derived the predictions.
+  \item Discuss in 1-2 sentences which of the 2 models (regression tree, QDA) 
+  you would prefer for modeling the data and explain your decision.
+\end{enumerate}
+}
+
+\dlz
+\loesung{
+
+\begin{enumerate}
+  \item \phantom{foo}
+  \begin{enumerate}
+    \item[(i)] $\hat{q}_1 = 2$, $\hat{q}_2 = 6$
+    \item[(ii)] $\hat{c}_1 = 2$, $\hat{c}_2 = 4$, $\hat{c}_3 = 3$
+    \item[(iii)] $\hat{q}_1$ and $\hat{q}_2$ would not change since including 
+    more 'wrong' points is making end notes less pure, regardless of the loss. 
+    (Basically no explanation needed for full point, since it does not change.)
+    $\hat{c}_1$ and $\hat{c}_3$ would be higher since the L2 loss gives more 
+    weight to extreme observations.
+    $\hat{c}_2$ would be lower since the L2 loss gives more weight to extreme 
+    observations.
+  \end{enumerate}  
+  \item \phantom{foo}
+  \begin{enumerate}
+    \item[(i)] $\hat{y}_{*1} = 2$, $\hat{y}_{*2} = 3$, 
+    \item[(ii)] $\hat{z}_{*1} = 3$, since the variance of class 3 is higher, 
+    the density will overshoot the density of class 1. 
+    $\hat{z}_{*2} = 2$, obviously highest posterior here.
+  \end{enumerate}
+  \item E.g., 
+  \begin{itemize}
+    \item CART better than LM because I do not have to specify those indicator 
+    functions manually and estimate the split points manually, CART does this 
+    data driven
+    \item For QDA we have to throw away information of y, this favors CART
+    \item QDA predicts the middle class (3) for very extreme observations, this 
+    does not seem right. However, we do not know how data behave outside the 
+    bounds of x.
+    \item QDA assumes gaussian distributions which is clearly not the case.
+  \end{itemize}
+\end{enumerate}
+
+}
+
+% ------------------------------------------------------------------------------
+
+\aufgabeexam{WS2020/21}{main}{2}{
+
+The table below shows $\D = \Dset $, a data set with 
+$n$ = 5 observations of a continuous target variable $y$ and a continuous, 
+1-dimensional feature variable $\xv$. In the following, we aim at predicting 
+$y$ with a machine learning model that takes $\xv$ as input.
+
+\begin{tabular}{ | c | c | c |}
+\hline
+ID  &  $\xv$  &  $y$  \\  \hline
+1   &  1.0    &  3.1  \\
+2   &  5.2    &  0.5  \\
+3   &  2.7    &  1.7  \\
+4   &  1.1    &  4.5  \\
+5   &  1.5    &  2.7  \\
+\hline
+\end{tabular}
+
+\begin{enumerate}
+  \item We want to train a regression tree on the above data with the L1 loss 
+  $\Lxy =|y - \fx|$. Compute the first split point $\hat{q}_1$ of the regression 
+  tree.
+  \item Compute the two predicted labels $\hat{c}_1$ and $\hat{c}_2$ 
+  corresponding to the two resulting intervals from a).
+  \item Predict the label $y$ for a new observation $\xv_* = 2$ with this 
+  regression tree and explain your calculation.
+\end{enumerate}
+
+}
+
+\dlz
+\loesung{
+
+\begin{enumerate}
+
+  \item   
+  <<results="asis", echo=FALSE>>=
+  x <- c(1, 5.2, 2.7, 1.1, 1.5)
+  y <- c(3.1, 0.5, 1.7, 4.5, 2.7)
+  df <- data.frame(x, y)
+  df <- df[order(df$x, decreasing = FALSE),]
+  knitr::kable(df)
+  @
+  \begin{itemize}
+    \item Split $x$ in two groups using the following split points.
+      \begin{itemize}
+        \item $ (1)$, $(1.1,1.5,2.7,5.2)$ (splitpoint 1.05)
+        \item $ (1,1.1)$, $(1.5,2.7,5.2)$ (splitpoint 1.3)
+        \item $ (1,1.1,1.5)$, $(2.7,5.2)$ (splitpoint 2.1)
+        \item $ (1,1.1,1.5,2.7)$, $(5.2)$ (splitpoint 4.0)
+      \end{itemize}
+   \item For each possible split point compute the empirical risk.
+   \item Use as split point the point that splits both groups best w.r.t. 
+   minimizing the empirical risk.
+  \end{itemize}
+  \begin{itemize}
+    \item[$q = 1.05$]
+      \begin{align*}
+        \mathcal{R}(1, 1, 1.05) &= 0 + \sum_{i=2}^5 |y_i-median(y[2:5])|\\
+        &= 0 + \sum_{i=2}^5 |y_i-2.2| \\
+        &= 0 + 2.3 + 0.5 + 0.5 + 1.7\\
+        &= 5
+      \end{align*}
+    \item[$q =  1.3$] 
+      \begin{align*}
+        \mathcal{R}(1, 1, 1.3) &= \sum_{i=1}^2 |y_i - median(y[1:2])|  + 
+        \sum_{i=3}^5 |y_i-median(y[3:5])|\\
+        &= \sum_{i=1}^2 |y_i - 3.8|  + \sum_{i=3}^5 |y_i-1.7|\\
+        &= 0.7 + 0.7 + 1 + 1.2 \\
+        &= 3.6
+      \end{align*}
+    \item[$q =  2.1$] 
+      \begin{align*}
+        \mathcal{R}(1, 1, 2.1) &= \sum_{i=1}^3 |y_i - median(y[1:3])|  + 
+        \sum_{i=4}^5 |y_i-median(y[4:5])|\\
+        &= \sum_{i=1}^3 |y_i - 3.1|  + \sum_{i=4}^5 |y_i-1.1|\\
+        &= 0 + 1.4 + 0.4 + 0.6 + 0.6 \\
+        &= 3
+      \end{align*}
+    \item[$q =  4.0$] 
+      \begin{align*}
+        \mathcal{R}(1, 1, 4.0) &= \sum_{i=1}^4 |y_i - median(y[1:4])|  + 0 \\
+        &= \sum_{i=1}^4 |y_i - 2.9| \\
+        &= 0.2 + 1.6 + 0.2 + 1.2  \\
+        &= 3.2
+      \end{align*}
+      Minimal empirical risk is obtained by choosing the split point 
+      $\hat{q} = 2.1$
+  \end{itemize}
+  
+  \item $\hat{c}_1 = 3.1$ and $\hat{c}_2 = 1.1$
+
+  \item Since $\xv_* = 2 < \hat{q} = 2.1$,  the observations falls in the left 
+  part, i.e., the prediction is $\hat{c}_1 = 3.8$    
+
+\end{enumerate} 
+
+}
+
+% ------------------------------------------------------------------------------
+
+\aufgabeexam{WS2020/21}{retry}{1}{
+
+<<echo=FALSE, message=FALSE, warning = FALSE>>=
+x <- c(0,1,1.5,2.5,3.5,5,6,7,8)
+y <- c(0,4,5.5,7,6,3,2,3,8)
+df = data.frame(x = x, y = y)
+#knitr::kable(t(df))
+@
+
+\begin{enumerate}
+  \item We want to compare a linear regression model with a regression 
+  tree. For the linear regression, we use the feature 
+  variable $\xv$ without any transformations; for the regression tree, we use a 
+  fully grown tree, i.e., we set the hyperparameters $cp=0$, $minsplit=1$ and 
+  $minbucket=1$ in \texttt{rpart}.
+  \begin{enumerate}
+    \item[(i)] State the training loss of the regression tree and explain why 
+    the regression tree would yield a better fit (i.e., a smaller training loss) 
+    to the data than the linear regression model.
+    \item[(ii)] Given the true underlying model is the cubical polynomial
+    function shown with a solid line in the plot below: Which of the two models 
+    (linear regression and regression tree) would extrapolate better in the 
+    region $x\in (100, \infty)$? Explain your decision. 
+    <<include=TRUE, results="asis", echo=FALSE, fig.width=3, fig.height=2, warning = FALSE>>=
+    mod <- lm(y~x + I(x^2) + I(x^3), data = df)
+    true_fun <- function(x){ 
+      summary(mod)$coef[1,1] + x*summary(mod)$coef[2,1]  + 
+        x^2*summary(mod)$coef[3,1] + x^3*summary(mod)$coef[4,1]
+      }
+    ggplot(df)+
+      geom_point(aes(x = x, y = y))+
+      stat_function(fun = true_fun)+
+        scale_x_continuous(
+          minor_breaks = seq(0, 8, by = 1),
+          breaks = seq(0, 8, by = 1),
+          limits=c(0,8)) +
+      scale_y_continuous(
+        minor_breaks = seq(0, 8, by = 1),
+        breaks = seq(0, 8, by = 1),
+        limits=c(0,8)) +
+      theme_bw()
+    @
+  \end{enumerate}    
+\end{enumerate}  
+
+}
+
+\newpage
+\loesung{
+
+\begin{enumerate}
+  \item The training loss of the regression tree would be 0 because the fully 
+  grown tree would yield a step function that goes through every point. 
+  The training loss of the linear model can not be 0 since the training points 
+  can not be interpolated with a straight line. 
+  \item The linear model would extrapolate better because the regression tree 
+  extrapolates a constant value of 8 but the true function goes further up. 
+  As would go the estimated linear model.
+\end{enumerate} 
+}
+
+% ------------------------------------------------------------------------------
+
+\aufgabeexam{WS2020/21}{retry}{2}{
+
+The table below shows $\D = \Dset $, a data set with 
+$n$ = 10 observations of a binary target variable \texttt{PlayTennis} and two 
+binary feature variables \texttt{Temperature} and \texttt{Weather}. 
+In the following, we aim at predicting \texttt{PlayTennis} with a machine 
+learning model that takes \texttt{Temperature} and \texttt{Weather} as input.
+
+\resizebox{0.88\textwidth}{!}{%
+\begin{tabular}{|r|cccccccccc|}
+  \hline
+ID & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 \\
+  \hline
+Temperature & cool & cool & cool & hot & hot & cool & hot & cool & cool & hot \\
+  Weather & rain & rain & sunny & sunny & sunny & rain & rain & sunny & sunny & sunny \\
+  \hline
+  PlayTennis & no & no & yes & no & yes & no & yes & yes & yes & yes \\
+   \hline
+\end{tabular}
+}
+}
+
+\begin{enumerate}
+  \item We want to train a classification tree on the above data using the Brier 
+  score (Gini impurity) as split criterion. Which feature will be chosen for 
+  the first split? Calculate all necessary Brier scores.
+\end{enumerate}
+
+\dlz
+\loesung{
+
+\begin{enumerate}
+  \item Calculate Brier score for both variables:
+  \begin{itemize}
+    \item \textbf{For temperature}:
+    \begin{itemize}
+      \item[] \textbf{N1 = hot}:
+      $\hat \pi_\text{no}^\text{(hot)} = 1/4 $,
+      $\hat \pi_\text{yes}^\text{(hot)} = 3/4 $,
+      $Brier_\text{hot} = 2 \cdot 1/4 \cdot 3/4 = 3/8$
+      \item[] \textbf{N2 = cool}:
+      $\hat \pi_\text{no}^\text{(cool)} = 3/6$,
+      $\hat \pi_\text{yes}^\text{(cool)} = 3/6$,
+      $Brier_\text{cool} = 2 \cdot 1/2 \cdot 1/2 = 1/2 $
+      \item[] Average node impurity for temperature:
+      $Brier_\text{temperature} = 4/10 \cdot 3/8 + 6/10 \cdot 1/2 = .45$
+    \end{itemize}
+    \item \textbf{For Weather}:
+    \begin{itemize}
+      \item[]\textbf{N1 = sunny}:
+      $\hat \pi_\text{no}^\text{(sunny)} = 1/6$,
+      $\hat \pi_\text{yes}^\text{(sunny)} = 5/6 $,
+      $Brier_\text{sunny} = 2 \cdot 1/6 \cdot 5/6 = 10/36$
+      \item[]\textbf{N2 = rain}:
+      $\hat \pi_\text{no}^\text{(rain)} = 3/4$,
+      $\hat \pi_\text{yes}^\text{(rain)} = 1/4$,
+      $Brier_\text{rain} = 2 \cdot 3/4 \cdot 1/4 = 3/8$
+      \item[] Average node impurity for weather:
+      $Brier_\text{weather} = 4/10 \cdot 3/8 + 6/10 \cdot 10/36 = .317$
+    \end{itemize}
+ \end{itemize}
+  The split would be made on the feature \textit{weather} because the Brier 
+  score of this feature is smaller.
+\end{enumerate} 
+}
 
 % ------------------------------------------------------------------------------
 % INSPO
