@@ -64,10 +64,10 @@ file = ifelse(time, "traintime.pdf", "accuracy.pdf")
 
 pdf(file = file)
 
-if(time) {
+if (time) {
   plotBMRBoxplots(bmr, measure = timetrain)
-  plotBMRSummary(bmr, measure = timetrain) }
-else {
+  plotBMRSummary(bmr, measure = timetrain) 
+} else {
   plotBMRBoxplots(bmr)
   plotBMRSummary(bmr) }
 dev.off()
