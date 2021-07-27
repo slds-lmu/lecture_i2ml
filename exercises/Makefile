@@ -1,4 +1,4 @@
-EX = $(shell find -maxdepth 2 -type f \( -iname "ex_*.Rnw" -o -iname "sol_*.Rnw" \))
+EX = $(shell find -maxdepth 2 -type f \( -iname "ex_*.Rnw" -o -iname "sol_*.Rnw" -o -iname "collection_*.Rnw" \))
 EXS = $(EX:%.Rnw=%.pdf)
 
 all: texclean $(EXS) texclean copy
@@ -27,3 +27,4 @@ texclean:
 	rm -rf *.vrb
 	rm -rf *.synctex.gz
 	rm -rf *-concordance.tex
+	rm -rf *.tex
