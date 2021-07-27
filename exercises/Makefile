@@ -1,35 +1,30 @@
-all: d1 d2 d3 d4
+EX = $(shell find -maxdepth 2 -type f \( -iname "ex_*.Rnw" -o -iname "sol_*.Rnw" -o -iname "collection_*.Rnw" \))
+EXS = $(EX:%.Rnw=%.pdf)
 
-d1: day1/exercise_1.pdf day1/solution_1.pdf
-d2: day2/exercise_2.pdf day2/solution_2.pdf
-d3: day3/exercise_3.pdf day3/solution_3.pdf
-d4: day4/exercise_4.pdf day4/solution_4.pdf
-d5: day5/exercise_5.pdf
+all: texclean $(EXS) texclean move
 
+$(EXS): %.pdf: %.Rnw
+	Rscript -e 'setwd("$(dir $<)"); knitr::knit2pdf("$(notdir $<)")'
 
+move: 
+	find  -maxdepth 2 -type f \( -iname "ex_*.pdf" -o -iname "sol_*.pdf" \) -exec mv {}  ../exercises-pdf \; 
 
-day1/exercise_1.pdf: day1/*.Rnw
-	Rscript -e 'setwd("day1"); knitr::knit2pdf("exercise_1.Rnw")'
-day1/solution_1.pdf: day1/*.Rnw
-	Rscript -e 'setwd("day1"); knitr::knit2pdf("solution_1.Rnw")'
-
-day2/exercise_2.pdf: day2/*.Rnw
-	Rscript -e 'setwd("day2"); knitr::knit2pdf("exercise_2.Rnw")'
-day2/solution_2.pdf: day2/*.Rnw
-	Rscript -e 'setwd("day2"); knitr::knit2pdf("solution_2.Rnw")'
-
-
-day3/exercise_3.pdf: day3/*.Rnw
-	Rscript -e 'setwd("day3"); knitr::knit2pdf("exercise_3.Rnw")'
-day3/solution_3.pdf: day3/*.Rnw
-	Rscript -e 'setwd("day3"); knitr::knit2pdf("solution_3.Rnw")'
-
-
-day4/exercise_4.pdf: day4/*.Rnw
-	Rscript -e 'setwd("day4"); knitr::knit2pdf("exercise_4.Rnw")'
-day4/solution_4.pdf: day4/*.Rnw
-	Rscript -e 'setwd("day4"); knitr::knit2pdf("solution_4.Rnw")'
-
-
-day5/exercise_5.pdf: day5/*.Rnw
-	Rscript -e 'setwd("day5"); knitr::knit2pdf("exercise_5.Rnw")'
+texclean: 
+	rm -rf *.out
+	rm -rf *.dvi
+	rm -rf *.log
+	rm -rf *.aux
+	rm -rf *.bbl
+	rm -rf *.blg
+	rm -rf *.ind
+	rm -rf *.idx
+	rm -rf *.ilg
+	rm -rf *.lof
+	rm -rf *.lot
+	rm -rf *.toc
+	rm -rf *.nav
+	rm -rf *.snm
+	rm -rf *.vrb
+	rm -rf *.synctex.gz
+	rm -rf *-concordance.tex
+	rm -rf *.tex

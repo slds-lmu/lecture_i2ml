@@ -1,0 +1,388 @@
+% !Rnw weave = knitr
+
+<<setup-child, include = FALSE, echo=FALSE>>=
+library('knitr')
+knitr::set_parent("../../style/preamble_ueb_coll.Rnw")
+@
+
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+
+\kopf{Supervised Classification}
+
+\tableofcontents
+
+% ------------------------------------------------------------------------------
+% LECTURE EXERCISES
+% ------------------------------------------------------------------------------
+
+\dlz
+\exlect
+\lz
+
+\aufgabe{logistic regression -- thresholding}{
+<<child="ex_rnw/ex_logreg_dec_boundaries.Rnw">>=
+@
+}
+
+\newpage
+\loesung{
+<<child="ex_rnw/sol_logreg_dec_boundaries.Rnw">>=
+@
+}
+
+\aufgabe{logistic regression -- link function and likelihood}{
+<<child="ex_rnw/ex_softmax.Rnw">>=
+@
+}
+\newpage
+\loesung{
+<<child="ex_rnw/sol_softmax.Rnw">>=
+@
+}
+
+\aufgabe{logistic regression -- softmax hyperplane}{
+<<child="ex_rnw/ex_softmax_hyperplane.Rnw">>=
+@
+}
+\dlz
+\loesung{
+<<child="ex_rnw/sol_softmax_hyperplane.Rnw">>=
+@
+}
+
+\aufgabe{decision boundaries with \texttt{mlr3}}{
+<<child="ex_rnw/ex_mlr_dec_boundaries.Rnw">>=
+@
+}
+\dlz
+\loesung{
+
+See \href{https://github.com/compstat-lmu/lecture_i2ml/blob/master/exercises/supervised-classification/sol_mlr_dec_boundaries.R}{R code}
+}
+
+\newpage
+\aufgabe{$k$-NN classification}{
+<<child="ex_rnw/ex_knn_manh.Rnw">>=
+@
+}
+\newpage
+\loesung{
+<<child="ex_rnw/sol_knn_manh.Rnw">>=
+@
+}
+
+\dlz
+\aufgabe{$k$-NN from scratch}{
+<<child="ex_rnw/ex_knn_from_scratch.Rnw">>=
+@
+}
+\dlz
+
+\loesung{
+
+See \href{https://github.com/compstat-lmu/lecture_i2ml/blob/master/exercises/supervised-classification/sol_knn_from_scratch.R}{R code}
+}
+
+\dlz
+\aufgabe{QDA from scratch}{
+<<child="ex_rnw/ex_qda_from_scratch.Rnw">>=
+@
+}
+\dlz
+
+\loesung{
+
+See \href{https://github.com/compstat-lmu/lecture_i2ml/blob/master/exercises/supervised-classification/sol_qda_from_scratch.R}{R code}
+}
+
+\dlz
+\aufgabe{naive Bayes}{
+<<child="ex_rnw/ex_naive_bayes.Rnw">>=
+@
+}
+\dlz
+\loesung{
+<<child="ex_rnw/sol_naive_bayes.Rnw">>=
+@
+}
+
+\dlz
+\aufgabe{classifying \texttt{ionosphere}}{
+<<child="ex_rnw/ex_ionosphere.Rnw">>=
+@
+}
+\dlz
+\loesung{
+
+No model solution
+}
+
+% ------------------------------------------------------------------------------
+% PAST EXAMS
+% ------------------------------------------------------------------------------
+
+\dlz
+\exexams
+\lz
+
+\aufgabeexam{WS2020/21}{first}{1}{
+
+<<echo=FALSE, fig.align="center", fig.width=5, fig.height=3>>=
+library(ggplot2)
+set.seed(31415)
+
+
+x1 <- runif(49, 0.1, 1.9)
+x2 <- runif(98, 2.1, 5.9)
+x3 <- runif(49, 6.1, 7.9)
+x4 <- c(1,3,5,7)
+x <- c(x1, x2, x3, x4)
+
+y1 <- 2 + rnorm(49, 0, 0.02)
+y2 <- 4 + rnorm(98, 0, 0.02)
+y3 <- 3 + rnorm(49, 0, 0.02)
+y4 <- c(4, 2, 3, 4)
+y <- c(y1, y2, y3, y4)
+
+d = data.frame(x, y)
+
+ggplot(data = d, aes(x = x, y = y)) +
+  geom_point(alpha = 0.25)
+
+@
+
+The above plot shows $\D = \Dset $, a data set with %$n$ observations
+%data $\xv = (x^{(1)}, \dots, x^{(n)})^\top$ and $\ydat = \yvec$ for 
+$n$ = 200 observations of a continuous target variable $y$ and a continuous, 
+1-dimensional feature variable $\xv$. In the following, we aim at predicting 
+$y$ with a machine learning model that takes $\xv$ as input.
+
+\begin{enumerate}
+  \item Since the data seem to fall in 3 quite well-separable classes, we now 
+  want to apply a classification model instead of the regression model in a). 
+  To prepare the data for classification, we categorize the target variable $y$ 
+  in 3 classes and call the transformed target variable $z$, as follows:
+  \[
+    z^{(i)} = \left\{\begin{array}{lr}
+        1, \text{ if }&  -\infty < \yi \leq 2.5 \\
+        2, \text{ if }&  2.5\ < \yi \leq 3.5 \\
+        3, \text{ if }&  3.5 < \yi < \infty
+        \end{array} \right\}
+  \]
+  Now we can apply quadratic discriminant analysis (QDA):
+  \begin{enumerate}
+    \item[(i)] Estimate the class means $\mu_k = \E(\xv|z = k)$ for each of the 
+    three classes $k \in \{1, 2, 3\}$ visually from the plot. Do not 
+    overcomplicate this, a rough estimate is sufficient here.
+    \item[(ii)] Make a hand-drawn plot that visualizes the different estimated 
+    densities per class.
+    \item[(iii)] How would your drawing from (ii) change if we used linear 
+    discriminant analysis (LDA) instead of QDA? Explain your answer.
+    \item[(iv)] Why is QDA for this data preferable over LDA?
+  \end{enumerate}  
+  \item Given are two new observations $\xv_{*1} = -10$ and $\xv_{*2} = 7$. 
+  State the prediction for each of the two models 
+  \begin{enumerate}
+    \item[(i)] regression tree
+    \item[(ii)] QDA
+  \end{enumerate}
+  and explain how you derived the predictions.
+  \item Discuss in 1-2 sentences which of the 2 models (regression tree, QDA) 
+  you would prefer for modeling the data and explain your decision.
+\end{enumerate}
+
+\dlz
+\loesung{
+
+\begin{enumerate}
+  \item \phantom{foo}
+  \begin{enumerate}
+    \item[(i)] $\mu_1 = 1$, $\mu_2 = 7$, $\mu_3 = 4$
+    \item[(ii)] 
+    <<echo=FALSE, message=FALSE, warning = FALSE, fig.height=4, fig.width=5>>=
+    library(MASS)
+    z <- as.factor(ifelse(y<2.5, 1,
+                        ifelse(y<3.5, 2, 3)))
+  
+    d1 <- data.frame(z, x)
+    qd <- qda(z ~ x, d1)
+    
+    mean_vec <- c(mean(x[z==1]),
+                  mean(x[z==2]),
+                  mean(x[z==3]))
+    sd_vec <- c(sd(x[z==1]),
+                  sd(x[z==2]),
+                  sd(x[z==3]))
+    x_grid <- seq(0,8, by=0.01)
+    plot(x_grid, dnorm(x_grid, mean = mean_vec[1], sd = sd_vec[1]),type="l", ylab = "density")
+    lines(x_grid, dnorm(x_grid, mean = mean_vec[2], sd = sd_vec[2]), col='blue')
+    lines(x_grid, dnorm(x_grid, mean = mean_vec[3], sd = sd_vec[3]), col = 'orange')
+    legend('top', legend = c("z = 1","z = 2","z = 3"), col=c('black', 'blue', 'orange'), lty=1)
+    @
+    \item[(iii)] Variances would be all equal. Assumption of LDA is equal 
+    variances, i.e., estimatated models will always have equal variances, no 
+    matter if this fits the data or not
+    \item[(iv)] Variances seem not to be equal, this is only captured in QDA
+  \end{enumerate}  
+  \item \phantom{foo}
+  \begin{enumerate}
+    \item[(i)] $\hat{y}_{*1} = 2$, $\hat{y}_{*2} = 3$, 
+    \item[(ii)] $\hat{z}_{*1} = 3$, since the variance of class 3 is higher, 
+    the density will overshoot the density of class 1. 
+    $\hat{z}_{*2} = 2$, obviously highest posterior here.
+  \end{enumerate}
+  \item E.g., 
+  \begin{itemize}
+    \item CART better than LM because I do not have to specify those indicator 
+    functions manually and estimate the split points manually, CART does this 
+    data driven
+    \item For QDA we have to throw away information of y, this favors CART
+    \item QDA predicts the middle class (3) for very extreme observations, this 
+    does not seem right. However, we do not know how data behave outside the 
+    bounds of x.
+    \item QDA assumes gaussian distributions which is clearly not the case.
+  \end{itemize}
+\end{enumerate}
+
+}
+
+% ------------------------------------------------------------------------------
+
+\dlz
+\aufgabeexam{WS2020/21}{first}{4}{
+
+The table below shows $\D = \Dset $, a data set with 
+$n$ = 8 observations of a binary target variable $y$ containing the information 
+if the object is a \texttt{Banana} or not and a 4-dimensional feature vector 
+$\xv$, containing \texttt{Color}, \texttt{Form}, \texttt{Origin} (categorical 
+features) and \texttt{Length} (continuous feature) of the object. In the 
+following, we aim at predicting \texttt{Banana} with a machine learning model 
+that takes $\xv$ as input.
+
+\begin{tabular}{ | c | c | c | c | c | c |}
+\hline
+ID  &  Color   &  Form    &  Origin    & Length [cm]  &  Banana  \\  \hline
+1   &  yellow  &  oblong  &  imported  & 15           &  yes      \\
+2   &  yellow  &  round   &  domestic  & 5            &  no       \\
+3   &  yellow  &  oblong  &  imported  & 10           &  no       \\
+4   &  brown   &  oblong  &  imported  & 17           &  yes      \\
+5   &  brown   &  round   &  domestic  & 16           &  no        \\
+6   &  green   &  round   &  imported  & 13           &  yes       \\
+7   &  green   &  oblong  &  domestic  & 25           &  no       \\
+8   &  red     &  round   &  imported  & 7            &  no        \\
+\hline
+\end{tabular}
+
+We want to use a naive Bayes classifier to predict the label of a new 
+observation. 
+
+\begin{enumerate}
+  \item Calculate the posterior probability $\pi(\xv_*) = \P(y = \text{yes} | 
+  \xv_*)$ for a new observation \ $\xv_* = (\text{green}, \text{oblong}, 
+  \text{imported}, 14)^\top$. Explain every step thoroughly. (Hint: At some 
+  point you will have to compute values of Gaussian densities - use R for this
+  step.)
+  \item How would you classify the new observation? Explain your answer.
+\end{enumerate}
+
+}
+
+\dlz
+\loesung{
+
+\begin{enumerate}
+
+  \item The features $\xv := (x_\text{Color},x_\text{Form},x_\text{Origin},
+  x_\text{Length})$ given the category $y \in \{\text{yes},\text{no}\}$ are
+  assumed to be conditionally independent of each other (since we are using
+  Naive Bayes), s.t.
+
+  $$p(\xv|y = k) = p(x_\text{Color}|y = k)\cdot p(x_\text{Form}|y = k) \cdot
+  p(x_\text{Origin}|y = k) \cdot p(x_\text{Length}|y = k).$$
+
+  For the posterior probabilities $\pi_k(\xv) = \P(y = k | \xv)$ it holds with
+  Bayes' Theorem:
+  \begin{align*}
+  \pi_k(\xv)  \propto & \; \underbrace{\pi_k \cdot p(\xv|y = k)
+  }_{=: \alpha_k(\xv)} \\
+  \iff & \exists c \in \mathbb{R}: \pi_k(\xv) = c \cdot \alpha_k(\xv),
+  \end{align*}
+
+  where $\pi_k = \P(y = k)$ is the prior probability of class $k$.
+
+  From this and since the posterior probabilities need to sum up to 1, it holds
+  that
+  \begin{align*}1 =& \; c \cdot \alpha_\text{yes}(\xv) +  c \cdot
+  \alpha_\text{no}(\xv) \\
+  \iff & c = \frac{1}{\alpha_\text{yes}(\xv) + \alpha_\text{no}(\xv)}.
+  \end{align*}
+
+  This means, the scores $\alpha_\text{yes}(x)$ and $\alpha_\text{no}(x)$ are
+  needed to compute  $$\pi_\text{yes}(\xv) = \frac{\alpha_\text{yes}(\xv)}{
+  \alpha_\text{yes}(\xv) + \alpha_\text{no}(\xv)}. $$
+
+  For the new observation $\xv_*$ we have to estimate the respective
+  probabilities and densities. For the categorical features, we can simply
+  compute relative frequencies. For the continuous features \texttt{Length} we
+  have to estimate the densities per class and evaluate those at the value $14$.
+  Doing this with R we end up with:
+
+   <<echo=FALSE, message=FALSE, warning = FALSE>>=
+  x_yes <- c(15,17,13)
+  x_no <- c(5,10,16,25,7)
+  m_yes = mean(x_yes)
+  s_yes = sd(x_yes)
+
+  m_no = mean(x_no)
+  s_no = sd(x_no)
+
+  dnorm(14, m_yes, s_yes)
+  dnorm(14, m_no, s_no)
+  @
+
+  \begin{center}
+  \begin{tabular}{ | c | c | c | c | c | c |}
+  \hline
+  k     &  $\hat{\pi}_k$   &  $\hat{p}(\text{green}|y = k)$    &  
+  $\hat{p}(\text{oblong}|y = k)$    & $\hat{p}(\text{imported}|y = k)$    & 
+  $\hat{p}(\text{14}|y = k)$   \\  \hline
+  yes   &  3/8  &  1/3    &  2/3  & 3/3     &  0.176 \\
+  no    &  5/8  &  1/5    &  2/5  & 2/5     &  0.049 \\
+  \hline
+  \end{tabular}
+  \end{center}
+
+  \begin{align*}
+  \hat{\alpha}_\text{yes}(x) = & \;  \hat{\pi}_{yes} \cdot \hat{p}(
+  \text{green}|y = \text{yes})\cdot \hat{p}(\text{oblong}|y = \text{yes}) \cdot 
+  \hat{p}(\text{imported}|y = \text{yes}) \cdot \hat{p}(14|y = \text{yes}) \\
+  = & \; \frac{3}{8} \cdot \frac{1}{3} \cdot \frac{2}{3} \cdot 1 \cdot 0.176  
+  \approx 0.0147, \\
+  \hat{\alpha}_\text{no}(x) = & \;  
+  \hat{\pi}_{no} \cdot \hat{p}(\text{green}|y = \text{no})\cdot 
+  \hat{p}(\text{oblong}|y = \text{no}) \cdot \hat{p}(\text{imported}|y = 
+  \text{no}) \cdot \hat{p}(14|y = \text{no}) \\
+  = & \; \frac{5}{8} \cdot \frac{1}{5} \cdot \frac{2}{5} \cdot \frac{2}{5} 
+  \cdot 0.049  \approx 0.00098.
+  \end{align*}
+  
+  With this we can calculate the posterior probability
+  $$\hat{\pi}_\text{yes}(x) = \frac{\hat{\alpha}_\text{yes}(x)}{
+  \hat{\alpha}_\text{yes}(x) + \hat{\alpha}_\text{no}(x)} \approx 0.937.$$
+  
+  \item Classification as yes = \texttt{banana}. We have to define a threshold, 
+  observations with a posterior probability equal or above the threshold are 
+  hard labeled as yes, others as no. The optimal threshold has to be chosen, 
+  e.g., inspecting ROC measures. With default 0.5 we end up with the above 
+  classification.
+
+\end{enumerate}
+}
+
+% ------------------------------------------------------------------------------
+% INSPO
+% ------------------------------------------------------------------------------
+
+\dlz
+\exinspo

@@ -1,0 +1,303 @@
+% !Rnw weave = knitr
+
+<<setup-child, include = FALSE, echo=FALSE>>=
+library('knitr')
+knitr::set_parent("../../style/preamble_ueb_coll.Rnw")
+@
+
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+
+\kopf{Random Forests}
+
+\tableofcontents
+
+% ------------------------------------------------------------------------------
+% LECTURE EXERCISES
+% ------------------------------------------------------------------------------
+
+\dlz
+\exlect
+\lz
+
+\aufgabe{random forests vs CART}{
+<<child="ex_rnw/ex_rf_vs_cart.Rnw">>=
+@
+}
+
+\dlz
+\loesung{
+<<child="ex_rnw/sol_rf_vs_cart.Rnw">>=
+@
+}
+
+\dlz
+\aufgabe{decision boundaries}{
+<<child="ex_rnw/ex_dec_boundaries.Rnw">>=
+@
+}
+
+\dlz
+\loesung{
+
+See
+\href{https://github.com/compstat-lmu/lecture_i2ml/blob/master/exercises/forests/ex_rnw/sol_dec_boundaries.R}{R code}
+}
+
+\dlz
+\aufgabe{random forest implementations}{
+<<child="ex_rnw/ex_rf_implementations.Rnw">>=
+@
+}
+
+\dlz
+\loesung{
+
+See
+\href{https://github.com/compstat-lmu/lecture_i2ml/blob/master/exercises/forests/ex_rnw/sol_rf_implementations.R}{R code}
+}
+
+\newpage
+\aufgabe{spam classification}{
+<<child="ex_rnw/ex_spam.Rnw">>=
+@
+}
+
+\dlz
+\loesung{
+<<child="ex_rnw/sol_spam.Rnw">>=
+@
+}
+
+% ------------------------------------------------------------------------------
+% PAST EXAMS
+% ------------------------------------------------------------------------------
+
+\dlz
+\exexams
+\lz
+
+\aufgabeexam{WS2020/21}{first}{2}{
+
+The table below shows $\D = \Dset $, a data set with 
+$n$ = 5 observations of a continuous target variable $y$ and a continuous, 
+1-dimensional feature variable $\xv$. In the following, we aim at predicting 
+$y$ with a machine learning model that takes $\xv$ as input.
+
+\begin{tabular}{ | c | c | c |}
+\hline
+ID  &  $\xv$  &  $y$  \\  \hline
+1   &  1.0    &  3.1  \\
+2   &  5.2    &  0.5  \\
+3   &  2.7    &  1.7  \\
+4   &  1.1    &  4.5  \\
+5   &  1.5    &  2.7  \\
+\hline
+\end{tabular}
+
+\begin{enumerate}
+
+  \item We train a random forest with L2 loss $\Lxy = 0.5(y-\fx)^2$ and 
+  $\texttt{num.trees} = 3$ trees. The results of the training and all estimated 
+  split points and predicted labels can be found in the R script \texttt{rf.R}. 
+  To prevent differing numbers due to technical reasons, you see the output of 
+  \texttt{ranger::treeInfo()} in the following table. Predict the label $y$ for 
+  a new observation $\xv_* = 2$ with the random forest as given in the table 
+  below. State the entire manual calculation, i.e., the entire path of the 
+  observation through the trees in detail. (You are allowed to use R to 
+  cross-check your solution, but we will only grade your manual computations -- 
+  for full points, you have to describe your calculations thoroughly.) 
+  
+  \item Compute the proximities of the 5 training observations, using the random 
+  forest. In \texttt{rf.R} you see the skeleton of a function 
+  \texttt{get\_prox\_matrix()}. Complete this function and apply it to the 
+  predictions of the individual trees of the random forest, which are 
+  precomputed in the R script for you and stored in the matrix 
+  \texttt{pred\_mat}. Print the results. This is an R question. As a solution, 
+  hand in a completed version of \texttt{rf.R}. No hand-written solution is 
+  allowed here.
+  
+  \item Use the proximities matrix given below for outlier detection: Which 
+  observations are the most likely candidates for being an outlier and why? 
+  State the IDs of the respective observations.
+  
+\end{enumerate}
+
+}
+
+\dlz
+
+\loesung{
+
+\begin{enumerate}
+
+  \item
+  <<include=TRUE, results="asis", echo=FALSE, message=FALSE>>=
+  library(mlr3)
+  library(mlr3learners)
+  library(rpart.plot)
+  library(ranger)  
+  x <- c(1, 5.2, 2.7, 1.1, 1.5)
+  y <- c(3.1, 0.5, 1.7, 4.5, 2.7)
+  df <- data.frame(x, y)
+  df <- df[order(df$x, decreasing = FALSE),]  
+  set.seed(135)
+  task <- TaskRegr$new(id = "exam",
+                       backend = df,
+                       target = "y")
+  rf <- lrn("regr.ranger", num.trees=3, min.node.size=1)
+  rf$train(task)
+  knitr::kable(treeInfo(rf$model, tree=1))
+  knitr::kable(treeInfo(rf$model, tree=2))
+  knitr::kable(treeInfo(rf$model, tree=3))
+  @
+  \begin{itemize}
+    \item Tree 1:
+    \begin{itemize}
+      \item Split 1: left child since $2<3.15 $
+      \item End node: Prediction 4.5
+    \end{itemize}
+    \item Tree 2:
+    \begin{itemize}
+      \item Split 1: left child since $2<2.1$
+      \item Split 2: right child since $2>1.3$
+      \item End node: Prediction 2.7
+    \end{itemize}
+    \item Tree 3:
+    \begin{itemize}
+      \item Split 1: right child since $2>1.9$
+      \item Split 2: left child since $2<3.95$
+      \item End node: Prediction 1.7
+    \end{itemize}
+    Final prediction is the mean of the 3 values: 2.97
+  \end{itemize}
+
+  \item Model solution somewhere in exam folder?
+
+  \item
+  <<include=TRUE, results="asis", echo=FALSE>>=
+  pred <- predict(rf$model, data = data.frame(x=x), predict.all=TRUE)
+  pred_mat <- pred$predictions
+  get_prox_matrix <- function(pred_mat){
+    prox <- matrix(NA, nrow=5, ncol=5)
+    for(i in 1:4){
+      for(j in (i+1):5){
+        prox[i,j] <- prox[j,i] <- sum(pred_mat[i,] == pred_mat[j,])
+      }
+    }
+    prox <- prox / 3
+    return(prox)
+  }
+  prox_mat <- get_prox_matrix(pred_mat)
+  prox_df <- as.data.frame(prox_mat)
+  colnames(prox_df) <- 1:5
+  knitr::kable(round(prox_df,2), row.names = TRUE)
+  @
+
+\end{enumerate}
+}
+
+% ------------------------------------------------------------------------------
+
+\aufgabeexam{WS2020/21}{second}{2}{
+
+The table below shows $\D = \Dset $, a data set with 
+$n$ = 10 observations of a binary target variable \texttt{PlayTennis} and two 
+binary feature variables \texttt{Temperature} and \texttt{Weather}. 
+In the following, we aim at predicting \texttt{PlayTennis} with a machine 
+learning model that takes \texttt{Temperature} and \texttt{Weather} as input.
+
+\resizebox{0.88\textwidth}{!}{%
+\begin{tabular}{|r|cccccccccc|}
+  \hline
+ID & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 \\
+  \hline
+Temperature & cool & cool & cool & hot & hot & cool & hot & cool & cool & hot \\
+  Weather & rain & rain & sunny & sunny & sunny & rain & rain & sunny & sunny & sunny \\
+  \hline
+  PlayTennis & no & no & yes & no & yes & no & yes & yes & yes & yes \\
+   \hline
+\end{tabular}
+}
+}
+
+\begin{enumerate}
+  \item We train a random forest with $\texttt{num.trees} = 3$ trees. 
+  The results of the training and all estimated split points and predicted 
+  labels can be found in the R script \texttt{snd\_rf.R}. 
+  To prevent differing numbers due to technical reasons, you see the output of 
+  \texttt{ranger::treeInfo()} in the following table. 
+  Predict the label \texttt{PlayTennis} for a new observation 
+  $\xv_* = (cool, rain)^\top$ with the random forest as given in the table 
+  below. State the entire manual calculation, i.e., the entire path of the 
+  observation through the trees in detail. (You are allowed to use R to 
+  cross-check your solution, but we will only grade your manual computations -- 
+  for full points, you have to describe your calculations thoroughly.) 
+\end{enumerate}
+
+\newpage
+\loesung{
+
+\begin{enumerate}
+  \item   
+  <<include=FALSE, results="asis", echo=FALSE>>=
+  temperature <- as.factor(
+    c("cool", "cool", "cool", "hot", "hot", 
+      "cool", "hot", "cool", "cool", "hot"))
+  weather <- as.factor(
+    c("rain", "rain", "sunny", "sunny", "sunny", 
+      "rain", "rain", "sunny", "sunny", "sunny"))
+  playtennis <- as.factor(
+    c("no", "no", "yes",  "no", "yes", 
+      "no", "yes", "yes", "yes", "yes"))
+  df <- data.frame(temperature, weather, playtennis)
+  library(mlr3)
+  library(mlr3learners)
+  task <- TaskClassif$new(
+    id = "secondexam",
+    backend = df,
+    target = "playtennis")
+  t <- lrn("classif.rpart", minbucket=1)
+  t$train(task)
+  t$model
+  @
+  <<include=TRUE, results="asis", echo=FALSE, message=FALSE>>=
+  library(ranger)  
+  set.seed(13511)
+  rf <- lrn("classif.ranger", num.trees=3, min.node.size=1)
+  rf$train(task)
+  knitr::kable(treeInfo(rf$model, tree=1))
+  knitr::kable(treeInfo(rf$model, tree=2))
+  knitr::kable(treeInfo(rf$model, tree=3))
+  @
+  In the R code you can see that cool is class 1, hot is class 2, for 
+  temperature and that rain is class 1, sun is class 2 for weather.
+  \begin{itemize}
+    \item Tree 1: 
+    \begin{itemize}
+      \item nodeID 0: left child since cool $=1<1.5 \Rightarrow$ nodeID = 1
+      \item nodeID 1: left child since rain $=1<1.5 \Rightarrow$ nodeID = 3
+      \item nodeID 3 = End node: Prediction 'no'
+    \end{itemize}
+    \item Tree 2: 
+    \begin{itemize}
+      \item nodeID 0: left child since rain $=1<1.5 \Rightarrow$ nodeID = 1
+      \item nodeID 1: left child since cool $=1<1.5 \Rightarrow$ nodeID = 3
+      \item nodeID 3 = End node: Prediction 'no'
+    \end{itemize}
+    \item Tree 3: 
+    \begin{itemize}
+      \item nodeID 0: left child since cool $=1<1.5 \Rightarrow$ nodeID = 1
+      \item nodeID 1 = End node: Prediction 'no'
+    \end{itemize}
+    Final prediction is the majority vote of the 3 values: 'no'
+  \end{itemize}
+\end{enumerate} 
+}
+
+% ------------------------------------------------------------------------------
+% INSPO
+% ------------------------------------------------------------------------------
+
+\dlz
+\exinspo
