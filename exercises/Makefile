@@ -3,7 +3,7 @@ EXS = $(EX:%.Rnw=%.pdf)
 
 all: texclean $(EXS) texclean copy
 
-$(EXS): %.pdf: %.Rcnw
+$(EXS): %.pdf: %.Rnw
 	Rscript -e 'setwd("$(dir $<)"); knitr::knit2pdf("$(notdir $<)")'
 
 copy: 
