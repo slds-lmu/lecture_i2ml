@@ -57,6 +57,7 @@ what material needs to be understood before what else. Please do add appropriate
   - a collection file (prefixed with `collection_`) that assembles all exercises for the given topic (those currently used in the exercise sheets, further existing material, ideas, URLs, ...)
 - Compiling the slides should be done via the Makefile: just type `make all` and it will render all exercises, solutions and collection files, or `make <FILE>.pdf` to render a specific file `<FILE>.Rnw`.
 - `make` will automatically move a copy of the compiled PDFs to the `exercises-pdf` directory. From there, files can be copied into the [course website repository](https://github.com/teaching-data-science/intro2ml) in case of a new release.
+- When creating new exercise sheets or collection files, please use the setup provided in `style/preamble_ueb.Rnw` and `style/preamble_ueb_coll.Rnw`.
 
 ### Code Snippets
 
