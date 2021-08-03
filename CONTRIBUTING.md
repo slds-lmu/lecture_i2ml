@@ -53,9 +53,9 @@ what material needs to be understood before what else. Please do add appropriate
 - Exercises are organized chapter-wise. Each folder will contain
   - a subdirectory `figure` for plots,
   - a subdirectory `ex_rnw` that contains .Rnw files with single exercises (prefixed with `ex_`) and associated solutions (prefixed with sol `sol_`),
-  - one or multiple exercise sheets (prefixed with `ex_`) and associated solutions (prefixed with sol `sol_`), sourcing the single snippets from `ex_rnw`,
+  - one or multiple exercise sheets (prefixed with `ex_`) and associated solutions (prefixed with `sol_`), sourcing the single snippets from `ex_rnw`,
   - a collection file (prefixed with `collection_`) that assembles all exercises for the given topic (those currently used in the exercise sheets, further existing material, ideas, URLs, ...)
-- Compiling the slides should be done via the Makefile: just type `make all` and it will render all exercises, solutions and collection files, or `make <FILE>.pdf` to render a specific file `<FILE>.tex`.
+- Compiling the slides should be done via the Makefile: just type `make all` and it will render all exercises, solutions and collection files, or `make <FILE>.pdf` to render a specific file `<FILE>.Rnw`.
 - `make` will automatically move a copy of the compiled PDFs to the `exercises-pdf` directory. From there, files can be copied into the [course website repository](https://github.com/teaching-data-science/intro2ml) in case of a new release.
 
 ### Code Snippets
