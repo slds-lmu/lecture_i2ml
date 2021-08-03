@@ -23,8 +23,6 @@ or similar, where applicable.
 
 ### Slides
 
-- **Do not** update the pdf-files of the `slides-pdf` folder. They will only be updated in case of a new release.
-
 - Notation on the slides uses [`latex-math`](https://github.com/compstat-lmu/latex-math). Please do read the accompanying ReadMe and clone [`latex-math`](https://github.com/compstat-lmu/latex-math) into this repo (otherwise you will not be able to render the slides).
 - Use the commands defined there, don't define your own. 
 - If you have to introduce new notation/symbols you should add it to `latex-math`, after doublechecking that  
@@ -33,7 +31,8 @@ or similar, where applicable.
 - We write slides for beginners: keep it simple, keep it short
 - We try to keep slides modular: slidesets should represent about 15-20 minutes of material and be moderately self-contained.
 - Don't put code on the slides, the theory is orthogonal to issues of implementation (... in theory..). Code is strictly for exercises/ practice sessions. 
-- Compiling the slides should be done via the Makefile: just type `make` in the specific folder and it will render all slidesets in the folder, or `make <SLIDES>.pdf` to render a specific file `<SLIDES>.tex`.
+- Compiling the slides should be done via the Makefile: just type `make all` in the specific folder and it will render all slidesets in the folder, or `make <SLIDES>.pdf` to render a specific file `<SLIDES>.tex`.
+- `make` will automatically move a copy of the compiled PDFs to the `slides-pdf` directory. From there, files can be copied into the [course website repository](https://github.com/teaching-data-science/intro2ml) in case of a new release.
 - We try to keep a "dependency graph" between slide sets up to date so that it's easier to keep track of
 what material needs to be understood before what else. Please do add appropriate `%! includes:`-comments in your slides to keep this up-to-date, see also `attic/slide-dependencies.R` and `slides/slide-dependencies.pdf`.
 - We recommend usage of `{tinytex}` (install via `tinytex::install_tinytex()`)
@@ -48,7 +47,17 @@ what material needs to be understood before what else. Please do add appropriate
   - If you create a new plot or change an existing plot, you need to commit your changes of the r-files as well as the corresponding pdf-files. This means in if you create a new plot, you will have to add the pdf-files with `git add -f *.pdf` since pdf-files are ignored in this repo by default.
   - Utility functions used by more than one R-file should be exported to a separate R-file (also located in the respective rsrc folder)
   - Heavy simulations should not be done in the figures producing R-files. Instead, we only load Rdata files which were produced by separate R-files (also located in the rsrc folder)
+  
+### Exercises
 
+- Exercises are organized chapter-wise. Each folder will contain
+  - a subdirectory `figure` for plots,
+  - a subdirectory `ex_rnw` that contains .Rnw files with single exercises (prefixed with `ex_`) and associated solutions (prefixed with sol `sol_`),
+  - one or multiple exercise sheets (prefixed with `ex_`) and associated solutions (prefixed with `sol_`), sourcing the single snippets from `ex_rnw`,
+  - a collection file (prefixed with `collection_`) that assembles all exercises for the given topic (those currently used in the exercise sheets, further existing material, ideas, URLs, ...)
+- Compiling the slides should be done via the Makefile: just type `make all` and it will render all exercises, solutions and collection files, or `make <FILE>.pdf` to render a specific file `<FILE>.Rnw`.
+- `make` will automatically move a copy of the compiled `ex_` and `sol_` PDFs (i.e., those that will appear on the Website) to the `exercises-pdf` directory. From there, files can be copied into the [course website repository](https://github.com/teaching-data-science/intro2ml) in case of a new release.
+- When creating new exercise sheets or collection files, please use the setup provided in `style/preamble_ueb.Rnw` and `style/preamble_ueb_coll.Rnw`.
 
 ### Code Snippets
 
