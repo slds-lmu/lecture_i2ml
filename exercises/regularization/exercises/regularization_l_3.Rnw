@@ -1,0 +1,44 @@
+Use a quadratic Taylor approximation of the unregularized objective $\risket$ in the neighborhood of its minimizer $\thetah$,
+
+$$ \mathcal{\tilde R}_{\text{emp}}(\thetab)= \mathcal{R}_{\text{emp}}(\thetah) + \nabla_{\thetab} \mathcal{R}_{\text{emp}}(\thetah)\cdot(\thetab - \thetah) + \ \frac{1}{2} (\thetab - \thetah)^T \bm{H} (\thetab - \thetah), $$
+
+where $\bm{H}$ is the Hessian matrix of $\risket$ evaluated at $\thetah$.
+
+\lz
+
+% Because $\thetah = \argmin_{\thetab}\risket$,
+\begin{itemize}
+  \item The first-order term is 0 in the expression above because the gradient is $0$ at the minimizer.
+  \item $\bm{H}$ is positive semidefinite.
+\end{itemize}
+
+The minimum of $\mathcal{\tilde R}_{\text{emp}}(\thetab)$ occurs where $\nabla_{\thetab}\mathcal{\tilde R}_{\text{emp}}(\thetab) = \bm{H}(\thetab - \thetah)$ is $0$.
+
+Now we $L2$-regularize $\mathcal{\tilde R}_{\text{emp}}(\thetab)$, such that
+\[
+\mathcal{\tilde R}_{\text{reg}}(\thetab) = \mathcal{\tilde R}_{\text{emp}}(\thetab) + \frac{\lambda}{2} \|\thetab\|^2_2\]
+and solve this approximation of $\riskr$ for the minimizer $\hat{\thetab}_{\text{Ridge}}$:
+\begin{align*}
+ \nabla_{\thetab}\mathcal{\tilde R}_{\text{reg}}(\thetab) = 0,\\
+%  \lambda \thetab + \nabla_{\thetab}\mathcal{\tilde R}_{\text{emp}}(\thetab) = 0,\\
+  \lambda \thetab + \bm{H}(\thetab - \thetah) = 0,\\
+      (\bm{H} + \lambda \id) \thetab = \bm{H} \thetah,\\
+      \hat{\thetab}_{\text{Ridge}} = (\bm{H} + \lambda \id)^{-1}\bm{H} \thetah,
+\end{align*}
+
+% where $\id$ is the identity matrix.
+This give us a formula to see how the minimizer of the $L2$-regularized version is a transformation of the minimizer of the unpenalized version.
+
+  \begin{itemize}
+    \item As $\lambda$ approaches $0$, the regularized solution $\hat{\thetab}_{\text{Ridge}}$ approaches $\thetah$. What happens as $\lambda$ grows?
+    \item Because $\bm{H}$ is a real symmetric matrix, it can be decomposed as $\bm{H} = \bm{Q} \bm{\Sigma} \bm{Q}^\top$, where $\bm{\Sigma}$ is a diagonal matrix of eigenvalues and $\bm{Q}$ is an orthonormal basis of eigenvectors.
+    \item Rewriting the transformation formula with this:
+  \begin{equation*}
+    \begin{aligned}
+    \hat{\thetab}_{\text{Ridge}} &=\left(\bm{Q} \bm{\Sigma} \bm{Q}^{\top}+\lambda \id\right)^{-1} \bm{Q} \bm{\Sigma} \bm{Q}^{\top} \thetah \\
+              &=\left[\bm{Q}(\bm{\Sigma}+\lambda \id) \bm{Q}^{\top}\right]^{-1} \bm{Q} \bm{\Sigma} \bm{Q}^{\top} \thetah \\
+              &=\bm{Q}(\bm{\Sigma} + \lambda \id)^{-1} \bm{\Sigma} \bm{Q}^{\top} \thetah
+    \end{aligned}
+  \end{equation*}
+    \item Therefore, weight decay rescales $\thetah$ along the axes defined by the eigenvectors of $\bm{H}$. The component of $\thetah$ that is aligned with the $j$-th eigenvector of $\bm{H}$ is rescaled by a factor of $\frac{\sigma_j}{\sigma_j + \lambda}$, where $\sigma_j$ is the corresponding eigenvalue.
+\end{itemize}

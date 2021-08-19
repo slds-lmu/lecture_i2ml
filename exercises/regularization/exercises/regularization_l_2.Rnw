@@ -1,0 +1,79 @@
+\begin{enumerate}
+    \item[a)]
+    The empirical risk for the ridge regularization is given by
+
+    $$
+        \riskrt = \frac{1}{n}(X\theta - Y)^2 + \lambda \|\thetab\|^2_2.
+    $$
+
+    we want to minimize this expression:
+
+    $$
+        \min_{\thetab} \riskrt = \min_{\thetab} \risket + \frac{\lambda}{2} \|\thetab\|^2_2.
+    $$
+
+    Therefore we need the gradient:
+
+    $$
+        \nabla_{\thetab} \riskrt = \nabla_{\thetab} \risket + \lambda \thetab.
+    $$
+
+    Plugging this into our gradient descent formula yields:
+
+    \begin{align*}
+        \thetab^{[\text{new}]} &= \thetab^{[\text{old}]} - \alpha \left(\nabla_{\thetab} \riske(\thetab^{[\text{old}]}) + \lambda \thetab^{[\text{old}]}\right) \\&=
+        \thetab^{[\text{old}]} (1 - \alpha \lambda) - \alpha \nabla_{\thetab} \riske(\thetab^{[\text{old}]}).
+    \end{align*}
+
+
+    The term $\lambda \thetab^{[old]}$ causes the parameter (\textbf{weight}) to \textbf{decay} in proportion to its size.
+    This is a very well-known technique in deep learning - and simply $L2$ regularization in disguise.
+
+
+    We now the gradient of the empirical risk (c.f. Ex. 2):
+
+    $$
+    \nabla_{\thetab} \risket = \frac{2}{n}X^T[X\theta^{[t]} - y]
+    $$
+
+    \item[b)]
+    We can modify the functions that we used in Ex. 2:
+
+<<echo=TRUE, message=FALSE>>=
+
+r_emp_derivative <- function(theta_t, X, y) {
+  2 / nrow(X) * (t(X) %*% (X %*% theta_t - y))
+}
+
+r_deriv_ridge <- function(theta_t, X, y, lambda) {
+    r_emp_derivative(theta_t, X, y) + lambda * theta_t
+}
+@
+
+With $\lambda$ now being incorporated, note that the example given is the exact one
+from sheet 2. Therefore, your code should still work (with the addition of $\lambda$):
+
+<<echo=TRUE, message=FALSE>>=
+gd_step_ridge <- function(theta_t, X, y, alpha, lambda) {
+  theta_t - alpha * r_deriv_ridge(theta_t, X, y, lambda)
+}
+@
+
+<<echo=TRUE, message=FALSE>>=
+small_x <- c(0.56, 0.22, 1.7, 0.63, 0.36, 1.2)
+X <- cbind(1, small_x)
+y <- c(160, 150, 175, 185, 165, 170)
+
+gd_step_ridge(c(0, 0), X, y, alpha = 0.1, lambda = 0.1)
+@
+
+Note that this is the exact result as in the unregularized setting. This is because
+$\theta^{[0]} = (0,0)$. In later steps or with a different starting point, the
+results will not be the same:
+
+<<echo=TRUE, message=FALSE>>=
+gd_step_ridge(c(1, 1), X, y, alpha = 0.1, lambda = 0.1)
+gd_step_ridge(c(1, 1), X, y, alpha = 0.1, lambda = 0) # Unregularized model
+@
+
+\end{enumerate}
