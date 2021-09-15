@@ -1,0 +1,159 @@
+In contrast to the linear model(s) of traditional statistics, machine learning offers a broad range of alternative models to perform prediction on a data set. A problem where one wants to predict a categorical target variable given some feature variables is called \textbf{classification}.
+\medbreak
+The figure below plots three different classification models for the same data set. An observation with numerical features $\xv = (x_1, x_2)^T$ can either belong to class 1 or class 2. The true class is indicated by the color of the corresponding point.
+The class a model predicts is indicated by the background color. For example, the single observation with $\xv = (5, 0)^T$ belongs to class 1, which is correctly predicted by model A and model C, but incorrectly predicted by model B.
+\bigbreak
+
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height = 7.1, fig.width = 8.5>>=
+library(knitr)
+library(ggplot2)
+library(gridExtra)
+library(cowplot)
+library(mlr3)
+library(mlr3learners)
+library(mlr3measures)
+library(mlr3viz)
+library(e1071)
+library(rpart)
+library(rpart.plot)
+
+lgr::get_logger("mlr3")$set_threshold("warn")
+
+options(digits = 3, 
+        width = 165, 
+        str = strOptions(strict.width = "cut", vec.len = 3))
+
+# DATA -------------------------------------------------------------------------
+
+set.seed(888)
+points <- data.frame(x1 = runif(299, 0, 5),
+                     x2 = runif(299, 0, 5),
+                     Class = rep(1, 299))
+points[,3] <- as.factor(mapply(function(x, y) if (y > -(x-1.6)*(x-1.2)*(x-4.3)) {sample.int(2, size = 1, prob = c(0.02, 0.98))} else {1}, points[,1], points[,2]))
+points[300,] <- c(4.95, 0.05, as.factor(1))
+
+task = TaskClassif$new(id = "CART", backend = points, target = "Class")
+
+# FUNCTIONS --------------------------------------------------------------------
+
+ff = function(type, title, ...) {
+  
+  learner = lrn(type, predict_type = "response")
+  
+  if (!length(list(...)) == 0) {
+    learner$param_set$values <- list(...)
+  }
+  
+  pl = plot_learner_prediction(learner, task)
+  pl = pl + 
+    scale_fill_viridis_d(end = .9) +
+    ggtitle(title) + 
+    xlim(0, 5) + 
+    ylim(0, 5) +
+    guides(shape = FALSE, alpha = FALSE)
+  
+}
+
+cm = function(type, ...) {
+  
+  learner = lrn(type, predict_type = "response")
+  
+  if (!length(list(...)) == 0) {
+    learner$param_set$values <- list(...)
+  }
+  
+  confusion_matrix(learner$train(task)$predict(task)$truth,
+                   learner$train(task)$predict(task)$response,
+                   positive = "2")
+  
+}
+
+# PLOT -------------------------------------------------------------------------
+
+# Plot and Save Model Overview
+plot_p <- ggplot(data = points) +
+  geom_point(aes(x=x1, y=x2, colour = Class)) +
+  scale_colour_viridis_d(end = .9) +
+  ggtitle("DATA SET")
+
+plot_grid(plot_p + theme(legend.justification = c(0,0.2)),
+          ff("classif.log_reg", "MODEL A") + theme(legend.justification = c(0, 0.2)),
+          ff("classif.kknn", "MODEL B", k = 5, kernel = "rectangular") + theme(legend.justification = c(0,0.2)),
+          ff("classif.rpart", "MODEL C", minbucket = 15) + theme(legend.justification = c(0,0.2)),
+          align = "vh", nrow = 2, axis = "bt")
+@
+
+Each of the algorithms used to generate these \textbf{decision regions} (the set of input points where a certain class is predicted) will be discussed in detail in this course. For example, the decision region plotted for model A belongs to a logistic regression model trained on the data.
+
+\pagebreak
+
+\begin{enumerate}
+\item[a)] Assign the decision regions of model B and model C above to the two machine learning models described below. Try to explain your choice. \\
+
+\begin{itemize}
+\item \textbf{K-Nearest Neighbors (KNN) with k = 5} \\
+To predict the class of a new observation with features $\xv = (x_1, x_2)^T$, take the 5 closest points in the data set (by their euclidean distance) and select the class which is most common among these 5 points.
+\bigbreak
+\item \textbf{CART} \\
+To predict the class of a new observation with features $\xv = (x_1, x_2)^T$, use the decision tree below, starting at the top. The colored circles at the bottom specify the class the model predicts.
+\end{itemize}
+
+<<echo=FALSE, message=FALSE, fig.align="center", fig.height = 4.5, fig.width = 5>>=
+tree = lrn("classif.rpart", predict_type = "response", minbucket = 15)$train(task)
+prp(tree$model,
+    shadow.col="gray",
+    type = 5,
+    extra =0,
+    cex= 0.8,
+    branch = 1,
+    box.palette = c("darkorchid3", "darkolivegreen2"))
+@
+
+%Plot and Save Confusion Matrices
+
+%Logistic Regression
+%cm("classif.log_reg")[[1]]
+
+%KNN
+%cm("classif.kknn", k = 5, kernel = "rectangular")[[1]]
+
+%CART
+%cm("classif.rpart", minbucket = 15)[[1]]
+
+\item[b)] In machine learning, models can be evaluated in different ways. How could you compare the performance of the three models by using the confusion matrices below?
+\medbreak
+\begin{center}
+\begin{tabular}{ ccc }
+Model A & Model B & Model C \\
+\\
+\begin{tabular}{cc|c|c|l}
+\cline{3-4}
+& & \multicolumn{2}{ c| }{Response} \\ \cline{3-4}
+& & 1 & 2 \\ \cline{1-4}
+\multicolumn{1}{ |c  }{\multirow{2}{*}{Truth} } &
+\multicolumn{1}{ |c| }{1} & 57 & 52 &     \\ \cline{2-4}
+\multicolumn{1}{ |c  }{}                        &
+\multicolumn{1}{ |c| }{2} & 37 & 154 &     \\ \cline{1-4}
+\end{tabular} &
+\begin{tabular}{cc|c|c|l}
+\cline{3-4}
+& & \multicolumn{2}{ c| }{Response} \\ \cline{3-4}
+& & 1 & 2 \\ \cline{1-4}
+\multicolumn{1}{ |c  }{\multirow{2}{*}{Truth} } &
+\multicolumn{1}{ |c| }{1} & 100 & 9 &     \\ \cline{2-4}
+\multicolumn{1}{ |c  }{}                        &
+\multicolumn{1}{ |c| }{2} & 6 & 185 &     \\ \cline{1-4}
+\end{tabular} &
+\begin{tabular}{cc|c|c|l}
+\cline{3-4}
+& & \multicolumn{2}{ c| }{Response} \\ \cline{3-4}
+& & 1 & 2 \\ \cline{1-4}
+\multicolumn{1}{ |c  }{\multirow{2}{*}{Truth} } &
+\multicolumn{1}{ |c| }{1} & 98 & 11 &     \\ \cline{2-4}
+\multicolumn{1}{ |c  }{}                        &
+\multicolumn{1}{ |c| }{2} & 15 & 176 &     \\ \cline{1-4}
+\end{tabular} \\
+\end{tabular}
+\end{center}
+
+\end{enumerate}
