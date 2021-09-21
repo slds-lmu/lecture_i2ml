@@ -1,1 +1,96 @@
-foo
+<<echo=FALSE, message=FALSE, include=FALSE>>=
+
+library(plotly)
+
+seq_x <- seq(-10L, 10L, length.out = 100L)
+theta <- list(
+  theta_1 = c(0.3, 0),
+  theta_2 = c(0.3, 0.3),
+  theta_3 = c(0.8, 0.8))
+
+plot_3d <- function(x, theta, eye = list(x = -1.5, y = 3L, z = 1L)) {
+  
+  compute_softmax <- function(X, theta) 1 / (1 + exp(-(X %*% theta)))
+  
+  dens <- expand.grid(x_1 = x, x_2 = x)
+  dens$z <- apply(as.matrix(dens), 1L, compute_softmax, theta = theta)
+  d <- akima::interp(x = dens$x_2, y = dens$x_1, z = dens$z)
+  
+  scene = list(
+    camera = list(eye = eye),
+    xaxis = list(title = "x1"),
+    yaxis = list(title = "x2"),
+    zaxis = list(title = "s(f(x1,x2))"))
+  
+  my_palette = c("cornflowerblue", "blue4")
+  
+  plotly::plot_ly(x = d$x, y = d$y, z = d$z) %>%
+    add_surface(
+      showscale = FALSE,
+      colors = my_palette
+      ) %>%
+    layout(scene = scene)
+  
+}
+
+p_1 <- plot_3d(seq_x, theta$theta_1)
+p_2 <- plot_3d(seq_x, theta$theta_2)
+p_3 <- plot_3d(seq_x, theta$theta_3)
+
+# dens <- expand.grid(
+#   x_1 = seq(-10L, 10L, length.out = 100L), 
+#   x_2 = seq(0L, 1L, length.out = 10L))
+# d <- akima::interp(x = 0L, y = dens$x_1, z = dens$x_2)
+# 
+# p_1 %>% 
+#   add_trace(
+#       x = 0L,
+#       y = seq(-10L, 10L, length.out = 100L),
+#       z = seq(0L, 1L, length.out = 100L),
+#       type = "surface",
+#       color = "gray",
+#       showlegend = FALSE) %>% 
+#     hide_colorbar()
+
+# took snapshots from browser bc orca does not always work
+
+# plotly::orca(p_1, "../figure/softmax_1.pdf")
+# plotly::orca(p_2, "../figure/softmax_2.pdf")
+# plotly::orca(p_2, "../figure/softmax_2.pdf")
+
+@
+
+In logistic regression (binary case), we estimate the probability $\pix$. In 
+order to decide about the class of an observation, we set $\yh = 1$ iff 
+$\pixh \geq \alpha$ for some $\alpha \in \R$.
+
+\begin{enumerate}[a)]
+  \item Show that the decision boundary of the logistic classifier is a 
+  (linear!) hyperplane. \\
+  Hint: derive the value of $\thetab^T\xv$  (depending on 
+  $\alpha$) starting from which you predict $y = 1$ rather than $y = 0$.
+  \item Below you see the logistic function for a binary classification problem 
+  with two input features for different values $\theta_1$ and $\theta_2$ as well 
+  as $\alpha$. What can you deduce for the values of $\theta_1$, $\theta_2$ and 
+  $\alpha$? What are the implications for classification in the different 
+  scenarios?
+\end{enumerate}
+
+\begin{minipage}[c]{0.33\textwidth}
+  \includegraphics[width=0.95\textwidth, trim = 650 200 650 200, clip]{
+  figure/softmax_1}
+\end{minipage}%
+\begin{minipage}[c]{0.33\textwidth}
+  \includegraphics[width=0.95\textwidth, trim = 650 200 650 200, clip]{
+  figure/softmax_2}
+\end{minipage}%
+\begin{minipage}[c]{0.33\textwidth}
+  \includegraphics[width=0.95\textwidth, trim = 650 200 650 200, clip]{
+  figure/softmax_3}
+\end{minipage}
+  
+\begin{itemize}
+  \item[c)] Derive the equation for the decision boundary hyperplane if we 
+  choose $\alpha = 0.5$.
+  \item[d)] Explain when it might be sensible to set $\alpha$ to 0.5. 
+\end{itemize}
