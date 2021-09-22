@@ -1,6 +1,8 @@
-<<echo=FALSE, message=FALSE, include=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 
 library(plotly)
+
+# define x and different theta configurations
 
 seq_x <- seq(-10L, 10L, length.out = 100L)
 theta <- list(
@@ -10,11 +12,17 @@ theta <- list(
 
 plot_3d <- function(x, theta, eye = list(x = -1.5, y = 3L, z = 1L)) {
   
+  # specify softmax operation
+  
   compute_softmax <- function(X, theta) 1 / (1 + exp(-(X %*% theta)))
+  
+  # use akima interpolation to create surface from 3d points
   
   dens <- expand.grid(x_1 = x, x_2 = x)
   dens$z <- apply(as.matrix(dens), 1L, compute_softmax, theta = theta)
   d <- akima::interp(x = dens$x_2, y = dens$x_1, z = dens$z)
+  
+  # define perspective plot is viewed from
   
   scene = list(
     camera = list(eye = eye),
@@ -22,7 +30,11 @@ plot_3d <- function(x, theta, eye = list(x = -1.5, y = 3L, z = 1L)) {
     yaxis = list(title = "x2"),
     zaxis = list(title = "s(f(x1,x2))"))
   
+  # define color
+  
   my_palette = c("cornflowerblue", "blue4")
+  
+  # plot
   
   plotly::plot_ly(x = d$x, y = d$y, z = d$z) %>%
     add_surface(
@@ -33,30 +45,61 @@ plot_3d <- function(x, theta, eye = list(x = -1.5, y = 3L, z = 1L)) {
   
 }
 
+# saving plotly objects requires orca installation, which might not work on 
+# every device
+# here: open the respective plot in your browser (clicking on "show in new 
+# window" in the viewer pane) and save snapshot via the camera symbol without 
+# zooming
+
 p_1 <- plot_3d(seq_x, theta$theta_1)
 p_2 <- plot_3d(seq_x, theta$theta_2)
 p_3 <- plot_3d(seq_x, theta$theta_3)
 
-# dens <- expand.grid(
-#   x_1 = seq(-10L, 10L, length.out = 100L), 
-#   x_2 = seq(0L, 1L, length.out = 10L))
-# d <- akima::interp(x = 0L, y = dens$x_1, z = dens$x_2)
-# 
-# p_1 %>% 
-#   add_trace(
-#       x = 0L,
-#       y = seq(-10L, 10L, length.out = 100L),
-#       z = seq(0L, 1L, length.out = 100L),
-#       type = "surface",
-#       color = "gray",
-#       showlegend = FALSE) %>% 
-#     hide_colorbar()
+# add hyperplanes marking decision boundaries for different thresholds
+# use dirty trick with points, cannot get it to work with actual surface :]
 
-# took snapshots from browser bc orca does not always work
+add_vertical_hyperplane <- function(plot, 
+                                    n_points = 100L, 
+                                    theta_1 = 0.3, 
+                                    threshold = 0.5) {
+  
+  y_vert <- seq(-10L, 10L, length.out = n_points)
+  z_vert <- seq(0L, threshold, length.out = n_points)
+  yz_vert <- expand.grid(y_vert, z_vert)
+  
+  plot %>%
+  add_trace(
+    inherit = FALSE,
+    x = rep((- 1 / theta_1 * log(1 / threshold - 1)), n_points^2),
+    y = yz_vert[, 1],
+    z = yz_vert[, 2],
+    marker = list(
+      type = "marker",
+      mode = "scatter3d",
+      color = "gray",
+      size = 0.8),
+    showlegend = FALSE) %>%
+    add_trace(
+      inherit = FALSE,
+      x = rep((- 1 / theta_1 * log(1 / threshold - 1)), n_points^2),
+      y = yz_vert[, 1],
+      z = 0L,
+      marker = list(
+        type = "marker",
+        mode = "scatter3d",
+        color = "black",
+        size = 2L),
+      showlegend = FALSE)
+  
+}
 
-# plotly::orca(p_1, "../figure/softmax_1.pdf")
-# plotly::orca(p_2, "../figure/softmax_2.pdf")
-# plotly::orca(p_2, "../figure/softmax_2.pdf")
+p_4 <- add_vertical_hyperplane(
+  p_1 %>%
+  layout(
+    scene = list(camera = list(eye = list(x = -0.3, y = 3, z = 1)))))
+
+p_4 <- add_vertical_hyperplane(p_4, threshold = 0.25)
+p_4 <- add_vertical_hyperplane(p_4, threshold = 0.75)
 
 @
 
@@ -70,24 +113,29 @@ $\pixh \geq \alpha$ for some $\alpha \in \R$.
   Hint: derive the value of $\thetab^T\xv$  (depending on 
   $\alpha$) starting from which you predict $y = 1$ rather than $y = 0$.
   \item Below you see the logistic function for a binary classification problem 
-  with two input features for different values $\theta_1$ and $\theta_2$ 
-  ($(\theta_1, \theta_2) = \thetab$) as well 
-  as $\alpha$. What can you deduce for the values of $\theta_1$, $\theta_2$ and 
+  with two input features for different values $\thetab = (\theta_1, \theta_2)$ 
+  (plots 1-3) as well as $\alpha$ (plot 4). 
+  What can you deduce for the values of $\theta_1$, $\theta_2$ and 
   $\alpha$? What are the implications for classification in the different 
   scenarios?
 \end{enumerate}
 
-\begin{minipage}[c]{0.33\textwidth}
-  \includegraphics[width=0.95\textwidth, trim = 650 200 650 200, clip]{
+\begin{minipage}[c]{0.5\textwidth}
+  \includegraphics[width=0.8\textwidth, trim = 650 200 650 200, clip]{
   figure/softmax_1}
 \end{minipage}%
-\begin{minipage}[c]{0.33\textwidth}
-  \includegraphics[width=0.95\textwidth, trim = 650 200 650 200, clip]{
+\begin{minipage}[c]{0.5\textwidth}
+  \includegraphics[width=0.8\textwidth, trim = 650 200 650 200, clip]{
   figure/softmax_2}
-\end{minipage}%
-\begin{minipage}[c]{0.33\textwidth}
-  \includegraphics[width=0.95\textwidth, trim = 650 200 650 200, clip]{
+\end{minipage}
+
+\begin{minipage}[c]{0.5\textwidth}
+  \includegraphics[width=0.8\textwidth, trim = 650 200 650 200, clip]{
   figure/softmax_3}
+\end{minipage}%
+\begin{minipage}[c]{0.5\textwidth}
+  \includegraphics[width=0.8\textwidth, trim = 650 200 650 200, clip]{
+  figure/softmax_4}
 \end{minipage}
   
 \begin{itemize}
