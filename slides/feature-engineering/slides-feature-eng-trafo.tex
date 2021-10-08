@@ -1,0 +1,369 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/automl2.png}
+\newcommand{\learninggoals}{
+  \item ...
+  \item ...
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Feature and Target Transformations}
+\lecture{Introduction to Machine Learning}
+
+
+\begin{vbframe}{Target Transformation}
+  
+  Sometimes using the raw target or raw features is not enough to build an adequate model.
+  For example, the linear model requires a normally distributed target variable.
+  But the house prices do not seems to be normally distributed.
+  A linear model trained on that target overestimates the target variable:
+  
+  
+  \begin{center}
+    \includegraphics[width=0.9\textwidth]{figure_man/target01.png}
+  \end{center}
+  
+  
+  \framebreak
+  
+  A common trick for skewed distributions is to model the log-transformation:
+  
+  
+  \begin{center}
+    \includegraphics[width=0.9\textwidth]{figure_man/target02.png}
+  \end{center}
+  
+  \framebreak
+  
+  Benchmarking the logarithmic transformation against the raw data yields a significant improvement of the mean absolute error:
+  
+  \begin{center}
+    \includegraphics[width=0.9\textwidth]{figure_man/target03.png}
+  \end{center}
+  
+  \framebreak
+  
+  Nevertheless, there are also methods that are able to deal with skewed data:
+  
+  
+  \begin{center}
+    \includegraphics[width=0.9\textwidth]{figure_man/target04.png}
+  \end{center}
+  
+\end{vbframe}
+
+\begin{vbframe}{Feature Transformations}
+  \begin{itemize}
+    \item \textbf{Normalization}: The feature is transformed to have a mean of 0 and standard deviation of 1
+          $$
+            z_j^{(i)} = \frac{x_j^{(i)} - \operatorname{mean}(x_j)}{\operatorname{sd}(x_j)}
+          $$
+          
+    \item \textbf{Box-Cox Transformation}: Stabilizes variance, makes the data more normal distribution-like
+          $$
+            z_j^{(i)} = \left\{\begin{array}{cc}
+              \frac{\left(x_j^{(i)}\right)^\lambda - 1}{\lambda} & \ \ \text{if} \ \ \lambda \neq 0 \\
+              \log(x_j^{(i)})                                    & \ \ \text{if} \ \ \lambda = 0    \\
+            \end{array}\right.
+          $$
+  \end{itemize}
+  \framebreak
+  
+  To illustrate the effect of transforming the features we evaluate a k-NN learner without scaling, with normalization, and with a Box-Cox transformation:
+  
+  \begin{center}
+    \includegraphics[width=0.9\textwidth]{figure_man/feature01.png}
+  \end{center}
+  
+\end{vbframe}
+
+\begin{vbframe}{Other Common Transformations}
+  \vspace{+1cm}
+  \begin{itemize}
+    \item Polynomials: $x_j \longrightarrow x_j, x_j^2, x_j^3, ...$
+          
+    \item Interactions: $x_j, x_k \longrightarrow x_j, x_k, x_j \times x_k$
+          
+    \item Basis expansions: BSplines, TPB, ...
+  \end{itemize}
+  \vspace{+.5cm}
+  
+  These transformations are used to improve simple models, e.g. linear regression, and most likely will \textbf{not} improve complex machine learning models.
+\end{vbframe}
+
+\begin{vbframe}{Feature Extraction vs. Selection}
+  \begin{center}
+    \includegraphics[width=\textwidth, trim=1cm 3cm 2cm 2cm]{figure_man/feat_extr_vs_selection.pdf}
+  \end{center}
+  
+  Feature extraction / dimensionality reduction:
+  \begin{itemize}
+    \item PCA, ICA, autoencoder, ...
+  \end{itemize}
+  
+  Feature selection:
+  
+  \begin{itemize}
+    \item Filter, stepwise selection, model-based selection, ...
+  \end{itemize}
+\end{vbframe}
+
+
+\section{Categorical Features}
+\begin{vbframe}{Categorical Features}
+  
+  A categorical feature is a feature with a finite number of discrete (unordered) \textbf{levels} $c_1, \dots, c_K$%, e.g.,
+  % \textbf{House.Style=2Story}$\stackrel{?}{>}$\textbf{SFoyer}.
+  
+  \begin{itemize}
+    \item Categorical features are very common in practical applications.
+          
+    \item Except for few machine learning algorithms like tree-based methods, categorical features have to be encoded in a preprocessing step.
+  \end{itemize}
+  \medskip
+  
+  \textbf{Encoding} is the creation of a fully numeric representation of a categorical feature.
+  \begin{itemize}
+    \item Choosing the optimal encoding can be a challenge, especially when the number of levels $k$ becomes very large.
+  \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{One-Hot Encoding}
+  \begin{itemize}
+    \item Convert each categorical feature to $K$ binary ($1/0$) features, where $K$ is the number of unique levels.
+    \item One-hot encoding does not lose any information contained in the feature;  many models can correctly handle binary features.
+    \item Given a categorical feature $x_j$ with levels $c_1,\dots, c_K$, the new features are
+          
+          $$
+            \tilde x_{j,k} = \mathbf{1}_{[x_j = c_k]} \quad \text{for } k \in \{1, 2, ..., K\},
+          $$
+          $$
+            \text{with}\quad \mathbf{1}_{[x_j = c_k]} = \begin{cases} 1 & \text{ if } x_j = c_k \\
+              0 & \text{ otherwise}\end{cases}\text{.}
+          $$
+  \end{itemize}
+  
+  \lz 
+  
+  One-hot encoding is often the \textbf{go-to} choice for encoding of categorial features! 
+  
+\end{vbframe}
+
+\begin{vbframe}{One-Hot Encoding: Example}
+  Original slice of the dataset:
+  \vspace{+.4cm}
+  \footnotesize
+  
+  \begin{center}
+    \begin{tabular}{c|c|c}
+      \hline
+      SalePrice & Central.Air & Bldg.Type \\
+      \hline
+      189900    & Y           & 1Fam      \\
+      \hline
+      195500    & Y           & 1Fam      \\
+      \hline
+      213500    & Y           & TwnhsE    \\
+      \hline
+      191500    & Y           & TwnhsE    \\
+      \hline
+      236500    & Y           & TwnhsE    \\
+      \hline
+    \end{tabular}
+  \end{center}
+  
+  
+  \normalsize{One-hot encoded:}
+  \vspace{+.4cm}
+  
+  \scriptsize
+  \begin{center}
+    \begin{tabular}{c|c|c}
+      \hline
+      SalePrice & Central.Air & Bldg.Type \\
+      \hline
+      189900    & Y           & 1Fam      \\
+      \hline
+      195500    & Y           & 1Fam      \\
+      \hline
+      213500    & Y           & TwnhsE    \\
+      \hline
+      191500    & Y           & TwnhsE    \\
+      \hline
+      236500    & Y           & TwnhsE    \\
+      \hline
+    \end{tabular}
+  \end{center}
+  
+\end{vbframe}
+
+\begin{vbframe}{Dummy Encoding}
+  \begin{itemize}
+    \item Dummy encoding is very similar to one-hot encoding with the difference that only $K-1$ binary features are created.
+    \item A \textbf{reference} category is chosen that has as all binary features set to $0$, i.e.,
+          
+          $$
+            \tilde x_{j,1} = 0, \dots, \tilde x_{j,K-1} = 0.
+          $$
+          
+    \item Each feature $\tilde x_{j,1}$ represents the \textbf{deviation} from the reference category.
+    \item While using a reference category is required for stability and interpretability in statistical models like (generalized) linear models, it is not necessary, rarely done in ML and can even have negative influence on performance.
+  \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Ames Housing - Encoding}
+  
+  \begin{center}
+    \includegraphics[width = 0.6\textwidth]{figure_man/ames-encoding.png}
+  \end{center}
+  
+  \begin{footnotesize}
+    Result of linear model depends on actual implementation, e.g., R's `lm()` produces a \textbf{rank-deficient fit} warning and recovers by dropping the intercept.
+  \end{footnotesize}
+\end{vbframe}
+
+\begin{vbframe}{One-Hot Encoding: Limitations}
+  \begin{itemize}
+    \item One-hot encoding can become extremely inefficient when the number of levels becomes too large, because one additional feature is introduced for every level.
+    \item Assume a categorical feature with $K = 4000$ levels. When using dummy encoding, 4000 new features are added to the dataset.
+    \item These additional features are very sparse.
+    \item Handling such \textbf{high-cardinality categorical features} is a challenge. Possible solutions are
+          \begin{itemize}
+
+            \item specialized methods such as \textbf{factorization machines},
+            \item \textbf{target/impact encoding},
+            \item clustering feature levels or
+            \item feature hashing.
+          \end{itemize}
+  \end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{Target Encoding}
+  \begin{itemize}
+    \item Developed to solve limitations of dummy encoding for high cardinality categorical features.
+    \item \textbf{Goal}: Each categorical feature $\xv$ should be encoded in a single numeric feature $\tilde \xv$.
+          \medskip
+    \item Basic definition for regression by Micci-Barreca (2001):
+          
+          $$
+            \tilde \xv = \frac{\sum_{i:\xv=k} \yi}{n_k}, \quad k = 1,\dots,K,
+          $$
+          
+          where $n_k$ is the number of observations of the $k$'th level of feature $\xv$.
+          
+  \end{itemize}
+  
+\end{vbframe}
+
+\begin{vbframe}{Target Encoding - Example}
+  \vspace{+.4cm}
+  
+  
+  \footnotesize
+  \begin{center}
+    \begin{tabular}{c|c|c|c|c|c|c}
+      \hline
+      Foundation & BrkTil & CBlock & PConc & Slab & Stone & Wood \\
+      \hline
+      nk         & 311    & 1244   & 1310  & 49   & 11    & 5    \\
+      \hline
+    \end{tabular}
+  \end{center}
+  
+  
+  \normalsize
+  \begin{itemize}
+    \item Encoding for wooden foundation:
+  \end{itemize}
+  \vspace{+.4cm}
+  
+  \footnotesize
+  \begin{center}
+    \begin{tabular}{c|c|c|c|c|c}
+      \hline
+      house.id   & 17     & 893    & 986    & 2898   & 2899   \\
+      \hline
+      SalePrice  & 164000 & 145500 & 143000 & 250000 & 202000 \\
+      \hline
+      Foundation & Wood   & Wood   & Wood   & Wood   & Wood   \\
+      \hline
+    \end{tabular}
+  \end{center}
+  
+  \vspace{+.4cm}
+  $$
+    \frac{164000 + 145500 + 143000 + 250000 + 202000}{5} = 180900
+  $$
+  \framebreak
+  
+  
+  \normalsize
+  \begin{itemize}
+    \item For all foundation types:
+  \end{itemize}
+  \vspace{+.4cm}
+  
+  \footnotesize
+  \begin{tabular}{c|c|c|c|c|c|c}
+    \hline
+    Foundation      & BrkTil & CBlock & PConc  & Slab   & Stone  & Wood   \\
+    \hline
+    Foundation(enc) & 128107 & 148284 & 227069 & 110458 & 149787 & 180900 \\
+    \hline
+  \end{tabular}
+  
+  
+  \vspace{+.4cm}
+  \normalsize
+  This mapping is calculated on training data and later applied to test data.
+\end{vbframe}
+
+\begin{vbframe}{Target Encoding for Classification}
+  \begin{itemize}
+    \item Extending encoding to binary classification is straightforward, instead of the average target value the relative frequency of the positive class is used.
+    \item Multi-class classification extends this by creating one feature for each target class in the same way as binary classification.
+  \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Target Encoding - Issues}
+  \textbf{Problem:} Target encoding can assign extreme values to rarely occurring levels.
+  
+  \vspace*{0.2cm}
+  
+  \textbf{Solution:} Encoding as weighted sum between global average target value and encoding value of level.
+  
+  $$
+    \tilde \xv = \lambda_k\frac{\sum_{i:\xv=k}\yi}{n_k} + (1-\lambda_k)\frac{\sum_{i=1}^n  \yi} {n}, \quad k=1,\dots,K.
+  $$
+  
+  \begin{itemize}
+    \item $\lambda_k$ can be parameterized and tuned, but tuning should optimally be done for each feature and level separately (most likely infeasible!).
+    \item Simple solution: Set $\lambda_k=\frac{n_k}{n_k+\epsilon}$ with regularization parameter $\epsilon$.
+    \item This shrinks small levels stronger to the global mean target value than large classes.
+  \end{itemize}
+  \framebreak
+  
+  
+  \textbf{Problem:} Label leakage! Information of $\yi$ is used to calculate $\tilde \xv$. This can cause overfitting issues, especially for rarely occurring classes.
+  
+  \vspace*{0.2cm}
+  
+  \textbf{Solution:} Use internal cross-validation to calculate $\tilde \xv$.
+  \vspace{+.4cm}
+  
+  \begin{itemize}
+    \item It is unclear how serious this problem is in practice.
+    \item But: calculation of $\tilde \xv$ is very cheap, so it doesn't hurt.
+    \item An alternative is to add some noise $\tilde x_j^{(n)} + N(0,\sigma_\epsilon)$ to the encoded samples.
+  \end{itemize}
+\end{vbframe}
+
+\endlecture
+\end{document}
