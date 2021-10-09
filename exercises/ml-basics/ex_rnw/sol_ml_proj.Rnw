@@ -33,8 +33,8 @@
   \item We can write the hypothesis space as:
   
   \begin{flalign*}
-    \Hspace = \{\thetab^T \xv ~|~ \thetab \in \R^3 \}
-    =  \{\theta_0 + \theta_1 x_1 + \theta_2 x_2 ~|~ 
+    \Hspace = \{\fxt = \thetab^T \xv ~|~ \thetab \in \R^3 \}
+    =  \{\fxt = \theta_0 + \theta_1 x_1 + \theta_2 x_2 ~|~ 
     (\theta_0, \theta_1, \theta_2) \in \R^3 \}.
     % \Hspace &= \{ f: (\R_{0}^{+})^2 \rightarrow \R ~|~ 
     % \fx = \theta_0 + \thetab^T \xv, ~ (\theta_0, \thetab) \in \R^3 \} \\
@@ -50,8 +50,9 @@
   it is more convenient to append the intercept coefficient to the vector of 
   feature coefficients. This does not change our model formulation, but we have 
   to keep in mind that it implicitly entails adding an element 1 at the first 
-  position of each feature vector, constituting the familiar column of ones 
-  in the design matrix $\Xmat$.
+  position of each feature vector, i.e., $\xi := (1, x_1, x_2)^{(i)} \in 
+  \{1\} \cup \Xspace$, constituting the familiar column of ones in the design 
+  matrix $\Xmat$.
   
   \item The parameter space is included in the definition of the hypothesis 
   space and in this case given by $\Theta = \R^3$.
@@ -67,14 +68,15 @@
   The last thing to fix is therefore the product introduced by the independence 
   assumption in the joint likelihood of all observations (recall that we use 
   a \textit{summed} loss in ERM), for which the logarithm is a natural remedy.
-  We can thus simply use the \textbf{negative log-likelihood} as our loss 
+  We can thus simply use the \textbf{negative log-likelihood (NLL)} as our loss 
   function (and indeed, many known loss functions can be shown to correspond to 
   certain model likelihoods).
   
   Let's put these reflections to practice:
   
   \begin{flalign*}
-    \Lxyit &= - \log \LL(\thetab | \xi) \\
+    L_{NLL}\left (\yi, f\left( \xi | \thetab \right) \right) 
+    &= - \log \LL(\thetab | \xi) \\
     &= - \ll(\thetab | \xi) \\
     &= - \log \left(\frac{1}{\sqrt{2 \pi 
     \sigma^2}} \exp \left(- \frac{1}{2 \sigma^2} \left( \yi - \thetab^T \xi  
@@ -90,35 +92,39 @@
   
   \begin{flalign*}
     \risket &= \sumin - \ll(\thetab | \xi) \\
-    &= \sumin \Lxyit \\
+    &= \sumin L_{NLL}\left (\yi, f\left( \xi | \thetab \right) \right)  \\
     &= \sumin \frac{1}{2} \log(2 \pi \sigma^2) + \frac{1}{2 \sigma^2} 
     \left(\yi - \thetab^T \xi \right)^2 \\
     &= \frac{n}{2}\log(2 \pi \sigma^2) +  \frac{1}{2 \sigma^2} \sumin
     \left(\yi - \thetab^T \xi \right)^2 \\
-    &\propto \sumin \left(\yi - \thetab^T \xi \right)^2
+    &\propto \sumin \left(\yi - \thetab^T \xi \right)^2 \\
+    &= \sumin \Lxyit ~ (L2 \text{ loss})
   \end{flalign*}  
   
   As we are only interested in the feature coefficients here, we neglect all 
   irrelevant terms that do not depend on $\thetab$ as they have no effect on
-  the solution.
+  the solution (i.e., the $\argmin$ of $\risket$).
   This is what the proportional sign $\propto$, often used in 
   contexts of optimization and Bayesian statistics, means: we keep 
   only expressions impacted by our parameter of interest because they suffice 
   to yield the intended results or show some property of interest.
   
-  From this we can easily see the correspondence between MLE and ERM.
+  From this we can easily see the correspondence between MLE and ERM:
+  the $L2$ loss is proportional to the negative log-likelihood and hence, the 
+  $\argmax$ of the likelihood (using the assumption of normally distributed 
+  errors) and the $\argmin$ of the risk (using $L2$ loss) are equivalent.
   
-  \item In order to find the optimal $\thetab$, we need to solve the following 
+  \item In order to find the optimal $\thetah$, we need to solve the following 
   minimization problem: 
   
   \begin{flalign*}
-    \min_{\thetab \in \Theta} \risket &= \min_{\thetab \in \Theta} \left( \sumin 
-    \left(\yi - \thetab^T \xi \right)^2 \right) \\
+    \thetah = \argmin_{\thetab \in \Theta} \risket &= \min_{\thetab \in \Theta} 
+    \left( \sumin \left(\yi - \thetab^T \xi \right)^2 \right) \\
     &= \min_{\thetab \in \Theta} \| \ydat - \Xmat \thetab \|_2^2
   \end{flalign*}  
 
   This is achieved in the usual manner of setting the derivative w.r.t. 
-  $\thetab$ to 0 and solving for $\thetab$, yielding the familiar least squares 
-  estimator.
+  $\thetab$ to 0 and solving for $\thetab$, yielding the familiar least-squares 
+  estimator $\thetah = (\Xmat^T \Xmat)^{-1} \Xmat^T \ydat$.
 
 \end{enumerate}
