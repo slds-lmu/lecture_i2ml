@@ -1,0 +1,101 @@
+\begin{enumerate}
+\item Let $f$ be the density of the $Bin(n,p)$ distribution and $q$ the density of the $\mathcal{N}(\mu, \sigma^2)$.
+\begin{enumerate}
+\item $$D_{KL}(f||q) = \mathbb{E}_{f}[\log \frac{f(X)}{q(X,\theta)}] = \mathbb{E}_{f}[\log f(X)] - \mathbb{E}_{f}[\log q(X|\theta)]$$
+\item For the gradients, we must derive the partial derivatives of the second part of the KLD. The involved log-density is $$\log q(X|\theta) = const. - 0.5 \log \sigma^2 - \frac{1}{2\sigma^2} (X-\mu)^2 .$$
+\begin{itemize}
+\item[] 
+\begin{equation}
+\partial D_{KL}(f||q) / \partial \mu = \partial - \mathbb{E}_f \log [q(X|\theta)] = \mathbb{E}_f \frac{1}{\sigma^2} (X-\mu) 
+\label{eq:I}
+\end{equation}
+\item[] 
+\begin{equation}
+\partial D_{KL}(f||q) / \partial \sigma^2 = \partial - \mathbb{E}_f \log [q(X|\theta)] = \mathbb{E}_f [\frac{1}{2\sigma^2} + \frac{-1}{2\sigma^4} (X-\mu)^2] 
+\label{eq:II}
+\end{equation}
+\end{itemize}
+\item Yes, there is. We can first set (\ref{eq:I}) to zero and get: $\mu = \mathbb{E}_f(X) \Leftrightarrow \mu = np$. We then use this solution for the second equation (\ref{eq:II}), which we also set to zero first:
+$$
+(\ref{eq:II}) = 0 \Leftrightarrow \sigma^2 = \mathbb{E}_f[(X-\mu)^2] = \text{Var}_f(X) + (\mathbb{E}_f[X-\mu])^2 = np(1-p) + (\mathbb{E}_f[X-\mu])^2.
+$$ 
+Using $\mu = np$, the second term vanishes and we get the optimal $\sigma^2  = np(1-p) = \text{Var}_f(X)$. Note that we would have to proof that the second derivate is $<0$ to be sure that we found a minimum!
+\item We could, alternatively, use the gradients and do gradient descent to find the optimal $\theta$.
+\end{enumerate}
+\item 
+<<fig.height=4, fig.width=7>>=
+nr_points = 1000
+p = 0.5
+n = 100
+# create data
+X <- rbinom(nr_points, prob = p, size = n)
+
+# define different Normal density functions
+normal_optimal <- function(x) dnorm(x, mean = n*p, sd = sqrt(n*p*(1-p)))
+normal_shift <- function(x) dnorm(x, mean = n*p - 10, sd = sqrt(n*p*(1-p)))
+normal_scale_increase <- function(x) dnorm(x, mean = n*p, sd = sqrt(n*p*(1-p))*2)
+normal_right_scale_decrease <- function(x) dnorm(x, mean = n*p + 20, sd = p*(1-p))
+
+hist(X, breaks = 25, xlim = c(10, 100), freq = FALSE)
+curve(normal_optimal, from = 10, to = 100, add = TRUE, col = "green")
+curve(normal_shift, from = 10, to = 100, add = TRUE, col = "blue")
+curve(normal_scale_increase, from = 10, to = 100, add = TRUE, col = "orange")
+curve(normal_right_scale_decrease, from = 10, to = 100, add = TRUE, col = "red")
+@
+
+For these distributions, we get the following KL divergence values (up to an additive constant):
+
+$$
+D_{KL}(f||q) = const. + 0.5 \log \sigma^2 + \frac{1}{2\sigma^2} (\text{Var}_f(X) + (np-\mu)^2))
+$$
+
+<<>>=
+kld_value <- function(mu,sigma2)
+{
+  0.5*log(sigma2) + 
+    0.5 * (sigma2)^(-1) * (n*p*(1-p) + (n*p - mu)^2)
+}
+(optimal_green <- kld_value(n*p,n*p*(1-p)))
+(shift_blue <- kld_value(n*p-10,n*p*(1-p)))
+(scale_increase_orange <- kld_value(n*p,n*p*(1-p)*4))
+(right_scale_decrease_red <- kld_value(n*p+20, (p*(1-p))^2))
+@
+
+\item Since we are now required to calculate the exact KLD values, we would also have to calculate $\mathbb{E}_f(f(X))$, which is somewhat more difficult. In you search the internet for a solution ($\rightarrow$ ``entropy of a binomial distribution''), you will find an approximate solution using the de-Moivre-Laplace theorem. Alternatively, we could make use of the central limit theorem, but then we would just approximate $f$ with a normal distribution with $\mu = np$ and $\sigma^2 = np(1-p)$, which would give us a constant KLD of zero (the very same happens if you use the first approximation using the de-Moivre-Laplace-theorem). We here instead will approximate the expectation using a large sample from the true underlying distribution:
+$$
+D_{KL}(f||q) \approx \frac{1}{B} \sum_{b=1}^B [\log f(X) - \log q(X|\mu = np. \sigma^2 = np(1-p))]
+$$
+<<warning=FALSE, message=NA, fig.height=4, fig.width=7>>=
+p_seq <- seq(0.01, 0.99, l = 100)
+n_seq <- seq(10, 500, by = 100)
+B <- 10000
+
+kld_value_approx <- function(n,p){ 
+  
+  # sample a large number of data points from true distribution
+  x <- rbinom(B, prob = p, size = n)
+  
+  # approximate the mean; threshold values to 0 if < 0 due
+  # to the approximation
+  pmax(
+    mean(
+      dbinom(x, prob = p, size = n, log = TRUE) - 
+        dnorm(x, mean = n*p, sd = sqrt(n*p*(1-p)), log = TRUE),
+      na.rm = TRUE
+    ),
+    0)
+  
+}
+
+kld_val <- sapply(n_seq, function(this_n) 
+  sapply(p_seq, function(this_p) kld_value_approx(this_n, this_p)))
+
+cols = rev(colorRampPalette(c('darkred','red','blue','lightblue'))(50))
+
+filled.contour(x = p_seq, y = n_seq, z = kld_val, 
+               xlab = "p", ylab = "n", 
+               col = cols
+               )
+@
+\item Based on the previous result, one can see that the KLD is very close to zero but has larger values for very small or very large values of $p$ and / in combination with a small number of experiments $n$. These are exactly the cases where the normal approximation of a binomial distribution does not work so good. 
+\end{enumerate}
