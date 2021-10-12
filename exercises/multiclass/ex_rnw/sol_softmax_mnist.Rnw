@@ -1,0 +1,224 @@
+\begin{enumerate}
+
+\item Read in the MNIST data set 
+<<echo = TRUE>>=
+library(keras)
+mnist <- dataset_mnist()
+@
+
+\item Visualize the data like
+
+<<echo = TRUE, fig.height=2, fig.width=5, fig.align='center'>>=
+library(keras)
+mnist <- dataset_mnist()
+x_train <- mnist$train$x
+y_train <- mnist$train$y
+x_test <- mnist$test$x
+y_test <- mnist$test$y
+
+# visualize the digits
+par(mfcol=c(1,6))
+par(mar=c(0, 0, 3, 0), xaxs='i', yaxs='i')
+for (idx in sample(1:NROW(x_train), 6)) { 
+    im <- x_train[idx,,]
+    im <- t(apply(im, 2, rev)) 
+    image(1:28, 1:28, im, col=gray((0:255)/255), 
+          xaxt='n', main=paste(y_train[idx]), 
+          yaxt='n')
+}
+@
+\item Convert the features to a (pandas) data frame, by flattening the 28x28 images to a 784 entry long vector, which represents one row in your data frame. Divide the intesity values of each pixel (each column) by 255 to get a value between 0 and 1.  
+
+<<echo=TRUE>>=
+library(tibble)
+# reshape
+dim(x_train) <- c(nrow(x_train), 784)
+dim(x_test) <- c(nrow(x_test), 784)
+# rescale
+x_train <- x_train / 255
+x_test <- x_test / 255
+# convert to data.frame
+x_train <- as_tibble(as.data.frame(x_train))
+x_test <- as_tibble(as.data.frame(x_test))
+@
+
+\item Softmax regression
+
+<<eval = FALSE, message = FALSE>>=
+library(nnet)
+data <- cbind(y = as.factor(y_train), x_train)
+# note: takes some time and requires quite some memory
+# also you need to set the maximum number of weights to get it running
+# we will further restrict the maximum number of iterations
+# to avoid overfitting (explanation is given later)
+model <- multinom(y ~ -1 + ., data = data, MaxNWts = 7860, maxit = 20)
+@
+
+<<echo=FALSE, message=FALSE>>=
+library(nnet)
+data <- cbind(y = as.factor(y_train), x_train)
+model <- multinom(y ~ -1 + ., data = data, MaxNWts = 7860, maxit = 20)
+@
+
+
+Look at the larger weights:
+
+<<>>=
+summary(model$wts)
+which.max(abs(model$wts))
+dim(coef(model))
+@
+
+There seem to be a few very large coefficients
+
+\item Use keras:
+
+<<echo=FALSE, message=FALSE>>=
+library(dplyr)
+library(keras)
+
+# convert outcome using one-hot encoding
+y_train_one_hot <- to_categorical(y_train)
+y_test_one_hot <- to_categorical(y_test)
+
+neural_network <- keras_model_sequential()
+
+neural_network %>% 
+  layer_dense(units = 10, # corresponding to the number of classes
+              activation = "softmax",
+              input_shape = list(784)) %>% 
+  compile(
+    optimizer = "adam",
+    loss      = "categorical_crossentropy",
+    metric = "accuracy"
+  )
+
+history_minibatches <- fit(
+  object           = neural_network, 
+  x                = as.matrix(x_train), 
+  y                = y_train_one_hot,
+  batch_size       = 24, 
+  epochs           = 80,
+  validation_split = 0.2,
+  callbacks = list(callback_early_stopping(patience = 10)),
+  verbose = FALSE, # set this to TRUE to get console output
+  view_metrics = FALSE # set this to TRUE to get a dynamic graphic output in RStudio
+)
+@
+
+Look at the network weights
+
+<<>>=
+library(tensorflow)
+tensor_weights <- as.matrix(tf$add(neural_network$weights[[1]],0))
+summary(c(tensor_weights))
+@
+
+and compare to the ones from multinomial logistic regression:
+
+<<>>=
+plot(c(tensor_weights[,-1]) ~ c(t(coef(model))),
+     xlab = "Weights Softmax Regression", ylab = "Weights Neural Network")
+abline(0,1, col="red")
+@
+
+As both models de facto are based on neural networks (here the implementation of the softmax regression is actually done by fitting a neural network with the very same network structure), their similarity depends on how the network is trained. While clearly the implementation calling python with backend TensorFlow (the keras fit) is much much faster, the network also converges more quickly due to a small batch size while the multinomial logisitic regression calls a network fitting algorithm that uses batch size equal to the number of observations (which is usually a bad idea).
+
+\item 
+
+First define the metrics
+
+<<>>=
+# Classification error (how many of the predictions are wrong)
+classiferror <- function(actual, predicted) {
+    return(mean(actual != predicted))
+}
+
+# Accuracy (how many of the predictions are correct)
+accuracy <- function(actual, predicted) {
+    return(1 - classiferror(actual, predicted))
+}
+
+# As we will usually have probabilistic predictions, 
+# we need to convert those to classes for the above 
+# metrics using the class with the max probability
+probs_to_class <- function(probvec) {
+  which.max(probvec)-1
+}
+
+#' MC Brier score
+mcbrier <- function(actual_one_hot, prob) {
+  rowSums((actual_one_hot-prob)^2)
+}
+
+# Cross-Entropy loss
+crossentropy <- function(actual_one_hot, prob) {
+  rowSums( -log(prob) * actual_one_hot )
+}
+
+# negative log-likelihood of multinomial distribution
+loglikmultinom <- function(actual_one_hot, prob) {
+  sapply(1:nrow(actual_one_hot), function(i) 
+    dmultinom(actual_one_hot[i,], 
+              size = 1, prob[i,], log = TRUE))
+}
+@
+
+Now we get the predictions:
+
+<<>>=
+pred_multinom <- predict(model, x_test, type = "probs")
+pred_nn <- predict(neural_network, as.matrix(x_test))
+str(pred_multinom, 1)
+str(pred_nn, 1)
+@
+
+Let's first look at the confusion matrix (in this case for the multinomial regression):
+
+<<>>=
+table(y_test, apply(pred_multinom,1,probs_to_class))
+@
+
+Now the metrics. Classification error:
+
+<<>>=
+cbind(multinom = classiferror(y_test, apply(pred_multinom,1,probs_to_class)),
+      neural = classiferror(y_test, apply(pred_nn,1,probs_to_class))
+)
+@
+
+Accuracy:
+
+<<>>=
+# Classification error
+cbind(multinom = accuracy(y_test, apply(pred_multinom,1,probs_to_class)),
+      neural = accuracy(y_test, apply(pred_nn,1,probs_to_class))
+)
+@
+
+MC Brier Score (note that we look at the mean, because the definition of the loss is on an observation basis):
+
+<<>>=
+cbind(multinom = mean(mcbrier(y_test_one_hot, pred_multinom)),
+      neural = mean(mcbrier(y_test_one_hot, pred_nn))
+)
+@
+
+Cross-Entropy (mean):
+
+<<>>=
+cbind(multinom = mean(crossentropy(y_test_one_hot, pred_multinom)),
+      neural = mean(crossentropy(y_test_one_hot, pred_nn))
+)
+@
+
+Mean negative Log-Likelihood of Multinomial distribution:
+
+<<>>=
+cbind(multinom = mean(loglikmultinom(y_test_one_hot, pred_multinom)),
+      neural = mean(loglikmultinom(y_test_one_hot, pred_nn))
+)
+@
+
+
+\end{enumerate}
