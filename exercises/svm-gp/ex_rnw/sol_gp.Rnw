@@ -1,0 +1,112 @@
+Assume your data follows the following law: $$\bm{y} = \bm{f} + \bm{\varepsilon}, \quad \bm{\varepsilon} \sim \mathcal{N}(\bm{0},\sigma^2\bm{\Psi}),$$
+with $\bm{f} = f(\bm{x}) \in \mathbb{R}^n$ being a realization of a Gaussian process (GP), for which we a priori assume $$f(\bm{x}) \sim \mathcal{GP}(m(\bm{x}),k(\bm{x},\bm{x}^\prime)).$$ $\bm{x}$ here only consists of 1 feature that is observed for $n$ data points. 
+\begin{enumerate}
+\item Prior distribution (assuming the same notation as in the lecture): $$\bm{f} \sim \mathcal{N}(\bm{m}, \bm{K})$$ with $\bm{m} = m(\bm{x})$ and $\bm{K}$ defined by the entries $\bm{K}_{ij} = k(x_i,x_j)$. NB: Note the (in-)finite Gaussian property of a GP. 
+\item Note that the posterior distribution $\bm{f}|\bm{y},\bm{x}$ in this case is different from the one of $\bm{f}_* | \bm{x}_*, \bm{x}, \bm{y}$ and also from the marginal distribution of $\bm{y} \sim \mathcal{N}(\bm{m},\bm{K} + \sigma^2 \bm{\Psi})$! We have: 
+\begin{equation}
+\begin{split}
+p(\bm{f}|\bm{y}) &\propto p(\bm{y}|\bm{f}) \cdot p(\bm{f}) \\
+&\propto \exp(-\frac{1}{2} (\bm{y}-\bm{f})^\top (\sigma^{2} \bm{\Psi})^{-1}(\bm{y}-\bm{f})) \cdot \exp(-\frac{1}{2}(\bm{f}-\bm{m})^\top \bm{K}^{-1} (\bm{f}-\bm{m}))\\
+&\propto \exp(-\frac{1}{2} \{ \bm{f}^\top \underbrace{((\sigma^{2} \bm{\Psi})^{-1} + \bm{K}^{-1})}_{=: \bm{K}^{-1}_{post}} \bm{f} -2 \bm{f}^\top \underbrace{((\sigma^{2} \bm{\Psi})^{-1} \bm{y} + \bm{K}^{-1} \bm{m})}_{=: \tilde{\bm{f}}} \})\\
+&\propto \exp(-\frac{1}{2} \{ \bm{f}^\top \bm{K}^{-1}_{post} \bm{f} - 2 \bm{f}^\top\tilde{\bm{f}}  \})
+\end{split}
+\end{equation}
+by removing all constant factors that do not depend on $\bm{f}$ as we only need to know the density up to a constant of proportionality. By extending the proportionality, we can get a quadratic form in $\bm{f}$:
+\begin{equation}
+\begin{split}
+p(\bm{f}|\bm{y}) &\propto \exp(-\frac{1}{2} \{ \bm{f}^\top \bm{K}^{-1}_{post} \bm{f} - 2 \bm{f}^\top\tilde{\bm{f}}  \})\\
+&\propto \exp(-\frac{1}{2} \{ \bm{f}^\top \bm{K}^{-1}_{post} \bm{f} - 2 \bm{f}^\top \bm{K}^{-1}_{post} \underbrace{\bm{K}_{post} \tilde{\bm{f}}}_{:=\bm{f}_{post}}  \}) \\
+&\propto \exp(-\frac{1}{2}  (\bm{f}-\bm{f}_{post})^\top \bm{K}^{-1}_{post} (\bm{f}-\bm{f}_{post}))
+\end{split}
+\end{equation}
+which is the so called \emph{kernel} of a multivariate normal distribution $\mathcal{N}(\bm{f}_{post},\bm{K}_{post} )$, i.e., $\bm{f}|\bm{y} \sim \mathcal{N}(\bm{f}_{post},\bm{K}_{post} )$. 
+\item In order to get the posterior predictive distribution for a new sample $x_*$ from the same data generating process, we could derive $$p(y_* | x_*, \bm{y}, \bm{x}) = \int p(y_*|x_*, \bm{x}, \bm{y}, \bm{f}) \cdot p(\bm{f}|\bm{y},\bm{x}) \,d\bm{f}.$$ This is doable but cumbersome. Alternatively, we can make use of the fact, that the joint distribution of $\bm{y}$ and $y_*$ is known (cf. slides on noisy GP): 
+$$\begin{pmatrix} \bm{y} \\ y_* \end{pmatrix} \sim \mathcal{N}\left( \begin{pmatrix} \bm{m} \\ m_* \end{pmatrix}, 
+\begin{pmatrix} 
+\bm{K} + \sigma^2 \bm{\Psi} & \bm{K}_*\\
+\bm{K}^\top_* & K_{**}\\
+\end{pmatrix}
+\right),$$
+with $m_* = m(x_*)$, $\bm{K}_* = k(x_*, \bm{x})$ and $K_{**} = k(x_*,x_*)$.
+The conditional distribution can then be derived using the rule of conditioning for Gaussian distributions: $$y_* | x_*, \bm{x}, \bm{y} \sim \mathcal{N}(m_* + \bm{K}^\top_* (\bm{K} + \sigma^2 \bm{\Psi})^{-1}(\bm{y}-\bm{m}), K_{**} - \bm{K}^\top_* (\bm{K} + \sigma^2 \bm{\Psi})^{-1} \bm{K}_*).$$
+\item To implement a GP with squared exponential kernel and $\ls = 1$, we need the inverse of $\bm{K}$. $\bm{x}$ being a vector implies that we have only one feature and thus the entries of our matrix $\bm{K}$ are 
+$$
+\bm{K} = \begin{pmatrix} 1 & \exp(-0.5 (x^{(1)} - x^{(2)})^2) \\ \exp(-0.5 (x^{(2)} - x^{(1)})^2) & 1 \end{pmatrix}.
+$$
+The inverse of $\bm{K}$ is then given by $$
+\frac{1}{1-\exp(-(x^{(1)} - x^{(2)})^2)} \begin{pmatrix} 1 & -\exp(-0.5 (x^{(1)} - x^{(2)})^2) \\ -\exp(-0.5 (x^{(2)} - x^{(1)})^2) & 1 \end{pmatrix}.
+$$
+If we have a noisy GP, we would have to add $\sigma^2 \bm{I}_2$ to $\bm{K}$ with resulting inverse 
+
+$$
+\bm{K}_y^{-1} = \frac{1}{\sigma^4-\exp(-(x^{(1)} - x^{(2)})^2)} \begin{pmatrix} \sigma^2 & -\exp(-0.5 (x^{(1)} - x^{(2)})^2) \\ -\exp(-0.5 (x^{(2)} - x^{(1)})^2) & \sigma^2 \end{pmatrix}.
+$$
+Assuming a zero mean GP, we can derive $\frac{\partial \bm{K}_y}{\partial \theta}$ with $\theta = \sigma^2$, which gives us the identity matrix. We can thus maximize the marginal likelihood (slide on \emph{Gaussian Process Training}), by finding $\sigma^2$ that yields 
+$$\text{tr}\left( \bm{K}_y^{-1} \bm{y} \bm{y}^\top \bm{K}_y^{-1} - \bm{K}_y^{-1} \right) = 0.$$
+This can be solved analytically (though quite tedious). We will use a root finding function for this. For the posterior predictive distribution we can make use of the results from the previous exercise.
+
+<<fig.height=4, fig.width=7>>=
+library(kernlab)
+
+# set seed, define n, true (unknown) sigma
+set.seed(4212)
+n <- 2
+sigma <- 1
+
+# define kernel with l = 1
+kernel_fun <- function(x) 
+  kernelMatrix(kernel = rbfdot(sigma = 1/2), 
+               x = x)
+kernel_fun_pred <- function(x,y)
+  kernelMatrix(kernel = rbfdot(sigma = 1/2), 
+               x = x, y = y)
+
+# draw data according to the generating process:
+x <- rnorm(n)
+K <- kernel_fun(x)
+K_y <- K + diag(rep(sigma^2,2))
+(y <- t(mvtnorm::rmvnorm(1, sigma = K_y)))
+
+# function to find the best sigma^2
+root_fun <- function(sigmaSq){
+  K_y_inv <- solve(K + diag(rep(sigmaSq,2)))
+  0.5*sum(diag(K_y_inv%*%y%*%t(y)%*%K_y_inv - K_y_inv))
+}
+
+# get the best sigma
+(bestSigmaSq <- uniroot(f = root_fun, interval = c(0,20)))$root
+
+# plot the optimization problem and best sigma
+possible_sigvals <- seq(0.001,20,l=1000)
+plot(possible_sigvals, sapply(possible_sigvals, root_fun),
+     xlab = expression(sigma^2), ylab = "marginal likelihood derivative",
+     pch = 20)
+abline(h=0, lty=2)
+abline(v=bestSigmaSq$root, lty=2)
+
+# function to draw samples from the predictive posterior
+draw_from_pred_posterior <- function(number_samples, y, x, xstar, sigmaSq = 1)
+{
+  
+  # invert noisy K
+  K_y_inv <- solve(kernel_fun(x) + diag(rep(sigmaSq,2)))
+  # get the other K's for new data
+  Kstar <- kernel_fun_pred(x,xstar)
+  Kstarstar <- kernel_fun(xstar)
+  # draw samples according to Ex. (d)
+  rnorm(number_samples, 
+        mean = as.numeric(t(Kstar) %*% K_y_inv %*% y), 
+        sd = sqrt(as.numeric(Kstarstar - t(Kstar) %*% K_y_inv %*% Kstar))
+  )
+  
+}
+
+# draw enough samples to get a feeling for the distribution
+samples_posterior <- 
+       draw_from_pred_posterior(number_samples = 1000, 
+                                y = y, x = x, xstar = 0)
+# plot the distribution
+hist(samples_posterior, breaks=50, xlab=expression(y["*"]^b))
+@
+
+\end{enumerate}
