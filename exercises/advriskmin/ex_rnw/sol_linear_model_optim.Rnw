@@ -3,11 +3,11 @@
 
   \item 
   \begin{itemize}
-  \item Hypothesis space $\mathcal{H}$ is defined as:
+  \item Hypothesis space $\Hspace$ is defined as:
         $$
-        \mathcal{H} = \{f(x) = \bm{X} \bm{\beta} \ |\ \bm{\beta} \in \mathbb{R}^p\}
+        \Hspace = \{\fx = \bm{X} \bm{\beta} \ |\ \bm{\beta} \in \mathbb{R}^p\}
         $$
-  \item We fit a linear model, ergo using the $L_2$-loss makes sense (e.g., because of the link to Gaussian MLE):
+  \item We fit a linear model, ergo using the $L2$ loss makes sense (e.g., because of the link to Gaussian MLE):
   $$
   L\left(y^{(i)},f\left(\bm{x}^{(i)}|\bm{\beta}\right)\right) = L\left(y^{(i)}, {\bm{x}^{(i)}}^\top\bm{\beta}\right) = 0.5 \left({y}^{(i)}-{\bm{x}^{(i)}}^\top\bm{\beta}\right)^2
   $$
@@ -16,24 +16,24 @@
   \mathcal{R}(f) = \mathcal{R}(\bm{\beta}) = \int (y-f(\bm{x}))^2 \,\mbox{d}\mathbb{P}_{xy} =  \int (y-\bm{x}^\top \bm{\beta})^2 \,\mbox{d}\mathbb{P}_{xy} .
   $$
   \end{itemize}
-  \item The Bayes regret is $\mathcal{R}_L(\hat{f}) - \mathcal{R}^\ast_L$ and can be decomposed into an estimation error $\left[ \mathcal{R}_L(\hat{f}) - \inf_{f\in\mathcal{H}} \mathcal{R}_L({f})   \right]$ and an approximation error $\left[ \inf_{f\in\mathcal{H}} \mathcal{R}_L({f}) - \mathcal{R}^\ast_L \right]$.
+  \item The Bayes regret is $\mathcal{R}_L(\hat{f}) - \mathcal{R}^\ast_L$ and can be decomposed into an estimation error $\left[ \mathcal{R}_L(\hat{f}) - \inf_{f\in\Hspace} \mathcal{R}_L({f})   \right]$ and an approximation error $\left[ \inf_{f\in\Hspace} \mathcal{R}_L({f}) - \mathcal{R}^\ast_L \right]$.
   \begin{itemize}
-  \item[(i)] If $f^\ast \in \mathcal{H}$, $\mathcal{R}^\ast_L = \inf_{f\in\mathcal{H}} \mathcal{R}_L({f})$, i.e., the approximation error is $0$ and for $n\to \infty$ our Bayes regret $\to 0$.  
-  \item[(ii)] If $f^\ast \notin \mathcal{H}$, the Bayes regret typically consists of both parts, but as $n\to\infty$, we are left with the approximation error.
+  \item[(i)] If $f^\ast \in \Hspace$, $\mathcal{R}^\ast_L = \inf_{f\in\Hspace} \mathcal{R}_L({f})$, i.e., the approximation error is $0$ and for $n\to \infty$ our Bayes regret $\to 0$.  
+  \item[(ii)] If $f^\ast \notin \Hspace$, the Bayes regret typically consists of both parts, but as $n\to\infty$, we are left with the approximation error.
   \end{itemize}
   \item 
   \begin{itemize}
   \item Our empirical risk is $$
   \mathcal{R}_{emp}(\bm{\beta}) = 0.5 \sum_{i=1}^n \left({y}^{(i)}-{\bm{x}^{(i)}}^\top\bm{\beta}\right)^2 = 0.5 ||\bm{y} - \bm{X\beta}||^2.
   $$
-  \item Optimization = Minimization of the empirical risk can either be done analytically (the preferred solution in this case!) or using, e.g., gradient descent.
+  \item Optimization = minimization of the empirical risk can either be done analytically (the preferred solution in this case!) or using, e.g., gradient descent.
   $$
   \nabla_{\bm{\beta}} \mathcal{R}(\bm{\beta}) = \nabla_{\bm{\beta}} (\bm{y}-\bm{X\beta})^\top(\bm{y}-\bm{X\beta}) = -\bm{X}^\top (\bm{y} - \bm{X}\bm{\beta})
   $$
   \end{itemize}
   \item For convex objectives, every local minimum corresponds to a global minimum. To show convexity, calculate the second derivatives:
   $$
-  \nabla_{\beta\beta^\top}  \mathcal{R}(\bm{\beta}) = \bm{X}^\top\bm{X}.
+  \nabla_{\bm{\beta}\bm{\beta}^\top}  \mathcal{R}(\bm{\beta}) = \bm{X}^\top\bm{X}.
   $$
   Since $\bm{z}^\top \bm{X}^\top \bm{X} \bm{z}$ is the inner product of a vector $\tilde{\bm{z}} = \bm{X} \bm{z}$ with itself, i.e. 
   $$
@@ -77,7 +77,7 @@ gradient_descent <- function(step_size, X, y, beta = rep(0,ncol(X)),
   \item Run a small simulation study by creating 100 data sets as indicated below and test different step sizes $\alpha$ (fixed across iterations) against each other and against the state-of-the-art routine for linear models in R using the function \texttt{lm}.
   \begin{itemize}
     \item Compare the difference in estimated coefficients $\beta_j, j=1,\ldots,p$ using the mean squared error, i.e. $$p^{-1} \sum_{j=1}^p (\beta^{truth}_j-\hat{\beta}_j)^2$$ and summarize the difference over all 100 simulation repetitions.
-    \item Compare the run-times of your implementation and the one given by \texttt{lm} by wrapping the funciton calls into \texttt{system.time()}.
+    \item Compare the run times of your implementation and the one given by \texttt{lm} by wrapping the function calls into \texttt{system.time()}.
     \end{itemize}
 <<eval=TRUE, fig.height=4, warning=FALSE, message=FALSE>>=
 n <- 10000
@@ -144,6 +144,6 @@ do.call("rbind", result_list) %>%
   facet_wrap(~ what, scales = "free")
 @
     
-\item There exists an analytic solution to this problem, namely $\hat{\beta} = (\bm{X}^\top \bm{X})^{-1} \bm{X}^\top \bm{y}$. Gradient descent might sometimes be slower and less exact. However, for very large data sets, a numerical optimization might be the preferred solution (in this case, you would rather apply \textbf{stochastic} gradient descent). Analytically solving the problem involves inverting the matrix $\bm{X}^\top \bm{X}$, which should never be done explicitly, but rather by solving the linear equation $\bm{X}^\top \bm{y} = \bm{X}^\top \bm{X} \bm{\beta}$ or by decomposing $\bm{X}^\top \bm{X}$ first, e.g., using Cholesky or QR decomposition.  
-\item Our learning algorithm $\mathcal{I}$ will always have an approximation error if $f^\ast \notin \mathcal{H}$, and is thus not consistent.
+\item There exists an analytic solution to this problem, namely $\hat{\bm{\beta}} = (\bm{X}^\top \bm{X})^{-1} \bm{X}^\top \bm{y}$. Gradient descent might sometimes be slower and less exact. However, for very large data sets, a numerical optimization might be the preferred solution (in this case, you would rather apply \textbf{stochastic} gradient descent). Analytically solving the problem involves inverting the matrix $\bm{X}^\top \bm{X}$, which should never be done explicitly, but rather by solving the linear equation $\bm{X}^\top \bm{y} = \bm{X}^\top \bm{X} \bm{\beta}$ or by decomposing $\bm{X}^\top \bm{X}$ first, e.g., using Cholesky or QR decomposition.  
+\item Our learning algorithm $\mathcal{I}$ will always have an approximation error if $f^\ast \notin \Hspace$, and is thus not consistent.
 \end{enumerate}
