@@ -148,7 +148,8 @@
 \input{../../latex-math/basic-math.tex}
 \input{../../latex-math/basic-ml.tex}
 \input{../../latex-math/ml-boosting.tex}
-\input{../../latex-math/ml-automl.tex}
+\input{../../latex-math/ml-eval.tex}
+\input{../../latex-math/ml-hpo.tex}
 
 %! includes: tuning-intro
 
@@ -159,12 +160,12 @@
 \begin{frame}{Tuning}
 
 \vskip 3em
-Recall: \textbf{Hyperparameters} $\lambdav$ are parameters that are \emph{inputs} to the 
+Recall: \textbf{Hyperparameters} $\lamv$ are parameters that are \emph{inputs} to the 
 training problem in which a learner $\inducer$ minimizes the empirical risk on a training data set in order
 to find optimal \textbf{model parameters} $\thetab$ which define the fitted model $\fh$.
 \vskip 2em
 
-\textbf{(Hyperparameter) Tuning} is the process of finding good model hyperparameters $\lambdav$. 
+\textbf{(Hyperparameter) Tuning} is the process of finding good model hyperparameters $\lamv$. 
 
 % \begin{vbframe}{Hyperparameter Tuning}
 % \begin{itemize}
@@ -202,17 +203,17 @@ We face a \textbf{bi-level} optimization problem: The well-known risk minimizati
   \footnotesize
   \begin{itemize}
     \item For a learning algorithm $\inducer$ (also inducer) with $d$ hyperparameters, the hyperparameter \textbf{configuration space} is:
-      $$\bm{\Lambda}=\Lambda_{1} \times \Lambda_{2} \times \ldots \times \Lambda_{d},$$
-      where $\Lambda_{i}$ is the domain of the $i$-th hyperparameter.
+      $$\Lam=\Lam_{1} \times \Lam_{2} \times \ldots \times \Lam_{d},$$
+      where $\Lam_{i}$ is the domain of the $i$-th hyperparameter.
     \item The domains can be continuous, discrete or categorical.
     \item For practical reasons, the domain of a continuous or integer-valued hyperparameter is typically bounded.
-    \item A vector in this configuration space is denoted as $\bm{\lambda} \in \bm{\Lambda}$.
-    \item A learning algorithm $\inducer$ takes a (training) dataset $\D \in \allDatasets$ and a hyperparameter configuration $\lambdav \in \bm{\Lambda}$ and returns a trained model (through risk minimization)
+    \item A vector in this configuration space is denoted as $\bm{\lambda} \in \Lam$.
+    \item A learning algorithm $\inducer$ takes a (training) dataset $\D \in \allDatasets$ and a hyperparameter configuration $\lamv \in \Lam$ and returns a trained model (through risk minimization)
 
     \vspace*{-0.2cm}
   \begin{eqnarray*}
     \inducer: \preimageInducer &\to& \Hspace \\
-    (\D, \lambdav) &\mapsto& \inducer(\D, \lambdav) = \hat f_{\D, \lambdav}
+    (\D, \lamv) &\mapsto& \inducer(\D, \lamv) = \hat f_{\D, \lamv}
   \end{eqnarray*}
     % \item Additionally, some hyperparameters may only need to be specified if another hyperparameter (or combination of hyperparameters) takes on a certain value.
   \end{itemize}
@@ -221,16 +222,16 @@ We face a \textbf{bi-level} optimization problem: The well-known risk minimizati
 
   % Note that 
 
-  %   In contrast to the first-level (empirical) risk minimization problem, hyperparameter optimization is also referred to as \textbf{second-level} optimization. The first-level problem can be seen as a subroutine called by the second-level problem: Each evaluation of $\lambdav$ requires to solve the first-level optimization problem.  
+  %   In contrast to the first-level (empirical) risk minimization problem, hyperparameter optimization is also referred to as \textbf{second-level} optimization. The first-level problem can be seen as a subroutine called by the second-level problem: Each evaluation of $\lamv$ requires to solve the first-level optimization problem.  
 
 
 %   \framebreak 
 
 %   \begin{itemize}
-%     \item search for the \textbf{inducer} hyperparameter $\lambdav$
+%     \item search for the \textbf{inducer} hyperparameter $\lamv$
 %     \item that minimizes the \textbf{generalization error}
 %       $$
-%         \min_{\lambdav} \E_{\D_n \sim \Pxy, (\xv, y) \sim \Pxy} \left(V\left(y, \hat f_{\D, \lambdav}(\xv)\right)\right). 
+%         \min_{\lamv} \E_{\D_n \sim \Pxy, (\xv, y) \sim \Pxy} \left(V\left(y, \hat f_{\D, \lamv}(\xv)\right)\right). 
 %       $$
 %   \end{itemize}
 
@@ -247,10 +248,10 @@ We face a \textbf{bi-level} optimization problem: The well-known risk minimizati
 %   In hyperparameter optimization, we
 
 %   \begin{itemize}
-%     \item search for the \textbf{inducer} hyperparameter $\lambdav$
+%     \item search for the \textbf{inducer} hyperparameter $\lamv$
 %     \item that minimizes the \textbf{test error}
 %       $$
-%         \min_{\lambdav \in \Lambda} \sum_{(\xi, \yi) \in \Dtest} V\left(\inducer(\Dtrain, \lambdav)(\xi), \yi\right). 
+%         \min_{\lamv \in \Lam} \sum_{(\xi, \yi) \in \Dtest} V\left(\inducer(\Dtrain, \lamv)(\xi), \yi\right). 
 %       $$
 %   \end{itemize}
 
@@ -266,12 +267,14 @@ We face a \textbf{bi-level} optimization problem: The well-known risk minimizati
 We formally state the nested hyperparameter tuning problem as: 
 
 $$
-\min_{\lambdav \in \bm{\Lambda}} \GEh{\Dtest}\left(\inducer(\Dtrain, \lambdav)\right) 
+\min_{\lamv \in \LamS} c(\lamv) \text{ where } c(\lamv) := \GEh_{\Dtrain, \Dtest}(\inducer,
+  \lamv, \ntrain, \rho)
 $$
 
 \begin{itemize}
-\item The learner $\inducer(\Dtrain, \lambdav)$ takes a training data set as well as hyperparameter settings $\lambdav$ (e.g., the maximal depth of a classification tree) as an input. 
-\item $\inducer(\Dtrain, \lambdav)$ performs empirical risk minimization on the training data and returns the optimal model $\fh$ for the given hyperparameters. 
+\item The learner $\inducer(\Dtrain, \lamv)$ takes a training data set as well as hyperparameter settings $\lamv$ (e.g., the maximal depth of a classification tree) as an input. 
+\item The search space $\LamS$  is a bounded subset of $\Lam$.
+\item $\inducer(\Dtrain, \lamv)$ performs empirical risk minimization on the training data and returns the optimal model $\fh$ for the given hyperparameters. 
 \item Note that for the estimation of the generalization error, more sophisticated resampling strategies like cross-validation can be used.
 \end{itemize}
 
