@@ -15,7 +15,7 @@ getCurrentAspect = function() {
 
 # PLOT -------------------------------------------------------------------------
 
-pdf("../figure/reg_knn_2.pdf", width = 10, height = 7)
+pdf("../figure/reg_knn_2.pdf", width = 7, height = 5)
 
 par(mar = c(4, 4, 0, 0) + .1)
 cex = 1.5
@@ -43,11 +43,12 @@ text(x = c(1L, 5L),
 
 lines(x = c(1L, 5L, 5L, 5L), 
       y = c(1L, 1L, 1L, 4L), 
-      col = 2)
+      col = 2,
+      lty = 2)
 
 legend(x = -0.1, 
        y = 5.1, 
-       lty = 1, 
+       lty = c(2, 1), 
        legend = c("Manhattan", "Euclidean"), 
        col = c(2, 1), 
        cex = cex,
@@ -71,5 +72,5 @@ text(x = 3,
      srt = 180 / pi * atan(3 / 4 * asp), 
      cex = cex)
 
-ggsave("../figure/reg_knn_2.pdf", width = 10, height = 7)
+ggsave("../figure/reg_knn_2.pdf", width = 8, height = 6)
 dev.off()
