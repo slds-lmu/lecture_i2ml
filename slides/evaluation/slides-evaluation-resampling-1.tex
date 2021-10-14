@@ -116,8 +116,7 @@
 \newcommand{\titlefigure}{figure_man/crossvalidation.png}
 \newcommand{\learninggoals}{
 \item Understand how resampling techniques extend the idea of simple train-test splits
-\item Understand the ideas of cross-validation, bootstrap and subsampling
-\item Understand what pessimistic bias means}
+\item Understand the ideas of cross-validation, bootstrap and subsampling}
 \usepackage{../../style/lmu-lecture}
 
 \let\code=\texttt
@@ -149,30 +148,37 @@
 % Defines macros and environments
 \input{../../latex-math/basic-math.tex}
 \input{../../latex-math/basic-ml.tex}
-\input{../../latex-math/ml-automl.tex}
+\input{../../latex-math/ml-hpo.tex}
+\input{../../latex-math/ml-eval.tex}
 %! includes: evaluation-test
 
-\lecturechapter{Evaluation: Resampling}
+\lecturechapter{Evaluation: Resampling 1}
 \lecture{Introduction to Machine Learning}
 
 % ------------------------------------------------------------------------------
 
 \begin{vbframe}{Resampling}
 
-\begin{small}
+\begin{footnotesize}
 \begin{itemize}
-  \item \textbf{Goal}: assess performance of learning algorithm.
+  \item \textbf{Goal}: estimate $\GEfull[n] =
+  \lim_{\ntest \rightarrow \infty} \E \left[ \rho \left(
+  \yv, \F_{\Dtest, \inducer(\D_n, \lamv)} 
+  \right)\right]$.
    \item Use the data at hand efficiently.
    \item Repeatedly split in train and test, then average results.
-  \item Make training sets large (to keep pessimistic bias small),
+  \item Make training sets large (to keep pessimistic bias small since we use 
+  $\GEfull$ as a proxy for $\GEfull[n]$),
   and reduce variance introduced by smaller test sets through many repetitions / 
   averaging of results.
+  \item Problems with single-holdout split: small train set leads to high 
+  pessimistic bias and small test set results in high variance.
 \end{itemize}
-\end{small}
+\end{footnotesize}
 
 \begin{center}
 % FIGURE SOURCE: https://docs.google.com/drawings/d/1q7WN1_YKHedIPNySiZBEraLtTkHRX12Ej6M6ISbfMD0/edit?usp=sharing
-\includegraphics[width=0.6\textwidth]{figure_man/resampling_error.pdf}
+\includegraphics[width=0.55\textwidth]{figure_man/resampling_error.pdf}
 % % FIGURE SOURCE: No source
 % \includegraphics[width=0.7\textwidth]{figure_man/ml_abstraction-crop.pdf}
 \end{center}
@@ -182,39 +188,27 @@
 % ------------------------------------------------------------------------------
 
 \begin{vbframe}{Resampling strategies}
-
+\footnotesize
 \begin{itemize}
   \item Different \textbf{resampling strategies} exist to balance bias against 
   variance, e.g., holdout sampling or cross-validation.
   \item To ease notation, we represent our train and test sets by index
-  vectors $J_\mathrm{train} \in \nset^{m_\mathrm{train}}$ and $J_\mathrm{test}
-  \in \nset^{m_\mathrm{test}}$, and define a resampling strategy with 
-  $B$ train-test splits by $$\mathcal{J} = \left((J_{\mathrm{train}, 1}, 
-  J_{\mathrm{test}, 1}), \dots, (J_{\mathrm{train}, B}, J_{\mathrm{test}, B}) 
-  \right).$$
-  % \item With this, we can denote the corresponding vector of labels as
-  % $\yv_J = \left(y^{(J^{(1)})},\dots, y^{(J^{(m)})} \right) \in \Yspace^m$ and
-  % the matrix of prediction scores as
-  % $\bm{F}_{J,f} = \left( f(\xv^{(J^{(1)})}), \dots, f(\xv^{(J^{(m)})}) \right)
-  % \in \R^{m\times g}$.
-  % TODO translate to latex-math once notation is updated there
-  \item Based on $\mathcal{J}$, we can express our \textbf{generalization error} 
-  estimate for arbitrary resampling strategies as
-  \begin{equation*}
-    \begin{split}
-      \small
-      \widehat{\mathrm{GE}}_\mathcal{J}(\inducer, \lambdav, \rho) =
-      \textrm{agg} \Bigg(& \rho \left( \yv_{J_{\mathrm{test}, 1}},
-      \bm{F}_{J_{\mathrm{test}, 1}, \inducer(J_{\mathrm{test}, 1}, \lambdav)} 
-      \right), \\
-      &\dots, 
-      \rho \left( \yv_{J_{\mathrm{test}, B}},
-      \bm{F}_{J_{\mathrm{test}, B}, \inducer(J_{\mathrm{test}, B}, \lambdav)}
-      \right) \Bigg),
-    \end{split}
-  \end{equation*}
-  where the aggregation \textcolor{blue}{$\textrm{agg}$} is typically chosen to 
-  be the mean.
+  vectors $\Jtrain \in \nset^{\ntrain}$ and $\Jtest
+  \in \nset^{\ntest}$, and define a resampling strategy with 
+  $B$ train-test splits by $$\JJ = \JJset.$$
+  \item Based on $\JJ$, we can express our estimate of the \textbf{generalization error} 
+ $\GEfull$ for arbitrary resampling strategies as
+\begin{equation*}
+\small
+\begin{split}
+\GEhresa = \agr\Big(
+ &\rho\Big(\yv_{\Jtesti[1]}, \FJtestftraini[1]\Big), \\ &\large{\vdots} \\
+& \rho\Big(\yv_{\Jtesti[1]}, \FJtestftraini[B]\Big)
+    \Big),
+\end{split}
+\end{equation*}
+  where the aggregation \textcolor{blue}{$\agr$} is typically chosen to 
+  be the mean and $\ntrain \approx \ntraini[1] \approx \dots \approx \ntraini[B]$.
 \end{itemize}
 
 \end{vbframe}
@@ -235,8 +229,8 @@
 \textbf{Example:} 3-fold cross-validation
 
 \begin{center}
-% FIGURE SOURCE: https://docs.google.com/presentation/d/1sKtnj5nIQrcOGU7rTisMsppUGOk7UX2gbjKhtQmTX7g/edit?usp=sharing
-\includegraphics[width=8cm]{figure_man/crossvalidation.png}
+% FIGURE SOURCE: practical tuning paper
+\includegraphics[width=11cm]{figure_man/crossvalidation.png}
 \end{center}
 \end{vbframe}
 
@@ -254,12 +248,14 @@ specific categorical feature of interest) in each fold.
 \begin{knitrout}\scriptsize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
 
-{\centering \includegraphics[width=0.95\textwidth]{figure/eval_resample_1} 
+{\centering \includegraphics[width=0.8\textwidth]{figure/eval_resample_1} 
 
 }
 
 \end{knitrout}
 \end{vbframe}
+
+
 
 % ------------------------------------------------------------------------------
 
@@ -280,6 +276,7 @@ specific categorical feature of interest) in each fold.
   can improve error estimation for small sample sizes.
 \end{itemize}
 \end{vbframe}
+
 
 % ------------------------------------------------------------------------------
 
@@ -355,12 +352,14 @@ $\Dtest^b = \Dtrain \setminus \Dtrain^b$, $b = 1, 2, \dots, B$.
   variance of $k$-fold CV. \\
   $\Rightarrow$ More iterations, smaller variance.
   \item As in $k$-fold CV, GE estimates tend to be pessimistically biased
-  (because training sets contain only about $63.2 \%$ of the unique 
+  (because training sets contain only approximately about $1 - \P((\xv, y) \notin \Dtrain) = 1 - \left(1 - \frac{1}{n}\right)^n 
+  \ \stackrel{n \to \infty}{\longrightarrow} \ 1-\frac{1}{e} \approx 63.2 \%$ of the unique 
   observations).
   \item Bootstrapping framework allows for inference 
   (e.g., detecting significant performance differences between learners).
   \item Extensions exist for very small data sets that also use the training 
   error for  estimation: B632 and B632+.
+
 \end{itemize}
 
 \end{vbframe}
@@ -386,99 +385,28 @@ $\Dtest^b = \Dtrain \setminus \Dtrain^b$, $b = 1, 2, \dots, B$.
 
 \end{vbframe}
 
-% ------------------------------------------------------------------------------
+\begin{vbframe}{Leave-One-Object-Out}
 
-\begin{vbframe}{Bias-Variance Analysis for Subsampling}
+In the situation, where our observations consist of  multiple observations 
+orginating from the same instances we need to adapt our resampling strategy. 
+(Note: In this case, the observations are not i.i.d)
 
-  \begin{itemize}
-    \item Reconsider our hold-out experiment on the \texttt{spirals} data from 
-    the train-test unit (maybe re-read it again)
-    \item Again, we use split rates $s \in \{0.05, 0.1, ..., 0.95\}$ for 
-    training with $|\Dtrain| = s \cdot 500$.
-    \item But: now we compare 50 subsampling experiments with $50 \cdot 50$ 
-    hold-out experiments per split.
-    \item Every subsampling experiment is the result of averaging 50 hold-out 
-    experiments, so each performance estimate is much more reliable (but also 
-    more expensive) than one computed by a single hold-out experiment.
-  \end{itemize}
+\lz
 
-\framebreak
+One simple solution is to train on all observations originating from all instances
+except one and then evaluate on the observations of the remaining one. This
+procedure is called leave-one-object-out.
+\lz
 
-\begin{center}
-% FIGURE SOURCE: eval-resampling-example
-\includegraphics[width=0.9\textwidth]{figure/eval-resampling-example-1}
-\end{center}
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
 
+{\centering \includegraphics[width=0.85\textwidth]{figure_man/loobject} 
 
+}
 
-\begin{itemize}
-  \item Both experiments are compared to the "real" MMCE (black line).
-  \item Subsampling has the same pessimistic bias for small split rates but 
-  much less variance overall.
-  \item This allows to use much smaller test sets with good results.
-\end{itemize}
-
-\framebreak
-
-\begin{center}
-% FIGURE SOURCE: eval-resampling-example
-\includegraphics[width=0.7\textwidth]{figure/eval-resampling-example-2}
-\end{center}
-
-\begin{itemize}
-  \item The MSE is strictly better for subsampling compared to hold-out.
-  \item The optimal split rate now is a higher $s \approx 0.8$.
-  \item We see the variance picking up at the end because training sets 
-  increasingly overlap.
-\end{itemize}
-
+\end{knitrout}
 \end{vbframe}
-
 % ------------------------------------------------------------------------------
-
-\begin{vbframe}{Resampling discussion}
-
-\begin{itemize}
-
-  \item In ML we fit, at the end, a model on all our given data.\\
-
-  \item \textbf{Problem:} We need to know how well this model will perform in 
-  the future, but no data is left to reliably quantify this.\\
-  $\Rightarrow$ Approximate using hold-out / CV / bootstrap / subsampling \\
-  estimate\\ 
-
-  \item \textbf{But:} pessimistic bias because we don't use all data points.\\
-
-  \item The final model is (usually) computed on all data points.
-
-  \item Strictly speaking, resampling only produces one number, the performance 
-  estimator.
-  It does NOT produce models, parameters, etc. These are intermediate results 
-  and discarded.
-  
-  \item The model and parameters are only obtained when we finally fit the 
-  learner on the complete data.
-
-\end{itemize}
-
-\framebreak
-
-\begin{itemize}
-  \item 5-CV or 10-CV have become standard.
-  \item Do not use hold-out, CV with few iterations, or subsampling with a low 
-  subsampling rate for small samples, since this can cause the estimator to be 
-  extremely biased, with large variance.
-  \item For small-data situations with less than 500 or 200 observations, use 
-  LOO or, probably better, repeated CV.
-  \item For some models, computationally fast calculations or approximations 
-  for LOO exist.
-  \item A data set $\D$ with $|\D| = 100.000$ can have small-sample properties 
-  if one class has few observations 
-  \item Research indicates that subsampling has better properties than
-    bootstrapping. The repeated observations can cause problems in training,
-    especially in nested setups where the \enquote{training} set is split up again.
-\end{itemize}
-\end{vbframe}
-
 \endlecture
 \end{document}

@@ -139,7 +139,8 @@
 % Defines macros and environments
 \input{../../latex-math/basic-math.tex}
 \input{../../latex-math/basic-ml.tex}
-\input{../../latex-math/ml-automl.tex}
+\input{../../latex-math/ml-eval.tex}
+\input{../../latex-math/ml-hpo.tex}
 %! includes: basics-learners 
 
 \lecturechapter{Evaluation: Introduction and Remarks}
@@ -154,17 +155,17 @@
   \textbf{performance}.
   \item Recall that supervised learning is about finding the optimal model 
   for our data at hand, given a set of hyperparameters: 
-  $$\inducer: \preimageInducerShort \rightarrow \Hspace, \quad (\D, \lambdav)
-  \mapsto \fh_{\D, \lambdav}.$$
-  \item We obtain $\fh_{\D, \lambdav}$ by means of empirical risk minimization, 
+  $$\inducer: \preimageInducerShort \rightarrow \Hspace, \quad (\D, \lamv)
+  \mapsto \fhDlambda.$$
+  \item We obtain $\fhDlambda$ by means of empirical risk minimization, 
   based on what we will now call \textbf{inner loss}.
-  \item However, the inner loss does not tell us anything about the performance 
+  \item However, the inner loss does not necessarily tell us something about the performance 
   of our learner -- after all, we chose our model precisely so it would be 
   loss-minimal on the data we trained it on.
 \end{itemize}
 
 \lz
-$\rightarrow$ We cannot hope for $\fh_{\D, \lambdav}$ to perform equally well 
+$\rightarrow$ We cannot hope for $\fh_{\D, \lamv}$ to perform equally well 
 on unseen data. \\
 $\rightarrow$ Evaluation based on the inner loss would be 
 \textbf{optimistically biased}.
@@ -187,7 +188,7 @@ $\rightarrow$ Evaluation based on the inner loss would be
   need independent \textbf{test data}. 
   \item As such a test set is not always available, we make do with 
   splitting our data at hand into non-overlapping sets $\Dtrain$ and $\Dtest$, 
-  with respective sizes $m_{\mathrm{train}} + m_{\mathrm{test}} = n$.
+  with respective sizes $\ntrain + \ntest = n$.
 \end{itemize}
 
 \end{vbframe}
@@ -202,11 +203,10 @@ $\rightarrow$ Evaluation based on the inner loss would be
   set rather than point-wise (e.g., the AUC), and potentially differ from the 
   inner loss.
   \item For arbitrary data sets of size $m$ and a prediction matrix 
-  $\bm{F} \in \R^{m \times g}$ returned by our model, $\rho$ is defined as:
-  $$\rho: \bigcup_{m \in \N} \left( \Yspace^m \times \R^{m \times g} \right) 
-  \rightarrow \R, \quad (\yv, \bm{F}) \mapsto \rho(\yv, \bm{F}).$$
-  \item We can easily translate this to our usual notion of point-wise loss:
-  $$\rho_L(\yv, \bm{F}) = \sum_{i=1}^m L(\yi, \bm{F}^{(i)}).$$
+  $$\F = \begin{bmatrix} \fh(\xi[1])^\top & \dots & \fh(\xi[m])^\top \end{bmatrix}^\top \in \R^{m \times g}$$ returned by our model $\fh$, $\rho$ is defined as:
+  $$\rho: \preimageRho  \rightarrow \R, \quad (\yv, \F) \mapsto \rho(\yv, \F).$$
+  \item We can easily translate this to our usual notion of point-wise loss $L$:
+  $$\rho_L(\yv, \F) = \frac{1}{m}\sumim L(\yi, \Fi)  \quad \left(= \frac{1}{m}\sumim L(\yi, \fh(\xi)\right).$$
 \end{itemize}
 
 \end{vbframe}
@@ -225,18 +225,18 @@ $\rightarrow$ Evaluation based on the inner loss would be
   % $\bm{F}_{J,f} = \left( f(\xv^{(J^{(1)})}), \dots, f(\xv^{(J^{(m)})}) \right)
   % \in \R^{m\times g}$.
   \item This allows us to define the \textbf{generalization error} as:
-  $$\mathrm{GE}(\inducer, \lambdav, m_{\mathrm{train}}, \rho) := 
-  \lim_{m_{\mathrm{test}} \rightarrow \infty} \E \left[ \rho \left(
-  \yv, \bm{F}_{\Dtest, \inducer(\mathcal{D}_{\mathrm{train}}, \lambdav)} 
-  \right)\right].$$
+  $$\GEfull := 
+  \lim_{\ntest \rightarrow \infty} \E \left[ \rho \left(
+  \yv, \F_{\Dtest, \inducer(\D_{\mathrm{train}}, \lamv)} 
+  \right)\right]$$
   \item The expectation is taken w.r.t. the unkown distribution $\Pxy$ from 
   which both $\Dtrain$ and $\Dtest$ are sampled independently.
   \item We must therefore estimate the generalization error, based on our 
   train-test split:
-  $$\widehat{\mathrm{GE}}_{\Dtrain, \Dtest}(\inducer,
-  \lambdav, m_\mathrm{train}, \rho) =
-  \rho \left( \yv_{\Dtest}, \bm{F}_{\Dtest, 
-  \inducer(\mathcal{D}_{\mathrm{train}}, \lambdav)} \right).$$
+  $$\GEh_{\Dtrain, \Dtest}(\inducer,
+  \lamv, \ntrain, \rho) =
+  \rho \left( \yv_{\Dtest}, \F_{\Dtest, 
+  \inducer(\D_{\mathrm{train}}, \lamv)} \right).$$
   \item In practice, we will not rely on a single split, but use 
   \textbf{resampling} to repeatedly carve out test observations from our data.
 \end{itemize}
@@ -255,9 +255,9 @@ $\rightarrow$ Evaluation based on the inner loss would be
   \end{itemize}
   \item Beyond evaluating a single learner, the outer loss lends itself to
   comparing different types of learners, or learners with varying hyperparameter
-  configurations $\lambdav$.
-  \lz
-  \item Ideally, we have \textbf{inner loss = outer loss}.
+  configurations $\lamv$.
+  \item Ideally, we have \textbf{inner loss = outer loss}. In this case, it holds by the law of the large numbers for the empirical risk $\riske$ that
+  $$\E_{\D\sim(\Pxy)^{\ntrain}}\left[\frac{1}{n}\sumin L\left(\yi, \fhDlambda(\xi)\right)  \right] \xrightarrow{n \to \infty} \GE(\inducer, \lamv, \ntrain, \rhoL) .$$
   \item This is not always possible -- some special (set-based) metrics for 
   evaluation, such as the AUC, are not applicable as inner loss.
   \item On the other hand, we sometimes wish to use losses that are 
@@ -284,7 +284,7 @@ $\rightarrow$ Evaluation based on the inner loss would be
 \begin{minipage}{0.6\textwidth}
   \begin{itemize}
     \item 0-1 loss simply assigns a loss of 1 for incorrect predictions and 0
-    otherwise: $$\Lhxy = [y \neq \hx]$$
+    otherwise: $$\Lhxy = \I_{\{y \neq \hx\}}$$
   \end{itemize}
 \end{minipage}%
 \begin{minipage}{0.4\textwidth}

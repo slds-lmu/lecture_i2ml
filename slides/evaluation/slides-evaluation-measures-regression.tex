@@ -115,7 +115,8 @@
 \newcommand{\learninggoals}{
 \item Know the definitions of mean squared error (MSE) and mean absolute error (MAE)
 \item Understand the connections of MSE and MAE to L2 and L1 loss
-\item Know the definitions of $R^2$ and generalized $R^2$}
+\item Know the definitions of $R^2$ and generalized $R^2$
+\item Know the definition of Spearman's $\rho$}
 \usepackage{../../style/lmu-lecture}
 
 \let\code=\texttt
@@ -138,6 +139,7 @@
 % Defines macros and environments
 \input{../../latex-math/basic-math.tex}
 \input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-eval.tex}
 
 %! includes: regression-losses, evaluation-intro
 
@@ -152,7 +154,7 @@ The \textbf{mean squared error (MSE)} computes the mean of squared distances
 between the target variable $y$ and the predicted target $\yh$.
 
 $$
-MSE = \meanin (\yi - \yih)^2 \in [0;\infty) \qquad \rightarrow L2 \text{ loss}.
+\rho_{MSE}(\yv, \F) = \meanin (\yi - \yih)^2 \in [0;\infty) \qquad \rightarrow L2 \text{ loss}.
 $$
 
 \begin{minipage}[c]{0.33\textwidth}
@@ -189,7 +191,7 @@ A more robust (but not necessarily better) alternative is the
 \textbf{mean absolute error (MAE)}:
 
 $$ 
-MAE = \meanin \rvert \yi - \yih \rvert \in [0;\infty) \qquad \rightarrow L1 
+\rho_{MAE}(\yv, \F) = \meanin \rvert \yi - \yih \rvert \in [0;\infty) \qquad \rightarrow L1 
 \text{ loss}.
 $$
 
@@ -218,12 +220,48 @@ Similar measures:
 
 % ------------------------------------------------------------------------------
 
+\begin{vbframe}{Mean Absolute Percentage Error}
+
+The relative error can be measured with the
+\textbf{mean absolute percentage error (MAPE)}:
+
+$$ 
+\rho_{MAPE}(\yv, \F) = \sumin \left\rvert \frac{\yi - \yih}{\yi} \right\rvert \in [0;\infty) 
+$$
+
+\begin{minipage}[c]{0.33\textwidth}
+  \raggedright
+  \small
+  
+The smaller the absolute target values are the stronger they influence the MAPE 
+optimal model.  Can not handle zero target values.
+\end{minipage}%
+\begin{minipage}[c]{0.67\textwidth}
+  \begin{knitrout}\scriptsize
+  \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+  {\includegraphics[width=\textwidth]{figure/eval_mape}}
+\end{knitrout}
+\end{minipage}
+
+\small
+Similar measures:
+
+\begin{itemize}
+  \small
+  \item Mean Absolute Scaled Error (MASE)
+  \item Symmetric Mean Absolute Percentage Error (sMAPE)
+\end{itemize}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
 \begin{vbframe}{$R^2$}
 \begin{small}
 Another well known measure from statistics is $R^2$:
 
 \[
-R^2 = 1 - \frac{\sumin (\yi - \yih)^2}{\sumin (\yi - \bar{y})^2} = 1 - \frac{SSE_{LinMod}}{SSE_{Intercept}}.
+\rho_{R^2}(\yv, \F) = 1 - \frac{\sumin (\yi - \yih)^2}{\sumin (\yi - \bar{y})^2} = 1 - \frac{SSE_{LinMod}}{SSE_{Intercept}}.
 \]
 
 \begin{itemize}
@@ -232,12 +270,26 @@ R^2 = 1 - \frac{\sumin (\yi - \yih)^2}{\sumin (\yi - \bar{y})^2} = 1 - \frac{SSE
   \item Simpler explanation: it compares the SSE of a constant model (baseline) 
   to that of a more complex model (LM) on some data, usually the same as used 
   for model fitting.
-  \item $R^2=1$: all residuals are 0, we predict perfectly, \\
-  $R^2=0$: we predict as badly as the constant model.
-  \item If measured on the training data, $R^2 \in [0;1]$, as the LM must be at 
+  \item $\rho_{R^2}=1$: all residuals are 0, we predict perfectly, \\
+  $\rho_{R^2}=0$: we predict as badly as the constant model.
+  \item If measured on the training data, $\rho_{R^2} \in [0;1]$, as the LM must be at 
   least as good as the constant, and both SSEs are non-negative.
   \item On other data $R^2$ can even be negative as there is no guarantee that 
   the LM generalizes better than a constant (overfitting).
+\end{itemize}
+\end{small}
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{$R^2$ VS MSE}
+\begin{small}
+\begin{itemize}
+\item An improvement in the fraction of variability explained by the model does not 
+necessarily mean a better model fit:
+\includegraphics[width=\textwidth]{figure/eval_mse_r2}
+Here, we generate data with $y = 1.1x + \epsilon$ where $\epsilon \sim \normal(0, 0.15)$ and fit the half (black) and the full data set (black and red) with a linear model, respectively. Although the fit does not improve the $R^2$ value rises.
+\item While $R^2$ is invarariant with respect to linear scaling of the target values, the MSE is not.
 \end{itemize}
 \end{small}
 \end{vbframe}
@@ -267,6 +319,35 @@ A simple generalization of $R^2$ for ML seems to be:
 
 % ------------------------------------------------------------------------------
 
+\begin{vbframe}{Spearman's $\rho$}
+\footnotesize
+Spearman's $\rho$ measures the rank correlation, i.e.,
+\[
+\rho_{\text{Spearman}}(\yv, \F) = \frac{\cov(\textrm{rg}(\yv),\textrm{rg}(\hat{\yv}))}
+{\sqrt{\var(\textrm{rg}(\yv))}\cdot\sqrt{\var(\textrm{rg}(\hat{\yv}))}}  \in [-1, 1],
+\]
+where $\textrm{rg}$ is the ranking function (e.g. $\textrm{rg}((4, 0.5, 10)) = 
+(2, 1, 3)$).
+
+\begin{itemize}
+  \item It is very robust against outliers, since the correlation is only based 
+  on the ranks of $\yv$ and $\hat{\yv}$, respectively.
+  \item A value of 1 or -1 means that $\hat{\yv}$ and $\yv$ have a perfect monotonic 
+  relationship.  
+  \item A  value of zero indicates no association between 
+  $\textrm{rg}(\yv)$ and $\textrm{rg}(\hat{\yv})$.
+  \item It only measures the monotonic relationship, i.e., any strictly
+  increasing transformation applied to $\hat{\yv}$ does not alter 
+  $\rho_{\text{Spearman}}$.
+
+\end{itemize}
+\begin{center}
+\includegraphics[width=0.71\textwidth]{figure/eval_spearman}
+\end{center}
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
 \begin{vbframe}{ml vs classical statistics}
 
 \small
@@ -282,13 +363,13 @@ A simple generalization of $R^2$ for ML seems to be:
     \small
     \item \textbf{Akaike’s information criterion (AIC)} balances model fit and
     complexity, penalizing the number of parameters, $p$: 
-    $$ AIC = -2 \cdot \llt + 2 \cdot p.$$
+    $$ AIC = -2 \cdot \loglt + 2 \cdot p.$$
     
     %\item \textbf{AICc} is a corrected version for AIC for small sample sizes.
     
     \item \textbf{Bayesian information criterion (BIC)} is another variant of 
     the AIC with a stronger penalty for more complex models: 
-    $$ BIC = -2 \cdot \llt + \log(p).$$
+    $$ BIC = -2 \cdot \loglt + \log(p).$$
   \end{itemize}
     
   % \item By adding the number of parameters $p$ to the evaluation metric, more 
