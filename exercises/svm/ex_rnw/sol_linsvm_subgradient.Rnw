@@ -1,0 +1,119 @@
+\begin{itemize}
+\item Implementation of the PEGASOS algorithm: 
+<<>>=
+#' @param y outcome vector
+#' @param X design matrix (including a column of 1s for the intercept)
+#' @param nr_iter number of iterations for the algorithm
+#' @param theta starting values for thetas
+#' @param lambda penalty parameter
+#' @param alpha step size for weight decay
+pegasos_linear <- function(
+  y, 
+  X, 
+  nr_iter = 50000, 
+  theta = rnorm(ncol(X)), 
+  lambda = 1, 
+  alpha = 0.01)
+{
+  
+  t <- 1
+  n <- NROW(y)
+  
+  while(t <= nr_iter){
+  
+    f_current = X%*%theta
+    i <- sample(1:n, 1)
+    
+    # update
+    theta <- (1 - lambda * alpha) * theta
+    # theta[1] <- theta[1] * (1-alpha)
+    # add second term if within margin
+    if(y[i]*f_current[i] < 1) theta <- theta + alpha * y[i]*X[i,]
+    
+    t <- t + 1
+    
+  }
+  
+  return(theta)
+  
+}
+@
+
+\item Check on a simple example
+
+<<fig.width=6, fig.height=4>>=
+## Check on a simple example
+## --------------------------------------------
+
+set.seed(2L)
+
+C = 1
+
+library(mlbench)
+library(kernlab)
+data = mlbench.twonorm(n = 100, d = 2)
+
+plot(data)
+
+data = as.data.frame(data)
+X = as.matrix(data[, 1:2])
+y = data$classes
+
+# recode y
+y = ifelse(y == "2", 1, -1)
+mod_pegasos = pegasos_linear(y, cbind(1,X), lambda = C/(NROW(y)))
+
+# Add estimated decision boundary:
+abline(a = - mod_pegasos[1] / mod_pegasos[2], 
+       b = - mod_pegasos[2] / mod_pegasos[3], col = "red")
+
+# Compare to logistic regression:
+mod_logreg = glm(classes ~ ., data = data, family = binomial())
+abline(a = - coef(mod_logreg)[1] / coef(mod_logreg)[2], 
+       b = - coef(mod_logreg)[2] / coef(mod_logreg)[3], col = "blue")
+
+# decision values
+f_pegasos = cbind(1,X) %*% mod_pegasos
+
+# How many wrong classified examples?
+table(sign(f_pegasos * y))
+
+## compare to kernlab. we CANNOT expect a PERFECT match
+## -------------------------------------------------------------
+
+mod_kernlab = ksvm(classes~., 
+                   data = data, 
+                   kernel = "vanilladot", 
+                   C = C, 
+                   kpar = list(), 
+                   scaled = FALSE)
+f_kernlab = predict(mod_kernlab, newdata = data, type = "decision")
+# How many wrong classified examples?
+table(sign(f_kernlab * y))
+
+# compare outputs
+print(range(abs(f_kernlab - f_pegasos)))
+
+# compare coeffs
+rbind(
+  mod_pegasos,
+  mod_kernlab = c(mod_kernlab@b,
+  (params <- colSums(X[mod_kernlab@SVindex, ] * 
+                       mod_kernlab@alpha[[1]] * 
+                       y[mod_kernlab@SVindex])))
+)
+# seems we were reasonably close
+
+# recompute margin
+margin = 1 / sqrt(sum(params^2))
+
+# add margins to visualization:
+abline(a = - mod_kernlab@b / params[1], 
+       b = - params[1] / params[2], col = "purple")
+abline(a = - mod_kernlab@b / params[1] + margin, 
+       b = - params[1] / params[2], col = "purple", lty = 2)
+abline(a = - mod_kernlab@b / params[1] - margin, 
+       b = - params[1] / params[2], col = "purple", lty = 2)
+@
+
+\end{itemize}

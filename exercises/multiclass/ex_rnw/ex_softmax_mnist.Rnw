@@ -1,0 +1,89 @@
+\begin{enumerate}
+\item Read in the MNIST data set included in the data sets in the package \texttt{keras}, using either 
+<<eval = FALSE>>=
+library(keras)
+mnist <- dataset_mnist()
+@
+in R or 
+<<eval = FALSE>>=
+import tensorflow as tf
+mnist = tf.keras.datasets.mnist.load_data(
+    path='mnist.npz'
+)
+@
+in Python. The data set should contain 4 (2x2) list elements for features (pictures) and outcomes (label) for training and testing (as separate list items). 
+\item Optional: Check that the data is correctly loaded by visualizing it, e.g., like this:\\
+
+<<echo = FALSE, fig.height=2, fig.width=5, fig.align='center'>>=
+library(keras)
+mnist <- dataset_mnist()
+x_train <- mnist$train$x
+y_train <- mnist$train$y
+x_test <- mnist$test$x
+y_test <- mnist$test$y
+
+# visualize the digits
+par(mfcol=c(1,6))
+par(mar=c(0, 0, 3, 0), xaxs='i', yaxs='i')
+for (idx in sample(1:NROW(x_train), 6)) { 
+    im <- x_train[idx,,]
+    im <- t(apply(im, 2, rev)) 
+    image(1:28, 1:28, im, col=gray((0:255)/255), 
+          xaxt='n', main=paste(y_train[idx]), 
+          yaxt='n')
+}
+@
+\item Convert the features to a (\texttt{pandas}) data frame, by flattening the 28x28 images to a 784-entry-long vector, which represents one row in your data frame. Divide the intensity values of each pixel (each column) by 255 to get a value between 0 and 1.  
+
+<<echo=FALSE>>=
+library(tibble)
+# reshape
+dim(x_train) <- c(nrow(x_train), 784)
+dim(x_test) <- c(nrow(x_test), 784)
+# rescale
+x_train <- x_train / 255
+x_test <- x_test / 255
+# convert to data.frame
+x_train <- as_tibble(as.data.frame(x_train))
+x_test <- as_tibble(as.data.frame(x_test))
+@
+
+\item Fit a softmax regression to the given data and interpret the results. Use an existing package by searching for a package that fits \textit{Multinomial Logistic Regression}, which is equal to a softmax regression.
+
+\item Use the deep learning API \texttt{keras} to fit a softmax regression by fitting a network like the following:
+
+<<eval=FALSE>>=
+library(dplyr)
+library(keras)
+
+# convert outcome using one-hot encoding
+y_train <- to_categorical(y_train)
+y_test <- to_categorical(y_test)
+
+neural_network <- keras_model_sequential()
+
+neural_network %>% 
+  layer_dense(units = ..., # fill in the correct number of units 
+              activation = ... # fill in the correct activation function
+              input_shape = list(784)) %>% 
+  compile(
+    optimizer = "adam",
+    loss      = "categorical_crossentropy",
+    metric = "accuracy"
+  )
+
+history_minibatches <- fit(
+  object           = neural_network, 
+  x                = as.matrix(x_train), 
+  y                = y_train,
+  batch_size       = 24, 
+  epochs           = 80,
+  validation_data = list(as.matrix(x_test), y_test)
+)
+@
+
+and compare the learned \texttt{neural\_network\$weights} with the coefficients from the softmax regression.
+
+\item Compare the performances of the two algorithms using four different multiclass metrics (you are allowed to use existing implementations).
+
+\end{enumerate}
