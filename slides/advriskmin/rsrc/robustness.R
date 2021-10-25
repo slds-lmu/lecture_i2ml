@@ -34,12 +34,12 @@ ggplot(mat, aes(x, y)) +
 p = ggplot(mat,aes(x,y)) + 
   geom_point(alpha = 0.8) +
   geom_point(color = "red", x = outlier[1], y = outlier[2], size = 3L) +
-  geom_smooth(method = 'lm', formula = y ~ x, se = FALSE, aes(color = "L2-loss")) +
-  geom_quantile(quantiles = 0.5, aes(color = "L1-loss")) +
+  geom_smooth(method = 'lm', formula = y ~ x, se = FALSE, aes(color = "L2 loss")) +
+  geom_quantile(quantiles = 0.5, aes(color = "L1 loss")) +
   geom_smooth(method=MASS::rlm, se = FALSE, formula = y ~ x, aes(color = "Huber loss")) +
   scale_color_viridis_d(name = "Regression loss", end = .8) +
 # scale_color_manual(name = "Regression", values = c("L2 loss" = "darkgreen", "L1 loss" = "orange", "Huber loss" = "blue")) +
-# theme_minimal() + 
+theme_minimal() +
   theme(text = element_text(size = 20L)) 
 
 ggplot2::ggsave("../figure/robustness.png", p, width = 6L, height = 4L)

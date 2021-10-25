@@ -44,7 +44,7 @@ Why should we care about how to choose the loss function $\Lxy$?
 \item \textbf{Statistical} properties: choice of loss implies statistical assumptions on the distribution of $y ~|~ \xv = \xv$ (see \emph{maximum likelihood estimation vs.
 empirical risk minimization}). 
 \item \textbf{Robustness} properties: some loss functions are more robust towards outliers than others. 
-\item \textbf{Analytical} properties: the computational / optimization complexity of the problem. 
+\item \textbf{Analytical} properties: the computational / optimization complexity of the problem 
 $$
 \argmin_{\thetab \in \Theta} \risket
 $$
@@ -61,14 +61,14 @@ is influenced by the choice of the loss function.
 
 \begin{itemize}
   \small
-  \item Regression losses usually only depend on the \textbf{ residuals}
+  \item Regression losses usually only depend on the \textbf{residuals}
   $r := y - \fx.$
   \item Classification losses are usually expressed in terms of the 
   \textbf{margin} $\nu := y \cdot \fx.$
   \item A loss is called \textbf{distance-based} if
   \begin{itemize}
     \small
-    \item it can be written in terms of the residual
+    \item it can be written in terms of the residual, i.e., 
     $\Lxy = \psi (r) \text{ for some } \psi: \R \to \R, ~ \text{and}$
     \item $\psi(r) = 0 \Leftrightarrow r = 0$.
   \end{itemize}
@@ -102,7 +102,8 @@ is influenced by the choice of the loss function.
 
 \small
 
-Outliers (in $y$) have large residuals $r = y - \fx$. For some losses large residuals have a much bigger impact on the risk than other losses. 
+Outliers (in $y$) have large residuals $r = y - \fx$. For some losses large 
+residuals have a much bigger impact on the risk than for others. 
 
 \vspace{0.5cm}
 
@@ -111,7 +112,7 @@ Outliers (in $y$) have large residuals $r = y - \fx$. For some losses large resi
   \begin{table}[]
   \begin{tabular}{r|r|r|r}
   \toprule
-  $y - \fxh$ & L1 & L2 & Huber ($\eps = 5$) \\ \hline
+  $y - \fxh$ & $L1$ & $L2$ & Huber ($\eps = 5$) \\ \hline
   1 & 1 & 1 & 0.5 \\
   5 & 5 & 25 & 12.5 \\
   10 & 10 & 100 & 37.5 \\
@@ -158,31 +159,86 @@ Outliers (in $y$) have large residuals $r = y - \fx$. For some losses large resi
 
 \begin{vbframe}{Analytical Properties: Smoothness}
 
-\textcolor{blue}{LW: points 1-3 together w/ plot on subsequent slide; scnd slide w/ concrete examples (e.g., gd failing w/ lasso}
+% \textcolor{blue}{LW: points 1-3 together w/ plot on subsequent slide; scnd slide w/ concrete examples (e.g., gd failing w/ lasso}
 
 \begin{itemize}
-    \item \textbf{Smoothness} of a function is a property that is measured by the number of continuous derivatives it has. 
-    \item A function is said to be $\mathcal{C}^k$ if it is $k$ times continuously differentiable. A function is $\mathcal{C}^\infty$ if it is continuously differently for all orders $k$. 
-    \item In contrast do derivative-free methods, derivative-based methods require a certain level of smoothness of the risk function $\risket$. 
-    \item Example: Gradient descent requires differentiability of the $\risket$ (existence of $\nabla \risket$), Newton-Raphson requires $\risket$ to be twice differentiable (existence of Hessian $\nabla^2 \risket$). 
-
-    \framebreak 
-
-    \item If the loss function is not smooth, the risk minimization problem is in general not smooth either. 
-    \item  Instead, derivative-free optimization need to be used (which might not be desirable)
+  \small
+  \item \textbf{Smoothness} of a function is a property measured by 
+  the number of continuous derivatives. 
+  \item A function is said to be $\mathcal{C}^k$ if it is $k$ times 
+  continuously differentiable. A function is $\mathcal{C}^\infty$ if it is 
+  continuously differently for all orders $k$. 
+  \item Derivative-based methods require a certain level of smoothness of the 
+  risk function $\risket$. 
+  \begin{itemize}
+    \small
+    \item If the loss function is not smooth, the risk minimization problem will
+    generally not be smooth either. 
+    \item This will require the use of derivative-free optimization (which 
+    might not be desirable).
+  \end{itemize}
 \end{itemize}
 
-\begin{center}
-  \includegraphics[width = 0.5\textwidth]{figure/plot_loss_overview_classif.png} \\
-  \begin{footnotesize}
-    Squared loss, exponential loss, and squared hinge loss are continuously differentiable. The hinge loss is continuous but not differentiable. The 0-1-loss is not even continuous.   
-  \end{footnotesize}
-\end{center}
+\vfill
 
+\begin{minipage}[c]{0.4\textwidth}
+  \includegraphics[width=0.9\textwidth]{figure/plot_loss_overview_classif}
+\end{minipage}%
+\begin{minipage}[c]{0.05\textwidth}
+  \phantom{foo}
+\end{minipage}%
+\begin{minipage}[c]{0.55\textwidth}
+  \footnotesize \raggedright
+  Squared loss, exponential loss and squared hinge loss are continuously 
+  differentiable. Hinge loss is continuous but not differentiable. 
+  0-1 loss is not even continuous.
+\end{minipage}%
 
-%   \framebreak 
-%   \item Convexity of loss functions
-% \end{itemize}
+\framebreak
+
+\small
+\textbf{Example: Lasso regression}
+
+\begin{itemize}
+  \small
+  \item Most optimization methods require differentiability of loss 
+  function, e.g.,
+  \begin{itemize}
+    \small
+    \item Gradient descent: existence of gradient $\nabla \risket$, 
+    \item Newton-Raphson: existence of Hessian $\nabla^2 \risket$.
+  \end{itemize}
+  \item Problem: Lasso has non-differentiable 
+  objective function $$\riskrt = \| \yv - \Xmat \thetab \|^2_2
+  % \sumin \left( y - \fxit \right)^2 
+  + \lambda \| 
+  \thetab \|_1 ~ \in \mathcal{C}^0.$$
+  \item We must therefore resort to alternative optimization 
+  techniques -- for Lasso, this mostly means coordinate descent with 
+  subgradients.
+\end{itemize}
+
+\vfill
+
+\begin{minipage}[c]{0.3\textwidth}
+  \includegraphics[width=0.9\textwidth]{figure/lasso_unpenalized}
+\end{minipage}%
+\begin{minipage}[c]{0.05\textwidth}
+  \phantom{foo}
+\end{minipage}%
+\begin{minipage}[c]{0.3\textwidth}
+  \includegraphics[width=0.9\textwidth]{figure/lasso_penalty}
+\end{minipage}%
+\begin{minipage}[c]{0.05\textwidth}
+  \phantom{foo}
+\end{minipage}%
+\begin{minipage}[c]{0.3\textwidth}
+  \includegraphics[width=0.9\textwidth]{figure/lasso_penalized}
+\end{minipage}%
+
+\tiny Example: XYZ. \textit{Left:} unpenalized objective, \textit{middle:}
+$L1$ penalty, \textit{right:} penalized objective.
+    % \item Example: Gradient descent requires differentiability of the $\risket$ (existence of $\nabla \risket$), Newton-Raphson requires $\risket$ to be twice differentiable (existence of Hessian $\nabla^2 \risket$). 
 
 \end{vbframe}
 
