@@ -198,7 +198,7 @@ strongly affected by large residuals than others.
 \framebreak
 
 \small
-\textbf{Example: Lasso regression} \textcolor{blue}{@Bernd}
+\textbf{Example: Lasso regression}
 
 \begin{itemize}
   \small
@@ -238,7 +238,7 @@ strongly affected by large residuals than others.
 \end{minipage}%
 
 \tiny Example: XYZ. \textit{Left:} unpenalized objective, \textit{middle:}
-$L1$ penalty, \textit{right:} penalized objective.
+$L1$ penalty, \textit{right:} penalized objective. \textcolor{blue}{screenshot}
     % \item Example: Gradient descent requires differentiability of the $\risket$ (existence of $\nabla \risket$), Newton-Raphson requires $\risket$ to be twice differentiable (existence of Hessian $\nabla^2 \risket$). 
 
 \end{vbframe}
@@ -248,21 +248,22 @@ $L1$ penalty, \textit{right:} penalized objective.
 \begin{vbframe}{Analytical Properties: Convexity}
 
 \begin{itemize}
-  \small
-  % \item A function $\risket$ is convex if 
-  % $$
-  %   \risk\left(t \thetab^{(1)} + (1 - t) \cdot \thetab^{(2)}\right) \le t \risk\left(\thetab^{(1)}\right) + (1 - t) \cdot \risk\left(\thetab^{(2)}\right) 
-  % $$
-  % for all $0 \le t \le 1$ and all $\thetab^{(1)}, \thetab^{(2)} \in \Theta$
-  % (strictly convex if the above equation is fulfilled with equality). 
+  \footnotesize
+  \item A function $\risket$ is convex if
+  $$
+    \risk\left(t \cdot \thetab + (1 - t) \cdot \tilde \thetab\right) \le t \cdot
+    \risk\left(\thetab\right) + (1 - t) \cdot \risk\left(\tilde \thetab \right)
+  $$
+  $\forall$ $t \in [0, 1], ~\thetab, \tilde \thetab \in \Theta$
+  (strictly convex if the above holds with equality).
   \item In optimization, convex optimization problems are desirable because 
   they have a number of conventient properties. 
-  \item In particular, it holds for convex problems that local minima are also 
-  global minima $\rightarrow$ a strictly convex function has at most 
+  \item In particular, it holds for convex problems that local optima are 
+  global optima \\$\rightarrow$ a strictly convex function has at most 
   \textbf{one} global minimum (uniqueness). 
   \item Note, however, that convexity of $\risket$ depends both on convexity of 
   \begin{itemize} 
-    \small
+    \footnotesize
     \item $L(\cdot)$ -- given in most cases -- and 
     \item $\fxt$ -- often problematic.
   \end{itemize}  
@@ -283,22 +284,9 @@ $L1$ penalty, \textit{right:} penalized objective.
   \phantom{foo}
 \end{minipage}%
 \begin{minipage}[b]{0.45\textwidth}
-  \includegraphics[width=\textwidth]{figure_man/convex-vs-nonconfex-landscape}
+  \includegraphics[width=0.75\textwidth]{
+  figure_man/convex-vs-nonconfex-landscape}
 \end{minipage}%
-
-  % \begin{center}
-  % \includegraphics[width = 0.45\textwidth]{figure_man/convex-vs-nonconfex-landscape.png} \\
-  % \begin{footnotesize} Li et al., 2018, Visualizing the Loss Landscape of Neural Nets. The problem on the bottom right is convex, the others are not. \end{footnotesize}
-  % \end{center}
-
-% \framebreak
-%   
-% \begin{itemize}
-%   \item In practical terms convexity means that we do not need to worry to get 
-%   stuck in local minima during risk minimization. 
-%   \item Note that convexity of $\risket$ does not only depend on convexity of the loss function: Convexity of $\risket$ is also determined by the choice of the hypothesis space!
-%   \item For example, if $\Lxy$ is convex in its second argument, and $\fxt$ is linear in $\thetab$, then $\risket$ is convex. If $L$ is not convex, $\risket$ might have multiple local minima (bad!).
-% \end{itemize} 
 
 \end{vbframe}
 
@@ -306,7 +294,80 @@ $L1$ penalty, \textit{right:} penalized objective.
 
 \begin{vbframe}{Analytical Properties: Convergence}
 
-\textcolor{blue}{LW: not that much detail (belongs to logreg instead, is addressed in demo); story: if loss never reaches 0, w/ linearly separable data, it becomes desirable to have an infinitely steep logistic fun --> theta to infty}
+% \textcolor{blue}{LW: not that much detail (belongs to logreg instead, is addressed in demo); story: if loss never reaches 0, w/ linearly separable data, it becomes desirable to have an infinitely steep logistic fun --> theta to infty}
+% 
+% \textcolor{red}{@BB: Do we want to cover this case here in such a detailed manner? }
+
+\small
+The choice of the loss function may also impact the convergence behavior of the 
+optimization problem. 
+
+\begin{itemize} 
+  \small
+  \item Example: gradient descent in logistic regression will not converge for 
+  linearly separable data (\textbf{complete separation}). 
+  \item This is a direct consequence of the convergence behavior of Bernoulli 
+  loss, which reaches 0 only in the infinite limit of the margin.
+  \item In the case of complete separation, we have
+  \begin{flalign*}
+    \risket &= \sumin \log \left( 1 + \exp \left( - \yi \thetab^T \xi \right) 
+    \right) \\ &=
+    \sumin \log \left( 1 + \exp \left( - | \thetab^T \xi| \right) 
+    \right),
+  \end{flalign*}
+  as every observation is correctly classified (i.e., $\thetab^T \xi < 0$ \\for
+  $\yi = -1$ and $\thetab^T \xi > 0$ for $\yi = 1$).
+\end{itemize}  
+
+\framebreak
+
+\phantom{foo}
+
+% \vspace{0.3cm}
+
+\begin{minipage}[b]{0.55\textwidth}
+  \footnotesize
+  $\risket$ thus monotonically decreases in $\thetab$: if a parameter 
+  vector $\thetab^\prime$ is able to classify the samples perfectly, then 
+  $2\thetab^\prime$ also classifies the samples perfectly, at lower risk.
+\end{minipage}%
+\begin{minipage}[b]{0.05\textwidth}
+  \phantom{foo}
+\end{minipage}%
+\begin{minipage}[b]{0.4\textwidth}
+  \includegraphics[width=\textwidth]{figure_man/snap_bernoulli_loss}
+\end{minipage}%
+
+\vfill
+
+\begin{minipage}[b]{0.55\textwidth}
+  \footnotesize
+  Geometrically, this translates to an ever steeper slope of the 
+  logistic/softmax function, leading to increasingly sharp discrimination and 
+  infinitely running optimization.
+\end{minipage}%
+\begin{minipage}[b]{0.05\textwidth}
+  \phantom{foo}
+\end{minipage}%
+\begin{minipage}[b]{0.2\textwidth}
+  \includegraphics[width=\textwidth]{figure_man/snap_softmax_1}
+  \textcolor{blue}{screenshot}
+\end{minipage}%
+\begin{minipage}[b]{0.2\textwidth}
+  \includegraphics[width=\textwidth]{figure_man/snap_softmax_2}
+\end{minipage}%
+
+\vfill
+
+In practice, data are seldom linearly separable and misclassified 
+examples act as counterweights to increasing parameter values. Besides, we 
+can apply \textbf{regularization} to encourage convergence to robust solutions.
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Analytical Properties: Convergence}
 
 \textcolor{red}{@BB: Do we want to cover this case here in such a detailed manner? }
 
@@ -345,9 +406,10 @@ To find $\overline{\theta} := ||\bm{\theta}||_2$, we consider the empirical risk
 
 \end{vbframe}
 
-% ------------------------------------------------------------------------------
 
 \begin{vbframe}{Analytical Properties: Convergence}
+
+
 
 Clearly, $f_{\text{cor}}$ / $f_{\text{incor}}$ are monotonically decreasing/increasing with rising length of $\thetab$:
 
@@ -363,67 +425,6 @@ Clearly, $f_{\text{cor}}$ / $f_{\text{incor}}$ are monotonically decreasing/incr
 \end{itemize}
 
 \end{vbframe}
-
-% ------------------------------------------------------------------------------
-
-
-% \begin{vbframe}{Visulizing Losses via Loss Plots}
-
-% We call the plot that shows the point-wise error, i.e. the loss $\Lxy$ vs. the \textbf{residuals} $\eps := y - \fx$ (for regression), \textbf{loss plot}. The pseudo-residual corresponds to the slope of the tangent in $\left(y - \fx, \Lxy \right)$. 
-
-% \vspace*{0.5cm}
-
-
-% \begin{figure}
-% \includegraphics[width = 1\linewidth]{figure_man/loss.png}
-% \end{figure}
-
-% %<<echo=FALSE, warning=FALSE, message=FALSE, fig.height = 4>>=
-% %   xx = seq(-2, 2, by = 0.01); 
-% %   yy = xx^2
-% %   plot(xx, yy, type = "l", xlab = "y - f(x)", ylab = "L(y, f(x))")
-% %   points(1, 1, col = "red")
-% %   lines(x = c(1, 1), y = c(0, 1), col = "red")
-% %   points(xx, 2 * xx - 1, type = "l", col = "red")
-% %  @
-
-% % We will define a similar plot for classification later on in this chapter.
-
-% \end{vbframe}
-
-
-
-
-
-
-
-
-
-
-% \section{Comparison of Loss Functions}
-% 
-% 
-% \begin{vbframe}{Comparison of Loss Functions}
-% 
-% 
-% \begin{center}
-% \includegraphics[width = 10cm]{figure_man/2_7_loss_comparison_plot1.png} \\
-% \end{center}
-% 
-% 
-% \framebreak
-% 
-% 
-% This plot shows the optimal constant model $\fx = \thetab$ (also \enquote{featureless predictor}) for the losses that have been discussed.
-% 
-% \begin{center}
-% \includegraphics[width = 10cm, height = 6.5cm]{figure_man/2_8_loss_comparison_constant_model_plot1.png} \\
-% \end{center}
-% 
-% \end{vbframe}
-
-
-
 
 \endlecture
 
