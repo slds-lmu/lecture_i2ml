@@ -87,8 +87,8 @@ p_3 <- cowplot::plot_grid(
 
 ggplot2::ggsave(
   "../figure/loss_dist_based.png",
-  p_3,
-  width = 4L,
+  p_2,
+  width = 3.5,
   height = 2.6)
 
 # PLOT 2: TRANSLATION-INVARIANT ------------------------------------------------
@@ -102,8 +102,8 @@ p_4 <- ggplot2::qplot(df_2$x, df_2$z, geom = "line") +
 ggplot2::ggsave(
   "../figure/loss_transl_inv.png",
   p_4,
-  width = 4L,
-  height = 2.6)
+  width = 3.5,
+  height = 3.2)
 
 # PLOT 3: SYMMETRIC ------------------------------------------------------------
 
@@ -124,5 +124,5 @@ p_7 <- cowplot::plot_grid(p_5, p_6, ncol = 2L, align = "h")
 ggplot2::ggsave(
   "../figure/loss_symmetric.png",
   p_7,
-  width = 4L,
-  height = 2.6)
+  width = 5L,
+  height = 3L)

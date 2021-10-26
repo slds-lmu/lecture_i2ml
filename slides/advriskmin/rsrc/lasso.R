@@ -1,7 +1,13 @@
+# ------------------------------------------------------------------------------
+# FIG: LASSO LOSS FUNCTION
+# ------------------------------------------------------------------------------
+
 library(ggplot2)
 library(data.table)
 library(plotly)
 library(tidyverse)
+
+# DATA -------------------------------------------------------------------------
 
 set.seed(123L)
 x_1 <- runif(10L, -3L, 3L)
@@ -21,17 +27,24 @@ d_q <- akima::interp(x = dt$theta_1, y = dt$theta_2, z = dt$losses)
 d_l <- akima::interp(x = dt$theta_1, y = dt$theta_2, z = dt$penalty)
 d_p <- akima::interp(x = dt$theta_1, y = dt$theta_2, z = dt$losses_p)
 
-plotly::plot_ly(x = d_q$x, y = d_q$y, z = d_q$z) %>%
-  add_surface(
-    showscale = FALSE,
-    color = ~ d_q$z)
+# FUNCTIONS --------------------------------------------------------------------
 
-plotly::plot_ly(x = d_l$x, y = d_l$y, z = d_l$z) %>%
-  add_surface(
-    showscale = FALSE,
-    color = ~ d_l$z)
+plot_3d <- function(d, eye = list(x =0, y = 1.8L, z = 0.2)) {
+  
+  scene = list(
+    camera = list(eye = eye),
+    xaxis = list(title = "theta1"),
+    yaxis = list(title = "theta2"),
+    zaxis = list(title = "", tickvals = list()))
+  
+  plotly::plot_ly(x = d$x, y = d$y, z = d$z) %>%
+    add_surface(
+      showscale = FALSE,
+      color = ~ d$z) %>%
+    layout(scene = scene)
+  
+}
 
-plotly::plot_ly(x = d_p$x, y = d_p$y, z = d_p$z) %>%
-  add_surface(
-    showscale = FALSE,
-    color = ~ d_p$z)
+plot_3d(d_q)
+plot_3d(d_l)
+plot_3d(d_p)
