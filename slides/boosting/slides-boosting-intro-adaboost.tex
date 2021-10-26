@@ -1,8 +1,7 @@
 \input{../../style/preamble} 
 \input{../../latex-math/basic-math}
 \input{../../latex-math/basic-ml}
-\input{../../latex-math/ml-bagging.tex}
-\input{../../latex-math/ml-boosting.tex}
+\input{../../latex-math/ml-ensembles.tex}
 \input{../../latex-math/ml-trees.tex}
 
 \newcommand{\titlefigure}{figure_man/adaboost_example_adjusted.PNG}
@@ -104,10 +103,10 @@ a strong learner (Schapire and Freund, 1990).
 \begin{itemize}
   \item Assume binary classification with $y$ encoded as $\setmp$.
   \item We use binary classifiers as weak base learners (e.g., tree stumps) from a hypothesis space $\mathcal{B}$,
-      denoted $\bmm$ (or $\bmm(\xv)$ or $\bmmxth$), which are hard labelers and output from $\setmp$.
+      denoted $\bl$ (or $\bl(\xv)$ or $\blxt$), which are hard labelers and output from $\setmp$.
   \item Decision score of the ensemble of size $M$ is weighted average:
     $$
-    \fx = \sum_{m=1}^{M} \betam \bmmxth \in \R
+    \fx = \sum_{m=1}^{M} \betam \blxt \in \R
     $$
   \item The base learner is sequentially applied to weighted training observations. 
       After each base learner fit, currently misclassified observations receive a higher weight for
@@ -123,16 +122,16 @@ a strong learner (Schapire and Freund, 1990).
 %   \begin{algorithmic}[1]
 %     \State Initialize observation weights: $w^{[1](i)} = \frac{1}{n} \quad \forall i \in \nset$
 %     \For {$m = 1 \to M$}
-%       \State Fit classifier to training data with weights $\wm$ and get $\bmmh$
+%       \State Fit classifier to training data with weights $\wm$ and get $\blh$
 %       \State Calculate weighted in-sample misclassification rate
 %       $$
-%         \errm = \frac{\sumin \wmi \cdot \mathds{1}_{\{\yi \,\neq\, \bmmh(\xi)\}}}{\sumin \wmi}
+%         \errm = \frac{\sumin \wmi \cdot \mathds{1}_{\{\yi \,\neq\, \blh(\xi)\}}}{\sumin \wmi}
 %       $$
 %       \State Compute: $ \betamh = \frac{1}{2} \log \left( \frac{1 - \errm}{\errm}\right)$
 %       \State Set: $w^{[m+1](i)} = \wmi \cdot \exp\left(\betamh \cdot
-%         \mathds{1}_{\{\yi \,\neq\, \bmmh(\xi)\}} \right)$
+%         \mathds{1}_{\{\yi \,\neq\, \blh(\xi)\}} \right)$
 %     \EndFor
-%     \State Output: $\fxh = \sum_{m=1}^{M} \betamh \bmmh(\xv)$
+%     \State Output: $\fxh = \sum_{m=1}^{M} \betamh \blh(\xv)$
 %   \end{algorithmic}
 %   \caption{AdaBoost}
 % \end{algorithm}
@@ -145,17 +144,17 @@ a strong learner (Schapire and Freund, 1990).
   \begin{algorithmic}[1]
     \State Initialize observation weights: $w^{[1](i)} = \frac{1}{n} \quad \forall i \in \nset$
     \For {$m = 1 \to M$}
-      \State Fit classifier to training data with weights $\wm$ and get $\bmmh$
+      \State Fit classifier to training data with weights $\wm$ and get $\blh$
       \State Calculate weighted in-sample misclassification rate
       $$
-        \errm = \sumin \wmi \cdot \mathds{1}_{\{\yi \,\neq\, \bmmh(\xi)\}}
+        \errm = \sumin \wmi \cdot \mathds{1}_{\{\yi \,\neq\, \blh(\xi)\}}
       $$
       \State Compute: $ \betamh = \frac{1}{2} \log \left( \frac{1 - \errm}{\errm}\right)$
       \State Set: $w^{[m+1](i)} = \wmi \cdot \exp\left(- \betamh \cdot
         \yi \cdot \hat{h}(\xi)\right) $
       \State Normalize $w^{[m+1](i)}$ such that $\sumin w^{[m+1](i)} = 1$
     \EndFor
-    \State Output: $\fxh = \sum_{m=1}^{M} \betamh \bmmh(\xv)$
+    \State Output: $\fxh = \sum_{m=1}^{M} \betamh \blh(\xv)$
   \end{algorithmic}
   \caption{AdaBoost}
 \end{algorithm}
@@ -171,7 +170,7 @@ a strong learner (Schapire and Freund, 1990).
 
 \begin{itemize}
   \item $n = 10$ observations and two features $x_1$ and $x_2$ 
-  \item Tree stumps as base learners $\bmm(\xv)$
+  \item Tree stumps as base learners $\bl(\xv)$
   \item Balanced classification task with $y$ encoded as $\setmp$
   \item $M = 3$ iterations $\Rightarrow$ initial weights 
   $w^{[1](i)} = \frac{1}{10} \quad \forall i \in 1,\dots ,10$. 
@@ -195,7 +194,7 @@ a strong learner (Schapire and Freund, 1990).
 \begin{minipage}[b]{0.55\textwidth}
   New observation weights:
   \begin{itemize}
-    %\item $\wmi \cdot \exp \left(\betamh \cdot \mathds{1}_{\{\yi \neq \bmmh(\xi)\}} \right)$
+    %\item $\wmi \cdot \exp \left(\betamh \cdot \mathds{1}_{\{\yi \neq \blh(\xi)\}} \right)$
     \item Prediction correct: \\
       $w^{[2](i)} = w^{[1](i)} \cdot \exp \left(-\hat \beta^{[1]} \cdot 1 
       \right)$\\ $\approx 0.065.$
@@ -260,7 +259,7 @@ and $\hat \beta^{[3]} \approx 0.92 > \hat \beta^{[1]} \approx 0.42.$
 
 % ------------------------------------------------------------------------------
 
-With $\fxh = \sum_{m=1}^{M} \betamh \bmmh(\xv)$ and $h(\xv) = \text{sign}(\fx) 
+With $\fxh = \sum_{m=1}^{M} \betamh \blh(\xv)$ and $h(\xv) = \text{sign}(\fx) 
 \in \setmp$, \\we get:
 
 \begin{center}
