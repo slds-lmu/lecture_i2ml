@@ -69,10 +69,11 @@ is influenced by the choice of the loss function.
   \begin{itemize}
     \small
     \item it can be written in terms of the residual, i.e., 
-    $\Lxy = \psi (r) \text{ for some } \psi: \R \to \R, ~ \text{and}$
+    $\Lxy = \psi (r)$ \\for some $\psi: \R \to \R, ~ \text{and}$
     \item $\psi(r) = 0 \Leftrightarrow r = 0$.
   \end{itemize}
-  \item A loss is \textbf{translation-invariant} if $L(y + a, \fx + a) = \Lxy$.
+  \item A loss is \textbf{translation-invariant} if $L(y + a, \fx + a) = \Lxy$, 
+  $a \in \R$.
   \item Losses are called \textbf{symmetric} if $\Lxy = L\left(\fx, y\right)$. 
 \end{itemize}
 
@@ -80,17 +81,17 @@ is influenced by the choice of the loss function.
 
 \begin{minipage}[b]{0.33\textwidth}
   \includegraphics[width=\textwidth]{figure/loss_dist_based}
-  \footnotesize \centering
+  \scriptsize \centering
   Distance-based: $L1$ loss
 \end{minipage}%
 \begin{minipage}[b]{0.33\textwidth}
   \includegraphics[width=\textwidth]{figure/loss_transl_inv.png}
-  \footnotesize \centering
+  \scriptsize \centering
   Translation-invariant: $L2$ loss
 \end{minipage}%
 \begin{minipage}[b]{0.33\textwidth}
   \includegraphics[width=\textwidth]{figure/loss_symmetric}
-  \footnotesize \centering
+  \scriptsize \centering
   Symmetric: Brier score
 \end{minipage}
 
@@ -102,8 +103,8 @@ is influenced by the choice of the loss function.
 
 \small
 
-Outliers (in $y$) have large residuals $r = y - \fx$. For some losses large 
-residuals have a much bigger impact on the risk than for others. 
+Outliers (in $y$) have large residuals $r = y - \fx$. Some losses are more
+strongly affected by large residuals than others. 
 
 \vspace{0.5cm}
 
@@ -174,7 +175,7 @@ residuals have a much bigger impact on the risk than for others.
     \small
     \item If the loss function is not smooth, the risk minimization problem will
     generally not be smooth either. 
-    \item This will require the use of derivative-free optimization (which 
+    \item This may require the use of derivative-free optimization (which 
     might not be desirable).
   \end{itemize}
 \end{itemize}
@@ -197,25 +198,25 @@ residuals have a much bigger impact on the risk than for others.
 \framebreak
 
 \small
-\textbf{Example: Lasso regression}
+\textbf{Example: Lasso regression} \textcolor{blue}{@Bernd}
 
 \begin{itemize}
   \small
-  \item Most optimization methods require differentiability of loss 
-  function, e.g.,
-  \begin{itemize}
-    \small
-    \item Gradient descent: existence of gradient $\nabla \risket$, 
-    \item Newton-Raphson: existence of Hessian $\nabla^2 \risket$.
-  \end{itemize}
+  % \item Most optimization methods require differentiability of loss 
+  % function, e.g.,
   \item Problem: Lasso has non-differentiable 
   objective function $$\riskrt = \| \yv - \Xmat \thetab \|^2_2
   % \sumin \left( y - \fxit \right)^2 
   + \lambda \| 
-  \thetab \|_1 ~ \in \mathcal{C}^0.$$
+  \thetab \|_1 ~ \in \mathcal{C}^0,$$
+  but many optimization methods are derivative-based, e.g.,
+  \begin{itemize}
+    \small
+    \item Gradient descent: requires existence of gradient $\nabla \risket$, 
+    \item Newton-Raphson: requires existence of Hessian $\nabla^2 \risket$.
+  \end{itemize}
   \item We must therefore resort to alternative optimization 
-  techniques -- for Lasso, this mostly means coordinate descent with 
-  subgradients.
+  techniques -- for instance, coordinate descent with subgradients.
 \end{itemize}
 
 \vfill
@@ -246,24 +247,58 @@ $L1$ penalty, \textit{right:} penalized objective.
 
 \begin{vbframe}{Analytical Properties: Convexity}
 
-\textcolor{blue}{LW: add concrete examples of (non-)convex loss funs}
-
 \begin{itemize}
+  \small
   % \item A function $\risket$ is convex if 
   % $$
   %   \risk\left(t \thetab^{(1)} + (1 - t) \cdot \thetab^{(2)}\right) \le t \risk\left(\thetab^{(1)}\right) + (1 - t) \cdot \risk\left(\thetab^{(2)}\right) 
   % $$
   % for all $0 \le t \le 1$ and all $\thetab^{(1)}, \thetab^{(2)} \in \Theta$
   % (strictly convex if the above equation is fulfilled with equality). 
-  \item In optimization, convex optimization problems are desirable because they have a number of conventient properties. In particular, it holds for convex problems: A local minimum of a convex function is also a global minimum. A strictly convex function has at most \textbf{one} global minimum (uniqueness). 
-  \begin{center}
-  \includegraphics[width = 0.45\textwidth]{figure_man/convex-vs-nonconfex-landscape.png} \\
-  \begin{footnotesize} Li et al., 2018, Visualizing the Loss Landscape of Neural Nets. The problem on the bottom right is convex, the others are not. \end{footnotesize}
-  \end{center}
-  \item In practical terms complexity means that we do not need to worry to get stuck in a local minimum during risk minimization. 
-  \item Note that convexity of $\risket$ does not only depend on convexity of the loss function: Convexity of $\risket$ is also determined by the choice of the hypothesis space!
-  \item For example, if $\Lxy$ is convex in its second argument, and $\fxt$ is linear in $\thetab$, then $\risket$ is convex. If $L$ is not convex, $\risket$ might have multiple local minima (bad!).
+  \item In optimization, convex optimization problems are desirable because 
+  they have a number of conventient properties. 
+  \item In particular, it holds for convex problems that local minima are also 
+  global minima $\rightarrow$ a strictly convex function has at most 
+  \textbf{one} global minimum (uniqueness). 
+  \item Note, however, that convexity of $\risket$ depends both on convexity of 
+  \begin{itemize} 
+    \small
+    \item $L(\cdot)$ -- given in most cases -- and 
+    \item $\fxt$ -- often problematic.
+  \end{itemize}  
 \end{itemize} 
+
+\vfill
+
+\begin{minipage}[b]{0.5\textwidth}
+  \footnotesize \raggedright
+  \href{https://arxiv.org/pdf/1712.09913.pdf}{Li et al., 2018: 
+  \textit{Visualizing the Loss Landscape of Neural Nets}}. 
+  The problem on the bottom right is convex, the others are not (note that 
+  very high-dimensional surfaces are coerced into 3D here).  
+  \\
+  \phantom{foo}
+\end{minipage}%
+\begin{minipage}[b]{0.05\textwidth}
+  \phantom{foo}
+\end{minipage}%
+\begin{minipage}[b]{0.45\textwidth}
+  \includegraphics[width=\textwidth]{figure_man/convex-vs-nonconfex-landscape}
+\end{minipage}%
+
+  % \begin{center}
+  % \includegraphics[width = 0.45\textwidth]{figure_man/convex-vs-nonconfex-landscape.png} \\
+  % \begin{footnotesize} Li et al., 2018, Visualizing the Loss Landscape of Neural Nets. The problem on the bottom right is convex, the others are not. \end{footnotesize}
+  % \end{center}
+
+% \framebreak
+%   
+% \begin{itemize}
+%   \item In practical terms convexity means that we do not need to worry to get 
+%   stuck in local minima during risk minimization. 
+%   \item Note that convexity of $\risket$ does not only depend on convexity of the loss function: Convexity of $\risket$ is also determined by the choice of the hypothesis space!
+%   \item For example, if $\Lxy$ is convex in its second argument, and $\fxt$ is linear in $\thetab$, then $\risket$ is convex. If $L$ is not convex, $\risket$ might have multiple local minima (bad!).
+% \end{itemize} 
 
 \end{vbframe}
 
