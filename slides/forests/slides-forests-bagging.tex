@@ -1,7 +1,7 @@
 \input{../../style/preamble}
 \input{../../latex-math/basic-math.tex}
 \input{../../latex-math/basic-ml.tex}
-\input{../../latex-math/ml-bagging.tex}
+\input{../../latex-math/ml-ensembles.tex}
 
 \newcommand{\titlefigure}{figure_man/rf_majvot_averaging.png}
 \newcommand{\learninggoals}{
@@ -37,10 +37,10 @@
 
 \framebreak 
 In a \textbf{bagging} ensemble, all base learners are of the same type. The only difference between the models is the data they are trained on.\\
-Specifically, we train base learners $\blm, m = 1, \dots, M$ on $M$ \textbf{bootstrap} samples of training data $\D$:
+Specifically, we train base learners $\bl, m = 1, \dots, M$ on $M$ \textbf{bootstrap} samples of training data $\D$:
 \begin{itemize}
   \item Draw $n$ observations from $\D$ with replacement
-  \item Fit the base learner on each of the $M$ bootstrap samples to get models $\fh(x) = \blmh, m = 1, \dots, M$
+  \item Fit the base learner on each of the $M$ bootstrap samples to get models $\fh(x) = \blh, m = 1, \dots, M$
 \end{itemize}
 
 \begin{center}
@@ -71,12 +71,12 @@ Specifically, we train base learners $\blm, m = 1, \dots, M$ on $M$ \textbf{boot
 %     \State {\bf Input: } Dataset $\D$, base learner, number of bootstraps $M$
 %     \For {$m = 1 \to M$}
 %       \State Draw a bootstrap sample $\D^{[m]}$ from $\D$.
-%       \State Train base learner on $\D^{[m]}$ to obtain model $\blm$
+%       \State Train base learner on $\D^{[m]}$ to obtain model $\bl$
 %     \EndFor
 %     \State Aggregate the predictions of the $M$ estimators (via averaging or majority voting), to determine the bagging estimator:
 %     \begin{align*}
-%     \fM &= \frac{1}{M} \sum_{m=1}^M \blm \\
-%     \text{or}\quad \fM &= \argmax_{k \in \Yspace} \sum_{m=1}^M \I\left(\blm = k\right)
+%     \fM &= \frac{1}{M} \sum_{m=1}^M \bl \\
+%     \text{or}\quad \fM &= \argmax_{k \in \Yspace} \sum_{m=1}^M \I\left(\bl = k\right)
 %     \end{align*}
 %   \end{algorithmic}
 % \end{algorithm}
@@ -93,13 +93,13 @@ If the error of a base learner model is mostly due to (random) variability and n
 
 \framebreak
 \begin{scriptsize}
- Assume we use quadratic loss and measure instability of the ensemble with $\ambifM = \tfrac{1}{M}\sum^M_{m} \left(\blm- \fM \right)^2$:
+ Assume we use quadratic loss and measure instability of the ensemble with $\ambifM = \tfrac{1}{M}\sum^M_{m} \left(\bl- \fM \right)^2$:
  \vskip -2em
  \begin{align*}
- \ambifM &= \tfrac{1}{M}\sum^M_{m} \left(\blm- \fM\right)^2 \\
-         &= \tfrac{1}{M}\sum^M_{m} \left(\left(\blm - y\right)  + \left(y - \fM\right)\right)^2\\
-         &= \tfrac{1}{M}\sum^M_{m} L(y, \blm) + L(y, \fM) \underbrace{- 2 \left(y - \tfrac{1}{M}\sum^M_{m=1}\blm\right)\left(y - \fM\right)}_{- 2 L\left(y, \fM\right)} \\[-.5em] \intertext{So, if we take the expected value over the data's distribution:}
-         \Exy\left[L\left(y, \fM\right)\right] &= \tfrac{1}{M}\sum^M_{m} \Exy\left[L\left(y, \blm \right)\right] - \Exy\left[\ambifM\right] \end{align*}
+ \ambifM &= \tfrac{1}{M}\sum^M_{m} \left(\bl- \fM\right)^2 \\
+         &= \tfrac{1}{M}\sum^M_{m} \left(\left(\bl - y\right)  + \left(y - \fM\right)\right)^2\\
+         &= \tfrac{1}{M}\sum^M_{m} L(y, \bl) + L(y, \fM) \underbrace{- 2 \left(y - \tfrac{1}{M}\sum^M_{m=1}\bl\right)\left(y - \fM\right)}_{- 2 L\left(y, \fM\right)} \\[-.5em] \intertext{So, if we take the expected value over the data's distribution:}
+         \Exy\left[L\left(y, \fM\right)\right] &= \tfrac{1}{M}\sum^M_{m} \Exy\left[L\left(y, \bl \right)\right] - \Exy\left[\ambifM\right] \end{align*}
 \end{scriptsize}
 \small
 $\Rightarrow$ The expected loss of the ensemble is lower than the average loss of the single base learner by the amount of instability in the ensemble's base learners.\\ The more accurate and diverse the base learners, the better.
@@ -111,14 +111,14 @@ $\Rightarrow$ The expected loss of the ensemble is lower than the average loss o
 \begin{scriptsize}
 \begin{align*}
 \shortintertext{How to make $\Exy\left[\ambifM\right]$ as large as possible?}
-\Exy\left[L\left(y, \fM \right)\right] &= \tfrac{1}{M}\sum^M_{m} \Exy\left[L\left(y, \blm \right)\right] - \Exy\left[\ambifM\right] \\
-\shortintertext{Assume $\Exy\left[\blm\right] = 0$ for simplicity, $\var_{xy}\left[\blm\right] = \Exy\left[(\blm)^2\right] = \sigma^2$, $\corr_{xy}\left[\blm, \bl{m'}\right] = \rho$ for all $m, m'$.}
+\Exy\left[L\left(y, \fM \right)\right] &= \tfrac{1}{M}\sum^M_{m} \Exy\left[L\left(y, \bl \right)\right] - \Exy\left[\ambifM\right] \\
+\shortintertext{Assume $\Exy\left[\bl\right] = 0$ for simplicity, $\var_{xy}\left[\bl\right] = \Exy\left[(\bl)^2\right] = \sigma^2$, $\corr_{xy}\left[\bl, \bl{m'}\right] = \rho$ for all $m, m'$.}
 \implies 
 \var_{xy}\left[\fM\right] &= \tfrac{1}{M} \sigma^2 +  \tfrac{M-1}{M} \rho \sigma^2 \qquad\left(... = \Exy\left[(\fM)^2\right]\right)\\
- \Exy\left[\ambifM\right] &= \tfrac{1}{M}\sum^M_{m} \Exy\left[\left(\blm- \fM\right)^2\right]\\
- & = \tfrac{1}{M}\left(M \Exy\left[(\blm)^2\right] + M \Exy\left[(\fM)^2\right] - 
-     2 M \Exy\left[\blm\fM\right]\right) \\
-  & = \sigma^2  + \Exy\left[(\fM)^2\right] - 2 \tfrac{1}{M}\sum^M_{m'} \underbrace{\Exy\left[\blm \bl{m'} \right]}_{\mathclap{\qquad\qquad\qquad\qquad= \cov_{xy}\left[\blm, \bl{m'} \right] + \Exy\left[\blm\right]\Exy\left[\bl{m'}\right]}} \\
+ \Exy\left[\ambifM\right] &= \tfrac{1}{M}\sum^M_{m} \Exy\left[\left(\bl- \fM\right)^2\right]\\
+ & = \tfrac{1}{M}\left(M \Exy\left[(\bl)^2\right] + M \Exy\left[(\fM)^2\right] - 
+     2 M \Exy\left[\bl\fM\right]\right) \\
+  & = \sigma^2  + \Exy\left[(\fM)^2\right] - 2 \tfrac{1}{M}\sum^M_{m'} \underbrace{\Exy\left[\bl \bl{m'} \right]}_{\mathclap{\qquad\qquad\qquad\qquad= \cov_{xy}\left[\bl, \bl{m'} \right] + \Exy\left[\bl\right]\Exy\left[\bl{m'}\right]}} \\
   &=  \sigma^2  + \left(\tfrac{1}{M} \sigma^2 +   \tfrac{M-1}{M} \rho \sigma^2\right) - 2\left(\tfrac{M-1}{M} \rho\sigma^2 + \tfrac{1}{M}\sigma^2 + 0 \cdot 0 \right)\\
   &= \tfrac{M-1}{M} \sigma^2 (1-\rho)
 \end{align*}
@@ -126,9 +126,9 @@ $\Rightarrow$ The expected loss of the ensemble is lower than the average loss o
 
 \begin{small}
 \begin{align*}
-\Exy\left[L\left(y, \fM\right)\right] &= \textcolor{blue}{\tfrac{1}{M}\sum^M_{m} \Exy\left[L\left(y, \blm \right)\right]} - \Exy\left[\ambifM\right]\\
+\Exy\left[L\left(y, \fM\right)\right] &= \textcolor{blue}{\tfrac{1}{M}\sum^M_{m} \Exy\left[L\left(y, \bl \right)\right]} - \Exy\left[\ambifM\right]\\
 \Exy\left[\ambifM\right] &\cong 
-\textcolor{purple}{\frac{M-1}{M}} \textcolor{cyan}{\var_{xy}\left[\blm\right]} \textcolor{violet}{\left(1 - \corr_{xy}\left[\blm, \bl{m'}\right]\right)}
+\textcolor{purple}{\frac{M-1}{M}} \textcolor{cyan}{\var_{xy}\left[\bl\right]} \textcolor{violet}{\left(1 - \corr_{xy}\left[\bl, \bl{m'}\right]\right)}
 \end{align*}
 \end{small}
 \begin{itemize}
