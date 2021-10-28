@@ -29,8 +29,8 @@ p_1 <- ggplot2::ggplot(data.frame(x_1, y), aes(x = x_1, y = y)) +
 ggplot2::ggsave(
   "../figure/plot_bernoulli.png", 
   p_1,
-  height = 3L,
-  width = 3L)
+  height = 2L,
+  width = 3.5)
 
 p_2 <- p_1 + 
   ggplot2::annotate(

@@ -253,8 +253,8 @@ towards (0, 0) and compromises the original objective's smoothness.
   \footnotesize
   \item A function $\risket$ is convex if
   $$
-    \risk\left(t \cdot \thetab + (1 - t) \cdot \tilde \thetab\right) \le t \cdot
-    \risk\left(\thetab\right) + (1 - t) \cdot \risk\left(\tilde \thetab \right)
+  \riske\left(t \cdot \thetab + (1 - t) \cdot \tilde \thetab\right) \le t \cdot
+  \riske\left(\thetab\right) + (1 - t) \cdot \riske\left(\tilde \thetab \right)
   $$
   $\forall$ $t \in [0, 1], ~\thetab, \tilde \thetab \in \Theta$
   (strictly convex if the above holds with equality).
@@ -297,73 +297,180 @@ towards (0, 0) and compromises the original objective's smoothness.
 \begin{vbframe}{Analytical Properties: Convergence}
 
 \small
-The choice of the loss function may also impact the convergence behavior of the 
-optimization problem. 
+The choice of the loss function may also impact convergence behavior.
 
 \vspace{0.2cm}
 
-\begin{minipage}[b]{0.7\textwidth}
-  \begin{itemize} 
+In the extreme case of \textbf{complete separation} optimization might even 
+fail entirely. Consider the following scenario:
+
+\vspace{0.5cm}
+
+\begin{minipage}{0.7\textwidth}
+  \begin{itemize}
     \small
-    \item Example: optimizers, e.g., gradient descent, in logistic regression 
-    will not converge for 
-    linearly separable data (\textbf{complete separation}). 
-    \item This is a direct consequence of the convergence behavior of Bernoulli 
-    loss, which reaches 0 only in the infinite limit of the margin.
-  \end{itemize}  
+    \item Margin-based loss that is antitonic in
+    $y \cdot f$ -- for example, \textbf{Bernoulli loss}: 
+    % \scriptsize
+    $$\Lxy = \log \left( 1 + \exp \left( - y  \fx \right)\right)$$
+  \end{itemize}
 \end{minipage}%
-\begin{minipage}[b]{0.05\textwidth}
+\begin{minipage}{0.05\textwidth}
   \phantom{foo}
 \end{minipage}%
-\begin{minipage}[b]{0.25\textwidth}
+\begin{minipage}{0.25\textwidth}
   \includegraphics[width=\textwidth]{figure/plot_bernoulli}
 \end{minipage}%
 
-% \vfill
-% \includegraphics[width=0.4\textwidth]{figure_man/snap_bernoulli_loss}
+\vspace{0.3cm}
+
+\begin{itemize}
+  \small
+  \item Data perfectly separable by our learner
+  \begin{itemize}
+    \small
+    \item[$\Rightarrow$] $\yi \fxit > 0 ~~ \forall \xi \ne \zero$
+    \\ \vspace{0.1cm} \scriptsize 
+    as every $\xi$ is correctly classified: $\fxit < 0$ for
+    $\yi = -1$, $> 0$ for $\yi = 1$ \small
+    \vspace{0.1cm}
+    \item[$\Rightarrow$] $y \fxt = |\fxt|$ 
+  \end{itemize}
+  \vspace{0.1cm}
+  \item $f$ linear in $\thetab$ -- for example, 
+  \textbf{logistic regression} with $\fxt = s(\thx)$
+  %   \begin{itemize}
+  %   \small
+  %   \item[$\Rightarrow$] $f \left( \xv ~|~ a \cdot \thetab \right) = 
+  %   a \cdot \fxt$ for $a > 1$
+  % \end{itemize}
+\end{itemize}
+
 % \vfill
 
-\begin{itemize} 
-  \item In the case of complete separation, we have
-  \footnotesize
-  \begin{flalign*}
-    \risket &= \sumin \log \left( 1 + \exp \left( - \yi \thetab^T \xi \right)
-    \right) \\ &=
-    \sumin \log \left( 1 + \exp \left( - | \thetab^T \xi| \right)
-    \right),
-  \end{flalign*}
-  \small
-  as every observation is correctly classified (i.e., $\thetab^T \xi < 0$ \\for
-  $\yi = -1$ and $\thetab^T \xi > 0$ for $\yi = 1$).
-\end{itemize} 
+% With optimization, e.g., gradient descent, we can always find a set of 
+% parameters $\thetab^\prime$ that fully separates the data.
 
 \framebreak
 
 \begin{itemize} 
   \small
-  \item $\risket$ thus monotonically decreases in $\thetab$: if a parameter 
-  vector $\thetab^\prime$ is able to classify the samples perfectly, then 
-  $2\thetab^\prime$ also classifies the samples perfectly, and at lower risk.
-  \item Geometrically, this translates to an ever steeper slope of the 
-  logistic/softmax function, leading to increasingly sharp discrimination and 
-  infinitely running optimization.
-  
-  \vspace{0.3cm}
-  \begin{minipage}[b]{0.4\textwidth}
-    \includegraphics[width=0.8\textwidth]{figure/softmax_1}
-  \end{minipage}%
-  \begin{minipage}[b]{0.4\textwidth}
-    \includegraphics[width=0.8\textwidth]{figure/softmax_2}
-  \end{minipage}%
+  \item In optimization, e.g., with gradient descent, we can always find a set 
+  of parameters $\thetab^\prime$ that classifies all samples perfectly.
+  \item But taking a closer look at $\risket$, we find that the same can be 
+  achieved with $2 \cdot \thetab^\prime$ -- and at lower risk:
+  \begin{flalign*}
+    \riske(2 \cdot \thetab) &= \sumin  
+    % \log \left( 1 + \exp \left( - |2 \thetab^T \xi| \right)\right) \\
+    L \left( \left \rvert f\left( \xi ~|~ 2  \cdot \thetab \right) \right \rvert  
+    \right)
+    = \sumin L \left(2 \cdot \left \rvert \fxit \right \rvert \right) \\
+    &< \sumin L \left( \left \rvert \fxit \right \rvert \right) = \risket
+  \end{flalign*}
+  \item This actually holds true for every $a \cdot \thetab$ with $a > 1$.
+  \begin{itemize}
+    \small
+    \item[$\Rightarrow$] By increasing $\| \thetab \|$, our loss becomes smaller 
+    and smaller, and optimization runs infinitely.
+    % \item[$\Rightarrow$] This is a consequence of the above assumptions and 
+    % sometimes encountered in logistic regression and linear support vector 
+    % machines.
+  \end{itemize}
 \end{itemize}  
 
-\vfill
+\framebreak
 
-In practice, data are seldom linearly separable and misclassified 
-examples act as counterweights to increasing parameter values. Besides, we 
-can apply \textbf{regularization} to encourage convergence to robust solutions.
+\begin{itemize}
+  \small
+  \item
+  Geometrically, this translates to an ever steeper slope of the 
+  logistic/softmax function, i.e., increasingly sharp discrimination:
+  
+  \vspace{0.3cm}
+  \begin{minipage}[b]{0.5\textwidth}
+    \includegraphics[width=0.8\textwidth]{figure/softmax_1}
+  \end{minipage}%
+  \begin{minipage}[b]{0.5\textwidth}
+    \includegraphics[width=0.8\textwidth]{figure/softmax_2}
+  \end{minipage}%
+  \item In practice, data are seldom linearly separable and misclassified 
+  examples act as counterweights to increasing parameter values.
+  \item Besides, we can apply \textbf{regularization} to encourage convergence 
+  to robust solutions.
+\end{itemize}
 
 \end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+% \begin{vbframe}{Analytical Properties: Convergence}
+% 
+% \small
+% The choice of the loss function may also impact the convergence behavior of the 
+% optimization problem. 
+% 
+% \vspace{0.2cm}
+% 
+% \begin{minipage}[b]{0.7\textwidth}
+%   \begin{itemize} 
+%     \small
+%     \item Example: optimizers, e.g., gradient descent, in logistic regression 
+%     will not converge for 
+%     linearly separable data (\textbf{complete separation}). 
+%     \item This is a direct consequence of the convergence behavior of Bernoulli 
+%     loss, which reaches 0 only in the infinite limit of the margin.
+%   \end{itemize}  
+% \end{minipage}%
+% \begin{minipage}[b]{0.05\textwidth}
+%   \phantom{foo}
+% \end{minipage}%
+% \begin{minipage}[b]{0.25\textwidth}
+%   \includegraphics[width=\textwidth]{figure/plot_bernoulli}
+% \end{minipage}%
+% 
+% % \vfill
+% % \includegraphics[width=0.4\textwidth]{figure_man/snap_bernoulli_loss}
+% % \vfill
+% 
+% \begin{itemize} 
+%   \item In the case of complete separation, we have
+%   \footnotesize
+%   \begin{flalign*}
+%     \risket &= \sumin \log \left( 1 + \exp \left( - \yi \thetab^T \xi \right)
+%     \right) \\ &=
+%     \sumin \log \left( 1 + \exp \left( - | \thetab^T \xi| \right)
+%     \right),
+%   \end{flalign*}
+%   \small
+%   as every observation is correctly classified (i.e., $\thetab^T \xi < 0$ \\for
+%   $\yi = -1$ and $\thetab^T \xi > 0$ for $\yi = 1$).
+% \end{itemize} 
+% 
+% \framebreak
+% 
+% \begin{itemize} 
+%   \small
+%   \item $\risket$ thus monotonically decreases in $\thetab$: if a parameter 
+%   vector $\thetab^\prime$ is able to classify the samples perfectly, then 
+%   $2\thetab^\prime$ also classifies the samples perfectly, and at lower risk.
+%   \item Geometrically, this translates to an ever steeper slope of the 
+%   logistic/softmax function, leading to increasingly sharp discrimination and 
+%   infinitely running optimization.
+%   
+%   \vspace{0.3cm}
+%   \begin{minipage}[b]{0.4\textwidth}
+%     \includegraphics[width=0.8\textwidth]{figure/softmax_1}
+%   \end{minipage}%
+%   \begin{minipage}[b]{0.4\textwidth}
+%     \includegraphics[width=0.8\textwidth]{figure/softmax_2}
+%   \end{minipage}%
+% \end{itemize}  
+% 
+% \vfill
+% 
+% 
+% 
+% \end{vbframe}
 
 % ------------------------------------------------------------------------------
 
