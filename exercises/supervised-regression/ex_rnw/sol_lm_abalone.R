@@ -1,51 +1,94 @@
-library(mlr3)
-library(mlr3learners)
-library(mlr3viz)
+# PREP -------------------------------------------------------------------------
 
-# Download data from:
-# http://archive.ics.uci.edu/ml/datasets/Abalone
-
-url <-
-  "http://archive.ics.uci.edu/ml/machine-learning-databases/abalone/abalone.data"
+# Download data
+url <- "https://archive.ics.uci.edu/ml/machine-learning-databases/abalone/abalone.data"
 abalone <- read.table(url, sep = ",", row.names = NULL)
 colnames(abalone) <- c(
-  "Sex", "LongestShell", "Diameter", "Height",
-  "WholeWeight", "ShuckedWeight", "VisceraWeight",
-  "ShellWeight", "Rings"
-)
+  "sex", "longest_shell", "diameter", "height", "whole_weight", 
+  "shucked_weight", "visceral_weight", "shell_weight", "rings")
 
-# We only use 2 features:
-data <- abalone[, c("LongestShell", "WholeWeight", "Rings")]
+# Reduce to relevant columns
+abalone <- abalone[, c("longest_shell", "whole_weight", "rings")]
 
-# a)
+# a) ---------------------------------------------------------------------------
+
 library(ggplot2)
-ggplot(data, aes(x = LongestShell, y = WholeWeight, color = Rings)) +
-  geom_point(size = 2)
 
-# Preparation for b) and c)
-task_abalone <- TaskRegr$new(id = "abalone", backend = data, target = "Rings")
+# Plot weight vs shell length
+ggplot2::ggplot(
+  abalone, 
+  aes(x = longest_shell, y = whole_weight, col = rings)) +
+  ggplot2::geom_point(alpha = 0.7) +
+  ggplot2::scale_color_viridis_c() +
+  ggplot2::labs(
+    x = "longest shell", 
+    y = "whole weight",
+    title = "Weight vs shell length for abalone data")
 
-# b)
+# We see that weight scales exponentially with shell length and that larger /
+# heavier animals tend to have more rings.
 
-learner_lm <- lrn("regr.lm")
+# b) ---------------------------------------------------------------------------
+
+library(mlr3)
+
+# Specify regression task
+task_abalone <- mlr3::TaskRegr$new(
+  id = "abalone", backend = abalone, target = "rings")
+
+# b) ---------------------------------------------------------------------------
+
+library(mlr3learners)
+
+# Set up LM, train (by default, the target will be regressed on all features, 
+# i.e., target ~ .)
+learner_lm <- mlr3::lrn("regr.lm")
+
+# Train and predict
 learner_lm$train(task_abalone)
 pred_lm <- learner_lm$predict(task_abalone)
 
+# Inspect predictions
 head(data.frame(
-  id = 1:length(pred_lm$truth), truth = pred_lm$truth,
-  response = pred_lm$response
-))
+  id = 1:length(pred_lm$truth), 
+  truth = pred_lm$truth,
+  response = pred_lm$response))
 
-# c)
-learner_knn <- lrn("regr.kknn", k = 5)
-learner_knn$train(task_abalone)
-pred_knn <- learner_knn$predict(task_abalone)
+# c) ---------------------------------------------------------------------------
 
-head(data.frame(
-  id = 1:length(pred_knn$truth), truth = pred_knn$truth,
-  response = pred_knn$response
-))
+library(mlr3viz)
 
-# d)
-autoplot(pred_lm)
-autoplot(pred_knn)
+# Get nice visualization with a one-liner
+mlr3viz::autoplot(pred_lm)
+
+# We see a scatterplot of true vs predicted values, where the small bars along 
+# the axes (a so-called rugplot) indicate the number of observations that fall 
+# into this area.
+# As we might have suspected from the first plot, the underlying relationship 
+# is not exactly linear (ideally, all points and the resulting line should lie 
+# on the diagonal). With a linear model we tend to underestimate the response.
+
+# d) ---------------------------------------------------------------------------
+
+# Define MAE metric
+mae <- mlr3::msr("regr.mae")
+
+# Assess performance (MSE by default)
+pred_lm$score()
+pred_lm$score(mae)
+
+# ------------------------------------------------------------------------------
+
+# While we focus on "learning to predict" here, we can of course also do the 
+# usual model interpretation, e.g., examining the coefficients.
+
+# All effects highly significant
+summary(learner_lm$model)
+
+# Not-so-homoskedastic residuals
+ggplot2::ggplot(
+  data.frame(
+    x = learner_lm$model$fitted.values, 
+    y = learner_lm$model$residuals),
+  aes(x, y)) + 
+  ggplot2::geom_point()
