@@ -1,0 +1,35 @@
+Optimization routines for the Lasso use coordinate gradient descent, but instead of using gradients, they resort to subdifferentials. We now try to understand in more detail what subdifferentials are:
+\begin{enumerate}
+  \item Recall that the Taylor approximation of first order of a function $f(x)$ at point $x_0$ is $$f(x) \approx f(x_0) + f^\prime(x_0)(x-x_0).$$ On the other hand, a differentiable function $f$ is said to be convex on an interval $\mathcal{I}$ if and only if $$f(x) \geq f(x_0) + f^\prime(x_0)(x-x_0)$$ for all points $x,x_0 \in \mathcal{I}$.
+  \begin{enumerate}
+  \item  What conclusion can we therefore draw if we approximate a convex function with a Taylor approximation of first order? 
+  \item Visualize such an approximation for $x=0$ and different values $x_0$ for one of the following convex functions on $\mathcal{I} = [-2,2]$. Hint: Substract $f(x_0)$ from the inequality on both sides.
+  \end{enumerate}
+<<echo=FALSE, fig.height=5, fig.width=7>>=
+   xx = seq(-2, 2, by = 0.01); 
+   yy = xx^2
+   
+   plot(xx, xx^2, type = "l", xlab = "x", ylab = "f(x)", ylim=c(0,2))
+   points(xx, 2*xx^2, col = "red", type="l")
+   points(xx, sapply(xx,function(x) 0 + (x>0)*0.8*x), col = "blue", type="l")
+   points(xx, sapply(xx,abs), col = "orange", type="l")
+   legend("bottomright", col=c("black", "red", "blue", "orange"), lty=1, title = "f(x)=",
+          c(expression(x^2), expression(2*x^2), expression(paste("max(0,", 0.8*x, ")")), "|x|"))
+@
+
+  \item A subdifferential of $f$ is a set of values $\breve{\nabla}_x f$ defined as $$\breve{\nabla}_x f = \{ g: f(x) \geq f(x_0) + g \cdot (x-x_0) \, \forall x \in \mathcal{I} \}.$$ Every scalar value $g \in \breve{\nabla}_x$ is said to be a subgradient of $f$.  Does a subdifferential have any parallels to the previous question? How can we interpret $g$?
+  \item We can make use of subdifferentials for convex but non-differentiable loss functions like the one induced by the Lasso. It holds that:\\
+  \begin{center}
+  A point $x_0$ is the global minimum of a convex function $f$ $\Leftrightarrow$ $0$ is contained in the subdifferential $\breve{\nabla}_x f$.\\
+  \end{center}
+  We can define a subdifferential at point $x_0$ also as a non-empty interval $[x_l,x_u]$ where the lower and upper limit is defined by $$x_l = \lim_{x \to x_0^{-}} \frac{f(x)-f(x_0)}{x-x_0}, \quad x_u = \lim_{x \to x_0^{+}} \frac{f(x)-f(x_0)}{x-x_0}.$$ These resemble the limits of the derivative $\partial f / \partial x$ evaluated at a point very close to $x_0$ when coming from the left or right side, respectively. 
+  \begin{enumerate}
+  \item Derive $\breve{\nabla}_x f$ for $f(x) = |x|$ at $x_0 = 0$.
+  \item Is $0$ a global minimum? Explain.
+  \item What is the subdifferential of the Lasso penalty $\lambda \sum_{j=1}^p |\theta_j|$? Hint: $\breve{\nabla}_x (f+g) = \breve{\nabla}_x f + \breve{\nabla}_x g$. Also, a subdifferential of a constant function is $0$ and at any other differentiable point $x_0$, the subdifferential is equal to the gradient.
+  \end{enumerate}
+  \item Derive the subdifferential for the Lasso problem  $$\mathcal{R}_{reg} = n^{-1} \sum_{i=1}^n (y^{(i)} - x^{(i)}_{1}\theta_1 - x^{(i)}_{2}\theta_2)^2 + \lambda \sum_{j=1}^2 |\theta_j|$$ w.r.t. $\theta_2$, i.e., for an $L1$-regularized linear model with two linear features $x_1$ and $x_2$.
+\end{enumerate}
+
+
+

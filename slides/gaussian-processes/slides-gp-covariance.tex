@@ -1,0 +1,320 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+\input{../../latex-math/ml-gp}
+
+\newcommand{\titlefigure}{figure_man/covariance2D-2.png}
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Covariance Functions for GPs}
+\lecture{Introduction to Machine Learning}
+
+\begin{vbframe}{Covariance function of a GP}
+
+  The marginalization property of the Gaussian process implies that for any finite set of input values, the corresponding vector of function values is Gaussian:
+
+  $$
+    \bm{f} = \left[f\left(\xi[1]\right), ..., f\left(\xi[n]\right)\right] \sim \mathcal{N}\left(\bm{m}, \bm{K}\right),
+  $$ 
+
+
+\begin{itemize}
+  \item The covariance matrix $\bm{K}$ is constructed based on the chosen inputs $\left\{\xv^{(1)}, ..., \xv^{(n)}\right\}$.
+  \item Entry $\bm{K}_{ij}$ is computed by $k\left(\xi, \xi[j]\right)$.
+  \item Technically, for \textbf{every} choice of inputs $\left\{\xv^{(1)}, ..., \xv^{(n)}\right\}$, $\bm{K}$ needs to be positive semi-definite in order to be a valid covariance matrix.
+  \item A function $k(.,.)$ satisfying this property is called \textbf{positive definite}.
+
+\framebreak 
+
+  \item Recall, the purpose of the covariance function is to control to which degree the following is fulfilled: \vspace*{0.4cm}
+  \begin{itemize}
+    \item[] If two points $\xi, \xi[j]$ are close in $\Xspace$-space, their function values $f(\xi), f(\xi[j])$ should be close (\textbf{correlated}!) in $\Yspace$-space.
+  \end{itemize} \vspace*{0.4cm}
+  % \item[$\to$] $\bm{K}_{ij}$ is the covariance of $f\left(\xi\right)$ and $f\left(\xi[j]\right)$  \vspace*{0.4cm}
+
+  \item Closeness of two points $\xi, \xi[j]$ in input space $\Xspace$ is measured in terms of $\bm{d} = \xi - \xi[j]$: 
+  $$
+    k(\xi, \xi[j]) = k(\bm{d})
+  $$ 
+  % Such covoariance functions are called \textbf{stationary}.
+\end{itemize}
+
+% \framebreak 
+
+% Technically, in order to be a valid covariance function, the matrix $\Kmat$ needs to be positive semi-definite
+
+% \vspace*{-0.4cm}
+% \begin{eqnarray*}
+%  \bm{a}^T\Kmat \bm{a} &\ge& 0 ~~~ \forall \bm{a} \in \R^n \\
+% \Leftrightarrow \sum_{i = 1}^n a_i a_j k(\xv^{(i)}, \xv^{(j)}) &\ge& 0 ~~~ \forall \bm{a} \in \R^n.
+% \end{eqnarray*}
+
+% A function $k(.,.)$ satisfying this property for all possible pairs of inputs in $(\xv, \tilde \xv) \in \Xspace \times \Xspace$ 
+% is called \textbf{positive definite}. 
+
+% \framebreak
+
+% Intuitively, the covariance function $k(\xv, \xv^\prime)$ is a \textbf{similarity} measure between points:    
+% \begin{itemize}
+
+% \item if two points are close in $\mathcal{X}$, $k(\xv, \xv^\prime)$ is usually high - the correlation between the function values $\fx, f(\xv^\prime)$ is high
+% \item if they are far away from each other, $k(\xv, \xv^\prime)$ is small and the function values are not correlated that strongly
+% \end{itemize}
+
+% The covariance function quantifies the notion of \enquote{closeness}. It therefore encodes \textbf{our assumptions} about the shape of the function we are interested in: how much variation in $\fx$ we expect over which distances in $\Xspace$.
+
+\end{vbframe}
+
+\begin{frame}{Covariance Function of a GP: Example} 
+
+\begin{itemize}
+  \item Let $\fx$ be a GP with $k(\xv, \xv^\prime) = \exp(-\frac{1}{2}\|\bm{d}\|^2)$ with $\bm{d} = \xv - \xv^\prime$.
+  \item Consider two points $\xi[1] = 3$ and $\xi[2] = 2.5$. 
+  \item If you want to know how correlated their function values are, compute their correlation!
+    \begin{figure}
+      \includegraphics[width=0.45\textwidth]{figure_man/covariance2point/example_covariance_1.png}
+      \includegraphics[width=0.45\textwidth]{figure_man/covariance2point/example_function_1-1.png}
+    \end{figure}
+\end{itemize}
+
+\end{frame}
+
+\begin{vbframe}{Covariance Function of a GP: Example} 
+
+\begin{itemize}
+  \item Assume we observed a value $\yi[1] = - 0.8$, the value of $\yi[2]$ should be close under the assumption of the above Gaussian process. 
+\end{itemize}
+
+\begin{figure}
+  \includegraphics[width=0.45\textwidth]{figure_man/covariance2point/example_covariance_1.png} ~      \includegraphics[width=0.45\textwidth]{figure_man/covariance2point/example_function_1-2.png}
+\end{figure}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Covariance Function of a GP: Example} 
+
+\begin{itemize}
+  \item Let us compare another point $\xi[3]$ to the point $\xi[1]$
+  \item We again compute their correlation
+  \item Their function values are not very much correlated; $\yi[1]$ and $\yi[3]$ might be far away from each other
+\end{itemize}
+
+\begin{figure}
+  \includegraphics[width=0.45\textwidth]{figure_man/covariance2point/example_covariance_2.png} ~      \includegraphics[width=0.45\textwidth]{figure_man/covariance2point/example_function_2-1.png}
+\end{figure}
+
+\end{vbframe}
+
+% Given an initial point $\xv^{(1)} = 3$ with $f(\xv^{(1)}) = -0.8$, we want to draw a function value for $\xv^{(2)} = 2.5$. 
+
+% \begin{center}
+% \includegraphics{figure_man/covariance2point_1.png}
+% \end{center}
+% }
+
+% \only<2>{Calculating the distance and using the kernel function as a \enquote{look-up-table} for the correlation of the function values, we see that they are highly correlated. We expect the $y$ values being close.  }
+
+% \only<2>{
+% \begin{center}
+% \includegraphics{figure_man/covariance2point_2.png}
+% \end{center}}
+
+% \only<3->{If in comparison we want to draw a function value for at $x^{(3)} = 5$ given $x^{(1)}$ we see on the right plot that the correlation is low. We do not expect the function value being close to $y^{(1)}$. }
+
+% \only<3>{
+% \begin{center}
+% \includegraphics{figure_man/covariance2point_3.png}
+% \end{center}}
+
+% \only<4>{
+% \begin{center}
+% \includegraphics{figure_man/covariance2point_4.png}
+% \end{center}}
+
+
+
+\begin{vbframe}{Covariance Functions}
+
+There are three types of commonly used covariance functions:
+
+\begin{itemize}
+
+\item $k(.,.)$ is called stationary if it is as a function of $\bm{d} = \bm{x} - \bm{x}^\prime$, we write $k(\bm{d})$.\\
+Stationarity is invariance to translations in the input space: $k(\bm{x},\bm{x} + \bm{d}) = k(\bm{0}, \bm{d})$
+\item $k(.,.)$ is called isotropic if it is a function of $r = \|\bm{x} - \bm{x}^\prime\|$, we write $k(r)$.\\
+Isotropy is invariance to rotations of the input space and implies stationarity. 
+\item $k(., .)$ is a dot product covariance function if $k$ is a function of $\bm{x}^T \bm{x}^\prime$
+\end{itemize}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Commonly used covariance functions}
+
+\begin{table}[]
+\centering
+\begin{tabular}{|c|c|}
+\hline
+Name & $k(\bm{x}, \bm{x}^\prime)$\\
+\hline
+constant & $\sigma_0^2$ \\ [1em]
+linear & $\sigma_0^2 + \bm{x}^T\bm{x}^\prime$ \\ [1em]
+polynomial & $(\sigma_0^2 + \bm{x}^T\bm{x}^\prime)^p$ \\ [1em]
+squared exponential & $\exp(- \frac{\|\bm{x} - \bm{x}^\prime\|^2}{2\ls^2})$ \\ [1em]
+Matérn & \begin{footnotesize} $\frac{1}{2^\nu \Gamma(\nu)}\biggl(\frac{\sqrt{2 \nu}}{\ls}\|\bm{x} - \bm{x}^\prime\|\biggr)^{\nu} K_\nu\biggl(\frac{\sqrt{2 \nu}}{\ls}\|\bm{x} - \bm{x}^\prime\|\biggr)$\end{footnotesize}  \\ [1em]
+exponential & $\exp\left(- \frac{\|\bm{x} - \bm{x}^\prime\|}{\ls}\right)$ \\ [1em]
+\hline
+\end{tabular}
+\end{table}
+\begin{footnotesize}
+$K_\nu(\cdot)$ is the modified Bessel function of the second kind.
+\end{footnotesize}
+
+
+\begin{center}
+
+\includegraphics{figure_man/covariance.png}
+\end{center}
+\vskip -1 em
+\begin{footnotesize}
+\begin{itemize}
+\item Random functions drawn from Gaussian processes with a Squared Exponential Kernel (left), Polynomial Kernel (middle), and a Matérn Kernel (right, $\ls = 1$). 
+\item The length-scale hyperparameter determines the ``wiggliness'' of the function.
+\item For Matérn, the $\nu$ parameter determines how differentiable the process is.
+\end{itemize}
+\end{footnotesize}
+\end{vbframe}
+
+% \begin{vbframe}{Making New Kernels from Old}
+
+% Kernels can be
+
+% \begin{itemize}
+% \item Summed together
+% \begin{itemize}
+% \item on the same space $k(\xv, \xv') = k_1(\xv, \xv') + k_2(\xv, \xv')$
+% \item on tensor space $k(\xv, \xv') = k_1(x_1, x_1') + k_2(x_2, x_2')$
+% \end{itemize}
+% \item Multiplied together
+% \begin{itemize}
+% \item on the same space $k(\xv, \xv') = k_1(\xv, \xv') \cdot k_2(\xv, \xv')$
+% \item on tensor space $k(\xv, \xv') = k_1(x_1, x_1') \cdot k_2(x_2, x_2')$
+% \end{itemize}
+% \item Composed with a function $k(\xv, \xv') = k_1(g(\xv), g(\xv'))$ 
+% \end{itemize}
+
+% All these operations will preserve the positive definiteness (see exercise). 
+% More details: lecture about kernel methods.
+
+% \end{vbframe}
+%-----------------------------------------------------------------------
+
+\begin{vbframe}{Squared Exponential Covariance Function}
+
+The squared exponential function is one of the most commonly used covariance functions.
+$$
+k(\xv, \xv^\prime) = \exp\biggl(- \frac{\|\xv - \xv^\prime\|^2}{2\ls^2}\biggr).
+$$
+
+\textbf{Properties}:
+\begin{itemize}
+\item It depends merely on the distance $r = \|\xv - \xv^\prime\|$ $\to$ isotropic and stationary.\lz
+\item Infinitely differentiable $\to$ sometimes deemed 
+  unrealistic for modeling most of the physical processes.
+
+\end{itemize}
+
+\end{vbframe}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[c,allowframebreaks]{Characteristic Length-Scale}
+    $$k(\xv, \xv^\prime) = \exp\left(-\frac{1}{2\ls^2}\|\xv - \xv^\prime\|^2\right)$$
+% \begin{figure}
+	% \includegraphics[width = .8\textwidth]{figure/lengthscale-1.pdf}
+% \end{figure}
+$\ls$ is called \textbf{characteristic length-scale}. Loosely speaking, the characteristic length-scale describes how far you need to move in input space for the function values to become uncorrelated. Higher $\ls$ induces smoother functions, lower $\ls$ induces more wiggly functions.
+
+\begin{figure}
+\includegraphics[width=0.6\textwidth]{figure_man/gp-sqexp-l-1.pdf}
+\end{figure}
+
+% \begin{itemize}
+    % \item Left: for higher $\ls$ the correlation between function values (for unchanged distance of input points) is also higher
+    % \item Right plot: a higher $\ls$ induces a smoother function 
+% \end{itemize}
+
+\framebreak
+
+For $p \geq 2$ dimensions, the squared exponential can be parameterized:
+
+$$
+k(\xv, \xv^\prime) = \exp\,\biggl(- \frac{1}{2}\left(\xv - \xv^\prime\right)^\top\bm{M}\left(\xv - \xv^\prime \right)\biggr)
+$$
+
+Possible choices for the matrix $\bm{M}$ include
+
+$$
+\bm{M}_1 = \ls^{-2}\id \qquad \bm{M}_2 = \text{diag}(\bm{\ls})^{-2} \qquad \bm{M}_3 = \Gamma \Gamma^\top + \text{diag}(\bm{\ls})^{-2}
+$$
+
+where $\bm{\ls}$ is a $p$-vector of positive values and $\Gamma$ is a $p \times k$ matrix. 
+
+\lz
+
+The 2nd (and most important) case can also be written as 
+$$
+  k(\bold{d}) = \exp\,\biggl(- \frac{1}{2} \sumjp \frac{d_j^2}{l_j^2} \biggr)
+$$
+
+% Here again, $\bm{\ls} = (\ls_1,\dots, \ls_p)$ are characteristic length-scales for each dimension. 
+
+
+\framebreak
+
+
+What is the benefit of having an individual hyperparameter $\ls_i$ for each dimension?
+
+\vspace{4mm}
+
+\begin{itemize} 
+\item The $\ls_1,\dots, \ls_p$ hyperparameters play the role of \textbf{characteristic length-scales}.
+\vspace{2mm}
+\item Loosely speaking, $\ls_i$ describes how far you need to move along axis $i$ in input space for the function values to be uncorrelated.
+\vspace{2mm}
+\item Such a covariance function implements \textbf{automatic relevance determination} (ARD), since the inverse of the length-scale $\ls_i$ determines the relevancy of input feature $i$ to the regression.
+\vspace{2mm}
+\item If $\ls_i$ is very large, the covariance will become almost independent of that input, effectively removing it from inference.
+\vspace{2mm}
+\item If the features are on different scales, the data can be automatically \textbf{rescaled} by estimating $\ls_1,\dots, \ls_p$ 
+
+\end{itemize}
+
+
+
+\framebreak
+
+
+\begin{figure}
+	\includegraphics[width = .8\textwidth]{figure_man/covariance2D.png}
+\end{figure}
+
+\vspace{3mm}
+%\begin{footnotesize}
+For the first plot, we have chosen $\bm{M} = \id$: the function varies the same in all directions. The second plot is for $\bm{M} = \text{diag}(\bm{\ls})^{-2}$ and $\bm{\ls} = \left(1, 3 \right)$: The function varies less rapidly as a function of $x_2$ than $x_1$ as the length-scale for $x_1$ is less. In the third plot $\bm{M} = \Gamma \Gamma^T + \text{diag}(\bm{\ls})^{-2}$ for $\Gamma = (1, -1)^\top$ and $\bm{\ls} = (6, 6)^\top$. Here $\Gamma$ gives the direction of the most rapid variation. (Image from Rasmussen \& Williams, 2006)
+%\end{footnotesize}
+
+
+\end{frame}
+
+\endlecture
+\end{document}
+

@@ -1,0 +1,82 @@
+sketch
+{
+	bounding-box -40 0 240 220;
+	font "Helvetica" 6;
+}
+{
+	var factor = 1.0;
+	var epsilon = 0.125 / factor;
+	var right = 0.3;
+	var xx = 100 + 300 * epsilon;
+
+	func density(t)
+	{
+		t = factor * t;
+		var p = [-0.2, -0.1, -0.05, 0.0, 0.02, 0.15];
+		var s = [0.5, 1.0, 2.5, 1.0, 4.5, 0.5];
+		var value = 0.0;
+		for (var i=0; i<6; i++;) value = value + s[i] * sqrt(2) * exp(-400.0 * (t - p[i])^2);
+		return = factor * value;
+	}
+
+	SetPlotCoordinates([100, 60], [300, 8]);
+	CoordinateSystem([-0.3, 0.3, 0.02, 0.1], [-5, 15, 1, 5]);
+	Text([210, 60], "risk");
+	Text([100, 205], "density");
+
+	func x2p(x) = [100, 60] + [x * 300, 0];
+	func x2pd(x) = [100, 60] + [x * 300, density(x) * 8];
+
+	func curve1(t)
+	{
+		if (t < 0.5) then
+		{
+			t = 2.0 * t;
+			var x = (1.0 - t) * epsilon + t * (-3.0);
+			return = x2pd(x);
+		}
+		else if (t < 0.9) then
+		{
+			t = 2.5 * (t - 0.5);
+			var x = t * epsilon + t * (-3.0);
+			return = x2p(x);
+		}
+		else
+		{
+			t = 10.0 * (t - 0.9);
+			return = (1.0 - t) * x2p(epsilon) + t * x2pd(epsilon);
+		}
+	}
+
+	func curve2(t)
+	{
+		if (t < 0.5) then
+		{
+			t = 2.0 * t;
+			var x = (1.0 - t) * epsilon + t * right;
+			return = x2pd(x);
+		}
+		else if (t < 0.9) then
+		{
+			t = 2.5 * (t - 0.5);
+			var x = t * epsilon + t * right;
+			return = x2p(x);
+		}
+		else
+		{
+			t = 10.0 * (t - 0.9);
+			return = (1.0 - t) * x2p(epsilon) + t * x2pd(epsilon);
+		}
+	}
+	FilledPCurve(&curve1, bgcolor=[1,1,0]);
+	FilledPCurve(&curve2, bgcolor=[0,0.7,0]);
+	Line([xx, 20], [xx, 180], style="dashed", linewidth=0.5);
+	var m = 0.5 * (100 + xx);
+	Arrow([m, 30], [100, 30], 6, 3);
+	Arrow([m, 30], [xx, 30], 6, 3);
+	Text([m, 20], "epsilon");
+
+	PlotFunction(&density, -0.33, 0.33, color=[1,0,0], linewidth=0.5);
+
+	Arrow([150, 100], [xx + 5, 63]); Text([154, 100], "delta");
+}
