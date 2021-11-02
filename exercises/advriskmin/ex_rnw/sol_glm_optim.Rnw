@@ -1,0 +1,98 @@
+\begin{enumerate}[a)]
+
+  
+  
+  \item The normal and gamma distribution assume a continuous target variable, however, we do have a discrete target variable.
+  Since the target variable (number of cars) represents a count variable, Bernoulli (taking only the values 0 and 1) is not a suitable choice in this context. It follows that the only reasonable choice of the given distributions is the Poisson distribution.
+  The Poisson distribution depends on the parameter $\lambda$, where the expected value is given by $E(Y|\xv) = \lambda ( \xv)$.
+  The log link function is given by $\log(\lambda(\xv)) = \thetab^T \xv$.
+  Following from that the probability function is given by
+  $$
+  P(Y = y) = \frac{\exp{(-\lambda(\xv))} \cdot (\lambda(\xv))^{y}}{y!} = \frac{\exp{(-\exp{(\thetab^T \xv)})} \cdot (\exp{\thetab^T \xv})^{y}}{y!}
+  $$
+  for $y \in \N_0$.
+  
+  
+  \item We can write the hypothesis space as:
+  
+  \begin{flalign*}
+    \Hspace = \{\fxt = \exp(\thetab^T \xv) ~|~ \thetab \in \R^3 \}
+    =  \{\fxt = \exp(\theta_0 + \theta_1 x_1 + \theta_2 x_2) ~|~ 
+    (\theta_0, \theta_1, \theta_2) \in \R^3 \}.
+    % \Hspace &= \{ f: (\R_{0}^{+})^2 \rightarrow \R ~|~ 
+    % \fx = \theta_0 + \thetab^T \xv, ~ (\theta_0, \thetab) \in \R^3 \} \\
+    % &=  \{ f: (\R_{0}^{+})^2 \rightarrow \R ~|~ 
+    % \fx = \theta_0 + \theta_{\text{age}} x_{\text{age}} + 
+    % \theta_{\text{mileage}} x_{\text{mileage}}, ~ (\theta_0, 
+    % \theta_{\text{age}}, \theta_{\text{mileage}}) \in \R^3 \},
+  \end{flalign*}
+  
+  Note the \textbf{slight abuse of notation} here: in the lecture, we first 
+  define $\thetab$ to only consist of the feature coefficients, with $\xv$ 
+  likewise being the plain feature vector. For the sake of simplicity, however, 
+  it is more convenient to append the intercept coefficient to the vector of 
+  feature coefficients. This does not change our model formulation, but we have 
+  to keep in mind that it implicitly entails adding an element 1 at the first 
+  position of each feature vector, i.e., $\xi := (1, x_1, x_2)^{(i)} \in 
+  \{1\} \cup \Xspace$, constituting the familiar column of ones in the design 
+  matrix $\Xmat$.
+  
+  \item The parameter space is included in the definition of the hypothesis 
+  space and in this case given by $\Theta = \R^3$.
+  
+  
+  \item 
+  The likelihood for the Poisson distribution is defined by:
+   \begin{flalign*}
+  \LL(\thetab | \xv) &= 
+  \prodin \frac{\exp{(-\exp{(\thetab^T \xi)})} \cdot (\exp{(\thetab^T \xi)})^{\yi}}{\yi!}
+  \end{flalign*}
+  
+  
+  The first thing to note is that both MLE and ERM are 
+  \textbf{optimization problems}, and both should lead us to the same optimum. 
+  Their opposite signs are not a problem: maximizing the likelihood is 
+  equivalent to minimizing the negative likelihood. 
+  Also, both are defined pointwise.
+  The last thing to fix is therefore the product introduced by the independence 
+  assumption in the joint likelihood of all observations (recall that we use 
+  a \textit{summed} loss in ERM), for which the logarithm is a natural remedy.
+  We can thus simply use the \textbf{negative log-likelihood (NLL)} as our loss 
+  function (and indeed, many known loss functions can be shown to correspond to 
+  certain model likelihoods).
+  
+  
+  
+  Let's put these reflections to practice:
+  
+  \begin{flalign*}
+    L_{NLL}\left (\yi, f\left( \xi | \thetab \right) \right) 
+    &= - \log \LL(\thetab | \xi) \\
+    &= - \ell(\thetab | \xi) \\
+    &= - \log \frac{\exp{(-\exp{(\thetab^T \xi)})} \cdot (\exp{(\thetab^T \xi)})^{\yi}}{\yi!} \\
+    &= \exp{(\thetab^T \xi)} - \yi (\thetab^T \xi) + \log(\yi!)
+  \end{flalign*}
+  
+  \begin{flalign*}
+    \risket &= \sumin - \ell(\thetab | \xi) \\
+    &= \sumin L_{NLL}\left (\yi, f\left( \xi | \thetab \right) \right)  \\
+    &= \sumin \exp{(\thetab^T \xi)} - \yi (\thetab^T \xi) + \log(\yi!) \\
+    &\propto \sumin \exp{(\thetab^T \xi)} - \yi (\thetab^T \xi) \\
+  \end{flalign*}  
+  
+  As we are only interested in the feature coefficients here, we neglect all 
+  irrelevant terms that do not depend on $\thetab$ as they have no effect on
+  the solution (i.e., the $\argmin$ of $\risket$).
+  This is what the proportional sign $\propto$, often used in 
+  contexts of optimization and Bayesian statistics, means: we keep 
+  only expressions impacted by our parameter of interest because they suffice 
+  to yield the intended results or show some property of interest.
+  
+  %From this we can easily see the correspondence between MLE and ERM:
+  %the $L2$ loss is proportional to the negative log-likelihood and hence, the 
+  %$\argmax$ of the likelihood (using the assumption of normally distributed 
+  %errors) and the $\argmin$ of the risk (using $L2$ loss) are equivalent.
+  
+  
+
+\end{enumerate}
