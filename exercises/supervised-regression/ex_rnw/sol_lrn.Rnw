@@ -1,25 +1,75 @@
-\begin{enumerate}
-\item[a)] Learning consists of \textit{representation} (hypothesis space), 
-\textit{evaluation} (risk) and \textit{optimization}. \\
-A learner in mlr3 can be thought of as the implementation of these components, 
-since 
-\begin{itemize}
-\item a representation of the associated model learnt from the data by 
-using the implemented optimization is stored in such a learner object,
-\item its performance measures can be accessed afterwards.
-\end{itemize}
-\item[b)] 
+\begin{enumerate}[a)]
+
+  \item Model classes representing a certain \textbf{hypothesis} are stored in 
+  \texttt{learner} objects. Before training them on actual data, they just 
+  contain information on the functional form of $f$.
+  Once a learner has been trained we can examine the parameters of the 
+  resulting model.
+  The empirical \textbf{risk} can be assessed after training by several 
+  performance measures (e.g., based on $L2$ loss).
+  \textbf{Optimization} happens rather implicitly as \texttt{mlr3} only acts as 
+  a wrapper for existing implementations and calls package-specific 
+  optimization procedures.
+  
+  \item
 <<echo=TRUE, message=FALSE>>=
 library(mlr3)
-library(mlr3learners)
-
-# show all available learners
-mlr_learners$keys()
-
-# see settings for a specific learner, e.g., for a regression tree
-rpart_learner <- lrn("regr.rpart")
-print(rpart_learner)
-@
-
-
+mlr3::tsk("iris")
+@  
+  We obtain the following information:
+  \begin{itemize}
+    \item \texttt{iris} is a classification task.
+    \item It has 150 observations of 5 variables, one of which is the 
+    target.
+    \item The target \texttt{Species} contains more than 2 classes.
+    \item We have 4 features, all of them floating numbers (\texttt{dbl}).
+  \end{itemize}
+  If necessary, we can specify further task attributes. For example, we might 
+  have one feature that merely stores unique identifiers for each observation. 
+  \texttt{mlr3} allows us to set the \textit{role} of this variable to an 
+  ID variable. We can also assign roles of weighting or stratifying variables in 
+  analogous fashion. Other task attributes include the number of missing values 
+  per feature and the so-called \textit{backend} (the raw data we created our 
+  task from -- besides using predefined tasks like \texttt{iris} it is 
+  possible to specify tasks from any data of suitable format).
+  
+  \item Let's have a look at the available learners (in case you are wondering 
+  why this list is so short: there is a dedicated extension package, 
+  \texttt{mlr3learners}, that holds other learners besides these most basic 
+  ones, and there is even \texttt{mlr3extralearners}):
+<<echo=TRUE, message=FALSE>>=
+mlr3::mlr_learners$keys()
+@  
+  Let's check out the \textbf{regression tree} learner. 
+  Roughly speaking, regression trees create small, homogeneous subsets 
+  (\enquote{nodes}) by repeatedly splitting the data at some cut-off (e.g., for 
+  \texttt{iris}: 
+  partition into observations with \texttt{Sepal.Width} $\leq 3$ and $> 3$), and 
+  predict the mean target value within each final group.
+<<echo=TRUE, message=FALSE>>=
+mlr3::lrn("regr.rpart")
+@  
+  We obtain the following information:
+  \begin{itemize}
+    \item \texttt{regr.rpart} is a \textit{regression} learner (as you may have 
+    noticed above, there is a separate tree learner for classification).  
+    \item It has not been trained yet, so no model is stored.
+    \item The underlying package is \texttt{rpart}.
+    \item \texttt{regr.rpart} predicts \textit{response} (unsurprisingly, but 
+    classification learners might also predict \textit{probabilities}).
+    \item It supports boolean, numerical and categorical features (but no 
+    date variables, for instance).
+    \item Special properties include the ability to handle missing values and 
+    compute feature importance.
+    \item Regarding hyperparameters, we see that some \texttt{xval} has been 
+    set (the function reference can be found at 
+    \url{https://cran.r-project.org/web/packages/rpart/rpart.pdf}). 
+    However, there is typically a whole bunch of configurable hyperparameters:
+<<echo=TRUE, message=FALSE>>=
+mlr3::lrn("regr.rpart")$param_set
+@  
+    We might, for example, override the default of \texttt{minsplit}, which 
+    states the minimum number of observations a node must contain to be 
+    split further.
+  \end{itemize}
 \end{enumerate}
