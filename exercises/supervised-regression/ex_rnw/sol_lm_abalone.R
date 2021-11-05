@@ -36,7 +36,7 @@ library(mlr3)
 task_abalone <- mlr3::TaskRegr$new(
   id = "abalone", backend = abalone, target = "rings")
 
-# b) ---------------------------------------------------------------------------
+# c) ---------------------------------------------------------------------------
 
 library(mlr3learners)
 
@@ -54,7 +54,7 @@ head(data.frame(
   truth = pred_lm$truth,
   response = pred_lm$response))
 
-# c) ---------------------------------------------------------------------------
+# d) ---------------------------------------------------------------------------
 
 library(mlr3viz)
 
@@ -68,7 +68,7 @@ mlr3viz::autoplot(pred_lm)
 # is not exactly linear (ideally, all points and the resulting line should lie 
 # on the diagonal). With a linear model we tend to underestimate the response.
 
-# d) ---------------------------------------------------------------------------
+# e) ---------------------------------------------------------------------------
 
 # Define MAE metric
 mae <- mlr3::msr("regr.mae")
