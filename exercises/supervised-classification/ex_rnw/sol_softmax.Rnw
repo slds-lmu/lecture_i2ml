@@ -1,11 +1,12 @@
 \begin{enumerate}[a)]
 
   \item As we would expect, the two formulations are equivalent (up to 
-  reparameterization):
+  reparameterization). 
+  In order to see this, consider the softmax function components:
   \begin{flalign*}
     \pikxt[1] &= \frac{\exp (\thetab_1^\top \xv)}{\exp (\thetab_1^\top \xv) +
     \exp (\thetab_2^\top \xv)} \\
-    \pikxt[2] &= \frac{\exp (\thetab_1^\top \xv)}{\exp (\thetab_1^\top \xv) +
+    \pikxt[2] &= \frac{\exp (\thetab_2^\top \xv)}{\exp (\thetab_1^\top \xv) +
     \exp (\thetab_2^\top \xv)},
   \end{flalign*}
   where $\pikxt[1] + \pikxt[2] = 1$.
@@ -16,13 +17,15 @@
     &= \frac{1}{1 + \exp (- \thx)} \\
     &= \pixt,
   \end{flalign*}
-  if we set $\thetab := \thetab_1 - \thetab_2$ and 
-  $\pikxt[2] = 1 - \pikxt[1]$.
+  i.e., the binary-case logistic function,
+  if we set $\thetab := \thetab_1 - \thetab_2$.
+  % and $\pikxt[2] = 1 - \pikxt[1]$.
 
   \item The joint likelihood is easy to compute with the \textit{iid} assumption
   we are willing to make.
   It is simply given by the product over all individual likelihoods:
-  $$\LLt = \prodin \prod_{j = 1}^g \pi_j(\xi)^{\I{(\yi = j)}}.$$
+  $$\LLt = \prodin \prod_{j = 1}^g \pi_j\left(\xi ~|~ \thetab \right)^{
+  \I{(\yi = j)}}.$$
   
   \item Right now, $\LLt$ does not look anything like an empirical risk 
   function.
@@ -35,39 +38,41 @@
     \item Then we get rid of the (outer) product over all 
     observations, which we would like to turn into a sum.
     This is achieved by taking the log, a strictly monotonic 
-    transformation that has no effect on the optimizer:
+    transformation that has no effect on the optimizer (recall that 
+    $\log (a \cdot b) = \log a + \log b$):
     $$\argmint \prodin - \LL_i(\thetab) = \argmint \sumin - \logl_i(\thetab).$$
     The inner product over all classes also becomes a sum in this new 
     formulation (before, we wanted all probability functions but the one 
     corresponding to the true class to become 1 factors, now we want them to 
     become 0 summands):
     $$\argmint \sumin - \logl_i(\thetab) = \argmint \sumin - \left( \sumjg 
-    \I(y = j) \log \pikx[j] \right)$$
+    \I(y = j) \log \pi_j\left(\xi ~|~ \thetab \right) \right)$$
     \item And we have already found an expression that is conformal with the 
     empirical risk minimization principle:
     $$\thetabh_{\text{MLE}} = \thetabh_{\text{ERM}} = 
     \argmint \underbrace{\sumin \underbrace{- \left( \sumjg \I(y = j) \log 
-    \pikx[j] \right)}_{\Lxyit}}_{\risket}$$
+    \pi_j\left(\xi ~|~ \thetab \right) \right)}_{\Lxyit}}_{\risket}$$
   \end{itemize}
   As the above transformations are universally applicable, we can always use 
   the negative log-likelihood (NLL) as a loss function in empirical risk 
-  minimization (not every loss function, however, corresponds to a likelihood 
+  minimization (not every loss function, however, has a corresponding likelihood 
   formulation).
   
   \item The $k$-th discriminant function has the following form:
   $$ \pikxt = \frac{\exp(\thetab_k^\top \xv)}{\sumjg 
   \exp(\thetab_j^\top \xv)} %~~ =: s_k(\xv ~|~ \thetab) 
   ~~ \in [0, 1],$$
-  and $\sum_{k = 1}^g \pikx = 1$.
+  and $\sum_{k = 1}^g \pikxt = 1$.
   This sum-one constraint means that one set of parameters is actually 
   redundant: if we know the first $g - 1$ discriminant functions, the $g$-th one 
   is fully specified.
-  Therefore, we set $\thetabh_g = \zero$ and compute $\P(\hat y = g) = 
-  1 - \sum_{k = 1}^{g - 1} \pikxh$.
+  Therefore, we set $\thetabh_g = \zero$ and compute $\P(\hat y = g ~|~ \xv, 
+  \thetab) = 
+  1 - \sum_{k = 1}^{g - 1} \hat{\pi}_k (\xv ~|~ \thetab)$.
   
   The highest of the thus estimated posterior class probabilities then 
   determines the actual class label prediction:
-  $$\yh = \argmax_{k \in \gset} \pikxh.$$
+  $$\yh = \argmax_{k \in \gset} \hat{\pi}_k (\xv ~|~ \thetab).$$
   
   \item In order to state the hypothesis space for the multiclass case we 
   can define a length-$g$ vector of class-individual probability functions 
@@ -75,7 +80,7 @@
   $$%\pixt :=
   \left[ \pikxt \right]_{k = 1, 2, \dots, g} = 
   \mat{\pikxt[1] & \pikxt[2] & \dots & \pikxt[g] }^\top
-  ~ =: \mathcal{S}(\xv, \thetab)$$
+  ~ =: \mathcal{S}(\xv ~|~ \thetab) ~ \in \unitint^g.$$
   
   Our parameters are now matrix-valued, where every class-individual parameter 
   vector is of length $p$, such that
@@ -86,8 +91,13 @@
   \theta_{g, p}}} ~~ \in \Theta = \R^{p \times g}$$
   
   Then we have for our hypothesis space:
-  $$\Hspace = \left \{\pi: \Xspace \rightarrow \unitint^g ~ \bigg \rvert ~
-  \pixt = \mathcal{S}(\xv, \thetab), ~ \thetab \in \R^{p \times g} \right\}$$
+  % $$\Hspace = \left \{\pi: \Xspace \rightarrow \unitint^g ~ \bigg \rvert ~
+  % \pixt = \mathcal{S}(\xv ~|~ \thetab), ~ \thetab \in \R^{p \times g} \right\}$$
+  $$\Hspace = \left \{\mathcal{S}_{\thetab}: \Xspace \rightarrow \unitint^g ~ 
+  \bigg \rvert ~ \mathcal{S}(\xv ~|~ \thetab) = 
+  \left [\frac{\exp(\thetab_k^\top \xv)}{\sumjg \exp(\thetab_j^\top \xv)}
+  \right]_{k = 1, 2, \dots, g}, 
+  ~ \thetab \in \R^{p \times g} \right\}$$  
 
 \end{enumerate}
 
