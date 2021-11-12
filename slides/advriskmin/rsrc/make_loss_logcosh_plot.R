@@ -6,7 +6,7 @@ library(ggplot2)
 
 # DATA -------------------------------------------------------------------------
 
-source("loss_functions.R")
+source("helpers/loss_functions.R")
 
 x <- seq(-10L, 10L, length.out = 800L)
 y <- logcosh(x)

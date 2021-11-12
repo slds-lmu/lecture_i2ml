@@ -26,11 +26,11 @@ p = p + geom_path(data = path1, aes(x = x, y = y), color = "orange")
 p = p + geom_segment(aes(x=x,y=y,xend=xend,yend=yend), data = segment1, lty = 2) 
 p
 
-ggsave("figure_man/optimal_pointwise_1.png", width = 4, height = 3)
+ggsave("../figure/optimal_pointwise_1.png", width = 4, height = 3)
 
 
 p = p + geom_point(aes(x = 0, y = 0), colour = "orange", size = 4, shape = 17)
 p = p + ggtitle("Find best prediction and repeat for all x")
 p
 
-ggsave("figure_man/optimal_pointwise_2.png", width = 4, height = 3)
+ggsave("../figure/optimal_pointwise_2.png", width = 4, height = 3)

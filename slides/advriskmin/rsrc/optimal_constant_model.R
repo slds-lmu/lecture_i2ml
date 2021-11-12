@@ -1,8 +1,9 @@
 library("bmrm")
 library("MASS")
 library("data.table")
+library("ggplot2")
 
-source("loss_functions.R")
+source("helpers/loss_functions.R")
 
 #1 Derive a dataframe with all optimal constant models
 

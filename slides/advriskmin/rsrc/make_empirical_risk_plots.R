@@ -123,7 +123,7 @@ gradDescent = function(risk, theta0, max.iter = 100, step.size = 0.00005,
 
 # 1 - Create Plots  
 
-source("rsrc/loss_functions.R")
+source("helpers/loss_functions.R")
 
 # available loss functions
 lossfuns = list(L1 = L1, L2 = L2, quant = quant, huber = huber)
@@ -170,7 +170,7 @@ for (iter in 1:4) {
   p1 = plotLinearModel(opt.path, X, y, iteration = iter)
   p2 = plotRisk(opt.path, risk_limo, theta_lower = - 0.5, theta_upper = 1.5, iteration = iter)
 
-  ggsave(paste0("figure_man/empirical_risk_plot_constant_", iter, ".pdf"), grid.arrange(p1, p2, nrow = 1), width = 7, height = 4)
+  ggsave(paste0("../figure/empirical_risk_plot_constant_", iter, ".pdf"), grid.arrange(p1, p2, nrow = 1), width = 7, height = 4)
 }
 
 
@@ -197,7 +197,7 @@ for (iter in 1:4) {
   p1 = plotLinearModel(opt.path, X, y, iteration = iter)
   p2 = plotRisk(opt.path, risk_limo, theta_lower = c(-0.5, 0.5), theta_upper = c(1.5, 1.5), iteration = iter)
 
-  ggsave(paste0("figure_man/empirical_risk_plot_linear_", iter, ".pdf"), grid.arrange(p1, p2, nrow = 1), width = 7, height = 4)
+  ggsave(paste0("../figure/empirical_risk_plot_linear_", iter, ".pdf"), grid.arrange(p1, p2, nrow = 1), width = 7, height = 4)
 }
 
 

@@ -15,4 +15,4 @@ p = p + geom_line(data = df.fitted, aes(x = x, y = value, lty = variable, colour
 p = p + theme(legend.position = "none")
 p
 
-ggsave(filename = "example_intro.png", path = "figure_man", width = 200, height = 100, units = "mm")
+ggsave(filename = "example_intro.png", path = "../figure", width = 200, height = 100, units = "mm")

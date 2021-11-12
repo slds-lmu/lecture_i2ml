@@ -6,8 +6,8 @@ library(ggplot2)
 
 # DATA -------------------------------------------------------------------------
 
-source("loss_functions.R")
-source("constant_model.R")
+source("helpers/loss_functions.R")
+source("optimal_constant_model.R")
 
 x <- seq(-3L, 3L, length.out = 800L)
 y <- log_barrier(x)

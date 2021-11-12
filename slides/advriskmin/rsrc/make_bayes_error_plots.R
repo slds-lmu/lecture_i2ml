@@ -33,13 +33,13 @@ p = ggplot() + geom_contour(data = data.grid, aes(x = x1, y = x2, z = prob, colo
 p = p + geom_point(data = df, aes(x = x1, y = x2, color = class), alpha = 0.2)
 p
 
-ggsave("figure_man/bayes_error_1.png", width = 9, height = 5)
+ggsave("../figure/bayes_error_1.png", width = 9, height = 5)
 
 p = ggplot() + geom_density_2d(data = df, aes(x = x1, y = x2, color = class))
 p = p + geom_point(data = df, aes(x = x1, y = x2, color = class), alpha = 0.2)
 p
 
-ggsave("figure_man/bayes_error_2.png", width = 9, height = 5)
+ggsave("../figure/bayes_error_2.png", width = 9, height = 5)
 
 
 p = ggplot() + geom_contour(data = data.grid, aes(x = x1, y = x2, z = prob, colour = class))
@@ -47,7 +47,7 @@ p = p + geom_point(data = df, aes(x = x1, y = x2, color = class), alpha = 0.2)
 p = p + geom_abline(slope = 1, intercept = 0, colour = "orange", size = 2)
 p
 
-ggsave("figure_man/bayes_error_3.png", width = 9, height = 5)
+ggsave("../figure/bayes_error_3.png", width = 9, height = 5)
 
 
 p1 = ggplot() + geom_line(data = data.grid, aes(x = x1, y = prob, colour = class), alpha = 0.5, size = 2)
@@ -71,8 +71,8 @@ p2 <- ggplot2::ggplot() +
   theme_minimal() +
   theme(legend.position = "none", text = element_text(size = 20L))
 
-ggsave("figure_man/bayes_error_4.png", p1, width = 9, height = 5)
-ggsave("../figure_man/bayes_error_5.png", p2, width = 9, height = 4)
+ggsave("../figure/bayes_error_4.png", p1, width = 9, height = 5)
+ggsave("../figure/bayes_error_5.png", p2, width = 9, height = 4)
 
 
 

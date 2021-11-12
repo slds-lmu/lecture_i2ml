@@ -51,20 +51,20 @@ plotResiduals = function(loss) {
 }
 
 p = plotResiduals("L1")
-ggsave("figure_man/residuals_plot_L1.pdf", p, width = 8, height = 4)
+ggsave("../figure/residuals_plot_L1.pdf", p, width = 8, height = 4)
 # Title figures 
-ggsave("figure/residuals_plot_L1_title.png", grid::grid.draw(p$grobs[[1]]) , width = 4, height = 3)
+ggsave("../figure/residuals_plot_L1_title.png", grid::grid.draw(p$grobs[[1]]) , width = 4, height = 3)
 
 p = plotResiduals("L2")
-ggsave("figure_man/residuals_plot_L2.pdf", p, width = 8, height = 4)
+ggsave("../figure/residuals_plot_L2.pdf", p, width = 8, height = 4)
 # Title figures 
-ggsave("figure/residuals_plot_L2_title.png", grid::grid.draw(p$grobs[[1]]) , width = 4, height = 3)
+ggsave("../figure/residuals_plot_L2_title.png", grid::grid.draw(p$grobs[[1]]) , width = 4, height = 3)
 
 p = plotResiduals("Huber_Gaussian")
-ggsave("figure_man/residuals_plot_Huber_Gaussian.pdf", p, width = 8, height = 4)
+ggsave("../figure/residuals_plot_Huber_Gaussian.pdf", p, width = 8, height = 4)
 
 p = plotResiduals("Huber_L1")
-ggsave("figure_man/residuals_plot_Huber_L1.pdf", p, width = 8, height = 4)
+ggsave("../figure/residuals_plot_Huber_L1.pdf", p, width = 8, height = 4)
 
-ggsave("figure/residuals_plot_L2_title.png", grid::grid.draw(p$grobs[[1]]) , width = 4, height = 3)
+ggsave("../figure/residuals_plot_L2_title.png", grid::grid.draw(p$grobs[[1]]) , width = 4, height = 3)
 

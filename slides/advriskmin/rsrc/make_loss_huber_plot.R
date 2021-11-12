@@ -6,7 +6,7 @@ library(ggplot2)
 
 # DATA -------------------------------------------------------------------------
 
-source("loss_functions.R")
+source("helpers/loss_functions.R")
 
 set.seed(123L)
 x <- runif(50L, 0L, 2L)
