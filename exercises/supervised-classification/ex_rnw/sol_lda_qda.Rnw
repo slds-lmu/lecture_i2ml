@@ -1,1 +1,77 @@
-foo
+\begin{enumerate}[a)]
+
+  \item \begin{enumerate}[i)]
+  
+    \item As the data seem to be pretty symmetric conditional on the 
+    respective class, we estimate the class means to lie roughly in the middle 
+    of the data clusters: $\hat \mu_1 = 1$, $\hat \mu_2 = 7$, $\hat \mu_3 = 4$.
+    \textcolor{blue}{@Ludwig: die Datenlage ist tatsächlich etwas suboptimal, 
+    weil die aus einer Unif gezogen sind statt aus einer NV - genau genommen 
+    passen halt QDA und LDA hier nicht gut}
+    
+    \item We see that the variances in classes 1 and 2 are similar and also 
+    much smaller than in class 3.
+    Therefore, the densities could look roughly like this:
+<<message=FALSE, warning = FALSE, fig.height=2, fig.width=5>>=
+
+library(ggplot2)
+
+colors <- c("1" = "blue", "2" = "red", "3" = "orange")
+ 
+ggplot(data.frame(x = c(0, 8)), aes(x = x)) +
+  stat_function(fun = dnorm, n = 100, args = list(mean = 1, sd = 0.5), aes(col = "1")) +
+  stat_function(fun = dnorm, n = 100, args = list(mean = 7, sd = 0.5), aes(col = "2")) +
+  stat_function(fun = dnorm, n = 100, args = list(mean = 4, sd = 2), aes(col = "3")) +
+  scale_color_manual("class", values = colors) +
+  theme_classic() +
+  ylab("estimated density") +
+  scale_y_continuous(breaks = NULL) 
+@
+  
+    \item Since LDA assumes isotropic Gaussians, i.e., constant variances across 
+    all classes (also if this does not reflect the data siutation), all densities 
+    would have the same shape and only differ in location. 
+    
+    \item As we have already noted, the assumption of equal class variances is 
+    not justified here, but LDA is confined to isotropic distributions. 
+    Therefore, the more flexible QDA is preferable in this case.
+  
+  \end{enumerate}
+  
+  \item The prediction for $\xv_{\ast 1}$ will probably be $\hat z_{\ast 1} = 3$ 
+  because the density of class 3 has much larger variance and will therefore 
+  overshoot the density of class 1. 
+  For $\xv_{\ast 2}$ the case is unambiguous and we obviously have 
+  $\hat z_{\ast 2} = 2$.
+  
+  \item In order to arrive at the equation for the decision boundary, we 
+  first need to understand that on the boundary of classes 1 and 2, both 
+  discriminant functions $\delta_1(\xv)$ and $\delta_2(\xv)$ will be exactly 
+  equal -- it is the one location where we would not be able to assign points 
+  to either one of the classes, whereas for $\delta_1(\xv) > \delta_2(\xv)$ we 
+  would assign class 1 and vice versa.
+  Therefore, we compute the equation as follows:
+  
+  \begin{align*}
+    \delta_1(\xv) &= \delta_2(\xv) \\
+    \Leftrightarrow \log \pik[1]  - \frac{1}{2} \bm{\mu}_1^\top \Sigma^{-1} 
+    \bm{\mu}_1 + \xv^\top \Sigma^{-1} \bm{\mu}_1 &= 
+    \log \pik[2] - \frac{1}{2} \bm{\mu}_2^\top 
+    \Sigma^{-1} \bm{\mu}_2 + \xv^\top \Sigma^{-1} \bm{\mu}_2 \\
+    \Leftrightarrow \xv^\top \Sigma^{-1} \bm{\mu}_1 - \xv^\top \Sigma^{-1} 
+    \bm{\mu}_2  &= \log \frac{\pik[2]}{\pik[1]}
+    + \frac{1}{2} \left( \bm{\mu}_1^\top \Sigma^{-1} \bm{\mu}_1 - 
+    \bm{\mu}_2^\top \Sigma^{-1} \bm{\mu}_2 \right) \\
+    \Leftrightarrow \xv^\top \underbrace{\left( \Sigma^{-1} (\bm{\mu}_1 - 
+    \bm{\mu}_2) \right)}_{=: \bm{\nu} \in \R^{2 \times 1}}
+    &= \log \frac{\pik[2]}{\pik[1]} 
+    + \frac{1}{2} \left( \bm{\mu}_1^\top \Sigma^{-1} \bm{\mu}_1 - 
+    \bm{\mu}_2^\top \Sigma^{-1} \bm{\mu}_2 \right) \\
+    \Leftrightarrow \nu_1 x_1 + \nu_2 x_2 &= \underbrace{
+    \log \frac{\pik[2]}{\pik[1]} 
+    + \frac{1}{2} \left( \bm{\mu}_1^\top \Sigma^{-1} \bm{\mu}_1 - 
+    \bm{\mu}_2^\top \Sigma^{-1} \bm{\mu}_2 \right)}_{=: a \in \R}.
+  \end{align*}
+  The right hand side might look somewhat intimidating, but simply evaluates to 
+  a scalar and we obtain the hyperplane equation $\xv^\top \nu = a$.
+\end{enumerate}
