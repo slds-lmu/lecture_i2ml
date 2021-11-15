@@ -1,0 +1,146 @@
+\begin{enumerate}[a)]
+
+  \item \textit{Cubic} means degree 3, so our hypothesis space will look as 
+  follows:
+  $$\Hspace = \{ \fxt = \theta_0 + \theta_1 x + \theta_2 x^2 + \theta_3 x^3 
+  ~|~ (\theta_0, \theta_1, \theta_2, \theta_3)^\top \in \R^4 \}$$
+
+  \item Choose 3 different parameterizations and plot the resulting polynomials:   
+<<echo=TRUE, message=FALSE, fig.height=3, fig.width=8>>=
+library(ggplot2)
+
+# Simulate data
+set.seed(123L)
+x <- seq(-3, 3, length.out = 50)
+y <- -3 + 5 * sin(0.4 * pi * x) + rnorm(50, sd = 1)
+data <- data.frame(x, y)
+
+# Generate design matrix by taking x to the power of 0 through 3
+X <- as.matrix(sapply(0:3, function(i) x^i))
+head(X)
+
+# Define 3 different values for each theta_j
+thetas <- matrix(cbind(
+  c(-3, 1, 1.5),
+  c(5, -1.6, 2),
+  c(0, -0.3, -0.7),
+  c(-0.8, 0.2, 0)),
+  ncol = 4)
+thetas
+
+# Compute the resulting models
+f_hat <- sapply(1:3, function(i) X %*% thetas[i, ])
+data_models <- data.frame(x, f_hat)
+names(data_models) <- c("x", sprintf("f_hat_%i", 1:3))
+head(data_models)
+
+# Convert data to long format
+data_models_long <- reshape2::melt(
+  data_models, 
+  id.vars = "x", 
+  measure.vars = c("f_hat_1", "f_hat_2", "f_hat_3"))
+
+# Plot the corresponding polynomial functions
+ggplot2::ggplot(data_models_long, aes(x = x, y = value, col = variable)) +
+  ggplot2::geom_line() +
+  ggplot2::scale_color_viridis_d(
+    "Models",
+    end = 0.9, 
+    labels = c(
+      bquote(-3 + 5 * x - 0.8 * x**3),
+      bquote(1 - 1.6 * x - 0.3 * x**2 + 0.2 * x**3),
+      bquote(1.5 + 2 * x - 0.7 * x**2))) +
+  ggplot2::geom_point(data, mapping = aes(x, y), inherit.aes = FALSE) +
+  ggplot2::ylab("")
+
+@  
+  We see that our hypothesis space is simply a family of curves.
+  The 3 examples plotted here already hint at the amount of flexibility  
+  third-degree polynomials offer over simple linear functions.
+  
+  \item The empirical risk is:
+  $$\risket = \sum_{i = 1}^{50} \left(\yi - \left[ \theta_0 + \theta_1 x^{(i)} + 
+  \theta_2 \left( x^{(i)} \right)^2 + \theta_3 \left( x^{(i)} \right)^3 \right] 
+  \right)^2$$
+  
+  \item Denoting our transformed feature matrix by $\tilde{\Xmat}$, we can 
+  find the gradient just as we did for an intermediate result when we derived 
+  the least-squares estimator:
+  
+  \begin{flalign*}
+    \nabla_{\thetab} \risket &=
+    \pd{}{\thetab} \left \| \yv - \tilde{\Xmat} \thetab \right \|_2^2 \\
+    &= \pd{}{\thetab} \left( \left(\yv - \tilde{\Xmat} \thetab\right)^\top 
+    \left(\yv - \tilde{\Xmat} \thetab \right) \right) \\ 
+    &= - 2 \tilde{\Xmat}^\top \yv + 2 \tilde{\Xmat}^\top \tilde{\Xmat} \thetab\\
+    &= 2 \cdot \left( - \tilde{\Xmat}^\top \yv + \tilde{\Xmat}^\top 
+    \tilde{\Xmat} \thetab \right)
+  \end{flalign*}
+  
+  \item Recall that the idea of gradient descent (\textit{descent}!) is to 
+  traverse the risk surface in the direction of the \textit{negative} gradient 
+  as we are in search for the minimum.
+  Therefore, we will update our current parameter set $\thetat$ with the 
+  negative gradient of the current empirical risk w.r.t. $\thetab$, scaled 
+  by learning rate (or step size) $\alpha$:
+  
+  $$\thetatn = \thetat - \alpha \cdot \nabla_{\thetab} \riske(\thetat).$$
+  
+  Note that the $L2$-induced multiplicative constant of 2 in the gradient 
+  can simply be absorbed by $\tilde \alpha := \tfrac{1}{2} \alpha$:
+  
+  \begin{flalign*}
+    \underbrace{\thetatn}_{p \times 1} &= \underbrace{\thetat}_{p \times 1} - 
+    \tilde \alpha \cdot \left( - \underbrace{\tilde{\Xmat}^\top \phantom{y}}_{
+    p \times n} \underbrace{\yv}_{n \times 1} + \underbrace{
+    \tilde{\Xmat}^\top \tilde{\Xmat} \phantom{y}}_{p \times p} 
+    \underbrace{\thetat \phantom{y}}_{p \times 1} 
+    \right) \\
+    \vspace{0.1cm}
+    \mat{\theta_1 \\ \theta_2 \\ \vdots \\ \theta_p}^{[t + 1]} &= 
+    \mat{\theta_1 \\ \theta_2 \\ \vdots \\ \theta_p}^{[t]} - \tilde \alpha 
+    \cdot \left( - \tilde{\Xmat}^\top \yv + \tilde{\Xmat}^\top \tilde{\Xmat} 
+    \mat{\theta_1 \\ \theta_2 \\ \vdots \\ \theta_p}^{[t]} \right)
+  \end{flalign*}
+  
+  What actually happens here: we update each component of our current 
+  parameter vector $\thetat$ in the \textit{direction} of the negative 
+  gradient, i.e., following the steepest downward slope, and also by an 
+  \textit{amount} that depends on the value of the gradient.
+  
+  In order to see what that means it is helpful to recall that the gradient 
+  $\nabla_{\thetab} \risket$ tells us about the effect (infinitesimally small) 
+  changes in $\thetab$ have on $\risket$.
+  A parameter vector component with large gradient has strong impact on the 
+  empirical risk, and it is reasonable to assume it to be rather important for 
+  the model.
+  
+  Therefore, gradient updates focus on  influential components, and we 
+  proceed more quickly along the important dimensions.
+  
+  \item We see that, for example, the first model in exercise b) fits the data 
+  fairly well but not perfectly.
+  Choosing a more flexible function (a polynomial of higher degree or a function 
+  from an entirely different, more complex, model class) might be advantageous:
+  \begin{itemize}
+    \item We would be able to trace the observations more closely if our 
+    function were less smooth, and thus reduce empirical risk.
+    \item Also, we might achieve a better fit on the boundaries of the input 
+    space where the cubic polynomials diverge pretty quickly. 
+  \end{itemize}
+  On the other hand, flexibility also has some drawbacks:
+  \begin{itemize}
+    \item Flexible model classes often have more parameters, making training 
+    harder.
+    \item We might run into a phenomenon called \textbf{overfitting}. 
+    Recall that our ultimate goal is to make predictions on \textit{new} 
+    observations (after all, we know the labels for the training data). 
+    However, fitting every quirk of the training observations -- possibly caused 
+    by imprecise measurement or other factors of randomness/error -- will not 
+    generalize so well to new data.
+  \end{itemize}
+  In the end, we need to balance model fit and generalization. 
+  We will discuss the choice of hypotheses quite a lot since it is one 
+  of the most crucial design decisions in machine learning. 
+  
+\end{enumerate}
