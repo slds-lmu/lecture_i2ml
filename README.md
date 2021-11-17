@@ -2,7 +2,7 @@
 
 This Project offers a free, open source introductory and applied overview of supervised machine learning. 
 
-Main course site: https://introduction-to-machine-learning.netlify.app/
+Main course site: https://slds-lmu.github.io/i2ml/
 
 
 # Contents, License, Team and Further Info
