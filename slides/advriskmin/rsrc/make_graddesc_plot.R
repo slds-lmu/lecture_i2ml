@@ -57,6 +57,6 @@ theta.true = optimize(function(theta) HuberLossConstant(theta, y = y, delta = de
 
 plist = gradient.descent(df, n.iter = 4, theta.start = 2, theta.opt = theta.true)
 
-ggsave(plist[[1]], filename = "graddesc_iter1.png", path = "figure_man")
-ggsave(plist[[2]], filename = "graddesc_iter2.png", path = "figure_man")
-ggsave(plist[[3]], filename = "graddesc_iter3.png", path = "figure_man")
+ggsave(plist[[1]], filename = "graddesc_iter1.png", path = "../figure")
+ggsave(plist[[2]], filename = "graddesc_iter2.png", path = "../figure")
+ggsave(plist[[3]], filename = "graddesc_iter3.png", path = "../figure")

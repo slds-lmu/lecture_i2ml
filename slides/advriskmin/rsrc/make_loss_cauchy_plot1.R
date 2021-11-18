@@ -1,7 +1,7 @@
 library(ggplot2)
 library(reshape2)
 
-source("loss_functions.R")
+source("helpers/loss_functions.R")
 
 df = data.frame(res = seq(-10, 10, length.out = 1000))
 
