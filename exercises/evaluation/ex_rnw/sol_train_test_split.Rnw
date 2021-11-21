@@ -1,0 +1,84 @@
+\begin{enumerate}[a)]
+  \item Get the data, define a task and corresponding train-test split, and
+  predict with trained model:
+  <<echo=TRUE, message=FALSE>>=
+
+  # get data
+  library(mlbench)
+  data(BostonHousing)
+  data_pollution <- data.frame(dis = BostonHousing$dis, nox = BostonHousing$nox)
+  data_pollution <- data_pollution[order(data_pollution$dis), ]
+  head(data_pollution)
+  
+  # define task and train-test split
+  library(mlr3)
+  task <- mlr3::TaskRegr$new("pollution", backend = data_pollution, target = "nox")
+  train_set = 1:10
+  test_set = setdiff(seq_len(task$nrow), train_set)
+  
+  # train linear learner
+  library(mlr3learners)
+  learner <- mlr3::lrn("regr.lm")
+  learner$train(task, row_ids = train_set)
+  
+  # predict on test data
+  predictions <- learner$predict(task, row_ids = test_set)
+  predictions$score(mlr3::msr("regr.mse"))
+  @
+  
+  \item We have chosen the first ten observations from a data set that is 
+  ordered by feature value, which is obviously not a good idea.
+  Looking at the data, this gives us a pretty steep regression line that does 
+  not reflect the overall data situation.
+  Also, a training set of ten points is pretty small and will likely lead to 
+  poor generalization.
+  
+  \item We repeat the above procedure for different train-test splits like so:
+  <<echo=TRUE, results=FALSE, message=FALSE>>=
+
+  # define train-test splits
+  repetitions <- 1:10
+  split_ratios <- seq(0.1, 0.9, by = 0.1)
+  
+  # create resampling objects with holdout strategy, using lapply for efficient computation
+  split_strategies <- lapply(split_ratios, function(i) mlr3::rsmp("holdout", ratio = i))
+  
+  # train linear learners and predict in one step (remember to set a seed)
+  set.seed(123)
+  results <- list()
+  for (i in repetitions) {
+    results[[i]] <- lapply(split_strategies, function(i) mlr3::resample(task, learner, i))
+  }
+  @
+  <<echo=TRUE, message=FALSE, fig.height=4, fig.width=8>>=
+  
+  # compute errors in double loop over repetitions and split ratios
+  errors <- lapply(
+    repetitions, 
+    function(i) sapply(results[[i]], function(j) j$score()$regr.mse))
+  
+  # assemble everything in data.frame and convert to long format for plotting
+  errors_df <- as.data.frame(do.call(cbind, errors))
+  errors_df$split_ratios <- split_ratios
+  errors_df_long <- reshape2::melt(errors_df, id.vars = "split_ratios")
+  names(errors_df_long)[2:3] <- c("repetition", "mse")
+  
+  # plot errors vs split ratio
+  ggplot2::ggplot(
+    errors_df_long, 
+    ggplot2::aes(x = as.factor(split_ratios), y = mse)) +
+    ggplot2::geom_boxplot(fill = "lightgray") +
+    ggplot2::theme_classic() +
+    ggplot2::labs(x = "share of training samples", y = "average MSE")
+  
+  @
+  
+  \item From the experiment in c) we can derive two conclusions:
+  \begin{enumerate}[1)]
+    \item A smaller training set tends to produce higher estimated 
+    generalization errors.
+    \item A larger training set, at the expense of test set size, will cause 
+    high variance in the individual generalization error estimates.
+  \end{enumerate}
+  
+\end{enumerate}
