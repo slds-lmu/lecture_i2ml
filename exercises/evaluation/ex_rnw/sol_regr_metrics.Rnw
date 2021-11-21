@@ -1,0 +1,55 @@
+\begin{enumerate}[a)]
+
+  \item Since the polynomial learner clearly achieves a better fit for the 
+  training data and some observations lie rather far from the regression line, 
+  which is strongly penalized by $L2$ loss, it will have lower empirical risk 
+  than the linear learner.
+  
+  \item First and foremost, evaluation on the training data is almost never a 
+  good idea.
+  Under certain conditions the training error does tell us something about 
+  generalization ability, but for flexible learners and/or small training data 
+  it is deceptive due to optimistic bias.
+  In this particular situation, we have few training observations and at least 
+  one suspiciously looking like an outlier.
+  A low training error might be achieved by a learner that fits every 
+  quirk in the training data but generalizes poorly to unseen points with only 
+  slightly different distribution.
+  Evaluation on separate test data is therefore definitely necessary.
+  
+  \item We fit the polynomial and linear learner and then compute the squared 
+  and absolute differences between their respective predictions and the 
+  true target values:
+  
+      <<echo=TRUE, message=FALSE>>=
+
+# define train data including outlier
+set.seed(123)
+x_train <- seq(10, 15, length.out = 29)
+y_train <- 10 + 3 * sin(0.15 * pi * x_train) + rnorm(length(x_train), sd = 0.1)
+data_train <- data.frame(x = c(x_train, 12), y = c(y_train, 16))
+
+# define test data
+set.seed(1)
+x_test <- seq(10, 15, length.out = 30)
+y_test <- 10 + 3 * sin(0.15 * pi * x_test) + rnorm(length(x_test), sd = 0.05)
+x_test <- c(x_test, 12)
+y_test <- c(y_test, 14)
+
+# train learners
+polynomial_learner <- lm(y ~ poly(x, 13), data_train)
+linear_learner <- lm(y ~ x, data_train)
+
+# predict with both learners
+y_polynomial <- predict(polynomial_learner, data.frame(x = x_test))
+y_lm <- predict(linear_learner, data.frame(x = x_test))
+
+# compute errors
+abs_differences <- lapply(list(y_polynomial, y_lm), function(i) abs(y_test - i))
+errors_mse <- sapply(abs_differences, function(i) mean(i^2))
+errors_mae <- sapply(abs_differences, mean)
+
+print(c(errors_mse, errors_mae))
+@
+  
+\end{enumerate}
