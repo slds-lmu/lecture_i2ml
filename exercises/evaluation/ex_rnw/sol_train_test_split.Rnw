@@ -27,9 +27,11 @@
   @
   
   \item We have chosen the first ten observations from a data set that is 
-  ordered by feature value, which is obviously not a good idea.
-  Looking at the data, this gives us a pretty steep regression line that does 
-  not reflect the overall data situation.
+  ordered by feature value, which is obviously not a good idea and leads to a 
+  pretty high test MSE (relatively speaking -- we will see in the next exercise 
+  which error values we can usually expect for this task).
+  Looking at the data, this gives us a steeply declining regression line that 
+  does not reflect the overall data situation.
   Also, a training set of ten points is pretty small and will likely lead to 
   poor generalization.
   
@@ -39,10 +41,10 @@
   # define train-test splits
   repetitions <- 1:10
   split_ratios <- seq(0.1, 0.9, by = 0.1)
-  
+
   # create resampling objects with holdout strategy, using lapply for efficient computation
   split_strategies <- lapply(split_ratios, function(i) mlr3::rsmp("holdout", ratio = i))
-  
+
   # train linear learners and predict in one step (remember to set a seed)
   set.seed(123)
   results <- list()
@@ -51,21 +53,21 @@
   }
   @
   <<echo=TRUE, message=FALSE, fig.height=4, fig.width=8>>=
-  
+
   # compute errors in double loop over repetitions and split ratios
   errors <- lapply(
-    repetitions, 
+    repetitions,
     function(i) sapply(results[[i]], function(j) j$score()$regr.mse))
-  
+
   # assemble everything in data.frame and convert to long format for plotting
   errors_df <- as.data.frame(do.call(cbind, errors))
   errors_df$split_ratios <- split_ratios
   errors_df_long <- reshape2::melt(errors_df, id.vars = "split_ratios")
   names(errors_df_long)[2:3] <- c("repetition", "mse")
-  
+
   # plot errors vs split ratio
   ggplot2::ggplot(
-    errors_df_long, 
+    errors_df_long,
     ggplot2::aes(x = as.factor(split_ratios), y = mse)) +
     ggplot2::geom_boxplot(fill = "lightgray") +
     ggplot2::theme_classic() +
@@ -81,4 +83,72 @@
     high variance in the individual generalization error estimates.
   \end{enumerate}
   
+  \item In order to solve this, we rely mostly on the linearity of the 
+  expectation and what is known as \enquote{Verschiebungssatz der Varianz} in 
+  German (i.e., $\var(z) = \E(z^2) - \E^2(z)$ for some random variable $z$).
+  Then:
+  
+  \begin{flalign*}
+    \E_{\Pxy} ((\hat y - y)^2 ~|~ \xv) &= \E_{\Pxy} (\hat y^2 - 2\hat y y +
+    y^2 ~|~ \xv) \\
+    &= \hat y^2 - 2 \cdot \hat y \cdot \E_{\Pxy}(y ~|~ \xv) + 
+    \E_{\Pxy}(y^2 ~|~ \xv) \\
+    &= \hat y^2 - 2 \cdot \hat y \cdot \E_{\Pxy}(y ~|~ \xv) + 
+    \E^2_{\Pxy}(y ~|~ \xv) +
+    \var_{\Pxy}(y ~|~ \xv) \\ 
+    &= \left(\hat y - \E_{\Pxy}(y ~|~ \xv) \right)^2 + \var_{\Pxy}(y ~|~ \xv).
+  \end{flalign*}
+  
+  Now we incorporate our random sampling process and obtain:
+  
+  \begin{flalign*}
+    \E_{\mathcal{S}, \Pxy} ((\hat y - y)^2 ~|~ \xv) &=
+    \E_{\mathcal{S}} \left( \left(\hat y - \E_{\Pxy}(y ~|~ \xv) \right)^2 \right)
+    + \var_{\Pxy}(y ~|~ \xv) \\
+    &= \E_{\mathcal{S}} \left(\hat y^2 - 2 \cdot \hat y  \cdot 
+    \E_{\Pxy}(y ~|~ \xv) +
+    \E^2_{\Pxy}(y ~|~ \xv)\right) + \var_{\Pxy}(y ~|~ \xv) \\
+    &= \E_{\mathcal{S}}(\hat y^2) - 2  \cdot \E_{\mathcal{S}}(\hat y)
+     \cdot \E_{\Pxy}(y ~|~ \xv) + \E^2_{\Pxy}(y ~|~ \xv) + 
+     \var_{\Pxy}(y ~|~ \xv) \\
+    &= \E^2_{\mathcal{S}}(\hat y) + \var_{\mathcal{S}}(\hat y)-  
+    2  \cdot \E_{\mathcal{S}}(\hat y)
+     \cdot \E_{\Pxy}(y ~|~ \xv) + \E^2_{\Pxy}(y ~|~ \xv) + 
+     \var_{\Pxy}(y ~|~ \xv) \\
+    &= \left( \E_{\mathcal{S}}(\hat y) -  \E_{\Pxy}(y ~|~ \xv) \right)^2 +
+    \var_{\mathcal{S}}(\hat y) + \var_{\Pxy}(y ~|~ \xv).
+  \end{flalign*}
+  
+  Okay, now what to make of this? 
+  The first thing we need to understand is 
+  that $\E_{\Pxy}(y ~|~ \xv)$ is the best possible prediction we could make -- 
+  the conditional expectation of our target under the true data-generating 
+  process.
+  Unfortunately, we must expect our prediction $\E_{\mathcal{S}}(\hat y)$ to be 
+  different from $\E_{\Pxy}(y ~|~ \xv)$. 
+  Looking at the last line of our derivation, we see that the first term 
+  is exactly the MSE btween these two quantities -- i.e., the expected 
+  square \textit{bias} we make with our prediction.
+  
+  The second summand $\var_{\mathcal{S}}(\hat y)$ represents, unsurprisingly, 
+  the \textit{variance} part of the decomposition.
+  
+  Now the last term is the variance of the true conditional distribution, which, 
+  crucially, does not depend on our prediction.
+  No matter how accurate our model is, this component will be irreducible.
+  It thus marks a lower bound on the generalization error and is also referred 
+  to as \textit{Bayes error}.
+  
+  Summarizing:
+  
+  $$\E_{\mathcal{S}, \Pxy} ((\hat y - y)^2 ~|~ \xv) = 
+  \left( \underbrace{\E_{\mathcal{S}}(\hat y) -  \E_{\Pxy}(y ~|~ \xv)}_{
+  \text{bias}} \right)^2
+  + \underbrace{\var_{\mathcal{S}}(\hat y)}_{\text{variance}} 
+  + \underbrace{\var_{\Pxy}(y ~|~ \xv)}_{\text{irreducible error}}.$$
+  
+  Revisiting our practical experiments, we see again that 
+  $\E_{\mathcal{S}}(\hat y)$ will be closer to the optimal prediction if we 
+  have more data for training, while $\var_{\mathcal{S}}(\hat y)$ is large if 
+  we leave little data to test on.
 \end{enumerate}
