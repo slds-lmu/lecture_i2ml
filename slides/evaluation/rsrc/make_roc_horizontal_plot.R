@@ -13,6 +13,8 @@ df <- data.frame(
   Score = c(0.95, 0.86, 0.69, 0.65, 0.59, 0.52, 0.51, 0.39, 0.28, 0.18, 0.15, 0.06)
 )
 
+c_list <- c(0.9, 0.85, 0.66, 0.6, 0.55, 0.3)
+
 # PLOTS ------------------------------------------------------------------------
 
 generate_roc_horizontal <- function(c = 0.8) {
@@ -57,7 +59,7 @@ generate_roc_horizontal <- function(c = 0.8) {
   p
 }
 
-for (i in 1:length(df$Score)) {
-  p <- generate_roc_horizontal(df$Score[i])
+for (i in 1:length(c_list)) {
+  p <- generate_roc_horizontal(c_list[i])
   ggsave(filename = glue("../figure/roc_horizontal_step_{i}.png"), plot = p, width = 8, height = 1.5)
 }
