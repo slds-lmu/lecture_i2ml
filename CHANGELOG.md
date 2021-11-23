@@ -1,5 +1,10 @@
 ## Changelog
 
+### 11-2021
+- Reworked Chapter Evaluation:
+  - new plots in roc-space
+  - ..
+
 
 ### 01-2021
 - supervised-regression/slides-regression-knn and supervised-classification/slides-classification-knn are deleted and merged into knn/slides-knn
