@@ -6,7 +6,8 @@
 \newcommand{\titlefigure}{figure/eval_test_3}
 \newcommand{\learninggoals}{
 \item Understand the definition of test error
-\item Understand how overfitting can be seen in the test error}
+\item Understand that test error is more reliable than train error    
+\item Bias-Variance analysis of holdout splitting}
 
 
 \title{Introduction to Machine Learning}
@@ -32,15 +33,19 @@
 % \end{itemize}
   \small
 \begin{itemize}
-  \item In order to avoid optimistic bias we will use the 
-  \textbf{test error}, i.e.,
-$$\rho(\yv_{\mathrm{test}}, F_{\textrm{test}}), \;\text{where}\; F_{\textrm{test}} = 
-\begin{bmatrix} \fhDtrain(\xi[1]_{\textrm{test}})^\top & \dots & \fhDtrain(\xi[m]_{\textrm{test}})^\top \end{bmatrix}^\top,$$ 
-  to simulate how our model performs on new, unseen data.
-  \item Evaluating a given model therefore means predicting only on the
-  test data and measuring the resulting performance.
-  \item This implies splitting the data into disjoint sets (e.g., 2/3 for 
-  training and 1/3 for testing).
+  \item Simulate prediction on unseen data, to avoid optimistic bias:
+\small
+$$\rho(\yv_{\mathrm{test}}, F_{\textrm{test}})\;\text{where}\; 
+F_{\textrm{test}} = \begin{bmatrix} 
+\fhDtrain(\xi[1]_{\textrm{test}}) \\ 
+\dots \\
+\fhDtrain(\xi[m]_{\textrm{test}})
+\end{bmatrix}$$ 
+% $$\rho(\yv_{\mathrm{test}}, F_{\textrm{test}}), \;\text{where}\; F_{\textrm{test}} = 
+% \begin{bmatrix} \fhDtrain(\xi[1]_{\textrm{test}})^\top & \dots & \fhDtrain(\xi[m]_{\textrm{test}})^\top \end{bmatrix}^\top,$$ 
+  % \item Evaluating a given model therefore means predicting only on the
+  % test data and measuring the resulting performance.
+  \item Partition data, e.g., 2/3 for train and 1/3 for test.
 \end{itemize}
 
 \begin{center}
@@ -49,6 +54,7 @@ $$\rho(\yv_{\mathrm{test}}, F_{\textrm{test}}), \;\text{where}\; F_{\textrm{test
   \includegraphics[width=0.6\textwidth]{figure_man/test_error.pdf}
 
 \end{center}
+A.k.a. holdout splitting.
 
 \end{vbframe}
 
@@ -69,8 +75,8 @@ $$\rho(\yv_{\mathrm{test}}, F_{\textrm{test}}), \;\text{where}\; F_{\textrm{test
 
 \begin{vbframe}{Example: Polynomial Regression}
 
-Consider the previous example with the sinusoidal function
-$0.5 + 0.4 \cdot \sin (2 \pi x) + \epsilon$:
+Previous example:
+% $0.5 + 0.4 \cdot \sin (2 \pi x) + \epsilon$:
 
 \vfill
 
@@ -78,11 +84,13 @@ $0.5 + 0.4 \cdot \sin (2 \pi x) + \epsilon$:
   \includegraphics[width=0.85\textwidth]{figure/eval_train_1}
 \end{center}
 
-Again, we approximate the data with a $d^{th}$-degree polynomial:
+% Again, we approximate the data with a $d^{th}$-degree polynomial:
 \[ \fxt = \theta_0 + \theta_1 \xv + \cdots + \theta_d \xv^d = \sum_{j = 0}^{d}
 \theta_j \xv^j\text. \]
 
 \framebreak
+
+Now with fresh test data:
 
 \includegraphics[width=0.8\textwidth]{figure/eval_test_2} 
 
@@ -95,9 +103,8 @@ Again, we approximate the data with a $d^{th}$-degree polynomial:
 
 \vfill
 
-While the training error monotonically decreases for rising $d$, 
-the test error reflects the fact that higher-degree polynomials overfit 
-the data.
+While train error monotonically decreases in $d$, 
+test error shows that high-d polynomials overfit.
 
 \end{vbframe}
 
@@ -149,7 +156,7 @@ the data.
 
 \begin{vbframe}{Test Error}
 
-Plot evaluation measure for all polynomial degrees:
+Let's plot train and test MSE for all $d$:
 
 \includegraphics[width=0.9\textwidth]{figure/eval_test_3} 
 
@@ -168,22 +175,22 @@ Increasing model complexity tends to cause
 \begin{vbframe}{Training vs. test error}
 \begin{small}
 \begin{itemize}
-\item We take the Boston Housing data set where the value of houses in the area around Boston is predicted based on $13$ features describing the region (e.g., crime rate, name of the town, etc. ).
-\item We fit a polynomial regression model on it $$ \yv_{medv} = \beta_0 + \sum_{j=1}^d \sumin \beta_{i, j} \left(\xv_i\right)^j$$
-with $n$ features and $d$ degrees polynomials.
-\item We observe the train and test error when we change the size of training set, the size of the test set and the model complexity (increasing the possible degrees of the polynomials). 
+\item Boston Housing data
+    % set where the value of houses in the area around Boston is predicted based on $13$ features describing the region (e.g., crime rate, name of the town, etc. ).
+\item Polynomial regression (without interactions)
+    % $$ \yv_{medv} = \beta_0 + \sum_{j=1}^d \sumin \beta_{i, j} \left(\xv_i\right)^j$$
+% with $n$ features and $d$ degrees polynomials.
+% \item We check what happens with train and test error when we change the size of train and test set, and model complexity. 
 \end{itemize}
 
-\vfill
+% \textbf{The training error...}
 
-\textbf{The training error...}
+% \begin{itemize}
+  % \item is a biased estimator as performance is measured on the same data the 
+  % model was trained on.
+% \end{itemize}
 
-\begin{itemize}
-  \item is a biased estimator as performance is measured on the same data the 
-  model was trained on.
-\end{itemize}
-
-\framebreak
+% \framebreak
 
 \textbf{The training error...}
 \begin{itemize}
@@ -192,7 +199,7 @@ with $n$ features and $d$ degrees polynomials.
 \end{itemize}
 \end{small}
 \begin{center}
-\includegraphics[width=0.7\textwidth]{figure/fig-train-vs-test-error-1}
+\includegraphics[width=0.6\textwidth]{figure/fig-train-vs-test-error-1}
 \end{center}
 
 \framebreak
@@ -200,7 +207,7 @@ with $n$ features and $d$ degrees polynomials.
 \textbf{The training error...}
 \begin{itemize}  
   \item decreases with increasing model complexity as the model gets better at
-  learning more complex structures (here: more degrees in polynomial regression).
+  learning more complex structures. 
 \end{itemize}
 
 \begin{center}
@@ -213,7 +220,7 @@ with $n$ features and $d$ degrees polynomials.
 
 \begin{itemize}
   \item will typically decrease with larger training set size as the model 
-  generalizes better with more data to learn on.
+  generalizes better with more data to learn from.
   
 \end{itemize}
 \begin{center}
@@ -237,7 +244,7 @@ with $n$ features and $d$ degrees polynomials.
 
 \begin{itemize}    
   
-  \item will have higher variance with increasing model complexity (here: more degrees in polynomial regression).
+  \item will have higher variance with increasing model complexity.
 \end{itemize}
 
 \begin{center}
@@ -249,47 +256,35 @@ with $n$ features and $d$ degrees polynomials.
 
 % ------------------------------------------------------------------------------
 
-\begin{vbframe}{Test error Problems}
+\begin{vbframe}{Bias and Variance}
 
 \begin{itemize}
-  \item In general, the test error is a good estimator of future performance,
-  \textbf{given} the test data and data we might see in future applications are 
-  indeed \textit{iid} samples from the same underlying distribution.
-  \item Hold-out sampling produces a trade-off between \textbf{bias} and
-  \textbf{variance} that is balanced by the split ratio.
+  \item Test error is a good estimator of GE,
+  given a) we have enough data b) test data is representative i.i.d.
+  % indeed \textit{iid} samples from the same underlying distribution.
+   \item Estimates for smaller test sets can fluctuate considerably -- this is why we use resampling in such situations.\\
+   Repeated $\tfrac{2}{3}$ / $\tfrac{1}{3}$ holdout splits:\\
+\texttt{iris} ($n=150$) and \texttt{sonar} ($n=208$).\\
+% So we have about 50 (\texttt{iris}) and 70 (\texttt{sonar}) observations in our 
+% respective test sets.\\
+
+\vfill
+
+\begin{center}
+\includegraphics[width=0.8\textwidth]{figure/test-error-flucuation} 
+\end{center}
+  % \item \textbf{Sample size} plays a crucial role in deciding on a split 
+  % strategy:
   % \begin{itemize}
-  %   \item Smaller training set $\rightarrow$ poor fit, high bias in error 
-  %   estimate.
-  %   \item Smaller test set $\rightarrow$ high variance in error estimate.
-  % \end{itemize}   
-  \item \textbf{Sample size} plays a crucial role in deciding on a split 
-  strategy:
-  \begin{itemize}
-    \item If the size of our initial, complete data set $\D$ is limited,
-    single train-test splits can be problematic.
-    \item Small-sample problems come in different shapes in ML -- 
-    maybe overall set size is sufficient but one of the classes is very small.
-  \end{itemize}
-  \item It is generally advisable to try out different train-test splits and 
-  study the resulting error measurement fluctuation.
+  %   \item If the size of our initial, complete data set $\D$ is limited,
+  %   single train-test splits can be problematic.
+  %   \item Small-sample problems come in different shapes in ML -- 
+  %   maybe overall set size is sufficient but one of the classes is very small.
+  % \end{itemize}
+  % \item It is generally advisable to try out different train-test splits and 
+  % study the resulting error measurement fluctuation.
 \end{itemize}
 
-\framebreak
-
-We simulate repeated $\tfrac{2}{3}$ / $\tfrac{1}{3}$ train-test splits on two ML 
-tasks:\\ 
-\texttt{iris} ($n$ = 150) and \texttt{sonar} ($n$ = 208).\\
-So we have about 50 (\texttt{iris}) and 70 (\texttt{sonar}) observations in our 
-respective test sets.\\
-
-\vfill
-
-The plots below show the strong variation in test errors (50 
-repetitions).
-
-\vfill
-
-\includegraphics[width=\textwidth]{figure/test-error-flucuation} 
 
 \end{vbframe}
 
@@ -336,19 +331,28 @@ repetitions).
 
 \begin{vbframe}{Bias-Variance of Hold-Out -- Experiment}
 
-\begin{itemize}
-  \item Data: simulate \texttt{spirals} data ($sd = 0.1$) from \texttt{mlbench}.
-  \item Learner: CART (\texttt{classif.rpart} from \texttt{mlr3}).
-  \item Goal: estimate real performance of a model with $|\Dtrain| = 500$.
+    Hold-out sampling produces a trade-off between \textbf{bias} and
+  \textbf{variance} that is controlled by split ratio.
   \begin{itemize}
-    \item Get the "true" estimator by repeatedly sampling 500 observations from 
-    the simulator, fit the learner, then evaluate on $10^5$ observations -- 
-    obviously not feasible in practice.
-    \item Analyze different split rates $s \in \{0.05, 0.10, ..., 0.95\}$ 
+    \item Smaller training set $\rightarrow$ poor fit, pessimistic bias in $\GEh$.
+    \item Smaller test set $\rightarrow$ high variance.
+  \end{itemize}   
+
+\vfill
+
+Experiment:
+\begin{itemize}
+  \item \texttt{spirals} data ($sd = 0.1$), with CART tree. 
+  \item Goal: estimate real performance of a model with $|\Dtrain| = 500$.
+  % \begin{itemize}
+    \item Split rates $s \in \{0.05, 0.10, ..., 0.95\}$ 
     with $|\Dtrain| = s \cdot 500$.
-    \item Estimate performance on $\Dtest$ with $|\Dtest| = (1 - s) \cdot 500$.
-    \item Repeat the experiment 50 times for each split rate.
-  \end{itemize}
+    \item Estimate error on $\Dtest$ with $|\Dtest| = (1 - s) \cdot 500$.
+    \item 50 repeats for each split rate.
+    \item Get "true" performance by often sampling 500 points, 
+      fit learner, then eval on $10^5$ fresh points.
+    % obviously not feasible in practice.
+  % \end{itemize}
 \end{itemize}
 
 \framebreak
@@ -360,20 +364,20 @@ repetitions).
 \lz
 
 \begin{itemize}
-  \item We clearly see the pessimistic bias for small training sets -- we cannot 
-  learn much from substantially fewer than 500 observations. 
-  \item At the same time, we observe an increase in variance when test sets 
-  become smaller.
+  \item Clear pessimistic bias for small training sets -- we learn
+      a much worse model than with 500 observations. 
+  \item But increase in variance when test sets become smaller.
 \end{itemize}
 
 \framebreak
 
 \begin{itemize}
-  \item We now plot the MSE between true performance (horizontal line in 
-  previous plot) and hold-out values in each boxplot.
-  \item The split rate with the lowest MSE value produces the best estimator, 
-  which is pretty close to a training set ratio of 2/3.
-  \item NB: this is a single experiment and not a scientific study, but this 
+  \item Let's now plot the MSE of the holdout estimator.
+  \item NB: Not MSE of model, but squared difference between estimated
+      holdout values and true performance (horiz. line in 
+  prev. plot).
+  \item Best estimator is ca. train set ratio of 2/3.
+  \item NB: This is a single experiment and not a scientific study, but this 
   rule-of-thumb has also been validated in larger studies.
 \end{itemize}
 
@@ -384,29 +388,6 @@ repetitions).
 
 \end{vbframe}
 
-% ------------------------------------------------------------------------------
-
-\begin{vbframe}{Test error}
-
-To clear up a major point of confusion:
-\medskip
-
-\begin{itemize}
-  \item In ML we frequently face a weird situation.
-  \item We are usually given a single data set, and at the end of our model 
-  selection and evaluation process, we will likely fit one model on exactly that 
-  complete data set. 
-  \item As training error evaluation does not work, we have no other option but 
-  to evaluate exactly that model.
-  \item Hold-out splitting (and \textbf{resampling}) are tools to estimate 
-  future performance in a valid manner. 
-  \item All of the models produced during that phase of evaluation are only
-  intermediate results.
-\end{itemize}
-
-\end{vbframe}
-
-% ------------------------------------------------------------------------------
 
 \endlecture
 \end{document}

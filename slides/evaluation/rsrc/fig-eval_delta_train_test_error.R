@@ -171,3 +171,50 @@ ggplot2::ggsave(
   p_3,
   height = 2L,
   width = 4.5)
+
+
+# visualize the 2d landscape and position of errors
+# to see further differences between train and test
+
+set.seed(123)
+sd = 0.1; cycles = 2
+ntrain = 500
+nbigtest = 100000
+k = 2
+ll = lrn("classif.fnn", k = k)
+
+dtrain =  mlbench.spirals(n = ntrain, cycles = cycles, sd = sd)
+dtrain = as.data.table(dtrain)
+task = TaskClassif$new("spirals", backend = dtrain, target = "classes")
+ll$train(task)
+dtrain$response = ll$predict_newdata(dtrain)$response
+trainerr = mean(dtrain$response != dtrain$classes)
+
+x1s = seq(-2, 2, by = 0.1)
+x2s = seq(-2, 2, by = 0.1)
+dpredbg = expand.grid(x.1 = x1s, x.2 = x2s)
+dpredbg$response = ll$predict_newdata(dpredbg)$response
+
+dbigtest = mlbench::mlbench.spirals(n = nbigtest, cycles = cycles, sd = sd)
+dbigtest = data.table::as.data.table(dbigtest)
+dbigtest$response = ll$predict_newdata(dbigtest)$response
+testerr = mean(dbigtest$response != dbigtest$classes)
+dbigtest = dbigtest[response != classes,]
+
+pl = ggplot(dpredbg, aes(x = x.1, y = x.2, fill = response))
+pl = pl + geom_raster()
+pl = pl + geom_point(data = dtrain, aes(x = x.1, y = x.2, fill = classes),
+  shape = 21, colour = "black", size = 2)
+pl = pl + geom_point(data = dbigtest, aes(x = x.1, y = x.2), fill = "black", 
+  alpha=0.1, size=0.3)
+tit = sprintf("k = 2;   trainerr = %.2f,   testerr = %.2f", trainerr, testerr)
+pl = pl + ggtitle(tit)
+pl = pl + guides(fill=guide_legend(title="Classes"))
+
+ggsave(
+  "../figure/eval_delta_train_test_knn_2d.pdf",
+  pl,
+  height = 2L,
+  width = 5)
+
+

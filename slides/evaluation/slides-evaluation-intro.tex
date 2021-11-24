@@ -8,7 +8,8 @@
 \newcommand{\learninggoals}{
 \item Understand the goal of performance estimation
 \item Understand the difference between outer and inner loss
-\item Know the definition of generalization error}
+\item Know the formal definition of generalization error as a statistical estimator of
+future performance}
 
 \title{Introduction to Machine Learning}
 % \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
@@ -17,7 +18,7 @@
 
 \begin{document}
 
-\lecturechapter{Evaluation: Introduction and Remarks}
+\lecturechapter{Evaluation: Generalization Error}
 \lecture{Introduction to Machine Learning}
 \sloppy
 
@@ -26,107 +27,64 @@
 \begin{vbframe}{Performance estimation}
 
 \begin{itemize}
-  \item After training our model, we are naturally interested in its
-  \textbf{performance}.
-  \item Recall that supervised learning is about finding the optimal model 
-  for our data at hand, given a set of hyperparameters: 
+  \item For a trained model, we want to know its future \textbf{performance}.
+  \item Training works by ERM on $\Dtrain$ (inducer, loss, risk minimization):
   $$\inducer: \preimageInducerShort \rightarrow \Hspace, \quad (\D, \lamv)
   \mapsto \fhDlam.$$
-  \item We obtain $\fhDlam$ by means of empirical risk minimization, 
-  based on what we will now call \textbf{inner loss}.
-  \item However, the inner loss does not necessarily tell us something about the performance 
-  of our learner -- after all, we chose our model precisely so it would be 
-  loss-minimal on the data we trained it on.
+  % by ERM:
+  $$ \min_{\theta \in \Theta} \sumin \Lxyit $$ 
+  \item Due to effects like overfitting, we cannot simply use this \textbf{training error}
+      to gauge our model, this is likely optimistically biased.\\ 
+      (more on this later!)
+  \item We want: the true expected loss, a.k.a. \textbf{generalization error}.
+  \item To reliably estimate it, we need independent, unseen \textbf{test data}. 
+  \item This simply simulates the application of the model in reality.    
 \end{itemize}
+\end{vbframe}
 
-\lz
-$\rightarrow$ We cannot hope for $\fh_{\D, \lamv}$ to perform equally well 
-on unseen data. \\
-$\rightarrow$ Evaluation based on the inner loss would be 
-\textbf{optimistically biased}.
-
-\framebreak
-
+\begin{vbframe}{GE for a fixed model}
 \begin{itemize}
-  \item We wish to compute the true expected loss of our learner, referred to as
-  \textbf{generalization error} or \textbf{outer loss}.
+  \item GE for a fixed model: $\GE(\fh, L) := \E \left[ L(y, \fxh) \right]$\\
+      Expectation over a single, random test point $(\xv, y) \sim \Pxy$.
+  \item Estimator, \textbf{if a dedicated test set is available} (size $m$) 
+    $$\GEh(\fh, L) := \frac{1}{m}\sum_{(\xv, y) \in \Dtest} \left[ L(y, \fxh) \right]$$
+    
+     % $$\GEh(\fh, L) := \GE(I, \lamv, n_{train}, \rho_L | \Dtrain) $$
+  
 \end{itemize}
 
 \begin{center}
 % FIGURE SOURCE: https://docs.google.com/drawings/d/13AH298rMnDL5p0SrBd6VCukC9vg1qyRXGqgMcvuPRc0/edit?usp=sharing
-\includegraphics[trim = 0 0 0 30, clip, width=0.7\textwidth]
+\includegraphics[trim = 0 0 0 30, clip, width=0.5\textwidth]
 {figure_man/evaluation-intro-ge.pdf}
 \end{center}
+  
+\vfill
 
-\begin{itemize}
-  \item In order to estimate performance on previously unseen observations, we 
-  need independent \textbf{test data}. 
-  \item As such a test set is not always available, we split the data at hand into non-overlapping sets $\Dtrain$ and $\Dtest$, 
-  with respective sizes $\ntrain + \ntest = n$.
-\end{itemize}
+NB: Very often, no dedicated test-set is available, and what we describe here is not same
+as hold-out splitting (see later).
 
+% \begin{itemize}
+  % \item If no dedicated test set is available, we partition $D$ into $\Dtrain$ and $\Dtest$, 
+  % so $\ntrain + \ntest = n$.
+% \end{itemize}
 \end{vbframe}
 
-% ------------------------------------------------------------------------------
 
-\begin{vbframe}{Set-based performance metrics}
 
-\begin{itemize}
-  \item For the outer loss, we introduce a \textbf{set-based metric} $\rho$.
-  \item This allows us to use outer losses that are defined on the entire test 
-  set rather than point-wise (e.g., the AUC), and potentially differ from the 
-  inner loss.
-  \item For arbitrary data sets of size $m$ and a prediction matrix 
-  $$\F = \begin{bmatrix} \fh(\xi[1])^\top & \dots & \fh(\xi[m])^\top \end{bmatrix}^\top \in \R^{m \times g}$$ returned by our model $\fh$, $\rho$ is defined as:
-  $$\rho: \preimageRho  \rightarrow \R, \quad (\yv, \F) \mapsto \rho(\yv, \F).$$
-  \item We can easily translate this to our usual notion of point-wise loss $L$:
-  $$\rho_L(\yv, \F) = \frac{1}{m}\sumim L(\yi, \Fi)  \quad \left(= \frac{1}{m}\sumim L(\yi, \fh(\xi)\right).$$
-\end{itemize}
 
-\end{vbframe}
-
-% ------------------------------------------------------------------------------
-
-\begin{vbframe}{Generalization error}
-
-\begin{itemize}
-  % \item To ease notation, we will represent our train and test sets by index 
-  % vectors $J_\mathrm{train} \in \nset^{m_\mathrm{train}}$ and $J_\mathrm{test} 
-  % \in \nset^{m_\mathrm{test}}$.
-  % \item With this, we can denote the corresponding vector of labels as
-  % $\yv_J = \left(y^{(J^{(1)})},\dots, y^{(J^{(m)})} \right) \in \Yspace^m$ and 
-  % the matrix of prediction scores as
-  % $\bm{F}_{J,f} = \left( f(\xv^{(J^{(1)})}), \dots, f(\xv^{(J^{(m)})}) \right)
-  % \in \R^{m\times g}$.
-  \item This allows us to define the \textbf{generalization error} as:
-  $$\GEfull := 
-  \lim_{\ntest \rightarrow \infty} \E \left[ \rho \left(
-  \yv, \F_{\Dtest, \inducer(\D_{\mathrm{train}}, \lamv)} 
-  \right)\right]$$
-  \item The expectation is taken w.r.t. the unknown distribution $\Pxy$ from 
-  which both $\Dtrain$ and $\Dtest$ are sampled independently.
-  \item We must therefore estimate the generalization error, based on our 
-  train-test split:
-  $$\GEh_{\Dtrain, \Dtest}(\inducer,
-  \lamv, \ntrain, \rho) =
-  \rho \left( \yv_{\Dtest}, \F_{\Dtest, 
-  \inducer(\D_{\mathrm{train}}, \lamv)} \right).$$
-  \item In practice, we will not rely on a single split, but use 
-  \textbf{resampling} to repeatedly carve out test observations from our data.
-\end{itemize}
-
-\framebreak
-
+\begin{vbframe}{Example: Test Loss as Random Variable}
 \begin{itemize}
   \small
-  \item In order to get a better feeling for the quantities we are trying to 
-  estimate, let's look at the (pointwise) losses we can expect when applying 
-  a model on unseen test data.
-  \item We fit a linear model to the \texttt{boston housing} regression task 
-  with $\Dtrain$ of fixed size $\ntrain = 354$ (70\% of total observations).
-  \item From the remaining unseen data, we draw one observation at a time, 
-  feed it to the trained model, and compute the pointwise $L2$ loss.
-  \item Then, we can plot the density of the stacked loss values:
+  % \item In order to get a better feeling for the quantities we are trying to 
+  % estimate, let's look at the (pointwise) losses we can expect when applying 
+  % a model on unseen test data.
+  \item For a fixed model and dedicated i.i.d. test set, we can easily approximate
+      the complete test loss distribution $L(y, \fxh)$.
+  \item LM on \texttt{mlbench::friedman1} test problem
+  \item With $\ntrain = 500$ we create a fixed model
+  \item We feed 5000 fresh test points to model
+  \item And plot the pointwise $L2$ loss.
 \end{itemize}
 
 \vfill
@@ -143,28 +101,31 @@ $\rightarrow$ Evaluation based on the inner loss would be
     grey.
   \end{itemize}
 \end{minipage}
-
 \end{vbframe}
 
-% ------------------------------------------------------------------------------
 
 \begin{vbframe}{Inner vs outer loss}
 
 \begin{itemize}
-  \item Supervised learning thus implies the following dichotomy:
-  \begin{itemize}
-    \item \textbf{Learning}: minimize inner loss
-    \item \textbf{Evaluation}: estimate outer loss
-  \end{itemize}
-  \item Beyond evaluating a single learner, the outer loss lends itself to
-  comparing different types of learners, or learners with varying hyperparameter
-  configurations $\lamv$.
-  \item Ideally, we have \textbf{inner loss = outer loss}. In this case, it holds by the law of the large numbers for the empirical risk $\riske$ that
-  $$\E_{\D\sim(\Pxy)^{\ntrain}}\left[\frac{1}{n}\sumin L\left(\yi, \fhDlam(\xi)\right)  \right] \xrightarrow{n \to \infty} \GE(\inducer, \lamv, \ntrain, \rhoL) .$$
-  \item This is not always possible -- some special (set-based) metrics for 
-  evaluation, such as the AUC, are not applicable as inner loss.
-  \item On the other hand, we sometimes wish to use losses that are 
-  hard to optimize or do not even specify one directly.
+  % \item Supervised learning thus implies the following dichotomy:
+  % \begin{itemize}
+    % \item \textbf{Learning}: minimize inner loss
+    % \item \textbf{Evaluation}: estimate outer loss
+  % \end{itemize}
+  % \item Beyond evaluating a single learner, the outer loss lends itself to
+  % comparing different types of learners, or learners with varying hyperparameter
+  % configurations $\lamv$.
+  \item Sometimes, we would like to evaluate our learner with a different 
+      loss $L$ or metric $\rho$.
+  \item Nomenclature: ERM and \textbf{inner loss}; evaluation and \textbf{outer loss}. 
+          % In this case, it holds by the law of the large numbers for the empirical risk $\riske$ that
+  % $$\E_{\D\sim(\Pxy)^{\ntrain}}\left[\frac{1}{n}\sumin L\left(\yi, \fhDlam(\xi)\right)  \right] \xrightarrow{n \to \infty} \GE(\inducer, \lamv, \ntrain, \rhoL) .$$
+  \item Different losses, if computationally advantageous to deviate from outer loss of application; 
+      e.g., optimization faster with inner L2 or maybe no implementation for outer loss exists.
+      % is not always possible -- some special (set-based) metrics for 
+  % evaluation, such as the AUC, are not applicable as inner loss.
+  % \item On the other hand, we sometimes wish to use losses that are 
+  % hard to optimize or do not even specify one directly.
   % , as in:
   % \begin{itemize}
   %   \item Logistic regression: minimization of binomial loss
@@ -172,42 +133,158 @@ $\rightarrow$ Evaluation based on the inner loss would be
   % \end{itemize}
 \end{itemize}
 
-\framebreak
+\vfill
 
-\textbf{Example:} Logistic regression
-
+\textbf{Example:} Linear binary classifier / Logistic regression.
+\begin{columns}
+\begin{column}{0.7\textwidth}
+\small
 \begin{itemize}
-  \item An intuitive choice would be the share of incorrect predictions.
-  \item This leads to the \textbf{mislassification error rate (MCE)}, computing
-  the mean over pointwise \textbf{0-1 loss}.
+  \item Outside: We often want to eval with "nr of misclassifed examples",
+      so 0-1 loss.
+  \item Problem: 0-1 neither differentiable nor continuous.
+  Hence: Inner loss = binomial.\\
+  (0-1 actually NP hard).
+  \item For evaluation, differentiability is not required.
 \end{itemize}
+\end{column}
+\begin{column}{0.3\textwidth}
+\begin{center}    
+  \includegraphics[width=1.0\textwidth]{figure/plot_loss_01}
+\end{center}    
+\end{column}
+\end{columns}
 
-\lz
-
-\begin{minipage}{0.6\textwidth}
-  \begin{itemize}
-    \item 0-1 loss simply assigns a loss of 1 for incorrect predictions and 0
-    otherwise: $$\Lhxy = \I_{\{y \neq \hx\}}$$
-  \end{itemize}
-\end{minipage}%
-\begin{minipage}{0.4\textwidth}
-  \centering
-  \includegraphics[width=0.8\textwidth]{figure/plot_loss_01}
-\end{minipage}
-
-\lz
-
-\begin{itemize}
-  \item Problem: 0-1 loss is not differentiable (not continuous even). \\
-  $\rightarrow$ This is why we use \textbf{binomial} loss as inner loss 
-  instead.
-  \item For evaluation, differentiability is not required, so evaluation on 
-  \textbf{MCE} is feasible. 
-\end{itemize}
-
-\normalsize
 
 \end{vbframe}
+
+
+
+
+
+\begin{vbframe}{Set-based performance metrics}
+\begin{itemize}
+  \item Metric $\rho$ measures quality of predictions as scalar on one test set.
+  $$\rho: \preimageRho  \rightarrow \R, \quad (\yv, \F) \mapsto \rho(\yv, \F).$$
+  \item Needed as some metrics are not observation-based losses but defined on sets,
+      e.g. AUC or metrics in survival analysis. 
+  \item For test data of size $m$, $\F$ is prediction matrix 
+  % $$\F = \begin{bmatrix} \fh(\xi[1])^\top & \dots & \fh(\xi[m])^\top \end{bmatrix}^\top \in \R^{m \times g}$$ 
+$$\F = \begin{bmatrix} 
+\fh(\xi[1]) \\ 
+\dots \\
+\fh(\xi[m])
+\end{bmatrix} \in \R^{m \times g}$$ 
+  % we define 
+  \item Point-wise loss $L$ can easily be extended to a $\rho_L$:
+  $$\rho_L(\yv, \F) = \frac{1}{m}\sumim L(\yi, \Fi)  \quad \left(= \frac{1}{m}\sumim L(\yi, \fh(\xi)\right).$$
+\end{itemize}
+\end{vbframe}
+
+
+
+
+\begin{vbframe}{Model GE vs. Learner GE}
+
+To clear up a major point of confusion (or totally confuse you):
+\medskip
+
+\begin{itemize}
+  \item In ML we frequently face a weird situation.
+  \item We are usually given a single data set, and at the end of our model fitting (and evaluation and selection) process, we will likely fit one model on exactly that 
+  complete data set. 
+  \item We only trust in unseen-test-error estimation -- but have no data left for that
+      final model. 
+  \item So in the construction of any practical estimator we cannot really use that final model!
+
+% \framebreak
+
+  \item Hence, we will now evaluate the next best thing: The inducer, 
+      and the quality of a model produced when fitted on (nearly) the same number of points!
+  % \item For this, we will soon define a number of splitting (a.k.a. resampling) procedures.
+  % \item Hold-out splitting (and \textbf{resampling}) are tools to estimate 
+  % future performance in a valid manner. 
+  % \item NB: All of the models produced during that phase of evaluation are only
+  % intermediate results.
+\end{itemize}
+
+\end{vbframe}
+
+% \lz
+% $\rightarrow$ We cannot hope for $\fh_{\D, \lamv}$ to perform equally well 
+% on unseen data. \\
+% $\rightarrow$ Evaluation based on the inner loss would be 
+% \textbf{optimistically biased}.
+
+% \framebreak
+
+% \end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Generalization error for inducer}
+  $$\GEfull := 
+  \lim_{\ntest \rightarrow \infty} \E \left[ \rho \left(
+  \yv, \F_{\Dtest, \inducer(\D_{\mathrm{train}}, \lamv)} 
+  \right)\right]$$
+
+\begin{itemize}
+  % \item To ease notation, we will represent our train and test sets by index 
+  % vectors $J_\mathrm{train} \in \nset^{m_\mathrm{train}}$ and $J_\mathrm{test} 
+  % \in \nset^{m_\mathrm{test}}$.
+  % \item With this, we can denote the corresponding vector of labels as
+  % $\yv_J = \left(y^{(J^{(1)})},\dots, y^{(J^{(m)})} \right) \in \Yspace^m$ and 
+  % the matrix of prediction scores as
+  % $\bm{F}_{J,f} = \left( f(\xv^{(J^{(1)})}), \dots, f(\xv^{(J^{(m)})}) \right)
+  % \in \R^{m\times g}$.
+  \item Quality of models when fitted with $\Ilam$ on 
+      $n_{\mathrm{train}}$ points from $\Pxy$.
+  \item Expectation \textbf{both} over $\Dtrain$ and $\Dtest$, sampled independently.
+  \item This is estimated by all following \textbf{resampling} procedures. 
+  \item NB: All of the models produced during that phase of evaluation are only
+    intermediate results.
+\end{itemize}
+\end{vbframe}
+
+% \framebreak    
+\begin{vbframe}{Generalization error for inducer}
+  $$\GEfull := 
+  \lim_{\ntest \rightarrow \infty} \E \left[ \rho \left(
+  \yv, \F_{\Dtest, \inducer(\D_{\mathrm{train}}, \lamv)} 
+  \right)\right]$$
+\begin{itemize}
+  \item We can already see a potential source of pessimistic bias in our
+      estimator: While we would like to estimate a GE with 
+      $n_{\mathrm{train}} = |\D|$, the size of the complete data set, 
+      in practice we can only do this for strictly smaller values, so that test data is left to work with.
+  \item For pointwise losses $\rho_L$:
+      $$\GE(\inducer, \lamv, n_\mathrm{train}, \rho_L) := 
+      \E \left[ L(y, \inducer(\D_{\mathrm{train}}, \lamv)(\xv) \right]$$
+  Expectation \textbf{both} over $\Dtrain$ and $(\xv,y)$ independently from $\Pxy$.
+
+
+  % \item We must therefore estimate the generalization error, based on our 
+  % train-test split:
+  % $$\GEh_{\Dtrain, \Dtest}(\inducer,
+  % \lamv, \ntrain, \rho) =
+  % \rho \left( \yv_{\Dtest}, \F_{\Dtest, 
+  % \inducer(\D_{\mathrm{train}}, \lamv)} \right).$$
+  % \item In practice, we will not rely on a single split, but use 
+  % \textbf{resampling} to repeatedly carve out test observations from our data.
+\end{itemize}
+
+
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+
+
+
 
 % ------------------------------------------------------------------------------
 
