@@ -57,22 +57,22 @@
   <<echo=TRUE, message=FALSE, fig.height=4, fig.width=8>>=
 
   # compute errors in double loop over repetitions and split ratios
-  errors <- lapply(
-    repetitions,
-    function(i) sapply(results[[i]], function(j) j$score()$regr.mse))
-
-  # assemble everything in data.frame and convert to long format for plotting
-  errors_df <- as.data.frame(do.call(cbind, errors))
-  errors_df$split_ratios <- split_ratios
-  errors_df_long <- reshape2::melt(errors_df, id.vars = "split_ratios")
-  names(errors_df_long)[2:3] <- c("repetition", "mse")
-
-  # plot errors vs split ratio
-  library(ggplot2)
-  ggplot(errors_df_long, aes(x = as.factor(split_ratios), y = mse)) +
-    geom_boxplot(fill = "lightgray") +
-    theme_classic() +
-    labs(x = "share of training samples", y = "average MSE")
+  # errors <- lapply(
+  #   repetitions,
+  #   function(i) sapply(results[[i]], function(j) j$score()$regr.mse))
+  # 
+  # # assemble everything in data.frame and convert to long format for plotting
+  # errors_df <- as.data.frame(do.call(cbind, errors))
+  # errors_df$split_ratios <- split_ratios
+  # errors_df_long <- reshape2::melt(errors_df, id.vars = "split_ratios")
+  # names(errors_df_long)[2:3] <- c("repetition", "mse")
+  # 
+  # # plot errors vs split ratio
+  # library(ggplot2)
+  # ggplot(errors_df_long, aes(x = as.factor(split_ratios), y = mse)) +
+  #   geom_boxplot(fill = "lightgray") +
+  #   theme_classic() +
+  #   labs(x = "share of training samples", y = "average MSE")
   
   @
   
@@ -102,9 +102,7 @@
   
   \item Now we account for the fact that $\hat y$ is a random variable if we 
   compute repeated estimates of the generalization error based on random sampling 
-  processes.
-  For this, we start from the expression we have derived in e), only now with 
-  the additional expectation around the first component:
+  processes. our random sampling process and obtain:
   
   \begin{flalign*}
     \Exy ((\E_{\hat y}((\hat y - y)^2) ~|~ \xv) &=
@@ -126,12 +124,11 @@
   
   Okay, now what to make of this? 
   The first thing we need to understand is 
-  that $\Exy(y ~|~ \xv)$ is the best possible prediction we could make: it is
+  that $\Exy(y ~|~ \xv)$ is the best possible prediction we could make -- 
   the conditional expectation of our target under the true data-generating 
-  process, i.e., the value of $y$ we would expect to observe for given $\xv$ 
-  if we knew the true feature-target relation.
-  Unfortunately, our prediction $\E_{\hat y}(\hat y)$ will in general be
-  different from $\Exy(y ~|~ \xv)$ because we do not know the whole truth. 
+  process.
+  Unfortunately, we must expect our prediction $\E_{\hat y}(\hat y)$ to be 
+  different from $\Exy(y ~|~ \xv)$. 
   Looking at the last line of our derivation, we see that the first term 
   is exactly the MSE btween these two quantities -- i.e., the expected 
   square \textit{bias} we make with our prediction.
@@ -147,13 +144,14 @@
   
   Summarizing:
   
-  $$\Exy ((\E_{\hat y}((\hat y - y)^2) ~|~ \xv) = 
+  $$\E_{\hat y, \Pxy} ((\hat y - y)^2 ~|~ \xv) = 
   \left( \underbrace{\E_{\hat y}(\hat y) -  \Exy(y ~|~ \xv)}_{
   \text{bias}} \right)^2
   + \underbrace{\var_{\hat y}(\hat y)}_{\text{variance}} 
   + \underbrace{\var_{xy}(y ~|~ \xv)}_{\text{irreducible error}}.$$
   
-  We see again that $\E_{\hat y}(\hat y)$ will, on average, be a better 
-  estimator for $\Exy(y ~|~ \xv)$ if we have more data for training, while 
-  $\var_{\hat y}(\hat y)$ tends to be large if we leave little data to test on.
+  Revisiting our practical experiments, we see again that 
+  $\E_{\hat y}(\hat y)$ will be closer to the optimal prediction if we 
+  have more data for training, while $\var_{\hat y}(\hat y)$ is large if 
+  we leave little data to test on.
 \end{enumerate}
