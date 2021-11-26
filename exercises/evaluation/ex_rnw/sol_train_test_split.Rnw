@@ -38,7 +38,7 @@
   poor generalization.
   
   \item We repeat the above procedure for different train-test splits like so:
-  <<echo=TRUE, results=FALSE, message=FALSE>>=
+  <<echo=TRUE, results=FALSE, message=FALSE, fig.width=3, fig.height=1.5>>=
 
   # define train-test splits
   repetitions <- 1:10
@@ -84,77 +84,81 @@
     high variance in the individual generalization error estimates.
   \end{enumerate}
   
-  \item In order to solve this, we rely mostly on the linearity of the 
-  expectation and what is known as \enquote{Verschiebungssatz der Varianz} in 
-  German (i.e., $\var(z) = \E(z^2) - \E^2(z)$ for some random variable $z$).
-  Then:
-  
-  \begin{flalign*}
-    \Exy ((\hat y - y)^2 ~|~ \xv) &= \Exy (\hat y^2 - 2\hat y y +
-    y^2 ~|~ \xv) \\
-    &= \hat y^2 - 2 \cdot \hat y \cdot \Exy(y ~|~ \xv) + 
-    \Exy(y^2 ~|~ \xv) \\
-    &= \hat y^2 - 2 \cdot \hat y \cdot \Exy(y ~|~ \xv) + 
-    \E^2_{\Pxy}(y ~|~ \xv) +
-    \var_{xy}(y ~|~ \xv) \\ 
-    &= \left(\hat y - \Exy(y ~|~ \xv) \right)^2 + \var_{xy}(y ~|~ \xv).
-  \end{flalign*}
-  
-  \item Now we account for the fact that $\hat y$ is a random variable if we 
-  compute repeated estimates of the generalization error based on random sampling 
-  processes.
-  For this, we start from the expression we have derived in e), only now with 
-  the additional expectation around the first component:
-  
-  \begin{flalign*}
-    \Exy ((\E_{\hat y}((\hat y - y)^2) ~|~ \xv) &=
-    \E_{\hat y} \left( \left(\hat y - \Exy(y ~|~ \xv) \right)^2 \right) + 
-    \var_{xy}(y ~|~ \xv) \\
-    &= \E_{\hat y} \left(\hat y^2 - 2 \cdot \hat y  \cdot
-    \Exy(y ~|~ \xv) +
-    \E^2_{xy}(y ~|~ \xv)\right) + \var_{xy}(y ~|~ \xv) \\
-    &= \E_{\hat y}(\hat y^2) - 2  \cdot \E_{\hat y}(\hat y)
-     \cdot \Exy(y ~|~ \xv) + \E^2_{xy}(y ~|~ \xv) + 
-     \var_{xy}(y ~|~ \xv) \\
-    &= \E^2_{\hat y}(\hat y) + \var_{\hat y}(\hat y)-  
-    2  \cdot \E_{\hat y}(\hat y)
-     \cdot \Exy(y ~|~ \xv) + \E^2_{xy}(y ~|~ \xv) + 
-     \var_{xy}(y ~|~ \xv) \\
-    &= \left( \E_{\hat y}(\hat y) -  \Exy(y ~|~ \xv) \right)^2 +
-    \var_{\hat y}(\hat y) + \var_{xy}(y ~|~ \xv).
-  \end{flalign*}
-  
-  Okay, now what to make of this? 
-  The first thing we need to understand is 
-  that $\Exy(y ~|~ \xv)$ is the best possible prediction we could make: it is
-  the conditional expectation of our target under the true data-generating 
-  process, i.e., the value of $y$ we would expect to observe for given $\xv$ 
-  if we knew the true feature-target relation.
-  Unfortunately, our prediction $\E_{\hat y}(\hat y)$ will in general be
-  different from $\Exy(y ~|~ \xv)$ because we do not know the whole truth. 
-  Looking at the last line of our derivation, we see that the first term 
-  is exactly the MSE btween these two quantities -- i.e., the expected 
-  square \textit{bias} we make with our prediction.
-  
-  The second summand $\var_{\hat y}(\hat y)$ represents, unsurprisingly, 
-  the \textit{variance} part of the decomposition.
-  
-  Now the last term is the variance of the true conditional distribution, which, 
-  crucially, does not depend on our prediction.
-  No matter how accurate our model is, this component will be irreducible.
-  It thus marks a lower bound on the generalization error and is also referred 
-  to as \textit{Bayes error}.
-  
-  Summarizing:
-  
-  $$\Exy ((\E_{\hat y}((\hat y - y)^2) ~|~ \xv) = 
-  \left( \underbrace{\E_{\hat y}(\hat y) -  \Exy(y ~|~ \xv)}_{
-  \text{bias}} \right)^2
-  + \underbrace{\var_{\hat y}(\hat y)}_{\text{variance}} 
-  + \underbrace{\var_{xy}(y ~|~ \xv)}_{\text{irreducible error}}.$$
-  
-  We see again that $\E_{\hat y}(\hat y)$ will, on average, be a better 
-  estimator for $\Exy(y ~|~ \xv)$ if we have more data for training (provided 
-  our learner class is flexible enough), while 
-  $\var_{\hat y}(\hat y)$ tends to be large if we leave little data to test on.
+  % \item In order to solve this, we rely mostly on the linearity of the 
+  % expectation and what is known as \enquote{Verschiebungssatz der Varianz} in 
+  % German (i.e., $\var(z) = \E(z^2) - \E^2(z)$ for some random variable $z$), 
+  % as well as pulling components out of the expectation that do not depend on the 
+  % variable we marginalize over.
+  % Then:
+  % 
+  % \begin{flalign*}
+  %   \Exy ((\hat y - y)^2 ~|~ \xv) &= \Exy (\hat y^2 - 2\hat y y +
+  %   y^2 ~|~ \xv) \\
+  %   &= \hat y^2 - 2 \cdot \hat y \cdot \Exy(y ~|~ \xv) + 
+  %   \Exy(y^2 ~|~ \xv) \\
+  %   &= \hat y^2 - 2 \cdot \hat y \cdot \Exy(y ~|~ \xv) + 
+  %   \E^2_{xy}(y ~|~ \xv) +
+  %   \var_{xy}(y ~|~ \xv) \\ 
+  %   &= \left(\hat y - \Exy(y ~|~ \xv) \right)^2 + \var_{xy}(y ~|~ \xv).
+  % \end{flalign*}
+  % 
+  % \item Now we account for the fact that $\hat y$ is a random variable if we 
+  % compute repeated estimates of the generalization error based on random sampling 
+  % processes.
+  % For this, we start from the expression we have derived in e), only now with 
+  % the additional expectation around the first component:
+  % 
+  % \begin{flalign*}
+  %   \Exy (\E_{\hat y}((\hat y - y)^2) ~|~ \xv) &=
+  %   \E_{\hat y} \left( \left(\hat y - \Exy(y ~|~ \xv) \right)^2 + 
+  %   \var_{xy}(y ~|~ \xv) \right) \\
+  %   &= \E_{\hat y} \left( \left(\hat y - \Exy(y ~|~ \xv) \right)^2 \right) + 
+  %   \var_{xy}(y ~|~ \xv) \\
+  %   &= \E_{\hat y} \left(\hat y^2 - 2 \cdot \hat y  \cdot
+  %   \Exy(y ~|~ \xv) +
+  %   \E^2_{xy}(y ~|~ \xv)\right) + \var_{xy}(y ~|~ \xv) \\
+  %   &= \E_{\hat y}(\hat y^2) - 2  \cdot \E_{\hat y}(\hat y)
+  %    \cdot \Exy(y ~|~ \xv) + \E^2_{xy}(y ~|~ \xv) + 
+  %    \var_{xy}(y ~|~ \xv) \\
+  %   &= \E^2_{\hat y}(\hat y) + \var_{\hat y}(\hat y)-  
+  %   2  \cdot \E_{\hat y}(\hat y)
+  %    \cdot \Exy(y ~|~ \xv) + \E^2_{xy}(y ~|~ \xv) + 
+  %    \var_{xy}(y ~|~ \xv) \\
+  %   &= \left( \E_{\hat y}(\hat y) -  \Exy(y ~|~ \xv) \right)^2 +
+  %   \var_{\hat y}(\hat y) + \var_{xy}(y ~|~ \xv).
+  % \end{flalign*}
+  % 
+  % Okay, now what to make of this? 
+  % The first thing we need to understand is 
+  % that $\Exy(y ~|~ \xv)$ is the best possible prediction we could make: it is
+  % the conditional expectation of our target under the true data-generating 
+  % process, i.e., the value of $y$ we would expect to observe for given $\xv$ 
+  % if we knew the true feature-target relation.
+  % Unfortunately, our prediction $\E_{\hat y}(\hat y)$ will in general be
+  % different from $\Exy(y ~|~ \xv)$ because we do not know the whole truth. 
+  % Looking at the last line of our derivation, we see that the first term 
+  % is exactly the MSE between these two quantities -- i.e., the square expected 
+  % \textit{bias} we make with our prediction.
+  % 
+  % The second summand $\var_{\hat y}(\hat y)$ represents, unsurprisingly, 
+  % the \textit{variance} part of the decomposition.
+  % 
+  % Now the last term is the variance of the true conditional distribution, which, 
+  % crucially, does not depend on our prediction.
+  % No matter how accurate our model is, this component will be irreducible.
+  % It thus marks a lower bound on the generalization error and is also referred 
+  % to as \textit{Bayes error}.
+  % 
+  % Summarizing:
+  % 
+  % $$\Exy (\E_{\hat y}((\hat y - y)^2) ~|~ \xv) = 
+  % \left( \underbrace{\E_{\hat y}(\hat y) -  \Exy(y ~|~ \xv)}_{
+  % \text{bias}} \right)^2
+  % + \underbrace{\var_{\hat y}(\hat y)}_{\text{variance}} 
+  % + \underbrace{\var_{xy}(y ~|~ \xv)}_{\text{irreducible error}}.$$
+  % 
+  % We see again that $\E_{\hat y}(\hat y)$ will, on average, be a better 
+  % estimator for $\Exy(y ~|~ \xv)$ if we have more data for training (provided 
+  % our learner class is flexible enough), while 
+  % $\var_{\hat y}(\hat y)$ tends to be large if we leave little data to test on.
 \end{enumerate}
