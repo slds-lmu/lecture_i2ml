@@ -28,7 +28,7 @@ plot_p_r_hist <- function(p = 1, n = 1e4){
     ylab(NULL) +
     xlab("r") +
     ylim(0, 0.85) +
-    theme_bw()
+    theme_minimal()
 }
 
 set.seed(123)

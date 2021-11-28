@@ -16,7 +16,7 @@ df <- make_spam_df()
 # PLOTS ------------------------------------------------------------------------
 
 p <- ggplot(data = df, aes(x = charExclamation, y = capitalAve, colour = type)) +
-  theme_bw() +
+  theme_minimal() +
   geom_jitter() +
   ylim(c(0, 5)) + xlim(c(0, 0.5)) +
   xlab("Frequency of exclamation marks") +

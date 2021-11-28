@@ -37,7 +37,7 @@ p_plot  <- ggplot(data.frame(x = x), aes(x)) +
                 xlim = c(r_from, r_to),
                 geom = "area", colour="red" , fill="transparent") +
   ylab("p(r)") + xlab("r") +
-  theme_bw()
+  theme_minimal()
 
 d_plot <- ggplot() +
   geom_raster(data = data.frame(x1 = X[,1], x2 = X[,2], z = normal_2d), aes(x1, x2, fill=z)) +
@@ -45,7 +45,7 @@ d_plot <- ggplot() +
   geom_polygon(data = data.frame(x=xc, y=yc), fill="red", alpha = 0.7,
                aes(x,y)) +
   labs(fill = "density") +
-  theme_bw() +
+  theme_minimal() +
   scale_fill_viridis(end = 0.9)
 
 p <- grid.arrange(p_plot, d_plot, ncol=2,

@@ -16,7 +16,7 @@ df <- make_spam_df()
 # PLOTS ------------------------------------------------------------------------
 
 p <- ggplot(data = df, aes(x = charExclamation, y = 0, colour = type)) +
-  theme_bw() +
+  theme_minimal() +
   geom_vline(xintercept = c(0, 0.25, 0.5), colour = "grey") +
   geom_jitter(height = 0, size = 1) +
   ylim(c(0, 1)) + xlim(c(0, 0.5)) +

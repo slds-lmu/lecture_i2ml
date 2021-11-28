@@ -19,6 +19,6 @@ p <- ggplot(df, aes(x=p, y=vol)) +
   geom_line() +
   xlab("Dimension p") +
   ylab(expression('Volume fraction' ~ 'S'[p](r)/'C'[p](r))) +
-  theme_bw()
+  theme_minimal()
 
 ggsave(filename = "../figure/vol_dim_plot.png", plot = p, width = 6, height = 3)
