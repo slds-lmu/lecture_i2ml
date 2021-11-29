@@ -68,17 +68,17 @@ for (i in seq_len(n_reps)) {
 # RESHAPING --------------------------------------------------------------------
 
 ggd1 = reshape2::melt(results)
-colnames(ggd1) = c("split", "rep", "ssiter", "mmce")
+colnames(ggd1) = c("split", "rep", "ssiter", "mce")
 ggd1$split = as.factor(ggd1$split)
-ggd1$mse = (ggd1$mmce -  true_performance)^2
+ggd1$mse = (ggd1$mce -  true_performance)^2
 ggd1$type = "holdout"
 ggd1$ssiter = NULL
 
 mse1 = plyr::ddply(ggd1, "split", plyr::summarize, mse = mean(mse))
 mse1$type = "holdout"
 
-ggd2 = plyr::ddply(ggd1, c("split", "rep"), plyr::summarize, mmce = mean(mmce))
-ggd2$mse = (ggd2$mmce -  true_performance)^2
+ggd2 = plyr::ddply(ggd1, c("split", "rep"), plyr::summarize, mce = mean(mce))
+ggd2$mse = (ggd2$mce -  true_performance)^2
 ggd2$type = "subsampling"
 mse2 = plyr::ddply(ggd2, "split", plyr::summarize, mse = mean(mse))
 mse2$type = "subsampling"

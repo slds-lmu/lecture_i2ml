@@ -3,16 +3,16 @@ library(ggplot2)
 
 load("rsrc/holdout-biasvar.RData")
 ggd1 = reshape2::melt(res)
-colnames(ggd1) = c("split", "rep", "ssiter", "mmce")
+colnames(ggd1) = c("split", "rep", "ssiter", "mce")
 ggd1$split = as.factor(ggd1$split)
-ggd1$mse = (ggd1$mmce -  realperf)^2
+ggd1$mse = (ggd1$mce -  realperf)^2
 ggd1$type = "holdout"
 ggd1$ssiter = NULL
 mse1 = plyr::ddply(ggd1, "split", plyr::summarize, mse = mean(mse))
 mse1$type = "holdout"
 
-ggd2 = plyr::ddply(ggd1, c("split", "rep"), plyr::summarize, mmce = mean(mmce))
-ggd2$mse = (ggd2$mmce -  realperf)^2
+ggd2 = plyr::ddply(ggd1, c("split", "rep"), plyr::summarize, mce = mean(mmce))
+ggd2$mse = (ggd2$mce -  realperf)^2
 ggd2$type = "subsampling"
 mse2 = plyr::ddply(ggd2, "split", plyr::summarize, mse = mean(mse))
 mse2$type = "subsampling"
@@ -23,7 +23,7 @@ ggd$type = as.factor(ggd$type)
 gmse$split = as.numeric(as.character(gmse$split))
 gmse$type = as.factor(gmse$type)
 
-pl1 = ggplot(ggd[ggd$type == "holdout", ], aes(x = split, y = mmce))
+pl1 = ggplot(ggd[ggd$type == "holdout", ], aes(x = split, y = mce))
 pl1 = pl1 + geom_boxplot()
 pl1 = pl1 + geom_hline(yintercept = realperf)
 pl1 = pl1 + theme(axis.text.x = element_text(angle = 45))

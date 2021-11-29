@@ -40,7 +40,7 @@ myLearningCurveSplit = function(learner,
   
   res = mlr3::resample(this_task, learner, rdesc)
   
-  # Create measure that computes mean and standard deviation of mmce for both
+  # Create measure that computes mean and standard deviation of mce for both
   # train and test sets
   
   measure_custom = list(
@@ -89,10 +89,10 @@ myLearningCurve = function(learner,
   
   # Make data frame
   
-  melt(res, 
+  data.table::melt(data.table::setDT(res),
        id.vars = "percentage", 
        variable.name = "measure",
-       value.name = c("mmce", "sd"), 
+       value.name = c("mce", "sd"),
        measure = patterns("mean", "sd"))
   
 }
