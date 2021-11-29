@@ -30,7 +30,7 @@ for (i in 1:nreps) {
    sr = split.rates[j]
    messagef("rep = %i;  splitrate = %g", i, sr)
    r = subsample(lrn, task2, iters = ss.iters, split = sr, show.info = FALSE)
-   res[j, , i] = r$measures.test[, "mmce"]
+   res[j, , i] = r$measures.test[, "mce"]
  }
 }
 save2(file = "holdout-biasvar.RData", n1 = n1, n2 = n2,
@@ -38,17 +38,17 @@ save2(file = "holdout-biasvar.RData", n1 = n1, n2 = n2,
  res = res, r1 = r1, realperf = realperf)
 
 # ggd1 = melt(res)
-# colnames(ggd1) = c("split", "rep", "ssiter", "mmce")
+# colnames(ggd1) = c("split", "rep", "ssiter", "mce")
 # ggd1$split = as.factor(ggd1$split)
-# ggd1$mse = (ggd1$mmce -  realperf)^2 
+# ggd1$mse = (ggd1$mce -  realperf)^2
 # ggd1$type = "ho"
 # ggd1$ssiter = NULL
 # mse1 = ddply(ggd1, "split", summarize, mse = mean(mse))
 # mse1$type = "ho"
 # 
 # 
-# ggd2 = ddply(ggd1, c("split", "rep"), summarize, mmce = mean(mmce))
-# ggd2$mse = (ggd2$mmce -  realperf)^2 
+# ggd2 = ddply(ggd1, c("split", "rep"), summarize, mce = mean(mce))
+# ggd2$mse = (ggd2$mce -  realperf)^2
 # ggd2$type = "ss"
 # mse2 = ddply(ggd2, "split", summarize, mse = mean(mse))
 # mse2$type = "ss"
@@ -57,7 +57,7 @@ save2(file = "holdout-biasvar.RData", n1 = n1, n2 = n2,
 # ggd$split.and.type = paste(0, ggd$split, ggd$type)
 # gmse = rbind(mse1, mse2)
 # 
-# pl1 = ggplot(ggd, aes(x = split.and.type, y = mmce))
+# pl1 = ggplot(ggd, aes(x = split.and.type, y = mce))
 # pl1 = pl1 + geom_boxplot()
 # pl1 = pl1 + geom_hline(yintercept = realperf)
 # pl1 = pl1 + theme(axis.text.x = element_text(angle = 45))

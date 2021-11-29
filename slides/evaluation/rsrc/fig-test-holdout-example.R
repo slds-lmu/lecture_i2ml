@@ -9,7 +9,7 @@ load("holdout-biasvar.RData")
 
 # PLOT 1 -----------------------------------------------------------------------
 
-pl1 = ggplot(ggd[ggd$type == "holdout", ], aes(x = split, y = mmce))
+pl1 = ggplot(ggd[ggd$type == "holdout", ], aes(x = split, y = mce))
 pl1 = pl1 + geom_boxplot()
 pl1 = pl1 + geom_hline(yintercept = true_performance)
 pl1 = pl1 + theme(axis.text.x = element_text(angle = 45))
