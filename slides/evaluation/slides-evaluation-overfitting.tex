@@ -6,8 +6,9 @@
 
 \newcommand{\titlefigure}{figure/eval_ofit_1}
 \newcommand{\learninggoals}{
-\item Understand what overfitting is and why it is a problem
-\item Learn about countermeasures to overfitting}
+\item Understand definitions of overfitting and underfitting
+% \item Relation of both to bias-variance of a learner
+}
 
 
 \title{Introduction to Machine Learning}
@@ -17,134 +18,160 @@
 
 \begin{document}
 
-\lecturechapter{Evaluation: Overfitting}
+\lecturechapter{Evaluation: Overfitting and Underfitting}
 \lecture{Introduction to Machine Learning}
 \sloppy
 
 % ------------------------------------------------------------------------------
 
+
+% overfitting can also happen with linear models
+%& overftiing is a function of training data size and capacity and noise
+%  grafik machen
+
+\begin{vbframe}{Underfitting}
+
+\begin{itemize}
+  \item Occurs if model does not reflect true shape of underlying
+      function
+  \item Hence, predictions will be less good as they could be
+  \item High train error and high test error
+  \item Hard to detect, as we don't know what the Bayes error is for a task
+\end{itemize}
+\lz
+\begin{columns}
+\begin{column}{0.5\textwidth}
+  \raggedright
+  Underfitted model\\
+  \includegraphics[width=\textwidth]{figure/eval_ofit_1u}
+\end{column}
+\begin{column}{0.5\textwidth}
+  \raggedright
+  Appropriate model\\
+  \includegraphics[width=\textwidth]{figure/eval_ofit_1a}
+\end{column}
+\end{columns}
+\end{vbframe}
+
 \begin{vbframe}{Overfitting}
 
-\begin{minipage}[t]{0.5\textwidth}
-  \raggedright
-  Overfitting learner\\
-  \lz
-  \includegraphics[width=\textwidth]{figure/eval_ofit_1}
-  Better training set performance (seen examples)
-\end{minipage}%
-\begin{minipage}[t]{0.5\textwidth}
-  \raggedright
-  Non-overfitting learner\\
-  \lz
-  \includegraphics[width=\textwidth]{figure/eval_ofit_2}
-  Better test set performance (unseen examples)
-\end{minipage}
-
-\framebreak
-
-\textcolor{blue}{BB: def overfitting}
-We can quantify overfitting as difference between the generalization error and the apparent training error, i.e.
-$$\GEfull - \rho(\yv_{\mathrm{train}}, F_{\textrm{train}}).$$
-We can estimate this quantity via e.g. a holdout-split 
-$$\GEh_{\Dtrain, \Dtest}(\inducer,
-  \lamv, \ntrain, \rho) - \rho(\yv_{\mathrm{train}}, F_{\textrm{train}}).$$
-
-\framebreak
-
 \begin{itemize}
-  \item \textbf{Overfitting} is a well-known problem with powerful 
-  (non-linear) learning algorithms.
-  \item It occurs when the learner starts modeling patterns in the data 
-  that are not actually there, i.e., noise or artifacts in the training data. \\
-  $\rightarrow$ Too many hypotheses and not enough data to tell them apart.
-  \item Symptoms of overfitting are small training errors that come at the 
-  expense of high test errors.
-  \item Recall that our primary focus is on the learner's ability to generalize 
-  well to new observations, not fit the training data perfectly.
-  \item In larger data sets overfitting is less of an issue as more data allow 
-  for more poor hypotheses to be eliminated, but if the hypothesis space is not 
-  constrained, there may never be enough data.
+  \item Overfitting occurs when the model reflects noise or artifacts in training data,
+      which do not generalize
+  \item Small train error, at cost of test high error
+  \item Hence, predictions of overfitting models cannot be trusted -
+      but proper ML evaluation workflows should make it visible
 \end{itemize}
-
+\lz
+\begin{columns}
+\begin{column}{0.5\textwidth}
+  \raggedright
+  Overfitted model\\
+  \includegraphics[width=\textwidth]{figure/eval_ofit_1o}
+\end{column}
+\begin{column}{0.5\textwidth}
+  \raggedright
+    Appropriate model\\
+  \includegraphics[width=\textwidth]{figure/eval_ofit_1a}
+\end{column}
+\end{columns}
 \end{vbframe}
 
-% ------------------------------------------------------------------------------
-
-% \begin{vbframe}{Overfitting and Noise}
-% 
-% \begin{itemize}
-%   \item Overfitting is seriously exacerbated by \textit{noise} (errors in the 
-%   training data)
-%   \item An unconstrained learner will start to model that noise
-%   \item It can also arise when relevant features are missing in the data
-%   \item In general it's better to make some mistakes on training data ("ignore 
-%   some observations") than trying to get all correct
-% \end{itemize}
-% 
-% \end{vbframe}
-
-% ------------------------------------------------------------------------------
-
-\begin{vbframe}{Avoiding Overfitting}
-
-Remedies against overfitting include:
+\begin{vbframe}{Under- and Overfitting in Regression}
 \begin{itemize}
-  \item Use less complex models -- e.g., lower-degree polynomials. 
-  \item Get more, or better, data -- not always possible, but there are 
-  techniques to augment existing data, e.g., for image data.
-  \item Apply regularization -- many learners come with hyperparameters that 
-  enable to constrain complexity.
-  \item Some learners are also eligible for "early stopping", where the 
-  learning process is terminated before perfectly fitting (i.e., overfitting) 
-  the training data.
+\item Poly-Regression, on data from sinusoidal function
+\item LM underfits, high-d overfits
+\end{itemize}
+\begin{center}
+\includegraphics[width=0.7\textwidth]{figure/eval_train_2} 
+\end{center}
+\end{vbframe}
+
+
+\begin{vbframe}{Mathematical Definitions}
+
+\begin{itemize}
+\item Nearly no reference does that, here is one approach
+\item Underfitting
+    $UF(\fh, L) : = GE(f^{*}, L) - GE(\fh, L)$\\
+    Diff in GE between $\fh$ and the Bayes optimal model
+\item Overfitting
+    $OF(\fh, L) : = GE(\fh, L) - \riske(\fh, L)$\\
+    Diff between (theoretical) GE and training error
 \end{itemize}
 
 \lz
 
-In the end, we will always need to balance a trade-off between model fit 
-and generalization ability.
-
+\begin{center}
+\includegraphics[width=0.3\textwidth,trim={0.8cm 0.6cm 3cm 0},clip]{figure/eval_ofit_1a}
+\includegraphics[width=0.3\textwidth,trim={0.8cm 0.6cm 3cm 0},clip]{figure/eval_ofit_1u}
+\includegraphics[width=0.3\textwidth,trim={0.8cm 0.6cm 3cm 0},clip]{figure/eval_ofit_1o}
+\end{center}
+NB: Now, RHS is both UF and OF, let's say OF has "prio". 
 \end{vbframe}
 
-% \begin{vbframe}{Triple Trade-Off}
 
-% In all learning algorithms that are trained from data, there is a trade-off between three factors:
-% \begin{itemize}
-  % \item The complexity of the hypothesis we fit to the training data
-  % \item The amount of training data (in terms of both instances and informative features)
-  % \item The generalization error on new examples
-% \end{itemize}
-% If the capacity of the learning algorithm is large enough to a) approximate the data generating process and b) exploit the information contained in the data, the generalization error will decrease as the amount of training data increases.
+\begin{vbframe}{Overfitting trade-offs}
 
-% For a fixed size of training data, the generalization error decreases first and then starts to increase (overfitting) as the complexity of the hypothesis space $H$ increases.
-% \end{vbframe}
-
-% ------------------------------------------------------------------------------
-
-\begin{vbframe}{Trade-Off Between Complexity and Generalization Error}
-
-\textbf{Apparent error} (at training time) and \textbf{actual error} 
-(at prediction time) evolve in opposite directions with increasing 
-complexity:
-
+The potential for overfitting is influenced by:
+\begin{itemize}
+  \item Complexity of hypothesis space
+  \item Amount of training data
+  \item Dimensionality of feature space
+  \item Irreducible noise 
+\end{itemize}
 \lz
+Implications:
+\begin{itemize}
+\item The larger / more complex is $\Hspace$, 
+    the more data we need to tell candidate models apart
+\item The less data we have, the more we need to stick with "constrained" $\Hspace$
+\item OF can happen for LMs too: If feature space is very high-dim
+\item Tightly connected to the bias-var-noise decomposition of GE
+of a learner ($\rightarrow$ which we study elsewhere).
+\end{itemize}
+\end{vbframe}
 
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
 
-{\centering \includegraphics[width = 0.9\textwidth]{figure/eval_ofit_3} 
-}
-\end{knitrout}
+\begin{vbframe}{Complexity vs GE}
+
+\begin{center}
+\includegraphics[width = 0.9\textwidth]{figure/eval_ofit_3} 
+\end{center}
+
 
 \vfill
 
-$\rightarrow$ We would like to find the optimal level of complexity: \\ 
-Hit the sweet spot  for the given amount of data where generalization error 
-becomes minimal.
+\begin{itemize}
+\item Common U-shape of GE if complexity or train-rounds go up.
+\item Optimal level of complexity:\\
+    Simplest model for which GE is not significantly outperformed
+\item We could also call "Point of OF" the point where GE goes up. 
+\end{itemize}
 
 \end{vbframe}
 
 % ------------------------------------------------------------------------------
+\begin{vbframe}{Avoiding Overfitting}
+
+\begin{itemize}
+  \item Use more or better data -- not always possible, but maybe can augment data, 
+      e.g., for images
+  \item Constrain $\Hspace$ directly by using less complex model classes
+  \item Many learners come with HPs that can 
+      constrain complexity
+  \item Use "early-stopping"
+\item Occam's razor in model selection: 
+    If GE not strongly reduced for more complex class,
+    use the simpler model.
+\end{itemize}
+
+\lz
+
+All of the above are methods of regularization,
+which we study in a dedicated chapter.
+
+\end{vbframe}
 
 \endlecture
 \end{document}
