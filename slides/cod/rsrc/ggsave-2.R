@@ -171,27 +171,27 @@ p4 = p4 + ggtitle("Bayes error (p = 1)")
 d = 2
 a = rep(2 / sqrt(d), d)
 x = seq(-6, 6, length.out = 100)
-datagrid_bayes = expand.grid(x1 = x, x2 = x)
+datagrid_bayes6 = expand.grid(x1 = x, x2 = x)
 
-datagrid_bayes$`1` = dmvnorm(datagrid_bayes[, 1:d], mean = - a) - 
-  dmvnorm(datagrid_bayes[, 1:d], mean = a)
-datagrid_bayes$`2` = dmvnorm(datagrid_bayes[, 1:d], mean = a) - 
-  dmvnorm(datagrid_bayes[, 1:d], mean = - a)
+datagrid_bayes6$`1` = dmvnorm(datagrid_bayes6[, 1:d], mean = - a) -
+  dmvnorm(datagrid_bayes6[, 1:d], mean = a)
+datagrid_bayes6$`2` = dmvnorm(datagrid_bayes6[, 1:d], mean = a) -
+  dmvnorm(datagrid_bayes6[, 1:d], mean = - a)
 
-idx_1 = (datagrid_bayes$x1 >= 0 & datagrid_bayes$x2 >= 0) | 
-  (datagrid_bayes$x1 * datagrid_bayes$x2 <= 0 & -datagrid_bayes$x1 <= datagrid_bayes$x2)
+idx_1 = (datagrid_bayes6$x1 >= 0 & datagrid_bayes6$x2 >= 0) |
+  (datagrid_bayes6$x1 * datagrid_bayes6$x2 <= 0 & -datagrid_bayes6$x1 <= datagrid_bayes6$x2)
 
-idx_2 = (datagrid_bayes$x1 < 0 & datagrid_bayes$x2 < 0) | 
-  (datagrid_bayes$x1 * datagrid_bayes$x2 < 0 & -datagrid_bayes$x1 > datagrid_bayes$x2)
+idx_2 = (datagrid_bayes6$x1 < 0 & datagrid_bayes6$x2 < 0) |
+  (datagrid_bayes6$x1 * datagrid_bayes6$x2 < 0 & -datagrid_bayes6$x1 > datagrid_bayes6$x2)
 
-datagrid_bayes$density = 0.
-datagrid_bayes[idx_1, "density"] = dmvnorm(datagrid_bayes[idx_1, 1:d], mean = - a)
-datagrid_bayes[idx_2, "density"] = dmvnorm(datagrid_bayes[idx_2, 1:d], mean = a)
+datagrid_bayes6$density = 0.
+datagrid_bayes6[idx_1, "density"] = dmvnorm(datagrid_bayes6[idx_1, 1:d], mean = - a)
+datagrid_bayes6[idx_2, "density"] = dmvnorm(datagrid_bayes6[idx_2, 1:d], mean = a)
 
 
 p4_2 = ggplot() +
   theme_bw() +
-  geom_raster(data=datagrid_bayes, aes(x = x1, y = x2, fill = density)) +
+  geom_raster(data=datagrid_bayes6, aes(x = x1, y = x2, fill = density)) +
   geom_contour(data = df, aes(x = x1, y = x2, z = value, colour = variable)) +
   coord_fixed(xlim = c(- 5, 5), ylim = c(- 5, 5), ratio = 1) +
   scale_fill_gradient(low = "white", high = "black") +
@@ -203,7 +203,7 @@ grid.arrange(p3, p3_2, p4, p4_2 , nrow = 2)
 
 ############################################################################
 
-bres = readRDS("code/cod_knn.rds")
+bres = readRDS("datasets/knn_misclassification_dataset.rds")
 p = ggplot(data = bres[bres$learner == "Bayes Optimal Classifier", ], aes(x = d, y = mmce.test.mean, colour = learner))
 p = p + theme_bw()
 p = p + geom_line()
@@ -221,25 +221,24 @@ p = p + xlab("p") + ylab("Mean Misclassification Error") + labs(colour = "Learne
 p = p + ylim(c(0, 0.4))
 p 
 
-ggsave("../figure_man/knn_misclassification.png", width = 7.5, height= 2.5)
+ggsave("../figure/knn_misclassification_plot.png", width = 7.5, height= 2.5)
 
 ############################################################################
 
-bres = readRDS("code/cod_lm_rpart.rds")
+bres = readRDS("datasets/lm_mse_dataset.rds")
 bres = melt(bres, id.vars = c("task.id", "learner.id", "d"))
 p = ggplot(data = bres[bres$d != 500, ], aes(x = d, y = value, colour = learner.id))
 p = p + geom_line()
 p = p + xlab("Number of noise variables") + ylab("Mean Squared Error") + labs(colour = "Learner")
-p = p + ylim(c(0, 300))
 p
 
 
-ggsave("../figure_man/MSE.png", width = 7.5, height= 2.5)
+ggsave("../figure/lm_mse_plot.png", width = 7.5, height= 2.5)
 
 
 ############################################################################
 
-noise_prop = readRDS("code/cod_lm_noise.rds")
+noise_prop = readRDS("datasets/cod_lm_noise.rds")
 
 plot_noise <- ggplot(noise_prop, aes(x=X2, y=value)) +
   geom_boxplot() + 
@@ -248,6 +247,6 @@ plot_noise <- ggplot(noise_prop, aes(x=X2, y=value)) +
 
 plot_noise
 
-ggsave("../figure_man/added_noise.png",width = 7.5, height= 4)
+ggsave("../figure/lm_noise_plot.png",width = 7.5, height= 4)
 
 ############################################################################

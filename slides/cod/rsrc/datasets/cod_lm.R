@@ -28,7 +28,7 @@ names(res)[3] = "mse.test.mean"
 res = res[order(learner.id), ]
 res$d = rep(seq(0, 500, by = 100), 2)
 
-saveRDS(object = res, "code/cod_lm_rpart.rds")
+saveRDS(object = res, "cod_lm_rpart.rds")
 
 set.seed(1234)
 res <- matrix(nrow=100, ncol = 5)

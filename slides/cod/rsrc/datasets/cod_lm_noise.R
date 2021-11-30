@@ -1,4 +1,5 @@
 library(reshape)
+library(mlr)
 
 d <- getTaskData(bh.task)                                                                                                   
 n <- nrow(d)
@@ -34,4 +35,4 @@ colnames(res) <- as.character(1:ks*100)
 noise_prop <- melt(res)
 noise_prop$X2 <- as.factor(noise_prop$X2)
 
-saveRDS(object = noise_prop, "code/cod_lm_noise.rds")
+saveRDS(object = noise_prop, "datasets/cod_lm_noise.rds")
