@@ -1,6 +1,7 @@
 # PREREQ -----------------------------------------------------------------------
 
 library(data.table)
+library(ggplot2)
 library(mlr3)
 library(mlr3learners)
 library(mlr3viz)
@@ -59,9 +60,8 @@ titles <- c(
 plots <- lapply(
   seq_along(preds),
   function(i) {
-    mlr3viz::autoplot(preds[[i]], type = "roc") + ggtitle(titles[i])})
-
-plots <- lapply(preds, function(i) mlr3viz::autoplot(i, type = "roc"))
+    mlr3viz::autoplot(preds[[i]], type = "roc") + 
+      labs(x = "FPR", y = "TPR", title = titles[i])})
 
 plot_grid <- gridExtra::grid.arrange(
   plots[[1]], plots[[2]], plots[[3]], nrow = 1L)

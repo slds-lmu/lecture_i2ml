@@ -32,8 +32,8 @@ pROC::plot.roc(rocobj,
                partial.auc.focus = "sp", 
                reuse.auc = FALSE, 
                legacy.axes = TRUE, 
-               xlab = "fpr", 
-               ylab = "tpr", 
+               xlab = "FPR", 
+               ylab = "TPR", 
                xlim = c(1, 0), 
                ylim = c(0, 1),  
                auc.polygon.col = "red", 
@@ -49,8 +49,8 @@ pROC::plot.roc(rocobj,
                partial.auc.focus = "se", 
                reuse.auc = FALSE, 
                legacy.axes = TRUE, 
-               xlab = "fpr", 
-               ylab = "tpr", 
+               xlab = "FPR", 
+               ylab = "TPR", 
                xlim = c(1, 0), 
                ylim = c(0, 1),  
                auc.polygon.col = "red", 
@@ -58,5 +58,5 @@ pROC::plot.roc(rocobj,
                auc.polygon.angle = 135, 
                print.auc.cex = 2)
 
-ggsave("../figure/eval_mclass_roc_sp_13.pdf", width = 14, height = 7)
+ggsave("../figure/eval_mclass_roc_sp_13.pdf", width = 7, height = 3.5)
 dev.off()
