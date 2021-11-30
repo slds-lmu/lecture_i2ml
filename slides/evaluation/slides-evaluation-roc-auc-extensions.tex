@@ -31,8 +31,7 @@
   % \item This leads to partial AUC (pAUC), originally proposed by 
   % \href{http://journals.sagepub.com/doi/pdf/10.1177/0272989X8900900307}
   % {McClish (1989)}.
-  \item For example, we might focus on a region with low FPR or a region with 
-  high TPR:
+  \item If, e.g., an FPR > 0.2 or an TPR < 0.8 is not acceptable for some reasons, we don't care about the performance in that region.
 \end{itemize}
 
 \begin{knitrout}\scriptsize
@@ -47,20 +46,19 @@
 \begin{vbframe}{Partial AUC -- example}
 
 \begin{itemize}
-  \item Applications where sensitivity and specificity are treated 
+  \item Applications where TPR and FPR are treated 
   asymmetrically often occur in biomedical contexts.
   \item For example, 
   \href{https://clincancerres.aacrjournals.org/content/16/24/6111}
-  {Wild et al. (2010)} used pAUC in their study of biomarkers for the detection 
+  {Wild et al. (2010)} fix FPR on a certain value in their study of biomarkers for the detection 
   of colorectal cancer.
-  \item Sensitivity, i.e., being able to correctly detect present diseases, is 
+  \item TPR, i.e., being able to correctly detect present diseases, is 
   crucial in this setting.
-  \item At the same time, high sensitivity is only useful if the classifier also 
-  achieves high specificity. \\
-  $\rightarrow$ Otherwise, healthy patients might receive costly and entirely 
-  unnecessary treatment.
-  \item It is therefore reasonable to demand a certain level of specificity and 
-  evaluate/optimize learners on the resulting pAUC.
+  \item At the same time, high TPR is only useful if the classifier also 
+  achieves low FPR. \\
+  $\rightarrow$ Otherwise, healthy patients might receive costly and unnecessary treatment.
+  \item It is therefore reasonable to define an upper bound for FPR and 
+  evaluate learners on the resulting pAUC.
 \end{itemize}
 
 \end{vbframe}
@@ -70,10 +68,10 @@
 \begin{vbframe}{Corrected Partial AUC}
 
 \begin{itemize}
-  \item The scale of the partial AUC depends on the FPR cut-off values used to 
+  \item The scale of the partial AUC depends on the cut-off values used to 
   determine the region of interest $\Rightarrow \text{pAUC} \in [0, c_2 - c_1]$.
-  \item For standard AUC, we have $c_1 = 0$ and $c_2 = 1$.
-  \item We can scale pAUC to take on values in $[0, 1]$ again:
+  \item For standard AUC: $c_1 = 0$ and $c_2 = 1$.
+  \item We can scale pAUC, such that $\text{pAUC} \in [0, 1]$:
   $$\text{pAUC}_\text{corrected} = \cfrac{1}{2} \left( 1 + \cfrac{\text{pAUC} - 
   \text{AUC}_{\text{min}}}{\text{AUC}_{\text{max}} - \text{AUC}_{\text{min}}} 
   \right),$$
@@ -85,9 +83,7 @@
   \end{itemize}
   % \item As usual, $\text{pAUC} = 0.5$ corresponds to the non-discriminant and 
   % $\text{pAUC} = 1$ to the perfect classifier.
-  \lz
-  \item NB: using pAUC means casting aside parts of the information 
-  deliberately.
+
 \end{itemize}
 
 \end{vbframe}
@@ -106,7 +102,7 @@
   estimating the area under the ROC curve evolves into estimating the 
   hypervolume under the ROC surface.
   \item This can be achieved by considering a set of two-dimensional curves, 
-  resulting from binry comparisons, and subsequent aggregation. \\
+  resulting from binary comparisons, and subsequent aggregation. \\
   $\rightarrow$ In principle, we have the choice between one-vs-one and 
   one-vs-rest comparisons.
 \end{itemize}  
@@ -132,12 +128,14 @@
  
 \framebreak
   
-\begin{itemize}  
+
   \small
-  \item For the first possibility, 
+For one-vs-one comparison,
   \href{https://link.springer.com/article/10.1023/A:1010920819831}
   {Hand and Till (2001)} proposed to average the AUC of respective pairwise 
-  comparisons between two classes.
+  comparisons between two classes:
+  $$\text{AUC}_{MC} = \frac{2}{g(g - 1)} \sum_{k < \ell} \text{AUC}(k, \ell) 
+    \in [0, 1].$$
   \begin{itemize}
     \small
     % \small
@@ -147,16 +145,15 @@
   % \item \href{https://link.springer.com/article/10.1023/A:1010920819831}
   % {Hand and Till (2001)} proposed to average the AUC of pairwise comparisons 
   % (one-vs-one) of a multi-class classifier.
-    \item First, compute for all pairs of classes $k, \ell \in \gset$ the 
-    probability $\text{AUC}(k ~|~ \ell)$ of a randomly drawn member of class $k$ 
-    having a lower probability of belonging to class $\ell$ than a randomly drawn 
-    member of class $\ell$.
-    \item For $g = 2$, we have $\text{AUC}(k ~|~ \ell) = 
-    \text{AUC}(\ell ~|~ k)$, but not necessarily so for $g > 2$.
+    \item $\text{AUC}(k ~|~ \ell)$ is the 
+    probability that a member of class $k$ 
+    has a lower probability of belonging to class $\ell$ than a member of class $\ell$, for all pairs of classes $k, \ell \in \gset$.
+    \item For $g = 2$, $\text{AUC}(k ~|~ \ell) = 
+    \text{AUC}(\ell ~|~ k)$, but not necessarily for $g > 2$.
     \item However, since class identifiability is immune to any bijective 
-    transformation of the labels, we cannot distinguish $\text{AUC}(k ~|~ \ell)$ 
-    from $\text{AUC}(\ell ~|~ k)$, so we set 
-    $\text{AUC}(k, \ell) = \frac{1}{2} \cdot [\text{AUC}(k ~|~ \ell) + 
+    transformation of the labels, %we cannot distinguish $\text{AUC}(k ~|~ \ell)$ 
+    %from $\text{AUC}(\ell ~|~ k)$, so 
+    we set $\text{AUC}(k, \ell) = \frac{1}{2} \cdot [\text{AUC}(k ~|~ \ell) + 
     \text{AUC}(\ell ~|~ k)]$.
   
   % \begin{itemize}
@@ -169,15 +166,15 @@
   %   AUC.
   % \end{itemize}
   
-    \item Averaging over all pairs of classes yields the overall 
-    $\text{AUC}_{MC}$ as a multi-class performance metric:
-    $$\text{AUC}_{MC} = \frac{2}{g(g + 1)} \sum_{k < \ell} \text{AUC}(k, \ell) 
-    \in [0, 1].$$
+  %  \item Averaging over all pairs of classes yields the overall 
+   % $\text{AUC}_{MC}$ as a multi-class performance metric:
+    %$$\text{AUC}_{MC} = \frac{2}{g(g - 1)} \sum_{k < \ell} \text{AUC}(k, \ell) 
+    %\in [0, 1].$$
     \item This reduces to the standard AUC for the binary case.
     % \item Again, a non-discriminant classifier will have $\text{AUC}_{MC} = 0.5$
     % as all pairwise probability estimates equal 0.5.
   \end{itemize}
-\end{itemize}
+
 \end{vbframe}
 
 % ------------------------------------------------------------------------------
