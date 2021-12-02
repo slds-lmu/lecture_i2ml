@@ -5,9 +5,9 @@
 
 \newcommand{\titlefigure}{figure/eval_mclass_roc_sp_13}
 \newcommand{\learninggoals}{
-\item Understand partial AUC and its motivation 
-\item Understand multi-class AUC variants
-}
+\item Understand why pAUC is a reasonable metric in some contexts
+\item Know how pAUC is computed and normalized
+\item Understand multi-class AUC}
 
 
 \title{Introduction to Machine Learning}
@@ -23,16 +23,16 @@
 
 % ------------------------------------------------------------------------------
 
-\begin{vbframe}{Partial AUC (pAUC)}
+\begin{vbframe}{Partial AUC}
 
 \begin{itemize}
-  \item Can be useful to limit region under ROC curve
-  % curve $\Rightarrow$ partial AUC (pAUC).
-  % \item This leads to partial AUC (pAUC), originally proposed by 
+  \item Sometimes it can be useful to look at a specific region under the ROC
+  curve $\Rightarrow$ partial AUC (pAUC).
+  % \item This leads to partial AUC (pAUC), originally proposed by
   % \href{http://journals.sagepub.com/doi/pdf/10.1177/0272989X8900900307}
   % {McClish (1989)}.
-  \item E.g. FPR > 0.2 or TPR < 0.8 might not be acceptable for task, then 
-      we don't want to integrate over that region
+  \item For example, we might focus on a region with low FPR or a region with
+  high TPR:
 \end{itemize}
 
 \begin{knitrout}\scriptsize
@@ -42,56 +42,55 @@
 
 \end{vbframe}
 
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Partial AUC -- example}
+
+\begin{itemize}
+  \item Applications where sensitivity and specificity are treated
+  asymmetrically often occur in biomedical contexts.
+  \item For example,
+  \href{https://clincancerres.aacrjournals.org/content/16/24/6111}
+  {Wild et al. (2010)} used pAUC in their study of biomarkers for the detection
+  of colorectal cancer.
+  \item Sensitivity, i.e., being able to correctly detect present diseases, is
+  crucial in this setting.
+  \item At the same time, high sensitivity is only useful if the classifier also
+  achieves high specificity. \\
+  $\rightarrow$ Otherwise, healthy patients might receive costly and entirely
+  unnecessary treatment.
+  \item It is therefore reasonable to demand a certain level of specificity and
+  evaluate/optimize learners on the resulting pAUC.
+\end{itemize}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
 \begin{vbframe}{Corrected Partial AUC}
 
 \begin{itemize}
-  \item Range of pAUC depends on cut-off value for region 
-      % used to 
-  % determine the region of interest $\Rightarrow \text{pAUC} \in [0, c_2 - c_1]$.
-  % \item For standard AUC: $c_1 = 0$ and $c_2 = 1$.
-  \item We can normalize to $[0, 1]$:
-  $$\text{pAUC}_\text{corrected} = \cfrac{1}{2} \left( 1 + \cfrac{\text{pAUC} - 
-  \text{AUC}_{\text{min}}}{\text{AUC}_{\text{max}} - \text{AUC}_{\text{min}}} 
+  \item The scale of the partial AUC depends on the FPR cut-off values used to
+  determine the region of interest $\Rightarrow \text{pAUC} \in [0, c_2 - c_1]$.
+  \item For standard AUC, we have $c_1 = 0$ and $c_2 = 1$.
+  \item We can scale pAUC to take on values in $[0, 1]$ again:
+  $$\text{pAUC}_\text{corrected} = \cfrac{1}{2} \left( 1 + \cfrac{\text{pAUC} -
+  \text{AUC}_{\text{min}}}{\text{AUC}_{\text{max}} - \text{AUC}_{\text{min}}}
   \right),$$
   where
   \begin{itemize}
-    \item $\text{AUC}_{\text{min}}$ is the value of the non-discriminant AUC, 
+    \item $\text{AUC}_{\text{min}}$ is the value of the non-discriminant AUC,
     and
     \item $\text{AUC}_{\text{max}}$ is the maximum possible AUC in the region.
   \end{itemize}
-  % \item As usual, $\text{pAUC} = 0.5$ corresponds to the non-discriminant and 
+  % \item As usual, $\text{pAUC} = 0.5$ corresponds to the non-discriminant and
   % $\text{pAUC} = 1$ to the perfect classifier.
-
+  \lz
+  \item NB: using pAUC means casting aside parts of the information
+  deliberately.
 \end{itemize}
 
 \end{vbframe}
-
-% ------------------------------------------------------------------------------
-
-\begin{vbframe}{ROC Measure under Contraint}
-
-BB CHECKEN hier
-
-\begin{itemize}
-  \item Applications where TPR and FPR are treated 
-  asymmetrically often occur in biomedical contexts.
-  \item For example, 
-  \href{https://clincancerres.aacrjournals.org/content/16/24/6111}
-  {Wild et al. (2010)} fix FPR on a certain value in their study of biomarkers for the detection 
-  of colorectal cancer.
-  \item TPR, i.e., being able to correctly detect present diseases, is 
-  crucial in this setting.
-  \item At the same time, high TPR is only useful if the classifier also 
-  achieves low FPR. \\
-  $\rightarrow$ Otherwise, healthy patients might receive costly and unnecessary treatment.
-  \item It is therefore reasonable to define an upper bound for FPR and 
-  evaluate learners on the resulting pAUC.
-\end{itemize}
-
-\end{vbframe}
-
-% ------------------------------------------------------------------------------
-
 
 % ------------------------------------------------------------------------------
 
@@ -101,88 +100,174 @@ BB CHECKEN hier
 
 \begin{itemize}
   \small
-  \item In its original form, AUC (as the other ROC metrics) is defined for the 
-  binary-class case.
-  \item We can extend AUC to \textbf{multi-class} classification, where 
-  estimating the area under the ROC curve evolves into estimating the 
-  hypervolume under the ROC surface.
-  \item This can be achieved by considering a set of two-dimensional curves, 
-  resulting from binary comparisons, and subsequent aggregation. \\
-  $\rightarrow$ In principle, we have the choice between one-vs-one and 
-  one-vs-rest comparisons.
-\end{itemize}  
+  \item AUC (as other ROC metrics) is usually defined for binary classification.
+  \item Different ways to estimate a \textbf{multi-class AUC} have been proposed.
+  % We can extend AUC to \textbf{multi-class} classification, where
+  % estimating the area under the ROC curve evolves into estimating the
+  % hypervolume under the ROC surface.
+  \item Many of these definitions are based on aggregating AUC values
+  %a set of two-dimensional ROC curves
+  that result from binary comparisons (e.g., one-vs-one or one-vs-rest).
+  %$\rightarrow$ In principle, we have the choice between one-vs-one and one-vs-rest comparisons.
+\end{itemize}
 
-\vfill
- 
-\begin{minipage}[c]{0.75\textwidth}
-  \centering
-  \includegraphics[trim = 0 40 -20 40, clip, width=\textwidth]
-  {figure/eval_auc_extensions}
-\end{minipage}%
-\begin{minipage}[c]{0.25\textwidth}
-  \scriptsize
-  \raggedright
-  One-vs-one comparisons between classes for classification of \texttt{iris} 
-  species with LDA according to sepal width.
-\end{minipage}
- 
+%\vfill
+
+\textbf{Example:} One-vs-one comparisons between classes for classification of \texttt{iris} species with LDA according to sepal width.
+
+\centering
+\includegraphics[trim = 0 40 -20 40, clip, width=\textwidth]{figure/eval_auc_extensions}
+
+\textbf{Note:} AUC of setosa vs. versicolor $\neq$ AUC of versicolor vs. setosa.
+
+% \begin{minipage}[c]{0.75\textwidth}
+%   \centering
+%   \includegraphics[trim = 0 40 -20 40, clip, width=\textwidth]
+%   {figure/eval_auc_extensions}
+% \end{minipage}%
+% \begin{minipage}[c]{0.25\textwidth}
+%   \scriptsize
+%   \raggedright
+% \end{minipage}
+
 % \begin{center}
 %   \includegraphics[trim = 0 40 0 40, clip, width=0.5\textwidth]
 %   {figure/eval_auc_extensions}
 % \end{center}
- 
-\framebreak
-  
+%
+% \framebreak
+%
+% \begin{itemize}
+%   \small
+%   \item \href{https://link.springer.com/article/10.1023/A:1010920819831}
+%   {Hand and Till (2001)} proposed to average the AUC of pairwise comparisons between two classes.
+%   \item Remember:
+%   \begin{itemize}
+%     \small
+%     % \small
+%   % , where
+%   % the classifier predicts the probability $\pik$ of belonging to class $k$ for
+%   % each class $k \in \setg$.
+%   % \item \href{https://link.springer.com/article/10.1023/A:1010920819831}
+%   % {Hand and Till (2001)} proposed to average the AUC of pairwise comparisons
+%   % (one-vs-one) of a multi-class classifier.
+%     \item First, compute for all pairs of classes $k, \ell \in \gset$ the
+%     probability $\text{AUC}(k ~|~ \ell)$ of a randomly drawn member of class $k$
+%     having a lower probability of belonging to class $\ell$ than a randomly drawn
+%     member of class $\ell$.
+%     \item For $g = 2$, we have $\text{AUC}(k ~|~ \ell) =
+%     \text{AUC}(\ell ~|~ k)$, but not necessarily so for $g > 2$.
+%     \item However, since class identifiability is immune to any bijective
+%     transformation of the labels, we cannot distinguish $\text{AUC}(k ~|~ \ell)$
+%     from $\text{AUC}(\ell ~|~ k)$, so we set
+%     $\text{AUC}(k, \ell) = \frac{1}{2} \cdot [\text{AUC}(k ~|~ \ell) +
+%     \text{AUC}(\ell ~|~ k)]$.
+%
+%   % \begin{itemize}
+%   %   \item Compute $\text{AUC}(i,j)$ for each pair of classes $i, j \in \setg$.
+%   %   \item $\text{AUC}(i,j)$ is the probability that a randomly drawn member of
+%   %   class $i$ has a lower probability of belonging to class $j$
+%   %   than a randomly drawn member of class $j$.
+%   %   \item For $g$ classes, we have ${{g}\choose{2}} = \tfrac{g (g-1)}{2}$ values
+%   %   of $\text{AUC}(i,j)$, which are then averaged to compute the multi-class
+%   %   AUC.
+%   % \end{itemize}
+%
+%     \item Averaging over all pairs of classes yields the overall
+%     $\text{AUC}_{MC}$ as a multi-class performance metric:
+%     $$\text{AUC}_{MC} = \frac{2}{g(g + 1)} \sum_{k < \ell} \text{AUC}(k, \ell)
+%     \in [0, 1].$$
+%     \item This reduces to the standard AUC for the binary case.
+%     % \item Again, a non-discriminant classifier will have $\text{AUC}_{MC} = 0.5$
+%     % as all pairwise probability estimates equal 0.5.
+%   \end{itemize}
+% \end{itemize}
+\end{vbframe}
 
-  \small
-For one-vs-one comparison,
-  \href{https://link.springer.com/article/10.1023/A:1010920819831}
-  {Hand and Till (2001)} proposed to average the AUC of respective pairwise 
-  comparisons between two classes:
-  $$\text{AUC}_{MC} = \frac{2}{g(g - 1)} \sum_{k < \ell} \text{AUC}(k, \ell) 
-    \in [0, 1].$$
-  \begin{itemize}
-    \small
-    % \small
-  % , where 
-  % the classifier predicts the probability $\pik$ of belonging to class $k$ for 
-  % each class $k \in \setg$.
-  % \item \href{https://link.springer.com/article/10.1023/A:1010920819831}
-  % {Hand and Till (2001)} proposed to average the AUC of pairwise comparisons 
-  % (one-vs-one) of a multi-class classifier.
-    \item $\text{AUC}(k ~|~ \ell)$ is the 
-    probability that a member of class $k$ 
-    has a lower probability of belonging to class $\ell$ than a member of class $\ell$, for all pairs of classes $k, \ell \in \gset$.
-    \item For $g = 2$, $\text{AUC}(k ~|~ \ell) = 
-    \text{AUC}(\ell ~|~ k)$, but not necessarily for $g > 2$.
-    \item However, since class identifiability is immune to any bijective 
-    transformation of the labels, %we cannot distinguish $\text{AUC}(k ~|~ \ell)$ 
-    %from $\text{AUC}(\ell ~|~ k)$, so 
-    we set $\text{AUC}(k, \ell) = \frac{1}{2} \cdot [\text{AUC}(k ~|~ \ell) + 
-    \text{AUC}(\ell ~|~ k)]$.
-  
-  % \begin{itemize}
-  %   \item Compute $\text{AUC}(i,j)$ for each pair of classes $i, j \in \setg$.
-  %   \item $\text{AUC}(i,j)$ is the probability that a randomly drawn member of 
-  %   class $i$ has a lower probability of belonging to class $j$
-  %   than a randomly drawn member of class $j$.
-  %   \item For $g$ classes, we have ${{g}\choose{2}} = \tfrac{g (g-1)}{2}$ values 
-  %   of $\text{AUC}(i,j)$, which are then averaged to compute the multi-class 
-  %   AUC.
-  % \end{itemize}
-  
-  %  \item Averaging over all pairs of classes yields the overall 
-   % $\text{AUC}_{MC}$ as a multi-class performance metric:
-    %$$\text{AUC}_{MC} = \frac{2}{g(g - 1)} \sum_{k < \ell} \text{AUC}(k, \ell) 
-    %\in [0, 1].$$
-    \item This reduces to the standard AUC for the binary case.
-    % \item Again, a non-discriminant classifier will have $\text{AUC}_{MC} = 0.5$
-    % as all pairwise probability estimates equal 0.5.
-  \end{itemize}
+% ------------------------------------------------------------------------------
+
+
+\begin{vbframe}{Multi-class AUC}
+
+\begin{itemize}
+\small
+%\item A multiclass classifier predicts $\hat \pi_k$ for all classes $k \in \gset$, i.e., the probability of an observation belonging to class $k$.
+\item Recall: $\hat \pi_k$ is the probability of an observation belonging to class $k$.
+\item Let $\text{AUC}(k ~|~ \ell)$ be the probability that a randomly drawn member of class $k$ has a lower probability of belonging to class $\ell$ than a randomly drawn member of class $\ell$.
+$\Rightarrow$ Known interpretation of the AUC as probability.
+\item The first index in $\text{AUC}(k ~|~ \ell)$ refers to the positive class (here: $k$) and the second index to the negative class (here: $\ell$).
+\item For $g = 2$, $\text{AUC}(k ~|~ \ell) = \text{AUC}(\ell ~|~ k)$, but not necessarily for $g > 2$.
+%For $g > 2$, $\text{AUC}(k ~|~ \ell) \neq \text{AUC}(\ell ~ | k)$.
+%(while for $g = 2$ $\text{AUC}(k ~|~ \ell) = \text{AUC}(\ell ~|~ k)$).
+%\item Let $\text{AUC}(k ~|~ \ell)$ be the probability of our classifier ranking a random drawn member of class $\ell$ higher than a random drawn member of class $\ell$.
+\end{itemize}
+\small
+
+%\framebreak
+
+\textbf{Example:} For $g=3$, $\text{AUC}(3|1) \neq \text{AUC}(1|3)$ as $\hat \pi_3$ separates all negative from positive classes at $\hat \pi_3 = 0.25$ (right table) but $\hat \pi_1$ does not (left table).
+
+%\begin{center}
+\centerline{\includegraphics[trim = 0 15 00 10, clip, width=0.72\textwidth]{figure_man/multiclass-auc.pdf}}
+% Source: https://docs.google.com/presentation/d/1Yap557n9SDyq9-fpA8u7wP46dkpzApJRx5bWpvTgIpM/edit?usp=sharing
+%\end{center}
 
 \end{vbframe}
 
 % ------------------------------------------------------------------------------
+
+
+\begin{vbframe}{Multi-class AUC}
+\href{https://link.springer.com/article/10.1023/A:1010920819831}{Hand and Till (2001)} proposed to average the AUC of pairwise comparisons (\textbf{one-vs-one}) of a multiclass classifier:
+  %\begin{itemize}
+
+\begin{itemize}
+    \item For all pairs of classes $k, \ell \in \gset$, compute $\text{AUC}(k ~|~ \ell)$.
+    %\item Estimate $AUC(i,j)$ for each pair of class $i$ and $j$.
+    %\item $AUC(i,j)$ is the probability of a randomly drawn member from class $i$ having a lower probability of belonging to class $j$ than a randomly drawn member of class $j$.
+    \item For $g$ classes, we have $g (g-1)$ different $\text{AUC}(k ~|~ \ell)$ values that are averaged to compute a multi-class AUC measure:
+    %$$\text{AUC}_{MC} = \tfrac{2}{g(g - 1)} \sum_{k < \ell} \text{AUC}(k, \ell) = \tfrac{1}{g(g - 1)} \sum_{k \neq \ell} \text{AUC}(k, \ell) \in [0, 1].$$
+    % ${{g}\choose{2}} = \tfrac{g (g-1)}{2}$
+    $$\text{AUC}_{MC} = \tfrac{1}{g(g - 1)} \sum_{k \neq \ell} \text{AUC}(k | \ell) \in [0, 1].$$
+  %\end{itemize}
+\end{itemize}
+
+\textbf{Final comments}:
+
+\begin{itemize}
+\item Other definitions use \textbf{one-vs-rest} comparisons and need to average only $g$ AUC values. $\Rightarrow$ More efficient than one-vs-one.
+\item The one-vs-rest approach introduces imbalanced classes even if the original classes were balanced.
+\item Imbalanced classes can be considered by weighting individual AUC values with prior class distributions, see \href{https://doi.org/10.1016/j.patrec.2008.08.010}{Ferri et al. (2003)}.
+\end{itemize}
+
+\end{vbframe}
+
+%
+% \begin{vbframe}{Multi-class AUC}
+% \begin{itemize}
+%   \item Provost and Domingos (2003)\footnote{Provost, F., Domingos, P. (2003). Tree induction for probability-based ranking.} proposed to average the AUC of \\
+%   \textbf{1-vs-rest} comparisons of a multiclass classifier.
+%   \item The idea is to iteratively take each class as the reference class, i.e., set the current class to 0 and all other classes to 1.
+%   \item Then average these single $AUC(i,j)$ values to compute the multiclass AUC according to \textbf{1-vs-rest}.
+%   \item For $g$ classes, we have $g$ values of $AUC(i,j)$ that are then averaged to compute the multiclass AUC.
+% \end{itemize}
+%
+% \textbf{Note}: Both versions of the multiclass AUC can be weighted with their respective prior class distributions to also consider imbalanced classes.
+%
+% % Source: https://link.springer.com/content/pdf/10.1023/A:1024099825458.pdf
+% \end{vbframe}
+%
+%
+% \begin{vbframe}{Multi-class AUC}
+%
+% \begin{itemize}
+%   \item Note that the 1-vs-1 procedure is computationally heavier than 1-vs-rest.
+%   \item The 1-vs-rest approach leads to a skewed comparison as we create an artificial class imbalance even if the original classes were balanced in the first
+%   place.
+%   \item Provost and Domingos (2003) tried to solve the imbalance problem by
+%   incorporating the respective prior class distributions as weights.
+% \end{itemize}
+% \end{vbframe}
 
 \endlecture
 \end{document}
