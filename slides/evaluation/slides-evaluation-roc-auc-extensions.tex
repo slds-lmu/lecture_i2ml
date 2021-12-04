@@ -5,9 +5,9 @@
 
 \newcommand{\titlefigure}{figure/eval_mclass_roc_sp_13}
 \newcommand{\learninggoals}{
-\item Understand why pAUC is a reasonable metric in some contexts
-\item Know how pAUC is computed and normalized
-\item Understand multi-class AUC}
+\item Understand pAUC 
+\item Understand multi-class AUC
+}
 
 
 \title{Introduction to Machine Learning}
@@ -23,106 +23,133 @@
 
 % ------------------------------------------------------------------------------
 
+% 2-way pauc noch rein?
+% lift chart noch rein
+
 \begin{vbframe}{Partial AUC}
 
 \begin{itemize}
-  \item Sometimes it can be useful to look at a specific region under the ROC
-  curve $\Rightarrow$ partial AUC (pAUC).
-  % \item This leads to partial AUC (pAUC), originally proposed by
+  \item TRP and FPR often treated asymmetrical in biomedical contexts
+  \item TPR, so disease detection, is crucial
+  \item But low FPR needed to avoid unnecessary treatments
+\item Common solution: Fix either TPR or FPR to a required value and optimize the other, but not easy to select exact point 
+\framebreak
+  \item Can be useful to limit region under ROC curve
+  % \item This leads to partial AUC (pAUC), originally proposed by 
   % \href{http://journals.sagepub.com/doi/pdf/10.1177/0272989X8900900307}
   % {McClish (1989)}.
-  \item For example, we might focus on a region with low FPR or a region with
-  high TPR:
+  \item E.g. FPR > 0.2 or TPR < 0.8 might not be acceptable for task, then 
+      we don't want to integrate over that region
 \end{itemize}
 
 \begin{knitrout}\scriptsize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-{\centering \includegraphics[width=0.9\textwidth]{figure/eval_mclass_roc_sp_13}}
+{\centering \includegraphics[width=0.95\textwidth]{figure/eval_mclass_roc_sp_13}}
 \end{knitrout}
 
 \end{vbframe}
 
-% ------------------------------------------------------------------------------
-
-\begin{vbframe}{Partial AUC -- example}
-
-\begin{itemize}
-  \footnotesize
-  \item Applications where sensitivity and specificity are treated
-  asymmetrically often occur in biomedical contexts.
-  \item For example,
-  \href{https://clincancerres.aacrjournals.org/content/16/24/6111}
-  {Wild et al. (2010)} used pAUC in their study of biomarkers for the detection
-  of colorectal cancer.
-  \item Sensitivity, i.e., being able to correctly detect present diseases, is
-  crucial here.
-  \item At the same time, high sensitivity is only useful if the classifier also
-  achieves high specificity.
-  $\rightarrow$ Otherwise, healthy patients might receive
-  unnecessary treatment.
-  \item It is therefore reasonable to demand a certain level of specificity and
-  evaluate/optimize learners on the resulting pAUC.
-\end{itemize}
-
-\vfill
-\includegraphics[width=0.35\textwidth]{figure/fig_pauc}
-
-\end{vbframe}
-
-% ------------------------------------------------------------------------------
-
 \begin{vbframe}{Corrected Partial AUC}
 
 \begin{itemize}
-  \item The scale of the partial AUC depends on the FPR cut-off values used to
-  determine the region of interest $\Rightarrow \text{pAUC} \in [0, c_2 - c_1]$.
-  \item For standard AUC, we have $c_1 = 0$ and $c_2 = 1$.
-  \item We can scale pAUC to take on values in $[0, 1]$ again:
-  $$\text{pAUC}_\text{corrected} = \cfrac{1}{2} \left( 1 + \cfrac{\text{pAUC} -
-  \text{AUC}_{\text{min}}}{\text{AUC}_{\text{max}} - \text{AUC}_{\text{min}}}
+\item Range of pAUC depends on cut-off values
+      % used to 
+  % determine the region of interest $\Rightarrow \text{pAUC} \in [0, c_2 - c_1]$.
+% \item For standard AUC: $c_1 = 0$ and $c_2 = 1$.
+\item Normalize to $[0, 1]$:
+  $$\text{pAUC}_\text{corrected} = \cfrac{1}{2} \left( 1 + \cfrac{\text{pAUC} - 
+  \text{pAUC}_{\text{min}}}{\text{pAUC}_{\text{max}} - \text{pAUC}_{\text{min}}} 
   \right),$$
-  where
-  \begin{itemize}
-    \item $\text{AUC}_{\text{min}}$ is the value of the non-discriminant AUC,
-    and
-    \item $\text{AUC}_{\text{max}}$ is the maximum possible AUC in the region.
-  \end{itemize}
-  % \item As usual, $\text{pAUC} = 0.5$ corresponds to the non-discriminant and
-  % $\text{pAUC} = 1$ to the perfect classifier.
-  \lz
-  \item NB: using pAUC means casting aside parts of the information
-  deliberately.
 \end{itemize}
 
+\begin{columns} 
+\begin{column}{0.6\textwidth} 
+\begin{itemize}
+  \item pAUC is V+U = "A-B-C-D"
+  \item $\text{pAUC}_{\text{min}}$ is pAUC of random classifier, 
+      so U = "A-B-g-h"
+  \item $\text{pAUC}_{\text{max}}$ is U+V+W = "A-B-e-f"
+  \item Normalized pAUC: percentage of V in V+W,
+      map 1 to optimal model, 0 to random model
+\end{itemize}
+\end{column} 
+\begin{column}{0.4\textwidth} 
+\begin{center}
+\includegraphics[width=0.9\textwidth]{figure/fig_pauc}
+\end{center}
+\end{column} 
+\end{columns} 
+%   % \item As usual, $\text{pAUC} = 0.5$ corresponds to the non-discriminant and 
+%   % $\text{pAUC} = 1$ to the perfect classifier.
+\end{vbframe}
+
+\begin{vbframe}{2way Partial AUC}
+
+\begin{itemize}
+\item Can also limit both TPR and FPR 
+\item 2way pAUC = compute area under 2way limited segment
+\end{itemize}
+\begin{center}
+\includegraphics[width=0.5\textwidth]{figure/fig_pauc_2way}
+\end{center}
 \end{vbframe}
 
 % ------------------------------------------------------------------------------
+
+% \begin{vbframe}{Partial AUC -- example}
+
+% \begin{itemize}
+%   \footnotesize
+%   \item Applications where sensitivity and specificity are treated
+%   asymmetrically often occur in biomedical contexts.
+%   \item For example,
+%   \href{https://clincancerres.aacrjournals.org/content/16/24/6111}
+%   {Wild et al. (2010)} used pAUC in their study of biomarkers for the detection
+%   of colorectal cancer.
+%   \item Sensitivity, i.e., being able to correctly detect present diseases, is
+%   crucial here.
+%   \item At the same time, high sensitivity is only useful if the classifier also
+%   achieves high specificity.
+%   $\rightarrow$ Otherwise, healthy patients might receive
+%   unnecessary treatment.
+%   \item It is therefore reasonable to demand a certain level of specificity and
+%   evaluate/optimize learners on the resulting pAUC.
+% \end{itemize}
+
+% \vfill
+% \includegraphics[width=0.35\textwidth]{figure/fig_pauc}
+
+% \end{vbframe}
+
+% ------------------------------------------------------------------------------
+
 
 \begin{vbframe}{Multi-class AUC}
 
 % \small
 
 \begin{itemize}
-  \small
-  \item AUC (as other ROC metrics) is usually defined for binary classification.
-  \item Different ways to estimate a \textbf{multi-class AUC} have been proposed.
+  % \small
+  \item AUC and other ROC metrics for binary classification
+  \item Different ways to estimate \textbf{multi-class AUC}
   % We can extend AUC to \textbf{multi-class} classification, where
   % estimating the area under the ROC curve evolves into estimating the
   % hypervolume under the ROC surface.
-  \item Many of these definitions are based on aggregating AUC values
-  %a set of two-dimensional ROC curves
-  that result from binary comparisons (e.g., one-vs-one or one-vs-rest).
+  \item Often based on aggregated binary AUCs:\\ %a set of two-dimensional ROC curves
+  e.g. 1-vs-1 or 1-vs-rest
   %$\rightarrow$ In principle, we have the choice between one-vs-one and one-vs-rest comparisons.
 \end{itemize}
 
-%\vfill
+\vfill
 
-\textbf{Example:} One-vs-one comparisons between classes for classification of \texttt{iris} species with LDA according to sepal width.
+
+
+\textbf{Example:} 1-vs-1 on \texttt{iris}
 
 \centering
 \includegraphics[trim = 0 40 -20 40, clip, width=\textwidth]{figure/eval_auc_extensions}
 
-\textbf{Note:} AUC of setosa vs. versicolor $\neq$ AUC of versicolor vs. setosa.
+% \textbf{Note:} AUC of setosa vs. versicolor $\neq$ AUC of versicolor vs. setosa.
 
 % \begin{minipage}[c]{0.75\textwidth}
 %   \centering
@@ -198,11 +225,12 @@
 %\item A multiclass classifier predicts $\hat \pi_k$ for all classes $k \in \gset$, i.e., the probability of an observation belonging to class $k$.
 %\item Recall: $\hat \pi_k$ is the probability of an observation belonging to class $k$.
 
-\item Let $\text{AUC}(k ~|~ \ell)$ be the AUC of a classifier for class $k$ and $l$, where $k$ (first index) refers to the positive and $\ell$ to the negative class.
+\item Def $\text{AUC}(k ~|~ \ell)$ for classes $k$ (pos) and $l$ (neg)
+    % , where $k$ (first index) is pos and $\ell$ neg class
 
-\item $\text{AUC}(k ~|~ \ell)$ is computed by subsetting the predicted probability matrix according to class $k$ and $l$ using $\hat \pi_k$ as scores.
+\item Compute AUC: Subset preds to rows of true $k$ and $l$, use $\hat \pi_k$ 
 
-\item It can be interpreted as the probability that a randomly drawn member of class $\ell$ has a lower probability of belonging to class $k$ than a randomly drawn member of class $k$.
+\item Interprete: Prob that random member of $\ell$ has a lower prob to belong to class $k$ than random member of class $k$.
 %$\Rightarrow$ Known interpretation of the AUC as probability.
 
 %\item For $g = 2$, $\text{AUC}(k ~|~ \ell) = \text{AUC}(\ell ~|~ k)$, but not necessarily for $g > 2$.
@@ -212,21 +240,22 @@
 %\item Let $\text{AUC}(k ~|~ \ell)$ be the probability of our classifier ranking a random drawn member of class $\ell$ higher than a random drawn member of class $\ell$.
 \end{itemize}
 
+\lz
 %\framebreak
 
-\textbf{Example:} Compute AUC(3|1) when $g=3$ classes are available
+\textbf{Example:} AUC(3|1) with $g=3$ 
 %\begin{center}
 \begin{columns}[T]
 \begin{column}{0.3\textwidth}
 \centerline{\includegraphics[trim = 250 15 00 10, clip, width=\textwidth]{figure_man/multiclass-auc.pdf}}
 \end{column}
 \begin{column}{0.7\textwidth}
+    \lz
 \begin{enumerate}
-\small
-\item Subset the probability matrix according to class $k=3$ and $\ell = 1$.
-\item Define $k=3$ as the positive class and $\ell = 1$ as the negative class.
-\item Compute the standard AUC using $\hat \pi_3$ as scores.\\ %and class $k=3$ as the positive class vs. class $\ell = 1$ as the negative class.\\
-$\Rightarrow$ AUC(3|1) = 1 as all positives have a lower probability for $\hat \pi_3$ than all negatives.
+\item Subset pred rows to true classes 1 and 3
+\item Use $k=3$ as pos and $\ell = 1$ as neg class
+\item Compute standard AUC with $\hat \pi_3$ as scores\\ %and class $k=3$ as the positive class vs. class $\ell = 1$ as the negative class.\\
+\item AUC(3|1) = 1:\\ all pos have higher $\pi_3$ than negs
 \end{enumerate}
 \end{column}
 \end{columns}
@@ -243,15 +272,18 @@ $\Rightarrow$ AUC(3|1) = 1 as all positives have a lower probability for $\hat \
 \begin{itemize}
 \item For binary classes, we always have $\text{AUC}(1 | 0) = \text{AUC}(0 | 1)$.
 
-\item For the multi-class case with $g > 2$, we usually have
-$\text{AUC}(k ~|~ \ell) \neq \text{AUC}(\ell ~|~ k)$, $\forall k, \ell \in \gset, k \neq \ell$.
+\item For multi-class usually:
+$\text{AUC}(k ~|~ \ell) \neq \text{AUC}(\ell ~|~ k)$
+% $\forall k, \ell \in \gset, k \neq \ell$.
 
 \item
 %\textbf{Example:} For $g=3$, $\text{AUC}(3|1) \neq \text{AUC}(1|3)$ as $\hat \pi_3 = 0.25$ separates all negative from positive classes (right table) but $\hat \pi_1$ does not (left table).
 \textbf{Example} with $g=3$ where $\text{AUC}(1|3) \neq \text{AUC}(3|1) $:
 \begin{itemize}
-\item $\text{AUC}(1|3) \neq 1$ (left table) as the score $\hat \pi_1$ does not perfectly separate the positive class $k=1$ from negative class $\ell=3$.
-\item $\text{AUC}(3|1) = 1$ (right table) as the score $\hat \pi_3$ perfectly separates all negative from positive classes.
+\item $\text{AUC}(3|1) = 1$ (right table) as before 
+    % as the score $\hat \pi_3$ perfectly separates all negative from positive classes.
+\item $\text{AUC}(1|3) \neq 1$ (left table) 
+    % as the score $\hat \pi_1$ does not perfectly separate the positive class $k=1$ from negative class $\ell=3$.
 \end{itemize}
 
 %\begin{center}
@@ -267,25 +299,31 @@ $\text{AUC}(k ~|~ \ell) \neq \text{AUC}(\ell ~|~ k)$, $\forall k, \ell \in \gset
 % ------------------------------------------------------------------------------
 
 \begin{vbframe}{Multi-class AUC}
-\href{https://link.springer.com/article/10.1023/A:1010920819831}{Hand and Till (2001)} proposed to average the AUC of pairwise comparisons (\textbf{one-vs-one}) of a multiclass classifier:
+\href{https://link.springer.com/article/10.1023/A:1010920819831}{Hand and Till (2001)} proposed to avg AUC via \textbf{1-vs-1}:
+% of a multiclass classifier:
   %\begin{itemize}
 
 \begin{itemize}
-    \item For all class pairs $k, \ell \in \gset, k \neq \ell$, compute $\text{AUC}(k ~|~ \ell)$.
+    \item For all class pairs, 
+        % $k, \ell \in \gset, k \neq \ell$, 
+        compute $\text{AUC}(k ~|~ \ell)$.
     %\item Estimate $AUC(i,j)$ for each pair of class $i$ and $j$.
     %\item $AUC(i,j)$ is the probability of a randomly drawn member from class $i$ having a lower probability of belonging to class $j$ than a randomly drawn member of class $j$.
-    \item For $g$ classes, we have $g (g-1)$ different $\text{AUC}(k ~|~ \ell)$ values that are averaged to compute a multi-class AUC measure:
+    % \item For $g$ classes, we have $g (g-1)$ different $\text{AUC}(k ~|~ \ell)$ values that are averaged to compute a multi-class AUC measure:
     %$$\text{AUC}_{MC} = \tfrac{2}{g(g - 1)} \sum_{k < \ell} \text{AUC}(k, \ell) = \tfrac{1}{g(g - 1)} \sum_{k \neq \ell} \text{AUC}(k, \ell) \in [0, 1].$$
     % ${{g}\choose{2}} = \tfrac{g (g-1)}{2}$
     $$\text{AUC}_{MC} = \tfrac{1}{g(g - 1)} \sum_{k \neq \ell} \text{AUC}(k | \ell) \in [0, 1].$$
   %\end{itemize}
 \end{itemize}
 
-\textbf{Final comments}:
+\lz
+
+\textbf{Comments}:
 
 \begin{itemize}
-\item Other definitions use \textbf{one-vs-rest} comparisons and need to average only $g$ AUC values. $\Rightarrow$ More efficient than one-vs-one.
-\item The one-vs-rest approach introduces imbalanced classes even if the original classes were balanced.
+\item Other defs use \textbf{1-vs-rest} and need to avg only $g$ AUC values
+    % . $\Rightarrow$ More efficient than one-vs-one.
+\item 1-vs-rest creates imbal classes even if orig classes are balanced
 \item Imbalanced classes can be considered by weighting individual AUC values with prior class distributions, see \href{https://doi.org/10.1016/j.patrec.2008.08.010}{Ferri et al. (2003)}.
 \end{itemize}
 
