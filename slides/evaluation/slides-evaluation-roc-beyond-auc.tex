@@ -63,6 +63,7 @@ Might be more informative for highly imbalanced data ($\nn \gg \np$) than TPR-FP
 \begin{itemize}
   \item Precision = $\rho_{PPV}$ = $\frac{TP}{TP + FP}$, recall = $\rho_{TPR}$ = $\frac{TP}{TP + FN}$
   (do not depend on TN).
+  \item We might call them TPR-PPV curve
   %\item Note that both measures are not dependent on true negatives.
   \item Figure (a): ROC curve: both learner seem to perform well
   \item Figure (b): PR curve: room for improvement (top-right is optimal)
@@ -96,16 +97,76 @@ Might be more informative for highly imbalanced data ($\nn \gg \np$) than TPR-FP
 \framebreak
 
 \begin{itemize}
-  \item ROC problem is $FPR$ in case of $\nn \gg \np$, which is often
-  very small as TN are usually high \\
-  $\Rightarrow$ Large change in FP yields small change in $FPR$
-  \item PPV: compares FP to TP (not TN) and does not suffer from this
-  issue. Captures effect of large $\nn$.
+  \item In imbalanced classes with $\nn \gg \np$:
+      Large change in FP yields small change in FPR
+  \item PPV likely more informative
 \end{itemize}
 
-\begin{center}
-  \includegraphics[width=0.8\textwidth]{figure_man/roc-confusion_matrix.png}
-\end{center}
+\lz
+
+\begin{columns}
+ \begin{column}{0.45\textwidth}
+ \underline{FP=10}:\\
+ %Proportion $\np/\nn = 1$\\
+ \lz
+ {
+ \tiny
+ \centering
+ \tiny
+ \begin{tabular}{|l|c|c|}
+                 \hline
+                & True +1 & True -1 \\ \hline
+ Pred. Pos & 100            & 10            \\ \hline
+ Pred. Neg & 10            & 9990           \\ \hline
+ Total  & 110            & 10000           \\ \hline
+ \end{tabular}
+ }
+
+ \medskip
+ %$\text{E} = 35/100 = 0.35$\\
+ $\text{FPR} = 0.001$\\
+ $\text{PPV} = 1/11$
+\end{column}
+\begin{column}{0.45\textwidth}
+ \underline{FP=100}:\\
+%%  Proportion $\np/\nn = 2$\\
+ \lz
+ {
+ \tiny
+ \begin{tabular}{|l|c|c|}
+                 \hline
+                & True +1 & True -1 \\ \hline
+ Pred. +1 & 100            & 100            \\ \hline
+ Pred. -1 & 10            & 9900           \\ \hline
+ Total  & 110            & 10000           \\ \hline
+ \end{tabular}
+ }
+
+ \medskip
+ $\text{FPR} = 0.01$\\
+ $\text{PPV} = 1/2$
+\end{column}
+\end{columns}
+
+\vfill
+
+RHS: Given test says +1: It's now a coin flip that this is correct.
+
+%\begin{center}
+%  \includegraphics[width=0.8\textwidth]{figure_man/roc-confusion_matrix.png}
+%\end{center}
+
+% \begin{itemize}
+%   \item ROC problem is $FPR$ in case of $\nn \gg \np$, which is often
+%   very small as TNs are usually high \\
+%   $\Rightarrow$ Large change in FP yields small change in $FPR$
+%   \item PPV: compares FP to TP (not TN) and does not suffer from this
+%   issue. Captures effect of large $\nn$.
+% \end{itemize}
+
+% \begin{center}
+%   \includegraphics[width=0.8\textwidth]{figure_man/roc-confusion_matrix.png}
+% \end{center}
 
 \framebreak
 
@@ -192,14 +253,17 @@ Might be more informative for highly imbalanced data ($\nn \gg \np$) than TPR-FP
   \raggedright
   \textbf{Example:} %Interpretation of two ROC curves
   \begin{itemize}
-  \item Classifiers $f_1$ and $f_2$ with intersecting ROC curves at point (FPR, TPR) = (0.25, 0.69)
-  \item $f_2$ dominates $f_1$ until intersection
-  \item After intersection, $f_1$ dominates $f_2$
+  \item $f_1$ and $f_2$ with intersecting ROC curves 
+      % at point (FPR, TPR) = (0.25, 0.69)
+  \item $f_2$ dominates first, then $f_1$ 
+  % \item After intersection, $f_1$ dominates $f_2$
   \end{itemize}
 
-  \textbf{BUT:} Unclear for which thresholds, costs, or class distributions $f_2$ performs better than $f_1$.
+\lz
 
-  $\Rightarrow$ Cost curves provide this kind of information.
+  \textbf{BUT:} Unclear for which thresholds, costs or class distribs $f_2$ better than $f_1$
+
+  % $\Rightarrow$ Cost curves
 \end{column}
 \begin{column}{0.39\textwidth}
   %\begin{figure}
@@ -229,14 +293,15 @@ Might be more informative for highly imbalanced data ($\nn \gg \np$) than TPR-FP
 \small
 
 %Let $\rp = \P(y = 1)$ be the proportion of positive instances.
-Using the Law of total probability, the misclassification error rate (MCE) can be written as a function of $\rp$:
+With law total probab, can write misclassif rate as function of $\rp$:
 \begin{align*}
 \rho_{MCE}(\rp)
 &= (1 - \rp) \cdot \P(\hat y = 1 | y = 0) + \rp \cdot \P(\hat y = 0 | y = 1) \\
 &= (1 - \rp) \cdot FPR + \rp \cdot FNR \\
 &= (FNR - FPR) \cdot \rp + FPR
 \end{align*}
-Similarly, expected misclassification costs can be written as a function of $\rp$:
+Can do the same for costs:
+% Similarly, expected misclassification costs can be written as a function of $\rp$:
 $$Costs(\rp) = (1 - \rp) \cdot FPR \cdot cost_{FP} + \rp \cdot FNR \cdot cost_{FN}$$
 $$Costs_{norm}(\rp) = \tfrac{(1 - \rp) \cdot FPR \cdot cost_{FP} \; + \; \rp \cdot FNR \cdot cost_{FN}}{(1 - \rp) \cdot cost_{FP} \; + \; \rp \cdot cost_{FN}} \in [0,1]$$
 
@@ -245,8 +310,8 @@ $$Costs_{norm}(\rp) = \tfrac{(1 - \rp) \cdot FPR \cdot cost_{FP} \; + \; \rp \cd
 \small
 \begin{itemize}
 \itemsep0em
-\item $Costs_{norm}$ (normalized costs) is a natural extension of the error rate.
-\item Denominator refers to $\max(Costs)$, which occurs when all observations are misclassified (i.e., $FPR = FNR = 1$).
+% \item $Costs_{norm}$ (normalized costs) is a natural extension of MCE
+\item Denominator = $\max(Costs)$ =  all obs misclassified (i.e., $FPR = FNR = 1$).
 \item If $cost_{FN} = cost_{FP}$, than $Costs_{norm} = \rho_{MCE}$
 \end{itemize}
 \end{column}
