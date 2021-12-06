@@ -22,7 +22,7 @@ dims <- ceiling(2^seq(log2(min_d), log2(max_d), length = len_d))
 n_test <- 10000
 n_iters <- 10
 
-make_regression_data <- function(d=500, n=500, snr_y=2) {
+make_regression_data <- function(d=500, n=500) {
   actual_n <- n + n_test
 
   X <- matrix(rnorm(d*(actual_n)), ncol = d)
@@ -33,18 +33,16 @@ make_regression_data <- function(d=500, n=500, snr_y=2) {
   beta[2:d%/%2,] <- 3
   beta[(d%/%2+1):d,] <- -3
 
-  sigma <- sqrt(sum(beta^2)/snr_y)
-
-  y <- X%*%beta + rnorm(actual_n, sd=sigma)
+  y <- X%*%beta + rnorm(actual_n)
 
   list(X=X,y=y)
 }
 
 make_task_data <- function(d=500, n=500) {
-  peak <- mlbench.peak(n=n + n_test,d=d)
-  # reg <- make_regression_data(d=d,n=n)
-  data <- as.data.frame(peak$x)
-  data$y <- peak$y
+  # peak <- mlbench.peak(n=n + n_test,d=d)
+  reg <- make_regression_data(d=d,n=n)
+  data <- as.data.frame(reg$X)
+  data$y <- reg$y
   task <- as_task_regr(data, target = "y", id = paste0(d, "_", n))
   task
 }
@@ -60,7 +58,7 @@ learners <- list(
   lrn("regr.kknn", id="K-Nearest Neighbors"),
   lrn("regr.ranger", id="Random Forest"),
   lrn("regr.xgboost", id="Gradient Boosting"),
-  lrn("regr.svm", id="Support Vector Machine", kernel="polynomial")
+  lrn("regr.svm", id="Support Vector Machine")
 )
 
 for (i in 1:length(dims)) {
@@ -99,7 +97,7 @@ for (i in 1:length(dims)) {
 
 # saveRDS(df, file = "overfiting_mlr.rds")
 
-saveRDS(df, file = "overfitting_peak.rds")
+saveRDS(df, file = "overfitting_mlr.rds")
 
 options(warn = defaultW)
 
