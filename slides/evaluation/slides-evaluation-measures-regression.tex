@@ -1,11 +1,14 @@
 \input{../../style/preamble}
 \input{../../latex-math/basic-math.tex}
 \input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-eval.tex}
+\input{../../latex-math/ml-hpo.tex}
 
-%\newcommand{\titlefigure}{figure_man/plot_title_eval_regr.png} MISSING
+\newcommand{\titlefigure}{figure_man/plot_title_eval_regr}
 \newcommand{\learninggoals}{
 \item Know the definitions of mean squared error (MSE) and mean absolute error (MAE)
 \item Understand the connections of MSE and MAE to L2 and L1 loss
+\item Know the definition of Spearman's $\rho$
 \item Know the definitions of $R^2$ and generalized $R^2$}
 
 
@@ -18,100 +21,242 @@
 
 \lecturechapter{Evaluation: Measures for Regression}
 \lecture{Introduction to Machine Learning}
+\sloppy
 
+% ------------------------------------------------------------------------------
 
-\begin{vbframe}{Mean Squared Error}
+\begin{vbframe}{Mean Squared Error (MSE)}
 
-% The \textbf{Mean Squared Error} compares the mean of the squared distances between the target variable $y$ and the predicted target $\yh$.
+% Average squared distance between label and prediction: 
+$$
+\rho_{MSE}(\yv, \F) = \meanim (\yi - \yih)^2 \in [0;\infty) \qquad \rightarrow L2 \text{ loss}.
+$$
 
-\begin{center}
-$
-MSE = \meanin (\yi - \yih)^2 \in [0;\infty)
-$
-\hspace{4em} $\rightarrow$ L2 loss.
-\end{center}
-
-\lz
-
-Single observations with a large prediction error heavily influence the \textbf{MSE}, as they enter quadratically.
-
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-
-{\centering \includegraphics[width=0.8\textwidth]{figure/plot_quad_loss} 
-
-}
-
-
-
+\begin{minipage}[c]{0.33\textwidth}
+  \raggedright
+  \small
+  Outliers with large prediction error heavily influence the MSE, as they 
+  enter quadratically.
+\end{minipage}%
+\begin{minipage}[c]{0.67\textwidth}
+  \begin{knitrout}\scriptsize
+  \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+  {\includegraphics[width=0.9\textwidth]{figure/plot_quad_loss}}
 \end{knitrout}
+\end{minipage}
 
-Similar measures: sum of squared errors (SSE), root mean squared error (RMSE, brings measurement back to the original scale of the outcome).
+\small
+Similar measures:
+
+\begin{itemize}
+  \small
+  \item Sum of squared errors: $\rho_{SSE}(\yv, \F)=\sumim (\yi - \yih)^2$
+  \item Root MSE (orig. scale): $\rho_{RMSE}(\yv, \F)= \sqrt{\meanim (\yi - \yih)^2}$
+\end{itemize}
 
 \end{vbframe}
+
+% ------------------------------------------------------------------------------
 
 \begin{vbframe}{Mean Absolute Error}
 
-% A more robust (but not neccessarily better) way to compute a performance measure is the \textbf{Mean Absolute Error}:
-\begin{center}
-$
-MAE = \meanin |\yi - \yih| \in [0;\infty)
-$
-\hspace{4em} $\rightarrow$ L1 loss.
-\end{center}
+% Mean absolute distance:
+$$ 
+\rho_{MAE}(\yv, \F) = \meanim \rvert \yi - \yih \rvert \in [0;\infty) \qquad \rightarrow L1 
+\text{ loss}.
+$$
 
-\lz
-Less influenced by large errors and maybe more intuitive than the MSE.
-
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-
-{\centering \includegraphics[width=0.8\textwidth]{figure/plot_abs_loss} 
-
-}
-
-
-
+\begin{minipage}[c]{0.33\textwidth}
+  \raggedright
+  \small
+  More robust, less influenced by large residuals, more intuitive than MSE.
+\end{minipage}%
+\begin{minipage}[c]{0.67\textwidth}
+  \begin{knitrout}\scriptsize
+  \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+  {\includegraphics[width=\textwidth]{figure/plot_abs_loss}}
 \end{knitrout}
+\end{minipage}
 
-Similar measures: median absolute error (for even more robustness).
+\small
+Similar measures:
+
+\begin{itemize}
+  \small
+  \item Median absolute error (for even more robustness)
+\end{itemize}
 
 \end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Mean Absolute Percentage Error}
+
+% The relative error can be measured with the
+% \textbf{mean absolute percentage error (MAPE)}:
+
+$$ 
+\rho_{MAPE}(\yv, \F) = \meanim \left\rvert \frac{\yi - \yih}{\yi} \right\rvert \in [0;\infty) 
+$$
+
+\vfill
+
+\begin{minipage}[c]{0.33\textwidth}
+  \raggedright
+  \small
+  
+Small $|y|$ influence more strongly. Cannot handle $y=0$.
+\end{minipage}%
+\begin{minipage}[c]{0.67\textwidth}
+  \begin{knitrout}\scriptsize
+  \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+  {\includegraphics[width=\textwidth]{figure/eval_mape}}
+\end{knitrout}
+\end{minipage}
+
+\vfill
+
+\small
+Similar measures:
+
+\begin{itemize}
+  \small
+  \item Mean Absolute Scaled Error (MASE)
+  \item Symmetric Mean Absolute Percentage Error (sMAPE)
+\end{itemize}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
 
 \begin{vbframe}{$R^2$}
-
-Well-known measure from statistics.
+% \begin{small}
+% Another well known measure from statistics is $R^2$:
 
 \[
-R^2 = 1 - \frac{\sumin (\yi - \yih)^2}{\sumin (\yi - \bar{y})^2} = 1 - \frac{SSE_{LinMod}}{SSE_{Intercept}}
+\rho_{R^2}(\yv, \F) = 1 - \frac{\sumim (\yi - \yih)^2}{\sumim (\yi - \bar{y})^2} = 1 - \frac{SSE_{LinMod}}{SSE_{Intercept}}.
 \]
 
 \begin{itemize}
-\item Usually introduced as \textit{fraction of variance explained} by the model
-\item Simpler: compares SSE of constant model (baseline) with complex model (LM)
-\item $R^2=1$: all residuals are 0, we predict perfectly, \\
-$R^2=0$: we predict as badly as the constant model
-\item If measured on the training data, $R^2 \in [0;1]$ (LM must be at least as good as the constant)
-\item On other data $R^2$ can even be negative as there is no guarantee that the LM generalizes better than a constant (overfitting)
+  \item Well-known classical measure for LMs -- on train data. 
+  \item "Fraction of variance explained" by the model.
+  \item How much SSE of constant baseline is reduced 
+      when we use more complex model? 
+  \item $\rho_{R^2}=1$: all residuals are 0, we predict perfectly, \\
+  \item $\rho_{R^2}=0.9$: LM reduces SSE by factor of 10.\\
+  $\rho_{R^2}=0$: we predict as badly as the constant model.
+  \item Is $\in [0, 1]$ on train data; as LM is always better than intercept.
+  % \item On other data $R^2$ can even be negative as there is no guarantee that 
+  % the LM generalizes better than a constant (overfitting).
 \end{itemize}
 \end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{$R^2$ VS MSE}
+\begin{itemize}
+\item Better $R^2$ does not necessarily imply better fit.
+\item Data: $y = 1.1x + \epsilon$, where $\epsilon \sim \normal(0, 0.15)$. 
+\item Fit half (black) and full data (black and red) with LM.
+\end{itemize}
+\begin{center}
+\includegraphics[width=\textwidth]{figure/eval_mse_r2}
+\end{center}
+\begin{itemize}
+\item Fit does not improve, but $R^2$ goes up.
+\item But: Invariant w.r.t. to linear scaling of $y$, MSE is not.
+\end{itemize}
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
 
 \begin{vbframe}{Generalized $R^2$ for ML}
-A simple generalization of $R^2$ for ML seems to be:
+% A simple generalization of $R^2$ for ML seems to be:
 
 \[
-1 - \frac{Loss_{ComplexModel}}{Loss_{SimplerModel}}
+1 - \frac{Loss_{ComplexModel}}{Loss_{SimplerModel}}.
 \]
 
 \begin{itemize}
-% \item This introduces a general measure of comparison between a simpler baseline, and a more complex model considered as an alternative
-\item Works for arbitrary measures (not only SSE), for arbitrary models, on any data set of interest
-\item E.g. model vs constant, LM vs non-linear model, tree vs forest, model without some features vs model with them included
-% \item In ML we would rather use that metric on a holdout-test set, there is no reason not to do that
-\item Fairly unknown; our terminology (generalized $R^2$) is non-standard
+% \b   \item This introduces a general measure of comparison between a simpler 
+   % baseline and a more complex model considered as an alternative.
+  \item E.g., model vs constant, LM vs non-linear model, tree vs forest, 
+  model with fewer features vs model with more, ...
+  \item We could use arbitrary measures.
+  \item In ML we would rather evaluate on test set.
+  \item Can then become negative, e.g., for SSE and constant baseline,
+     if our model fairs worse on the test set than a simple constant.
+  % \item Fairly unknown; our terminology (generalized $R^2$) is non-standard.
 \end{itemize}
+
 \end{vbframe}
 
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Spearman's $\rho$}
+\footnotesize
+Can be used if we care about the relative ranks of predictions:
+\[
+\rho_{\text{Spearman}}(\yv, \F) = \frac{\cov(\textrm{rg}(\yv),\textrm{rg}(\hat{\yv}))}
+{\sqrt{\var(\textrm{rg}(\yv))}\cdot\sqrt{\var(\textrm{rg}(\hat{\yv}))}}  \in [-1, 1],
+\]
+% where $\textrm{rg}$ is the ranking function (e.g. $\textrm{rg}((4, 0.5, 10)) = 
+% (2, 1, 3)$).
+
+\begin{itemize}
+  \item Very robust against outliers
+      % , since the correlation is only based on the ranks of $\yv$ and $\hat{\yv}$, respectively.
+  \item A value of 1 or -1 means that $\hat{\yv}$ and $\yv$ have a perfect monotonic 
+  relationship.  
+  % \item A  value of zero indicates no monotonic relationship between 
+  % $\yv$ and $\hat{\yv}$.
+  \item Invariant under monotone transformations of $\hat{\yv}$ 
+
+\end{itemize}
+\begin{center}
+\includegraphics[width=0.71\textwidth]{figure/eval_spearman}
+\end{center}
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+% \begin{vbframe}{ml vs classical statistics}
+% 
+% \small
+% 
+% \begin{itemize}
+%   \item In classical statistics, besides MSE, RMSE and in-sample $R^2$, other 
+%   metrics are used to evaluate and select regression models. 
+%   \item They often focus on goodness-of-fit, as measured by (log-)likelihood, 
+%   rather than predictive accuracy -- for example, information criteria:
+%   % \item Frequently used metrics are so-called information criteria (lower values 
+%   % indicating better models): 
+%   \begin{itemize}
+%     \small
+%     \item \textbf{Akaike’s information criterion (AIC)} balances model fit and
+%     complexity, penalizing the number of parameters, $p$: 
+%     $$ AIC = -2 \cdot \loglt + 2 \cdot p.$$
+%     
+%     %\item \textbf{AICc} is a corrected version for AIC for small sample sizes.
+%     
+%     \item \textbf{Bayesian information criterion (BIC)} is another variant of 
+%     the AIC with a stronger penalty for more complex models: 
+%     $$ BIC = -2 \cdot \loglt + \log(p).$$
+%   \end{itemize}
+%     
+%   % \item By adding the number of parameters $p$ to the evaluation metric, more 
+%   % complex models are penalized. 
+%     
+%   \item As both AIC and BIC are based upon a ground-truth distribution, they 
+%   cannot be used to compare performances across different data sets.
+%   \item NB: using the same data for training and evaluation / model selection 
+%   introduces optimistic bias $\rightarrow$ post-selection inference.
+%     
+%  \end{itemize}
+% 
+% \end{vbframe}
+
+% ------------------------------------------------------------------------------
 
 \endlecture
 \end{document}

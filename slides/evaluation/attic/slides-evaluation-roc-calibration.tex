@@ -1,0 +1,199 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-eval.tex}
+
+\newcommand{\titlefigure}{figure_man/placeholder_discrimination}
+\newcommand{\learninggoals}{
+\item Understand the concepts of discrimination and calibration
+\item Understand that they are sometimes at odds}
+
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Evaluation: Discrimination \& Calibration}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Discrimination}
+
+\begin{itemize}
+  \item Consider, again, the binary classification case.
+  \item \textbf{Discrimination} is the ability of a classifier to perfectly 
+  separate the population into positive and negative instances.
+  \begin{itemize}
+    \item The classifier is said to discriminate well if predictions differ 
+    strongly across classes -- e.g., predicted probabilities for the negative 
+    (positive) class are all close to zero (one).
+    \item Measures of discrimination: e.g., AUC, sensitivity, specificity.
+  \end{itemize}
+\end{itemize}
+
+\begin{center}
+  \includegraphics[width = 0.7\textwidth]{figure_man/placeholder_discrimination}
+\end{center}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Calibration}
+
+\begin{itemize}
+  \item \textbf{Calibration}, on the other hand, assesses the concordance of 
+  predicted probabilities with the observed outcome (for any reasonable
+  grouping). \\
+  \textcolor{blue}{$\rightarrow$ For scoring classifiers, evaluating 
+  calibrations requires transformation of scores to posterior probabilities 
+  first.}
+  \item Predictions of a well-calibrated classifier follow approximately the 
+  same distribution as the true data labels.
+  \item Poor calibration occurs with imbalanced classes or when the learner 
+  lacks a probabilistic framework (e.g., $k$-NN, trees).
+  % \begin{itemize}
+  %   \item The learner has no probabilistic framework in the first place (e.g.,
+  %   $k$-NN or trees).
+  %   \item Classes are imbalanced.
+  % \end{itemize}
+  \item We distinguish two different notions of calibration:
+  \begin{itemize}
+    \item \textbf{Calibration in the large} is a property of the 
+    \textit{full} sample.\\
+    $\rightarrow$ Observed class-1 frequency in full sample vs average overall 
+    predicted class-1 probability.
+    \item \textbf{Calibration in the small} is a property of \textit{subsets}.\\
+    $\rightarrow$ Observed likelihood in subset vs average predicted class-1 
+    probability in that subset.
+  \end{itemize}
+\end{itemize}
+
+% We consider data with a binary outcome $y$.
+% \begin{itemize}
+%   \item \textbf{Calibration:} When the predicted probabilities closely agree
+%     with the observed outcome (for any reasonable grouping).
+%   \begin{itemize}
+%     \item \textbf{Calibration in the large} is a property of the \textit{full sample}.
+%     It compares the observed probability in the full sample  (e.g. proportion of observations for which $y=1$)
+% <!-- (e.g., 10% if 10 of 100 individuals have the outcome being predicted, e.g. $y=1$) -->
+%     with the average predicted probability in the full sample.
+%     \item \textbf{Calibration in the small} is a property of \textit{subsets} of the sample.
+%     It compares the observed probability in each subset with the average
+%     predicted probability in that subset.
+%   \end{itemize}
+%   \item \textbf{Discrimination:} Ability to perfectly separate the population into $y=0$ and $y=1$.
+%     Measures of discrimination are, for example, AUC, sensitivity, specificity.
+% \end{itemize}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Calibration and Discrimination}
+
+%<!-- http://www.uphs.upenn.edu/dgimhsr/documents/predictionrules.sp12.pdf -->
+
+\begin{itemize}
+  \item A well-calibrated classifier can be poorly discriminating.
+  \item E.g., consider two probabilistic classifiers $f_1$ and $f_2$:
+  \lz
+  % \begin{table}[]
+  %   \centering
+  %   \begin{tabular}{rrrr}
+  %     \small
+  %     \hline
+  %     observation nr. & truth & prediction $f_1$ & prediction $f_2$ \\
+  %     \hline
+  %     1        & 1     & 1           & 0           \\
+  %     2        & 1     & 1           & 1           \\
+  %     3        & 0     & 0           & 1           \\
+  %     4        & 0     & 0           & 0           \\ \hline
+  %     avg. class-1 prob. & 50\%  & 50\%        & 50\%        \\
+  %     \hline
+  %   \end{tabular}
+  % \end{table}
+  \begin{table}[]
+    \footnotesize
+    \centering
+    \begin{tabular}{rrrr}
+      \hline
+      observation nr. & truth & prediction $f_1$ & prediction $f_2$ \\
+      \hline
+      1 & 1 & 0.9 & 0.6 \\
+      2 & 1 & 0.9 & 0.6 \\
+      3 & 1 & 0.9 & 0.4 \\
+      4 & 0 & 0.1 & 0.4 \\
+      5 & 0 & 0.1 & 0.4 \\
+      6 & 0 & 0.1 & 0.6 \\ \hline
+      avg. class-1 prob. & 50\%  & 50\%  & 50\% \\
+      \hline
+    \end{tabular}
+  \end{table}
+  \lz
+  \item Both classifiers have identical calibration in the large (50\%), 
+  but clearly, $f_1$ has better discriminative power.
+\end{itemize}
+
+% <<eval = FALSE, echo = FALSE>>=
+% truth = c(1,1,0,0,0,0)
+% pred.rule.1 = c(1,1,0,0,0,0)
+% pred.rule.2 = c(0,0,0,0,1,1)
+% kable(data.frame(truth = truth, "pred rule 1" = pred.rule.1, "pred rule 2" = pred.rule.2))
+% @
+
+\framebreak
+
+\begin{itemize}
+  \item Conversely, a good discriminator can have bad calibration:
+  \lz
+  \begin{table}[]
+    \footnotesize
+    % \centering
+    \begin{tabular}{rrrr}
+      \hline
+      observation nr. & truth & prediction $f_1$ & prediction $f_2$ \\
+      \hline
+      1 & 1 & 0.97 & 0.99 \\
+      2 & 1 & 0.97 & 0.99 \\
+      3 & 0 & 0.01 & 0.67 \\
+      4 & 0 & 0.01 & 0.67 \\
+      5 & 0 & 0.01 & 0.67 \\
+      6 & 0 & 0.01 & 0.67 \\
+      7 & 0 & 0.01 & 0.67 \\
+      8 & 0 & 0.01 & 0.67 \\ \hline
+      avg. class-1 prob. & 25\%  & 25\%  & 75\% \\
+      \hline
+    \end{tabular}
+  \end{table}
+  % \begin{table}[]
+  % \centering
+  % \begin{tabular}{rrrr}
+  % \hline
+  % observation nr. & truth & prediction $f_1$ & prediction $f_2$ \\
+  % \hline
+  % 1        & 1     & 0.9           & 0.9         \\
+  % 2        & 1     & 0.9           & 0.9           \\
+  % 3        & 0     & 0.1          & 0.7           \\
+  % 4        & 0     & 0.1         & 0.7           \\ \hline
+  % avg. class-1 prob. & 50\%  & 50\%        & 80\%        \\
+  % \hline
+  % \end{tabular}
+  % \end{table}
+  \lz
+  \item Both classifiers discriminate well (e.g., setting thresholds at
+  0.5 and 0.8, respectively).
+  \item Classifier $f_2$ is, however, rather poorly calibrated: the probability 
+  of class 1 would be estimated at three times the true proportion.
+\end{itemize}
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\endlecture
+\end{document}

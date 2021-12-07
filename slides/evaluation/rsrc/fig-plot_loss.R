@@ -20,18 +20,18 @@ model = lm(y ~ x)
 
 # PLOT 1 -----------------------------------------------------------------------
 
-pdf("../figure/plot_abs_loss.pdf", height = 3)
+# pdf("../figure/plot_abs_loss.pdf", height = 3)
 
-plotModAbsoluteLoss(data, model = model, pt_idx = c(1, 4))
+p1 <- plotModAbsoluteLoss(data, model = model, pt_idx = c(1, 4))
 
-ggsave("../figure/plot_abs_loss.pdf", width = 7, height = 1.5)
-dev.off() 
+ggsave("../figure/plot_abs_loss.pdf", p1, width = 7, height = 2.5)
+# dev.off() 
 
 # PLOT 2 -----------------------------------------------------------------------
 
-pdf("../figure/plot_quad_loss.pdf", height = 2.5)
+# pdf("../figure/plot_quad_loss.pdf", height = 2.5)
 
-plotModQuadraticLoss(data = data, model = model, pt_idx = c(1, 4))
+p2 <- plotModQuadraticLoss(data = data, model = model, pt_idx = c(1, 4))
 
-ggsave("../figure/plot_quad_loss.pdf", width = 7, height = 2.5)
-dev.off() 
+ggsave("../figure/plot_quad_loss.pdf", p2, width = 7, height = 2.5)
+# dev.off() 

@@ -1,100 +1,212 @@
-% Defines macros and environments
 \input{../../style/preamble}
 \input{../../latex-math/basic-math.tex}
 \input{../../latex-math/basic-ml.tex}
-
+\input{../../latex-math/ml-eval.tex}
 
 \newcommand{\titlefigure}{figure/eval_train_2}
 \newcommand{\learninggoals}{
 \item Understand the definition of training error
-\item Understand why training error is no reliable estimator of future performance
-}
+\item Understand why train error is unreliable for models of higher complexity
+  when overfitting can occur}
+
+
 \title{Introduction to Machine Learning}
 % \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
 \institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
 \date{}
 
-
 \begin{document}
-
-
-%! includes: evaluation-intro 
 
 \lecturechapter{Evaluation: Training Error}
 \lecture{Introduction to Machine Learning}
+\sloppy
+
+% ------------------------------------------------------------------------------
 
 \begin{vbframe}{Training Error}
-(also: apparent error / resubstitution error)
 
 
-\lz
+Simply plugin predictions for data that model has been trained on:
+\small
+$$\rho(\yv_{\mathrm{train}}, F_{\textrm{train}})\;\text{where}\; 
+F_{\textrm{train}} = \begin{bmatrix} 
+\fhDtrain(\xi[1]_{\textrm{train}}) \\ 
+\dots \\
+\fhDtrain(\xi[m]_{\textrm{train}})
+\end{bmatrix}$$ 
 
 \begin{center}
 % FIGURE SOURCE: https://docs.google.com/drawings/d/1m0Uwf5bvWuP1agyZ0TOd0qaBakJVtfe_PspxqPL3mxU/edit?usp=sharing
-\includegraphics[width=.55\textwidth]{figure_man/train_error.pdf}
+\includegraphics[width=.40\textwidth]{figure_man/train_error.pdf}
 \end{center}
 
-\vspace{-0.8cm}
+A.k.a. apparent error or resubstitution error.
 
 \end{vbframe}
 
-\begin{vbframe}{Example: Polynomial Regression}
 
-Sample data from sinusoidal function
-$0.5 + 0.4 \cdot \sin (2 \pi x) + \epsilon$\\
-with measurement error $\epsilon$.
+\begin{vbframe}{Example 1: KNN}
 
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+For large data, and some models, train error \textbf{can maybe} yield 
+a good approximation of the GE:
 
-{\centering \includegraphics[width=0.85\textwidth]{figure/eval_train_1} 
+\begin{minipage}[c]{0.6\textwidth}
+\begin{itemize}
+  \small
+\item Use $k$-NN ($k = 15$).
+\item Up to 30K points from \texttt{spirals} to train.
+\item Use very large extra set for testing\\(to measure "true GE").
+\end{itemize}
+\end{minipage}%
+\begin{minipage}[c]{0.05\textwidth}
+  \phantom{foo}
+\end{minipage}%
+\begin{minipage}[c]{0.35\textwidth}
+  \includegraphics[width = 0.9\textwidth]{figure/eval_delta_train_test_err_data}
+\end{minipage}%
 
-}
+\vfill
+
+\small
 
 
+\vfill
 
-\end{knitrout}
+% We set aside a very large test set of 70,000 observations to gauge the true 
+% generalization error as well as possible.
+We increase train size, and see how gap between train error and GE closes.
 
-Assume data-generating process unknown.\\
-Try to approximate with a $d^{th}$-degree polynomial:
-\[ \fxt = \theta_0 + \theta_1 x + \cdots + \theta_d x^d = \sum_{j = 0}^{d} \theta_j x^j\text{.} \]
+\vfill
+
+\includegraphics[width = \textwidth]{figure/eval_delta_train_test_err}
 
 \framebreak
 
-Models of different \textit{complexity}, i.e., of different orders of the polynomial
-are fitted. How should we choose $d$?
+% ------------------------------------------------------------------------------
 
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\small
 
-{\centering \includegraphics[width=0.7\textwidth]{figure/eval_train_2} 
+% So: for a large amount of training data and a rather
+% simple learner, the training error can hold quite reliable information about 
+% the learner's ability to generalize.
 
-}
+% \vfill
 
 
+% \vfill
 
-\end{knitrout}
 
+\begin{columns}
+\begin{column}{0.6\textwidth}
 \begin{itemize}
-\item d=1: MSE = 0.036: Clear underfitting
-\item d=3: MSE = 0.003: Pretty OK?
-\item d=9: MSE = 0.001: Clear overfitting
+\item Fix train size to 500 and vary k.
+\item Low train error for small $k$ is deceptive. Model is very local and overfits.
 \end{itemize}
+\end{column}
+\begin{column}{0.4\textwidth}
+\begin{center}
+\includegraphics[width = \textwidth]{figure/eval_delta_train_test_overfit}
+\end{center}
+\end{column}
+\end{columns}
+\vfill
+\begin{center}
+\includegraphics[width = 0.90\textwidth]{figure/eval_delta_train_test_knn_2d}
+\end{center}
+Black region are misclassifications from large test test.
+\end{vbframe}
 
-Simply using the training error seems to be a bad idea.
+
+\begin{vbframe}{Example 2: Polynomial Regression}
+
+Sample data from
+$0.5 + 0.4 \cdot \sin (2 \pi x) + \epsilon$
+
+\vfill
+
+\begin{center}
+  \includegraphics[width=0.85\textwidth]{figure/eval_train_1}
+\end{center}
+
+% Now assume the data-generating process to be unknown as usual.\\
+We fit a $d^{th}$-degree polynomial:
+\[ \fxt = \theta_0 + \theta_1 \xv + \cdots + \theta_d \xv^d = \sum_{j = 0}^{d}
+\theta_j \xv^j\text. \]
+
+\framebreak
+
+Simple model selection problem: Which $d$?
+
+\vfill
+
+Visual inspection vs quantitative MSE on training set:
+
+\begin{minipage}[c]{0.6\textwidth}
+  % \centering
+  \includegraphics[width=\textwidth]{figure/eval_train_2} 
+\end{minipage}%
+\begin{minipage}[c]{0.4\textwidth}
+  \begin{itemize}
+    \footnotesize
+    \item $d = 1$: MSE = 0.036: \\clearly underfitting
+    \item $d = 3$: MSE = 0.003: \\pretty OK
+    \item $d = 9$: MSE = 0.001: \\clearly overfitting
+  \end{itemize}
+\end{minipage}
+
+\vfill
+
+Using the train error chooses overfitting model of maximal complexity.
 
 \end{vbframe}
 
-\begin{vbframe}{Training Error Problems}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Train error can easily become 0}
+
+% Training error \textbf{Optimistically biased} estimator of future performance. 
+
 \begin{itemize}
-  \item Unreliable and overly optimistic estimator of future performance.
-    E.g., training error of 1-NN is always zero as each observation is its own NN during test time.
-  \item Goodness-of-fit measures like (classic) $R^2$, likelihood, AIC, BIC, deviance are all based on the training error.
-  \item For models of restricted capacity, and given enough data, the training error may provide reliable information.\\ 
-  E.g., LM with $p = 5$ features, $10^6$ training points.\\ 
-  But: impossible to determine when training error becomes unreliable.
+  % \item \textbf{Optimistically biased} estimator of future performance.\\ 
+    \item For 1-NN it is always 0 as each $\xi$ is its own NN at test time.
+  % \item We are interested in modeling the inherent data structure, not in 
+  % fitting every peculiarity or noise in the training data.
+  \item Extend any ML training in the following way:
+    After normal fitting, we also store the training data.
+    During prediction, we first check whether $x$ is already stored in this set. 
+    If so, we replicate its label.
+    The train error of such an (unreasonable) procedure will be 0.
+  \item There are so called interpolators - interpolating 
+  splines, interpolating Gaussian processes - whose predictions can always 
+  perfectly match the regression targets, they are not necessarily good as they 
+  will interpolate noise, too.
 \end{itemize}
 \end{vbframe}
+
+
+\begin{vbframe}{Classical Statistical GoF measures}
+
+\begin{itemize}
+  \item \textbf{Goodness-of-fit} measures like $R^2$, likelihood, AIC, 
+  BIC, deviance are all based on the training error.
+  \item For models of restricted capacity, and enough data, 
+      and non-violated distributional assumptions: 
+      they might work.
+  \item Hard to gauge when that breaks, for high-dim, more complex data.
+  \item How do you compare to non-param ML-like models?
+\end{itemize}
+
+\vfill
+
+\textbf{Out-of-sample testing is probably always a good idea!}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+
+% ------------------------------------------------------------------------------
 
 \endlecture
 \end{document}

@@ -1,0 +1,279 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-eval.tex}
+\input{../../latex-math/ml-hpo.tex}
+
+\newcommand{\titlefigure}{figure_man/crossvalidation}
+\newcommand{\learninggoals}{
+\item Understand how resampling techniques extend the idea of simple train-test splits
+\item Understand the ideas of cross-validation, bootstrap and subsampling
+% \item Understand what pessimistic bias means
+}
+
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Evaluation: Resampling 1}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Resampling}
+
+\begin{footnotesize}
+\begin{itemize}
+  \item \textbf{Goal}: estimate $\GE(\inducer, \lamv, n, \rho_L) = \E \left[L(y, \Ilam(\Dtrain)(\xv)) \right]$.
+  \item Holdout: 
+      Small trainset = high pessimistic bias; small testset = high var.
+   \item Resampling: Repeatedly split in train and test, then average results.
+  \item Allows to have large trainsets large (low pessimistic bias) since we use 
+  $\GEfull$ as a proxy for $\GEfull[n]$)
+\item And reduce var from small testsets via averaging over repetitions.
+\end{itemize}
+\end{footnotesize}
+
+\begin{center}
+% FIGURE SOURCE: https://docs.google.com/drawings/d/1q7WN1_YKHedIPNySiZBEraLtTkHRX12Ej6M6ISbfMD0/edit?usp=sharing
+\includegraphics[width=0.55\textwidth]{figure_man/resampling_error.pdf}
+% % FIGURE SOURCE: No source
+% \includegraphics[width=0.7\textwidth]{figure_man/ml_abstraction-crop.pdf}
+\end{center}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Resampling strategies}
+\footnotesize
+\begin{itemize}
+  % \item Different \textbf{resampling strategies} exist to balance bias against 
+  % variance, e.g., holdout sampling or cross-validation.
+  \item Represent train and test sets by index
+  vectors::\\ 
+  $\Jtrain \in \nset^{\ntrain}$ and $\Jtest
+  \in \nset^{\ntest}$
+  \item Resampling strategy = collection of splits:
+  $$\JJ = \JJset.$$
+  \item Resampling estimator:  
+ % $\GEfull$ for arbitrary resampling strategies as
+\begin{equation*}
+\small
+\begin{split}
+\GEhresa = \agr\Big(
+ &\rho\Big(\yv_{\Jtesti[1]}, \FJtestftraini[1]\Big), \\ &\large{\vdots} \\
+& \rho\Big(\yv_{\Jtesti[B]}, \FJtestftraini[B]\Big)
+    \Big),
+\end{split}
+\end{equation*}
+\item Aggregation $\agr$ is typically "mean" and $\ntrain \approx \ntraini[1] \approx \dots \approx \ntraini[B]$.
+\end{itemize}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Cross-Validation}
+
+\begin{itemize}
+  \item Split the data into $k$ roughly equally-sized partitions.
+  \item Each part is test set once, join $k-1$ parts for training.
+  \item Obtain $k$ test errors and average.
+  \item Fraction $(k-1)/k$ is used for training, so 90\% for 10CV
+  \item Each observation is tested exactly once.
+\end{itemize}
+
+\lz
+
+\textbf{Example:} 3-fold CV
+
+\begin{center}
+% FIGURE SOURCE: practical tuning paper
+\includegraphics[width=0.5\textwidth]{figure_man/crossvalidation.png}
+\end{center}
+\end{vbframe}
+
+\begin{vbframe}{Cross-Validation - Stratification}
+
+\begin{itemize}
+    \item Used when target classes are very imbalanced
+    \item Then small classes can randomly get very small in samples   
+    \item Preserve distrib of target (or any feature) in each fold
+    \item For classes: simply CV-split the class data, then join
+\end{itemize}
+
+\lz
+
+\textbf{Example:} stratified 3-fold cross-validation
+\begin{center}
+\includegraphics[width=0.7\textwidth]{figure/eval_resample_1} 
+\end{center}
+\end{vbframe}
+
+
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Cross-Validation}
+
+\begin{itemize}
+  \item 5 or 10 folds are common.%, they use 80\% and 90\% of data in training
+  \item $k = n$ is known as "leave-one-out" CV (LOO-CV)
+  \item Bias of $\GEh$: The more folds, the smaller. LOO nearly unbiased. 
+  % $\Rightarrow$ Bias increases as $k$ gets smaller.
+  % \item The $k$ performance estimates are dependent because
+  % of the structured overlap of the train sets.\\
+  % $\Rightarrow$ Variance of the estimator increases for very large $k$ 
+  % (approaching LOO), when training sets nearly completely overlap.
+  \item LOO has high var, better many folds for small data but not LOO
+  \item Repeated CV (avg over high-fold CVs) good for 
+      for small data.
+\end{itemize}
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Subsampling}
+
+\begin{itemize}
+  \item Repeated hold-out with averaging, a.k.a. Monte Carlo CV.
+  % \item Similar to bootstrap, but draws without replacement.
+  \item Typical choices for splitting: $\frac{4}{5}$ or $\frac{9}{10}$ for 
+  training.
+\end{itemize}
+\begin{center}
+% FIGURE SOURCE: https://docs.google.com/drawings/d/1q7WN1_YKHedIPNySiZBEraLtTkHRX12Ej6M6ISbfMD0/edit?usp=sharing
+\includegraphics[width=0.7\textwidth]{figure_man/resampling_error.pdf}
+\end{center}
+\begin{itemize}
+  \item Smaller subsampling rate = larger pessimistic bias
+  \item More reps = smaller var
+\end{itemize}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Bootstrap}
+
+\begin{itemize}
+    \item Draw $B$ trainsets of size $n$ with replacement from orig $\D$
+    \item Testsets = Out-Of-Bag points:
+$\Dtest^b = \D \setminus \Dtrain^b$
+% $b = 1, 2, \dots, B$.
+\end{itemize}
+% \begin{eqnarray*}
+% \Dtrain^1 &=& \{z^1_1, \ldots, z^1_n\}\\
+% \vdots& \\
+% \Dtrain^B &=& \{z^B_1, \ldots, z^B_n\}
+% \end{eqnarray*}
+
+\begin{center}
+\begin{tikzpicture}[scale=1]
+% style
+\tikzstyle{rboule} = [circle,scale=0.7,ball color=red]
+\tikzstyle{gboule} = [circle,scale=0.7,ball color=green]
+\tikzstyle{bboule} = [circle,scale=0.7,ball color=blue]
+\tikzstyle{nboule} = [circle,scale=0.7,ball color=black]
+\tikzstyle{sample} = [->,thin]
+
+% title initial sample
+\path (3.5,3.75) node[anchor=east] {$\Dtrain$};
+
+% labels
+\path (3.5,3)   node[anchor=east] {$\Dtrain^1$};
+\path (3.5,2.5) node[anchor=east] {$\Dtrain^2$};
+\path (3.5,1.5) node[anchor=east] {$\Dtrain^B$};
+
+\path (3.5,2) node[anchor=east] {$\vdots$};
+\path[draw,dashed] (3.75,2.0) -- (4.5,2.0);
+
+% initial sample
+\path ( 3.75,3.75) node[rboule] (j01) {};
+\path ( 4.00,3.75) node[gboule] (j02) {};
+\path ( 4.25,3.75) node[bboule] (j03) {};
+\path ( 4.5,3.75) node[nboule] (j20) {};
+
+% bootstrap 1
+\path ( 3.75, 3.0) node[rboule] {};
+\path ( 4.00, 3.0) node[rboule] {};
+\path ( 4.25, 3.0) node[bboule] {};
+\path ( 4.5, 3.0) node[nboule] (b1) {};
+
+% bootstrap 2
+\path ( 3.75, 2.5) node[gboule] {};
+\path ( 4.00, 2.5) node[bboule] {};
+\path ( 4.25, 2.5) node[gboule] {};
+\path ( 4.5, 2.5) node[rboule] (b2) {};
+
+% bootstrap N
+\path (3.75,1.5) node[gboule] {};
+\path (4,1.5) node[rboule] {};
+\path (4.25,1.5) node[nboule] {};
+\path (4.5,1.5) node[nboule] (bN) {};
+
+% arrows
+\path[sample] (j20.east) edge [out=0, in=60] (b1.east);
+\path[sample] (j20.east) edge [out=0, in=60] (b2.east);
+\path[sample] (j20.east) edge [out=0, in=60] (bN.east);
+\end{tikzpicture}
+\end{center}
+
+% \framebreak
+
+\begin{itemize}
+  % \item Typically, $B$ is between $30$ and $200$.
+  % \item The variance of the bootstrap estimator tends to be smaller than the
+  % variance of $k$-fold CV. \\
+  % $\Rightarrow$ More iterations, smaller variance.
+  % \item As in $k$-fold CV, GE estimates tend to be pessimistically biased
+  \item Similar analysis as for subsampling
+  \item Trainsets contain about 2/3 unique points:
+      $1 - \P((\xv, y) \notin \Dtrain) = 1 - \left(1 - \frac{1}{n}\right)^n 
+  \ \stackrel{n \to \infty}{\longrightarrow} \ 1-\frac{1}{e} \approx 63.2 \%$ 
+  % of the unique 
+  % observations).
+  % \item Bootstrapping framework allows for inference 
+  % (e.g., detecting significant performance differences between learners).
+\item Replicated train points can lead to problems and artifacts
+\item Extensions B632 and B632+ also use trainerr for better estimate when data very small
+
+\end{itemize}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Leave-One-Object-Out}
+
+\begin{itemize}
+    \item Used when we have multiple obs from same objects, e.g., persons 
+        or hospitals or base images
+    \item Data not i.i.d. any more
+    \item Data from same object should \textbf{either} be in train \textbf{or}
+        testset
+    \item Otherwise we likely bias $\GEh$
+    \item CV on objects, or leave-one-object-out
+% One simple solution is to train on all observations originating from all instances
+% except one and then evaluate on the observations of the remaining one. This
+% procedure is called leave-one-object-out.
+\lz
+\end{itemize}
+
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{\centering \includegraphics[width=0.85\textwidth]{figure_man/loobject} 
+
+}
+
+\end{knitrout}
+\end{vbframe}
+% ------------------------------------------------------------------------------
+\endlecture
+\end{document}

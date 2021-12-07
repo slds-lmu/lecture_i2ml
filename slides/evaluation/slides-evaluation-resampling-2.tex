@@ -1,0 +1,305 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-eval.tex}
+\input{../../latex-math/ml-hpo.tex}
+
+\newcommand{\titlefigure}{figure_man/crossvalidation}
+\newcommand{\learninggoals}{
+\item Understand why resampling is better estimator than hold-out
+\item In-depth bias-var analysis of resampling estimator
+\item Understand that CV does not produce independent samples
+\item Short guideline for practical use 
+}
+
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Evaluation: Resampling 2}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+
+% ------------------------------------------------------------------------------
+
+
+
+
+\begin{frame}{Bias-Variance Analysis for Subsampling}
+\begin{center}
+% FIGURE SOURCE: eval-resampling-example
+\includegraphics[width=0.9\textwidth]{figure/eval-resampling-example-1}
+\end{center}
+
+\vfill
+
+\only<1>{
+  \begin{itemize}
+    \item Reconsider bias-var experiment for holdout (maybe re-read)
+    \item Split rates $s \in \{0.05, 0.1, ..., 0.95\}$ with $|\Dtrain| = s \cdot 500$.
+    \item Holdout vs. subsampling with 50 iters
+    \item 50 replications
+    % \item Every subsampling experiment is the result of averaging 50 hold-outs,
+        % so
+    % experiments, so each performance estimate is much more reliable (but also 
+    % more expensive) than one computed by a single hold-out experiment.
+  \end{itemize}
+}
+
+\only<2>{
+\begin{itemize}
+  \item Both estimators are compared to "real" MCE (black line)
+  \item SS same pessimistic bias as holdout for given s, but much less var
+\end{itemize}
+}
+
+% \framebreak
+
+\end{frame}
+
+
+\begin{vbframe}{Bias-Variance Analysis for Subsampling}
+
+\begin{center}
+% FIGURE SOURCE: eval-resampling-example
+\includegraphics[width=0.7\textwidth]{figure/eval-resampling-example-2}
+\end{center}
+
+\begin{itemize}
+  \item MSE of $\GEh$ strictly better for SS
+  \item Smaller var of SS enables to use larger $s$ for optimal choice
+      % ()
+  \item The optimal split rate now is a higher $s \approx 0.8$.
+  \item Beyond $s=0.8$: MSE goes up because var doesn't go down as much as we want 
+      due to increasing overlap in trainsets (see later)
+\end{itemize}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+% set watermark here, shift controls position
+
+
+% ------------------------------------------------------------------------------
+
+\begin{frame}{Dedicated testset scenario - Analysis}
+\begin{itemize}
+\item Goal: estimate $GE(\fh) = \E[\Lyfhx]$ via
+$$\GEh(\fh) = \frac{1}{m} \sum_{\xy \in \Dtest} \Lyfhx $$
+Here, only $(\xv,y)$ are random, they are $m$ i.i.d. fresh test samples
+
+
+\item This is: average over i.i.d $L(y, \fxh)$,
+    so directly know $\E$ and var. And can use CLT to approx distrib of $\GEh(\fh)$ with Gaussian.
+
+\item $\E[\GEh(\fh)] = \E[\Lyfhx] = GE(\fh) $
+
+\item $\mathbb{V}[\GEh(\fh)] = \frac{1}{m} \mathbb{V}[\Lyfhx]$ 
+
+\item So $\GEh(\fh)$ is unbiased estimator of $\GE(\fh)$, var decreases linearly in testset size, have an approx of full distrib (can do NHST, CIs, etc.)
+\item NB: Gaussian may work less well for e.g. 0-1 loss, with $\E$ close to 0, can use binomial or other special approaches for other losses
+
+\end{itemize}
+\end{frame}
+
+\begin{vbframe}{Pessimistic Bias in Resampling}
+\begin{itemize}
+    \item Estim $\GE(\inducer, n)$ (surrogate for $\GE(\fh)$ when $\fh$ is fit on full $\D$, with $|\D|=n$) via resampling based estim
+        $\GEh(\inducer, \ntrain)$
+\begin{equation*}
+\small
+\begin{split}
+\GEhresa = \agr\Big(
+ &\rho\Big(\yv_{\Jtesti[1]}, \FJtestftraini[1]\Big), \\ &\large{\vdots} \\
+& \rho\Big(\yv_{\Jtesti[B]}, \FJtestftraini[B]\Big)
+    \Big),
+\end{split}
+\end{equation*}
+% \item Goal: estimate $GE(\fh) = \E[\Lyfhx]$ via
+\item Let's assume $\agr$ is avg and $\rho$ is loss-based, so $\rho_L$ 
+\item The $\rho$ are simple holdout estims. So:
+$$\E[\GEhresa] \approx \E[\rho\Big(\yv_{\Jtest}, \FJtestftrain\Big)] $$
+\end{itemize}
+
+\begin{itemize}
+    \footnotesize
+\item NB1: In above, as always for $\GE(\inducer)$, both $\Dtrain$ and $\Dtest$ (and so $\xv \in \Dtest$) are random vars, and we take E over them 
+\item NB2: Need $\approx$ as maybe not all train/test sets in resampling of exactly same size
+\end{itemize}
+
+\framebreak
+
+% $$  \E \left[ \frac{1}{m} \sum_{\xy \in \Dtest} L(y, \inducer(\Dtrain)(\xv)) \right] = GE(\inducer, \ntrain)$$
+
+\framebreak
+
+$$\E[\GEhresa] \approx \E[\rho\Big(\yv_{\Jtest}, \FJtestftrain\Big)] = $$
+$$  \E \left[ \frac{1}{m} \sum_{\xy \in \Dtest} L(y, \inducer(\Dtrain)(\xv)) \right] = GE(\inducer, \ntrain)$$
+
+
+% \begin{itemize}
+    % \footnotesize
+% \end{itemize}
+
+$\Rightarrow$
+
+\begin{itemize}
+    \item So when we use $\GEhresa$ to to estimate $\GE(\inducer, n)$, our expected value is nearly correct, it's $\GE(\inducer, \ntrain)$
+    \item But fitting $\inducer$ on less data ($\ntrain$ vs full $n$) usually results in model with worse perf, hence estimator is pessimistically biased 
+    \item Bias the stronger, the smaller our training splits in resampling.
+\end{itemize}
+\end{vbframe}
+
+\setbeamertemplate{background}{%
+\begin{tikzpicture}[overlay, remember picture]
+\node[anchor=north west, scale=2.2, color=red, opacity=0.2, rotate=30]
+at ([shift={(0.8in, -2.2in)}]current page.north west){DON'T DO THIS AT HOME};
+\end{tikzpicture}%
+}
+
+\begin{frame}{No independence of CV results}
+% \begin{footnotesize}
+
+\begin{itemize}
+    \item Similar analysis as before holds for CV
+    \item Might be tempted to report distribution or SD 
+        of individual CV split perf values, e.g.
+        to test if perf of 2 learners is significantly different
+    % \item Since the $k$ training sets and their respective independent test sets stem
+% from the same distribution we get $k$ unbiased estimators of $\GEfull$.
+% \item However, in order to compare two different learners we also need to assess the 
+% uncertainty of our overall  estimator.
+\item But $k$ CV splits are not independent
+\end{itemize}
+
+\vfill
+
+\begin{minipage}[b]{0.45\textwidth}
+  \small \raggedright
+  A t-test on the difference of the mean GE estimators yields a highly 
+  significant p-value of $\approx 7.9 \cdot 10^{-5}$ on the 95\% level.
+\end{minipage}
+\begin{minipage}[b]{0.05\textwidth}
+  \phantom{}
+\end{minipage}
+\begin{minipage}[b]{0.45\textwidth}
+  \includegraphics[width=\textwidth]{figure/plot_ttest_error_dens}
+  
+  \tiny{LDA vs SVM on \texttt{spam} classification problem, performance 
+  estimation via 20-CV w.r.t. MCE.}
+\end{minipage}
+
+% \newcommand{\undraft}{
+% \setbeamertemplate{background}{}
+% }
+
+\end{frame}
+
+\setbeamertemplate{background}{}
+
+\begin{vbframe}{No independence of CV results}
+
+\begin{itemize}
+\item $\mathbb{V}[\GEh]$ of CV is a difficult combination of 
+\begin{itemize}
+\begin{footnotesize}
+\item average variance as we estim on finite trainsets
+\item covar from test errors,
+    as models result from overlapping trainsets
+\item covar due to the dependence of trainsets and test obs appear in trainsets
+\end{footnotesize}
+\end{itemize}
+\item Naively using the empirical var of $k$ individual $\GEh$s (as on slide before) yields biased 
+estimator of $\mathbb{V}[\GEh]$. Usually this underestimates the true var!
+\item Worse: there is no unbiased estimator of $\mathbb{V}[\GEh]$ [Bengio, 2004]
+\item Take into account when comparing learners by NHST
+\item Somewhat difficult topic, we leave it with the warning here
+\end{itemize}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+% \begin{vbframe}{Resampling discussion}
+
+% \begin{itemize}
+
+%   \item In ML we fit, at the end, a model on all our given data.\\
+
+%   \item \textbf{Problem:} We need to know how well this model will perform in 
+%   the future, but no data is left to reliably quantify this.\\
+%   $\Rightarrow$ Approximate using hold-out / CV / bootstrap / subsampling \\
+%   estimate\\ 
+
+%   \item \textbf{But:} pessimistic bias because we don't use all data points.\\
+
+%   \item The final model is (usually) computed on all data points.
+
+%   \item Strictly speaking, resampling only produces one number, the performance 
+%   estimator.
+%   It does NOT produce models, parameters, etc. These are intermediate results 
+%   and discarded.
+  
+%   \item The model and parameters are only obtained when we finally fit the 
+%   learner on the complete data.
+
+% \end{itemize}
+
+% \framebreak
+
+% \begin{itemize}
+%   \item 5-CV or 10-CV have become standard.
+%   \item Do not use hold-out, CV with few iterations, or subsampling with a low 
+%   subsampling rate for small samples, since this can cause the estimator to be 
+%   extremely biased, with large variance.
+%   \item For small-data situations with less than 500 or 200 observations, use 
+%   LOO or, probably better, repeated CV.
+%   \item For some models, computationally fast calculations or approximations 
+%   for LOO exist.
+%   \item A data set $\D$ with $|\D| = 100.000$ can have small-sample properties 
+%   if one class has few observations 
+%   \item Research indicates that subsampling has better properties than
+%     bootstrapping. The repeated observations can cause problems in training,
+%     especially in nested setups where the \enquote{training} set is split up again.
+% \end{itemize}
+% 
+% \framebreak
+\begin{vbframe}{Short Guideline}
+
+\fboxsep=0pt
+\noindent%
+\begin{minipage}[t]{0.42\linewidth}
+\vspace{0pt}
+\includegraphics{figure_man/resampling_dec_tree}
+\end{minipage}%
+\hfill%
+%
+\begin{minipage}[t]{0.58\linewidth}
+\vspace{0pt}
+\footnotesize
+\begin{itemize}
+  \item 5-CV or 10-CV have become standard.
+  \item Do not use hold-out, CV with few folds, or SS with small 
+  split rate for small $n$. Can bias estim and have large var.
+  \item For small $n$, e.g. $n < 200$, use 
+  LOO or, probably better, repeated CV.
+  \item For some models, fast tricks for LOO exist
+  \item With $n = 100.000$, can have "hidden" small-sample size, e.g.
+  one class very small
+  \item SS usually better than bootstrapping. Repeated obs can cause problems in training,
+    especially in nested setups where the \enquote{training} set is split up again.
+\end{itemize}
+\end{minipage}
+
+
+
+\end{vbframe}
+
+\endlecture
+\end{document}

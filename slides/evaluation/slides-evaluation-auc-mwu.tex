@@ -1,0 +1,138 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-eval.tex}
+
+\newcommand{\titlefigure}{figure_man/roc-mannwhitney2}
+\newcommand{\learninggoals}{
+\item Understand the rank-based nature of AUC
+\item See the connection between AUC and Mann-Whitney-U statistic}
+
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Evaluation: AUC \& Mann-Whitney-U Test}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{AUC as a rank-based metric}
+
+\begin{itemize}
+  \item The AUC metric is intimately related to the \textbf{Mann-Whitney-U 
+  test}, also known as \textbf{Wilcoxon rank-sum test}.
+  \item This connection is best understood viewing the AUC from a slightly 
+  different angle: it is, in effect, a \textbf{rank-based} metric.
+  \item Recall that, constructing the ROC curve, we count TP and FP.
+  \begin{center}
+  \includegraphics[trim = 0 0 0 -20, clip, width=0.5\textwidth]
+  {figure/eval_mclass_roc_sp_12_1} 
+  \end{center}
+  \item The AUC abstracts from the actual classification scores and
+  considers only their rank.
+\end{itemize}
+
+\framebreak 
+
+\begin{itemize}
+  \small
+  \item We can interpret the AUC as the probability of our classifier 
+  ranking a random positive observation higher than a random negative one.
+  \item A perfect classifier will rank all positive above all negative 
+  observations, achieving AUC = 1.
+\end{itemize}
+
+\begin{center}
+% FIGURE SOURCE: https://docs.google.com/drawings/d/1flfi73s8qr53-ZE6oq4qRGIG-sccpBp2cSfw1Stxh8I/edit
+  \includegraphics[width=0.55\textwidth]{figure_man/auc_interpretation_new}
+  \includegraphics[width=0.4\textwidth] {figure/fig-eval_mwu_ranking}
+\end{center}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Mann-Whitney-U test}
+
+\begin{itemize}
+  \item The Mann-Whitney-U test is a \textbf{non-parametric hypothesis test} on 
+  the difference in location between two samples $X_1$, $X_2$ of sizes $n_1$ and 
+  $n_2$, respectively.
+  \item Under the null, $X_1$ and $X_2$ follow the same (unknown) distribution 
+  $\P$, and for any pair of observations $x_{1,1} \in X_1$, $x_{2,1} \in X_2$ 
+  drawn at random from $\P$, the following statement holds:
+  $\P(x_{1,1} \in X_1) > \P(x_{2,1} \in X_2) = \P(x_{1,1} \in X_1) < \P(x_{2,1} 
+  \in X_2) = 0.5$.
+  \item The test statistic estimates the probability of a random sample from 
+  $X_1$ ranking higher than one from $X_2$ ($R_1$ denoting the sum of 
+  ranks of the $x_{1,i}$):
+  \begin{equation*}
+    % \begin{split}
+      U = \frac{1}{n_1 n_2} \sum_{i = 1}^{n_1} \sum_{j = 1}^{n_2} 
+      \I[x_{1,i} > x_{2,j}]
+      = R_1 - \cfrac{n_1(n_1 + 1)}{2}
+    % \end{split}
+  \end{equation*}
+  \item For large samples, $U$ is approximately normally distributed.
+\end{itemize}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{AUC \& Mann-Whitney-U test}
+
+\begin{itemize}
+  \item We can directly interpret the AUC in the light of the U 
+  statistic.
+  \item In order to see this, plot the ranks of all the scores as a stack of 
+  horizontal bars, and color them by label.
+  \item Next, keep only the green ones, and slide them 
+  horizontally to get a nice even stairstep on the right edge:
+\end{itemize}
+\begin{center}
+\includegraphics[trim = 0 40 0 0, clip, width=0.9\textwidth]
+{figure_man/roc-mannwhitney3.png}
+\end{center}
+
+\framebreak
+
+\begin{center}
+\includegraphics[width=0.6\textwidth]{figure_man/roc-mannwhitney2.png}
+\end{center}
+
+\begin{itemize}
+  \item Denoting the respective numbers of cases as $\np$ and $\nn$, we 
+  have: $U = R_+ - \cfrac{\np(\np + 1)}{2}$.
+  \item The area of the green bars on the right is equal to 
+  $\cfrac{\np(\np + 1)}{2}$.
+\end{itemize}
+
+\framebreak
+
+\begin{center}
+  \includegraphics[width=0.6\textwidth]{figure_man/roc-mannwhitney2.png}
+\end{center}
+
+\begin{itemize}
+  \item $U$: area of the green bars on the left.
+  \item $\np \cdot \nn$: area of the dashed rectangle.
+\end{itemize}
+
+\vfill
+ 
+$\Rightarrow$ AUC is $U$ normalized to the unit square: \\
+$$\text{AUC} = \cfrac{U}{\np \cdot \nn}.$$
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\endlecture
+\end{document}
