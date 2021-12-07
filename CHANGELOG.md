@@ -1,9 +1,11 @@
 ## Changelog
 
-### 11-2021
-- Reworked Chapter Evaluation:
-  - new plots in roc-space
-  - ..
+### 12-2021
+- Chapter Evaluation:
+  - a lot of new material on advanced topics like pAUC, multiclass AUC, MWU, PR curves, and more
+  - extended resampling profoundly
+  - changed naming of the chunks
+  - improved other chunks
 
 
 ### 01-2021
