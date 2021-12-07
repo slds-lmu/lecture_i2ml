@@ -1,0 +1,312 @@
+\input{../../style/preamble}
+\newcommand{\titlefigure}{figure/cart_tuning_ad_4.pdf}
+\newcommand{\learninggoals}{
+\item Understand the idea of model based optimization
+\item Be able to explein the terms 'surrogate model' and 'expected improvement'
+\item Understand the idea of hyperband}
+\usepackage{../../style/lmu-lecture}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/ml-hpo.tex}
+\input{../../latex-math/ml-eval.tex}
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+
+\begin{document}
+
+\lecturechapter{Hyperparameter Tuning - Advanced Tuning Techniques: MBO \& Hyperband}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+
+\begin{vbframe}{HPO -- Many approaches}
+\begin{itemize}
+    \item Evolutionary algorithms
+    \item Bayesian / model-based optimization
+    \item Multi-fidelity optimization, e.g.\ Hyperband
+\end{itemize}
+
+\includegraphics[width = 0.37\textwidth]{figure/ea.eps}
+\includegraphics[width = 0.37\textwidth]{figure/mbo.png}
+\includegraphics[trim=0 0 285 0, clip, width = 0.235\textwidth]{figure/hyperband.png}
+
+HPO methods can be characterized by: 
+\begin{itemize}
+    \item how the exploration vs. exploitation trade-off is handled
+    \item how the inference vs. search trade-off is handled% (how much time is spent is spent to learn a surrogate model on the currently observed data)
+\end{itemize}
+
+Further aspects: Parallelizability, local vs. global behavior, handling of noisy observations, multifidelity and search space complexity. 
+
+\end{vbframe}
+
+\begin{vbframe}{Evolutionary strategies}
+
+\begin{figure}[htb]
+    \centering
+    \includegraphics[width=0.65\textwidth]{figure/ea.eps}
+%    \caption{%
+%        Schematic representation of a single iteration of an ES as a four dimensional discrete problem.
+%        Parameter values are symbolized by geometric shapes.
+%    }
+    \label{fig:ea}
+\end{figure}
+\begin{footnotesize}
+\begin{itemize}
+\item Are  a  class  of  stochastic  population-based  optimization  methods  inspired  by  the  concepts  of  biological  evolution
+\item Are applicable to HPO since they  do  not  require  gradients
+\item Mutation is  the  (randomized)  change  of  one  or  a  few  HP  values  in  a  configuration.
+\item Crossover creates a new HPC by (randomly) mixing the values of two other configurations. 
+\end{itemize}
+\end{footnotesize}
+
+\end{vbframe}
+
+\begin{vbframe}{Bayesian Optimization}
+BO sequentially iterates:
+\begin{columns}
+\column{0.45\textwidth}
+\begin{enumerate}
+\item \textbf{Approximate} $\bm{\lambda} \mapsto c(\bm{\lambda})$ by  (nonlin) regression model $\hat c(\bm{\lambda})$, from evaluated configurations (archive)
+\item \textbf{Propose candidates} via optimizing an acquisition function that is based on the surrogate $\hat c(\bm{\lambda})$
+\item \textbf{Evaluate} candidate(s) proposed in 2, then go to 1 
+\end{enumerate}
+\column{0.5\textwidth}
+\vspace*{0.5cm}
+\includegraphics[width = 1\textwidth]{figure/mbo.png}
+\end{columns}
+Important trade-off: \textbf{Exploration} (evaluate candidates in under-explored areas) vs. \textbf{exploitation} (search near promising areas)
+
+\end{vbframe}
+
+\begin{frame}{Bayesian Optimization}
+
+\begin{columns}
+\column{0.45\textwidth}
+\textbf{Surrogate Model}: 
+\begin{itemize}
+    \item Probabilistic modeling of $C(\lamv) \sim (\hat c(\bm{\lambda}), \hat \sigma(\bm{\lambda}))$ with posterior mean $\hat c(\bm{\lambda})$ and uncertainty  $\hat \sigma(\bm{\lambda})$.  
+    \item Typical choices for numeric spaces are Gaussian Processes; random forests for mixed spaces
+\end{itemize}
+\column{0.5\textwidth}
+\vspace*{0.5cm}
+\includegraphics[width = 1\textwidth]{figure/mbo.png}
+\end{columns}
+
+\textbf{Acquisition Function}: 
+\begin{itemize}
+    \item Balance exploration (high $\hat \sigma$) vs. exploitation (low $\hat c$). 
+    \item Lower confidence bound (LCB): $\quad a(\bm{\lamv}) = \hat c(\bm{\lambda}) - \kappa \cdot \hat \sigma(\lamv)$ 
+    \item Expected improvement (EI): $\quad a(\lamv) = \E\left[\max\left\{c_{\min} - C(\lamv), 0\right\}\right]$ where ($c_{\min}$ is best cost value from archive)
+    %($c_{\min}$ is best observed value)
+    \item Optimizing $a(\lamv)$ is still difficult, but cheap(er)
+\end{itemize}
+
+\end{frame}
+
+\begin{vbframe}{Bayesian Optimization}
+
+% Model-based optimization (MBO) is a sequential optimization procedure. We start with an initial design, i.e., a set of configurations $\lambda_i$ where we have evaluated the corresponding (resampling) performance. 
+% 
+% Repeat:
+%   \begin{enumerate}
+% \item From the available performance measurements, we build a \textbf{surrogate model} that models the relationship between model hyperparameters and estimated generalization error. It serves as a cheap approximation of the expensive objective. 
+% \item Based on information provided by the surrogate model, a new configuration $\lambda^{(\text{new})}$ is proposed: we pick a value for which the surrogate model predicts a large potential improvement over the already evaluated configurations.
+% \item The resampling performance of the learner with hyperparameter setting $\lambda^{(\text{new})}$ is evaluated and added to the set of design points.  
+% \end{enumerate}
+
+%\framebreak 
+
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{\centering \includegraphics[width=0.95\textwidth]{figure/cart_tuning_ad_1.pdf} 
+
+}
+%FIGURE SOURCE: fig-cart_tuning_ad_1.R
+
+
+\end{knitrout}
+  
+  \begin{footnotesize}
+Upper plot: The surrogate model (black, dashed) models the \emph{unknown} relationship between input and output (black, solid) based on the initial design (red points).\\
+Lower plot: Mean and variance of the surrogate model are used to derive the expected improvement (EI) criterion. The point that maximizes the EI is proposed (blue point). 
+\end{footnotesize}
+
+
+\end{vbframe}
+\begin{vbframe}{Model-based Optimization}
+\addtocounter{framenumber}{-1}
+
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{\centering \includegraphics[width=0.95\textwidth]{figure/cart_tuning_ad_2.pdf} 
+}
+%FIGURE SOURCE: fig-cart_tuning_ad_1.R
+
+
+\end{knitrout}
+  \begin{footnotesize}
+Upper plot: The surrogate model (black, dashed) models the \emph{unknown} relationship between input and output (black, solid) based on the initial design (red points).\\
+Lower plot: Mean and variance of the surrogate model are used to derive the expected improvement (EI) criterion. The point that maximizes the EI is proposed (blue point). 
+\end{footnotesize}
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{Model-based Optimization}
+\addtocounter{framenumber}{-1}
+
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{\centering \includegraphics[width=0.95\textwidth]{figure/cart_tuning_ad_3.pdf} 
+}
+%FIGURE SOURCE: fig-cart_tuning_ad_1.R
+
+
+\end{knitrout}
+  \begin{footnotesize}
+Upper plot: The surrogate model (black, dashed) models the \emph{unknown} relationship between input and output (black, solid) based on the initial design (red points).\\
+Lower plot: Mean and variance of the surrogate model are used to derive the expected improvement (EI) criterion. The point that maximizes the EI is proposed (blue point). 
+\end{footnotesize}
+
+\end{vbframe}
+\begin{vbframe}{Model-based Optimization}
+\addtocounter{framenumber}{-1}
+
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{\centering \includegraphics[width=0.95\textwidth]{figure/cart_tuning_ad_4.pdf} 
+}
+%FIGURE SOURCE: fig-cart_tuning_ad_1.R
+
+
+\end{knitrout}
+  \begin{footnotesize}
+Upper plot: The surrogate model (black, dashed) models the \emph{unknown} relationship between input and output (black, solid) based on the initial design (red points).\\
+Lower plot: Mean and variance of the surrogate model are used to derive the expected improvement (EI) criterion. The point that maximizes the EI is proposed (blue point). 
+\end{footnotesize}
+\framebreak
+
+Since we use the sequentially updated surrogate model predictions of performance to propose new configurations,
+we are guided to \enquote{interesting} regions of $\bm{\Lambda}$ and avoid irrelevant evaluations:
+  
+  \begin{center}
+\begin{figure}
+% see rsrc/mbo-example.R
+\includegraphics[width=0.65\textwidth]{figure/mbo_random_tune.pdf}
+\caption{\footnotesize{Tuning complexity and minimal node size for splits for CART on the \texttt{titanic} data (10-fold CV maximizing accuracy). \\
+  Left panel: MBO, 50 configurations; right panel: random search, 50 iterations.}}
+\end{figure}
+\end{center}
+
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{Multifidelity optimization}
+\begin{itemize}
+\item Prerequiste: Fidelity  HP $\lamfid$, i.e.,  a  component  of $\lamv$,  which  influences  the computational  cost  of  the  fitting  procedure  in  a  monotonically  increasing  manner
+\item Methods of multifidelity optimization in HPO are all tuning  approaches  that  can  efficiently handle  a $\inducer$ with  a  HP $\lambda_{\text{fid}}$
+\item The  lower  we  set $\lamfid$,  the more points we can explore in our search space, albeit with much less reliable information w.r.t. their true performance.
+\item We  assume  to  know  box-constraints  of $\lamfid$,  so $\lamfid \in [\lamfidl, \lamfidu]$,  where  the  upper  limit  implies  the  highest  fidelity  returning  values closest to the true objective value at the highest computational cost. 
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Successive Halving}
+
+\begin{columns}
+\column{0.59\textwidth}
+\begin{itemize}
+\item Races down set of HPCs to the best
+\item Idea: Discard bad configurations early
+\item Train HPCs with fraction of full budget (SGD epochs, training set size); the control param for this is called \textbf{multi-fidelity HP}
+\item Continue with better half of HPCs (w.r.t $\GEh{}$); 
+with doubled budget
+\item Repeat until budget depleted or single HPC remains
+\end{itemize}
+\column{0.41\textwidth}
+\begin{center}
+\includegraphics[trim=0 0 285 0, clip, width = 1.0\textwidth]{figure/hyperband.eps}
+\end{center}
+\end{columns}
+\end{vbframe}
+
+\begin{vbframe}{Multifidelity optimization -- Hyperband}
+
+\begin{columns}
+\column{0.70\textwidth}
+\textbf{Problem with SH}
+\begin{itemize}
+    \item Good HPCs could be killed off too early, 
+    depends on evaluation schedule
+\end{itemize}
+\textbf{Solution: Hyperband}
+\begin{itemize}
+\item Repeat SH with different start budgets $\lambda_{\text{budget}}^{[0]}$ and initial number of HPCs $p^{[0]}$ 
+\item Each SH run is called bracket
+\item Each bracket consumes ca. the same budget
+%\item It is a multi-fidelity optimization method since it uses information of multiple fidelity levels to identify promising candidates
+\end{itemize}
+\column{0.30\textwidth}
+\begin{center}
+\includegraphics[trim=620 0 0 0, clip, width = 0.70\textwidth]{figure/hyperband.eps}
+\end{center}
+\end{columns}
+\end{vbframe}
+
+% \begin{vbframe}{Hyperband}
+% 
+% \begin{itemize}
+% \item It is extremely expensive to train complex models on large data sets
+% \item For many configurations, it might be clear early on that further training is not likely to significantly improve the performance
+% \item More importantly, the relative ordering of configurations (for a given data set) can also become evident early on. 
+% \item \textbf{Idea:} \enquote{weed out} poor configurations early during training
+% \item One approach is \textbf{successive halving}: Given an initial set of configurations, all trained for a small initial budget, repeat:
+%   \begin{itemize}
+% \item Remove the half that performed worst, double the budget
+% \item Continue until the new budget is exhausted
+% \end{itemize}  
+% \item Successful halving is performed several times with different trade-offs between the number of configurations considered and the budget that is spent on them. 
+% \end{itemize}
+% 
+% \framebreak 
+% 
+% Only the most promising configuration(s) are trained to completion: 
+%   
+%   \begin{center}
+% \begin{figure}
+% \includegraphics[width=0.8\textwidth]{figure_man/hyperband3.png}
+% %src: https://www.automl.org/wp-content/uploads/2019/05/AutoML_Book_Chapter1.pdf
+% \end{figure}
+% \end{center}
+% \tiny taken from Hutter, Kotthoff, Vanschoren. \textit{Automated Machine Learning -- Methods, Systems, Challenges}. Springer, 2019. (Fig. 1.3)
+% \end{vbframe}
+
+\begin{frame}{More tuning algorithms:}
+
+Other advanced techniques besides model-based optimization and the hyperband algorithm are: 
+  
+  \begin{itemize}
+\item Stochastic local search, e.g., simulated annealing
+\item Genetic algorithms / CMAES
+\item Iterated F-Racing
+\item Many more $\ldots$
+  \end{itemize}
+
+\medskip
+For more information see \textit{Hyperparameter Optimization: Foundations, Algorithms,
+Best Practices and Open Challenges}, Bischl (2021)
+
+\end{frame}
+\endlecture
+\end{document}
