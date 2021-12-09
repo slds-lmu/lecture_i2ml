@@ -22,25 +22,8 @@ dims <- ceiling(2^seq(log2(min_d), log2(max_d), length = len_d))
 n_test <- 10000
 n_iters <- 10
 
-make_regression_data <- function(d=500, n=500) {
-  actual_n <- n + n_test
-
-  X <- matrix(rnorm(d*(actual_n)), ncol = d)
-  X <- cbind(matrix(1, nrow = actual_n), scale(X))
-
-  beta <- matrix(0, nrow = d + 1)
-  beta[1,] <- 5
-  beta[2:d%/%2,] <- 3
-  beta[(d%/%2+1):d,] <- -3
-
-  y <- X%*%beta + rnorm(actual_n)
-
-  list(X=X,y=y)
-}
-
 make_task_data <- function(d=500, n=500) {
   peak <- mlbench.peak(n=n + n_test,d=d)
-  # reg <- make_regression_data(d=d,n=n)
   data <- as.data.frame(peak$x)
   data$y <- peak$y
   task <- as_task_regr(data, target = "y", id = paste0(d, "_", n))
@@ -56,12 +39,11 @@ df <- data.frame(learner_id=character(),
 measure <- msr("regr.mse")
 
 learners <- list(
-  lrn("regr.lm", id="Linear Model"),
-  lrn("regr.rpart", id="Regression Tree"),
-  lrn("regr.kknn", id="K-Nearest Neighbors"),
-  lrn("regr.ranger", id="Random Forest"),
+  lrn("regr.svm", id="Support Vector Machine", gamma=0.1, cost=1, kernel="radial", type="eps-regression"),
   lrn("regr.xgboost", id="Gradient Boosting", nthread=4, nrounds=10),
-  lrn("regr.svm", id="Support Vector Machine")
+  lrn("regr.ranger", id="Random Forest", num.trees=500, num.threads=4),
+  lrn("regr.rpart", id="Regression Tree", maxdepth=30, minsplit=20),
+  lrn("regr.kknn", id="K-Nearest Neighbors", k=7, distance=2)
 )
 
 for (i in 1:length(dims)) {
@@ -107,9 +89,7 @@ for (i in 1:length(dims)) {
 
 }
 
-# saveRDS(df, file = "overfiting_mlr.rds")
-
-saveRDS(df, file = "overfitting_peak_boost_10rounds.rds")
+saveRDS(df, file = "overfitting_peak_svm_gamma0.1.rds")
 
 options(warn = defaultW)
 
