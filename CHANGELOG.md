@@ -1,5 +1,12 @@
 ## Changelog
 
+### 12-2021
+- Chapter Evaluation:
+  - a lot of new material on advanced topics like pAUC, multiclass AUC, MWU, PR curves, and more
+  - extended resampling profoundly
+  - changed naming of the chunks
+  - improved other chunks
+
 
 ### 01-2021
 - supervised-regression/slides-regression-knn and supervised-classification/slides-classification-knn are deleted and merged into knn/slides-knn

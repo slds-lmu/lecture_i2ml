@@ -1,67 +1,103 @@
-\begin{enumerate}
+\begin{enumerate}[a)]
 
-  \item[a)]
+  \item As we would expect, the two formulations are equivalent (up to 
+  reparameterization). 
+  In order to see this, consider the softmax function components:
+  \begin{flalign*}
+    \pikxt[1] &= \frac{\exp (\thetab_1^\top \xv)}{\exp (\thetab_1^\top \xv) +
+    \exp (\thetab_2^\top \xv)} \\
+    \pikxt[2] &= \frac{\exp (\thetab_2^\top \xv)}{\exp (\thetab_1^\top \xv) +
+    \exp (\thetab_2^\top \xv)},
+  \end{flalign*}
+  where $\pikxt[1] + \pikxt[2] = 1$.
+  \begin{flalign*}
+    \Longrightarrow \pikxt[1] &= \dfrac{1}{\dfrac{\exp (\thetab_1^\top \xv) +
+    \exp (\thetab_2^\top \xv)}{\exp (\thetab_1^\top \xv)}} \\
+    &= \frac{1}{1 + \exp (\thetab_2^\top \xv - \thetab_1^\top \xv)} \\
+    &= \frac{1}{1 + \exp (- \thx)} \\
+    &= \pixt,
+  \end{flalign*}
+  i.e., the binary-case logistic function,
+  if we set $\thetab := \thetab_1 - \thetab_2$.
+  % and $\pikxt[2] = 1 - \pikxt[1]$.
 
-  $\pi_1(x)=\frac{\exp(\theta_1^T x)}{\exp(\theta_1^T x) + \exp(\theta_2^T x)}$
-
-  $\pi_2(x)=\frac{\exp(\theta_2^T x)}{\exp(\theta_1^T x) + \exp(\theta_2^T x)}$
-
-  $\pi_1(x)=\frac{1}{ (\exp(\theta_1^T x) + \exp(\theta_2^T x) )/ \exp(\theta_1^T x)} = \frac{1}{1+\exp(-\theta^{T} x)}$ where $\theta =\theta_1 - \theta_2 $ and $\pi_2(x) = 1 - \pi_1(x)$
-
-  \item[b)]
-  When using softmax regression the posterior class probability for the class $k$ is modeled, s.t.
-  $$\pi_k(x) = \frac{\exp(\theta_k^T x)}{\sum^g_{j=1} \exp(\theta_j^T x)}.$$ 
+  \item The joint likelihood is easy to compute with the \textit{iid} assumption
+  we are willing to make.
+  It is simply given by the product over all individual likelihoods:
+  $$\LLt = \prodin \prod_{j = 1}^g \pi_j\left(\xi ~|~ \thetab \right)^{
+  \I{(\yi = j)}}.$$
   
-  A single observation is multinomially distributed, i.e., 
-$$\mathcal{L}_i = \P(Y^{(i)} = y^{(i)}|x^{(i)},\theta_1, \dots, \theta_g) = 
-\prod^g_{j=1} \pi_j(x^{(i)})^{\mathds{1}_{\{y^{(i)} = j\}}}.$$
-  Under the assumption that the observations are conditionally independent the 
-  likelihood of the data can be expressed, s.t.
-  $$\mathcal{L} = \P(Y^{(1)} = y^{(1)},\dots,Y^{(n)} = y^{(n)}|x^{(1)},\dots,x^{(n)},\theta_1, \dots, \theta_g) = \prod^n_{i=1}\prod^g_{j=1} \pi_j(x^{(i)})^{\mathds{1}_{\{y^{(i)} = j\}}}.$$
-(By following the maximum likelihood principle, we should look for parameters $\theta_1, \dots, \theta_g$, which maximize the expression above.) \\
- Now we want the empirical risk to be a \emph{sum} of loss function values, not a \emph{product}
-recall: $$\riske = \sum^n_{i=1} \Lxyi.$$
-We can turn the product into a sum by taking its log since the same parameters maximize the expressions. Finally, we convert the maximization into minimization by multiplying with -1. So we end up with the so-called cross-entropy loss function:
+  \item Right now, $\LLt$ does not look anything like an empirical risk 
+  function.
+  However, we will arrive there by some simple transformations you might 
+  recall from the first exercise sheet:
+  \begin{itemize}
+    \item First we convert our \textit{maximum} likelihood problem into an 
+    empirical risk \textit{minimization} problem:
+    $$\argmax_{\thetab \in \Theta} \LLt = \argmint - \LLt.$$
+    \item Then we get rid of the (outer) product over all 
+    observations, which we would like to turn into a sum.
+    This is achieved by taking the log, a strictly monotonic 
+    transformation that has no effect on the optimizer (recall that 
+    $\log (a \cdot b) = \log a + \log b$):
+    $$\argmint \prodin - \LL_i(\thetab) = \argmint \sumin - \logl_i(\thetab).$$
+    The inner product over all classes also becomes a sum in this new 
+    formulation (before, we wanted all probability functions but the one 
+    corresponding to the true class to become 1 factors, now we want them to 
+    become 0 summands):
+    $$\argmint \sumin - \logl_i(\thetab) = \argmint \sumin - \left( \sumjg 
+    \I(y = j) \log \pi_j\left(\xi ~|~ \thetab \right) \right)$$
+    \item And we have already found an expression that is conformal with the 
+    empirical risk minimization principle:
+    $$\thetabh_{\text{MLE}} = \thetabh_{\text{ERM}} = 
+    \argmint \underbrace{\sumin \underbrace{- \left( \sumjg \I(y = j) \log 
+    \pi_j\left(\xi ~|~ \thetab \right) \right)}_{\Lxyit}}_{\risket}$$
+  \end{itemize}
+  As the above transformations are universally applicable, we can always use 
+  the negative log-likelihood (NLL) as a loss function in empirical risk 
+  minimization (not every loss function, however, has a corresponding likelihood 
+  formulation).
   
-$$ \Lxy = -\sum^g_{j=1} \mathds{1}_{\{y = j\}}\log[{\pi_j(x)}].$$
- 
-We see that for the softmax regression the loss function is equal to the negative log-likelihood of one observation. Thus the associated empirical risk is the negative log-likelihood of the complete data set.
+  \item The $k$-th discriminant function has the following form:
+  $$ \pikxt = \frac{\exp(\thetab_k^\top \xv)}{\sumjg 
+  \exp(\thetab_j^\top \xv)} %~~ =: s_k(\xv ~|~ \thetab) 
+  ~~ \in [0, 1],$$
+  and $\sum_{k = 1}^g \pikxt = 1$.
+  This sum-one constraint means that one set of parameters is actually 
+  redundant: if we know the first $g - 1$ discriminant functions, the $g$-th one 
+  is fully specified.
+  Therefore, we set $\thetabh_g = \zero$ and compute $\P(\hat y = g ~|~ \xv, 
+  \thetab) = 
+  1 - \sum_{k = 1}^{g - 1} \hat{\pi}_k (\xv ~|~ \thetab)$.
   
-  \item[c)]
-  Since the subtraction of any fixed vector from all $\theta_k$ does not change the prediction, one set of parameters is "redundant". Thus we set $\theta_g = (0,\dots,0).$
-    Hence for $g$ classes we get $g - 1$ discriminant functions from the softmax $\hat{\pi}_1(x), \dots, \hat{\pi}_{g-1}(x)$ which can be interpreted as probability. The probability for class $g$ can be calculated by using $\hat{\pi}_g = 1 - \sum_{k = 1}^{g-1} \hat{\pi}_k(x)$. To estimate the class we are using majority vote:
-    $$
-    \hat{y} = \argmax_k \hat{\pi}_k(x)
-    $$
-    The parameter of the softmax regression is defined as parameter matrix where each class has its own parameter vector $\theta_k$, $k \in \{1, \dots, g-1\}$:
-    $$
-    \theta = [\theta_1, \dots, \theta_{g-1}]
-    $$
+  The highest of the thus estimated posterior class probabilities then 
+  determines the actual class label prediction:
+  $$\yh = \argmax_{k \in \gset} \hat{\pi}_k (\xv ~|~ \thetab).$$
+  
+  \item In order to state the hypothesis space for the multiclass case we 
+  can define a length-$g$ vector of class-individual probability functions 
+  that results from applying the softmax function $\mathcal{S}$:
+  $$%\pixt :=
+  \left[ \pikxt \right]_{k = 1, 2, \dots, g} = 
+  \mat{\pikxt[1] & \pikxt[2] & \dots & \pikxt[g] }^\top
+  ~ =: \mathcal{S}(\xv ~|~ \thetab) ~ \in \unitint^g.$$
+  
+  Our parameters are now matrix-valued, where every class-individual parameter 
+  vector is of length $p$, such that
+  $$\thetab = \mat{\thetab_1 & 
+  \thetab_2 & \dots & \thetab_g} = \mat{\mat{\theta_{1, 1} \\ \vdots \\ 
+  \theta_{1, p}} & \mat{\theta_{2, 1} \\ \vdots \\ 
+  \theta_{2, p}} & \dots & \mat{\theta_{g, 1} \\ \vdots \\ 
+  \theta_{g, p}}} ~~ \in \Theta = \R^{p \times g}$$
+  
+  Then we have for our hypothesis space:
+  % $$\Hspace = \left \{\pi: \Xspace \rightarrow \unitint^g ~ \bigg \rvert ~
+  % \pixt = \mathcal{S}(\xv ~|~ \thetab), ~ \thetab \in \R^{p \times g} \right\}$$
+  $$\Hspace = \left \{\mathcal{S}_{\thetab}: \Xspace \rightarrow \unitint^g ~ 
+  \bigg \rvert ~ \mathcal{S}(\xv ~|~ \thetab) = 
+  \left [\frac{\exp(\thetab_k^\top \xv)}{\sumjg \exp(\thetab_j^\top \xv)}
+  \right]_{k = 1, 2, \dots, g}, 
+  ~ \thetab \in \R^{p \times g} \right\}$$  
 
-
-
-  % $\frac{\partial (-\log L)}{\partial \theta_i} = - \sum_k I_k \frac{1}{\pi_k} \frac{\partial \pi_k}{\partial \theta_i}$
-
-  % since
-
-  % $ \frac{\partial \pi_i}{\partial \theta_i} = \triangledown_{\theta_i} \frac{e^{\theta_i^T x}}{\sum_k e^{\theta_k^T x}}= \frac{e^{z_i}(\sum_k e^{z_k})-(e^{z_i})^2}{(\sum_k e^{z_k})^2}x = \frac{e^{z_i}(\sum_{k \neq i} e^{z_k})}{(\sum_k e^{z_k})^2}x= \pi_i(1 - \pi_i)x$,
-
-  % $ \frac{\partial \pi_i}{\partial \theta_j} = \triangledown_{\theta_j} \frac{e^{\theta_i^T x}}{\sum_k e^{\theta_k^T x}}= \frac{-e^{z_i}e^{z_j}}{(\sum_k e^{z_k})^2}x= - \pi_i\pi_j x$, ($i \neq j$)
-
-  % Conclusion:
-
-  % $\frac{- \partial \log L}{\partial \theta_i} = - \sum_k I_k \frac{1}{\pi_k} \frac{\partial \pi_k}{\partial \theta_i} = -(1-\pi_i)x$ ($i = y$)
-  % and
-
-  % $\frac{- \partial \log L}{\partial \theta_j} = - \sum_k I_k \frac{1}{\pi_k} \frac{\partial \pi_k}{\partial \theta_j} = \pi_j x$
-  % ($j \neq y$)
-
-  % Writing the two cases in one formula, we have
-
-  % $\frac{- \partial \log L}{\partial \theta_k} = -(I_k -\pi_k )x$ where $I_k = [y = k]$
-
-  % summing over all instances, we have
-
-  % $\triangledown_{\theta_k}\mathcal{L} = \sum_{i=1}^n-([y_i = k] -\pi_k )x$
 \end{enumerate}
 
