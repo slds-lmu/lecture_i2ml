@@ -39,10 +39,11 @@ df <- data.frame(learner_id=character(),
 measure <- msr("regr.mse")
 
 learners <- list(
-  lrn("regr.svm", id="Support Vector Machine", gamma=0.1, cost=1, kernel="radial", type="eps-regression"),
-  lrn("regr.xgboost", id="Gradient Boosting", nthread=4, nrounds=10),
+  lrn("regr.svm", id="SVM (gamma=1/dim)", cost=1, kernel="radial", type="eps-regression"),
   lrn("regr.ranger", id="Random Forest", num.trees=500, num.threads=4),
+  lrn("regr.xgboost", id="Gradient Boosting", nthread=4, nrounds=100),
   lrn("regr.rpart", id="Regression Tree", maxdepth=30, minsplit=20),
+  lrn("regr.svm", id="SVM (gamma=1)", gamma=1, cost=1, kernel="radial", type="eps-regression"),
   lrn("regr.kknn", id="K-Nearest Neighbors", k=7, distance=2)
 )
 
@@ -89,7 +90,7 @@ for (i in 1:length(dims)) {
 
 }
 
-saveRDS(df, file = "overfitting_peak_svm_gamma0.1.rds")
+saveRDS(df, file = "overfitting_peak.rds")
 
 options(warn = defaultW)
 
