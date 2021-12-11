@@ -39,7 +39,7 @@ df <- data.frame(learner_id=character(),
 measure <- msr("regr.mse")
 
 learners <- list(
-  lrn("regr.svm", id="SVM (gamma=1/dim)", cost=1, kernel="radial", type="eps-regression"),
+  lrn("regr.svm", id="SVM (gamma=1/p)", cost=1, kernel="radial", type="eps-regression"),
   lrn("regr.ranger", id="Random Forest", num.trees=500, num.threads=4),
   lrn("regr.xgboost", id="Gradient Boosting", nthread=4, nrounds=100),
   lrn("regr.rpart", id="Regression Tree", maxdepth=30, minsplit=20),
