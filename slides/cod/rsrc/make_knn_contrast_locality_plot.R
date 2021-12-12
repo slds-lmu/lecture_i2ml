@@ -6,12 +6,13 @@ library(xtable)
 library(gridExtra)
 library(grid)
 library(data.table)
+library(ggplot2)
 source("helpers/data_generators.R")
 source("helpers/constants.R")
 source("helpers/utilities.R")
 
 # DATA -------------------------------------------------------------------------
-distances <- readRDS("distances.rds")
+distances <- readRDS("datasets/distances.rds")
 
 # PLOTS ------------------------------------------------------------------------
 

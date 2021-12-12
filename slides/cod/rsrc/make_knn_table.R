@@ -10,7 +10,7 @@ source("helpers/constants.R")
 source("helpers/utilities.R")
 
 # DATA -------------------------------------------------------------------------
-distances <- readRDS("distances.rds")
+distances <- readRDS("datasets/distances.rds")
 
 # PLOTS ------------------------------------------------------------------------
 colnames(distances) <- c("italic(p)",
