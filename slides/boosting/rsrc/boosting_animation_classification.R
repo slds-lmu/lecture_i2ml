@@ -173,11 +173,11 @@ for (i in m) {
 }
 
 error_df <- data.table(iter=1:n_iter, train_error=sims$train_errors, test_error=sims$test_errors)
-error_df <- melt(error_df, id.vars = "iter", variable.name = "loss_type", value.name = "loss_val")
+error_df <- melt(error_df, id.vars = "iter", variable.name = "error_type", value.name = "loss_val")
 colors <- viridis::viridis(2, end=0.9)
 for (i in m) {
-  p <- ggplot(data=error_df, mapping=aes(x=iter, y=loss_val, color=loss_type)) +
-    labs(x="iteration", y="bernoulli loss", color="loss type") +
+  p <- ggplot(data=error_df, mapping=aes(x=iter, y=loss_val, color=error_type)) +
+    labs(x="iteration", y="bernoulli loss", color=element_blank()) +
     geom_line() +
     scale_color_viridis(discrete = TRUE, end=0.9) +
     geom_vline(xintercept = i, color="red") +
