@@ -1,121 +1,166 @@
-\begin{itemize}
+\begin{enumerate} [a)]
+  \item 
+  \begin{itemize}
   \item 
 
-  Proceed as follows, when solving manually:
+  \textbf{Pen-and-paper solution} \lz
 
-  \begin{enumerate}
-    \item Split $x$ in two groups using the following split points.
+  \begin{enumerate}[1)]
+    \item Here, we have only one split variable $x$.
+    We probe all splits of $x$ in two groups, where thresholds are placed 
+    equidistant between the observed feature values (think about why this 
+    might help generalization):
     \begin{itemize}
-      \item $ (1)$, $(2,7,10,20)$ (splitpoint 1.5)
-      \item $ (1,2)$, $(7,10,20)$ (splitpoint 4.5)
-      \item $ (1,2,7)$, $(10,20)$ (splitpoint 8.5)
-      \item $ (1,2,7,10)$, $(20)$ (splitpoint 15)
+      \item $ (1)$ | $(2,7,10,20)$ (split point 1.5)
+      \item $ (1,2)$ | $(7,10,20)$ (split point 4.5)
+      \item $ (1,2,7)$ | $(10,20)$ (split point 8.5)
+      \item $ (1,2,7,10)$ | $(20)$ (split point 15)
     \end{itemize}
-    \item For each possible split point compute the sum of squares in both groups.
-    \item Use as split point the point that splits both groups best w.r.t. minimizing the sum of squares in both groups.
-  \end{enumerate}
+    \item For each split point, compute the sum of squares ($L2$ loss) 
+    in both groups.
+    \item Choose the point that splits both groups best w.r.t. empirical risk 
+    reduction.
+  \end{enumerate} 
+  
+  \lz
 
-  Here, we have only one split variable $x$. A split point $t$, leads to the following half-spaces:% (here, we will have 4 possibilities, see figure below):
-
+  A split point $t$ leads to the following half-spaces:
   \begin{align*}
-  \Nl(t) &= \{ (x,y) \in \Np: x \leq t \} \text{ and } \Nr(t) = \{ (x,y) \in \Np: x > t \}.
+    \Nl(t) &= \{ (x,y) \in \Np: x \leq t \} ~~ \text{and} ~~ 
+    \Nr(t) = \{ (x,y) \in \Np: x > t \}.
   \end{align*}
 
-  Remember the minimization Problem (here only for one split variable $x$):
-
+  Recall the corresponding minimization problem (only w.r.t. $t$ as there is 
+  just one variable):
   \begin{align*}
-  \min_{t} \left(\min_{c_1} \sum_{(x,y) \in \Nl} (y - c_1)^2 + \min_{c_2} \sum_{(x,y) \in \Nr} (y - c_2)^2 \right).
+    \min_{t} \left(\min_{c_1} \sum_{(x,y) \in \Nl(t)} (y - c_1)^2 + 
+    \min_{c_2} \sum_{(x,y) \in \Nr(t)} (y - c_2)^2 \right).
   \end{align*}
-  The inner minimization is solved through:
-  $\hat{c}_1 = \bar{y}_1$ and $\hat{c}_2 = \bar{y}_2$
-
-  Which results in:
-
+  The inner minimizers are the respective mean target values in each node,
+  $\hat{c}_1 = \bar{y}_1$ and $\hat{c}_2 = \bar{y}_2$, such that:
   \begin{align*}
-  \min_{t} \left(\sum_{(x,y) \in \Nl} (y - \bar{y}_1)^2 + \sum_{(x,y) \in \Nr} (y - \bar{y}_2)^2 \right).
+    \min_{t} \left(\sum_{(x,y) \in \Nl(t)} (y - \bar{y}_1)^2 + 
+    \sum_{(x,y) \in \Nr(t)} (y - \bar{y}_2)^2 \right),
   \end{align*}
 
-  % <<echo = -1, fig.height=5, fig.width=5, fig.align='center'>>=
-  % par(mfrow = c(2,2), mar = c(4,4,1,1))
-  % x = c(1,2,7,10,20)
-  % y = c(1,1,0.5,10,11)
-  % for (i in 1:(length(x) - 1)) plot(x, y, col = as.factor(x <= x[i]))
-  % @
-  The sum of squares error of the parent is:
-  $$Impurity_{parent} = MSE_{parent} = \frac{1}{5} \sum_{i=1}^5 (y_i - 4.7)^2 = 22.56 $$
+  so the MSE of the parent is:
+  $$\rho_{\text{MSE}}(\Np) = 
+  \frac{1}{|\Np|} \sum_{(x,y) \in \Np} (y - \bar{y})^2 = 
+  \frac{1}{5} \sum_{i = 1}^5 (y_i - 4.7)^2 = 22.56. $$
 
-  Calculate the risk for each split point:
+  Calculate the risk $\risk(\Np, j, t)$ for each split point:
 
   \begin{itemize}
-    \item[$x \leq 1.5$]
+    \item $x \leq 1.5$
       \begin{align*}
-        \mathcal{R}(1, 1.5) &= \frac{1}{5}\text{MSE}_{left} + \frac{4}{5}\text{MSE}_{right}  =  \\
-        &= \frac{1}{5} \cdot \frac{1}{1}(1 - 1)^2 + \frac{4}{5} \cdot\frac{1}{4}((1 - 5.625)^2 + (0.5 - 5.625)^2 + (10 - 5.625)^2 + (11 - 5.625)^2) \\
-        &= 19.1375
+        \risk(\Np, 1, 1.5) &= \tfrac{|\Nl|}{|\Np|} \rho_{\text{MSE}}(\Nl) + 
+        \tfrac{|\Nr|}{|\Np|} \rho_{\text{MSE}}(\Nr)  =  \\
+        &= \tfrac{1}{5} \cdot \left( \tfrac{1}{1}(1 - 1)^2 \right) + 
+        \tfrac{4}{5} \cdot \left( 
+        \tfrac{1}{4}((1 - 5.625)^2 + (0.5 - 5.625)^2 + (10 - 5.625)^2 + 
+        (11 - 5.625)^2) \right) \\
+        &= 19.14
       \end{align*}
 
-    \item[$x \leq 4.5$] $\mathcal{R}(1, 4.5) = 13.43$
-    \item[$x \leq 8.5$] $\mathcal{R}(1, 8.5) = 0.13$
-    \item[$x \leq 15$] $\mathcal{R}(1, 15) = 12.64$
+    \item $x \leq 4.5$ ~~ $\Longrightarrow$ $\risk(\Np, 1, 4.5) = 13.43$
+    \item$x \leq 8.5$ ~~ $\Longrightarrow$ $\risk(\Np, 1, 8.5) = 0.13$ 
+    ~~ \textbf{optimal}
+    \item$x \leq 15$ ~~~ $\Longrightarrow$ $\risk(\Np, 1, 15) = 12.64$
 
   \end{itemize}
+  
+  \lz
 
-  Minimal empirical risk is obtained by choosing the split point $8.5$.
-
-  Doing the same for the $\log$-transformation gives:
+  Proceeding accordingly for the monotonic, rank-preserving log transformation 
+  yields the same result:
   \begin{itemize}
-    \item[$x \leq 0.3$] $\mathcal{R}(1, 0.3) = 19.14$
-    \item[$x \leq 1.3$] $\mathcal{R}(1, 1.3) = 13.43$
-    \item[$x \leq 2.1$] $\mathcal{R}(1, 2.1) = 0.13$
-    \item[$x \leq 2.6$] $\mathcal{R}(1, 2.6) = 12.64$
+    \item $\log x \leq 0.3$ ~~ $\Longrightarrow$ $\risk(1, 0.3) = 19.14$
+    \item $\log x \leq 1.3$ ~~ $\Longrightarrow$ $\risk(1, 1.3) = 13.43$
+    \item $\log x \leq 2.1$ ~~ $\Longrightarrow$ $\risk(1, 2.1) = 0.13$ 
+    ~~ \textbf{optimal}
+    \item $\log x \leq 2.6$ ~~ $\Longrightarrow$ $\risk(1, 2.6) = 12.64$
   \end{itemize}
+  
+  \lz
 
-  Minimal empirical risk is obtained by choosing the split point $2.1$.
-
-
-  \item Code example:
+  \item \textbf{\texttt{R} solution} \lz
   
   <<>>=
-  x = c(1,2,7,10,20)
-  y = c(1,1,0.5,10,11)
+  x <- c(1, 2, 7, 10, 20)
+  y <- c(1, 1, 0.5, 10, 11)
 
-  calculate_mse <- function (y) mean((y - mean(y))^2)
-  calculate_total_mse <- function (yleft, yright) {
+  compute_mse <- function (y) mean((y - mean(y))**2)
+  
+  compute_total_mse <- function (yleft, yright) {
     num_left <- length(yleft)
     num_right <- length(yright)
-
-    w_mse_left <- num_left / (num_left + num_right) * calculate_mse(yleft)
-    w_mse_right <- num_right / (num_left + num_right) * calculate_mse(yright)
-
-    return(w_mse_left + w_mse_right)
+    w_mse_left <- num_left / (num_left + num_right) * compute_mse(yleft)
+    w_mse_right <- num_right / (num_left + num_right) * compute_mse(yright)
+    w_mse_left + w_mse_right
   }
 
   split <- function(x, y) {
+    
     # try out all unique points as potential split points and ...
     unique_sorted_x <- sort(unique(x))
-    split_points <- unique_sorted_x[1:(length(unique_sorted_x) - 1)] + 
+    split_points <- head(unique_sorted_x, length(unique_sorted_x) - 1) + 
       0.5 * diff(unique_sorted_x)
-    node_mses <- lapply(split_points, function(i) {
-      y_left <- y[x <= i]
-      y_right <- y[x > i]
-
-      # ... compute SS in both groups
-      mse_split <- calculate_total_mse(y_left, y_right)
-      print(sprintf("Split at %.1f: empirical Risk = %.2f", i, mse_split))
-
-      return(mse_split)
+    
+    node_mses <- lapply(
+      split_points, 
+      function(i) { 
+        y_left <- y[x <= i]
+        y_right <- y[x > i]
+        # ... compute SS in both groups
+        mse_split <- compute_total_mse(y_left, y_right)
+        print(sprintf("split at %.1f: empirical risk = %.2f", i, mse_split))
+        mse_split
     })
+    
     # select the split point yielding the maximum impurity reduction
-    best <- which.min(node_mses)
-    split_points[best]
+    split_points[which.min(node_mses)]
+    
   }
 
-  x
-  split(x, y) # the 3rd observation is the best split point
+  split(x, y) # 3rd obs is best split point
 
-  log(x)
-  split(log(x), y) # also here, the 3rd observation is the best split point
+  split(log(x), y) # again, 3rd obs wins
   @
 
 
 \end{itemize}
+
+\newpage
+\item For regression trees, we usually identify \textit{impurity} with 
+\textit{variance}. 
+Here is why:
+\begin{itemize}
+  \item It is reasonable to define impurity via the deviation between actual 
+  target values and the predicted constant -- either using absolute or 
+  square distances to enforce symmetry of positive and negative residuals.
+  \item Recall the constant $L2$ risk minimizer for a node $\Np$:
+  $$\bar y = \argmin_c \sum_{(x, y) \in \Np} (y - c)^2. $$
+  % \begin{align*}
+  % \min_c \sum_{(x,y) \in \Np} (y - c)^2 &\Longleftrightarrow
+  % \pd{}{c} \left( \sum_{(x,y) \in \Np} (y - c)^2 \right) = 0 \\
+  % &\Longleftrightarrow \pd{}{c} \left( \sum_{i = 1}^{|\Np|} \left({\yi}^2 -
+  % 2 \yi c + c^2\right) \right) = 0 \\
+  % &\Longleftrightarrow \left( \sum_{i = 1}^{|\Np|} \left(
+  % -2 \yi + 2c\right) \right) = 0 \\
+  % &\Longleftrightarrow |\Np| \cdot c =  \sum_{i = 1}^{|\Np|} \yi \\
+  % &\Longleftrightarrow \hat c = \frac{1}{|\Np|}  \sum_{i = 1}^{|\Np|} \yi 
+  % = \bar y.
+  % \end{align*}
+  \item Consequently, we also have 
+  $$\bar y = \argmin_c \frac{1}{|\Np|} \sum_{(x, y) \in \Np} (y - c)^2, $$
+  where the RHS is the (biased) sample variance for sample mean $c$.
+  \item Therefore, predicting the sample mean both minimizes risk under $L2$ 
+  loss and variance impurity.
+  \item Since constant mean prediction is equivalent to an intercept LM 
+  (minimizing the sum of squared residuals!), regression trees with $L2$ loss 
+  perform piecewise constant linear regression.
+  \item The same correspondence holds between impurity via absolute distances 
+  and $L1$ regression.
+\end{itemize}
+
+\end{enumerate}
