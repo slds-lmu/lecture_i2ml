@@ -64,10 +64,9 @@ simulate_classif_boosting <- function(gridsize,
     
     learner <- lrn("regr.rpart", maxdepth = 3)
     learner$train(task, row_ids=1:n_train)
-    pred.train <- learner$predict(task)
     
     # baselearner logloss predictions for pseudo residuals
-    baselearner_pred <- pred.train$data$response
+    baselearner_pred <- learner$predict(task)$data$response
     
     
     # calculate overall prediction for boosting model
@@ -86,9 +85,8 @@ simulate_classif_boosting <- function(gridsize,
     grid <- expand.grid(seq(min(X$x1), max(X$x1), length.out = gridsize),
                        seq(min(X$x2), max(X$x2), length.out = gridsize))
     colnames(grid) <- c("x1","x2")
-    pred.grid <- learner$predict_newdata(grid, task = task)
-    pred_grid <- pred.grid$data$response
-    grid$prob <- pred_grid
+    pred_grid <- learner$predict_newdata(grid, task = task)
+    grid$prob <- pred_grid$data$response
     
     # create plot
     p <- ggplot(mapping = aes_string(x = "x1", y = "x2"))
@@ -116,18 +114,18 @@ simulate_classif_boosting <- function(gridsize,
     #-----------------------------------------------------------------------------------------------
     # plot overall predictions
     
-    if(i == 1) pred.grid.cum <- 0
+    if(i == 1) pred_grid_cum <- 0
     
     # dataset for geom_point (true labels)
     data_plot_base <- data.frame(x1 = head(X, n_train)$x1, x2 = head(X, n_train)$x2, trueLabel = head(y, n_train))
     
     # add up base learner predictions for total boosting predictions and calculate probabilities
-    pred.grid.cum <- pred.grid.cum + pred.grid$data$response
-    prob.grid.cum <- exp(pred.grid.cum)/(1+exp(pred.grid.cum))
+    pred_grid_cum <- pred_grid_cum + pred_grid$data$response
+    prob_grid_cum <- exp(pred_grid_cum)/(1+exp(pred_grid_cum))
     grid <- expand.grid(seq(min(X$x1), max(X$x1), length.out = gridsize),
                        seq(min(X$x2), max(X$x2), length.out = gridsize))
     colnames(grid) <- c("x1","x2")
-    grid$prob <- prob.grid.cum
+    grid$prob <- prob_grid_cum
     
     # create plot
     p <- ggplot(mapping = aes_string(x = "x1", y = "x2"))
