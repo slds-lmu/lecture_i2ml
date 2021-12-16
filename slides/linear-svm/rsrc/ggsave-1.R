@@ -3,11 +3,13 @@ library(knitr)
 library(ggplot2)
 library(mlr)
 library(BBmisc)
-
-source("rsrc/plot_lin_svm.R")
-
 library(mvtnorm)
 library(gridExtra)
+
+source("plot_lin_svm.R")
+
+theme_set(theme_minimal())
+
 set.seed(3)
 
 num_obs <- 20
@@ -27,7 +29,7 @@ good_dec <- plot_lin_svm(data, show_gamma = FALSE, C=100,
 
 tmp <- rbind(data.frame(x.1=-0.5, x.2=0.6, y="-1"),
              data)
-tmp$y <- relevel(tmp$y, "1")
+tmp$y <- relevel(as.factor(tmp$y), "1")
 
 bad_dec <- plot_lin_svm(tmp, show_gamma = FALSE, C=100, 
                         show_points = FALSE,
@@ -36,7 +38,9 @@ bad_dec <- plot_lin_svm(tmp, show_gamma = FALSE, C=100,
                         sw_labels = -1) + 
   geom_point(data=data, aes(x=x.1, y=x.2, colour=y), size=3)
 
-grid.arrange(bad_dec, good_dec, ncol=2)
+linear_classif_1_plot <- grid.arrange(bad_dec, good_dec, ncol=2)
+
+ggsave(filename = "../figure/linear_classif_1.png", plot = linear_classif_1_plot, width = 6, height = 3)
 
 #####################################################
 
@@ -51,6 +55,10 @@ bad_dec <- plot_lin_svm(tmp, show_gamma = FALSE, C=100,
   geom_point(data=data, aes(x=x.1, y=x.2, colour=y), size=3) 
 
 grid.arrange(bad_dec, good_dec, ncol=2)
+
+linear_classif_2_plot <- grid.arrange(bad_dec, good_dec, ncol=2)
+
+ggsave(filename = "../figure/linear_classif_2.png", plot = linear_classif_2_plot, width = 6, height = 3)
 
 ####################################################
 
