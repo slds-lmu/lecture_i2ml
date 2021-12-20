@@ -12,7 +12,7 @@ library(BBmisc)
 library(gridExtra)
 
 # Function to get the true error + the error for different CV methods
-estimate = function(learner, task, measures = mmce, stratify = FALSE,
+estimate = function(learner, task, measures = mce, stratify = FALSE,
   split = 0.01, cv.iters = seq(2, 10, by = 2)) {
   # holdout for nested resampling, use always stratify = TRUE
   rdesc = makeResampleDesc("Holdout", split = split, stratify = TRUE)
@@ -52,9 +52,9 @@ parallelLibrary("mlr")
 clusterSetRNGStream(iseed = 123)
 # stratified vs. not stratified
 res.imbalanced = parallelMap(function(i, ...) estimate(...), seq_len(replicates),
-  more.args = list(learner = lrn, task = imbalanced.task, measures = mmce, stratify = TRUE, split = 0.1))
+  more.args = list(learner = lrn, task = imbalanced.task, measures = mce, stratify = TRUE, split = 0.1))
 res.imbalanced2 = parallelMap(function(i, ...) estimate(...), seq_len(replicates),
-  more.args = list(learner = lrn, task = imbalanced.task, measures = mmce, stratify = FALSE, split = 0.1))
+  more.args = list(learner = lrn, task = imbalanced.task, measures = mce, stratify = FALSE, split = 0.1))
 parallelStop()
 save(res.imbalanced, res.imbalanced2, file = "compare-cv-example.RData")
 

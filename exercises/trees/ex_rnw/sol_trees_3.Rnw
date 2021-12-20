@@ -1,21 +1,57 @@
-According to the lecture for a target $y$ with target space $\mathcal{Y} = \{1, \dots, g\}$ the target class proportion $\pikN$  of class $k \in \mathcal{Y}$ in a node can be computed, s.t.
-$$ \pikN = \frac{1}{|\Np|} \sum\limits_{(x^{(i)},y^{(i)}) \in \Np} [y^{(i)} = k].$$
-Now for any $n \in \mathbb{N}$ let $Y^{(1)},\dots,Y^{(n)},\hat{Y}^{(1)},\dots,\hat{Y}^{(n)}$ be i.i.d. random variables, where $Y^{(i)}$ and $\hat{Y}^{(i)}$ are categorically distributed with
-$$\mathbb{P}(Y^{(i)} = k| \mathcal{N}) = \mathbb{P}(\hat{Y}^{(i)} = k| \mathcal{N}) = \pikN \quad \forall i \in \{1,\dots,n\},\quad k \in \mathcal{Y}.$$
-The random variables $Y^{(1)},\dots,Y^{(n)}$ represent data distributed like the training data\footnote{under the independence assumption} of size $n$ and the random variables $\hat{Y}^{(1)},\dots,\hat{Y}^{(n)}$ the corresponding estimators using the randomizing rule.
-With these we can define the misclassification rate $\mathsf{err}_{\mathcal{N}}$ of node $\mathcal{N}$ for data distributed like the training data, s.t
-$$\mathsf{err}_{\mathcal{N}} = \frac{1}{n}\sum^n_{i=1}[Y^{(i)} \neq \hat{Y}^{(i)}].$$
-We're interested in the expected misclassification rate $\mathsf{err}_{\mathcal{N}}$ of node $\mathcal{N}$ for data distributed like the training data, i.e.,
+The target class proportion $\pikN$ of class $k \in \Yspace$ in a node can 
+be computed as
+$$ \pikN = \frac{1}{|\Np|} \sum_{(x^{(i)},y^{(i)}) \in \Np} [y^{(i)} = k].$$
+
+We can define $n \in \N$ i.i.d. RV $Y^{(1)}, \dots, Y^{(n)}$ that are
+distributed like the training data
+via the categorical distribution induced by the above class frequencies:
+
+$$\mathbb{P}(Y^{(i)} = k| \mathcal{N}) = \pikN \quad \forall i \in
+\nset, \quad k \in \Yspace.$$
+
+By design, the corresponding estimators $\hat{Y}^{(1)},
+\dots, \hat{Y}^{(n)}$ from the randomizing rule follow the same
+distribution:
+
+$$\mathbb{P}(\hat Y^{(i)} = k| \mathcal{N}) = \pikN \quad \forall i \in
+\nset, \quad k \in \Yspace.$$
+
+Then, we can define the MCE for predicting in a node with $n = |\Np|$
+observations distributed like the 
+training data:
+$$\rho_{\text{MCE}}(\Np) = \meanin \left[ Y^{(i)} \neq \hat Y^{(i)}\right].$$
+
+Taking the expectation of this MCE leads to:
 \begin{align*}
-\mathbb{E}_{Y^{(1)},\dots,Y^{(n)},\hat{Y}^{(1)},\dots,\hat{Y}^{(n)}} \left(\mathsf{err}_{\mathcal{N}}\right) &= \mathbb{E}_{Y^{(1)},\dots,Y^{(n)},\hat{Y}^{(1)},\dots,\hat{Y}^{(n)}}\left(\frac{1}{n}\sum^n_{i=1}[Y^{(i)} \neq \hat{Y}^{(i)}] \right)\\
-& = \frac{1}{n}\sum^n_{i=1}\mathbb{E}_{Y^{(i)},\hat{Y}^{(i)}}\left([Y^{(i)} \neq \hat{Y}^{(i)}]\right) \\
-& = \frac{1}{n}\sum^n_{i=1}\mathbb{E}_{Y^{(i)}}\left(\mathbb{E}_{\hat{Y}^{(i)}}\left([Y^{(i)} \neq \hat{Y}^{(i)}]\right)\right) \\
-& = \frac{1}{n}\sum^n_{i=1}\mathbb{E}_{Y^{(i)}} \left( \sum^g_{k=1} [Y^{(i)} \neq k] \pikN\right) \\
-& = \frac{1}{n}\sum^n_{i=1}\mathbb{E}_{Y^{(i)}} \left( \sum_{k \in \mathcal{Y} \setminus \{Y^{(i)}\}} \pikN\right) \\
-& = \frac{1}{n}\sum^n_{i=1}\mathbb{E}_{Y^{(i)}} \left( 1 - \pi^{\mathcal{(N)}}_{Y^{(i)}}\right) \\
-& = \frac{1}{n}\sum^n_{i=1} \sum^g_{k=1} (1 - \pikN)\pikN \\
-& = \frac{n}{n} \sum^g_{k=1} (1 - \pikN)\pikN \\
-& = 1 -  \sum^g_{k=1} \left(\pikN \right)^2.
+  \E_{Y^{(1)}, \dots, Y^{(n)}, \hat{Y}^{(1)}, \dots, \hat{Y}^{(n)}}
+  \left(\rho_{\text{MCE}}(\Np) \right)
+  &=  \E_{Y^{(1)}, \dots,Y^{(n)}, \hat{Y}^{(1)}, \dots, \hat{Y}^{(n)}}
+  \left(\meanin \left[Y^{(i)} \neq \hat{Y}^{(i)} \right] \right) \\
+  & = \meanin \E_{Y^{(i)}, \hat{Y}^{(i)}} \left( \left[Y^{(i)}
+  \neq \hat{Y}^{(i)} \right]\right) ~~ \text{i.i.d. assumption} \\
+  & = \meanin\E_{Y^{(i)}}\left(
+  \E_{\hat{Y}^{(i)}} \left( \left[Y^{(i)} \neq \hat{Y}^{(i)} \right] \right)
+  \right) ~~ \text{Fubini's theorem} \\
+  & = \meanin\E_{Y^{(i)}} \left( \sum_{k \in \Yspace} \pikN \cdot
+  \left[ Y^{(i)} \neq k \right]  \right) \\
+  & = \meanin \E_{Y^{(i)}} \left( \sum_{k \in \Yspace
+  \setminus \{Y^{(i)}\}} \pikN \right) \\
+  & = \meanin \E_{Y^{(i)}} \left( 1 - \pi^{(\Np)}_{k = Y^{(i)}}
+  \right) \\
+  & = \meanin \sumkg \pikN \cdot \left(1 - \pikN \right) \\
+  & = n \cdot \frac{1}{n} \sumkg \pikN \cdot \left(1 - \pikN \right) \\
+  &= \sumkg \pikN - \sumkg \left (\pikN \right)^2 \\
+  & = 1 -  \sumkg\left(\pikN \right)^2.
 \end{align*}
 
-This is exactly the Gini-Index which CART uses for splitting the tree.
+This is precisely the Gini index CART use for splitting with Brier score.
+
+Gini impurity can thus be viewed as the frequency with which 
+a randomly chosen sample would be misclassified if we used randomized 
+predictions according to the categorical distribution induced by the training 
+class 
+frequencies.
+
+In other words, we minimize the expected rate of misclassification among random 
+samples from data distributed like the training data if we predict according to
+the observed class probabilities.

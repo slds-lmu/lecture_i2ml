@@ -1,10 +1,10 @@
-\begin{enumerate}
-  \item[a)] First, sort the table:
+\begin{enumerate}[a)]
+  \item First, sort the table:
   \begin{center}
   \begin{tabular}{ | c | c | c | c |}
   \hline
-  ID & Actual Class & Score & Predicted Class \\ \hline
-  6 & 0 & 0.63 & 1  \\
+  ID & True class & Score & Predicted class \\ \hline
+  6 & 1 & 0.63 & 1  \\
   7 & 1 & 0.62 & 1  \\
   10 & 0 & 0.57 & 1 \\
   \hline
@@ -14,7 +14,7 @@
   2 & 0 & 0.27 & 0  \\
   5 & 1 & 0.17 & 0  \\
   9 & 0 & 0.15 & 0 \\
-  3 & 1 & 0.11 & 0  \\
+  3 & 0 & 0.11 & 0  \\
   \hline\end{tabular}
   \end{center}
 
@@ -22,9 +22,9 @@
   \begin{center}
   \begin{tabular}{ | c | c | c | }
   \hline
-   & Actual Class - 0 & Actual Class - 1  \\
-  Prediction - 0 & 3 & 4  \\
-  Prediction - 1 & 2 & 1  \\
+   & True 1 & True 0  \\ \hline
+  Predicted 1 & 2 & 1  \\ \hline
+  Predicted 0 & 3 & 4  \\
       \hline
     \end{tabular}
   \end{center}
@@ -34,74 +34,105 @@
   \begin{center}
   \begin{tabular}{ | c | c | c | c | }
   \hline
-  FN & FP & TN & TP   \\ \hline
-  4 & 2 & 3 & 1 \\
+  $\fan$ & $\fap$ & $\tn$ & $\tp$   \\ \hline
+  3 & 1 & 4 & 2 \\
       \hline
     \end{tabular}
   \end{center}
 
-  \item[b)]
+  \item
 
-  $$\text{Precision} = \frac{\text{TP}}{\text{TP} + \text{FP}} =\frac{1}{3} $$
+  $$\rho_{\text{PPV}} = \frac{\tp}{\tp + \fap} =\frac{2}{3} $$
 
-  $$\text{Sensitivity} = \frac{\text{TP}}{\text{TP} + \text{FN}} =\frac{1}{5} $$
+  $$\rho_{\text{NPV}} = \frac{\tn}{\tn + \fan} =\frac{4}{7} $$
+  
+  $$\rho_{\text{TPR}} = \frac{\tp}{\tp + \fan} =\frac{2}{5} $$
+  
+  $$\rho_{\text{FPR}}  = \frac{\fap}{\tn + \fap} =\frac{1}{5} $$
 
-  $$\text{Accuracy} = \frac{\text{TP} + \text{TN}}{\text{TP} + \text{TN} + \text{FP} + \text{FN}} =\frac{4}{10} $$
+  $$\rho_{\text{ACC}} = \frac{\tp + \tn}{\tp + \tn + 
+  \fap + \fan} =\frac{6}{10} $$
 
-  $$\text{Specificity}  = \frac{\text{TN}}{\text{TN} + \text{FP}} =\frac{3}{5} $$
+  $$\rho_{\text{MCE}}  = \frac{\fap + \fan}{\tp + \tn + 
+  \fap + \fan} =\frac{4}{10} $$
 
-  $$\text{Error Rate}  = \frac{\text{FP} + \text{FN}}{\text{TP} + \text{TN} + \text{FP} + \text{FN}} =\frac{6}{10} $$
+  $$\rho_{F1} = \frac{2\cdot \rho_{\text{PPV}} \cdot \rho_{\text{TPR}}}{
+  \rho_{\text{PPV}} + \rho_{\text{TPR}}} = 0.5 $$
 
-  $$\text{F-measure} = \frac{2\cdot\text{Precision}\cdot\text{Sensitivity}}{\text{Precision}+\text{Sensitivity}} = 0.25 $$
+  
 
-  $$\text{Negative Predictive Value} = \frac{\text{TN}}{\text{TN} + \text{FN}} =\frac{3}{7} $$
+  \item
+First we sort the results by score:
 
-  \item[c)] 
-First we sort the results by the score: \\
   <<message=FALSE, echo=FALSE>>=
   cdata <- data.frame(
-    true_labels = c(0,0,1,1,1,0,1,1,0,0),
-    scores = c(0.33,0.27,0.1,0.38,0.17,0.63,0.62,0.33,0.15,0.57)
+    true_labels = c(0, 0, 0, 1, 1, 1, 1, 1, 0, 0),
+    scores = c(0.33, 0.27, 0.11, 0.38, 0.17, 0.63, 0.62, 0.33, 0.15, 0.57)
   )
   
   cdata <- cdata[order(cdata$scores, decreasing = T),]
   knitr::kable(cdata)
   @
-Here we see that $\frac{1}{n_+} = \frac{1}{5} = 0.2$ and $\frac{1}{n_-} = \frac{1}{5} = 0.2$. Now we follow the algorithm as described in the lecture slides:
-\begin{enumerate}
-\item Set $\alpha = 1$, so we start in $(0,0)$; we predict everything as 1.
-\item Set threshold $\tau = 0.625$ yields TPR 0 and FPR  $0 + \frac{1}{n_-} = 0.2$. (Obs. 6 is "0")
-\item Set threshold $\tau = 0.6$ yields TPR $0 + \frac{1}{n_+} = 0.2$ and FPR  $0.2$. (Obs. 7 is "1")
-\item Set threshold $\tau = 0.5$ yields TPR 0.2 and FPR  $0.2 + \frac{1}{n_-} = 0.4$. (Obs. 10 is "0")
-\item Set threshold $\tau = 0.35$ yields TPR $0.2 + \frac{1}{n_+} = 0.4$ and FPR  $0.4$. (Obs. 4 is "1")
-\item Set threshold $\tau = 0.3$ yields TPR $0.4 + \frac{1}{n_+} = 0.6$ and FPR  $0.4 + \frac{1}{n_-} = 0.6$. (Obs. 1/8 is "0"/"1")
-\item Set threshold $\tau = 0.2$ yields TPR $0.6$ and FPR  $0.6 + \frac{1}{n_-} = 0.8$. (Obs. 2 is "0")
-\item Set threshold $\tau = 0.16$ yields TPR $0.6 + \frac{1}{n_+} = 0.8$ and FPR  $0.8$. (Obs. 5 is "1")
-\item Set threshold $\tau = 0.14$ yields TPR $0.8$ and FPR  $0.8 + \frac{1}{n_-} = 1$. (Obs. 9 is "0")
-\item Set threshold $\tau = 0.09$ yields TPR $0.8 + \frac{1}{n_+} = 1$ and FPR  $1$. (Obs. 3 is "1")
+  
+Here we see that $\frac{1}{\np} = \frac{1}{\nn} = 0.2$. 
+Now we follow the algorithm as described in the lecture 
+slides:
+
+\begin{enumerate}[1)]
+  \item $c = 1$ $~ \Longrightarrow ~$ we start in $(0,0)$ and predict 
+  everything as negative, so TPR 0 and FPR 0.
+  \item $c = 0.625$ $~ \Longrightarrow ~$ TPR $0 + \frac{1}{\np} = 0.2$ and 
+  FPR 0 (obs 6 correctly classified).
+  \item $c = 0.6$ $~ \Longrightarrow ~$ TPR $0.2 + \frac{1}{\np} = 0.4$ and FPR
+  0 (obs 7 correctly classified).
+  \item $c = 0.5$ $~ \Longrightarrow ~$ TPR 0.4 and FPR 
+  $0 + \frac{1}{\nn} = 0.2$ (obs 10 misclassified).
+  \item $c = 0.35$ $~ \Longrightarrow ~$ TPR $0.4 + \frac{1}{\np} = 0.6$ and 
+  FPR 0.2 (obs 4 correctly classified).
+  \item $c = 0.3$ $~ \Longrightarrow ~$ TPR $0.6 + \frac{1}{\np} = 0.8$ and 
+  FPR $0.2 + \frac{1}{\nn} = 0.4$ (obs 8 correct but obs 1 
+  misclassified).
+  \item $c = 0.2$ $~ \Longrightarrow ~$ TPR $0.8$ and FPR  
+  $0.4 + \frac{1}{\nn} = 0.6$ (obs 2 misclassified).
+  \item $c = 0.16$ $~ \Longrightarrow ~$ TPR $0.8 + \frac{1}{\np} = 1$ and FPR 
+  $0.6$ (obs 5 correctly classified).
+  \item $c = 0.14$ $~ \Longrightarrow ~$ TPR 1 and FPR  
+  $0.6 + \frac{1}{\nn} = 0.8$ (obs 9 misclassified)
+  \item $c = 0.09$ $~ \Longrightarrow ~$ TPR 1 and FPR 1 (obs 3 misclassified).
 \end{enumerate}
 
-Therefore we get the polygonal path consisting of the ordered list of vertices \[(0,0), (0.2,0), (0.2,0.2),
-(0.4,0.2), (0.4,0.4), (0.6,0.6), (0.8,0.6), (0.8, 0.8), (1, 0.8), (1,1).\]
+Therefore we get the polygonal path consisting of the ordered list of vertices 
+\[(0, 0), (0.2, 0), (0.4, 0), (0.4, 0.2), (0.6, 0.2), (0.8, 0.4), (0.8, 0.6), 
+(1, 0.6), (1, 0.8), (1, 1).\]
 
-  <<message=FALSE, fig.height=4, fig.width=4, fig.align='center'>>=
+  <<message=FALSE, fig.height=3, fig.width=3, fig.align='center'>>=
   
   library(ggplot2)
-  roc_data <- data.frame(TPR = c(0, 0,   0.2, 0.2, 0.4, 0.6, 0.6, 0.8, 0.8, 1),
-                         FPR = c(0, 0.2, 0.2, 0.4, 0.4, 0.6, 0.8, 0.8,  1,  1)) 
+  roc_data <- data.frame(
+    TPR = c(0, 0.2, 0.4, 0.4, 0.6, 0.8, 0.8, 1, 1, 1),
+    FPR = c(0, 0, 0, 0.2, 0.2, 0.4, 0.6, 0.6, 0.8, 1)) 
 
   ggplot(roc_data, aes(x = FPR, y = TPR)) + geom_line() + 
     geom_abline(slope = 1, intercept = 0, linetype = 'dashed')
   @
 
-We see that the resulting ROC lies below the line from the origin with a slope of 1, which represents
-a random classifier, i.e., the scoring algorithm performs worse than a random classifier.
-If this happens while evaluating the training data, the labels of the scoring algorithm should be inverted.
+We see that the resulting ROC curve is distinct from the diagonal marking a 
+purely random classifier, but also not too great.
+The step function character is clearly visible for so few observations (the 
+non-axis-parallel part in the middle is due to the fact that we have two 
+observations with the same score but different true class, so both TPR and 
+FPR go up when we move from $c = 0.35$ to $c= 0.3$).
 
-  \item[d)] 
-  We can compute the AUC (\textit{area under the curve}) by looking at the ROC, s.t.
+  \item
+  We can compute the AUC by adding rectangular 
+  and triangular areas, s.t.
   $$
-  AUC = 0.5 - 4 \cdot (0.2 \cdot 0.2 \cdot 0.5) = 0.42.
+  \rho_{\text{AUC}} = 0.2 \cdot 0.4 + 0.2 \cdot 0.6 + \tfrac{1}{2} \cdot 
+  0.2 \cdot 0.2 + 0.2 \cdot 0.8 + 0.4 \cdot 1 = 0.78.
   $$
+  
+  \item Not at all, because the ROC curve is drawn by iterating through 
+  \textit{all} thresholds, and the corresponding AUC does not depend on
+  a particular choice of $c$.
 
 \end{enumerate}
