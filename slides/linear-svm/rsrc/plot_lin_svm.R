@@ -139,5 +139,5 @@ plot_lin_svm <- function(data,
                            linetype = "dotted")
     }
   }
-  pl
+  pl + viridis::scale_color_viridis(end=0.9, discrete = TRUE)
 }

@@ -1,0 +1,99 @@
+\begin{minipage}{\textwidth}
+\begin{minipage}[c]{0.49\textwidth}
+The primal optimization problem for the two-class soft margin SVM classification is given by
+\begin{equation*}
+\label{eq:softmargin}
+\begin{aligned}
+& \min_{\mathbf{\theta}, \theta_0, \pmb{\xi}}
+& &\frac{1}{2} ||\mathbf{\theta}||^2 + C \sum_{i=1}^n \sli \\
+& \text{s.t. :}
+& & y^{(i)} (\mathbf{\theta}^\top \mathbf{x}^{(i)} + \theta_0) \geq 1 - \sli, \\
+&&& \sli \geq 0, \hspace{8pt} \forall i = 1, \hdots, n.
+%&&& \forall i = 1, \hdots, N.
+\end{aligned}
+\end{equation*}
+\end{minipage}
+  \hfill
+\begin{minipage}[c]{0.51\textwidth}
+\centering
+<<echo=FALSE, fig.align='center', fig.height=4, fig.width=4>>=
+mpoints = list(c(0, 0),c(0.5, 0.5),c(0, 1), c(0,3), c(3,0), c(3,3))
+x1 = sapply(mpoints,function(x) x[1])
+x2 = sapply(mpoints,function(x) x[2])
+y = c(1, -1, -1, 1, 1, 1)
+
+par(mar = c(4,4,1,1), pin = c(3,3))
+plot(x1, x2, pch = ifelse(y == -1, "-", "+"), cex = 1.5,
+  xlim = c(0,3), ylim = c(0,3),
+  ylab = "x2", xlab = "x1")
+abline(coef = c(2, -1), lty = 1)
+grid(lwd = 2)
+points(x1, x2, pch = ifelse(y == -1, "-", "+"), cex = 1.5)
+@
+\end{minipage}
+\end{minipage}
+
+\begin{enumerate}
+
+  \item
+    Add the decision boundary to the figure for $\hat\theta = (1, 1)^T, \hat\theta_0 = -2$. \\
+
+    \textbf{Solution:} \\
+    
+    The hyperplane is given by $$\theta_1 x_1^{(i)} + \theta_2 x_2^{(i)} + \theta_0 = 0.$$
+    
+    Plugging in the values for the $\theta$s and solving for $x_2$, we get the decision boundary as function of $x_1$: $$x_2 = -x_1 + 2.$$ 
+
+  \item
+    Identify the coordinates of the support vector(s) and compute the values of their slack variables $\sli$. \\
+
+    \textbf{Solution:} \\
+
+    $(0.5, 0.5), (0, 1), (0, 3), (3, 0)$ are support vectors with slack value of $\sli = 0$ as they lie on the margin hyperplanes.
+
+    $(0, 0)$ is also a support vector with slack value of $\sli = 3$.
+
+    Derivation: We use the equation from the constraint
+    $y_i (\mathbf{\theta}^\top \mathbf{x}_i + \theta_0) \geq 1 - \sli$ and plug in the values for the margin-violating point $y_i = 1, x_1 = 0, x_2 = 0$:
+
+    $$
+    y_i (x_1 + x_2 - 2) = 1 (0 + 0 - 2) \geq 1 - \sli \Rightarrow \sli \geq 3
+    $$
+
+    <<echo = FALSE, eval = FALSE>>=
+    library(e1071)
+    mpoints = list(c(0, 0),c(0.5, 0.5),c(0, 1), c(0,3), c(3,0), c(3,3))
+    x1 = sapply(mpoints,function(x) x[1])
+    x2 = sapply(mpoints,function(x) x[2])
+    y = c(1, -1, -1, 1, 1, 1)
+
+    dat = data.frame(x1 = x1, x2 = x2, y = as.factor(y))
+    mod = svm(y ~ ., data = dat, scale = FALSE, kernel = "linear", cost = 100)
+    x = dat[,1:2]
+    beta = drop(t(mod$coefs) %*% as.matrix(x)[mod$index, ])
+    beta0 = mod$rho
+    c(beta0/beta[2], -beta[1]/beta[2])
+    @
+
+  \item
+    Compute the Euclidean distance of the non-margin-violating support vector(s) (i.e. support vectors that are located on the margin hyperplanes) to the decision boundary. \\
+
+    \textbf{Solution:} \\
+
+    Using $\xi = \left(\begin{array}{c} 0.5 \\ 0.5 \end{array}\right)$:
+
+    $$
+    d(f, \xi) = \frac{\yi f(\xi)}{\| \theta \|_2} = \frac{-1(0.5 + 0.5 - 2)}{\sqrt{2}} = \frac{1}{\sqrt{2}}
+    $$
+
+    The distance is the same for all non-margin-violating support vectors.
+
+  \item
+    What needs to be changed in the plot such that a hard margin SVM results into the same decision boundary? \\
+
+    \textbf{Solution:} \\
+
+    Change point $(0,0)$ from $+$ to $-$.
+
+\end{enumerate}
+

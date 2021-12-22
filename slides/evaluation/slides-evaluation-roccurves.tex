@@ -1,0 +1,584 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-eval.tex}
+\input{../../latex-math/ml-hpo.tex}
+
+\newcommand{\titlefigure}{figure/eval_mclass_roc_sp_4a}
+\newcommand{\learninggoals}{
+\item Understand ROC curve
+\item Be able to compute a ROC curve manually
+\item Understand that ROC curve is invariant to class priors at test-time 
+\item Discuss threshold selection
+\item Understand AUC
+}
+
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Evaluation: Measures for Binary Classification: ROC Visualization}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Labels: ROC Space}
+
+\begin{itemize}
+ \item For comparing classifiers, we characterize them by their TPR and FPR values and plot them in 
+ a coordinate system.
+ \item We could also use two different ROC metrics which define a trade-off, 
+ for instance, TPR and PPV.
+\end{itemize}
+
+\lz
+
+\begin{minipage}[c]{0.5\textwidth}
+  \begin{knitrout}
+    \scriptsize
+    \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+    {\centering \includegraphics[width=\textwidth]{figure/eval_mclass_roc_sp_1}}
+  \end{knitrout}
+\end{minipage}%
+\begin{minipage}[c]{0.5\textwidth}
+% \includegraphics[width=\textwidth]{figure_man/roc-confmatrix2.png}
+\begin{center}
+  \small
+  \begin{tabular}{cc|cc}
+    & & \multicolumn{2}{c}{\bfseries True Class $y$} \\
+    & & $+$ & $-$ \\
+    \hline
+    \bfseries Pred.     & $+$ & TP & FP \\
+              $\yh$ & $-$ & FN & TN \\
+\end{tabular}
+\lz
+$$\text{TPR} = \frac{\text{TP}}{\text{TP} + \text{FN}}$$
+$$\text{FPR} = \frac{\text{FP}}{\text{FP} + \text{TN}}$$
+\end{center}
+\end{minipage}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Labels: ROC Space}
+
+\begin{itemize}
+  \item The best classifier lies on the top-left corner, where FPR equals 0 and 
+  TPR is maximal.
+  \item The diagonal is worst as it corresponds to a classifier producing random 
+  labels (with different proportions). 
+\end{itemize}
+
+\lz
+
+\begin{minipage}[c]{0.5\textwidth}
+  \begin{itemize}
+    \item If each positive $x$ will be randomly classified 
+    with 25\% as "pos", $\text{TPR} = 0.25$.
+    \item If we assign each negative $x$ randomly to "pos", $\text{FPR} = 0.25$.
+  \end{itemize}
+\end{minipage}%
+\begin{minipage}[c]{0.5\textwidth}
+  \centering \includegraphics[width=0.8\textwidth]{figure/eval_mclass_roc_sp_2}
+\end{minipage}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Labels: ROC Space}
+
+\begin{itemize}
+  \item In practice, we should never obtain a classifier below the diagonal.
+  \item Inverting the predicted labels ($0 \mapsto 1$ and $1 \mapsto 0$) will 
+  result in a reflection at the diagonal. \\
+  $\Rightarrow \text{TPR}_{\text{new}} = 1 - \text{TPR}$ and 
+  $\text{FPR}_{\text{new}} = 1 - \text{FPR}.$ \\
+\end{itemize}
+
+\begin{center}
+  \includegraphics[width=0.4\textwidth]{figure/eval_mclass_roc_sp_3}
+\end{center}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Label Distribution in TPR and FPR}
+
+TPR and FPR (ROC curves) are insensitive to the class distribution in the sense 
+that they are not affected by changes in the ratio $\np/\nn$ (at prediction).
+
+\lz
+
+\begin{columns}
+  \begin{column}{0.45\textwidth}
+  \underline{Example 1}:\\
+  Proportion $\np/\nn = 1$\\
+  \lz
+  {
+  \tiny
+  \centering
+  \tiny
+  \begin{tabular}{|l|c|c|}
+                  \hline
+                 & Actual Positive & Actual Negative \\ \hline
+  Pred. Positive & 40            & 25            \\ \hline
+  Pred. Negative & 10            & 25           \\ \hline
+  \end{tabular}
+  }
+  
+  \medskip
+  $\text{MCE} = 35/100 = 0.35$\\
+  $\text{TPR} = 0.8$\\ 
+  $\text{FPR} = 0.5$ 
+\end{column}
+\begin{column}{0.45\textwidth} 
+  \underline{Example 2}:\\
+  Proportion $\np/\nn = 2$\\
+  \lz
+  {
+  \tiny
+  \begin{tabular}{|l|c|c|}
+                  \hline
+                 & Actual Positive & Actual Negative \\ \hline
+  Pred. Positive & 80            & 25            \\ \hline
+  Pred. Negative & 20            & 25           \\ \hline
+  \end{tabular}
+  }
+  
+  \medskip
+  $\text{MCE} = 45/150 = 0.3$\\
+  $\text{TPR} = 0.8$\\ 
+  $\text{FPR} = 0.5$ 
+\end{column}
+\end{columns}
+
+\lz
+
+Note: If class proportions differ during training, the above is not true. 
+Estimated posterior probabilities can change!
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+% \begin{vbframe}{Scoring Classifiers}
+% \begin{itemize}
+% \item A scoring classifier is a model which outputs scores or probabilities, instead of discrete labels, and nearly all modern classifiers can do that.
+% \item Thresholding flexibly converts measured probabilities to labels.
+%   Predict $1$ (positive class) if $\fxh > c$ else predict $0$.
+% \item Normally we could use $c = 0.5$ to convert, but for imbalanced or cost-sensitive situations another threshold could be much better.
+% \item After thresholding, any metric defined on labels can be used.
+% \end{itemize}
+% \begin{center}
+% % FIGURE SOURCE: https://docs.google.com/presentation/d/1GmlgtjSCTHgSAveVGf-x1ojAjGP2llPhFKjn_6M4Sig/edit?usp=sharing
+% \includegraphics[width=0.5\textwidth]{figure_man/confusion_matrix_measures}
+% \end{center}
+% \end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{From Probabilities to Labels: ROC Curve}
+
+Remember: Both probabilistic and scoring classifiers can output classes by 
+thresholding:
+$$\hx = [\pix) \ge c] \quad \text{ or } \quad \hx = [\fx \ge c_f].$$
+
+% \begin{center}
+%   \includegraphics{../supervised-classification/figure_man/classifiers.png}
+% \end{center}
+
+\textbf{To draw a ROC curve}:
+
+\lz
+
+\begin{minipage}[b]{0.65\textwidth}
+  \footnotesize
+  \begin{enumerate}
+    \item Rank test observations on decreasing score.
+    \item Start with $c = 1$, so we start in $(0, 0)$; we predict everything as
+    negative.
+    \item Iterate through all possible thresholds $c$ and proceed for each
+    observation $x$ as follows:
+    \begin{itemize}
+      \footnotesize
+      \item If $x$ is positive, move TPR $1/n_+$ up, \\as we have one TP more.
+      \item If $x$ is negative, move FPR $1/n_-$ right, \\as we have one FP 
+      more.
+    \end{itemize}
+  \end{enumerate}
+\end{minipage}%
+\begin{minipage}[b]{0.35\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{figure/eval_mclass_roc_sp_4}
+\end{minipage}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Drawing ROC Curves}
+
+% new frame for every animation step (rather than framebreak) to prevent plots
+% from jumping
+
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{
+% \centering 
+\includegraphics[width=0.8\textwidth]{figure/eval_mclass_roc_sp_5} 
+}
+
+\end{knitrout}
+
+\vfill
+
+\begin{minipage}[b]{0.3\textwidth}
+  $c =$ 0.9\\ 
+  $\rightarrow$ TPR = 0.167 \\
+  $\rightarrow$ FPR = 0
+\end{minipage}%
+\begin{minipage}[b]{0.7\textwidth}
+  \includegraphics{figure/roc_horizontal_step_1} 
+\end{minipage}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Drawing ROC Curves}
+
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{
+% \centering 
+\includegraphics[width=0.8\textwidth]{figure/eval_mclass_roc_sp_6}
+}
+
+\end{knitrout}
+
+\vfill
+
+\begin{minipage}[b]{0.3\textwidth}
+  $c =$ 0.85\\ 
+  $\rightarrow$ TPR = 0.333 \\
+  $\rightarrow$ FPR = 0
+\end{minipage}%
+\begin{minipage}[b]{0.7\textwidth}
+  \includegraphics{figure/roc_horizontal_step_2} 
+\end{minipage}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Drawing ROC Curves}
+
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{
+% \centering 
+\includegraphics[width=0.8\textwidth]{figure/eval_mclass_roc_sp_7}
+}
+
+\end{knitrout}
+
+\vfill
+
+\begin{minipage}[b]{0.3\textwidth}
+  $c =$ 0.66\\ 
+  $\rightarrow$ TPR = 0.5 \\
+  $\rightarrow$ FPR = 0
+\end{minipage}%
+\begin{minipage}[b]{0.7\textwidth}
+  \includegraphics{figure/roc_horizontal_step_3} 
+\end{minipage}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Drawing ROC Curves}
+
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{
+% \centering 
+\includegraphics[width=0.8\textwidth]{figure/eval_mclass_roc_sp_8}
+}
+
+\end{knitrout}
+
+\vfill
+
+\begin{minipage}[b]{0.3\textwidth}
+  $c =$ 0.6\\ 
+  $\rightarrow$ TPR = 0.5 \\
+  $\rightarrow$ FPR = 0.167
+\end{minipage}%
+\begin{minipage}[b]{0.7\textwidth}
+  \includegraphics{figure/roc_horizontal_step_4} 
+\end{minipage}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Drawing ROC Curves}
+
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{
+% \centering 
+\includegraphics[width=0.8\textwidth]{figure/eval_mclass_roc_sp_9}
+}
+
+\end{knitrout}
+
+\vfill
+
+\begin{minipage}[b]{0.3\textwidth}
+  $c =$ 0.55\\ 
+  $\rightarrow$ TPR = 0.667 \\
+  $\rightarrow$ FPR = 0.167
+\end{minipage}%
+\begin{minipage}[b]{0.7\textwidth}
+  \includegraphics{figure/roc_horizontal_step_5} 
+\end{minipage}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Drawing ROC Curves}
+
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{
+% \centering 
+\includegraphics[width=0.8\textwidth]{figure/eval_mclass_roc_sp_10} 
+}
+
+\end{knitrout}
+
+\vfill
+
+\begin{minipage}[b]{0.3\textwidth}
+  $c =$ 0.3\\ 
+  $\rightarrow$ TPR = 0.833 \\
+  $\rightarrow$ FPR = 0.5
+\end{minipage}%
+\begin{minipage}[b]{0.7\textwidth}
+  \includegraphics{figure/roc_horizontal_step_6} 
+\end{minipage}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Drawing ROC Curves}
+
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{
+% \centering 
+\includegraphics[width=0.8\textwidth]{figure/eval_mclass_roc_sp_11}
+}
+
+\end{knitrout}
+
+\vfill
+
+\begin{minipage}[b]{0.3\textwidth}
+	$c =$ 0\\ 
+	$\rightarrow$ TPR = 1 \\
+	$\rightarrow$ FPR = 1
+\end{minipage}%
+\begin{minipage}[b]{0.7\textwidth}
+	\includegraphics{figure/roc_horizontal_step_7} 
+\end{minipage}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{ROC Curve properties}
+
+\begin{minipage}[c]{0.5\textwidth}
+  \begin{itemize}
+    \item The closer the curve to the top-left corner, the better.
+    \item If ROC curves cross, a different model might be better in different 
+    parts of the ROC space.
+\end{itemize}
+\end{minipage}%
+\begin{minipage}[c]{0.5\textwidth}
+  \centering 
+  \includegraphics[width=\textwidth]{figure/eval_mclass_roc_sp_12}
+\end{minipage}
+
+\lz
+
+\begin{itemize}
+  \item Small thresholds will very liberally predict the positive class, and 
+  result in a potentially higher FPR, but also higher TPR.
+  \item High thresholds will very conservatively predict the positive class, 
+  and result in a lower FPR and TPR.
+  \item As we have not defined the trade-off between false positive and false 
+  negative costs, we cannot easily select the "best" threshold. \\
+  $\rightarrow$ Visual inspection of all possible results seems useful.
+\end{itemize}
+
+% \textcolor{blue}{Include figure?}
+% 
+% \begin{center}
+%   \includegraphics[width=\textwidth]{figure_man/roc-curves2.png}
+% \end{center}
+
+% \textcolor{blue}{Include this again or compare it with above?}
+%  \begin{itemize}
+%    \item Rank test observations on decreasing score
+%    \item Set $\alpha=1$, so we start in $(0, 0)$; we predict everything as "neg"
+%    \item For each observation $x$ (in the decreasing order).
+%    \begin{itemize}
+%      \item Reduce threshold, so prediction for next observation changes
+%      \item If $x$ is "pos", move TPR $1/n_+$ up, as we have one TP more
+%      \item If $x$ is "neg", move FPR $1/n_-$ right, as we have one FP more
+%    \end{itemize}
+%  \end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Choosing Threshold / Operating point}
+
+Often done visually and post-hoc, as class imbalances or costs are unknown a-priori.
+
+\lz
+
+\begin{columns}
+\begin{column}{0.6\textwidth}
+\begin{itemize}
+  \item Identify non-dominated points 
+  \item Assess TPR / FPR 
+  \item Decide which combo is best for task
+  \item Pick associated threshold
+\end{itemize}
+\end{column}
+
+\begin{column}{0.4\textwidth}
+\begin{center}
+  \includegraphics[width=\textwidth,trim={1.5cm 0 0 1.5cm},clip]{figure/eval_mclass_roc_sp_4a.pdf}
+\end{center}
+\end{column}
+\end{columns}
+% \begin{itemize}
+  % \item Optimal threshold is mean of thresholds leading to that point.
+% \end{itemize}
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+% \begin{vbframe}{ROC Curve}
+% \begin{itemize}
+%   \item The closer the curve to the top-left corner, the better
+%   \item If ROC curves cross, a different model can be better in different parts 
+%   of the ROC space
+% \end{itemize}
+% \begin{knitrout}\scriptsize
+% \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+% 
+% {\centering \includegraphics[width=.65\textwidth]{figure/eval_mclass_roc_sp_12} 
+% 
+% }
+% 
+% \end{knitrout}
+% \end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{AUC: Area Under ROC Curve}
+
+\begin{itemize}
+  % \small
+  \item AUC $\in [0,1]$ is a single metric to evaluate scoring classifiers --
+  independent of the chosen threshold.
+  \begin{itemize}
+    \item AUC = 1: perfect classifier
+    \item AUC = 0.5: random, non-discriminant classifier
+    \item AUC = 0: perfect, with inverted labels
+  \end{itemize}
+  % \item The AUC is directly related to the Gini coefficient $G$: 
+  % $\text{AUC} = 0.5 \cdot (G + 1)$. 
+  % \textcolor{blue}{@BB: check if correct/helpful here}
+\end{itemize}
+
+\begin{center}
+  \includegraphics[width=0.5\textwidth]{figure/eval_mclass_roc_sp_12_1}
+\end{center}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{AUC as a rank-based metric}
+
+\begin{itemize}
+  \small
+  \item We can also interpret the AUC as the probability of our classifier 
+  ranking a random positive observation higher than a random negative one.
+  \item A perfect classifier will rank all positive above all negative 
+  observations, achieving AUC = 1.
+\end{itemize}
+
+\begin{center}
+% FIGURE SOURCE: https://docs.google.com/drawings/d/1flfi73s8qr53-ZE6oq4qRGIG-sccpBp2cSfw1Stxh8I/edit
+  \includegraphics[width=0.55\textwidth]{figure_man/auc_interpretation_new}
+  \includegraphics[width=0.4\textwidth] {figure/fig-eval_mwu_ranking}
+\end{center}
+
+\end{vbframe}
+
+% 
+% \begin{vbframe}{AUC: Area Under ROC Curve}
+% Interpretation: Probability that classifier ranks a random positive higher than a random negative observation
+% 
+% \begin{center}
+% % FIGURE SOURCE: https://docs.google.com/presentation/d/1xj9_84181bqFpr0EMqdGHE6dUf_vAf1qcs9z-siUsCw/edit?usp=sharing
+% \includegraphics[width=0.8\textwidth,page=1]{figure_man/auc_interpretation.pdf}
+% \end{center}
+% 
+% \end{vbframe}
+
+
+% \begin{vbframe}{Partial AUC}
+% \begin{itemize}
+%   \item Sometimes it can be useful to look at a \href{http://journals.sagepub.com/doi/pdf/10.1177/0272989X8900900307}{specific region under the ROC curve}  $\Rightarrow$ partial AUC (pAUC).
+%   \item Examples: focus on a region with low FPR or a region with high TPR:
+% \end{itemize}
+% 
+% \begin{knitrout}\scriptsize
+% \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+% 
+% {\centering \includegraphics[width=0.9\textwidth]{figure/eval_mclass_roc_sp_13} 
+% 
+% }
+
+% \end{knitrout}
+
+% ------------------------------------------------------------------------------
+
+\endlecture
+\end{document}

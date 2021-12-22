@@ -1,0 +1,260 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-eval.tex}
+
+\newcommand{\titlefigure}{figure_man/multiclass-auc.pdf}
+\newcommand{\learninggoals}{
+\item Understand that generalizing AUC to multi-class is not trivial
+\item Learn how multi-class AUC can be derived
+}
+
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Evaluation: Multi-Class AUC}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+% ------------------------------------------------------------------------------
+
+
+\begin{vbframe}{Multi-class AUC}
+
+% \small
+
+\begin{itemize}
+  % \small
+  \item AUC and other ROC metrics for binary classification
+  \item Different ways to estimate \textbf{multi-class AUC}
+  % We can extend AUC to \textbf{multi-class} classification, where
+  % estimating the area under the ROC curve evolves into estimating the
+  % hypervolume under the ROC surface.
+  \item Often based on aggregated binary AUCs:\\ %a set of two-dimensional ROC curves
+  e.g. 1-vs-1 or 1-vs-rest
+  %$\rightarrow$ In principle, we have the choice between one-vs-one and one-vs-rest comparisons.
+\end{itemize}
+
+\vfill
+
+
+
+\textbf{Example:} 1-vs-1 on \texttt{iris}
+
+\centering
+\includegraphics[trim = 0 40 -20 40, clip, width=\textwidth]{figure/eval_auc_extensions}
+
+% \textbf{Note:} AUC of setosa vs. versicolor $\neq$ AUC of versicolor vs. setosa.
+
+% \begin{minipage}[c]{0.75\textwidth}
+%   \centering
+%   \includegraphics[trim = 0 40 -20 40, clip, width=\textwidth]
+%   {figure/eval_auc_extensions}
+% \end{minipage}%
+% \begin{minipage}[c]{0.25\textwidth}
+%   \scriptsize
+%   \raggedright
+% \end{minipage}
+
+% \begin{center}
+%   \includegraphics[trim = 0 40 0 40, clip, width=0.5\textwidth]
+%   {figure/eval_auc_extensions}
+% \end{center}
+%
+% \framebreak
+%
+% \begin{itemize}
+%   \small
+%   \item \href{https://link.springer.com/article/10.1023/A:1010920819831}
+%   {Hand and Till (2001)} proposed to average the AUC of pairwise comparisons between two classes.
+%   \item Remember:
+%   \begin{itemize}
+%     \small
+%     % \small
+%   % , where
+%   % the classifier predicts the probability $\pik$ of belonging to class $k$ for
+%   % each class $k \in \setg$.
+%   % \item \href{https://link.springer.com/article/10.1023/A:1010920819831}
+%   % {Hand and Till (2001)} proposed to average the AUC of pairwise comparisons
+%   % (one-vs-one) of a multi-class classifier.
+%     \item First, compute for all pairs of classes $k, \ell \in \gset$ the
+%     probability $\text{AUC}(k ~|~ \ell)$ of a randomly drawn member of class $k$
+%     having a lower probability of belonging to class $\ell$ than a randomly drawn
+%     member of class $\ell$.
+%     \item For $g = 2$, we have $\text{AUC}(k ~|~ \ell) =
+%     \text{AUC}(\ell ~|~ k)$, but not necessarily so for $g > 2$.
+%     \item However, since class identifiability is immune to any bijective
+%     transformation of the labels, we cannot distinguish $\text{AUC}(k ~|~ \ell)$
+%     from $\text{AUC}(\ell ~|~ k)$, so we set
+%     $\text{AUC}(k, \ell) = \frac{1}{2} \cdot [\text{AUC}(k ~|~ \ell) +
+%     \text{AUC}(\ell ~|~ k)]$.
+%
+%   % \begin{itemize}
+%   %   \item Compute $\text{AUC}(i,j)$ for each pair of classes $i, j \in \setg$.
+%   %   \item $\text{AUC}(i,j)$ is the probability that a randomly drawn member of
+%   %   class $i$ has a lower probability of belonging to class $j$
+%   %   than a randomly drawn member of class $j$.
+%   %   \item For $g$ classes, we have ${{g}\choose{2}} = \tfrac{g (g-1)}{2}$ values
+%   %   of $\text{AUC}(i,j)$, which are then averaged to compute the multi-class
+%   %   AUC.
+%   % \end{itemize}
+%
+%     \item Averaging over all pairs of classes yields the overall
+%     $\text{AUC}_{MC}$ as a multi-class performance metric:
+%     $$\text{AUC}_{MC} = \frac{2}{g(g + 1)} \sum_{k < \ell} \text{AUC}(k, \ell)
+%     \in [0, 1].$$
+%     \item This reduces to the standard AUC for the binary case.
+%     % \item Again, a non-discriminant classifier will have $\text{AUC}_{MC} = 0.5$
+%     % as all pairwise probability estimates equal 0.5.
+%   \end{itemize}
+% \end{itemize}
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+
+\begin{vbframe}{Multi-class AUC}
+
+\begin{itemize}
+%\small
+%\item A multiclass classifier predicts $\hat \pi_k$ for all classes $k \in \gset$, i.e., the probability of an observation belonging to class $k$.
+%\item Recall: $\hat \pi_k$ is the probability of an observation belonging to class $k$.
+
+\item Def $\text{AUC}(k ~|~ \ell)$ for classes $k$ (pos) and $\ell$ (neg)
+    % , where $k$ (first index) is pos and $\ell$ neg class
+
+\item Compute AUC: Subset preds to rows of true $k$ and $\ell$, use $\hat \pi_k$ 
+
+\item Interprete: Prob that random member of $\ell$ has a lower prob to belong to class $k$ than random member of class $k$.
+%$\Rightarrow$ Known interpretation of the AUC as probability.
+
+%\item For $g = 2$, $\text{AUC}(k ~|~ \ell) = \text{AUC}(\ell ~|~ k)$, but not necessarily for $g > 2$.
+%\item The first index in $\text{AUC}(k ~|~ \ell)$ refers to the positive class (here: $k$) and the second index to the negative class (here: $\ell$).
+%For $g > 2$, $\text{AUC}(k ~|~ \ell) \neq \text{AUC}(\ell ~ | k)$.
+%(while for $g = 2$ $\text{AUC}(k ~|~ \ell) = \text{AUC}(\ell ~|~ k)$).
+%\item Let $\text{AUC}(k ~|~ \ell)$ be the probability of our classifier ranking a random drawn member of class $\ell$ higher than a random drawn member of class $\ell$.
+\end{itemize}
+
+\lz
+%\framebreak
+
+\textbf{Example:} AUC(3|1) with $g=3$ classes 
+%\begin{center}
+\begin{columns}[T]
+\begin{column}{0.3\textwidth}
+\centerline{\includegraphics[trim = 250 15 00 10, clip, width=\textwidth]{figure_man/multiclass-auc.pdf}}
+\end{column}
+\begin{column}{0.7\textwidth}
+    \lz
+\begin{enumerate}
+\item Subset pred rows to true classes 1 and 3
+\item Use $k=3$ as pos and $\ell = 1$ as neg class
+\item Compute standard AUC with $\hat{\pi}_3$ as scores\\ %and class $k=3$ as the positive class vs. class $\ell = 1$ as the negative class.\\
+\item AUC(3|1) = 1:\\ all pos have higher $\hat{\pi}_3$ than negs
+\end{enumerate}
+\end{column}
+\end{columns}
+% Source: https://docs.google.com/presentation/d/1Yap557n9SDyq9-fpA8u7wP46dkpzApJRx5bWpvTgIpM/edit?usp=sharing
+%\end{center}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+
+\begin{vbframe}{Multi-class AUC}
+
+\begin{itemize}
+\item For binary classes: always $\text{AUC}(1 | 0) = \text{AUC}(0 | 1)$
+
+\item For multi-class usually:
+$\text{AUC}(k ~|~ \ell) \neq \text{AUC}(\ell ~|~ k)$
+% $\forall k, \ell \in \gset, k \neq \ell$.
+
+\item
+%\textbf{Example:} For $g=3$, $\text{AUC}(3|1) \neq \text{AUC}(1|3)$ as $\hat \pi_3 = 0.25$ separates all negative from positive classes (right table) but $\hat \pi_1$ does not (left table).
+\textbf{Example} with $g=3$ where $\text{AUC}(1|3) \neq \text{AUC}(3|1) $:
+\begin{itemize}
+\item $\text{AUC}(3|1) = 1$ (RHS) as before 
+    % as the score $\hat \pi_3$ perfectly separates all negative from positive classes.
+\item $\text{AUC}(1|3) \neq 1$ (LHS) 
+    % as the score $\hat \pi_1$ does not perfectly separate the positive class $k=1$ from negative class $\ell=3$.
+\end{itemize}
+
+%\begin{center}
+\centerline{\includegraphics[trim = 0 15 00 10, clip, width=0.75\textwidth]{figure_man/multiclass-auc.pdf}}
+% Source: https://docs.google.com/presentation/d/1Yap557n9SDyq9-fpA8u7wP46dkpzApJRx5bWpvTgIpM/edit?usp=sharing
+%\end{center}
+
+\end{itemize}
+
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Multi-class AUC}
+\href{https://link.springer.com/article/10.1023/A:1010920819831}{Hand and Till (2001)} proposed to avg AUC via \textbf{1-vs-1}:
+% of a multiclass classifier:
+  %\begin{itemize}
+
+\begin{itemize}
+    \item For all class pairs, 
+        % $k, \ell \in \gset, k \neq \ell$, 
+        compute $\text{AUC}(k ~|~ \ell)$.
+    %\item Estimate $AUC(i,j)$ for each pair of class $i$ and $j$.
+    %\item $AUC(i,j)$ is the probability of a randomly drawn member from class $i$ having a lower probability of belonging to class $j$ than a randomly drawn member of class $j$.
+    % \item For $g$ classes, we have $g (g-1)$ different $\text{AUC}(k ~|~ \ell)$ values that are averaged to compute a multi-class AUC measure:
+    %$$\text{AUC}_{MC} = \tfrac{2}{g(g - 1)} \sum_{k < \ell} \text{AUC}(k, \ell) = \tfrac{1}{g(g - 1)} \sum_{k \neq \ell} \text{AUC}(k, \ell) \in [0, 1].$$
+    % ${{g}\choose{2}} = \tfrac{g (g-1)}{2}$
+    $$\text{AUC}_{MC} = \tfrac{1}{g(g - 1)} \sum_{k \neq \ell} \text{AUC}(k | \ell) \in [0, 1].$$
+  %\end{itemize}
+\end{itemize}
+
+\lz
+
+\textbf{Comments}:
+
+\begin{itemize}
+\item Other defs use \textbf{1-vs-rest} and need to avg only $g$ AUC values
+    % . $\Rightarrow$ More efficient than one-vs-one.
+\item 1-vs-rest creates imbal classes even if orig classes are balanced
+\item Imbalanced classes can be considered by weighting individual AUC values with class priors \href{https://doi.org/10.1016/j.patrec.2008.08.010}{[Ferri et al. (2003)]}
+\end{itemize}
+
+\end{vbframe}
+
+%
+% \begin{vbframe}{Multi-class AUC}
+% \begin{itemize}
+%   \item Provost and Domingos (2003)\footnote{Provost, F., Domingos, P. (2003). Tree induction for probability-based ranking.} proposed to average the AUC of \\
+%   \textbf{1-vs-rest} comparisons of a multiclass classifier.
+%   \item The idea is to iteratively take each class as the reference class, i.e., set the current class to 0 and all other classes to 1.
+%   \item Then average these single $AUC(i,j)$ values to compute the multiclass AUC according to \textbf{1-vs-rest}.
+%   \item For $g$ classes, we have $g$ values of $AUC(i,j)$ that are then averaged to compute the multiclass AUC.
+% \end{itemize}
+%
+% \textbf{Note}: Both versions of the multiclass AUC can be weighted with their respective prior class distributions to also consider imbalanced classes.
+%
+% % Source: https://link.springer.com/content/pdf/10.1023/A:1024099825458.pdf
+% \end{vbframe}
+%
+%
+% \begin{vbframe}{Multi-class AUC}
+%
+% \begin{itemize}
+%   \item Note that the 1-vs-1 procedure is computationally heavier than 1-vs-rest.
+%   \item The 1-vs-rest approach leads to a skewed comparison as we create an artificial class imbalance even if the original classes were balanced in the first
+%   place.
+%   \item Provost and Domingos (2003) tried to solve the imbalance problem by
+%   incorporating the respective prior class distributions as weights.
+% \end{itemize}
+% \end{vbframe}
+
+\endlecture
+\end{document}

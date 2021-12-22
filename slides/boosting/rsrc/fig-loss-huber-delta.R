@@ -1,4 +1,4 @@
-source("../../advriskmin/rsrc/loss_functions.R")
+source("../../advriskmin/rsrc/helpers/loss_functions.R")
 library(viridis)
 library(ggplot2)
 

@@ -1,93 +1,102 @@
-# create holdout-bias-var.png (not used) and holdout-biasvar.RData (used in intro-performance and resampling)
+# PREREQ -----------------------------------------------------------------------
 
+library(data.table)
 library(mlbench)
 library(BBmisc)
-library(mlr)
-library(reshape2)
+library(mlr3)
 library(ggplot2)
-library(gridExtra)
+library(reshape2)
 library(plyr)
 
-set.seed(123)
+# DATA -------------------------------------------------------------------------
 
-nreps = 50
-ss.iters = 50
-split.rates = seq(0.05, 0.95, by = 0.05)
-n1 = 100000
-n2 = 500
+set.seed(123L)
 
-lrn = makeLearner("classif.rpart")
-task1 = convertMLBenchObjToTask("mlbench.spirals", n1, sd = 0.1)
+n_reps = 50L
+ss_iters = 50L
+split_rates = seq(0.05, 0.95, by = 0.05)
+n_1 = 100000L
+n_2 = 500L
+data = data.table::as.data.table(mlbench::mlbench.spirals(n_1, sd = 0.1))
 
-r1 = subsample(lrn, task1, iters = ss.iters * 10, split = n2 / n1, keep.pred = FALSE)
-realperf = r1$aggr
-res = array(NA, dim = c(length(split.rates), ss.iters, nreps), 
- dimnames = list(split.rates, 1:ss.iters, 1:nreps))
+# EXPERIMENT -------------------------------------------------------------------
 
-for (i in 1:nreps) {
- task2 = subsetTask(task1, subset = sample(n1, n2))
- for (j in seq_along(split.rates)) {
-   sr = split.rates[j]
-   messagef("rep = %i;  splitrate = %g", i, sr)
-   r = subsample(lrn, task2, iters = ss.iters, split = sr, show.info = FALSE)
-   res[j, , i] = r$measures.test[, "mmce"]
- }
+learner = mlr3::lrn("classif.rpart")
+task = mlr3::TaskClassif$new("spirals", backend = data, target = "classes")
+
+resampling = mlr3::rsmp(
+   "subsampling", 
+   ratio = n_2 / n_1, 
+   repeats = ss_iters * 10L) 
+
+resampling_result = mlr3::resample(
+   task, 
+   learner, 
+   resampling, 
+   store_models = FALSE)
+
+true_performance = resampling_result$aggregate(mlr3::msr("classif.ce"))
+
+results = array(
+   NA, 
+   dim = c(length(split_rates), ss_iters, n_reps),
+   dimnames = list(split_rates, seq_len(ss_iters), seq_len(n_reps)))
+
+for (i in seq_len(n_reps)) {
+   
+   task_subset = task$clone()$filter(sample(n_1, n_2))
+   
+   for (j in seq_along(split_rates)) {
+      
+      this_split = split_rates[j]
+      mlr3misc::messagef("rep = %i;  splitrate = %g", i, this_split)
+      
+      resampling_result_subset = mlr3::resample(
+         task_subset, 
+         learner, 
+         mlr3::rsmp(
+            "subsampling", 
+            ratio = this_split, 
+            repeats = ss_iters))
+      
+      results[j, , i] = resampling_result_subset$score()$classif.ce
+      
+   }
+   
 }
-save2(file = "holdout-biasvar.RData", n1 = n1, n2 = n2,
- nreps = nreps, ss.iters = ss.iters, split.rates = split.rates,
- res = res, r1 = r1, realperf = realperf)
 
-# ggd1 = melt(res)
-# colnames(ggd1) = c("split", "rep", "ssiter", "mmce")
-# ggd1$split = as.factor(ggd1$split)
-# ggd1$mse = (ggd1$mmce -  realperf)^2 
-# ggd1$type = "ho"
-# ggd1$ssiter = NULL
-# mse1 = ddply(ggd1, "split", summarize, mse = mean(mse))
-# mse1$type = "ho"
-# 
-# 
-# ggd2 = ddply(ggd1, c("split", "rep"), summarize, mmce = mean(mmce))
-# ggd2$mse = (ggd2$mmce -  realperf)^2 
-# ggd2$type = "ss"
-# mse2 = ddply(ggd2, "split", summarize, mse = mean(mse))
-# mse2$type = "ss"
-# 
-# ggd = rbind(ggd1, ggd2)
-# ggd$split.and.type = paste(0, ggd$split, ggd$type)
-# gmse = rbind(mse1, mse2)
-# 
-# pl1 = ggplot(ggd, aes(x = split.and.type, y = mmce))
-# pl1 = pl1 + geom_boxplot()
-# pl1 = pl1 + geom_hline(yintercept = realperf)
-# pl1 = pl1 + theme(axis.text.x = element_text(angle = 45))
-# 
-# gmse$split = as.numeric(as.character(gmse$split))
-# gmse$type = as.factor(gmse$type)
-# pl2 = ggplot(gmse, aes(x = split, y = mse, col = type))
-# pl2 = pl2 + geom_line()
-# pl2 = pl2 + scale_y_log10()
-# 
-# pl = grid.arrange(pl1, pl2)
-# print(pl)
-# save(pl, file = "figure_man/holdout-bias-var.png")
+# RESHAPING --------------------------------------------------------------------
 
+ggd1 = reshape2::melt(results)
+colnames(ggd1) = c("split", "rep", "ssiter", "mce")
+ggd1$split = as.factor(ggd1$split)
+ggd1$mse = (ggd1$mce -  true_performance)^2
+ggd1$type = "holdout"
+ggd1$ssiter = NULL
 
-# experiment:
-# spiral data from mlbench(with sd = 0.1)
-# learner = CART (classif.rpart from mlr)
-# goal: estimate real performance of a model with |D_train| = 1000
-# get "true" estimator by repeatedly sampling 1000 obs from the simulator,
-#   fit the learner, then evaluate on a really large number of observation
-# now analyse different forms of holdout, with different split rates
-# sample D with |D| = 500
-# split-rate = c(0.05, 0.1, ..., 0.9, 0.95) for training with |Dtrain| = s 500
-# estimate performance on D_test with |Dtest| = 500 (1 - s)
-# repeat the sampöing of D 50 times, and the splitiing with s 50 times
-# (so 2500 exps per split rate)
-# visualize the perfomance estimator - and the MSE of the estimator in relation to the
-# true error rate
+mse1 = plyr::ddply(ggd1, "split", plyr::summarize, mse = mean(mse))
+mse1$type = "holdout"
 
+ggd2 = plyr::ddply(ggd1, c("split", "rep"), plyr::summarize, mce = mean(mce))
+ggd2$mse = (ggd2$mce -  true_performance)^2
+ggd2$type = "subsampling"
+mse2 = plyr::ddply(ggd2, "split", plyr::summarize, mse = mean(mse))
+mse2$type = "subsampling"
 
+ggd = rbind(ggd1, ggd2)
+gmse = rbind(mse1, mse2)
+ggd$type = as.factor(ggd$type)
+gmse$split = as.numeric(as.character(gmse$split))
+gmse$type = as.factor(gmse$type)
 
-
+save2(
+   file = "holdout-biasvar.RData", 
+   n_1 = n_1, 
+   n_2 = n_2,
+   n_reps = n_reps, 
+   ss_iters = ss_iters, 
+   split_rates = split_rates,
+   results = results, 
+   true_performance = true_performance,
+   ggd = ggd,
+   gmse = gmse)

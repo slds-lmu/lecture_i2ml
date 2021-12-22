@@ -76,12 +76,12 @@ plot(1,
      ylab = "MSE", 
      xlab = "degree of polynomial")
 
-lines(degrees, sapply(errors, function(x) x["train"]), type = "b")
-lines(degrees, sapply(errors, function(x) x["test"]), type = "b", col = "gray")
+lines(degrees, sapply(errors, function(x) x["train"]), type = "b", col = "darkgray")
+lines(degrees, sapply(errors, function(x) x["test"]), type = "b")
 
 legend("topright", c("training error", "test error"), 
        lty = 1L,
-       col = c("black", "gray"))
+       col = c("darkgray", "black"))
 
 text(3.75, 0.05, "Underfitting,\n\nHigh Bias,\nLow Variance", bg = "white")
 arrows(4.75, 0.05, 2.75, 0.05, code = 2L, lty = 2L, length = 0.1)
@@ -109,7 +109,7 @@ dev.off()
 
 # PLOT 5 -----------------------------------------------------------------------
 
-pdf("../figure/eval_train_2.pdf", width = 5, height = 3)
+pdf("../figure/eval_train_2.pdf", width = 5, height = 4)
 
 out = ggTrainTestPlot(data = mydf, 
                       truth.fun = .h, 
@@ -122,5 +122,5 @@ out[["plot"]] +
   theme(legend.position = "top") + 
   scale_color_viridis_d(end = .9)
 
-ggsave("../figure/eval_train_2.pdf", width = 5, height = 3)
+ggsave("../figure/eval_train_2.pdf", width = 5, height = 4)
 dev.off()

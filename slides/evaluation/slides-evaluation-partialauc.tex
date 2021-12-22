@@ -1,0 +1,125 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-eval.tex}
+
+\newcommand{\titlefigure}{figure/eval_mclass_roc_sp_13}
+\newcommand{\learninggoals}{
+\item Understand that entire AUC is not always relevant
+\item Learn about partial AUC
+}
+
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Evaluation: Partial AUC}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+% ------------------------------------------------------------------------------
+
+% 2-way pauc noch rein?
+% lift chart noch rein
+
+\begin{vbframe}{Partial AUC}
+
+\begin{itemize}
+  \item TPR and FPR often treated asymmetrically in biomed contexts
+  \item TPR = disease detection, is crucial
+  \item But low FPR needed to avoid unnecessary treatments
+\item Common solution: Fix either TPR or FPR to a required value and optimize the other, but not easy to select exact point 
+\framebreak
+  \item Can be useful to limit region under ROC curve
+  % \item This leads to partial AUC (pAUC), originally proposed by 
+  % \href{http://journals.sagepub.com/doi/pdf/10.1177/0272989X8900900307}
+  % {McClish (1989)}.
+  \item E.g. FPR > 0.2 or TPR < 0.8 might not be acceptable for task,\\
+      then we don't want to integrate over that region
+\end{itemize}
+
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+{\centering \includegraphics[width=0.95\textwidth]{figure/eval_mclass_roc_sp_13}}
+\end{knitrout}
+
+\end{vbframe}
+
+\begin{vbframe}{Corrected Partial AUC}
+
+\begin{itemize}
+\item Range of pAUC depends on cut-off values
+      % used to 
+  % determine the region of interest $\Rightarrow \text{pAUC} \in [0, c_2 - c_1]$.
+% \item For standard AUC: $c_1 = 0$ and $c_2 = 1$.
+\item Normalize to $[0, 1]$:
+  $$\text{pAUC}_\text{corrected} = \cfrac{1}{2} \left( 1 + \cfrac{\text{pAUC} - 
+  \text{pAUC}_{\text{min}}}{\text{pAUC}_{\text{max}} - \text{pAUC}_{\text{min}}} 
+  \right),$$
+\end{itemize}
+
+\begin{columns} 
+\begin{column}{0.6\textwidth} 
+\begin{itemize}
+  \item pAUC is V+U = "A-B-C-D"
+  \item $\text{pAUC}_{\text{min}}$ is pAUC of random classifier, 
+      so U = "A-B-g-h"
+  \item $\text{pAUC}_{\text{max}}$ is U+V+W = "A-B-e-f"
+  \item Compute percentage of V in V+W
+\item Rescale so random=0.5; optimal=1
+\end{itemize}
+\end{column} 
+\begin{column}{0.4\textwidth} 
+\begin{center}
+\includegraphics[width=0.9\textwidth]{figure/fig_pauc}
+\end{center}
+\end{column} 
+\end{columns} 
+%   % \item As usual, $\text{pAUC} = 0.5$ corresponds to the non-discriminant and 
+%   % $\text{pAUC} = 1$ to the perfect classifier.
+\end{vbframe}
+
+\begin{vbframe}{2way Partial AUC}
+
+\begin{itemize}
+\item Can also limit both TPR and FPR 
+\item 2way pAUC = compute area under 2way limited segment
+\end{itemize}
+\begin{center}
+\includegraphics[width=0.5\textwidth]{figure/fig_pauc_2way}
+\end{center}
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+% \begin{vbframe}{Partial AUC -- example}
+
+% \begin{itemize}
+%   \footnotesize
+%   \item Applications where sensitivity and specificity are treated
+%   asymmetrically often occur in biomedical contexts.
+%   \item For example,
+%   \href{https://clincancerres.aacrjournals.org/content/16/24/6111}
+%   {Wild et al. (2010)} used pAUC in their study of biomarkers for the detection
+%   of colorectal cancer.
+%   \item Sensitivity, i.e., being able to correctly detect present diseases, is
+%   crucial here.
+%   \item At the same time, high sensitivity is only useful if the classifier also
+%   achieves high specificity.
+%   $\rightarrow$ Otherwise, healthy patients might receive
+%   unnecessary treatment.
+%   \item It is therefore reasonable to demand a certain level of specificity and
+%   evaluate/optimize learners on the resulting pAUC.
+% \end{itemize}
+
+% \vfill
+% \includegraphics[width=0.35\textwidth]{figure/fig_pauc}
+
+% \end{vbframe}
+
+\endlecture
+\end{document}

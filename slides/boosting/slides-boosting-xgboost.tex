@@ -1,8 +1,7 @@
 \input{../../style/preamble} 
 \input{../../latex-math/basic-math}
 \input{../../latex-math/basic-ml}
-\input{../../latex-math/ml-bagging.tex}
-\input{../../latex-math/ml-boosting.tex}
+\input{../../latex-math/ml-ensembles.tex}
 \input{../../latex-math/ml-trees.tex}
 
 \newcommand{\titlefigure}{figure_man/split-finding02.png}
@@ -55,48 +54,48 @@ State-of-the-art machine learning method:
 \pkg{XGBoost} uses a risk function with 3 regularization terms:
 \vskip -1em
 \begin{multline*}
-  \riskr^{[m]} = \sum_{i=1}^{n} L\left(\yi, \fmd(\xi) + \bmm(\xi)\right)\\
-   + \lambda_1 J_1(\bmm) + \lambda_2 J_2(\bmm) + \lambda_3 J_3(\bmm),
+  \riskr^{[m]} = \sum_{i=1}^{n} L\left(\yi, \fmd(\xi) + \bl(\xi)\right)\\
+   + \lambda_1 J_1(\bl) + \lambda_2 J_2(\bl) + \lambda_3 J_3(\bl),
 \end{multline*}
 
 
-with $J_1(\bmm) = T^{[m]}$ to regularize tree depth, where $T^{[m]}$ is the number of leaves in the tree.
+with $J_1(\bl) = T^{[m]}$ to regularize tree depth, where $T^{[m]}$ is the number of leaves in the tree.
 
 \lz
 
-$J_2(\bmm) = \left\|\mathbf{c}^{[m]}\right\|^2_2$ and $J_3(\bmm) = \left\|\mathbf{c}^{[m]}\right\|_1$ are $L2$ and $L1$ regularizers of the terminal region scores $c_t^{[m]}, t=1,\dots,T^{[m]}$.
+$J_2(\bl) = \left\|\mathbf{c}^{[m]}\right\|^2_2$ and $J_3(\bl) = \left\|\mathbf{c}^{[m]}\right\|_1$ are $L2$ and $L1$ regularizers of the terminal region scores $c_t^{[m]}, t=1,\dots,T^{[m]}$.
 
 \lz
 
-\textbf{Note:} In the following we define $J(\bmm) := \lambda_1 J_1(\bmm) + \lambda_2 J_2(\bmm) + \lambda_3 J_3(\bmm)$ to simplify the notation.
+\textbf{Note:} In the following we define $J(\bl) := \lambda_1 J_1(\bl) + \lambda_2 J_2(\bl) + \lambda_3 J_3(\bl)$ to simplify the notation.
 
 \framebreak
 
-%Recall the way a tree base learner $\bmm(\xv)$ can be fitted loss-optimally in gradient boosting:
+%Recall the way a tree base learner $\bl(\xv)$ can be fitted loss-optimally in gradient boosting:
 
 %$$
-%\tilde{\mathbf{c}}^{[m]} = \argmin_{(c_1,\dots,c_{T^{[m]}})}\sum_{i = 1}^n L(\yi, \fmd(\xi) + \bmm(\xi, c_1,\dots,c_{T^{[m]}})).
+%\tilde{\mathbf{c}}^{[m]} = \argmin_{(c_1,\dots,c_{T^{[m]}})}\sum_{i = 1}^n L(\yi, \fmd(\xi) + \bl(\xi, c_1,\dots,c_{T^{[m]}})).
 %$$
 
 %The direction of steepest descent for the update is then
 
 %$$
-%-\frac{\partial L(y, \fmd(\xv) + \bmm(\xv))}{\partial \bmm(\xv)}
+%-\frac{\partial L(y, \fmd(\xv) + \bl(\xv))}{\partial \bl(\xv)}
 %$$
 
 %for each $\xi, i = 1,\dots, n$.
 
 %\lz
 
-%\textbf{Note:} $J(\bmm)$ is omitted for now but will be re-introduced later.
+%\textbf{Note:} $J(\bl)$ is omitted for now but will be re-introduced later.
 
 %\framebreak
 
 To approximate the loss in iteration $m$, use a second-order Taylor expansion around $\fmd(\xv)$:
 \vskip  -1em
 \begin{align*}
-  &L(y, \fmd(\xv) + \bmm(\xv)) \approx \\
-  &\qquad L(y, \fmd(\xv)) + g^{[m]}(\xv)\bmm(\xv) + \frac12 h^{[m]}(\xv)\bmm(\xv)^2,
+  &L(y, \fmd(\xv) + \bl(\xv)) \approx \\
+  &\qquad L(y, \fmd(\xv)) + g^{[m]}(\xv)\bl(\xv) + \frac12 h^{[m]}(\xv)\bl(\xv)^2,
 \end{align*}
 
 with gradient
@@ -118,17 +117,17 @@ $$
 Since $L(y, \fmd(\xv))$ is a constant, the optimization criterion simplifies to
 
 \begin{align*}
-\riskr^{[m]} \approx &\sum_{i = 1}^n g^{[m]}(\xi)\bmm(\xi) + \frac12 h^{[m]}(\xi)\bmm(\xi)^2 + J(\bmm) + const\\
-\propto&\sum_{t=1}^{T^{[m]}}\sum_{\xi\in R_t^{[m]}} g^{[m]}(\xi)c^{[m]}_t + \frac12 h^{[m]}(\xi)(c^{[m]}_t)^2 + J(\bmm).\intertext{Defining $G^{[m]}_t$ and $H^{[m]}_t$ as the sum of the gradients and Hessians, respectively, in terminal node $t$ yields
+\riskr^{[m]} \approx &\sum_{i = 1}^n g^{[m]}(\xi)\bl(\xi) + \frac12 h^{[m]}(\xi)\bl(\xi)^2 + J(\bl) + const\\
+\propto&\sum_{t=1}^{T^{[m]}}\sum_{\xi\in R_t^{[m]}} g^{[m]}(\xi)c^{[m]}_t + \frac12 h^{[m]}(\xi)(c^{[m]}_t)^2 + J(\bl).\intertext{Defining $G^{[m]}_t$ and $H^{[m]}_t$ as the sum of the gradients and Hessians, respectively, in terminal node $t$ yields
 }
-=& \sum_{t=1}^{T^{[m]}}G^{[m]}_t c^{[m]}_t+\frac12 H^{[m]}_t (c^{[m]}_t)^2 + J(\bmm).
+=& \sum_{t=1}^{T^{[m]}}G^{[m]}_t c^{[m]}_t+\frac12 H^{[m]}_t (c^{[m]}_t)^2 + J(\bl).
 \end{align*}
 
 
 
 \framebreak
 
-Expanding $J(\bmm)$, we get
+Expanding $J(\bl)$, we get
 \begin{align*}
 \riskr^{[m]} = &\sum_{t=1}^{T^{[m]}}\left(G^{[m]}_t c^{[m]}_t+\frac12 H^{[m]}_t (c^{[m]}_t)^2 + \frac12\lambda_2(c^{[m]}_t)^2 + \lambda_3 |c^{[m]}_t|\right) + \lambda_1 T^{[m]}\\
 =&\sum_{t=1}^{T^{[m]}}\left(G^{[m]}_t c^{[m]}_t+\frac12 (H^{[m]}_t + \lambda_2) (c^{[m]}_t)^2 + \lambda_3 |c_t^{[m]}|\right) + \lambda_1 T^{[m]}.
