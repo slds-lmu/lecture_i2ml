@@ -62,16 +62,13 @@ plot_boosting_multiclass <- function(iters) {
     geom_point(data = iris_data, mapping = aes(x=Sepal.Length, y=Sepal.Width, fill=Species, alpha=NULL), shape=21) +
     scale_fill_viridis(end=0.9, discrete = TRUE)
 
-  species <- unique(contour_df$Pred.Species)
-  colors <- viridis(length(species), end = 0.9)
-  contour_plot <- ggplot(data = contour_df, mapping = aes(x=Sepal.Length, y=Sepal.Width, z=Score, color=Pred.Species, fill=Score, alpha=Score))
-  for (i in 1:length(species)) {
-    contour_plot <- contour_plot + geom_tile(data = contour_df[contour_df$Pred.Species == species[i],], fill=colors[i], linetype = 0, size = 0, color=colors[i])
-  }
+  contour_plot <- ggplot(data = contour_df, mapping = aes(x=Sepal.Length, y=Sepal.Width, z=Score, color=Pred.Species, fill=Pred.Species, alpha=Score))
+
   contour_plot <- contour_plot +
+    geom_tile(linetype = 0, size = 0) +
     geom_contour(color="black") +
     geom_text_contour(color="black") +
-    scale_fill_continuous(name="Score", low="white", high="blue") +
+    scale_fill_viridis(end=0.9, discrete = TRUE) +
     scale_color_viridis(end=0.9, discrete = TRUE)
 
 
