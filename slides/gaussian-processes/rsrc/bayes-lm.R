@@ -15,6 +15,7 @@ y = 0.5 * x + rnorm(n)
 d = data.frame(x0 = rep(1, n), x = x, y = y)
 
 p = ggplot(data = d, aes(x = x, y = y)) + geom_point() + theme_bw() + ylab("x") + ylab("y")
+
 ggsave("figure_man/bayes-lm/example.pdf", width = 4, height = 3)
 
 
