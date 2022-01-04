@@ -1,0 +1,124 @@
+\input{../../style/preamble}
+\newcommand{\titlefigure}{figure_man/linear_pipeline.png}
+\newcommand{\learninggoals}{
+\item Be able to explain a linear pipeline
+\item Understand how HPO pipelines can be represented as DAGs
+\item Know the difference between the HP space of a linear pipeline and a 
+DAG}
+\usepackage{../../style/lmu-lecture}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-hpo.tex}
+\input{../../latex-math/ml-eval.tex}
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+
+\begin{document}
+
+\lecturechapter{Hyperparameter Tuning - Pipelines}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+\begin{vbframe}{Pipelines and AutoML}
+\begin{itemize}
+    \item ML typically has several data transformation steps before model fit
+    \item If steps are in succession, data flows through linear pipeline
+    \item NB: Each node has a train and predict step and learns params
+    \item And usually has HPs
+\end{itemize}
+
+%A linear ML pipeline is a succession of preprocessing methods followed by a learner at the end, all arranged as nodes in a linear graph:
+
+\vspace{0.5em}
+
+\begin{center}
+\includegraphics[width = 0.8\textwidth]{figure_man/linear_pipeline.png}
+\end{center}
+
+\vspace{0.5em}
+
+\pause
+\textbf{Pipelines are required to embed full model building into CV to avoid overfitting and biased evaluation!}
+\end{vbframe}
+
+\begin{vbframe}{Pipelines and AutoML}
+\begin{columns}
+\column{0.5\textwidth}
+\begin{itemize}
+    \item Further flexibility by representing pipeline as DAG
+    \item Single source accepts $\Dtrain$, single sink returns predictions
+    \item Each node represents a preprocessing operation, a learner, a postprocessing operation or controls data flow
+    \item Can be used to implement ensembles, operator selection, $\ldots$
+\end{itemize}
+\column{0.5\textwidth}
+\begin{center}
+\includegraphics[width = \textwidth]{figure_man/pipeline_with_param_table_I.png}
+\end{center}
+\end{columns}
+\end{vbframe}
+
+\begin{vbframe}{Pipelines and AutoML}
+\begin{columns}
+\column{0.6\textwidth}
+\begin{itemize}
+    \item HPs of linear pipeline are the joint set of all HPs of its contained nodes:\\
+    $\tilde{\bm\Lambda}=\tilde{\bm\Lambda}_{\mathrm{op}, 1} \times \cdots \times \tilde{\bm\Lambda}_{\mathrm{op}, k} \times \tilde{\bm\Lambda}_{\mathcal{I}}$
+    \item HP space of a DAG is more complex:\\
+    Depending on branching / selection different nodes and HPs are active\\ $\rightarrow$ \textbf{hierarchical search space}
+\end{itemize}
+\column{0.4\textwidth}
+\begin{center}
+\includegraphics[width = \textwidth]{figure_man/pipeline_with_param_table_II.png}
+\end{center}
+\end{columns}%
+\vspace{1em}
+
+A graph that includes many preprocessing steps and learner types can be flexible enough to work on a large number of data sets\\
+\vspace{1em}
+\textbf{Combining such graph with an efficient tuner is key in AutoML}
+\end{vbframe}
+
+
+\begin{frame}{Case for AutoML}
+
+\hspace{-1cm}
+\begin{minipage}{0.05\textwidth}
+    \phantom{}
+\end{minipage}
+\begin{minipage}{0.5\textwidth}
+    \begin{itemize}
+        \item[]
+        \item More and more tasks are approached via data driven methods.
+        \item Data scientists often rely on trial-and-error.
+        \item The process is especially tedious for similar, recurring tasks.
+        \item Not the entire machine learning lifecycle can be automated.
+        \item[]
+    \end{itemize}
+\end{minipage}
+
+\begin{tikzpicture}[remember picture,overlay]
+    \node[xshift=65mm,yshift=-40mm,anchor=west] at (current page.north west){%
+    \includegraphics[width=0.5\textwidth]{figure_man/ml_lifecycle}};
+\end{tikzpicture}
+
+\end{frame}
+
+
+
+\begin{frame}{AutoML -- Challenges}
+\begin{itemize}
+    \item Most efficient HPO approach? Good benchmarks often missing.
+    \item How to integrate human a-priori knowledge?
+    \item How can we best (computationally) transfer ``experience'' into AutoML?
+    Warmstarts, learned search spaces, etc. 
+    \item Multi-Objective goals, including model intepretability
+    \item AutoML as a process is too much of a black-box, hurts adoption.
+\end{itemize}
+\end{frame}
+
+
+\endlecture
+\end{document}
