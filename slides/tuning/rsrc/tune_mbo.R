@@ -25,7 +25,7 @@ task <- TaskClassif$new(
 learner = lrn("classif.rpart", cp = to_tune(lower = 1e-04, upper = 0.05, logscale = FALSE),
               minsplit = to_tune(1, 100))
 set.seed(3)
-num_reps = 5
+num_reps = 10
 
 mbo_datas = list()
 for(i in 1:num_reps){
