@@ -38,7 +38,7 @@ cboost$addTensor("Longitude", "Latitude", df = 2)
 
 cboost$train(n_iters, trace = 100L)
 
-plotBaselearnerTraces(cboost)
+#plotBaselearnerTraces(cboost)
 
 gg0 = plotPEUni(cboost, "Fireplaces") +
   ggplot2::theme_minimal() +
