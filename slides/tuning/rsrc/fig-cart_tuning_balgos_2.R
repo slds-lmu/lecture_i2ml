@@ -7,26 +7,35 @@ library(ggplot2)
 
 set.seed(12322)
 
-tr = BBmisc::load2("tune_example.RData")
+rs_tr <- readRDS("tune_rs_example.rds")
 
-ggd = tr$data() %>% 
-  as.data.frame() %>% 
+rs_ggd <- rs_tr %>%
   select(iter = batch_nr, auc = classif.auc) %>% 
+  mutate(auc = cummax(auc))
+
+gs_tr <- readRDS("tune_gs_example.rds")
+
+gs_ggd <- gs_tr %>%
+  select(iter = batch_nr, auc = classif.auc) %>%
   mutate(auc = cummax(auc))
 
 # PLOT -------------------------------------------------------------------------
 
-pdf("../figure/cart_tuning_balgos_3.pdf", width = 8, height = 3)
-
-pl = ggplot(ggd, aes(x = iter, y = auc))
-pl = pl + geom_line() 
-pl = pl + theme_bw()
-pl = pl + 
+rs_pl <- ggplot(rs_ggd, aes(x = iter, y = auc)) +
+  geom_line() +
+  theme_bw() +
   theme(axis.text = element_text(size = 18), 
         axis.title = element_text(size = 22)) +
   ylab("Maximal AUC") + 
   xlab("Iterations")
-print(pl)
 
-ggsave("../figure/cart_tuning_balgos_3.pdf", width = 8, height = 3)
-dev.off()
+gs_pl <- ggplot(gs_ggd, aes(x = iter, y = auc)) +
+  geom_line() +
+  theme_bw() +
+  theme(axis.text = element_text(size = 18),
+        axis.title = element_text(size = 22)) +
+  ylab("Maximal AUC") +
+  xlab("Iterations")
+
+ggsave("../figure/tuning_rs_example.pdf", plot = rs_pl, width = 8, height = 3)
+ggsave("../figure/tuning_gs_example.pdf", plot = gs_pl, width = 8, height = 3)
