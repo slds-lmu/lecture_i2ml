@@ -96,7 +96,7 @@ p3 = ggplot(res, aes(x=folds, y=ge)) + geom_boxplot() +
   ylab("GE") + xlab("number of folds")
 
 p1 + p2 + p3
-ggsave("../figure/resa_hpo.pdf")
+ggsave("../figure/resa_hpo.pdf", width = 8, height = 4)
 
 
 
