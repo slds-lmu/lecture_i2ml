@@ -33,4 +33,4 @@ svm_res_p <- ggplot(data=tuning_importance_dataset$svm_res_df, mapping = aes(x=g
 p <- grid.arrange(tree_res_p, knn_res_p, svm_res_p, nrow = 1, ncol = 3)
 p
 
-ggsave(plot = p, filename = "../figure/tuning_importance.png", width = 15, height = 5)
+ggsave(plot = p, filename = "../figure/tuning_importance.png", width = 12, height = 4)
