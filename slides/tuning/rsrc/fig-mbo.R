@@ -1,6 +1,5 @@
 library(patchwork)
 library(ggplot2)
-library(ggfan)
 
 ret = BBmisc::load2("tune_mbo.RData")
 grid_data = ret$grid
