@@ -31,7 +31,7 @@ K = sqexp.vec(x)
 
 # sample 
 set.seed(1234)
-y = t(rmvnorm(1, mean = m, sigma = K))
+y = t(rmvnorm(1, mean = m, Sigma = K))
 df$y = y
 
 

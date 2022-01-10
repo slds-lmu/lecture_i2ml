@@ -19,7 +19,7 @@ ltrue = 0.5
 K = exp(-1 / 2 * D^2 / ltrue^2) 
 
 noise = 0.5
-y = as.vector(rmvnorm(1, sigma = K)) + rnorm(n, sd = noise)
+y = as.vector(rmvnorm(1, Sigma = K)) + rnorm(n, sd = noise)
 
 df = data.frame(x = x, y = y)
 

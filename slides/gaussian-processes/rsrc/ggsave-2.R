@@ -87,7 +87,7 @@ for (i in 1:n) {
 }
 
 df = data.frame(x = x)
-df$y = as.vector(rmvnorm(1, sigma = K))
+df$y = as.vector(rmvnorm(1, Sigma = K))
 
 p = ggplot(data = df, aes(x = x, y = y)) + geom_line() + theme_bw()
 p = p + xlab("x") + ylab("f(x)")

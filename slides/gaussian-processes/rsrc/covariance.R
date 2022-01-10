@@ -1,25 +1,24 @@
-# ----------------------------------------------------------------------- #
-# Generation of Samples for different Covariance Functions                #
-# ----------------------------------------------------------------------- #
+# Generation of Samples for different Covariance Functions                
 
-# Initialization -------------------------------------------------------- #
-library(mvtnorm)
+# Initialization 
+library(MASS)
 library(ggplot2)
 library(RandomFieldsUtils)
 
 n = 1000 # number of points
 x = seq(-2, 2, length.out = n) # n equally spaced points
 D = as.matrix(dist(x, method = "euclidean")) # distance matrix 
-# ----------------------------------------------------------------------- #
 
-# Squared exponential Covariance Function ------------------------------- #
+# Squared exponential Covariance Function 
 
-## parameters to try out
-l = c(0.1, 1, 10) # parameters to try out 
+## Parameters to try out
+l = c(0.1, 1, 10)
+
 ## Corresponding kernel matrixes
 squared.exp = lapply(l, function(l) exp(-1 / 2 * D^2 / l^2))
+
 ## Sampling from corresponding Gaussian
-df.squared.exp = sapply(squared.exp, function(x) as.vector(rmvnorm(1, sigma = x)))
+df.squared.exp = sapply(squared.exp, function(x) as.vector(mvrnorm(1, mu = rep(0, length = ncol(x)), Sigma = x)))
 df.squared.exp = as.data.frame(df.squared.exp)
 names(df.squared.exp) = as.character(l)
 df.squared.exp$x = x
@@ -42,7 +41,7 @@ p = c(1, 2, 3)
 ## Corresponding kernel matrixes
 poly = lapply(p, function(l) as.matrix((x %*% t(x))^l))
 ## Sampling from corresponding Gaussian
-df.poly = sapply(poly, function(x) as.vector(rmvnorm(1, sigma = x)))
+df.poly = sapply(poly, function(x) as.vector(mvrnorm(1, mu = rep(0, ncol(x)), Sigma = x)))
 df.poly = as.data.frame(df.poly)
 names(df.poly) = as.character(p)
 df.poly$x = x
@@ -67,7 +66,7 @@ nu = c(0.5, 2, 10)
 matern = lapply(nu, function(l) matrix(matern(D, nu = l, scaling = "matern"), 
                                 nrow = n, ncol = n))
 ## Sampling from corresponding Gaussian
-df.matern = sapply(matern, function(x) as.vector(rmvnorm(1, sigma = x)))
+df.matern = sapply(matern, function(x) as.vector(mvrnorm(1, mu = rep(0, ncol(x)), Sigma = x)))
 df.matern = as.data.frame(df.matern)
 names(df.matern) = as.character(nu)
 df.matern$x = x

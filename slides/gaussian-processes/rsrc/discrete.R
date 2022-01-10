@@ -121,7 +121,7 @@ for (input in ninputs) {
 	for (i in 1:3) {
 
 		# Draw a sample 
-		y = as.vector(rmvnorm(1, mean = muc, sigma = sigmac))
+		y = as.vector(rmvnorm(1, mu = muc, Sigma = sigmac))
 				
 		p1 = plotDiscreteFunction(x, y, xlim = c(0, 1), ylim = c(- 2, 3))
 		p1 = p1 + ggtitle(paste0("Sample Function ", i, ", n = ", input))
@@ -167,7 +167,7 @@ muc = rep(0, input)
 sigmac = matrix(0.999, input, input) + 0.01 * diag(input)
 
 x = seq(0, 1, length.out = input)
-y = as.vector(rmvnorm(1, mean = muc, sigma = sigmac))
+y = as.vector(rmvnorm(1, mu = muc, Sigma = sigmac))
 		
 p1 = plotDiscreteFunction(x, y, xlim = c(0, 4), ylim = c(- 2, 2))+ theme(axis.text.x=element_blank())
 p1 = p1 + ggtitle(paste0("Sample Function for a)", ", n = ", input)) + ylim(c(-2, 2))
@@ -175,7 +175,7 @@ p1 = p1 + ggtitle(paste0("Sample Function for a)", ", n = ", input)) + ylim(c(-2
 ggsave(paste0("figure_man/discrete/example_extreme_", input, "-1.pdf"), p1, width = 3.5, height = 3)
 
 sigmac = diag(input)
-y = as.vector(rmvnorm(1, mean = muc, sigma = sigmac))
+y = as.vector(rmvnorm(1, mu = muc, Sigma = sigmac))
 
 p1 = plotDiscreteFunction(x, y, xlim = c(0, 4), ylim = c(- 2, 2)) + theme(axis.text.x=element_blank())
 p1 = p1 + ggtitle(paste0("Sample Function for b)", ", n = ", input)) + ylim(c(-2, 2))
@@ -188,7 +188,7 @@ ggsave(paste0("figure_man/discrete/example_extreme_", input, "-4.pdf"), p1, widt
 
 
 sigmac = squared.exp(x, x, l = 0.1)[1:input, 1:input]
-y = as.vector(rmvnorm(1, mean = muc, sigma = sigmac))
+y = as.vector(rmvnorm(1, mu = muc, Sigma = sigmac))
 
 p1 = plotDiscreteFunction(x, y, xlim = c(0, 4), ylim = c(- 2, 2)) + theme(axis.text.x=element_blank())
 p1 = p1 + ggtitle(paste0("Sample Function for c)", ", n = ", input)) + ylim(c(-2, 2))
@@ -213,7 +213,7 @@ plist = lapply(ninputs, function(input) {
 	sigmac = squared.exp(x, x, l = 0.1)[1:input, 1:input]
 
 	# Draw a sample 
-	y = as.vector(rmvnorm(1, mean = muc, sigma = sigmac))
+	y = as.vector(MASS::mvrnorm(1, mu = muc, Sigma = sigmac))
 			
 	p = plotDiscreteFunction(x, y, xlim = c(0, 4), ylim = c(- 2, 2))
 	p = p + ggtitle(paste0("n = ", input)) + theme(axis.text.x = element_blank())
@@ -235,7 +235,7 @@ for (input in ninputs) {
 		sigmac = squared.exp(x, x, l = 0.1)[1:input, 1:input]
 
 		# Draw a sample 
-		y = as.vector(rmvnorm(1, mean = muc, sigma = sigmac))
+		y = as.vector(MASS::mvrnorm(1, mu = muc, Sigma = sigmac))
 				
 		p1 = plotDiscreteFunction(x, y, xlim = c(0, 4), ylim = c(- 2, 2))
 		p1 = p1 + ggtitle(paste0("Sample Function, n = ", input))  + theme(axis.text.x = element_blank())
