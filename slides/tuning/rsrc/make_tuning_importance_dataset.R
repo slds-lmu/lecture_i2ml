@@ -24,8 +24,8 @@ knn_aucs <- NULL
 ks <- 1:20
 
 svm_aucs <- NULL
-gammas <- 2^seq(from=log2(1e-5), to=log2(100), length.out=10)
-Cs <- 2^seq(from=log2(1e-5), to=log2(100), length.out=10)
+gammas <- 2^seq(from=log2(1e-2), to=log2(1e4), length.out=10)
+Cs <- 2^seq(from=log2(1e-2), to=log2(1e4), length.out=10)
 svm_params <- expand.grid(gammas, Cs)
 colnames(svm_params) <- c("gamma", "C")
 
