@@ -39,8 +39,12 @@ rand_perf_feature_space = bg_plot + geom_point(data=random_data, aes(x=cp, y=min
                                                colour = "white", alpha = 0.5) +
   labs(fill = "accuracy", title = "Random search") 
 
-mbo_perf_feature_space = bg_plot + geom_point(data=mbo_data, aes(x=cp, y=minsplit, alpha=classif.acc),
-                                              colour="white", alpha=0.5) + 
+mbo_data$init = FALSE
+mbo_data$init[1:8] = TRUE
+
+mbo_perf_feature_space = bg_plot + geom_point(data=mbo_data, aes(x=cp, y=minsplit, alpha=classif.acc, colour=init),
+                                              alpha=0.5) + 
+  scale_colour_manual(values = c("red", "white")) + 
   theme(legend.position="none") +
   labs(title="Bayesian Optimization")
 
