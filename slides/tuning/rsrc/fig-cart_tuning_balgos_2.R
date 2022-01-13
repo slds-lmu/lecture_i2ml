@@ -14,17 +14,17 @@ rs_tr <- readRDS("tune_rs_example.rds")
 rs_ggd <- rs_tr %>%
   select(iter = batch_nr, auc = classif.auc) %>% 
   mutate(auc = cummax(auc)) %>%
-  add_column(type = "random search")
+  add_column(optimizer = "random search")
 
 gs_tr <- readRDS("tune_gs_example.rds")
 
 gs_ggd <- gs_tr %>%
   select(iter = batch_nr, auc = classif.auc) %>%
   mutate(auc = cummax(auc)) %>%
-  add_column(type = "grid search")
+  add_column(optimizer = "grid search")
 
 df <- rbind(rs_ggd, gs_ggd)
-
+df$optimizer <- factor(df$optimizer, levels = c("random search", "grid search"))
 
 # PLOT -------------------------------------------------------------------------
 
@@ -42,7 +42,7 @@ gs_pl <- ggplot(gs_ggd, aes(x = iter, y = auc)) +
   xlab("Iterations") +
   labs(title = "Grid Search")
 
-p <- ggplot(df, aes(x = iter, y = auc, color = type)) +
+p <- ggplot(df, aes(x = iter, y = auc, color = optimizer)) +
   geom_line() +
   theme_bw() +
   labs(x = "Iterations", y = "Maximal AUC") +
