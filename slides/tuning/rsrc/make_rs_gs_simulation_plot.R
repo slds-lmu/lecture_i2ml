@@ -4,17 +4,20 @@ library(viridis)
 library(gridExtra)
 library(reshape2)
 
-set.seed(0)
+set.seed(7)
+
+objective_func <- function(xs) {
+  c(y = - (xs[[1]] - 2)^2 - 1e-6*xs[[2]] + 10)
+}
+x1_dom = c(-10, 10)
+x2_dom = c(1,10)
 
 tuning_data_generator <- function(optimizer_algorithm, n_evals=25, resolution=5) {
-  objective_func <- function(xs) {
-    c(y = - (xs[[1]] - 2)^2 - 1e-6*xs[[2]] + 10)
-  }
 
   # domain
   domain <- ps(
-    x1 = p_dbl(-10, 10),
-    x2 = p_dbl(1, 10)
+    x1 = p_dbl(x1_dom[1], x1_dom[2]),
+    x2 = p_dbl(x2_dom[1], x2_dom[2])
   )
 
   codomain <- ps(
@@ -57,14 +60,27 @@ performance_df <- melt(data.frame(iter=rs_df$batch_nr, random_search=rs_df$cumma
                        value.name = "cummax"
 )
 
+step = 0.1
+x1_seq = seq(from = x1_dom[1], to = x1_dom[2], by = step)
+x2_seq = seq(from = x2_dom[1], to = x2_dom[2], by = step)
+x_dom = expand.grid(x1_seq, x2_seq)
+obj = apply(x_dom, 1, objective_func)
+obj_df = data.frame(x = x_dom, obj = obj)
+
 rs_p <- ggplot(data = rs_df, mapping = aes(x=x1, y=x2)) +
   geom_point(shape=21, fill=viridis(1, end=0.9)[1]) +
   geom_rug() +
+  geom_contour(data = obj_df, aes(x=x.Var1, y=x.Var2, z=obj)) + 
+  xlab(expression(x[1])) +
+  ylab(expression(x[2])) + 
   ggtitle("Random Search")
 
 gs_p <- ggplot(data = gs_df, mapping = aes(x=x1, y=x2)) +
   geom_point(shape=21, fill=viridis(1, end=0.9)[1]) +
   geom_rug() +
+  geom_contour(data = obj_df, aes(x=x.Var1, y=x.Var2, z=obj)) +
+  xlab(expression(x[1])) +
+  ylab(expression(x[2])) + 
   ggtitle("Grid Search")
 
 performance_p <- ggplot(data = performance_df, mapping = aes(x=iter,y=cummax, color=optimizer)) +
