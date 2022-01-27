@@ -40,7 +40,7 @@ roc_df <- tail(circle_points, n=n_points-2)
 
 lower_envelope_xs_ys <- lower_envelope_func(c(roc_df$x, 0, 1), c(roc_df$y, 0, 1))
 
-roc_plot <- ggplot() +
+roc_curve <- ggplot() +
   xlim(0, 1) +
   ylim(0, 1) +
   labs(x="False Positive Rate", y="True Positive Rate") +
@@ -56,17 +56,16 @@ cost_curve <- ggplot() +
 
 cost_lines <- list()
 
-roc_plot <- roc_plot +
-  geom_line(data=data.frame(x=c(roc_df$x, 0, 1), y=c(roc_df$y, 0, 1)), aes(x=x,y=y)) +
+roc_curve <- roc_curve +
   annotate("point", x=0,y=0,fill=colors[1], shape=22, color='black', size=3) +
   annotate("point", x=1,y=1,fill=colors[length(colors)], shape=22, color='black', size=3)
 
-p <- grid.arrange(roc_plot, cost_curve, ncol=2, nrow=1)
+p <- grid.arrange(roc_curve, cost_curve, ncol=2, nrow=1)
 ggsave(glue("../figure/lower_envelope_1.png"), width = 7, height = 3.5, plot = p)
 
 for (i in 1:nrow(roc_df)) {
   point <- roc_df[i, ]
-  roc_plot <- roc_plot +
+  roc_curve <- roc_curve +
     annotate("point", x=point$x,y=point$y, fill=colors[i + 1], shape=22, color='black', size=3) +
     geom_line()
   mce_pi <- local({ local_point <- point;
@@ -75,9 +74,12 @@ for (i in 1:nrow(roc_df)) {
   cost_curve <- cost_curve +
     geom_function(fun=mce_pi, color=colors[i + 1])
 
-  p <- grid.arrange(roc_plot, cost_curve, ncol=2, nrow=1)
+  p <- grid.arrange(roc_curve, cost_curve, ncol=2, nrow=1)
   ggsave(glue("../figure/lower_envelope_{i + 1}.png"), width = 7, height = 3.5, plot = p)
 }
+
+roc_curve <- roc_curve +
+  geom_line(data=data.frame(x=c(roc_df$x, 0, 1), y=c(roc_df$y, 0, 1)), aes(x=x,y=y))
 
 # cost_curve
 cost_curve <- cost_curve +
@@ -86,5 +88,5 @@ cost_curve <- cost_curve +
             aes(x=x,y=y), color='black', size=1
   )
 
-p <- grid.arrange(roc_plot, cost_curve, ncol=2, nrow=1)
+p <- grid.arrange(roc_curve, cost_curve, ncol=2, nrow=1)
 ggsave(glue("../figure/lower_envelope_{nrow(roc_df)+2}.png"), width = 7, height = 3.5, plot = p)
