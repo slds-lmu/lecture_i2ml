@@ -4,6 +4,8 @@ library(gridExtra)
 library(purrr)
 library(glue)
 
+theme_set(theme_bw())
+
 eq_spacing <- function(n, r = 1, center = c(0, 0)){
   polypoints <- seq(0, 2*pi, length.out=n+1)
   polypoints <- polypoints[-length(polypoints)]
@@ -30,27 +32,22 @@ lower_envelope_func <- function(xs, ys) {
 
 n_points <- 11
 
-# plot(eq_spacing(40, center = c(1, 0)), asp = 1)
-
 colors <- rainbow(n_points)
 
 circle_points <- eq_spacing((n_points - 1) * 4, center = c(1, 0))
 roc_df <- tail(circle_points, n=n_points-2)
-# roc_df[1, ] <- c(0, 0)
 
 lower_envelope_xs_ys <- lower_envelope_func(c(roc_df$x, 0, 1), c(roc_df$y, 0, 1))
 
 roc_curve <- ggplot() +
   xlim(0, 1) +
   ylim(0, 1) +
-  labs(x="False Positive Rate", y="True Positive Rate") +
-  theme_bw()
+  labs(x="False Positive Rate", y="True Positive Rate")
 
 cost_curve <- ggplot() +
-  xlim(0, 1) +
-  ylim(0, 0.5) +
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 1)) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 0.5)) +
   labs(x=expression(paste(pi["+"], " - Probability of Positive")), y="Error Rate") +
-  theme_bw() +
   geom_function(fun=mce_func(0, 0), color=colors[1]) +
   geom_function(fun=mce_func(1, 1), color=colors[length(colors)])
 
