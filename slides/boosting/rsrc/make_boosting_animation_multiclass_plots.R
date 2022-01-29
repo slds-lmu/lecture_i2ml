@@ -60,7 +60,8 @@ plot_boosting_multiclass <- function(iters) {
   prediction_plot <- ggplot(data = tile_df, mapping = aes(x=Sepal.Length, y=Sepal.Width, fill=Pred.Species, alpha=Prob)) +
     geom_tile(linetype = 0, size = 0) +
     geom_point(data = iris_data, mapping = aes(x=Sepal.Length, y=Sepal.Width, fill=Species, alpha=NULL), shape=21) +
-    scale_fill_viridis(end=0.9, discrete = TRUE)
+    scale_fill_viridis(end=0.9, discrete = TRUE) +
+    guides(alpha="none")
 
   contour_plot <- ggplot(data = contour_df, mapping = aes(x=Sepal.Length, y=Sepal.Width, z=Score, color=Pred.Species, fill=Pred.Species, alpha=Score))
 
@@ -69,7 +70,8 @@ plot_boosting_multiclass <- function(iters) {
     geom_contour(color="black") +
     geom_text_contour(color="black") +
     scale_fill_viridis(end=0.9, discrete = TRUE) +
-    scale_color_viridis(end=0.9, discrete = TRUE)
+    scale_color_viridis(end=0.9, discrete = TRUE) +
+    guides(alpha="none")
 
 
   grid.arrange(prediction_plot, contour_plot, ncol=2, nrow=1)
