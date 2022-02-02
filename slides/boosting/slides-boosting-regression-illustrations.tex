@@ -6,8 +6,8 @@
 
 \newcommand{\titlefigure}{figure/illustration_title.png}
 \newcommand{\learninggoals}{
-  \item Understand impact of different loss functions and
-  \item Understand impact of different base learners for regression
+  \item See simple visualizations of boosting in regression
+  \item Understand impact of different losses and base learners
 }
 
 \title{Introduction to Machine Learning}
@@ -22,51 +22,72 @@
 
 \begin{vbframe}{Gradient boosting illustration - GAM}
 
-We now compare different loss functions and base learners.
-We start with a GAM as base learner and compare the $L2$ loss with
-the $L1$ loss.\\
-\vspace*{0.1cm}
+% We now compare different loss functions and base learners.
+GAM / Splines as BL and compare $L2$ vs. $L1$ loss.
+% the $L1$ loss.\\
+\vspace*{0.2cm}
 
-\textbf{Reminder:} Pseudo-residuals
+% \textbf{Reminder:} Pseudo-residuals
 \begin{itemize}
-\item $L2$: $\tilde{r}(f) = r(f) = y - f(\xv)$
-\item $L1$: $\tilde{r}(f) = sign(y - f(\xv))$
+% \begin{enumerate}
+  \item L2: Init = optimal constant = mean(y);
+      for L1 it's median(y)
+  % target variable in the case of $L2$ loss and median in the case of $L1$ loss.
+  % \item Then calculate pointwise pseudo-resids on training data
+  % \item Fit GAM on training features and pseuso-resids 
+  % \begin{enumerate}
+    \item BLs are cubic $B$-splines with 40 knots.
+    % i.e., $\bmmxth = \sum_{k = 1}^{K + \ell} B_k^{(3)}(\xv)$, with $\ell = 3$ 
+    % and $K = 40$ knots.
+        % and added to the previous
+    % model.
+    % \item This procedure is repeated multiple times.
+  % \end{enumerate}
+% \end{enumerate}
+\item PRs $L2$: $\tilde{r}(f) = r(f) = y - f(\xv)$
+\item PRs $L1$: $\tilde{r}(f) = sign(y - f(\xv))$
+    \item Constant learning rate $0.2$ 
 \end{itemize}
-We consider a regression task with a single feature $x$ and target $y$, with 
-the following true underlying relationship:
+
+\begin{columns}[c]
+\begin{column}{0.5\textwidth}
+\footnotesize
+Univariate toy data: 
 \vspace{-0.2cm}
 \begin{align*}
 y^{(i)} &=  -1 + 0.2 \cdot x^{(i)} + 0.1 \cdot sin(x^{(i)}) + \epsilon^{(i)} \\
-&\text{with } n = 50 \text{ and } \epsilon^{(i)} \sim \mathcal{N}(0, 0.1) \quad 
-\forall i \in \nset
+& n = 50 \text{ ; } \epsilon^{(i)} \sim \mathcal{N}(0, 0.1) \quad 
+% \forall i \in \nset
 \end{align*}
-
-\vfill
-
+\end{column}
+\begin{column}{0.5\textwidth}
 \begin{figure}
-  \includegraphics[width = 0.45\textwidth]{figure/illustration_data_normal.png}
+  \includegraphics[width = 0.99\textwidth]{figure/illustration_data_normal.png}
 \end{figure}
+\end{column}
+\end{columns}
 
-\framebreak
 
-% ------------------------------------------------------------------------------
+% \framebreak
 
-\begin{enumerate}
-  \item We start with the simplest model, the optimal constant -- mean of the 
-  target variable in the case of $L2$ loss and median in the case of $L1$ loss.
-  \item We improve the model by calculating the pointwise 
-  pseudo-residuals on the training data, and fit a GAM on the residuals.
-  \begin{enumerate}
-    \item The GAM base learners model the conditional mean via cubic $B$-splines 
-    with 40 knots. 
-    % i.e., $\bmmxth = \sum_{k = 1}^{K + \ell} B_k^{(3)}(\xv)$, with $\ell = 3$ 
-    % and $K = 40$ knots.
-    \item In each step, the GAM fitted on the current pseudo-residuals is
-    multiplied by a constant learning rate of $0.2$ and added to the previous
-    model.
-    \item This procedure is repeated multiple times.
-  \end{enumerate}
-\end{enumerate}
+% % ------------------------------------------------------------------------------
+
+% \begin{enumerate}
+%   \item L2: Init = optimal constant = mean(y);
+%       for L1 it's median(y).
+%   % target variable in the case of $L2$ loss and median in the case of $L1$ loss.
+%   \item Then calculate pointwise pseudo-resids on training data
+%   \item Fit GAM on training features and pseuso-resids 
+%   % \begin{enumerate}
+%     \item BLs are cubic $B$-splines with 40 knots. 
+%     % i.e., $\bmmxth = \sum_{k = 1}^{K + \ell} B_k^{(3)}(\xv)$, with $\ell = 3$ 
+%     % and $K = 40$ knots.
+%     \item Constant learning rate $0.2$ 
+%         % and added to the previous
+%     % model.
+%     % \item This procedure is repeated multiple times.
+%   % \end{enumerate}
+% \end{enumerate}
 
 \end{vbframe}
 
@@ -127,18 +148,18 @@ Iteration 100
 
 \footnotesize
 
-The nature of the pseudo-residuals affects gradual model fit: as $L1$ only 
-considers residuals' sign, the corresponding base learners are less affected by very large or small values
-compared to $L2$ and hence lead to more moderate changes.%'s approximation of ever smaller residuals.
+Shape of PRs affects gradual model fit: $L1$ only 
+sees resids' sign, BLs are not affected size of values
+as in $L2$ and hence lead to more moderate changes.%'s approximation of ever smaller residuals.
 
 \end{frame}
 
 % ------------------------------------------------------------------------------
 
 \begin{frame}{GAM with Huber loss}
-We can also use Huber loss, which is closer to $L2$ for large $\delta$ values 
-and closer to $L1$ for 
-smaller $\delta$ values. Top: $\delta$ = 2, bottom: $\delta$ = 0.2.
+% Closer to $L2$ for large $\delta$ values and closer to $L1$ for 
+% smaller $\delta$ values. 
+Top: $\delta$ = 2, bottom: $\delta$ = 0.2.
 
 \vfill
 
@@ -154,7 +175,7 @@ Iteration 10
 \footnotesize
 \begin{columns}[c]
 \begin{column}{0.75\textwidth}
-We see how for smaller $\delta$ (bottom) pseudo-residuals are often effectively
+For small $\delta$, PRs are often
 bounded, resulting in $L1$-like behavior, while the upper plot more closely 
 resembles $L2$ loss.
 \end{column}
@@ -171,8 +192,8 @@ resembles $L2$ loss.
 % ------------------------------------------------------------------------------
 
 \begin{frame}{GAM with outliers}
-Instead of normally distributed noise we can assume a $t$-distribution, leading 
-to outliers in the observed target values.
+Instead of Gaussian noise, let's use $t$-distrib, that leads 
+to outliers in $y$.
 Top: $L2$, bottom: $L1$.
 
 \vfill
@@ -204,7 +225,7 @@ residuals' sign and not their magnitude, resulting in a more robust model.
 % ------------------------------------------------------------------------------
 
 \begin{frame}{LM with $L2$ vs $L1$ loss}
-Instead of using a GAM as base learner we now use a simple linear model.
+% Instead of using a GAM as base learner we now use a simple linear model.
 % It follows that this is equivalent to applying gradient descent on linear 
 % regression.
 Top: $L2$, bottom: $L1$.
@@ -253,10 +274,10 @@ Iteration 100
 \vfill
 
 \footnotesize
-For $L2$, as $\tilde r(f) = r(f)$, we find the optimal model in the very
-first iteration; only the multiplicative learning rate slows down optimization.
-In the $L1$ case the base learner LMs fit pseudo-residuals that differ from 
-model residuals, leading to a less monotonic optimization path.
+$L2$: as $\tilde r(f) = r(f)$, BL of 1st iter already optimal; 
+but learn rate slows us down.
+% $L1$: Less se learner LMs fit pseudo-residuals that differ from 
+% model residuals, leading to a less monotonic optimization path.
 
 \end{frame}
 % 
@@ -308,28 +329,25 @@ model residuals, leading to a less monotonic optimization path.
 
 % ------------------------------------------------------------------------------
 
-\begin{vbframe}{LM: gb vs gd}
+\begin{vbframe}{LM: Grad Boost vs Grad Desc Deep Dive}
 
 \footnotesize
 
 \begin{itemize}
-  \item As we have seen, boosting with LMs and $L2$ 
-  loss simply approaches the closed-form OLS solution with a speed determined by 
-  the learning rate $\alpha$.
-  \item This is perfectly equivalent to fitting an LM via 
-  \textbf{gradient descent}, as a gradient step in parameter space is a 
-  gradient step in function space for this specific case.
-  \item Recall the parameter update for GD with learning rate $\alpha$:
+  \item GB with LMs and $L2$ is basically equivalent to fit LM via GD. 
+  % the LR $\alpha$.
+  % \item Equivalent to fitting LM via GD. 
+  \item Here, a grad step in param space equals a grad step in function space.
+  \item GD update for LMs:
   $\thetab^{[m+1]} \leftarrow \thetam - \alpha \cdot \nabla_{\thetam} 
   \riske(\thetam) =  
-  \thetam + \alpha (-\Xmat^T \yv + \Xmat^T\Xmat \thetam).$ \\
-  \item Now compute the update for a boosted LM with current model 
-  $\Xmat \thetam$ (note that adding a linear base learner to an LM is 
-  equivalent to summing parameters):
+  \thetam + \alpha (-\Xmat^T \yv + \Xmat^T\Xmat \thetam)$ \\
+  \item Now let's fit LM against PRs in GB\\
+  NB: adding a linear BL to an LM simply sums params
   \begin{eqnarray*}
     \footnotesize
     \frac{\partial}{\partial \thetab^{[m+1]}} 
-    \left \| (\yv - \Xmat \thetam) - \Xmat \thetab^{[m+1]}) \right \|^2_2 
+    \left \| (\yv - \Xmat \thetam) - \Xmat \thetab^{[m+1]} \right \|^2_2 
     &=& 0 \\
     -2\Xmat^T (\yv - \Xmat \thetam) + 2\Xmat^T\Xmat 
     \thetab^{[m+1]} &=& 0 \\
@@ -341,15 +359,12 @@ model residuals, leading to a less monotonic optimization path.
     - \thetam % \quad \quad \textcolor{gray}{\rvert \cdot (-\Xmat^T\Xmat)} 
     \\
     \thetab^{[m+1]} &=& - \Xmat^T \yv + \Xmat^T\Xmat 
-    \thetam.
+    \thetam
   \end{eqnarray*}
   $\Rightarrow \fh^{[m+1]} = \Xmat \tilde \thetab^{[m+1]} = 
   \Xmat \left( \thetam + \alpha (-\Xmat^T \yv + 
-  \Xmat^T\Xmat \thetam) \right).$
+  \Xmat^T\Xmat \thetam) \right)$
 \end{itemize}
-
-
-
 \end{vbframe}
 
 % ------------------------------------------------------------------------------
