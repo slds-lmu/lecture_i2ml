@@ -10,33 +10,8 @@ library(BBmisc)
 library(reshape)
 
 
-load("data/ozone_example.RData")
 
-dfp =df_incdata[nobs == 50, ]
-
-p = ggplot(data = dfp, aes(x = 0, y = value, fill = variable))
-p = p + geom_boxplot() + labs(colour = " ")
-p = p + scale_colour_discrete(labels = c("Train error", "Test error"))
-p = p + xlab(" ") + ylab("Mean Squared Error")
-p = p + ylim(c(0, 400)) + theme(axis.title.x=element_blank(),
-                                axis.text.x=element_blank(),
-                                axis.ticks.x=element_blank()) +
-  scale_fill_brewer(palette="Dark2")
-p
-######################################################
-
-library(data.table)
-
-dfp = setDT(df_incdata)[, .(mean.mse = median(value)), by = c("nobs", "variable")]
-
-p = ggplot(data = dfp, aes(x = nobs, y = mean.mse, colour = variable))
-p = p + geom_line(lwd = 1.2) + ylim(c(0, 100)) + labs(colour = " ")
-p = p + scale_colour_discrete(labels = c("Train error", "Test error"))
-p = p + xlab("Size of data set") + ylab("MSE") +
-  scale_color_brewer(palette="Dark2")
-p
-######################################################
-load("data/ozone_example.RData")
+load("ozone_example.RData")
 
 p = ggplot(data = df_incfeatures, aes(x = type, y = mean.mse, colour = variable))
 p = p + geom_line(lwd = 1.2) + labs(colour = " ")
