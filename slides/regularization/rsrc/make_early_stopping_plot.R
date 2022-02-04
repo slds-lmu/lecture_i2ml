@@ -1,3 +1,6 @@
+# ------------------------------------------------------------------------------
+# FIG: EARLY STOPPING
+# ------------------------------------------------------------------------------
 
 library(knitr)
 library(mlr)
@@ -9,24 +12,12 @@ library(gridExtra)
 library(BBmisc)
 library(reshape)
 
-
-
-load("ozone_example.RData")
-
-p = ggplot(data = df_incfeatures, aes(x = type, y = mean.mse, colour = variable))
-p = p + geom_line(lwd = 1.2) + labs(colour = " ")
-p = p + scale_colour_discrete(labels = c("Train error", "Test error"))
-p = p + xlab("Number of features") + ylab("Mean Squared Error")
-p = p + ylim(c(0, 150))
-p = p + scale_x_continuous(breaks = 0:12) 
-p = p + scale_color_brewer(palette="Dark2")
-p
-######################################################
-
-load("rsrc/early_stopping1.RData")
+# DATA -------------------------------------------------------------------------
+load("early_stopping1.RData")
 
 o_data$type <- factor(o_data$type, levels=c("train", "test"))
 
+# PLOTS ------------------------------------------------------------------------
 p1 <- ggplot(o_learn, aes(x = id, y = value)) +
   geom_line(aes(colour = variable), lwd = 1.2) +
   geom_vline(xintercept = best_it, linetype = "solid", lwd = 2,
@@ -35,16 +26,16 @@ p1 <- ggplot(o_learn, aes(x = id, y = value)) +
              linetype = "dashed") +
   annotate("label", x = 30, y = 180, label = "stopped early") +
   annotate("label", x = 4e5, y = 180, label = "overfitted") +
-  scale_x_log10() + 
+  scale_x_log10() +
   xlab("Iterations") +
   ylab("Mean Squared Error") +
   labs(colour = " ")  +
   theme(legend.position="bottom") +
   scale_color_brewer(palette="Dark2")
 
-p2 <- ggplot(o_data, aes(x=V8*100, y=V4)) + 
+p2 <- ggplot(o_data, aes(x=V8*100, y=V4)) +
   geom_point(data=o_data, aes(colour=type, alpha=type)) +
-  scale_alpha_manual(values = c(1, 0.2), guide = "none") + 
+  scale_alpha_manual(values = c(1, 0.2), guide = "none") +
   geom_line(data=o_fit, aes(linetype=variable, x=x, y=value), alpha = 1,
             lwd = 2, colour="darkgrey") +
   scale_linetype_manual(values = c("dashed", "solid")) +
@@ -52,12 +43,10 @@ p2 <- ggplot(o_data, aes(x=V8*100, y=V4)) +
   ylab("Ozone level") +
   theme(legend.position="bottom") +
   guides(linetype = FALSE) +
-  # scale_alpha(guide = "none") + 
+  # scale_alpha(guide = "none") +
   labs(colour = " ") +
   scale_color_brewer(palette="Dark2")
 
-grid.arrange(p1, p2, ncol=2)
-###################################################
+p <- grid.arrange(p1, p2, ncol=2)
 
-
-
+ggsave("../figure/early_stopping.png", plot=p, width=9, height=6)
