@@ -4,9 +4,10 @@
 \input{../../latex-math/ml-ensembles.tex}
 \input{../../latex-math/ml-trees.tex}
 
-\newcommand{\titlefigure}{figure/gbm_anim_51.png}
+\newcommand{\titlefigure}{figure_man/gbm_leaf_adjustment.pdf}
 \newcommand{\learninggoals}{
-  \item \textcolor{blue}{@BB pls add}
+  \item Loss optimal terminal coefficients
+  \item GB with trees for multiclass problems
 }
 
 \title{Introduction to Machine Learning}
@@ -20,14 +21,19 @@
 % ------------------------------------------------------------------------------
 
 
-\begin{vbframe}{Theoretical Background}
- 
-One can write a tree as: $ b(\xv) = \sum_{t=1}^{T} c_t \mathds{1}_{\{\xv \in R_t\}} $,
-where $R_t$ are the terminal regions and $c_t$ the corresponding constant parameters.
+\begin{vbframe}{Adapting terminal coefficients}
+
+\begin{itemize}
+\item Tree as additive model: $ b(\xv) = \sum_{t=1}^{T} c_t \mathds{1}_{\{\xv \in R_t\}} $,
+\item $R_t$ are the terminal regions; $c_t$ are terminal constants 
+\end{itemize}
+
+% One can write a tree as: $ b(\xv) = \sum_{t=1}^{T} c_t \mathds{1}_{\{\xv \in R_t\}} $,
 
 \vspace*{0.2cm}
 
-For a fitted tree with regions $R_t$, the special additive structure can be exploited in boosting:  %Finished here
+The GB model is still additive in the regions:
+% For a fitted tree with regions $R_t$, the special additive structure can be exploited in boosting:  %Finished here
 
 \begin{align*}
   \fm(\xv) &= \fmd(\xv) +  \alpha^{[m]} \bl(\xv) \\
@@ -47,7 +53,7 @@ With $\ctmt = \alpha^{[m]} \cdot \ctm$ in the case that $\alpha^{[m]}$ is a cons
 
 \framebreak
 \begin{small}
-We do the same steps as before: (1) calculate the pseudo-residuals, (2) fit a tree against pseudo-residuals, \textbf{but now} we keep only the structure of the tree and optimize the $c$ parameter in a (further) post-hoc step.
+After the tree has been fitted against the PRs, we can adapt terminal constants in a second step to become more loss optimal.
 
 $$
 \fm(\xv) = \fmd(\xv) +  \sum_{t=1}^{\Tm} \ctmt \mathds{1}_{\{\xv \in \Rtm\}}. 
@@ -75,22 +81,26 @@ $$ \ctmt = \argmin_{c} \sum_{\xi \in \Rtm} L(\yi, \fmd(\xi) + c). $$
 \framebreak
 
 An alternative approach ist to directly fit a loss-optimal tree.
-The risk function is then defined by:
+Risk for data in a node:
 $$
 \mathcal{R}(\mathcal{N}') = \sum_{i \in \mathcal{N}'} L(\yi, \fmd(\xi) + c)
 $$
 
-with $\mathcal{N}'$ being the index set of a specific (left or right) node after splitting and $c$ being a constant value added to the current model for this node.
+with $\mathcal{N}'$ being the index set of a specific (left or right) node after splitting and $c$ the constant of the node.
 
-Thus, instead of having a two-step approach of first fitting a tree to the pseudo-residuals of the current model and then finding the optimal value for $c$, we now directly build a tree that finds $c$ loss-optimally. Since $c$ is unknown, it needs to be determined, which can either be done by a line search or by taking the derivative:
-$$
-\frac{\partial{\mathcal{R}(\mathcal{N}')}}{\partial c} = \sum_{i \in \mathcal{N}'} \frac{\partial{L(\yi, \fmd(\xi) + c)}}{\partial f \rvert_{f = \fmd + c}} = 0
-$$
+\vfill
+
+% Thus, instead of having a two-step approach of first fitting a tree to the pseudo-residuals of the current model and then finding the optimal value for $c$, we now directly build a tree that finds $c$ loss-optimally.
+$c$ can be found by line search or analytically for some losses.
+% Since $c$ is unknown, it needs to be determined, which can either be done by a line search or by taking the derivative:
+% $$
+% \frac{\partial{\mathcal{R}(\mathcal{N}')}}{\partial c} = \sum_{i \in \mathcal{N}'} \frac{\partial{L(\yi, \fmd(\xi) + c)}}{\partial f \rvert_{f = \fmd + c}} = 0
+% $$
 % ------------------------------------------------------------------------------
-\framebreak
-\input{algorithms/gradient_boosting_tree_algorithm_altern.tex}
+% \framebreak
+% \input{algorithms/gradient_boosting_tree_algorithm_altern.tex}
 
-The tree algorithm based on the CART algorithm of Breiman shows one partitioning step based on the risk function we introduced before. 
+% The tree algorithm based on the CART algorithm of Breiman shows one partitioning step based on the risk function we introduced before. 
 \end{vbframe}
 
 % ------------------------------------------------------------------------------
@@ -100,27 +110,28 @@ The tree algorithm based on the CART algorithm of Breiman shows one partitioning
 
 \begin{itemize}
   \item From Friedman, J. H. - Greedy Function Approximation: A Gradient Boosting Machine (1999)
-  \item Determining the tree structure for each $\hat{b}^{[m]}_k$ by $L2$ loss works just like before in the 2-class problem.
+  \item We again model one discriminant function per class.    
+  \item Determining the tree structure works just like before.
 \item In the estimation of the $c$ values, i.e., the heights of the terminal regions, however, all models depend on each other because of the definition
 of $L$. Optimizing this is more difficult, so we will skip some details and present the main idea and results.
 \end{itemize}
 
 \framebreak
 
-\begin{itemize}
-  \item The post-hoc, loss-optimal heights of the terminals $\hat{c}_{tk}^{[m]}$ are:
-  $$ 
-  \hat{c}_{tk}^{[m]} = - \argmin_{c_{tk}^{[m]} } \sum_{i=1}^n \sum_{k=1}^g \mathds{1}_{\{y = k\}} \ln \pi_k^{[m]}(\xv^{(i)}) \,.
-  $$
-\item Softmax trafo: $\pi_k^{[m]}(\xv) = \frac{\exp(f_k^{[m]}(\xv))}{\sum_j \exp(f_j^{[m]}(\xv))},$ with 
-\item The $k$-th model:
-  $
-  \hat{f}_k^{[m]}(\xv^{(i)})) = \hat{f}_k^{[m-1]}(\xv^{(i)}) + \sum_{t=1}^{T_k^{[m]}} \hat{c}_{tk}^{[m]} \mathds{1}_{\{\xv^{(i)} \in R_{tk}^{[m]}\}}. 
-  $
+% \begin{itemize}
+%   \item The post-hoc, loss-optimal heights of the terminals $\hat{c}_{tk}^{[m]}$ are:
+%   $$ 
+%   \hat{c}_{tk}^{[m]} = - \argmin_{c_{tk}^{[m]} } \sum_{i=1}^n \sum_{k=1}^g \mathds{1}_{\{y = k\}} \ln \pi_k^{[m]}(\xv^{(i)}) \,.
+%   $$
+% \item Softmax trafo: $\pi_k^{[m]}(\xv) = \frac{\exp(f_k^{[m]}(\xv))}{\sum_j \exp(f_j^{[m]}(\xv))},$ with 
+% \item The $k$-th model:
+%   $
+%   \hat{f}_k^{[m]}(\xv^{(i)})) = \hat{f}_k^{[m-1]}(\xv^{(i)}) + \sum_{t=1}^{T_k^{[m]}} \hat{c}_{tk}^{[m]} \mathds{1}_{\{\xv^{(i)} \in R_{tk}^{[m]}\}}. 
+%   $
   % resulting from the multinomial loss function $L(y, f_1(\xv), \ldots f_g(\xv)) = - \sumkg \mathds{1}_{\{y = k\}} \ln \pikx$.
   %and $\pikx = \frac{\exp(f_k(\xv))}{\sum_j \exp(f_j(\xv))}$ as before.\medskip
 
-\end{itemize}
+% \end{itemize}
 
 
   % \item In each iteration $m$ we calculate the pseudo-residuals
