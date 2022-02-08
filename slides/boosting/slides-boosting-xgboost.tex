@@ -6,8 +6,9 @@
 
 \newcommand{\titlefigure}{figure_man/split-finding02.png}
 \newcommand{\learninggoals}{
-  \item Understand different ways gradient boosting can be made more efficient
-  \item Learn how split finding can be sped up and parallelized
+  \item Overview over XGB
+  \item Regularization in XGB
+  \item Approximate split finding    
 }
 
 \title{Introduction to Machine Learning}
@@ -22,30 +23,26 @@
 % sources: https://towardsdatascience.com/boosting-algorithm-xgboost-4d9ec0207d
 % sources: https://devblogs.nvidia.com/parallelforall/gradient-boosting-decision-trees-xgboost-cuda/
 
-\begin{vbframe}{Motivation}
+\begin{vbframe}{XBG - Extreme Gradient Boosting}
 
-  \pkg{XGBoost} (short for eXtreme Gradient Boosting) is an open-source and scalable tree boosting system \textbf{(Chen and Guestrin 2016)}.
 
-  \lz
 
   \begin{itemize}
-    \item Efficient implementation in \emph{C++} with interfaces to many other programming languages.
-    \item Parallel approximate split finding.
-    \item Additional regularization techniques.
-    \item Feature and Data subsampling.
-    \item Cluster and GPU support.
+    \item Open-source and scalable tree boosting system
+    \item Efficient implementation in \emph{C++} with interfaces to many other programming languages
+    \item Parallel approximate split finding
+    \item Additional regularization techniques
+    \item Feature and data subsampling
+    \item Cluster and GPU support
+    \item Highly optimized and often achieves top performance in benchmarks 
+        -- if properly tuned
   \end{itemize}
-
-  \lz
-
-  \pkg{XGBoost} (and related implementations Catboost and LightGBM) are highly optimized and powerful machine learning frameworks and often achieve top performance in benchmarks and machine learning challenges.
-
 
 \end{vbframe}
 
-\begin{frame}{Regularization}
+\begin{frame}{3 Extra Regularization Terms}
 
-  \pkg{XGBoost} uses a risk function with 3 regularization terms:
+  % 3 regularization terms:
 
   \begin{multline*}
     \riskr^{[m]} = \sum_{i=1}^{n} L\left(\yi, \fmd(\xi) + \bl(\xi)\right)\\
@@ -53,27 +50,24 @@
   \end{multline*}
 
   \lz
-
-  with $J_1(\bl) = T^{[m]}$ the number of leaves in the tree to penalize tree depth.
-
-  \lz
-
-  $J_2(\bl) = \left\|\mathbf{c}^{[m]}\right\|^2_2$ and $J_3(\bl) = \left\|\mathbf{c}^{[m]}\right\|_1$ are $L2$ and $L1$ penalties of the terminal region values $c_t^{[m]}, t=1,\dots,T^{[m]}$.
-
+  \begin{itemize}
+    \item $J_1(\bl) = T^{[m]}$:  Nr of of leaves to penalize tree depth
+    \item $J_2(\bl) = \left\|\mathbf{c}^{[m]}\right\|^2_2$:  L2 penalty over leaf values 
+    \item $J_3(\bl) = \left\|\mathbf{c}^{[m]}\right\|_1$: L1 penalty over leaf values 
+  \end{itemize}
 \end{frame}
+
 
 
 \begin{vbframe}{Tree Growing}
 
-  \pkg{XGBoost} grows trees with a maximum depth \texttt{max\_depth}.
+  \begin{itemize}
+    \item Grown to max depth 
+    \item Fully expanded and leaves split even if no improvement
+    \item At the end, each split that did not improve risk is pruned
+  \end{itemize}
 
   \lz
-
-  Trees are fully expanded and leaves are split even if no improvement in risk can be achieved.
-
-  \lz
-
-  Only after the tree is fully expanded each split that did not improve the risk is pruned.
 
   \begin{figure}
     \includegraphics[trim=0 260 230 20, clip, width=\textwidth,page=2]{figure_man/trees_balance.pdf}
@@ -84,7 +78,7 @@
 
 \begin{vbframe}{Subsampling}
 
-  \textbf{Data Subsampling}: \pkg{XGBoost} applies stochastic gradient boosting.
+  \textbf{Data Subsampling}: XGB uses stochastic gradient GB.
 
   \lz
 
@@ -94,17 +88,17 @@
 
   The fraction of features for a split can be randomly sampled for each
   \begin{enumerate}
-    \item tree,
-    \item level of a tree, or
-    \item split.
+    \item tree
+    \item level of a tree
+    \item split
   \end{enumerate}
 
   \lz
 
-  \begin{itemize}
-    \item Feature subsampling speeds up training even further and can creates a more diverse ensembles that will often perform better.
-    \item Subsampling rates are usually defined as a fraction of features $[0,1]$ instead of an absolute number.
-  \end{itemize}
+  % \begin{itemize}
+ Feature subsampling speeds up training even further and can create a more diverse ensembles that will often perform better.
+    % \item Subsampling rates are usually defined as a fraction of features $[0,1]$ instead of an absolute number.
+  % \end{itemize}
 
 
 \end{vbframe}
@@ -112,91 +106,85 @@
 
 \begin{vbframe}{Approximate split-finding algorithms}
 
-  To speed up the tree building for large datasets it is possible to speed up the split finding:
-
-  \lz
-
-  Instead of iterating over all possible split points (exact greedy algorithm) only a predefined number of splits $l$ per feature is considered.
-
-  \lz
-
-  Usually these are percentiles of the empirical distribution of each feature, hence referred to as \textbf{Histogram-based Gradient Boosting}.
-
-  \lz
-
-  These percentiles can be computed once (global approximate algorithm) or recomputed after each split (local approximate algorithm).
-
-  \lz
-
-  To speed up the computation for the percentiles a \emph{weighted quantile-sketch} can be used as an efficient approximation.
+\begin{itemize}
+\item Speeds up tree building for large data
+\item Considers not all, but only $l$ splits per feature
+\item Usually percentiles of the empirical distribution of each feature
+\item Computed once (global) or recomputed after each split (local)
+\item Called \textbf{Histogram-based Gradient Boosting}
+% \item For further speed-up  a \emph{weighted quantile-sketch} can be used
+\end{itemize}
 
 
-  \framebreak
+  % Comparison of global (left) and local (right) histogram-based approximate split finding for feature $x_1$ with $l=10$.
 
-  Comparison of global (left) and local (right) histogram-based approximate split finding for feature $x_1$ with $l=10$.
-
-  \lz
+  % \lz
 
   \begin{small}
     \begin{minipage}[b]{0.49\textwidth}
       \begin{figure}
         \includegraphics[width=\textwidth]{figure_man/split-finding01.png}
-        \caption*{Global approximation.}
+        \caption*{Global}
       \end{figure}
 
     \end{minipage}
     \begin{minipage}[b]{0.49\textwidth}
       \begin{figure}
         \includegraphics[width=\textwidth]{figure_man/split-finding02.png}
-        \caption*{Local approximation.}
+        \caption*{Local}
       \end{figure}
     \end{minipage}
   \end{small}
 
-  \lz
-
-  Blue lines indicate percentiles that are considered as split points and the red line is the selected split.
+  {\footnotesize
+  Blue lines are percentiles and red = selected split}
 
   \framebreak
 
-  \begin{algorithm}[H]
-    \begin{footnotesize}
-      \begin{center}
-        \begin{algorithmic}[1]
-          \For{$j = 1 \to p$}
-          \State Define possible split proposals $S_j = \{s_{j}^{(1)}, s_{j}^{(2)}, \hdots, s_{j}^{(l)}\}$ by percentiles on feature $j$.
-          \State Proposal can be done once per tree (global), or in each node (local).
-          \EndFor
-          \For{$j = 1 \to p$}
-          \State ${G}_{kv} \gets \sum_{i \in \{i|s_j^{(v)} \geq x_j^{(i)} > s_{k}^{(v - 1)}\}} g(\xi)$
-          \State ${H}_{kv} \gets \sum_{i \in \{i|s_j^{(v)} \geq x_j^{(i)} > s_{k}^{(v - 1)}\}} h(\xi)$
-          \EndFor
-          \State Follow same steps as exact algorithm to find max score only among proposed splits.
-        \end{algorithmic}
-      \end{center}
-    \end{footnotesize}
-    \caption{Approximate algorithm for split finding}
-  \end{algorithm}
+  % \begin{algorithm}[H]
+  %   \begin{footnotesize}
+  %     \begin{center}
+  %       \begin{algorithmic}[1]
+  %         \For{$j = 1 \to p$}
+  %         \State Define possible split proposals $S_j = \{s_{j}^{(1)}, s_{j}^{(2)}, \hdots, s_{j}^{(l)}\}$ by percentiles on feature $j$.
+  %         \State Proposal can be done once per tree (global), or in each node (local).
+  %         \EndFor
+  %         \For{$j = 1 \to p$}
+  %         \State ${G}_{kv} \gets \sum_{i \in \{i|s_j^{(v)} \geq x_j^{(i)} > s_{k}^{(v - 1)}\}} g(\xi)$
+  %         \State ${H}_{kv} \gets \sum_{i \in \{i|s_j^{(v)} \geq x_j^{(i)} > s_{k}^{(v - 1)}\}} h(\xi)$
+  %         \EndFor
+  %         \State Follow same steps as exact algorithm to find max score only among proposed splits.
+  %       \end{algorithmic}
+  %     \end{center}
+  %   \end{footnotesize}
+  %   \caption{Approximate algorithm for split finding}
+  % \end{algorithm}
 
 \end{vbframe}
 
 \begin{vbframe}{Dropout Additive-Regression Trees}
 
-  Dropout Additive-Regression Trees (DART) introduces the idea of \emph{dropout} regularization used in neural networks to boosting.
+  DART introduces idea of \emph{dropout} regularization used in DL to boosting
 
   \lz
-
-  When computing $\fmdh$ for the next boosting iteration a random subset $D \subset \hat{b}^{[1]}, \dots \hat{b}^{[m-1]}$ of size $(m-1) \cdot p_\text{drop}$ is ignored.
-  To avoid \emph{overshooting} when predicting with the full ensemble, the base learners are scaled by $\frac{1}{|D| + 1}\blh$ and $\frac{|D|}{|D| + 1}\hat{b}\quad \forall \hat{b}\;\in D$.
-
-  \lz
-
-  The bounds of $p_\text{drop}$ provide a nice interpretation:
   \begin{itemize}
-    \item $p_\text{drop}=0$ corresponds to ordinary gradient boosting.
-    \item $p_\text{drop}=1$ means that all base learner are trained independently and are equally weighted. The model behaves very similar to a random forest.
+      \item In iteration $m$ we construct $\blh$
+      \item To compute PRs we need $\fmdh$
+      \item We compute this differently, by using random subset $D \subset \hat{b}^{[1]}, \dots \hat{b}^{[m-1]}$ of size $(m-1) \cdot p_\text{drop}$ is ignored
+      \item  To avoid \emph{overshot predictions} in ensemble, we scale the BLs at the end of the iteration, by $\frac{1}{|D| + 1}\blh$ and $\frac{|D|}{|D| + 1}\hat{b}\quad \forall \hat{b}\;\in D$.
+      % \item We scale the BLs at the end of the iteraton
+      % \item  To avoid \emph{overshot predictions} in ensemble, BLs are scaled by $\frac{1}{|D| + 1}\blh$ and $\frac{|D|}{|D| + 1}\hat{b}\quad \forall \hat{b}\;\in D$.
   \end{itemize}
-  $\Rightarrow p_\text{drop}$ represents a smooth transition from gradient boosting to a random forest.
+
+  \lz
+
+  % The bounds of $p_\text{drop}$ provide a nice interpretation:
+  \begin{itemize}
+    \item $p_\text{drop}=0$: Ordinary GB
+    \item $p_\text{drop}=1$: All BLs are trained independently, and equally weighted. 
+        Model is very similar to random forest.
+  \end{itemize}
+  $\Rightarrow p_\text{drop}$ is smooth transition from GB to RF
 
 
 
@@ -204,24 +192,13 @@
 
 
 \begin{vbframe}{Parallelism and GPU Computation}
-
-  Since gradient boosting is an inherently sequential algorithm it is unclear how to run it in parallel on multiple cores or machines.
-
-  \lz
-
-  \textbf{But:} The building of the base learners can be parallelized.
-
-  \lz
-
-  The sorting of data and split evaluation of in different branches of tree base learners can be computed in parallel by using efficient block data structures.
-
-  \lz
-
-  Instead of using a (multithread) CPU, a large increase in efficiency can be gained by moving computations to the Graphical Processing Unit (GPU).
-
-  \lz
-
-  Similar to modern deep learning frameworks GPUs are able to conduct a huge amount of parallel computations using the CUDA architecture.
+  
+    \begin{itemize}
+        \item GB is inherently sequential, not easy to parallelize
+        \item \textbf{But:} Building of BLs can be parallelized
+        \item Data sort and split eval in different branches of tree BLs can be computed in parallel by using efficient block data structures
+        \item Can also gain huge speed-up by moving from CPU to GPU
+    \end{itemize}
 
 
 \end{vbframe}
@@ -247,7 +224,7 @@
         \texttt{subsample}          & R    & $[0.1,1]$           & --     & 1       & subsample ratio of the training instances                                              \\
         \bottomrule
       \end{tabular}
-      \caption{Important \pkg{XGBoost} HPs with default values, typical ranges and transformations.}
+      % \caption{Important \pkg{XGBoost} HPs with default values, typical ranges and transformations.}
     \end{table}
   \end{tiny}
 \end{vbframe}
