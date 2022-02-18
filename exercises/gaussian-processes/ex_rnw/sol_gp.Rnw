@@ -1,12 +1,12 @@
 
 \begin{enumerate}
 \item Prior distribution (assuming the same notation as in the lecture): $$\bm{f} \sim \mathcal{N}(\bm{m}, \bm{K})$$ with $\bm{m} = m(\bm{x})$ and $\bm{K}$ defined by the entries $\bm{K}_{ij} = k(x_i,x_j)$. NB: Note the (in-)finite Gaussian property of a GP. 
-\item Note that the posterior distribution $\bm{f}|\bm{y},\bm{x}$ in this case is different from the one of $\bm{f}_* | \bm{x}_*, \bm{x}, \bm{y}$ and also from the marginal distribution of $\bm{y} \sim \mathcal{N}(\bm{m},\bm{K} + \sigma^2 \bm{\Psi})$! We have: 
+\item Note that the posterior distribution $\bm{f}|\bm{y},\bm{x}$ in this case is different from the one of $\bm{f}_* | \bm{x}_*, \bm{x}, \bm{y}$ and also from the marginal distribution of $\bm{y} \sim \mathcal{N}(\bm{m},\bm{K} + \sigma^2 \bm{I})$! We have: 
 \begin{equation}
 \begin{split}
 p(\bm{f}|\bm{y}) &\propto p(\bm{y}|\bm{f}) \cdot p(\bm{f}) \\
-&\propto \exp(-\frac{1}{2} (\bm{y}-\bm{f})^\top (\sigma^{2} \bm{\Psi})^{-1}(\bm{y}-\bm{f})) \cdot \exp(-\frac{1}{2}(\bm{f}-\bm{m})^\top \bm{K}^{-1} (\bm{f}-\bm{m}))\\
-&\propto \exp(-\frac{1}{2} \{ \bm{f}^\top \underbrace{((\sigma^{2} \bm{\Psi})^{-1} + \bm{K}^{-1})}_{=: \bm{K}^{-1}_{post}} \bm{f} -2 \bm{f}^\top \underbrace{((\sigma^{2} \bm{\Psi})^{-1} \bm{y} + \bm{K}^{-1} \bm{m})}_{=: \tilde{\bm{f}}} \})\\
+&\propto \exp(-\frac{1}{2} (\bm{y}-\bm{f})^\top (\sigma^{2} \bm{I})^{-1}(\bm{y}-\bm{f})) \cdot \exp(-\frac{1}{2}(\bm{f}-\bm{m})^\top \bm{K}^{-1} (\bm{f}-\bm{m}))\\
+&\propto \exp(-\frac{1}{2} \{ \bm{f}^\top \underbrace{((\sigma^{2} \bm{I})^{-1} + \bm{K}^{-1})}_{=: \bm{K}^{-1}_{post}} \bm{f} -2 \bm{f}^\top \underbrace{((\sigma^{2} \bm{I})^{-1} \bm{y} + \bm{K}^{-1} \bm{m})}_{=: \tilde{\bm{f}}} \})\\
 &\propto \exp(-\frac{1}{2} \{ \bm{f}^\top \bm{K}^{-1}_{post} \bm{f} - 2 \bm{f}^\top\tilde{\bm{f}}  \})
 \end{split}
 \end{equation}
@@ -22,12 +22,12 @@ which is the so-called \emph{kernel} of a multivariate normal distribution $\mat
 \item In order to get the posterior predictive distribution for a new sample $x_*$ from the same data-generating process, we could derive $$p(y_* | x_*, \bm{y}, \bm{x}) = \int p(y_*|x_*, \bm{x}, \bm{y}, \bm{f}) \cdot p(\bm{f}|\bm{y},\bm{x}) \,d\bm{f}.$$ This is feasible but cumbersome. Alternatively, we can make use of the fact that the joint distribution of $\bm{y}$ and $y_*$ is known (cf. slides on noisy GP): 
 $$\begin{pmatrix} \bm{y} \\ y_* \end{pmatrix} \sim \mathcal{N}\left( \begin{pmatrix} \bm{m} \\ m_* \end{pmatrix}, 
 \begin{pmatrix} 
-\bm{K} + \sigma^2 \bm{\Psi} & \bm{K}_*\\
+\bm{K} + \sigma^2 \bm{I} & \bm{K}_*\\
 \bm{K}^\top_* & K_{**}\\
 \end{pmatrix}
 \right),$$
 with $m_* = m(x_*)$, $\bm{K}_* = k(x_*, \bm{x})$ and $K_{**} = k(x_*,x_*)$.
-The conditional distribution can then be derived using the rule of conditioning for Gaussian distributions: $$y_* | x_*, \bm{x}, \bm{y} \sim \mathcal{N}(m_* + \bm{K}^\top_* (\bm{K} + \sigma^2 \bm{\Psi})^{-1}(\bm{y}-\bm{m}), K_{**} - \bm{K}^\top_* (\bm{K} + \sigma^2 \bm{\Psi})^{-1} \bm{K}_*).$$
+The conditional distribution can then be derived using the rule of conditioning for Gaussian distributions: $$y_* | x_*, \bm{x}, \bm{y} \sim \mathcal{N}(m_* + \bm{K}^\top_* (\bm{K} + \sigma^2 \bm{I})^{-1}(\bm{y}-\bm{m}), K_{**} - \bm{K}^\top_* (\bm{K} + \sigma^2 \bm{I})^{-1} \bm{K}_*).$$
 \item To implement a GP with squared exponential kernel and $\ls = 1$, we need the inverse of $\bm{K}$. $\bm{x}$ being a vector implies that we have only one feature and thus the entries of our matrix $\bm{K}$ are 
 $$
 \bm{K} = \begin{pmatrix} 1 & \exp(-0.5 (x^{(1)} - x^{(2)})^2) \\ \exp(-0.5 (x^{(2)} - x^{(1)})^2) & 1 \end{pmatrix}.
