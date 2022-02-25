@@ -50,26 +50,26 @@ plot_prediction <- function (learner, task) {
 
 #-------------------------------------------------------------------------------
 #spirals dataset
-spirals_generator = tgen("spirals", sd = 0.1)
+spirals_generator <- tgen("spirals", sd = 0.1)
 
 # get spirals data 
-spirals_task = spirals_generator$generate(n=100) 
+spirals_task <- spirals_generator$generate(n=100)
 
 
 ################################################################################
 ############ Different decay parameters ### ####################################
 ################################################################################
 # decay parameter / lambda 
-decay_list = list(0, 0.001, 0.005, 0.01, 0.05, 0.1)
+decay_list <- list(0, 0.001, 0.005, 0.01, 0.05, 0.1)
 
 # size of single hidden layer
-size = 10
+size <- 10
 
 
 # plot for all decay paramters the predition & a plot of the weights
 for(i in seq_along(decay_list)){
   set.seed(1234)
-  learner = lrn("classif.nnet", size = size, decay = decay_list[[i]])
+  learner <- lrn("classif.nnet", size = size, decay = decay_list[[i]])
   
   learner$train(spirals_task)
   weights <- learner$model$wts
@@ -92,12 +92,12 @@ for(i in seq_along(decay_list)){
 ################################################################################
 
 
-size_list = list(1, 2, 3, 5, 10, 100)
-decay = 0.001
+size_list <- list(1, 2, 3, 5, 10, 100)
+decay <- 0.001
 
 for(i in seq_along(size_list)){
   set.seed(1234)
-  learner = lrn("classif.nnet", size = size_list[[i]], decay = decay )
+  learner <- lrn("classif.nnet", size = size_list[[i]], decay = decay )
   
   learner$train(spirals_task)
   weights <- learner$model$wts
@@ -117,18 +117,18 @@ for(i in seq_along(size_list)){
 
 #-------------------------------------------------------------------------------
 
-folds = 10; reps = 5; 
-size = 10
-decay_list = seq(0, 0.02, length.out = 20)
+folds <- 10; reps <- 5;
+size <- 10
+decay_list <- seq(0, 0.02, length.out = 20)
 
 # this might run for 5 min
-rdesc = rsmp("repeated_cv", folds = folds, repeats = reps)
-lrns = lapply(decay_list, function(d) lrn("classif.nnet", size = size, decay = d))
-gg = benchmark_grid(tasks = spirals_task, resamplings = rdesc, learners = lrns)
-br = benchmark(gg)
-a = br$aggregate(measures = msr("classif.ce"), params = TRUE)
-a = mlr3misc::unnest(a, "params")
-p = ggplot(data = a, aes(x = decay, y = classif.ce)) +
+rdesc <- rsmp("repeated_cv", folds = folds, repeats = reps)
+lrns <- lapply(decay_list, function(d) lrn("classif.nnet", size = size, decay = d))
+gg <- benchmark_grid(tasks = spirals_task, resamplings = rdesc, learners = lrns)
+br <- benchmark(gg)
+a <- br$aggregate(measures = msr("classif.ce"), params = TRUE)
+a <- mlr3misc::unnest(a, "params")
+p <- ggplot(data = a, aes(x = decay, y = classif.ce)) +
   geom_line() + 
   xlab("lambda") + ylab("classif err")
 #print(p)
@@ -138,18 +138,18 @@ ggsave(filename = paste0("../figure/fig-regu-nonlin-srm-1.png"),
 
 #-------------------------------------------------------------------------------
 
-folds = 10; reps = 5; by = 1
-decay = 0.001
-size_list = seq(1, 30, by = by)
+folds <- 10; reps <- 5; by <- 1
+decay <- 0.001
+size_list <- seq(1, 30, by = by)
 
 # this might run for 5 min
-rdesc = rsmp("repeated_cv", folds = folds, repeats = reps)
-lrns = lapply(size_list, function(s) lrn("classif.nnet", size = s, decay = decay))
-gg = benchmark_grid(tasks = spirals_task, resamplings = rdesc, learners = lrns)
-br = benchmark(gg)
-a = br$aggregate(measures = msr("classif.ce"), params = TRUE)
-a = mlr3misc::unnest(a, "params")
-p = ggplot(data = a, aes(x = size, y = classif.ce)) +
+rdesc <- rsmp("repeated_cv", folds = folds, repeats = reps)
+lrns <- lapply(size_list, function(s) lrn("classif.nnet", size = s, decay = decay))
+gg <- benchmark_grid(tasks = spirals_task, resamplings = rdesc, learners = lrns)
+br <- benchmark(gg)
+a <- br$aggregate(measures = msr("classif.ce"), params = TRUE)
+a <- mlr3misc::unnest(a, "params")
+p <- ggplot(data = a, aes(x = size, y = classif.ce)) +
   geom_line() + 
   xlab("size hidden layer") + ylab("classif err")
 #print(p)
