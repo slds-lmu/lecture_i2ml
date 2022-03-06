@@ -1,12 +1,13 @@
-
-library(knitr)
+# ------------------------------------------------------------------------------
+# FIG: HARD MARGIN SVM CLASSIFICATION PLOTS
+# ------------------------------------------------------------------------------
 library(ggplot2)
 library(mlr)
 library(BBmisc)
 library(mvtnorm)
 library(gridExtra)
 
-source("plot_lin_svm.R")
+source("utils.R")
 
 theme_set(theme_minimal())
 
@@ -62,22 +63,20 @@ ggsave(filename = "../figure/linear_classif_2.png", plot = linear_classif_2_plot
 
 ####################################################
 
-plot_lin_svm(data, C=100, 
-             show_margin = TRUE, 
-             show_distances = TRUE,
-             gamma_offset = c(0.05, -0.05))
-####################################################
-
-plot_lin_svm(data, C=100, 
+svm_geo <- plot_lin_svm(data, C=100,
              show_margin = TRUE, 
              show_distances = TRUE,
              gamma_offset = c(0.05, -0.05))
 
+ggsave(filename = "../figure/svm_geometry.png", plot = svm_geo, width = 3, height = 3)
+
 ####################################################
 
-plot_lin_svm(data, C=100, 
+support_vects <- plot_lin_svm(data, C=100,
              show_margin = TRUE, 
              show_distances = TRUE,
              gamma_offset = c(0.1, -0.1), 
              highlight_sv = TRUE)
+
+ggsave(filename = "../figure/support_vectors.png", plot = support_vects, width = 3, height = 3)
 ####################################################
