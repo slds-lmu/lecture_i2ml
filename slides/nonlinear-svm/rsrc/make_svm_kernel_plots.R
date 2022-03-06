@@ -1,18 +1,17 @@
+# ------------------------------------------------------------------------------
+# FIG: SVM KERNEL PLOTS
+# ------------------------------------------------------------------------------
 
-plotSVM = function(tsk, par.vals) {
+library(ggplot2)
+library(viridis)
+library(mlr)
+library(gridExtra)
 
-lrn = makeLearner("classif.svm", par.vals = par.vals)
-set.seed(123L)
-mod = train(lrn, tsk)
-sv.index = mod$learner.model$index
-df = getTaskData(tsk)
-df = df[ifelse(1:getTaskSize(tsk) %in% sv.index, TRUE, FALSE), ]
-
+plotSVM <- function(tsk, par.vals) {
   set.seed(123L)
-  par.set = c(list("classif.svm", tsk), par.vals)
-  q = do.call("plotLearnerPrediction", par.set) + scale_f_d()
-  #q = q + geom_point(data = df, color = "black",
-  #  size = 6, pch = 21L)
+  par.set <- c(list("classif.svm", tsk), par.vals)
+  q <- do.call("plotLearnerPrediction", par.set) +
+    scale_fill_viridis(end = 0.9, discrete = TRUE)
   q
 }
 
@@ -31,9 +30,9 @@ y <- c(-1,-1,-1,-1,-1,1,1,1,1,1,1,1)
 df <- data.frame (x = x, y = as.factor(y))
 
 #make task
-tsk = makeClassifTask(data = df, target = 'y')
+tsk <- makeClassifTask(data = df, target = 'y')
 
-linear_svm <- plotSVM(tsk, list(kernel = "linear", 
+p_svm_linear_kernel <- plotSVM(tsk, list(kernel = "linear",
                                 nu = 0.2, 
                                 tolerance = 0.001, 
                                 cost = 1, 
@@ -41,32 +40,33 @@ linear_svm <- plotSVM(tsk, list(kernel = "linear",
                                 scale = FALSE)) + 
   ggtitle("")+
   xlab(expression(x[1]))+
-  ylab(expression (x[2]))
-linear_svm
+  ylab(expression (x[2])) +
+  theme_minimal()
+
+ggsave("../figure/svm_linear_kernel.png", plot = p_svm_linear_kernel, width = 6, height = 2.5)
 
 
 ############################################################################
 
+p_svm_poly_kernel_d2 <- plotSVM(tsk, list(kernel = "polynomial", degree = 2, coef0 = 1, gamma = 1)) +
+  ggtitle("d = 2") +
+  xlab(expression(x[1])) +
+  ylab(expression (x[2])) +
+  theme_minimal()
+p_svm_poly_kernel_d3 <- plotSVM(tsk, list(kernel = "polynomial", degree = 3, coef0 = 1, gamma = 1)) +
+  ggtitle("d = 3") +
+  xlab(expression(x[1])) +
+  ylab(expression (x[2])) +
+  theme_minimal()
 
-set.seed(123L)
+p_svm_poly_kernel <- grid.arrange(p_svm_poly_kernel_d2, p_svm_poly_kernel_d3, ncol= 2)
 
-two <- plotSVM(tsk, list(kernel = "polynomial", degree = 2, coef0 = 1, gamma = 1)) + 
-  ggtitle("d = 2")+
-  xlab(expression(x[1]))+
-  ylab(expression (x[2]))
-three <- plotSVM(tsk, list(kernel = "polynomial", degree = 3, coef0 = 1, gamma = 1)) + 
-  ggtitle("d = 3")+
-  xlab(expression(x[1]))+
-  ylab(expression (x[2]))
-
-grid.arrange(two, three, ncol= 2)
-
-
+ggsave("../figure/svm_poly_kernel.png", plot = p_svm_poly_kernel, width = 6, height = 2.5)
 
 ############################################################################
 
 gamma <- 1
-x.coord = seq(-4,4,length=250)
+x.coord <- seq(-4, 4, length=250)
 data_points <- data.frame(x.1= c(1.5,1), x.2= c(0.75,1))
 distance <- sqrt((data_points[1,1]-data_points[2,1])^2+(data_points[1,2]-data_points[2,2])^2)
 distance
@@ -96,7 +96,8 @@ distance_plot <- ggplot(data = data_points, aes(x.1,x.2)) +
     strip.text.y = element_text(size = 10, face="bold", colour = "black"),
     axis.line.x = element_line(color="black", size = 0.3),
     axis.line.y = element_line(color="black", size = 0.3)
-  )
+  ) +
+  theme_bw()
 
 
 rbf_plot <- ggplot(data = data, aes(x=distance, y=k))+ 
@@ -115,44 +116,15 @@ rbf_plot <- ggplot(data = data, aes(x=distance, y=k))+
     strip.text.y = element_text(size = 10, face="bold", colour = "black"),
     axis.line.x = element_line(color="black", size = 0.3),
     axis.line.y = element_line(color="black", size = 0.3)
-  )
+  ) +
+  theme_bw()
 
+rbf <- plotSVM(tsk, list(kernel = "radial", gamma = 1)) +
+  ggtitle("") +
+  xlab(expression(x[1])) +
+  ylab(expression (x[2])) +
+  theme_minimal()
 
+p_svm_rbf_kernel <- grid.arrange(distance_plot, rbf_plot,rbf,  ncol = 3, widths = c(2,2,3))
 
-set.seed(123L)
-rbf <- plotSVM(tsk, list(kernel = "radial", gamma = 1)) + 
-  ggtitle("")+
-  xlab(expression(x[1]))+
-  ylab(expression (x[2]))
-
-grid.arrange(distance_plot, rbf_plot,rbf,  ncol = 3, widths = c(2,2,3))
-
-
-
-############################################################################
-
-     
-library(xtable)
-    load("data/mnist_svm_mixed.RData")
-
-table_df = as.data.frame(mnist_test_mmce_mixed$mmce[c(1,2,4,5)])
-rownames(table_df) = c("linear", "poly (d = 2)", "RBF (gamma = 0.001)", "RBF (gamma = 1)")
-colnames(table_df) = "Error"
-
-print(xtable(signif(table_df, 3), digits = 3, display = rep("fg", 2), align = "r|l"),
-  row.names = FALSE, sanitize.colnames.function = function(x) x, include.rownames = TRUE,
-  hline.after = 0, latex.environments = "small")
-    
-
-
-############################################################################
-
-
-
-
-############################################################################
-
-
-
-
-############################################################################
+ggsave("../figure/svm_rbf_kernel.png", plot = p_svm_rbf_kernel, width = 9, height = 3)
