@@ -2,7 +2,8 @@
 library(mvtnorm)
 library(quadprog)
 library(gridExtra)
-source("rsrc/plot_lin_svm.R")
+library(viridis)
+source("utils.R")
 
 set.seed(1)
 
@@ -20,7 +21,8 @@ row.names(data) <- as.character(1:nrow(data))
 
 data_plot <- ggplot(data, aes(x=x.1, y=x.2)) +
   geom_point(aes(colour=y), size=3) +
-  xlab("") + ylab("") + theme(legend.position = "none")
+  xlab("") + ylab("") + theme(legend.position = "none") +
+  scale_color_viridis(end = 0.9, discrete = TRUE)
 
 pairwise_desc <- function(a, max_it = 100,
                           exit_if_a_valid = FALSE,
@@ -133,7 +135,9 @@ alpha_before <- plot_lin_svm(data, a = a_valid) +
   annotate("label", x=data[ids[2],1] + 0.2, y=data[ids[2],2],
            label="bold(x[18])", parse=TRUE, fill="red")
 
-grid.arrange(data_plot, alpha_before, ncol=2)
+svm_training_1_p <- grid.arrange(data_plot, alpha_before, ncol=2)
+
+ggsave(filename = "../figure/svm_training_01.png", plot = svm_training_1_p, width = 6, height = 3)
 
 ################################################################
 
@@ -179,12 +183,15 @@ alpha_opt <- ggplot() +
   labs(fill="Obj.") +
   theme(legend.position = "bottom",
         legend.margin=margin(0,0,0,0),
-        legend.box.margin=margin(-10,-10,-10,-10))
+        legend.box.margin=margin(-5,-5,-5,-5)) +
+  scale_fill_viridis(end = 0.9)
 
 alpha_after <- plot_lin_svm(data, a = a_better)
 
 
-grid.arrange(alpha_opt, alpha_after, ncol=2)
+svm_training_2_p <- grid.arrange(alpha_opt, alpha_after, ncol=2)
+
+ggsave(filename = "../figure/svm_training_02.png", plot = svm_training_2_p, width = 7, height = 3.5)
 
 ######################################################
 
@@ -209,10 +216,12 @@ smo <- ggplot(df, aes(x=a_i, y=value)) +
   scale_y_continuous(breaks=c(1,2.5,5.0,7.5)) +
   xlab(expression(a[1])) + ylab("") +
   annotate("label", x = a_better[1], y = 5, label="a[18]==C", parse=TRUE) +
-  scale_colour_discrete(name = "lines", labels = expression(a[18], 'Obj.')) +
+  scale_color_viridis(end = 0.9, discrete = TRUE, name = "lines", labels = expression(a[18], 'Obj.')) +
   geom_point(data=df_costs, aes(x=V1, y=V2), colour="red", size=2)
 
-grid.arrange(alpha_opt, smo, ncol=2)
+svm_traning_3_p <- grid.arrange(alpha_opt, smo, ncol=2)
+
+ggsave(filename = "../figure/svm_training_03.png", plot = svm_traning_3_p, width = 8, height = 4)
 
 ################################################
 
