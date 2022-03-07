@@ -32,8 +32,7 @@ p_svm_linear_kernel <- plotSVM(tsk, list(kernel = "linear",
                                 scale = FALSE)) + 
   ggtitle("")+
   xlab(expression(x[1]))+
-  ylab(expression (x[2])) +
-  theme_minimal()
+  ylab(expression (x[2]))
 
 ggsave("../figure/svm_linear_kernel.png", plot = p_svm_linear_kernel, width = 6, height = 2.5)
 
@@ -43,13 +42,11 @@ ggsave("../figure/svm_linear_kernel.png", plot = p_svm_linear_kernel, width = 6,
 p_svm_poly_kernel_d2 <- plotSVM(tsk, list(kernel = "polynomial", degree = 2, coef0 = 1, gamma = 1)) +
   ggtitle("d = 2") +
   xlab(expression(x[1])) +
-  ylab(expression (x[2])) +
-  theme_minimal()
+  ylab(expression (x[2]))
 p_svm_poly_kernel_d3 <- plotSVM(tsk, list(kernel = "polynomial", degree = 3, coef0 = 1, gamma = 1)) +
   ggtitle("d = 3") +
   xlab(expression(x[1])) +
-  ylab(expression (x[2])) +
-  theme_minimal()
+  ylab(expression (x[2]))
 
 p_svm_poly_kernel <- grid.arrange(p_svm_poly_kernel_d2, p_svm_poly_kernel_d3, ncol= 2)
 
@@ -114,8 +111,7 @@ rbf_plot <- ggplot(data = data, aes(x=distance, y=k))+
 rbf <- plotSVM(tsk, list(kernel = "radial", gamma = 1)) +
   ggtitle("") +
   xlab(expression(x[1])) +
-  ylab(expression (x[2])) +
-  theme_minimal()
+  ylab(expression (x[2]))
 
 p_svm_rbf_kernel <- grid.arrange(distance_plot, rbf_plot,rbf,  ncol = 3, widths = c(2,2,3))
 

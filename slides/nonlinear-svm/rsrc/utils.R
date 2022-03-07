@@ -5,7 +5,8 @@ plotSVM <- function(tsk, par.vals) {
   set.seed(123L)
   par.set <- c(list("classif.svm", tsk), par.vals)
   q <- do.call("plotLearnerPrediction", par.set) +
-    scale_fill_viridis(end = 0.9, discrete = TRUE)
+    scale_fill_viridis(end = 0.9, discrete = TRUE) +
+    theme_minimal()
   q
 }
 
