@@ -7,18 +7,10 @@ library(viridis)
 library(mlr)
 library(gridExtra)
 
-plotSVM <- function(tsk, par.vals) {
-  set.seed(123L)
-  par.set <- c(list("classif.svm", tsk), par.vals)
-  q <- do.call("plotLearnerPrediction", par.set) +
-    scale_fill_viridis(end = 0.9, discrete = TRUE)
-  q
-}
+source("utils.R")
 
 ############################################################################
 
-set.seed(123L)
-#matrix
 x <- cbind(
   c(2,3,4,5,6,0,1,2,3,1,2,3),
   c(0,0,0,0,0,0,1,2,3,-1,-2,-3))
