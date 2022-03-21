@@ -20,7 +20,7 @@ p <- ggplot(data = d, aes(x = x, y = y)) +
   ylab("x") +
   ylab("y")
 
-ggsave("../figure/bayes_lm_example.pdf", width = 4, height = 3)
+ggsave("../figure/bayes_lm/example.pdf", width = 4, height = 3)
 
 
 # Prior and Posterior for the Bayes Linear Model 
@@ -39,13 +39,13 @@ p1 <- p1 + geom_point(x = 0, y = 0, color = "orange", size = 2)
 p1 <- p1 + guides(fill = FALSE) + ggtitle(expression(paste("Prior ", theta, "~", N(0, 1)))) + theme(title = element_text(size = 11))
 p1 <- p1 + theme_bw()
 
-ggsave("../figure/bayes_lm_prior_1.pdf", p1, width = 4, height = 4)
+ggsave("../figure/bayes_lm/prior_1.pdf", p1, width = 4, height = 4)
 
 p2 <- ggplot() + geom_point(data = as.data.frame(d), aes(x = x, y = y), colour = "grey")
 p2 <- p2 + geom_abline(intercept = 0, slope = 0, color = "orange")
 p2 <- p2 + ggtitle("No data points observed") + theme_bw()
 
-ggsave("../figure/bayes_lm_prior_2.pdf", p2, width = 4, height = 4)
+ggsave("../figure/bayes_lm/prior_2.pdf", p2, width = 4, height = 4)
 
 
 # Posterior distribution
@@ -70,14 +70,14 @@ for (j in 1:length(nobs)) {
   p1 <- p1 + guides(fill = FALSE) + ggtitle(expression(paste("Posterior of ", theta))) + theme(title = element_text(size = 11))
   p1 <- p1 + theme_bw()
 
-  ggsave(paste0("../figure/bayes_lm_posterior_", i, "_1.pdf"), p1, width = 4, height = 4)
+  ggsave(paste0("../figure/bayes_lm/posterior_", i, "_1.pdf"), p1, width = 4, height = 4)
  
   p2 <- ggplot() + geom_point(data = as.data.frame(d), aes(x = x, y = y), colour = "grey")
   p2 <- p2 + geom_point(data = as.data.frame(d[1:i, ]), aes(x = x, y = y))
   p2 <- p2 + geom_abline(intercept = m.post[1], slope = m.post[2], color = "orange")
   p2 <- p2 + ggtitle(paste0("MAP after observing ", i, " data points")) + theme_bw()
 
-  ggsave(paste0("../figure/bayes_lm_posterior_", i, "_2.pdf"), p2, width = 4, height = 4)
+  ggsave(paste0("../figure/bayes_lm/posterior_", i, "_2.pdf"), p2, width = 4, height = 4)
 
   xpred <- data.frame(x0 = rep(1, 200), x = as.numeric(seq(-3.5, 7, length.out = 200)))
   postmean <- as.matrix(xpred) %*% m.post
@@ -92,6 +92,6 @@ for (j in 1:length(nobs)) {
   p2 <- p2 + geom_abline(intercept = m.post[1], slope = m.post[2], color = "orange")
   p2 <- p2 + ggtitle(paste0("MAP after observing ", i, " data points")) + theme_bw()
   p2
-  ggsave(paste0("../figure/bayes_lm_posterior_", i, "_3.pdf"), p2, width = 4, height = 4)
+  ggsave(paste0("../figure/bayes_lm/posterior_", i, "_3.pdf"), p2, width = 4, height = 4)
 
 }
