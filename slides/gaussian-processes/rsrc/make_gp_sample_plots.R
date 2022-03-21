@@ -108,38 +108,52 @@ for (j in 1:length(x.obs)) {
 
 ################################################
 
-set.seed(1221)
-n <- 100
+plot_10_samples <- function(l=1) {
+  set.seed(1221)
+  n <- 100
 
-x <- seq(-2, 2, length.out = n)
-K <- matrix(0, n, n)
+  x <- seq(-2, 2, length.out = n)
+  K <- matrix(0, n, n)
 
-for (i in 1:n) {
-  for (j in 1:n) {
-    K[i, j] <- exp(- 1/2 * (abs(x[i] - x[j]))^2)
-    # K[i, j] = t(x[i]) %*% x[j] # linear kernel
+  for (i in 1:n) {
+    for (j in 1:n) {
+      K[i, j] <- exp(- 1/(2*l^2) * (abs(x[i] - x[j]))^2)
+      # K[i, j] = t(x[i]) %*% x[j] # linear kernel
+    }
   }
+
+  df <- data.frame(x = x)
+
+  for (i in 1:10) {
+    df[, i + 1] <- as.vector(mvtnorm::rmvnorm(1, sigma = K))
+  }
+
+  df.m <- melt(df, id.vars = "x")
+
+  p <- ggplot(data = df.m, aes(x = x, y = value, colour = variable)) +
+    geom_line() +
+    theme_bw() +
+    xlab("x") +
+    ylab("f(x)") +
+    ylim(c(-5, 5)) +
+    theme(legend.position = "none") +
+    scale_color_viridis(end=0.9, discrete = TRUE)
+
+  return(p)
 }
 
-df <- data.frame(x = x)
-
-for (i in 1:10) {
-  df[, i + 1] <- as.vector(mvtnorm::rmvnorm(1, sigma = K))
-}
-
-df.m <- melt(df, id.vars = "x")
-
-p <- ggplot(data = df.m, aes(x = x, y = value, colour = variable)) +
-  geom_line() +
-  theme_bw() +
-  xlab("x") +
-  ylab("f(x)") +
-  ylim(c(-5, 5)) +
-  theme(legend.position = "none") +
-  scale_color_viridis(end=0.9, discrete = TRUE)
-p
+p1 <- plot_10_samples()
 
 ggsave(filename = "../figure/gp_sample/different_samples.pdf",
-       plot = p, width = 6, height = 2)
+       plot = p1, width = 6, height = 2)
 
+
+p2 <- plot_10_samples(l=0.1)
+
+p <- grid.arrange(p1 + ggtitle("l = 1"),
+                  p2 + ggtitle("l = 0.1"),
+                  ncol = 2)
+
+ggsave(filename = "../figure/gp_sample/varying_length_scale.pdf",
+       plot = p, width = 6, height = 3)
 
