@@ -5,6 +5,8 @@ library(MASS)
 library(ggplot2)
 library(RandomFieldsUtils)
 
+set.seed(123)
+
 n <- 1000 # number of points
 x <- seq(-2, 2, length.out = n) # n equally spaced points
 D <- as.matrix(dist(x, method = "euclidean")) # distance matrix
