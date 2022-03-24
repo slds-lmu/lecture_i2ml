@@ -91,9 +91,9 @@ $\boldsymbol{y}_J = \left(y^{(J^{(1)})},\dots,y^{(J^{(m)})}\right) \in \Yspace^m
 vector of labels\\
 
 $\boldsymbol{F}_{J,f} = \left(f(\xv^{(J^{(1)})}),\dots, f(\xv^{(J^{(m)})})\right) 
-\in \R^{m\times g}$ : matrix of prediction scores regarding a model $f$\\
+\in \R^{m\times g}$ : matrix of prediction scores yielded by a model $f$\\
 
-General \textbf{performance measure}: $\rho: \bigcup_{m\in\N}\left(\Yspace^m\times\R^{m\times g}\right)  \rightarrow \R$ maps every $m$-dimensional label vector $\boldsymbol{y}_J$ and its matrix of prediction scores $\boldsymbol{F}_{J,f}$ to a scalar performance value.\\
+General \textbf{performance measure}: $\rho: \bigcup_{m\in\N}\left(\Yspace^m\times\R^{m\times g}\right)  \rightarrow \R$ maps every $m$-dimensional label vector $\boldsymbol{y}_J$ and a matrix of prediction scores $\boldsymbol{F}_{J,f}$ to a scalar performance value.\\
 
 $\rho_L (\boldsymbol{y}, \boldsymbol{F}) = \sum_{i=1}^m L(\boldsymbol{y}^{(i)}, \boldsymbol{F}^{(i)})$ : performance measure induced by an arbitrary point-wise loss $L$
 
@@ -123,7 +123,7 @@ $\mathcal{J} = \left((J_{\mathrm{train},1}, J_{\mathrm{test},1}),\dots,
 \begin{split}
 \widehat{\mathrm{GE}}(\ind, \mathcal{J}, \boldsymbol\lambda, \rho) = \mathrm{agr}\Big(
  &\rho\Big(\boldsymbol{y}_{J_{\mathrm{test},1}}, \boldsymbol{F}_{J_{\mathrm{test},1},\ind(\mathcal{D}_{\mathrm{train},1}, \bm{\lambda})}\Big), \\ &\large{\vdots} \\
-& \rho\Big(\boldsymbol{y}_{J_{\mathrm{test},K}}, \boldsymbol{F}_{J_{\mathrm{test},K},
+& \rho\Big(\boldsymbol{y}_{J_{\mathrm{test},B}}, \boldsymbol{F}_{J_{\mathrm{test},B},
 \ind(\mathcal{D}_{\mathrm{train},B}, \bm{\lambda})}\Big)
     \Big),
 \end{split}
@@ -149,7 +149,7 @@ $n_{\mathrm{train}} \approx n_{\mathrm{train},1} \approx \dots \approx n_{\mathr
 \textbf{K-fold cross-validation} : splits the data into $K$ roughly equally-sized partitions.
 Uses each part once as test set and joins the others for training\\ 
 
-\textbf{Leave-one-out cross validation}  : n-fold cross-validation\\
+\textbf{Leave-one-out cross validation}  : $n$-fold cross-validation\\
 
 Repeated \textbf{subsampling} / Monte Carlo cross-validation : for $p \in (0,1)$ randomly draws $K$ training sets of size $\left \lfloor{p\cdot n}\right \rfloor $ without replacement from the data and uses the data not drawn as the corresponding $K$ test sets\\ 
 
@@ -159,7 +159,7 @@ Repeated \textbf{subsampling} / Monte Carlo cross-validation : for $p \in (0,1)$
 %-------------------------------------------------------------------------------
 \begin{myblock}{Tuning}
 
-\textbf{Tuner} $\tau$ is a mapping which takes a dataset $\D \in \allDatasets$, an inducer $\ind$, a search space $\LamS$, a performance strategy $\rho$ and a resampling strategy $\mathcal{J}$ and 
+\textbf{Tuner} $\tau$ is a mapping which takes a dataset $\D \in \allDatasets$, an inducer $\ind$, a search space $\LamS$, a performance measure $\rho$ and a resampling strategy $\mathcal{J}$ and 
 return a hyperparameter configuration $\lamh \in \LamS$ such that 
 $$ \tau(\D, \ind, \boldsymbol{\lambda}, \rho, \mathcal{J}) = \lamh \approx \lams \in 
 \argmin \limits_{\boldsymbol{\lambda \in \LamS}} \GEh(\ind, \mathcal{J}, \rho, \boldsymbol{\lambda}).
@@ -178,9 +178,9 @@ $$\mathcal{T}_{\ind,\LamS,\rho,\mathcal{J}} = \ind_{\lamh}, \text{ i.e., }
  \begin{center}
              \includegraphics[width=0.95\columnwidth]{figure/bb_cmp.pdf}
                \end{center}
-\textbf{Random search} : samples uniformly candidates from the search space\\
+\textbf{Random search} : uniformly samples candidates from the search space\\
 
-\textbf{Grid search} : (uniformly) discretizes the search space and samples without replacement candidates from it\\ 
+\textbf{Grid search} : (uniformly) discretizes the search space and samples candidates from it without replacment\\ 
 
 \end{myblock}
 
@@ -214,18 +214,18 @@ $$\mathcal{T}_{\ind,\LamS,\rho,\mathcal{J}} = \ind_{\lamh}, \text{ i.e., }
 
 $\mathcal{J}_{B_\mathrm{outer},B_\mathrm{inner}} = \left(\mathcal{J}_{\mathrm{outer}}, \left(\mathcal{J}_{\mathrm{inner}}^{(1)},\dots,\mathcal{J}_{\mathrm{inner}}^{(B_\mathrm{outer})}
 \right)\right)$ : \textbf{nested resampling strategy} where the outer resampling strategy  $\mathcal{J}_{\mathrm{outer}}$ is defined on $\D$ and the inner resampling strategy $\mathcal{J}_{\mathrm{inner}}^{(i)}$ defined on $\D_{\textrm{outer,train,i}}$. \\\\
-\textbf{Estimator of the generalization error} $\mathrm{GE}(\mathcal{T}_{\ind, \LamS, \rho, \mathcal{J}}, n_\mathrm{train}) = \GE(\ind, \lamh, n_\mathrm{train}, \rho)$ :
+\textbf{Estimator of the generalization error} $\mathrm{GE}(\mathcal{T}_{\ind, \LamS, \rho, \mathcal{J}}, n_\mathrm{train})$ :
 \begin{equation*}
 \begin{split}
 \GEh(\mathcal{T}_{\ind, \LamS, \rho, \mathcal{J}}, \mathcal{J}_{B_\mathrm{outer},B_\mathrm{inner}}) = \mathrm{agr}\Big(
  &\rho\Big(\boldsymbol{y}_{J_{\mathrm{outer,test},1}}, \boldsymbol{F}_{J_{\mathrm{outer,test},1},f_{\mathcal{D}_{\mathrm{outer,train},1}}}\Big), \\ &\large{\vdots} \\
-& \rho\Big(\boldsymbol{y}_{J_{\mathrm{outer,test},B}}, \boldsymbol{F}_{J_{\mathrm{outer,test},B},
-f_{\mathcal{D}_{\mathrm{outer,train},B}}}\Big)
+& \rho\Big(\boldsymbol{y}_{J_{\mathrm{outer,test},B_\mathrm{outer} }}, \boldsymbol{F}_{J_{\mathrm{outer,test},B_\mathrm{outer}},
+f_{\mathcal{D}_{\mathrm{outer,train},B_\mathrm{outer}}}}\Big)
     \Big),
 \end{split}
 \end{equation*}
-where $f_{\mathcal{D}_{\mathrm{outer,train},i}} = \mathcal{J}_{B_\mathrm{outer},B_\mathrm{inner}}(\mathcal{D}_{\mathrm{outer,train},i})$ and \\
-$\mathcal{J}_{\mathrm{inner}}^{(i)}$ has the same type of resampling strategy as $\mathcal{J}$ and \\
+where $f_{\mathcal{D}_{\mathrm{outer,train},i}} = \mathcal{T}_{\ind,\LamS,\rho,\mathcal{J}_{\mathrm{inner}}^{(i)}}(\mathcal{D}_{\mathrm{outer,train},i})$ and
+$\mathcal{J}_{\mathrm{inner}}^{(i)}$ has the same \\ type of resampling strategy as $\mathcal{J}$ and
 $n_{\mathrm{train}} \approx n_{\mathrm{outer,train},1} \approx \dots \approx n_{\mathrm{outer,train},B_\mathrm{outer}}$
 
  \begin{center}
