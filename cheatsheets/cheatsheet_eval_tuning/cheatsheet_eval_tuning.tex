@@ -1,0 +1,246 @@
+\documentclass{beamer}
+
+
+\usepackage[orientation=landscape,size=a0,scale=1.4,debug]{beamerposter}
+\mode<presentation>{\usetheme{mlr}}
+
+
+\usepackage[utf8]{inputenc} % UTF-8
+\usepackage[english]{babel} % Language
+\usepackage{hyperref} % Hyperlinks
+\usepackage{ragged2e} % Text position
+\usepackage[export]{adjustbox} % Image position
+\usepackage[most]{tcolorbox}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{dsfont}
+\usepackage{verbatim}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{csquotes}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{enumerate}
+\usepackage[absolute,overlay]{textpos}
+\usepackage{psfrag}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{eqnarray}
+\usepackage{arydshln}
+\usepackage{tabularx}
+\usepackage{placeins}
+\usepackage{tikz}
+\usepackage{setspace}
+\usepackage{colortbl}
+\usepackage{mathtools}
+\usepackage{wrapfig}
+\usepackage{bm}
+\usepackage{mathdots}
+
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-hpo.tex}
+\input{../../latex-math/ml-eval.tex}
+
+\title{I2ML :\,: EVALUATION AND TUNING} % Package title in header, \, adds thin space between ::
+\newcommand{\packagedescription}{ \invisible{x} % Package description in header
+	% The \textbf{I2ML}: Introduction to Machine Learning course offers an introductory and applied overview of "supervised" Machine Learning. It is organized as a digital lecture.
+}
+
+\newlength{\columnheight} % Adjust depending on header height
+\setlength{\columnheight}{84cm} 
+
+\newtcolorbox{codebox}{%
+	sharp corners,
+	leftrule=0pt,
+	rightrule=0pt,
+	toprule=0pt,
+	bottomrule=0pt,
+	hbox}
+
+\newtcolorbox{codeboxmultiline}[1][]{%
+	sharp corners,
+	leftrule=0pt,
+	rightrule=0pt,
+	toprule=0pt,
+	bottomrule=0pt,
+	#1}
+	
+
+	
+\begin{document}
+\begin{frame}[fragile]{}
+\vspace{-8ex}
+\begin{columns}
+	\begin{column}{.31\textwidth}
+		\begin{beamercolorbox}[center]{postercolumn}
+			\begin{minipage}{.98\textwidth}
+				\parbox[t][\columnheight]{\textwidth}{
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% First Column begin
+%-------------------------------------------------------------------------------
+% Set-Based Performance Metrics
+%-------------------------------------------------------------------------------
+\begin{myblock}{Set-Based Performance Metrics}
+$J \in \{1,\dots,n\}^m$ : $m$-dimensional index vector for a dataset $\D \in 
+\allDatasetsn$, which also induces 
+$\D_J = \left(\D^{(J^{(1)})},\dots,\D^{(J^{(m)})}\right) \in \allDatasets_m$\\
+
+
+$\boldsymbol{y}_J = \left(y^{(J^{(1)})},\dots,y^{(J^{(m)})}\right) \in \Yspace^m$ :
+vector of labels\\
+
+$\boldsymbol{F}_{J,f} = \left(f(\xv^{(J^{(1)})}),\dots, f(\xv^{(J^{(m)})})\right) 
+\in \R^{m\times g}$ : matrix of prediction scores yielded by a model $f$\\
+
+General \textbf{performance measure}: $\rho: \bigcup_{m\in\N}\left(\Yspace^m\times\R^{m\times g}\right)  \rightarrow \R$ maps every $m$-dimensional label vector $\boldsymbol{y}_J$ and a matrix of prediction scores $\boldsymbol{F}_{J,f}$ to a scalar performance value.\\
+
+$\rho_L (\boldsymbol{y}, \boldsymbol{F}) = \sum_{i=1}^m L(\boldsymbol{y}^{(i)}, \boldsymbol{F}^{(i)})$ : performance measure induced by an arbitrary point-wise loss $L$
+
+\end{myblock}
+%-------------------------------------------------------------------------------
+% Generalization Error
+%-------------------------------------------------------------------------------
+\begin{myblock}{Generalization Error}
+The \textbf{generalization error} $\mathrm{GE}$ is the performance of a model induced by $\ind_{\boldsymbol{\lambda}}$ from datasets $\Dtrain \sim (\P_{\xv y})^{n_{\mathrm{train}}}$ evaluated with performance measure $\rho$ over a dataset $\Dtest \sim (\P_{\xv y})^{n_{\mathrm{test}}}$ when $n_{\mathrm{test}}\rightarrow\infty$, i.e.,\\
+
+ $\mathrm{GE}(\ind, \bm{\lambda}, n_{\mathrm{train}}, \rho) = \lim_{n_{\mathrm{test}}\rightarrow\infty} \E \left[ \rho\left(\boldsymbol{y}, \boldsymbol{F}_{J_{\mathrm{test}},\ind(\mathcal{D}_{\mathrm{train}}, \bm{\lambda})}\right)\right],$ \\
+ 
+where the expectation is taken over both datasets $\Dtrain$ and $\Dtest$.
+\end{myblock}
+%-------------------------------------------------------------------------------
+% Data Splitting and Resampling
+%-------------------------------------------------------------------------------
+\begin{myblock}{Data Splitting and Resampling}
+% $\widehat{\mathrm{GE}}_{J_\mathrm{train}, J_\mathrm{test}}(\mathcal{I}, \boldsymbol\lambda, |J_\mathrm{train}|, \rho) = \rho(\boldsymbol{y}_{J_\mathrm{test}}, \boldsymbol{F}_{J_\mathrm{test}, f_{\mathcal{D}_{\mathrm{train}}, \bm{\lambda}}})$ : estimator of the generalization error  
+% $\mathrm{GE}(\ind, \bm{\lambda}, |J_\mathrm{train}|, \rho)$ \\
+
+$\mathcal{J} = \left((J_{\mathrm{train},1}, J_{\mathrm{test},1}),\dots,
+(J_{\mathrm{train},B}, J_{\mathrm{test},B})\right)$ : \textbf{resampling strategy} consisting of $B$ train-test-splits $(J_{\mathrm{train},i}, J_{\mathrm{test},i})$
+
+\textbf{Estimator of the generalization error} $\mathrm{GE}(\ind, \bm{\lambda}, n_\mathrm{train}, \rho)$:
+\begin{equation*}
+\begin{split}
+\widehat{\mathrm{GE}}(\ind, \mathcal{J}, \boldsymbol\lambda, \rho) = \mathrm{agr}\Big(
+ &\rho\Big(\boldsymbol{y}_{J_{\mathrm{test},1}}, \boldsymbol{F}_{J_{\mathrm{test},1},\ind(\mathcal{D}_{\mathrm{train},1}, \bm{\lambda})}\Big), \\ &\large{\vdots} \\
+& \rho\Big(\boldsymbol{y}_{J_{\mathrm{test},B}}, \boldsymbol{F}_{J_{\mathrm{test},B},
+\ind(\mathcal{D}_{\mathrm{train},B}, \bm{\lambda})}\Big)
+    \Big),
+\end{split}
+\end{equation*}
+where the aggregating function $\mathrm{agr}$ is often the $\textrm{mean}$ and
+$n_{\mathrm{train}} \approx n_{\mathrm{train},1} \approx \dots \approx n_{\mathrm{train},B}$ 
+\end{myblock}
+\vfill
+% End First Column
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+				}
+			\end{minipage}
+		\end{beamercolorbox}
+	\end{column}
+	\begin{column}{.31\textwidth}
+		\begin{beamercolorbox}[center]{postercolumn}
+			\begin{minipage}{.98\textwidth}
+				\parbox[t][\columnheight]{\textwidth}{
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Begin Second Column
+\underline{Resampling Strategies}\\
+
+\textbf{K-fold cross-validation} : splits the data into $K$ roughly equally-sized partitions.
+Uses each part once as test set and joins the others for training\\ 
+
+\textbf{Leave-one-out cross validation}  : $n$-fold cross-validation\\
+
+Repeated \textbf{subsampling} / Monte Carlo cross-validation : for $p \in (0,1)$ randomly draws $K$ training sets of size $\left \lfloor{p\cdot n}\right \rfloor $ without replacement from the data and uses the data not drawn as the corresponding $K$ test sets\\ 
+
+\textbf{Bootstrap sampling} : Similar to repeated subsampling but the training data is randomly drawn \underline{with} replacement $n$ times\\ 
+%-------------------------------------------------------------------------------
+% Tuning
+%-------------------------------------------------------------------------------
+\begin{myblock}{Tuning}
+
+\textbf{Tuner} $\tau$ is a mapping which takes a dataset $\D \in \allDatasets$, an inducer $\ind$, a search space $\LamS$, a performance measure $\rho$ and a resampling strategy $\mathcal{J}$ and 
+return a hyperparameter configuration $\lamh \in \LamS$ such that 
+$$ \tau(\D, \ind, \boldsymbol{\lambda}, \rho, \mathcal{J}) = \lamh \approx \lams \in 
+\argmin \limits_{\boldsymbol{\lambda \in \LamS}} \GEh(\ind, \mathcal{J}, \rho, \boldsymbol{\lambda}).
+$$
+The search space $\LamS$ is a bounded subspace of the hyperparameter space.
+
+If the inducer $\ind$, the seach space $\LamS$, the performance measure $\rho$
+and the sampling strategy $\mathcal{J}$ are fixed, a self-tuning learner 
+$\mathcal{T}_{\ind, \LamS, \rho, \mathcal{J}}: \allDatasets \rightarrow \Hspace,$ can be derived
+from a tuner $\tau$ such that
+$$\mathcal{T}_{\ind,\LamS,\rho,\mathcal{J}} = \ind_{\lamh}, \text{ i.e., } 
+\mathcal{T}_{\ind,\LamS,\rho,\mathcal{J}}(\D) = \ind_{\tau(\D,\mathcal{J},\ind, \rho, \LamS)}(\D).$$
+
+\underline{Black-Box Optimization Techniques}\\
+
+ \begin{center}
+             \includegraphics[width=0.95\columnwidth]{figure/bb_cmp.pdf}
+               \end{center}
+\textbf{Random search} : uniformly samples candidates from the search space\\
+
+\textbf{Grid search} : (uniformly) discretizes the search space and samples candidates from it without replacment\\ 
+
+\end{myblock}
+
+
+
+% End Second Column					
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+				}
+			\end{minipage}
+		\end{beamercolorbox}
+	\end{column}
+	\begin{column}{.31\textwidth}
+		\begin{beamercolorbox}[center]{postercolumn}
+			\begin{minipage}{.98\textwidth}
+				\parbox[t][\columnheight]{\textwidth}{
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Begin Third Column#
+
+
+
+\textbf{Bayesian optimization} : continuously learns a surrogate model of the objective function and leverages it to sample new candidates from the search space while balancing exploration and exploitation\\
+
+\textbf{Evolutionary algorithms} : are stochastic optimization methods that aim to solve optimization problems by using ideas of natural evolution\\
+
+\textbf{Hyperband} : is a multi-fidelity method which tries to allocate more budget to promising candidates based on Successive Halving \\
+
+%-------------------------------------------------------------------------------
+% Nested Resampling
+%------------------------------------------------------------------------------- 
+\begin{myblock}{Nested Resampling}
+
+$\mathcal{J}_{B_\mathrm{outer},B_\mathrm{inner}} = \left(\mathcal{J}_{\mathrm{outer}}, \left(\mathcal{J}_{\mathrm{inner}}^{(1)},\dots,\mathcal{J}_{\mathrm{inner}}^{(B_\mathrm{outer})}
+\right)\right)$ : \textbf{nested resampling strategy} where the outer resampling strategy  $\mathcal{J}_{\mathrm{outer}}$ is defined on $\D$ and the inner resampling strategy $\mathcal{J}_{\mathrm{inner}}^{(i)}$ defined on $\D_{\textrm{outer,train,i}}$. \\\\
+\textbf{Estimator of the generalization error} $\mathrm{GE}(\mathcal{T}_{\ind, \LamS, \rho, \mathcal{J}}, n_\mathrm{train})$ :
+\begin{equation*}
+\begin{split}
+\GEh(\mathcal{T}_{\ind, \LamS, \rho, \mathcal{J}}, \mathcal{J}_{B_\mathrm{outer},B_\mathrm{inner}}) = \mathrm{agr}\Big(
+ &\rho\Big(\boldsymbol{y}_{J_{\mathrm{outer,test},1}}, \boldsymbol{F}_{J_{\mathrm{outer,test},1},f_{\mathcal{D}_{\mathrm{outer,train},1}}}\Big), \\ &\large{\vdots} \\
+& \rho\Big(\boldsymbol{y}_{J_{\mathrm{outer,test},B_\mathrm{outer} }}, \boldsymbol{F}_{J_{\mathrm{outer,test},B_\mathrm{outer}},
+f_{\mathcal{D}_{\mathrm{outer,train},B_\mathrm{outer}}}}\Big)
+    \Big),
+\end{split}
+\end{equation*}
+where $f_{\mathcal{D}_{\mathrm{outer,train},i}} = \mathcal{T}_{\ind,\LamS,\rho,\mathcal{J}_{\mathrm{inner}}^{(i)}}(\mathcal{D}_{\mathrm{outer,train},i})$ and
+$\mathcal{J}_{\mathrm{inner}}^{(i)}$ has the same \\ type of resampling strategy as $\mathcal{J}$ and
+$n_{\mathrm{train}} \approx n_{\mathrm{outer,train},1} \approx \dots \approx n_{\mathrm{outer,train},B_\mathrm{outer}}$
+
+ \begin{center}
+             \includegraphics[width=0.9\columnwidth]{img/tuning_2.PNG}
+               \end{center}
+
+\end{myblock}
+
+% End Third Column
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+			  }
+			\end{minipage}
+		\end{beamercolorbox}
+	\end{column}
+\end{columns}
+
+\end{frame}
+\end{document}
