@@ -22,17 +22,10 @@ df$y <- as.factor(df$y)
 
 p_1 <- ggplot2::ggplot(data.frame(x_1, y), aes(x = x_1, y = y)) + 
   geom_line(size = 1.2) +
-  theme_minimal() +
   xlab(expression(yf(x))) +
   ylab(expression(L(y, f(x))))
 
-ggplot2::ggsave(
-  "../figure/plot_bernoulli.png", 
-  p_1,
-  height = 2L,
-  width = 3.5)
-
-p_2 <- p_1 + 
+p_1 <- p_1 + 
   ggplot2::annotate(
     "text",
     x = 2L,
@@ -40,10 +33,10 @@ p_2 <- p_1 +
     label = bquote(L(y, f(x)) ~ "=" ~ ln(1 + exp(-yf(x)))),
     size = 7L)
 
-p_2 <- p_2 + theme_minimal()
-p_2 <- p_2 + theme(text = element_text(size = 20L))
+p_1 <- p_1 + theme_minimal()
+p_1 <- p_1 + theme(text = element_text(size = 20L))
 
-ggplot2::ggsave("../figure/plot_bernoulli_plusmin_encoding.png", p_2)
+ggplot2::ggsave("../figure/plot_bernoulli_plusmin_encoding.png", p_1)
 
 p_2 <- ggplot2::ggplot(data = df, aes(x = x, y = pi, color = y)) + 
   geom_line(size = 1.2) + 
@@ -58,4 +51,3 @@ ggplot2::ggsave(
   p_2,
   height = 4L,
   width = 10L)
-
