@@ -1,3 +1,6 @@
+% Paper: https://home.ttic.edu/~nati/Publications/PegasosMPB.pdf
+% => Contains, among others, 4 possibilities of how to 
+%   estimate theta_0
 \begin{itemize}
 \item Implementation of the PEGASOS algorithm: 
 <<>>=
@@ -26,7 +29,6 @@ pegasos_linear <- function(
     
     # update
     theta <- (1 - lambda * alpha) * theta
-    # theta[1] <- theta[1] * (1-alpha)
     # add second term if within margin
     if(y[i]*f_current[i] < 1) theta <- theta + alpha * y[i]*X[i,]
     
@@ -53,11 +55,13 @@ library(mlbench)
 library(kernlab)
 data = mlbench.twonorm(n = 100, d = 2)
 
-plot(data)
 
 data = as.data.frame(data)
 X = as.matrix(data[, 1:2])
 y = data$classes
+par(mar = c(5,4,4,6))
+plot(x = data$x.1, y = data$x.2, pch = ifelse(data$classes == 1, "-", "+"), col = "black",
+     xlab = "x1", ylab = "x2")
 
 # recode y
 y = ifelse(y == "2", 1, -1)
@@ -65,12 +69,13 @@ mod_pegasos = pegasos_linear(y, cbind(1,X), lambda = C/(NROW(y)))
 
 # Add estimated decision boundary:
 abline(a = - mod_pegasos[1] / mod_pegasos[2], 
-       b = - mod_pegasos[2] / mod_pegasos[3], col = "red")
+       b = - mod_pegasos[2] / mod_pegasos[3], col = "#D55E00")
 
 # Compare to logistic regression:
 mod_logreg = glm(classes ~ ., data = data, family = binomial())
 abline(a = - coef(mod_logreg)[1] / coef(mod_logreg)[2], 
-       b = - coef(mod_logreg)[2] / coef(mod_logreg)[3], col = "blue")
+       b = - coef(mod_logreg)[2] / coef(mod_logreg)[3], col =  "#56B4E9", 
+       lty = 3, lwd = 2)
 
 # decision values
 f_pegasos = cbind(1,X) %*% mod_pegasos
@@ -107,13 +112,28 @@ rbind(
 # recompute margin
 margin = 1 / sqrt(sum(params^2))
 
+# compute value of intercept shift (the margin shift is in orthogonal direction
+#   to the decision boundary, so this has to be transformed first)
+m = - params[1] / params[2]
+t_0 = margin * m / (cos(atan(1/m)))
+
 # add margins to visualization:
 abline(a = - mod_kernlab@b / params[1], 
-       b = - params[1] / params[2], col = "purple")
-abline(a = - mod_kernlab@b / params[1] + margin, 
-       b = - params[1] / params[2], col = "purple", lty = 2)
-abline(a = - mod_kernlab@b / params[1] - margin, 
-       b = - params[1] / params[2], col = "purple", lty = 2)
+       b = m, col = "#0072B2")
+abline(a = - mod_kernlab@b / params[1] + t_0, 
+       b = m, col = "#0072B2", lty = 2)
+abline(a = - mod_kernlab@b / params[1] - t_0, 
+       b = m, col = "#0072B2", lty = 2)
+
+
+# add legends
+legend(par('usr')[2], par('usr')[4], , bty='n', xpd=NA, legend=c("1","2"), 
+       pch=c("-","+"), title="Classes", cex = 0.8)
+legend(par('usr')[2], 1.8, , bty='n', xpd=NA, 
+       legend=c("Pegasos","Logistic","Kernlab","Margin"), 
+       lty=c(1,3,1,2), 
+       col = c("#D55E00","#56B4E9","#0072B2","#0072B2"), 
+       title="", cex = 0.8, lwd = c(1,2,1,1))
 @
 
 \end{itemize}

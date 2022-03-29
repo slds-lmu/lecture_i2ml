@@ -11,9 +11,21 @@ library(smoof)
 
 ############################################################################
 
+
+squared.exp = function(x1, x2, l = 0.1) {
+  
+  D = as.matrix(dist(c(x1, x2), method = "euclidean"))
+  
+  K = exp(-1 / 2 * D^2 / l^2)
+  
+  return(K)
+}
+
 set.seed(123)
 n = 100
 x = seq(-2, 2, length.out = n)
+
+x.obs = c(-1, 1, 1.5)
 
 K = squared.exp(x, x.obs, l = 0.4)
 K.xx = K[(n + 1):nrow(K), (n + 1):nrow(K)]
@@ -36,6 +48,7 @@ p2 = p2 + theme(legend.position = "none") + ggtitle("Function transformed into p
 
 grid.arrange(p1, p2, nrow = 1)
 
+ggsave("figure_man/gp-classification.png")
 
 ############################################################################
 
@@ -49,3 +62,4 @@ df = melt(df, id.vars = "x")
 
 p = ggplot(data = df) + geom_line(aes(x = x, y = value, color = variable)) + labs(color = "")
 p
+

@@ -1,16 +1,15 @@
 \input{../../style/preamble}
 \input{../../latex-math/basic-math.tex}
 \input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-eval.tex}
+\input{../../latex-math/ml-hpo.tex}
 
-
-\newcommand{\titlefigure}{figure_man/conf_matrix.png}
+\newcommand{\titlefigure}{figure_man/conf_matrix}
 \newcommand{\learninggoals}{
 \item Know the definitions of misclassification error rate (MCE) and accuracy (ACC)
 \item Understand the entries of a confusion matrix
 \item Understand the idea of costs
-\item Know defintions of Brier score and log loss
-}
-
+\item Know definitions of Brier score and log loss}
 
 
 \title{Introduction to Machine Learning}
@@ -18,81 +17,169 @@
 \institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
 \date{}
 
-
 \begin{document}
+
 \lecturechapter{Evaluation: Simple Measures for Classification}
 \lecture{Introduction to Machine Learning}
+\sloppy
 
+% ------------------------------------------------------------------------------
 
 \begin{vbframe}{Labels vs Probabilities}
 
-\lz
+\footnotesize
+
 In classification we predict:
 
-\lz
 \begin{enumerate}
-\item Class labels $\rightarrow \hxh = \yh$
-\item Class probabilities $\rightarrow \pikxh$
+  \item Class labels: \\
+  $$\bm{F} = \left( \hat{o}_k^{(i)} \right)_{i \in \{1, \dots, m\}, 
+  k \in \{1, \dots, g\}}
+  \quad \in \R^{m \times g},$$
+  where $\hat{o}_k^{(i)} = [\yih = k], k = 1, \dots, g$ is the one-hot-encoded 
+  class label prediction.
+  % \begin{equation*}
+  %   \begin{split}
+  %     \bm{F} &= \left( \mathbb{I}_{[\hh(\xi) = k]} \right)_{i \in 
+  %     \{1, \dots, m\}, k \in \{1, \dots, g\}} = \\
+  %     &= \left( \mathbb{I}_{[\yih = k]} \right)_{i, k} \quad \in \R^{m \times g}
+  %   \end{split}
+  % \end{equation*}
+  % $\bm{F} = (\mathbb{I}[\hh(\xi) = k])_{i \in \{1, \dots, m\}, 
+  % k \in \{1, \dots, g\}} = (\mathbb{I}[\yih = k])_{i \in \{1, \dots, m\}, 
+  % k \in \{1, \dots, g\}} \in \R^{m \times g}$
+  \item Class probabilities: \\
+  $$\bm{F} = \left(\hat{\pi}_k^{(i)} \right)_{i \in \{1, \dots, m\}, 
+  k \in \{1, \dots, g\}}
+  \quad \in [0, 1]^{m \times g}$$
+  % \begin{equation*}
+  %   \begin{split}
+  %     \bm{F} &= \left(\pikxih \right)_{i \in \{1, \dots, m\}, 
+  %     k \in \{1, \dots, g\}} = \\
+  %     &= \left(\hat \pi_k^{(i)} \right)_{i, k} \quad \in \R^{m \times g}
+  %   \end{split}
+  % \end{equation*}
+  % $\rightarrow \bm{F} = (\pikxih)_{i \in \{1, \dots, m\}, 
+  % k \in \{1, \dots, g\}} = (\hat \pi_k^{(i)})_{i \in \{1, \dots, m\}, 
+  % k \in \{1, \dots, g\}} \in \R^{m \times g}$
 \end{enumerate}
 
-\lz
-$\rightarrow$ We evaluate based on those
+\vfill
+
+$\rightarrow$ These form the basis for evaluation.
+
+\vfill
+
+% Source https://docs.google.com/presentation/d/1eVGEZBS-MFIiweDz6FMioLAJJ25UXVOEykyoJIzUgeg/edit#slide=id.p
+% \begin{center}
+  \includegraphics[width = 0.4\textwidth]{figure_man/classif_thresholding.png}
+% \end{center}
 
 
 \end{vbframe}
 
-\begin{vbframe}{Labels: MCE}
+% ------------------------------------------------------------------------------
 
-The misclassification error rate (MCE) counts the number of incorrect predictions and presents them as a rate:
+\begin{vbframe}{Labels: MCE \& ACC}
 
-\[
-MCE = \meanin [\yi \neq \yih] \in [0;1]
-\]
+\begin{minipage}[t]{0.75\textwidth} 
+  \small
+  The \textbf{misclassification error rate (MCE)} counts the number of incorrect 
+  predictions and presents them as a rate:
+  $$ \rho_{MCE} = \frac{1}{m} \sum_{i = 1}^m [\yi \neq \yih] \in [0, 1]. $$
+  % $$ MCE = \meanin [\yi \neq \yih] \in [0, 1]. $$
+\end{minipage}%
+\begin{minipage}[t]{0.25\textwidth}
+  \centering
+  % FIGURE SOURCE: 
+  %https://docs.google.com/drawings/d/1AJrrXIBJhs0WH078boj3K0DKTJhYUOD_eiPL6J3qcok/edit?usp=sharing
+  \begin{center}
+    \textbf{MCE}
+    \includegraphics[width=0.7\textwidth]
+    {figure_man/eval-classif-loss-compare-mce.pdf}
+  \end{center}
+\end{minipage}
 
-Accuracy is defined in a similar fashion for correct classifications:
-\[
-ACC = \meanin [\yi = \yih] \in [0;1]
-\]
+\lz
+
+\begin{minipage}[t]{0.75\textwidth} 
+  \small
+  \textbf{Accuracy (ACC)} is defined in a similar fashion for correct 
+  classifications:
+  $$ \rho_{ACC} = \frac{1}{m} \sum_{i = 1}^m [\yi = \yih] \in [0, 1]. $$
+  % $$ ACC = \meanin [\yi = \yih] \in [0, 1]. $$
+\end{minipage}%
+\begin{minipage}[t]{0.25\textwidth}
+  \centering
+  % FIGURE SOURCE: 
+  %https://docs.google.com/drawings/d/1zx_hVua5EJbKUmOvAxDPNb9OEeX7fiF9w0Kykzd46jw/edit?usp=sharing
+  \begin{center}
+    \textbf{ACC}
+    \includegraphics[width=0.7\textwidth]
+    {figure_man/eval-classif-loss-compare.pdf}
+  \end{center}
+\end{minipage}
+
+\lz
 
 \begin{itemize}
-\item If the data set is small this can be brittle
-\item The MCE says nothing about how good/skewed predicted probabilities are
-\item Errors on all classes are weighted equally (often inappropriate)
+  \small
+  \item If the data set is small this can be brittle.
+  \item MCE says nothing about how good/skewed predicted probabilities are.
+  \item Errors on all classes are weighted equally, which is often 
+  inappropriate.
 \end{itemize}
+
 \end{vbframe}
 
-
-
-
+% ------------------------------------------------------------------------------
 
 \begin{vbframe}{Labels: Confusion Matrix}
 
-True classes in columns.\\
-Predicted classes in rows.\\
+Much better than reducing prediction errors to a simple number is 
+tabulating them in a \textbf{confusion matrix}:
+\begin{itemize}
+ \item true classes in columns,
+ \item predicted classes in rows.
+\end{itemize}
 
-\lz
+We can nicely see class sizes (predicted/true) and where errors occur.
 
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
-\begin{verbatim}
-           setosa versicolor virginica -err.- -n-
-setosa         50          0         0      0  50
-versicolor      0         46         4      4  50
-virginica       0          4        46      4  50
--err.-          0          4         4      8  NA
--n-            50         50        50     NA 150
-\end{verbatim}
-\end{kframe}
-\end{knitrout}
 
-\lz
-We can see class sizes (predicted and true) and where errors occur.
+\begin{table}[]
+\centering
+\begin{tabular}{cc|cccc|c|}
+& \multicolumn{6}{c}{True classes} \\ 
+\hline
+& &\textbf{setosa} & \textbf{versicolor} & \textbf{virginica} & \textbf{error} & \textbf{$n$} \\ 
+\hline
+
+\multirow{4}{*}{\rotatebox[origin=c]{90}{\parbox{1.5cm}{Predicted \\ classes}}}   
+
+& \textbf{setosa}     & 50              & 0                   & 0                  & 0              & 50           \\
+& \textbf{versicolor} & 0               & 46                  & 4                  & 4              & 50           \\
+& \textbf{virginica}  & 0               & 4                   & 46                 & 4              & 50           \\
+& \textbf{error}      & 0               & 4                   & 4                  & 8              &      -        \\
+\hline
+& \textbf{$n$}        & 50              & 50                  & 50                 &      -          & 150          \\ 
+
+%& & & & & &\\
+
+\hline
+\end{tabular}
+\end{table}
 \end{vbframe}
 
-
+% ------------------------------------------------------------------------------
 
 \begin{vbframe}{Labels: Confusion Matrix}
-\textbf{In binary classification}
+
+\begin{itemize}
+  \item In binary classification, we typically call one class "positive" and the 
+  other "negative".
+  \item The positive class is the more important, often smaller one.
+\end{itemize}
+
 % % FIGURE SOURCE: No source
 % \includegraphics[width=0.7\textwidth]{figure_man/roc-confmatrix1.png}
 
@@ -106,126 +193,154 @@ We can see class sizes (predicted and true) and where errors occur.
               $\yh$ & $-$ & False Negative (FN) & True Negative (TN) \\
 \end{tabular}
 \end{center}
+% \\
+e.g.,
+\begin{itemize}
+  \item \textbf{True Positive} (TP) means that an instance is classified as 
+  positive that is really positive (correct prediction).
+  % \item \textbf{False Positive}(FP) means that a instance is classified as positive which is actually negative (false prediction). 
+  \item \textbf{False Negative} (FN) means that an instance is classified as 
+  negative that is actually positive (incorrect prediction). 
+  % \item \textbf{True Negative}(TN) means that a instance is classified as negative which is negative (true prediction).
+\end{itemize}
 
 \end{vbframe}
 
-
-
+% ------------------------------------------------------------------------------
 
 \begin{vbframe}{Labels: Costs}
-We can also assign different costs to different errors via a cost matrix.
-\[
+
+\small
+
+We can also assign different costs to different errors via a 
+\textbf{cost matrix}.
+
+$$
   Costs = \meanin C[\yi, \yih]
-\]
+$$
 
-\underline{Example}:\\ 
+\underline{Example}: % \textbf{\textcolor{blue}{@BB Elkan Paper! Confusion matrix discussion}}\\ 
+% http://web.cs.iastate.edu/~honavar/elkan.pdf
+Depending on certain features (age, income, profession, ...) a bank wants to 
+decide whether to grant a 10,000 EUR loan.\\ 
 
+\medskip
 
+Predict if a person is solvent (yes / no).\\ 
+Should the bank lend them the money?\\
 
-Predict if person has a ticket (yes / no).\\ 
-Should train conductor check ticket of a person?\\
-
-\begin{columns}
-\begin{column}{0.5\textwidth}
-
-
+\medskip
   \begin{tabular}{ll}
-    \textbf{Costs:} & \\
-    Ticket checking:& 3 EUR\\
-    Fee for fare-dodging:& 40 EUR\\
-    % Ticket price:& 10 EUR\\
+    % \begin{small}
+    \textbf{Examplary costs:} & \\
+    Loss in event of default: & 10,000 EUR\\
+    Income through interest paid: & 100 EUR\\
+    % \end{small}
   \end{tabular}
-  
-\end{column}
-\begin{column}{0.5\textwidth} 
-
-   \includegraphics[width=0.8\textwidth]{figure_man/conductor.jpg}
-    {\tiny \url{http://www.oslobilder.no/OMU/OB.%C3%9864/2902}}
-   
-\end{column}
-\end{columns}
-
+ 
+\begin{table}[ht]
+  \small
+  \begin{tabular}{cccc}
+    \hline
+    & &\multicolumn{2}{c}{True classes} \\ 
+    & &\textbf{solvent} & \textbf{not solvent}  \\ 
+    \hline
+    \multirow{2}{*}{\parbox{1cm}{Predicted \\ classes}}& \textbf{solvent}     & 0                 & 10,000\\
+    & \textbf{not solvent} & 100               & 0\\
+    \hline
+\end{tabular}
+\end{table}
+ 
 \end{vbframe}
 
+% ------------------------------------------------------------------------------
 
 \begin{vbframe}{Labels: Costs}
 
-Predict if person has a ticket (yes / no).\\ 
-
 \begin{columns}
-\begin{column}{0.3\textwidth} 
-
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
-\begin{verbatim}
-Cost matrix C
-     predicted
-true   no yes
-  no  -37   0
-  yes   3   0
-\end{verbatim}
-\end{kframe} \begin{kframe}\begin{verbatim}
-Confusion matrix
-     predicted
-true  no yes
-  no   7   0
-  yes 93   0
-\end{verbatim}
-\end{kframe} \begin{kframe}\begin{verbatim}
-Confusion matrix * C
-     predicted
-true    no yes
-  no  -259   0
-  yes  279   0
-\end{verbatim}
-\end{kframe}
-\end{knitrout}
-
-\end{column}
-\begin{column}{0.65\textwidth}
-
-
-  \begin{tabular}{ll}
-    \textbf{Costs:} & \\
-    Ticket checking:& 3 EUR\\
-    Fee for fare-dodging:& 40 EUR\\
-    % Ticket price:& 10 EUR\\
-  \end{tabular}
-  \lz
-  
-  Our model says that we should not trust anyone and check the tickets of 
-  all passengers.
-  
-  
-  \begin{align*}
-      Costs &= \meanin C[\yi, \yih] \\
-      &= \frac{1}{100} \left( 
-      -37 \cdot 7 + 
-      0 \cdot 0 + 
-      3 \cdot 93 +
-      0 \cdot 0 
-      \right) \\
-      &= \frac{20}{100} = 0.2
-    \end{align*}
+\begin{column}{0.5\textwidth} 
+\footnotesize\textbf{Cost matrix}
+ \begin{table}[ht]
+ \tiny
+\begin{center}
+\begin{tabular}{cccc}
+    \hline
+    & &\multicolumn{2}{c}{True classes} \\ 
+    & &\textbf{solvent} & \textbf{not solvent}  \\ 
+ \hline
+    \multirow{2}{*}{\parbox{0.5cm}{Predicted \\ classes}}& \textbf{solvent}     & 0                 & 10,000\\
+    & \textbf{not solvent} & 100               & 0\\
+    \hline
+\end{tabular}
+\end{center}
+\end{table}
 \end{column}
 
+\begin{column}{0.5\textwidth}
+\footnotesize\textbf{Confusion matrix}
+ \begin{table}[ht]
+ \tiny
+\begin{center}
+\begin{tabular}{cccc}
+    \hline
+    & &\multicolumn{2}{c}{True classes} \\ 
+    & &\textbf{solvent} & \textbf{not solvent}  \\ 
+ \hline
+    \multirow{2}{*}{\parbox{0.5cm}{Predicted \\ classes}}& \textbf{solvent}     & 70                 & 3\\
+    & \textbf{not solvent} & 7              & 20\\
+    \hline
+\end{tabular}
+\end{center}
+\end{table}
+\end{column}
 \end{columns}
 
 
+  \begin{itemize}
+      \item If the bank gives everyone a credit, who was predicted as \textit{solvent}, the costs are at:
+      \begin{align*}
+      Costs &= \meanin C[\yi, \yih] \\&= 
+      \frac{1}{100} \left( 
+      100 \cdot 7 + 
+      0 \cdot 70 + 
+      10.000 \cdot 3 +
+      0 \cdot 20 
+      \right) = 307
+      \end{align*}
+    \item If the bank gives everyone a credit, the costs are at:
+      \begin{align*}
+      Costs &= 
+      \frac{1}{100} \left( 
+      100 \cdot 0 + 
+      0 \cdot 77 + 
+      10.000 \cdot 23 +
+      0 \cdot 0 
+      \right) = 2.300
+      \end{align*}
+    
+  
+  \end{itemize}
+ 
+ 
 \end{vbframe}
 
+% ------------------------------------------------------------------------------
 
 \begin{vbframe}{Probabilities: Brier Score}
-Measures squared distances of probabilities from the true class labels:
-\[
-BS1 = \meanin \left( \pixih - \yi \right)^2
-\]
 
+Measures squared distances of probabilities from the true class labels:
+$$\rho_{BS} = \frac{1}{m} \sum_{i = 1}^m 
+\left( \hat \pi^{(i)} - \yi \right)^2$$
+% \[
+% BS_1 = \meanin \left( \pixih - \yi \right)^2
+% \]
 
 \begin{itemize}
-  \item Fancy name for MSE on probabilities
-  \item Usual definition for binary case, $\yi$ must be coded as 0 and 1.
+  \item Fancy name for MSE on probabilities.
+  \item Usual definition for binary case; $\yi$ must be encoded as 0 and 1.
 \end{itemize}
+
+\lz
 
 \begin{knitrout}\scriptsize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
@@ -234,31 +349,38 @@ BS1 = \meanin \left( \pixih - \yi \right)^2
 
 }
 
-
-
 \end{knitrout}
 
 
 \framebreak
 
-\[
-BS2 = \meanin \sumkg \left( \pikxih - o_k^{(i)} \right)^2
-\]
+$$\rho_{BS, MC} = \frac{1}{m} \sum_{i = 1}^m \sumkg
+\left( \hat \pi_k^{(i)} - o_k^{(i)} \right)^2$$
+% \[
+% BS_2 = \meanin \sumkg \left( \pikxih - o_k^{(i)} \right)^2
+% \]
 \begin{itemize}
-  \item Original by Brier, works also for multiple classes
-  \item $ o_k^{(i)} = [ \yi = k ] $ is a 0-1-one-hot coding for labels
-  \item For the binary case, BS2 is twice as large as BS1, because in BS2 we sum the squared
-    difference for each observation regarding class 0 \textbf{and} class 1, not only the true class.
+  \item Original by Brier, works also for multiple classes.
+  \item $ o_k^{(i)} = [ \yi = k ] $ marks the one-hot-encoded class label.
+  \item For the binary case, $\rho_{BS, MC}$ is twice as large 
+  as $\rho_{BS}$: in $\rho_{BS, MC}$, we sum 
+  the squared difference for each observation regarding both class 0 
+  \textbf{and} class 1, not only the true class.
 \end{itemize}
-
 
 \end{vbframe}
 
+% ------------------------------------------------------------------------------
+
 \begin{vbframe}{Probabilities: Log-Loss}
-Logistic regression loss function, a.k.a. Bernoulli or binomial loss, $\yi$ coded as 0 and 1.
-\[
-LL = \meanin \left( - \yi \log(\pixih) - (1-\yi) \log(1-\pixih) \right)
-\]
+Logistic regression loss function, a.k.a. Bernoulli or binomial loss, $\yi$ 
+encoded as 0 and 1.
+$$\rho_{LL} = \frac{1}{m} \sum_{i = 1}^m \left( - \yi \log \left( 
+\hat \pi^{(i)} \right) - \left( 1-\yi \right) \log \left( 1 - \hat \pi^{(i)} 
+\right) \right).$$
+% \[
+% LL = \meanin \left( - \yi \log(\pixih) - (1-\yi) \log(1-\pixih) \right).
+% \]
 \begin{knitrout}\scriptsize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
 
@@ -266,15 +388,16 @@ LL = \meanin \left( - \yi \log(\pixih) - (1-\yi) \log(1-\pixih) \right)
 
 }
 
-
-
 \end{knitrout}
 \begin{itemize}
-  \item Optimal value is 0, \enquote{confidently wrong} is penalized heavily
-  \item Multiclass version: $ LL = - \meanin \sumkg o_k^{(i)} \log(\pikxih) $
+  \item Optimal value is 0, \enquote{confidently wrong} is penalized heavily.
+  \item Multi-class version: $\rho_{LL, MC} = 
+  - \frac{1}{m} \sum\limits_{i = 1}^m \sumkg o_k^{(i)} \log \left( 
+  \hat \pi_k^{(i)} \right).$
 \end{itemize}
 \end{vbframe}
 
+% ------------------------------------------------------------------------------
 
 \endlecture
 \end{document}

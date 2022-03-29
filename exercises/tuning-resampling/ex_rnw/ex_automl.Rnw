@@ -1,0 +1,81 @@
+In this exercise, we build a simple automated machine learning (AutoML) system 
+that will make data-driven choices on which learner to use and also conduct the 
+necessary tuning.
+
+\texttt{mlr3pipelines} make this endeavor easy, modular and guarded against 
+many common modeling errors.
+
+We work on the \texttt{pima} data to classify patients as diabetic and design a 
+system that is able 
+to choose between $k$-NN and a random forest, both with tuned hyperparameters.
+
+To this end, we will use a graph learner, a "single unit of data operation" 
+that can be trained, resampled, evaluated, \dots as a whole -- in other words, 
+treated as any other learner.
+% Crucially, the pipeline also includes pre-processing\footnote{
+% For example, we might want to perform principal component analysis (PCA) to 
+% reduce input dimensionality.
+% At prediction time, we must be careful to apply these very components, and not 
+% to compute them anew.
+% The same logic holds for feature selection -- we want to reduce the test data 
+% to the most important features as determined during training, not start the 
+% feature selection process over.
+% 
+% Adhering to such considerations becomes very error-prone in complex settings 
+% (think of nested resampling), so the pipelining concept greatly facilitates the
+% workflow here.
+% }.
+
+\begin{enumerate}[a)]
+  \item Create a task object in \texttt{mlr3} (the problem is pre-specified 
+  under the ID "pima").
+  \item Specify the above learners, where you need to 
+  give each learner a name as input to the \texttt{id} argument.
+  Convert each learner to a pipe operator by wrapping them in the sugar 
+  function \texttt{po()}, and store them in a \texttt{list}.
+  \item Before starting the actual learning pipeline, take care of 
+  pre-processing.
+  While this step is highly customizable, you can use an existing 
+  sequence to impute missing values, encode categorical features, and remove 
+  variables with constant value across all observations.
+  For this, specify a pipeline (\texttt{ppl()}) of type \texttt{"robustify"} 
+  (setting \texttt{factors\_to\_numeric} to \texttt{TRUE}).
+  \item Create another \texttt{ppl}, of type \texttt{"branch"} this time, to 
+  enable selection between your learners.
+  \item Chain both pipelines using the double pipe and plot the resulting graph.
+  Next, convert it into a graph learner with \texttt{as\_learner()}.
+  \item Now you have a learner object just like any other.
+  Take a look at its tunable hyperparameters.
+  You will optimize the learner selection, the number of neighbors in $k$-NN 
+  (between 3 and 10), 
+  and the number of split candidates to try in the random forest (between 1 and 
+  5).
+  Define the search range for each like so: 
+  <<echo=TRUE, eval=FALSE>>=
+  <learner>$param_set$values$<hyperparameter> <- to_tune(p_int(lower, upper))
+  @
+  \texttt{p\_int} marks an integer hyperparameter with lower and upper bounds 
+  as defined; similar objects exist for 
+  other data types. 
+  With \texttt{to\_tune()}, you signal that the hyperparameter shall be 
+  optimized in the given range.
+  
+  \textbf{Hint:} You need to define dependencies, since the tuning process 
+  is defined by which learner is selected in the first place (no need to tune 
+  $k$ in a random forest).
+  \item Conveniently, there is a sugar function, \texttt{tune\_nested()}, that 
+  takes care of nested resampling in one step.
+  Use it to evaluate your tuned graph learner with
+  \begin{itemize}
+    \item mean classification error as inner loss,
+    \item random search as tuning algorithm (allowing for 3 evaluations), and
+    \item 3-CV in both inner and outer loop.
+  \end{itemize}
+  \item Lastly, extract performance estimates per outer fold (\texttt{score()}) 
+  and overall (\texttt{aggregate()}).
+  If you want to risk a look under the hood, try 
+  \texttt{extract\_inner\_tuning\_archives()}.
+\end{enumerate}
+
+Congrats, you just designed a turn-key AutoML system that does (nearly) all the 
+work with a few lines of code!

@@ -1,0 +1,86 @@
+This exercise is a compact version of a tutorial on \href{
+https://mlr3gallery.mlr-org.com/posts/2021-03-11-practical-tuning-series-build-an-automated-machine-learning-system/
+}{mlr3gallery}.
+Feel free to explore the additional steps and explanations featured in the 
+original (there is also a 
+bunch of other useful code demos).
+
+\begin{enumerate}[a)]
+
+  \item 
+  <<echo=TRUE>>=
+  library(mlr3verse)
+  library(mlr3tuning)
+  
+  (task <- tsk("pima"))
+  @
+  
+  \item 
+  <<echo=TRUE>>=
+  learners <- list(
+    po(lrn("classif.kknn", id = "kknn")),
+    po(lrn("classif.ranger", id = "ranger")))
+  @
+  
+  \item 
+  <<echo=TRUE>>=
+  ppl_preproc <- ppl("robustify", task = task, factors_to_numeric = TRUE)
+  @
+  
+  \item 
+  <<echo=TRUE>>=
+  ppl_learners <- ppl("branch", learners)
+  @
+  
+  \item 
+  <<echo=TRUE, fig.height=8, fig.width=5>>=
+  ppl_combined <- ppl_preproc %>>% ppl_learners
+  plot(ppl_combined)
+  graph_learner <- as_learner(ppl_combined)
+  @
+  
+  \item
+  <<echo=TRUE>>=
+  # check available hyperparameters for tuning (converting to data.table for 
+  # better readability)
+  tail(as.data.table(graph_learner$param_set), 10)
+  
+  # seeing all our hyperparameters of interest are of type int, we specify the 
+  # tuning objects accordingly, and dependencies for k and mtry
+  graph_learner$param_set$values$branch.selection <- 
+    to_tune(p_int(1, 2))
+  graph_learner$param_set$values$kknn.k <- 
+    to_tune(p_int(3, 10, depends = branch.selection == 1))
+  graph_learner$param_set$values$ranger.mtry <-
+    to_tune(p_int(1, 5, depends = branch.selection == 2))
+  
+  # rename learner (otherwise, mlr3 will display a lengthy chain of operations 
+  # in result tables)
+  graph_learner$id <- "graph_learner"
+  @
+  
+  \item
+  <<echo=TRUE, results='hide'>>=
+  # make sure to set a seed for reproducible results
+  set.seed(123)
+  
+  # perform nested resampling, terminating after 3 evaluations
+  rr <- tune_nested(
+    method = "random_search",
+    task = task,
+    learner = graph_learner,
+    inner_resampling = rsmp ("cv", folds = 3),
+    outer_resampling = rsmp("cv", folds = 3),
+    measure = msr("classif.ce"),
+    term_evals = 3)
+  @
+  
+  \item 
+  <<echo=TRUE>>=
+  rr$score()
+  rr$aggregate()
+  @
+  The performance estimate for our tuned learner then amounts to an MCE of 
+  around \Sexpr{round(rr$aggregate(), 2)}.
+  
+\end{enumerate}
