@@ -11,7 +11,7 @@ Please see the main course site.
 
 ## Help is appreciated and welcome!
 
-We hope to continously improve and expand this course over the coming years. 
+We hope to continuously improve and expand this course over the coming years. 
 We strongly believe in open source and collaborative work. Please contact us if 
 you think likewise and would like to contribute. 
 See also our [contributing guidelines](CONTRIBUTING.md)
