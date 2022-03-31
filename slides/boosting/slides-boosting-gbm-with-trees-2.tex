@@ -1,0 +1,289 @@
+\input{../../style/preamble} 
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+\input{../../latex-math/ml-ensembles.tex}
+\input{../../latex-math/ml-trees.tex}
+
+\newcommand{\titlefigure}{figure_man/gbm_leaf_adjustment.pdf}
+\newcommand{\learninggoals}{
+  \item Loss optimal terminal coefficients
+  \item GB with trees for multiclass problems
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Gradient Boosting with Trees 2}
+\lecture{Introduction to Machine Learning}
+
+% ------------------------------------------------------------------------------
+
+
+\begin{vbframe}{Adapting terminal coefficients}
+
+\begin{itemize}
+\item Tree as additive model: $ b(\xv) = \sum_{t=1}^{T} c_t \mathds{1}_{\{\xv \in R_t\}} $,
+\item $R_t$ are the terminal regions; $c_t$ are terminal constants 
+\end{itemize}
+
+% One can write a tree as: $ b(\xv) = \sum_{t=1}^{T} c_t \mathds{1}_{\{\xv \in R_t\}} $,
+
+\vspace*{0.2cm}
+
+The GB model is still additive in the regions:
+% For a fitted tree with regions $R_t$, the special additive structure can be exploited in boosting:  %Finished here
+
+\begin{align*}
+  \fm(\xv) &= \fmd(\xv) +  \alpha^{[m]} \bl(\xv) \\
+         &= \fmd(\xv) +  \alpha^{[m]} \sum_{t=1}^{\Tm} \ctm \mathds{1}_{\{\xv \in \Rtm\}}\\
+         &= \fmd(\xv) +  \sum_{t=1}^{\Tm} \ctmt \mathds{1}_{\{\xv \in \Rtm\}}.
+\end{align*}
+
+With $\ctmt = \alpha^{[m]} \cdot \ctm$ in the case that $\alpha^{[m]}$ is a constant learning rate
+%Actually, we do not have to find $\ctm$ and $\betam$ in two separate steps
+%(fitting against pseudo-residuals, then line search) but find optimal 
+%\textcolor{blue}{$\ctmt$} (including $\betam$).
+%Also note that the \textcolor{blue}{$\ctmt$} will not really be loss-optimal as 
+%we used squared error loss
+%to fit them against the pseudo-residuals.
+
+% ------------------------------------------------------------------------------
+
+\framebreak
+\begin{small}
+After the tree has been fitted against the PRs, we can adapt terminal constants in a second step to become more loss optimal.
+
+$$
+\fm(\xv) = \fmd(\xv) +  \sum_{t=1}^{\Tm} \ctmt \mathds{1}_{\{\xv \in \Rtm\}}. 
+$$
+
+%We want to find the constant value $c$ that drives down risk the most w.r.t the squared error loss,
+%when added to the respective terminal region.
+We can determine/change all $\ctmt$ individually and directly $L$-optimally:
+
+
+%\vspace{-0.2cm}
+
+$$ \ctmt = \argmin_{c} \sum_{\xi \in \Rtm} L(\yi, \fmd(\xi) + c). $$
+
+\vspace{-0.5cm}
+
+\begin{center}
+
+\includegraphics[width=0.38\textwidth]{figure_man/gbm_leaf_adjustment.pdf}
+
+\end{center}
+
+\end{small}
+
+\framebreak
+
+An alternative approach ist to directly fit a loss-optimal tree.
+Risk for data in a node:
+$$
+\mathcal{R}(\mathcal{N}') = \sum_{i \in \mathcal{N}'} L(\yi, \fmd(\xi) + c)
+$$
+
+with $\mathcal{N}'$ being the index set of a specific (left or right) node after splitting and $c$ the constant of the node.
+
+\vfill
+
+% Thus, instead of having a two-step approach of first fitting a tree to the pseudo-residuals of the current model and then finding the optimal value for $c$, we now directly build a tree that finds $c$ loss-optimally.
+$c$ can be found by line search or analytically for some losses.
+% Since $c$ is unknown, it needs to be determined, which can either be done by a line search or by taking the derivative:
+% $$
+% \frac{\partial{\mathcal{R}(\mathcal{N}')}}{\partial c} = \sum_{i \in \mathcal{N}'} \frac{\partial{L(\yi, \fmd(\xi) + c)}}{\partial f \rvert_{f = \fmd + c}} = 0
+% $$
+% ------------------------------------------------------------------------------
+% \framebreak
+% \input{algorithms/gradient_boosting_tree_algorithm_altern.tex}
+
+% The tree algorithm based on the CART algorithm of Breiman shows one partitioning step based on the risk function we introduced before. 
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+
+\begin{vbframe}{GB Multiclass with Trees}
+
+\begin{itemize}
+  \item From Friedman, J. H. - Greedy Function Approximation: A Gradient Boosting Machine (1999)
+  \item We again model one discriminant function per class.    
+  \item Determining the tree structure works just like before.
+\item In the estimation of the $c$ values, i.e., the heights of the terminal regions, however, all models depend on each other because of the definition
+of $L$. Optimizing this is more difficult, so we will skip some details and present the main idea and results.
+\end{itemize}
+
+\framebreak
+
+% \begin{itemize}
+%   \item The post-hoc, loss-optimal heights of the terminals $\hat{c}_{tk}^{[m]}$ are:
+%   $$ 
+%   \hat{c}_{tk}^{[m]} = - \argmin_{c_{tk}^{[m]} } \sum_{i=1}^n \sum_{k=1}^g \mathds{1}_{\{y = k\}} \ln \pi_k^{[m]}(\xv^{(i)}) \,.
+%   $$
+% \item Softmax trafo: $\pi_k^{[m]}(\xv) = \frac{\exp(f_k^{[m]}(\xv))}{\sum_j \exp(f_j^{[m]}(\xv))},$ with 
+% \item The $k$-th model:
+%   $
+%   \hat{f}_k^{[m]}(\xv^{(i)})) = \hat{f}_k^{[m-1]}(\xv^{(i)}) + \sum_{t=1}^{T_k^{[m]}} \hat{c}_{tk}^{[m]} \mathds{1}_{\{\xv^{(i)} \in R_{tk}^{[m]}\}}. 
+%   $
+  % resulting from the multinomial loss function $L(y, f_1(\xv), \ldots f_g(\xv)) = - \sumkg \mathds{1}_{\{y = k\}} \ln \pikx$.
+  %and $\pikx = \frac{\exp(f_k(\xv))}{\sum_j \exp(f_j(\xv))}$ as before.\medskip
+
+% \end{itemize}
+
+
+  % \item In each iteration $m$ we calculate the pseudo-residuals
+        % $$\rmi_k = \mathds{1}_{\{\yi = k\}} - \pi_k^{[m-1]}(\xi),$$
+        % where $\pi_k^{[m-1]}(\xi)$ is derived from $f^{[m-1]}(\mathbf{x}).$
+
+  % \item Thus, $g$ trees are induced at each iteration $m$ to predict the corresponding current pseudo-residuals for each class on the probability scale.
+
+  % \item Each of these trees has $T$ terminal nodes with corresponding regions $R_{tk}^{[m]}$.
+
+
+\framebreak
+
+
+\begin{itemize}
+
+  \item There is no closed-form solution for finding the optimal $\hat{c}_{tk}^{[m]}$ values. Additionally, the regions corresponding to the different class trees overlap, so that the solution does not reduce to a separate calculation within each region of each tree.
+
+  \item Hence, we approximate the solution with a single Newton-Raphson step, using a diagonal approximation to the Hessian (we leave out the details here).
+
+  \item This decomposes the problem into a separate calculation for each terminal node of each tree.
+
+  \item The result is
+
+  $$\hat{c}_{tk}^{[m]} =
+      \frac{g-1}{g}\frac{\sum_{\xi \in R_{tk}^{[m]}} \rmi_k}{\sum_{\xi \in R_{tk}^{[m]}} \left|\rmi_k\right|\left(1 - \left|\rmi_k\right|\right)}.$$
+
+  % \item The update is then done by
+  % $$
+  % \hat{f}_k^{[m]}(\xv) = \hat{f}_k^{[m-1]}(\xv) + \sum_t \hat{c}_{tk}^{[m]} \mathds{1}_{\{\xv \in R_{tk}^{[m]}\}}.
+  % $$
+
+\end{itemize}
+
+\framebreak
+
+\input{algorithms/gradient_boosting_for_k_classification.tex}
+
+
+\end{vbframe}
+
+
+% \begin{vbframe}{Additional information}
+% 
+% By choosing a suitable loss function it is also possible to model a large number of different problem domains:
+% \begin{itemize}
+%   \item Regression
+%   \item (Multiclass) Classification
+%   \item Count data
+%   \item Survival data
+%   \item Ordinal data
+%   \item Quantile regression
+%   \item Ranking problems
+%   \item ...
+% \end{itemize}
+% 
+% \lz
+% 
+% % Boosting is closely related to L1 regularization.
+% 
+% % \lz
+% 
+% Different base learners increase flexibility (see componentwise gradient boosting).
+% If we model only individual variables, the resulting regularized variable selection
+% is closely related to $L1$ regularization.
+% 
+% \framebreak
+% 
+% For example, using the pinball loss in boosting
+% $$
+% L(y, f(\xv)) = \left\{
+% \begin{array}{lc}
+% (1 - \alpha)(f(\xv) - y), & \text{if}\ y < f(\xv) \\
+% \alpha(y - f(\xv)),       & \text{if}\ y \geq f(\xv)
+% \end{array}
+% \right.
+% $$
+% models the $\alpha$-quantiles:
+% 
+% \begin{center}
+% \includegraphics[scale=0.5]{figure_man/quantile_boosting.png}
+% \end{center}
+% 
+% \framebreak
+% 
+% The AdaBoost fit has the structure of an additive model with \enquote{basis functions} $\bl (x)$.
+% 
+% \lz
+% 
+% It can be shown (see Hastie et al. 2009, Chapter 10) that AdaBoost corresponds to minimizing the empirical risk in each iteration $m$ using the \textbf{exponential} loss function:
+% \begin{align*}
+%   L(y, \fmh(\mathbf{x}))    &= \exp\left(-y\fmh(\mathbf{x})\right) \\
+%   \riske(\fmh)              &= \sumin L(\yi, \fmh(\xi)) \\
+%                             &= \sumin L(\yi, \fmdh(\xi) + \beta b(\xi))\,,
+% \end{align*}
+% 
+% 
+% % \begin{align*}
+% %   \sum_{i=1}^n \exp\left(-\yi \cdot \left(\beta b\left(\xi\right)
+% %   + \fmdh\left(\xi\right)\right)\right),
+% % \end{align*}
+% with minimization over $\beta$ and $b$ and where $\fmdh$ is the boosting fit in iteration $m-1$.
+% 
+% % \framebreak
+% 
+% % AdaBoost is the empirical equivalent to the forward piecewise solution of the minimization problem
+% 
+% % \begin{align*}
+% %   \text{arg} \min_{f} \E_{y|x}( \exp (- y \cdot \fx))\ .
+% % \end{align*}
+% 
+% % \lz
+% 
+% % Therefore, the boosting fit is an estimate of function
+% % \begin{align*}
+% %   f^*(x) = 0.5 \cdot \log \left( \frac{\text{P} (y = 1 | x)}
+% %   {\text{P} (y = -1 | x)}\right) \ ,
+% % \end{align*}
+% % which solves the former problem theoretically.
+% 
+% % \lz
+% 
+% % Obvious idea: generalization on other loss functions, use of alternative basis methods.
+% 
+% \end{vbframe}
+
+% 
+% \begin{vbframe}{Take home message}
+% Gradient boosting is a statistical reinterpretation of the older AdaBoost algorithm.
+% 
+% \lz
+% 
+% Base learners are added in a \enquote{greedy} fashion, so that they point in the direction of the negative gradient of the empirical risk.
+% 
+% \lz
+% 
+% Regression base learners are fitted even for classification problems.
+% 
+% \lz
+% 
+% Often the base learners are (shallow) trees, but arbitrary base learners are possible.
+% 
+% \lz
+% 
+% The method can be adjusted flexibly by changing the loss function, as long as it's differentiable.
+% 
+% \lz
+% 
+% Methods to evaluate variable importance and to do variable selection exist.
+% 
+% \end{vbframe}
+
+
+\endlecture
+\end{document}

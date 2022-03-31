@@ -21,15 +21,17 @@
 
 
 
-\begin{vbframe}{Regularization and shrinkage}
+\begin{vbframe}{Iters, Tree Depth, Learn Rate}
 
-If GB runs for a large number of iterations, it can overfit due to its aggressive loss
-minimization.
+GB can overfit easily, due to its aggressive loss minimization.
 
 \begin{blocki}{Options for regularization:}
-\item Limit the number of boosting iterations $M$ (\enquote{early stopping}), i.e., limit the number of additive components.
-\item Limit the depth of the trees. This can also be interpreted as choosing the order of interaction.
-\item Shorten the learning rate $\betam$ of each iteration.
+\item Limit nr of iters $M$, i.e., additive components (\enquote{early stopping}),
+    % i.e., limit nr of additive components.
+\item Limit depth of trees.
+    Can also be interpreted as choosing the order of interaction (see later).
+\item Use a small learn rate $\alpha$ for only mild model updates. \\
+    $\alpha$ a.k.a. shrinkage.
 \end{blocki}
 
 % The latter is achieved by multiplying $\betam$ with a small $\nu \in (0,1]$:
@@ -37,49 +39,69 @@ minimization.
 % \fm(\xv) = \fmd(\xv) + \betam b(\xv, \thetam) \,.
 % $$
 
-Note: If $\betam$ is found via line search, we multiply the next base learner by an additional constant \textbf{shrinkage parameter} $\nu \in (0,1]$ to shorten the step length.
-In the case of a (commonly used) constant learning rate $\beta$, $\nu$ can be neglected by choosing a smaller value for $\beta$.
-Hence, on the following slides, we call $\beta$ the shrinkage parameter or learning rate.
+% Note: If $\alpha^{[m]}$ is found via line search, we multiply the next base learner by a small constant factor to shorten the step length.
+% In the case of a (commonly used) constant learning rate $\alpha$, this additional parameter 
+% can be factored in by choosing a smaller value for $\alpha$.
+% Hence, in the following, we call $\alpha$ the shrinkage parameter or learning rate.
 
 
-\framebreak
+% \framebreak
 
-Obviously, the optimal values for $M$ and $\beta$ strongly depend on each other:
-by increasing $M$ one can use a smaller value for $\beta$ and vice versa.
 
-\lz
 
-In practice, a common recommendation to find a good first model without tuning both parameters is thus to choose $\beta$ quite small and determine $M$ by cross-validation. 
+\begin{blocki}{Practical hints:}
+\item Optimal values for $M$ and $\alpha$ strongly depend on each other:
+by increasing $M$ one can use a smaller value for $\alpha$ and vice versa.
 
-\lz
+\item Fast option = Make $\alpha$ small and choose $M$ by CV. 
 
-It is probably best to tune all three parameters ($M$ and $\beta$ as well as 
-the tree depths) jointly based on the training data
-via cross-validation or a related method.
+\item Probably best to tune all 3 hyperpars jointly via, e.g., CV.
+\end{blocki}
 
 \end{vbframe}
 
 \begin{vbframe}{Stochastic gradient boosting}
 
-\textbf{Stochastic gradient boosting} is a minor modification to boosting to 
-incorporate the advantages of bagging into the method.
-The idea was formulated quite early by Breiman.
+\begin{itemize}
+\item Minor modification to incorporate the advantages of bagging
+\item In each iter, we only fit on a random subsample of the train data
+\item Especially for small train sets, this often leads helps
+\item Size of random sets = new hyperpar
+% substantial empirical improvements.
+% How large the improvements are depends on data structure, size of the dataset,
+% base learner and size of the subsamples (so this is another tuning parameter).
 
-\lz
-
-Instead of fitting on all the data points, a random subsample is drawn in each iteration.
-
-\lz
-
-Especially for small training sets, this simple modification often leads to
-substantial empirical improvements.
-How large the improvements are depends on data structure, size of the dataset,
-base learner and size of the subsamples (so this is another tuning parameter).
-
+\end{itemize}
 
 \end{vbframe}
 
+% ------------------------------------------------------------------------------
 
+\begin{vbframe}{Example: Sinusoidal with Tree stumps}
+
+% BL = tree stumps. 
+
+% \vfill
+
+\begin{center}
+  \includegraphics[width=\textwidth]{figure/gbm_sine.png}
+\end{center}
+
+% \vfill
+
+Works quite nicely without noise, but overfits on the RHS.
+
+% \small
+% \begin{itemize}
+  % \item Iterating this very simple base learner achieves a rather nice
+  % approximation of a smooth model in the end.
+  % \item Again, the model overfits the noisy case with less 
+  % regularization.
+% \end{itemize}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
 
 %\begin{vbframe}{Variable importance}
 
@@ -109,8 +131,43 @@ base learner and size of the subsamples (so this is another tuning parameter).
 
 %\end{vbframe}
 
+% \begin{vbframe}{Visualization 2}
+% 
+% \begin{center}
+%   \includegraphics[width=\textwidth]{figure/gbm_sine.png}
+% \end{center}
+% 
+% \vfill
+% 
+% \footnotesize
+% \begin{itemize}
+%   \item Iterating this very simple tree-stump base learner yields a rather nice
+%   approximation of a smooth model in the end.
+%   \item Severe overfitting apparent in the noisy case. We will discuss and solve 
+%   this problem later.
+% \end{itemize}
+% 
+% \end{vbframe}
 
-\begin{vbframe}{Example: Spam detection}
+\begin{vbframe}{example: spirals data}
+
+% Consider the \texttt{spirals} data set with $\mathit{sd} = 0.1$ and $n = 300$.
+We examine effect of learn rate, with fixed nr of trees and fixed depth.
+% 0k and choosing a tree depth of 10:
+
+\vfill
+
+\includegraphics[width = \textwidth]{figure/gbm_regu_oversmoothing_overfitting}
+
+\vfill
+
+We observe an oversmoothing effect in the left scenario with strong 
+regularization (i.e., very small learning rate) and overfitting when 
+regularization is too weak (right). $\alpha = 0.001$  yields a pretty good fit.
+
+\end{vbframe}
+
+\begin{vbframe}{Example: Spam detection with Trees} 
 
 % The data set we will examine briefly in the following was collected at the Hewlett Packard laboratories
 % to train a personalized spam mail detector.
@@ -141,23 +198,23 @@ base learner and size of the subsamples (so this is another tuning parameter).
 %
 % \lz
 
-We fit a gradient boosting model for different parameter values:
+% We fit a gradient boosting model for different parameter values:
 
 \begin{table}[]
 \footnotesize
 \centering
 \begin{tabular}{l|l}
-Parameter name      & Values                         \\
+Hyperpar     & Range                         \\
 \hline
 Loss        & Bernoulli (for classification) \\
 Number of trees $M$ & $\{0, 1,\dots,10000\}$              \\
-Shrinkage $\beta$     & $\{0.001, 0.01, 0.1\}$           \\
+Shrinkage $\alpha$     & $\{0.001, 0.01, 0.1\}$           \\
 Max. tree depth     & $\{1, 3, 5, 20\}$
 \end{tabular}
 \end{table}
 
 \vfill
-We consider the 3-CV test error to find the optimal parameters (red):
+Use 3-CV in grid search; optimal config in red:
 
 
 % \framebreak
@@ -195,69 +252,6 @@ We consider the 3-CV test error to find the optimal parameters (red):
 
 \end{vbframe}
 
-
-
-
-% \begin{vbframe}{Visualization 2}
-% 
-% \begin{center}
-%   \includegraphics[width=\textwidth]{figure/gbm_sine.png}
-% \end{center}
-% 
-% \vfill
-% 
-% \footnotesize
-% \begin{itemize}
-%   \item Iterating this very simple tree-stump base learner yields a rather nice
-%   approximation of a smooth model in the end.
-%   \item Severe overfitting apparent in the noisy case. We will discuss and solve 
-%   this problem later.
-% \end{itemize}
-% 
-% \end{vbframe}
-
-\begin{vbframe}{example: spirals data}
-
-Consider the \texttt{spirals} data set with $\mathit{sd} = 0.1$ and $n = 300$.
-We examine the effect of the shrinkage parameter, holding the number of trees 
-fixed at 10k and choosing a tree depth of 10:
-
-\vfill
-
-\includegraphics[width = \textwidth]{figure/gbm_regu_oversmoothing_overfitting}
-
-\vfill
-
-We observe an oversmoothing effect in the left scenario with strong 
-regularization (i.e., very small learning rate) and overfitting when 
-regularization is too weak (right). $\beta = 0.001$  yields a pretty good fit.
-
-\end{vbframe}
-
-% ------------------------------------------------------------------------------
-
-\begin{vbframe}{example: sinusoidal data}
-
-Here we choose a tree-stump base learner to model univariate data 
-with sinusoidal behavior.
-
-% \vfill
-
-\begin{center}
-  \includegraphics[width=\textwidth]{figure/gbm_sine.png}
-\end{center}
-
-% \vfill
-
-\small
-\begin{itemize}
-  \item Iterating this very simple base learner achieves a rather nice
-  approximation of a smooth model in the end.
-  \item Again, the model overfits the noisy case with less 
-  regularization.
-\end{itemize}
-
-\end{vbframe}
 
 \endlecture
 \end{document}
