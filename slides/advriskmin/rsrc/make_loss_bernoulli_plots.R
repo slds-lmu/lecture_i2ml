@@ -51,4 +51,3 @@ ggplot2::ggsave(
   p_2,
   height = 4L,
   width = 10L)
-

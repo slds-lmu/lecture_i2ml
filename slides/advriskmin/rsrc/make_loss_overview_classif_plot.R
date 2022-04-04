@@ -50,3 +50,9 @@ ggplot2::ggsave(
   p, 
   width = 6L, 
   height = 4L)
+
+ggplot2::ggsave(
+  "../figure/plot_loss_overview_classif_2.png", 
+  p, 
+  width = 4L, 
+  height = 3L)
