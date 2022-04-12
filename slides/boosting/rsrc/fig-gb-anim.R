@@ -146,7 +146,7 @@ plot_model <- function(m, x, y_hat, r, r_hat, beta) {
     ggplot2::geom_step(aes(x = x_grid, y = r_hat_grid), col = "blue") +
     ggplot2::ggtitle(
       label = NULL , 
-      subtitle = expression(r^{"[m]"} ~ "and" ~ beta * b^{"[m]"})) +
+      subtitle = expression(r^{"[m]"} ~ "and" ~ alpha * b^{"[m]"})) +
     ggplot2::ylim(c(-1L, 1L)) +
     ggplot2::theme_minimal() +
     ggplot2::theme(text = ggplot2::element_text(16L))
