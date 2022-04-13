@@ -1,0 +1,164 @@
+\begin{enumerate}[a)]
+  \item Get the data, define a task and corresponding train-test split, and
+  predict with trained model:
+  <<echo=TRUE, message=FALSE>>=
+
+  # get data
+  library(mlbench)
+  data(BostonHousing)
+  data_pollution <- data.frame(dis = BostonHousing$dis, nox = BostonHousing$nox)
+  data_pollution <- data_pollution[order(data_pollution$dis), ]
+  head(data_pollution)
+  
+  # define task and train-test split
+  library(mlr3)
+  task <- mlr3::TaskRegr$new("pollution", backend = data_pollution, target = "nox")
+  train_set = 1:10
+  test_set = setdiff(seq_len(task$nrow), train_set)
+  
+  # train linear learner
+  library(mlr3learners)
+  learner <- mlr3::lrn("regr.lm")
+  learner$train(task, row_ids = train_set)
+  
+  # predict on test data
+  predictions <- learner$predict(task, row_ids = test_set)
+  predictions$score(mlr3::msr("regr.mse"))
+  @
+  
+  \item We have chosen the first ten observations from a data set that is 
+  ordered by feature value, which is not a good idea because this is not a 
+  random sample and covers only a particular area of the feature space. 
+  Consequently, we obtain a pretty high test MSE (relatively speaking -- we 
+  will see in the next exercise 
+  which error values we can usually expect for this task).
+  Looking at the data, this gives us a steeply declining regression line that 
+  does not reflect the overall data situation.
+  Also, a training set of ten points is pretty small and will likely lead to 
+  poor generalization.
+  
+  \item We repeat the above procedure for different train-test splits like so:
+  <<echo=TRUE, results=FALSE, message=FALSE, fig.width=3, fig.height=1.5>>=
+
+  # define train-test splits
+  repetitions <- 1:10
+  split_ratios <- seq(0.1, 0.9, by = 0.1)
+
+  # create resampling objects with holdout strategy, using lapply for efficient computation
+  split_strategies <- lapply(split_ratios, function(i) mlr3::rsmp("holdout", ratio = i))
+
+  # train linear learners and predict in one step (remember to set a seed)
+  set.seed(123)
+  results <- list()
+  for (i in repetitions) {
+    results[[i]] <- lapply(split_strategies, function(i) mlr3::resample(task, learner, i))
+  }
+  @
+  <<echo=TRUE, message=FALSE, fig.height=4, fig.width=8>>=
+
+  # compute errors in double loop over repetitions and split ratios
+  errors <- lapply(
+    repetitions,
+    function(i) sapply(results[[i]], function(j) j$score()$regr.mse))
+
+  # assemble everything in data.frame and convert to long format for plotting
+  errors_df <- as.data.frame(do.call(cbind, errors))
+  errors_df$split_ratios <- split_ratios
+  errors_df_long <- reshape2::melt(errors_df, id.vars = "split_ratios")
+  names(errors_df_long)[2:3] <- c("repetition", "mse")
+
+  # plot errors vs split ratio
+  library(ggplot2)
+  ggplot(errors_df_long, aes(x = as.factor(split_ratios), y = mse)) +
+    geom_boxplot(fill = "lightgray") +
+    theme_classic() +
+    labs(x = "share of training samples", y = "average MSE")
+  
+  @
+  
+  \item From the experiment in c) we can derive two conclusions:
+  \begin{enumerate}[1)]
+    \item A smaller training set tends to produce higher estimated 
+    generalization errors.
+    \item A larger training set, at the expense of test set size, will cause 
+    high variance in the individual generalization error estimates.
+  \end{enumerate}
+  
+  % \item In order to solve this, we rely mostly on the linearity of the 
+  % expectation and what is known as \enquote{Verschiebungssatz der Varianz} in 
+  % German (i.e., $\var(z) = \E(z^2) - \E^2(z)$ for some random variable $z$), 
+  % as well as pulling components out of the expectation that do not depend on the 
+  % variable we marginalize over.
+  % Then:
+  % 
+  % \begin{flalign*}
+  %   \Exy ((\hat y - y)^2 ~|~ \xv) &= \Exy (\hat y^2 - 2\hat y y +
+  %   y^2 ~|~ \xv) \\
+  %   &= \hat y^2 - 2 \cdot \hat y \cdot \Exy(y ~|~ \xv) + 
+  %   \Exy(y^2 ~|~ \xv) \\
+  %   &= \hat y^2 - 2 \cdot \hat y \cdot \Exy(y ~|~ \xv) + 
+  %   \E^2_{xy}(y ~|~ \xv) +
+  %   \var_{xy}(y ~|~ \xv) \\ 
+  %   &= \left(\hat y - \Exy(y ~|~ \xv) \right)^2 + \var_{xy}(y ~|~ \xv).
+  % \end{flalign*}
+  % 
+  % \item Now we account for the fact that $\hat y$ is a random variable if we 
+  % compute repeated estimates of the generalization error based on random sampling 
+  % processes.
+  % For this, we start from the expression we have derived in e), only now with 
+  % the additional expectation around the first component:
+  % 
+  % \begin{flalign*}
+  %   \Exy (\E_{\hat y}((\hat y - y)^2) ~|~ \xv) &=
+  %   \E_{\hat y} \left( \left(\hat y - \Exy(y ~|~ \xv) \right)^2 + 
+  %   \var_{xy}(y ~|~ \xv) \right) \\
+  %   &= \E_{\hat y} \left( \left(\hat y - \Exy(y ~|~ \xv) \right)^2 \right) + 
+  %   \var_{xy}(y ~|~ \xv) \\
+  %   &= \E_{\hat y} \left(\hat y^2 - 2 \cdot \hat y  \cdot
+  %   \Exy(y ~|~ \xv) +
+  %   \E^2_{xy}(y ~|~ \xv)\right) + \var_{xy}(y ~|~ \xv) \\
+  %   &= \E_{\hat y}(\hat y^2) - 2  \cdot \E_{\hat y}(\hat y)
+  %    \cdot \Exy(y ~|~ \xv) + \E^2_{xy}(y ~|~ \xv) + 
+  %    \var_{xy}(y ~|~ \xv) \\
+  %   &= \E^2_{\hat y}(\hat y) + \var_{\hat y}(\hat y)-  
+  %   2  \cdot \E_{\hat y}(\hat y)
+  %    \cdot \Exy(y ~|~ \xv) + \E^2_{xy}(y ~|~ \xv) + 
+  %    \var_{xy}(y ~|~ \xv) \\
+  %   &= \left( \E_{\hat y}(\hat y) -  \Exy(y ~|~ \xv) \right)^2 +
+  %   \var_{\hat y}(\hat y) + \var_{xy}(y ~|~ \xv).
+  % \end{flalign*}
+  % 
+  % Okay, now what to make of this? 
+  % The first thing we need to understand is 
+  % that $\Exy(y ~|~ \xv)$ is the best possible prediction we could make: it is
+  % the conditional expectation of our target under the true data-generating 
+  % process, i.e., the value of $y$ we would expect to observe for given $\xv$ 
+  % if we knew the true feature-target relation.
+  % Unfortunately, our prediction $\E_{\hat y}(\hat y)$ will in general be
+  % different from $\Exy(y ~|~ \xv)$ because we do not know the whole truth. 
+  % Looking at the last line of our derivation, we see that the first term 
+  % is exactly the MSE between these two quantities -- i.e., the square expected 
+  % \textit{bias} we make with our prediction.
+  % 
+  % The second summand $\var_{\hat y}(\hat y)$ represents, unsurprisingly, 
+  % the \textit{variance} part of the decomposition.
+  % 
+  % Now the last term is the variance of the true conditional distribution, which, 
+  % crucially, does not depend on our prediction.
+  % No matter how accurate our model is, this component will be irreducible.
+  % It thus marks a lower bound on the generalization error and is also referred 
+  % to as \textit{Bayes error}.
+  % 
+  % Summarizing:
+  % 
+  % $$\Exy (\E_{\hat y}((\hat y - y)^2) ~|~ \xv) = 
+  % \left( \underbrace{\E_{\hat y}(\hat y) -  \Exy(y ~|~ \xv)}_{
+  % \text{bias}} \right)^2
+  % + \underbrace{\var_{\hat y}(\hat y)}_{\text{variance}} 
+  % + \underbrace{\var_{xy}(y ~|~ \xv)}_{\text{irreducible error}}.$$
+  % 
+  % We see again that $\E_{\hat y}(\hat y)$ will, on average, be a better 
+  % estimator for $\Exy(y ~|~ \xv)$ if we have more data for training (provided 
+  % our learner class is flexible enough), while 
+  % $\var_{\hat y}(\hat y)$ tends to be large if we leave little data to test on.
+\end{enumerate}

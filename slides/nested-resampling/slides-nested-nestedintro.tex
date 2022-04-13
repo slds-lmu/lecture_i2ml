@@ -1,0 +1,117 @@
+\input{../../style/preamble}
+
+
+\newcommand{\titlefigure}{figure/cart_tuning_nestintro_1}
+\newcommand{\learninggoals}{
+\item Understand the problem of overtuning
+\item Be able to explain the untouched test set principle and how it motivates the idea of nested resampling}
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+\begin{document}
+\lecturechapter{Nested Resampling Motivation}
+\lecture{Introduction to Machine Learning}
+
+\begin{vbframe}{Motivation}
+Selecting the best model from a set of potential candidates (e.g., different classes of learners, different hyperparameter settings, different feature sets, different preprocessing, ....) is an important part of most  machine learning problems.
+\vspace{-1ex}
+\begin{blocki}{Problem}
+    \item We cannot evaluate our finally selected learner on the same resampling splits that we have used to perform model selection for it, e.g., to tune its hyperparameters.
+    \item By repeatedly evaluating the learner on the same test set, or the same CV splits, information
+      about the test set \enquote{leaks} into our evaluation.
+    \item Danger of overfitting to the resampling splits / overtuning!
+    \item The final performance estimate will be optimistically biased.
+    \item One could also see this as a problem similar to multiple testing.
+\end{blocki}
+\end{vbframe}
+
+\begin{vbframe}{Instructive and problematic example}
+\begin{itemize}
+    \item Assume a binary classification problem with equal class sizes.
+    \item Assume a learner with hyperparameter $\lambda$.
+    \item Here, the learner is a (nonsense) feature-independent classifier,
+          where $\lambda$ has no effect. The learner simply
+          predicts random labels with equal probability.
+    \item Of course, its true generalization error is 50\%.
+    \item A cross-validation of the learner (with any fixed $\lambda$) will easily show this
+      (given that the partitioned data set for CV is not too small).
+    \item Now let's \enquote{tune} it, by trying out 100 different $\lambda$ values.
+    \item We repeat this experiment 50 times and average results.
+\end{itemize}
+
+\framebreak
+
+\begin{figure}
+\centering 
+\includegraphics[width=0.95\textwidth]{figure/cart_tuning_nestintro_1} 
+\end{figure}
+
+%FIGURE SOURCE: fig-cart_tuning_nestintro_1.R
+
+
+\begin{itemize}
+\item Plotted is the best \enquote{tuning error} (i.e. the performance of the model with fixed $\lambda$ as evaluated by the cross-validation) after $k$ tuning iterations.
+\item We have performed the experiment for different sizes of learning data
+      that were cross-validated.
+\end{itemize}
+
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{\centering \includegraphics[width=0.95\textwidth]{figure/cart_tuning_nestintro_2} 
+
+}
+%FIGURE SOURCE: fig-cart_tuning_nestintro_2.R
+
+
+\end{knitrout}
+
+\begin{itemize}
+\item For 1 experiment, the CV score will be nearly 0.5, as expected
+\item We basically sample from a (rescaled) binomial distribution when we calculate error rates
+\item And multiple experiment scores are also nicely arranged around the expected mean 0.5
+\end{itemize}
+
+\framebreak
+
+\begin{figure}
+\centering 
+\includegraphics[width=0.95\textwidth]{figure/cart_tuning_nestintro_2}
+%FIGURE SOURCE: fig-cart_tuning_nestintro_2.R
+\end{figure}
+
+\begin{itemize}
+\item But in tuning we take the minimum of those! So we don't really estimate the "average performance" anymore, we get an estimate of "best case" performance instead.
+\item The more we sample, the more "biased" this value becomes. 
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Untouched Test Set Principle}
+Countermeasure: simulate what actually happens in model application.
+
+\begin{itemize}
+\item All parts of the model building (including model selection,
+  preprocessing) should be embedded in the model-finding process
+  \textbf{on the training data}.
+\item The test set should only be touched once, so we have no way of \enquote{cheating}. The test data set is only used once \emph{after} a model is completely trained, after deciding, for example, on specific hyperparameters. 
+
+Only if we do this are the performance estimates we obtained from the test set  \textbf{unbiased estimates} of the true performance.
+
+\framebreak
+
+\item For steps that themselves require resampling (e.g., hyperparameter tuning) this results
+  in \textbf{nested resampling}, i.e., resampling strategies for both
+  \begin{itemize} 
+  \item tuning: an inner resampling loop to find what works best based on training data 
+  \item outer evaluation on data not used for tuning to get honest estimates of the expected performance on new data
+  \end{itemize}
+\end{itemize}
+\end{vbframe}
+
+\endlecture
+
+
+\end{document}

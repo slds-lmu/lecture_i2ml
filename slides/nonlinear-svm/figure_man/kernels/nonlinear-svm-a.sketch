@@ -1,0 +1,185 @@
+
+sketch
+{
+	bounding-box 0 0 200 200;
+	font "Helvetica" 6;
+}
+{
+	% This program includes a SMO solver, directly in postscript.
+	% This is highly inefficient, so it is limited to small problem
+	% instances.
+
+	var sigma = 50.0;		% kernel parameter
+	var C = 1.0;			% complexity control parameter
+
+	func gausskernel(a, b)
+	{
+		var diff = (1.0 / sigma) * (b - a);
+		return = exp(-0.5 * (diff * diff));
+	}
+
+	% very basic SMO SOLVER for the problem:
+	% max  f(alpha) = linear * alpha - 1/2 alpha^T * K * alpha
+	% s.t. lower[i] <= alpha[i] <= upper[i]
+	%   K: kernel matrix
+	%   linear: linear part of the objective function
+	%   lower: component-wise lower bound
+	%   upper: component-wise upper bound
+	%   return value: close-to-optimal solution
+	func QP(K, linear, lower, upper)
+	{
+		% SMO loop
+		var N = length(linear);
+		var alpha = Array(0.0, N);
+		var gradient = linear;
+		var i, j;
+		var bestIndex = 0, bestValue;
+		var iter;
+		for (iter=0; iter < 100000; iter=iter+1;)
+		{
+			% find active variable
+			bestIndex = 0;
+			bestValue = 0.0;
+			for (j=0; j<N; j=j+1;)
+			{
+				if (alpha[j] > lower[j] and gradient[j] < -bestValue) then
+				{ bestIndex = j; bestValue = -gradient[j]; }
+				if (alpha[j] < upper[j] and gradient[j] > bestValue) then
+				{ bestIndex = j; bestValue = gradient[j]; }
+			}
+
+			% check optimality
+			if (bestValue < 0.001) then break;
+
+			% update
+			var mu = gradient[bestIndex] / K[bestIndex][bestIndex];
+			var next = alpha[bestIndex] + mu;
+			if (next > upper[bestIndex]) then
+			{
+				mu = upper[bestIndex] - alpha[bestIndex];
+				next = upper[bestIndex];
+			}
+			if (next < lower[bestIndex]) then
+			{
+				mu = lower[bestIndex] - alpha[bestIndex];
+				next = lower[bestIndex];
+			}
+			alpha[bestIndex] = next;
+			gradient = gradient - mu * K[bestIndex];
+		}
+		return = alpha;
+	}
+
+	% train an SVM without bias,
+	% return the coefficient vector
+	func TrainSVM(input, target, kernel, C)
+	{
+		var N = length(input);
+		var linear = Array(0, N);
+		var lower = Array(0, N);
+		var upper = Array(0, N);
+		var K = Array(0, N);
+		var i, j;
+		for (i=0; i<N; i=i+1;)
+		{
+			var row = Array(0, N);
+			for (j=0; j<N; j=j+1;)
+			{
+				row[j] = kernel(input[i], input[j]);
+			}
+			K[i] = row;
+			if (target[i] > 0) then
+			{
+				linear[i] = 1.0;
+				lower[i] = 0.0;
+				upper[i] = C;
+			}
+			else
+			{
+				linear[i] = -1.0;
+				lower[i] = -C;
+				upper[i] = 0.0;
+			}
+		}
+		return = QP(K, linear, lower, upper);
+	}
+
+	% training data
+	var input = [
+		[100, 120],
+		[60, 140],
+		[160, 90],
+		[180, 160],
+		[90, 150],
+		[30, 190],
+		[50, 160],
+		[140, 170],
+		[110, 140],
+		[40, 60],
+		[150, 40],
+		[80, 90],
+		[140, 60],
+		[90, 50],
+		[50, 10],
+		[170, 20],
+		[130, 30],
+		[110, 70],
+		[20, 90],
+		[70, 170],
+		[100, 90],
+		[160, 150]];
+	var target = Concat(Array(1.0, 11), Array(-1.0, 11));
+
+	% svm model for prediction
+	var svm_coeff;
+	func PredictSVM(x)
+	{
+		var ret = 0.0;
+		var i;
+		var N = length(input);
+		for (i=0; i<N; i=i+1;)
+		{
+			ret = ret + svm_coeff[i] * gausskernel(x, input[i]);
+		}
+		return = ret;
+	}
+
+	% Bitmap function
+	func bmp(x, y)
+	{
+		var v0 = PredictSVM([x + 0.5, 199.5 - y]);
+		var sig = 1.0 / (1.0 + exp(-v0));
+		return = [sig, sig, 1.0];
+
+		var v1 = PredictSVM([x + 1.5, 199.5 - y]);
+		var v2 = PredictSVM([x + 1.5, 198.5 - y]);
+		if (v0 >= 1.0 and (v1 < 1.0 or v2 < 1.0)) then return = [0,0,0];
+		if (v0 < 1.0 and (v1 >= 1.0 or v2 >= 1.0)) then return = [0,0,0];
+		if (v0 <= -1.0 and (v1 > -1.0 or v2 > -1.0)) then return = [0,0,0];
+		if (v0 > -1.0 and (v1 <= -1.0 or v2 <= -1.0)) then return = [0,0,0];
+		if (v0 >= 0.0 and (v1 < 0.0 or v2 < 0.0)) then return = [1,1,0];
+		if (v0 < 0.0 and (v1 >= 0.0 or v2 >= 0.0)) then return = [1,1,0];
+	}
+
+	% ************************
+	% MAIN PROGRAM STARTS HERE
+	% ************************
+
+	% train the machine
+	svm_coeff = TrainSVM(input, target, &gausskernel, C);
+
+	% output the solution
+	Bitmap([0, 200], [200, 200], [200, 200], &bmp);
+
+	% output the training data
+	for (i=0; i<length(input); i=i+1;)
+	{
+		if (target[i] > 0.0) then
+			FrameCircle(input[i], 3, [1,0,0]);
+		else
+			FrameCircle(input[i], 3, [0,1,0]);
+	}
+
+	% mandatory "standard" frame...
+	Rect([0, 0], [200, 200], color=0);
+}

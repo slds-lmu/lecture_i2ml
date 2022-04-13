@@ -1,0 +1,314 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+\input{../../latex-math/ml-ensembles.tex}
+\input{../../latex-math/ml-trees.tex}
+
+\newcommand{\titlefigure}{figure_man/split-finding02.png}
+\newcommand{\learninggoals}{
+  \item Overview over XGB
+  \item Regularization in XGB
+  \item Approximate split finding    
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{XGBoost}
+\lecture{Introduction to Machine Learning}
+
+% sources: https://homes.cs.washington.edu/~tqchen/pdf/BoostedTree.pdf
+% sources: https://towardsdatascience.com/boosting-algorithm-xgboost-4d9ec0207d
+% sources: https://devblogs.nvidia.com/parallelforall/gradient-boosting-decision-trees-xgboost-cuda/
+
+\begin{vbframe}{XBG - Extreme Gradient Boosting}
+
+
+
+  \begin{itemize}
+    \item Open-source and scalable tree boosting system
+    \item Efficient implementation in \emph{C++} with interfaces to many other programming languages
+    \item Parallel approximate split finding
+    \item Additional regularization techniques
+    \item Feature and data subsampling
+    \item Cluster and GPU support
+    \item Highly optimized and often achieves top performance in benchmarks 
+        -- if properly tuned
+  \end{itemize}
+
+\end{vbframe}
+
+\begin{frame}{3 Extra Regularization Terms}
+
+  % 3 regularization terms:
+
+  \begin{multline*}
+    \riskr^{[m]} = \sum_{i=1}^{n} L\left(\yi, \fmd(\xi) + \bl(\xi)\right)\\
+    + \lambda_1 J_1(\bl) + \lambda_2 J_2(\bl) + \lambda_3 J_3(\bl),
+  \end{multline*}
+
+  \lz
+  \begin{itemize}
+    \item $J_1(\bl) = T^{[m]}$:  Nr of of leaves to penalize tree depth
+    \item $J_2(\bl) = \left\|\mathbf{c}^{[m]}\right\|^2_2$:  L2 penalty over leaf values 
+    \item $J_3(\bl) = \left\|\mathbf{c}^{[m]}\right\|_1$: L1 penalty over leaf values 
+  \end{itemize}
+\end{frame}
+
+
+
+\begin{vbframe}{Tree Growing}
+
+  \begin{itemize}
+    \item Grown to max depth 
+    \item Fully expanded and leaves split even if no improvement
+    \item At the end, each split that did not improve risk is pruned
+  \end{itemize}
+
+  \lz
+
+  \begin{figure}
+    \includegraphics[trim=0 260 230 20, clip, width=\textwidth,page=2]{figure_man/trees_balance.pdf}
+  \end{figure}
+
+
+\end{vbframe}
+
+\begin{vbframe}{Subsampling}
+
+  \textbf{Data Subsampling}: XGB uses stochastic gradient GB.
+
+  \lz
+
+  \textbf{Feature Subsampling}: Similar to \texttt{mtry} in a random forest only a random subset of features is used for split finding.
+
+  \lz
+
+  The fraction of features for a split can be randomly sampled for each
+  \begin{enumerate}
+    \item tree
+    \item level of a tree
+    \item split
+  \end{enumerate}
+
+  \lz
+
+  % \begin{itemize}
+ Feature subsampling speeds up training even further and can create a more diverse ensembles that will often perform better.
+    % \item Subsampling rates are usually defined as a fraction of features $[0,1]$ instead of an absolute number.
+  % \end{itemize}
+
+
+\end{vbframe}
+
+
+\begin{vbframe}{Approximate split-finding algorithms}
+
+\begin{itemize}
+\item Speeds up tree building for large data
+\item Considers not all, but only $l$ splits per feature
+\item Usually percentiles of the empirical distribution of each feature
+\item Computed once (global) or recomputed after each split (local)
+\item Called \textbf{Histogram-based Gradient Boosting}
+% \item For further speed-up  a \emph{weighted quantile-sketch} can be used
+\end{itemize}
+
+
+  % Comparison of global (left) and local (right) histogram-based approximate split finding for feature $x_1$ with $l=10$.
+
+  % \lz
+
+  \begin{small}
+    \begin{minipage}[b]{0.49\textwidth}
+      \begin{figure}
+        \includegraphics[width=\textwidth]{figure_man/split-finding01.png}
+        \caption*{Global}
+      \end{figure}
+
+    \end{minipage}
+    \begin{minipage}[b]{0.49\textwidth}
+      \begin{figure}
+        \includegraphics[width=\textwidth]{figure_man/split-finding02.png}
+        \caption*{Local}
+      \end{figure}
+    \end{minipage}
+  \end{small}
+
+  {\footnotesize
+  Blue lines are percentiles and red = selected split}
+
+  \framebreak
+
+  % \begin{algorithm}[H]
+  %   \begin{footnotesize}
+  %     \begin{center}
+  %       \begin{algorithmic}[1]
+  %         \For{$j = 1 \to p$}
+  %         \State Define possible split proposals $S_j = \{s_{j}^{(1)}, s_{j}^{(2)}, \hdots, s_{j}^{(l)}\}$ by percentiles on feature $j$.
+  %         \State Proposal can be done once per tree (global), or in each node (local).
+  %         \EndFor
+  %         \For{$j = 1 \to p$}
+  %         \State ${G}_{kv} \gets \sum_{i \in \{i|s_j^{(v)} \geq x_j^{(i)} > s_{k}^{(v - 1)}\}} g(\xi)$
+  %         \State ${H}_{kv} \gets \sum_{i \in \{i|s_j^{(v)} \geq x_j^{(i)} > s_{k}^{(v - 1)}\}} h(\xi)$
+  %         \EndFor
+  %         \State Follow same steps as exact algorithm to find max score only among proposed splits.
+  %       \end{algorithmic}
+  %     \end{center}
+  %   \end{footnotesize}
+  %   \caption{Approximate algorithm for split finding}
+  % \end{algorithm}
+
+\end{vbframe}
+
+\begin{vbframe}{Dropout Additive-Regression Trees}
+
+  DART introduces idea of \emph{dropout} regularization used in DL to boosting
+
+  \lz
+  \begin{itemize}
+      \item In iteration $m$ we construct $\blh$
+      \item To compute PRs we need $\fmdh$
+      \item We compute this differently, by using random subset $D \subset \hat{b}^{[1]}, \dots \hat{b}^{[m-1]}$ of size $(m-1) \cdot p_\text{drop}$ is ignored
+      \item  To avoid \emph{overshot predictions} in ensemble, we scale the BLs at the end of the iteration, by $\frac{1}{|D| + 1}\blh$ and $\frac{|D|}{|D| + 1}\hat{b}\quad \forall \hat{b}\;\in D$.
+      % \item We scale the BLs at the end of the iteraton
+      % \item  To avoid \emph{overshot predictions} in ensemble, BLs are scaled by $\frac{1}{|D| + 1}\blh$ and $\frac{|D|}{|D| + 1}\hat{b}\quad \forall \hat{b}\;\in D$.
+  \end{itemize}
+
+  \lz
+
+  % The bounds of $p_\text{drop}$ provide a nice interpretation:
+  \begin{itemize}
+    \item $p_\text{drop}=0$: Ordinary GB
+    \item $p_\text{drop}=1$: All BLs are trained independently, and equally weighted. 
+        Model is very similar to random forest.
+  \end{itemize}
+  $\Rightarrow p_\text{drop}$ is smooth transition from GB to RF
+
+
+
+\end{vbframe}
+
+
+\begin{vbframe}{Parallelism and GPU Computation}
+  
+    \begin{itemize}
+        \item GB is inherently sequential, not easy to parallelize
+        \item \textbf{But:} Building of BLs can be parallelized
+        \item Data sort and split eval in different branches of tree BLs can be computed in parallel by using efficient block data structures
+        \item Can also gain huge speed-up by moving from CPU to GPU
+    \end{itemize}
+
+
+\end{vbframe}
+
+\begin{vbframe}{Overview of Important Hyperparameters}
+  \begin{tiny}
+
+    \begin{table}[h!]
+      \begin{tabular}{p{3cm}crrrp{3cm}} \toprule
+        HP (as named in software)   & Type & Typical Range       & Trafo  & Default & Description                                                                            \\
+        \midrule
+        %\texttt{booster} & C & \{gbtree, gblinear, dart\}  & gbtree & type of base model or boosting method \\
+        \texttt{eta}                & R    & $[-4, 0]$           & $10^x$ & 0.3     & learning rate (also called $\nu$) shrinks contribution of each boosting update         \\
+        % \texttt{objective} & C & \{reg:squarederror, reg:logistic, binary:logistic, $\ldots$\} & reg:squarederror & loss function \\
+        \texttt{nrounds}            & I    & $\{1,\ldots,5000\}$ & --     & --      & number of boosting iterations. Can also be optimized with early stopping.              \\
+        \texttt{gamma}              & R    & $[-7,6]$            & $2^x$  & 0       & minimum loss reduction required to make a further partition on a leaf node of the tree \\
+        \texttt{max\_depth}         & I    & $\{1,\ldots,20\}$   & --     & 6       & maximum depth of a tree                                                                \\
+        \texttt{colsample\_bytree}  & R    & $[0.1,1]$           & --     & 1       & subsample ratio of columns for each tree                                               \\
+        \texttt{colsample\_bylevel} & R    & $[0.1,1]$           & --     & 1       & subsample ratio of columns for each depth level                                        \\
+        \texttt{lambda}             & R    & $[-10,10]$          & $2^x$  & 1       & $L_2$ regularization term on weights                                                   \\
+
+        \texttt{alpha}              & R    & $[-10,10]$          & $2^x$  & 0       & $L_1$ regularization term on weights                                                   \\
+        \texttt{subsample}          & R    & $[0.1,1]$           & --     & 1       & subsample ratio of the training instances                                              \\
+        \bottomrule
+      \end{tabular}
+      % \caption{Important \pkg{XGBoost} HPs with default values, typical ranges and transformations.}
+    \end{table}
+  \end{tiny}
+\end{vbframe}
+
+%\begin{vbframe}{Summary}
+%
+%XGBoost is an extremely powerful method, but also hard to configure correctly.
+%Overall, eight hyperparameters have to be set, which is difficult to do in practice and almost always requires tuning.
+%
+%\lz
+%
+%Different split finding algorithms can be selected, which allows XGBoost to be efficient even on very large datasets.
+%
+%\lz
+%
+%A large number of different regularization strategies is included to prevent overfitting.
+%
+%
+%\end{vbframe}
+%
+%\begin{vbframe}{Comparison of major boosting systems}
+%
+%\begin{tiny}
+%\begin{table}[]
+%\centering
+%\begin{tabular}{l|c|c|c|c|c|c}
+%System       & Exact algo. & Approx. algo. & Sparsity-aware & Variable importance & Parallel & Language   \\
+%\hline
+%ada          & yes         & no            & no             & no                  & no       & R          \\
+%GBM          & yes         & no            & partially      & yes                 & no       & R          \\
+%mboost       & yes         & no            & no             & no                  & no       & R          \\
+%compboost    & yes         & no            & yes            & yes                 & yes      & R          \\
+%H2O          & no          & yes           & partially      & yes                 & yes      & R (Java)   \\
+%XGBoost      & yes         & yes           & yes            & yes                 & yes      & R + Python \\
+%lightGBM     & no          & yes           & yes            & yes                 & yes      & R + Python \\
+%catboost     & no          & yes           & no             & yes                 & yes      & R + Python \\
+%scikit-learn & yes         & no            & no             & yes                 & no       & Python     \\
+%pGBRT        & no          & no            & no             & no                  & yes      & Python     \\
+%Spark MLLib  & no          & yes           & partially      & yes                 & yes      & R, Python, \\
+%             &             &               &                &                     &          & Java, Scala\\
+%
+%\end{tabular}
+%\label{my-label}
+%\end{table}
+%\end{tiny}
+%
+%\lz
+%
+%\textbf{Note:} H2O is a commercial software written in Java with a solid R interface.
+%In the free version only two CPUs can be used.
+%
+%%\framebreak
+%%
+%%We compare the performance in terms of accuray and runtime on five example data sets from OpenML.
+%%
+%%\lz
+%%
+%%All boosting algorithms use $100$ iterations, a learning rate of $0.1$ and a maximum tree depth of $4$ (except for mboost which uses linear models as base-learner).
+%%
+%%\lz
+%%
+%%We also compare to a random forest as a base-line.
+%%
+%%\framebreak
+%%<<echo=FALSE, fig.height=5>>=
+%%load("rsrc/benchmark.RData")
+%%plotBMRBoxplots(bmr, facet.wrap.ncol = 4)
+%%plotBMRBoxplots(bmr, measure = timetrain, facet.wrap.ncol = 4)
+%%@
+%
+%%\framebreak
+%
+%%Overall XGBoost performs well and is on par with commercial software like H2O.
+%
+%%\lz
+%
+%%The random forest is hard to beat in this benchmark. This is due to the fact that we did not do any tuning of the boosting hyperparameters.
+%%While this is quite important for boosting algorithms, a random forest is not as sensitive to its hyperparameters.
+%
+%%\lz
+%
+%%mboost with boosted linear models is overall worse than the other algorithms, but has the advantage of better interpretability.
+%
+%\end{vbframe}
+%
+\endlecture
+\end{document}

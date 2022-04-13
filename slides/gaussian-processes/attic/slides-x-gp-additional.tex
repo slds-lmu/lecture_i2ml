@@ -1,0 +1,219 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+\input{../../latex-math/ml-gp}
+
+\newcommand{\titlefigure}{figure_man/post-mean.png} % does not fit
+\newcommand{\learninggoals}{
+  \item \textcolor{blue}{XXX}
+  \item \textcolor{blue}{XXX}
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Gaussian Proccesses: Additional Material}
+\lecture{Introduction to Machine Learning}
+
+%http://www.gaussianprocess.org/gpml
+
+\begin{vbframe}{Notation}
+% We would like to model a function
+% 
+% $$
+% f: \mathcal{X} \to \Yspace
+% $$
+% 
+% where
+% 
+% \begin{itemize}
+% \item $\Xspace$ is a p-dimensional input space (here: $\Xspace = \R^n$)
+% \item $\Yspace$ is the target space (usually $\Yspace = \R$ for regression and $\Yspace = \{0, 1\}$ for binary classification)
+% \item $\bm{x} \in \mathcal{X}$ is called independent / predictor variable
+% \item $y \in \mathcal{Y}$ is called dependent variable (target, label, output)
+% \end{itemize}
+% 
+% \framebreak
+% 
+
+In this chapter 
+
+\begin{itemize}
+\item $(\xv_*, y_*)$ denotes one single test observation, excluded from training
+\item $\Xmat_* \in \R^{n_* \times p}$ contains a set of $n_*$ test observations and  
+\item $\yv_* \in \R^{n_* \times p}$ the corresponding outcomes, excluded from training. 
+\end{itemize}
+
+% \framebreak
+
+% In the context of Gaussian processes 
+
+% \begin{itemize}
+% \item the function $m: \Xspace \to \R$ is called \textbf{mean function}. We define the \textbf{mean vector}
+
+% \vspace*{-0.3cm}
+% $$
+% m(\Xmat):= \biggl(m\left(\bm{x}^{(1)}\right), m\left(\bm{x}^{(2)}\right), ..., m\left(\bm{x}^{(n)}\right)\biggr)^T
+% $$
+% \item  the bivariate, positive-definite function $k: \Xspace \times \Xspace \to \R$ is called \textbf{covariance function} or \textbf{kernel}; $k(\Xmat, \Xmat)$ denotes the $n\times n$ matrix that is obtained by plugging in all pairs $\bm{x}^{(i)}, \bm{x}^{(j)}$ and is called \textbf{kernel matrix} or \textbf{covariance matrix}
+
+% $$
+% k(\Xmat, \Xmat) := k(\bm{x}^{(i)}, \bm{x}^{(j)})_{i, j = 1, ..., n}
+% $$ 
+% \item We sometimes use the abbreviations $\bm{K} := k(\Xmat, \Xmat)$, $\bm{K}_* := k(\Xmat_*, \Xmat)$, $\bm{K}_{**} := k(\Xmat_*, \Xmat_*)$.
+
+
+% \end{itemize}
+
+\end{vbframe}
+
+
+
+\section{Noisy Gaussian Processes}
+
+\begin{vbframe}{Noisy Gaussian Process}
+
+In the above equations we implicitly assumed that we had access to the true function value $\fx$. In many cases, we only have access to a noisy version thereof 
+$$
+y = \fx + \eps.$$ 
+
+Assuming additive i.i.d. Gaussian noise, the covariance function becomes
+
+$$
+\cov(y^{(i)}, y^{(j)}) = k(\bm{x}^{(i)}, \bm{x}^{(j)}) + \sigma_n^2 \delta_{ij}
+$$
+
+where $\delta_{ij} = 1$ if $i = j$. In matrix notation, this becomes
+
+$$
+\cov(\yv) = \Kmat + \sigma_n^2\id =: \Kmat_y.  
+$$
+
+The $\sigma_n^2$ is also called \textbf{nugget}. 
+
+\end{vbframe}
+
+\begin{vbframe}{GP vs. kernelized Ridge regression} 
+
+The predictive function is then 
+
+\begin{eqnarray*}
+\bm{f}_* | \Xmat_*, \Xmat, \yv \sim \mathcal{N}(\bm{\bar f}_*, \cov(\bm{\bar f}_*)).
+\end{eqnarray*}
+
+with 
+
+\begin{itemize}
+\item $\bm{\bar f}_* = \Kmat_{*}^{T} \Kmat_y^{-1}\yv$ and
+\item $\cov(\bm{\bar f}_*) = \Kmat_{**}- \Kmat_{*}^{T}\Kmat_y^{-1}\Kmat_*$.
+\end{itemize}
+
+The predicted mean values at the training points $\bm{\bar f} = \bm{K}\Kmat_y^{-1}\bm{y}$ are a \textbf{linear combination} of the $\bm{y}$ values. 
+
+\lz 
+
+\textbf{Note:} Predicting the posterior mean corresponds exactly to the predictions obtained by kernelized Ridge regression. However, a GP (as a Bayesian model) gives us much more information, namely a posterior distribution, whilst kernelized Ridge regression does not. 
+
+
+\end{vbframe}
+
+
+
+
+\section{Bayesian Linear Regression as a GP}
+
+
+\begin{vbframe}{Bayesian linear regression as a GP}
+
+One example for a Gaussian process is the Bayesian linear regression model covered earlier. For  $\thetab \sim \mathcal{N}(\bm{0}, \tau^2 \id)$, the joint distribution of any set of function values 
+
+$$
+f(\xi) = \thetab^T \xi + \epsi
+$$
+
+is Gaussian. 
+
+\vspace*{0.3cm}
+
+The corresponding mean function is $m(\bm{x}) = \bm{0}$ and the covariance function is
+
+\vspace*{-0.5cm}
+
+\begin{eqnarray*}
+\cov(f(\bm{x}), f(\bm{x}^\prime)) &=& \E[f(\bm{x}) f(\bm{x}^\prime)] - \underbrace{\E[f(\bm{x})] \E[f(\bm{x}^\prime]}_{= 0} \\ &=& \E[(\thetab^T \bm{x} + \epsi)^T(\thetab^T \bm{x}^\prime + \epsi)] \\ &=&  \tau^2 \bm{x}^T\bm{x}^\prime + \sigma^2 =: k(\bm{x}, \bm{x}^\prime).
+\end{eqnarray*}
+
+% As we have just described, the predictive distribution assuming a Gaussian process Prior for one single test point $\bm{x}^*$  is normal with mean 
+% 
+% $$
+% (\bm{x}^*)^T \bm{X}^T (\Xmat\Xmat^T + \id)^{-1} \yv.
+% $$
+% 
+% Remember that we derived also a normal predictive distribution for a Bayesian linear regression case - the predictive mean was
+% 
+% $$
+% \mu_{\text{post}} = (\bm{x}^*)^T(\Xmat^T\Xmat + \sigma^2 \id)^{-1}\Xmat^T\yv.
+% $$
+% 
+% Using the matrix identity $(\bm{AB} + \id)
+% ^{-1}\Amat = \Amat(\bm{BA} + \id)^{-1}$^*$, it can be seen that the predictive distributions are identical.
+% 
+% \vfill
+% \begin{footnotesize}
+% $^*$ Searl Set of Identities, see \emph{http://matrixcookbook.com], 3.2}
+% \end{footnotesize}
+
+\end{vbframe}
+
+\begin{vbframe}{Feature Spaces and the Kernel Trick}
+
+If one relaxes the linearity assumption by first projecting features into a higher dimensional feature space $\mathcal{Z}$ using a basis function $\phi: \Xspace \to \mathcal{Z}$, the corresponding covariance function is
+
+$$
+k(\bm{x}, \bm{x}^\prime) = \tau^2 \phi(\bm{x})^T\phi(\bm{x}^\prime) + \sigma^2.
+$$
+
+To get arbitrarily complicated functions, we would have to handle high-dimensional feature vectors $\phi(\bm{x})$. 
+
+\lz 
+
+Fortunately, all we need to know are the inner products $\phi(\bm{x})^T\phi(\bm{x}^\prime)$ - the feature vector itself never occurs in calculations. 
+
+\framebreak
+
+
+If we can get the inner product directly \textbf{without} calculating the infinite feature vectors, we can infer an infinitely complicated model with a \textbf{finite amount} of computation. This idea is known as \textbf{kernel trick}.
+
+\lz 
+
+ A Gaussian process can be defined by either
+
+\begin{itemize}
+\item deriving the covariance function explicitly via inner products of evaluations of basis functions or
+\item choosing a positive definite kernel function (Mercer Kernel) directly, which  corresponds - according to Mercer's theorem - to taking inner products in some (possibly infinite) feature space
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Summary: Gaussian process regression}
+
+\begin{itemize}
+\item Gaussian process regression is equivalent to \textbf{kernelized} Bayesian linear regression
+\item The covariance function describes the shape of the Gaussian process
+\item With the right choice of covariance function, remarkably flexible models can be built
+\item But: naive implementations of Gaussian process models scale poorly with large datasets as
+\begin{itemize}
+\item the kernel matrix has to be inverted / factorized, which is $\order(n^3)$,
+\item computing the kernel matrix uses $\order(n^2)$ memory - running out of memory places a hard limit on problem sizes
+\item generating predictions is $\order(n)$ for the mean, but $\order(n^2)$ for the variance.
+\end{itemize}
+(...so we need special tricks)
+\end{itemize}
+
+\end{vbframe}
+
+
+\endlecture
+\end{document}
