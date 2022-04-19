@@ -29,7 +29,7 @@ dfn$score = predict(model, newdata = dfn)
 
 # PLOT -------------------------------------------------------------------------
 
-pdf("../figure/reg_class_log_5.pdf", width = 8, height = 5)
+#pdf("../figure/reg_class_log_5.pdf", width = 8, height = 5)
 
 p = ggplot() + 
   geom_line(data = dfn, aes(x = x, y = prob))
