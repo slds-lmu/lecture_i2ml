@@ -65,7 +65,7 @@ with suitable transformation $\phi(\cdot)$, e.g.,
     \sumin \left(\yi - \fxit \right)^2$ \\
     $\Rightarrow$ corresponding to ordinary-least-squares (OLS) estimation
     \item Alternatives: e.g., \textbf{absolute} or \textbf{Huber} loss (both 
-    more robust)
+    improving robustness)
   \end{itemize}
   \item \textbf{Logistic regression:} based on 
   \textbf{Bernoulli/log/cross-entropy} loss ~ 
@@ -105,11 +105,16 @@ with suitable transformation $\phi(\cdot)$, e.g.,
     \highlight{Advantages}
     \footnotesize
     \begin{itemize}
-      \positem \textbf{simple and fast} implementation; cheap computational costs
-      \positem intuitive \textbf{interpretability}: mean influence of features on the output and feature importance
-      \positem fits \textbf{linearly} separable data sets very well
-      \positem works well \textbf{independent of data size}
-      \positem basis for many machine learning algorithms
+      \positem \textbf{simple and fast} implementation
+      \positem \textbf{analytical} solution
+      \positem \textbf{cheap} computation
+      \positem applicable for any \textbf{dataset size}, as long as number of 
+      observations $\gg$ number of features
+      \positem flexibility \textbf{beyond linearity} with polynomials, 
+      trigonometric transformations etc.
+      \positem intuitive \textbf{interpretability} via feature effects
+      % \positem fits \textbf{linearly} separable data sets very well
+      \positem statistical hypothesis \textbf{tests} for effects available
 
     \end{itemize}
   \end{column}
@@ -118,13 +123,16 @@ with suitable transformation $\phi(\cdot)$, e.g.,
     \highlight{Disadvantages}
     \footnotesize
     \begin{itemize}
-      \negitem not suitable for data based on a \textbf{non-linear} data generating process $\rightarrow$ \textbf{strong simplification} of real-world problems
-      
-      \negitem \textcolor{blue}{\textbf{strong assumptions}: data is independent (multi-collinearity must be removed)}
-      
-      \negitem tend to \textbf{overfit} (can be reduced by regularization)
-      
-      \negitem \textbf{sensitive to outliers and noisy data}
+      \negitem \textbf{nonlinearity} of many real-world problems
+      \negitem further restrictive \textbf{assumptions}: linearly independent 
+      features, homoskedastic residuals, normality of conditional response
+      \negitem \textbf{sensitivity} w.r.t. outliers and noisy data (especially 
+      with L2 loss)
+      \negitem risk of \textbf{overfitting} with more flexible feature 
+      transformations (e.g., high-degree polynomials)
+      \negitem feature \textbf{interactions} must be handcrafted, so higher
+      orders practically infeasible
+      \negitem no handling of \textbf{missing} data
     \end{itemize}
   \end{column}
 \end{columns}
@@ -133,7 +141,8 @@ with suitable transformation $\phi(\cdot)$, e.g.,
 
 \small
 
-\conclbox{Simple method with good interpretability for linear problems, but strong assumptions and simplification of real-world problems}
+\conclbox{Simple method with good interpretability for linear problems, but with 
+strong assumptions and limited complexity}
 
 \end{frame}
 
@@ -144,32 +153,46 @@ with suitable transformation $\phi(\cdot)$, e.g.,
 \footnotesize
 
 %% WOULD DELTETE THIS!
- \highlight{\textcolor{blue}{Check assumptions??} }\\
- \textcolor{blue}{This model is very effective if the following assumptions are fulfilled:}
- \begin{itemize}\footnotesize
-  \item \textbf{linearity}: The expected response is a linear combination of the features.
-  \item \textbf{homoscedasticity}: The variance of residuals is equal for all features.
-  \item \textbf{independence}: All observations are independent of each other.
-  \item \textbf{normality}: Y is normally distributed for any fixed value of the features
+%  \highlight{\textcolor{blue}{Check assumptions??} }\\
+% Linear models are effective if the following assumptions are fulfilled:
+%  \begin{itemize}\footnotesize
+%   \item \textbf{linearity}: The expected response is a linear combination of the features.
+%   \item \textbf{homoscedasticity}: The variance of residuals is equal for all features.
+%   \item \textbf{independence}: All observations are independent of each other.
+%   \item \textbf{normality}: Y is normally distributed for any fixed value of the features
+% \end{itemize}
+
+\highlight{Implementation}
+
+\begin{itemize}
+  \item \textbf{R:} \texttt{mlr3} learner \texttt{LearnerRegrLM}, calling 
+  \texttt{stats::lm()} / \texttt{mlr3} learner \texttt{LearnerClassifLogReg}, 
+  calling \texttt{stats::glm()}
+  \item \textbf{Python:} \texttt{LinearRegression} from package 
+  \texttt{sklearn.linear\_model}, package for advanced statistical parameters 
+  \texttt{statsmodels.api} 
 \end{itemize}
 
-
 \medskip
 
-  \highlight{Implementation}
-  
-  \begin{itemize}
-    \item \textbf{R:} \texttt{mlr3} learner \texttt{LearnerRegrLM}, calling \texttt{stats::lm()}
-    \item \textbf{Python:} \texttt{LinearRegression} from package 
-    \texttt{sklearn.linear\_model}, package for advanced statistical parameters 
-    \texttt{statsmodels.api} 
+\highlight{Regularization}
+
+\begin{itemize}
+  \item Quadratic penalty on model coefficients (a.k.a. \textbf{Ridge} 
+  regression)
+  \begin{itemize} \footnotesize
+    \item Overall smaller, but still dense $\thetab$
+    \item Suitable with many influential features present, handling correlated 
+    features by shrinking their coefficients equally
   \end{itemize}
-
-\medskip
-
- \highlight{Regularization} \\
-
- In practice, we often use regularized models in order to \textbf{prevent overfitting} or perform feature selection. More details will follow in the subsequent chapter. 
-
+  \item Absolute penalty on model coefficients (a.k.a. \textbf{Lasso} 
+  regression)
+  \begin{itemize} \footnotesize
+    \item Actual variable selection
+    \item Suitable for sparse problems, ineffective with correlated 
+    features (randomly selecting one)
+  \end{itemize}  
+  \item Weighted combination of Ridge and Lasso: \textbf{elastic net}
+\end{itemize}
 
 \end{frame}
