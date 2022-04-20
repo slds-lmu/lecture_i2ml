@@ -1,5 +1,8 @@
 ## Changelog
 
+### 01-2022
+- Chapter Boosting: a lot of new chunks and improvements in others
+
 ### 12-2021
 - Chapter Evaluation:
   - a lot of new material on advanced topics like pAUC, multiclass AUC, MWU, PR curves, and more
