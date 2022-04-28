@@ -1,1 +1,0 @@
-include ../slides/tex.mk
