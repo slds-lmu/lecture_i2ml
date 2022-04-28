@@ -32,7 +32,7 @@ or similar, where applicable.
 - We try to keep slides modular: slidesets should represent about 15-20 minutes of material and be moderately self-contained.
 - Don't put code on the slides, the theory is orthogonal to issues of implementation (... in theory..). Code is strictly for exercises/ practice sessions. 
 - Compiling the slides should be done via the Makefile: just type `make all` in the specific folder and it will render all slidesets in the folder, or `make <SLIDES>.pdf` to render a specific file `<SLIDES>.tex`.
-- `make` will automatically move a copy of the compiled PDFs to the `slides-pdf` directory. From there, files can be copied into the [course website repository](https://github.com/teaching-data-science/intro2ml) in case of a new release.
+- `make` will automatically move a copy of the compiled PDFs to the `slides-pdf` directory. From there, files can be copied into the [course website repository](https://github.com/teaching-data-science/intro2ml) in case of a new release. If you use Windows we recommend that you access make via the [Ubuntu bash](https://apps.microsoft.com/store/detail/ubuntu/9PDXGNCFSCZV?hl=en-us&gl=US) (take a look at the installation tips)
 - We try to keep a "dependency graph" between slide sets up to date so that it's easier to keep track of
 what material needs to be understood before what else. Please do add appropriate `%! includes:`-comments in your slides to keep this up-to-date, see also `attic/slide-dependencies.R` and `slides/slide-dependencies.pdf`.
 - We recommend usage of `{tinytex}` (install via `tinytex::install_tinytex()`)
