@@ -1,0 +1,218 @@
+
+\begin{enumerate}
+
+  \item 
+  The empirical risk of any $h \in 
+  \Hspace = \{ h:\Xspace \to \Yspace \, | \,  \hx = \bm{\theta}  \ \forall \xv \in \Xspace  \}$ 
+  for the 0-1-loss, i.e.,
+  %
+  $$
+  \Lhxy = \mathds{1}_{\{y \ne \hx\}} =
+  \footnotesize \begin{cases} 1, \quad \text{ if } y \ne \hx, \\ 0, \quad    \text{ if } y = \hx,  \end{cases}
+  $$
+  is 
+  %
+  \begin{align*}
+%  	
+  	\bar\risk_\text{emp}(h) 
+%  	
+  	&= \sum_{i=1}^n \mathds{1}_{\{\yi \ne \hxi\}} \\
+%  	
+	&= \sum_{i:  \yi = 1 } \mathds{1}_{\{1 \ne \hxi\}} + \sum_{i:  \yi = 2 } \mathds{1}_{\{2 \ne \hxi\}} + \ldots + \sum_{i:  \yi = g } \mathds{1}_{\{g \ne \hxi\}} \\
+%	
+	&= \sum_{j=1}^g \sum_{i:  \yi = j } \mathds{1}_{\{j \ne \hxi\}} \\
+	%	
+	&= \sum_{j=1}^g \sum_{i:  \yi = j } \mathds{1}_{\{j \ne  \bm{\theta} \}}. \tag{constant model}
+%  	
+  \end{align*}
+%  
+For any $\bm{\theta}\in \Yspace$ and $j\in \Yspace$ we write 
+%
+$$m_j(\bm{\theta}) = \sum_{i:  \yi = j } \mathds{1}_{\{j \ne  \bm{\theta} \}},$$ 
+%
+i.e., the number of mistakes over the data set for class $j$ by predicting $\bm{\theta}.$
+%
+Further let 
+%
+$$n_j = \sum_{i=1  }^n \mathds{1}_{\{\yi = j\}}$$
+%
+be the number of occurrences of the class $j$ in the data set.
+%
+If $k = \bm{\theta},$ then $m_k(\bm{\theta}) = 0$ and for any $j\neq k$ it holds that $m_j(\bm{\theta}) = n_j.$
+%
+In words, if $\bm{\theta}$ coincides with $k,$ then we make no mistake for this class $k,$ while \emph{for all} other classes $j$ we make each time a mistake.
+
+Let $j^*$ be the mode of $y^{(1)},\ldots,y^{(n)},$ i.e., the class which appears the most\footnote{Break ties arbitrarily.}.
+%
+Note that by definition $n_{j^*} \geq n_j$ for any $j \neq j^*.$
+%
+With this, we obtain that
+%
+\begin{align*}
+%	
+	\bar\risk_\text{emp}(h) 
+%	
+	&= \sum_{j=1}^g \sum_{i:  \yi = j } \mathds{1}_{\{j \ne  \bm{\theta} \}} 
+%	
+	= \sum_{ j \neq  \bm{\theta}} n_j 
+%	
+	\geq \sum_{ j \neq  j^*} n_j 
+%	
+	= \bar\risk_\text{emp}(\hat{h}),
+%	
+\end{align*}
+%
+since  $\hxh =  \text{mode} \left\{\yi\right\} = j^*.$ 
+ 
+\item Recall that the point-wise optimizer for the 0-1-loss over all possible discrete classifiers $\hx$  is
+%
+\begin{eqnarray*}  
+	\hxbayes &=& \argmax_{l \in \Yspace} \P(y = l~|~ \xv = \xv).
+\end{eqnarray*}
+%
+Hence, we obtain the optimal constant model from the previous by forgetting the conditioning on $\xv,$ which leads to 
+%
+$$
+\bar{h}(\xv) =   \argmax_{l \in \Yspace} \P(y = l ).
+$$
+%
+Recall that we can write the 0-1-loss as follows:
+%
+\begin{align} \label{eq_alt_01_loss_repr}
+%	
+	\Lhxy 
+%	
+	= \mathds{1}_{\{y \ne \hx\}} 
+%	
+	= \sum_{k\in \Yspace} \mathds{1}_{\{y = k\}} \mathds{1}_{\{y \ne \hx\}}
+%	
+	= \sum_{k\in \Yspace} \mathds{1}_{\{y = k\}} \mathds{1}_{\{k \ne \hx\}}
+%	
+	= \sum_{k\in \Yspace} \mathds{1}_{\{y = k\}} L(k, h(\xv) ).
+%	
+\end{align}
+%
+With this, the risk of $\bar{h}$ is
+%
+\begin{align*}
+%	
+	\risk_L(\bar{h})  
+%	
+	&=  \Exy\left[  L(y,\bar{h}(\xv)) \right] \\
+%	
+	&=  \E_x \left[ \E_{y|x} [ L(y, \bar{h}(\xv)) ~|~ \xv = \xv ] \right] \tag{Law of total expectation} \\
+%	
+	&=  \E_x \left[ \E_{y|x} \left[ \sum_{k \in \Yspace} \mathds{1}_{\{y  = k \}} L(k, \bar{h}(\xv)) ~|~ \xv = \xv \right] \right] \tag{By \eqref{eq_alt_01_loss_repr}} \\
+%	
+	&=  \E_x \left[ \sum_{k \in \Yspace} L(k, \bar{h}(\xv)) \E_{y|x}  \left[  \mathds{1}_{\{y  = k \}} ~|~ \xv = \xv  \right] \right] \tag{Linearity of cond. expectation} \\
+%	
+	&= \E_x \left[\sum_{k \in \Yspace} L(k, \bar{h}(\xv)) \P(y = k~|~ \xv = \xv)\right] \tag{Expectation of an indicator random variable} \\ 
+%	
+	&= \sum_{k \in \Yspace} \E_x \left[ L(k, \bar{h}(\xv)) \P(y = k~|~ \xv = \xv)\right] \tag{Linearity of  expectation} \\
+	%	
+	&= \sum_{k \in \Yspace} L(k, \bar{h}(\xv))  \E_x \left[ \P(y = k~|~ \xv = \xv)\right] \tag{$\bar{h}$ is constant in $\xv$} \\
+	%	
+	&= \sum_{k \in \Yspace} L(k, \bar{h}(\xv))  \P(y = k) \tag{Law of total probability} \\
+%	
+	&= \sum_{k \in \Yspace} \mathds{1}_{\{k \ne \hx \}}  \P(y = k)   \\
+%	
+	&= \sum_{k \in \Yspace} \mathds{1}_{\{k \ne   \argmax_{l \in \Yspace} \P(y = l ) \}}  \P(y = k)   \\
+%	
+	&= 1 - \max_{l \in \Yspace} \P(y = l).
+%	
+\end{align*}
+
+\item By recalling the definition of the approximation error:
+%
+\begin{align*}
+%	
+	\inf_{h \in \Hspace} \risk_L(h) - \riskbayes_{L} 
+%	
+	&= \underbrace{\risk_L(\bar{h})}_{\overset{(b)}{=} 1 - \max_{l \in \Yspace} \P(y = l)}  - \underbrace{\riskbayes_{L}}_{\overset{Lec.}{=} 1 - \E_x \left[\max_{l \in \Yspace} \P(y = l~|~ \xv = \xv)\right] } \\
+%	
+	&= \E_x \left[\max_{l \in \Yspace} \P(y = l~|~ \xv = \xv)\right] - \max_{l \in \Yspace} \P(y = l). 
+%	
+\end{align*}
+
+
+\item For any probabilistic classifier $\pi$ in the hypothesis space of probabilistic classifiers
+%
+$\Hspace = \{ \pi:\Xspace \to [0,1]    \},$
+%
+we can write the probabilistic 0-1-loss as 
+%
+$$\Lpixy = \mathds{1}_{\{ \pix\geq 1/2  \}}  \mathds{1}_{\{ y=0 \}} + \mathds{1}_{\{ \pix< 1/2  \}} \mathds{1}_{\{ y=1 \}}  \left( { \footnotesize  = \begin{cases}
+	1, & \mbox{if ($\pix\geq 1/2$ \& $y=0$) or ($\pix< 1/2$ \& $y=1$), } \\
+	0, & \mbox{else. }
+\end{cases}  } \right) .$$
+%
+We use our usual ``unraveling trick'' by means of the law of total expectation:
+%
+\begin{align*}
+%	
+	\Exy\left[  L(y,\pi(\xv)) \right] 
+	%	
+	&=  \E_x \left[ \E_{y|x} [ L(y, \pi(\xv)) ~|~ \xv = \xv ] \right]  
+%	
+\end{align*}
+%
+and consider then minimization of $ \E_{y|x} [ L(y, \pi(\xv)) ~|~ \xv = \xv ]$ by choosing $ \pi$ point-wise, i.e., for any point $\xv$.
+%
+With the alternative form of $L$, we obtain
+%
+\begin{align*}
+%	
+	\E_{y|x} &[ L(y, \pi(\xv)) ~|~ \xv = \xv ]  \\
+%	
+	&= \E_{y|x} [ \mathds{1}_{\{ \pix\geq 1/2  \}}  \mathds{1}_{\{ y=0 \}} + \mathds{1}_{\{ \pix< 1/2  \}} \mathds{1}_{\{ y=1 \}} ~|~ \xv = \xv ] \\
+	%	
+	&= \E_{y|x} [ \mathds{1}_{\{ \pix\geq 1/2  \}}  \mathds{1}_{\{ y=0 \}}  ~|~ \xv = \xv ] \quad +  \E_{y|x} [ \mathds{1}_{\{ \pix< 1/2  \}} \mathds{1}_{\{ y=1 \}} ~|~ \xv = \xv ] \tag{Linearity of expectation} \\
+%	
+	&=  \mathds{1}_{\{ \pix\geq 1/2  \}}  \cdot \E_{y|x} [ \mathds{1}_{\{ y=0 \}}  ~|~ \xv = \xv ] ~ + \mathds{1}_{\{ \pix< 1/2  \}} \cdot \E_{y|x} [ \mathds{1}_{\{ y=1 \}} ~|~ \xv = \xv ] \tag{$\mathds{1}_{\{ \pix\geq 1/2  \}}$ and $\mathds{1}_{\{ \pix < 1/2  \}}$ are non-random given $\xv$ }\\
+%
+	&=  \mathds{1}_{\{ \pix\geq 1/2 \}}  \P(y = 0~|~ \xv = \xv) \qquad ~ ~ + \mathds{1}_{\{ \pix < 1/2 \}} \P(y = 1~|~ \xv = \xv). \tag{Expectation of an indicator random variable} 
+%	
+\end{align*}
+%
+We can distinguish between two cases:
+%
+\begin{itemize}
+%	
+	\item If $ \P(y = 0~|~ \xv = \xv) \geq  \P(y = 1~|~ \xv = \xv) $ (or  $\P(y = 0~|~ \xv = \xv)\geq 1/2$), then any $\pix$ such that $\pix < 1/2$ minimizes $\E_{y|x} [ L(y, \pi(\xv)) ~|~ \xv = \xv ] .$
+	
+%	
+	\item If $ \P(y = 0~|~ \xv = \xv) \leq  \P(y = 1~|~ \xv = \xv) $ (or  $\P(y = 0~|~ \xv = \xv)\leq 1/2$), then any $\pix$ such that $\pix \geq 1/2$ minimizes $\E_{y|x} [ L(y, \pi(\xv)) ~|~ \xv = \xv ] .$
+%	
+\end{itemize}
+%
+Thus, any $\pi$ of the form
+%
+\begin{align} \label{def_minim_prob_class}
+%	
+	\pix 
+%	
+	= \begin{cases}
+			< 1/2 , & \mbox{if $\P(y = 0~|~ \xv = \xv)\geq 1/2,$} \\
+			\geq 1/2 ,    & \mbox{if $\P(y = 0~|~ \xv = \xv)< 1/2,$} 
+	\end{cases}
+%	
+\end{align}
+%
+minimizes $	\Exy\left[  L(y,\pi(\xv)) \right]$ over $\Hspace = \{ \pi:\Xspace \to [0,1]    \}.$
+%
+The posterior distribution $p_{y|x}(1 ~|~ \xv)$ is quite naturally of this form, but it is in general not the only $\pi$ of this kind.
+%
+As a consequence, the minimizer is not unique.
+
+\emph{(Dis-)advantages.}  The posterior distribution $p_{y|x}$ is the \emph{ground-truth} we seek to find with our (empirical) loss minimization approach. 
+%
+Thus, the corresponding loss function should give an incentive for any learning algorithm to find this ground-truth by minimizing the loss function.
+%
+This is the case for strictly proper scoring rules like the cross-entropy or log-loss (Bernoulli-loss), but as we have just seen not the case for the probabilistic 0-1-loss.
+%
+In light of this, it is not a good idea to use the probabilistic 0-1-loss for learning probabilistic classifiers, as the probabilistic classifiers learned might be different from our actual ground-truth posterior distribution.
+%
+However, one could defend the 0-1 probabilistic loss here as well, since the minimizing probabilistic classifiers in \eqref{def_minim_prob_class} at least have the ``correct form'' in the sense that the class probabilities are on the right side of $1/2.$
+
+
+\end{enumerate}
