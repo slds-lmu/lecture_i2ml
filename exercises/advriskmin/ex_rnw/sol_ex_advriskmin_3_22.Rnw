@@ -1,0 +1,174 @@
+\begin{enumerate}
+%
+	\item We can make use of the ``substitution trick'' from Exercise Sheet 1, i.e., $z^{(i)} = m(\yi).$
+%  
+	Then, it holds that $z^{(i)}~|~\xv$ is distributed as $\normal(m(\ftrue(\xi)),\sigma^2),$ since $z^{(i)} = m(\ftrue(\xi)) + \epsi$ and $\epsi \sim \normal(0,\sigma^2).$
+	%
+	Note that $(\xv^{(1)},z^{(1)}),\ldots,(\xv^{(n)},z^{(n)})$ are iid, as transforming $y^{(1)},\ldots,y^{(n)}$ via $m$ to $z^{(1)},\ldots,z^{(n)}$ preserves the stochastic independence property.
+%  
+	\item 
+	The likelihood for  $(\xv^{(1)},z^{(1)}),\ldots,(\xv^{(n)},z^{(n)})$  is  
+	
+	\begin{eqnarray*}
+		\LL(\thetab) &=& \prod_{i=1}^n \pdf\left(z^{(i)} ~\bigg|~ \fxit, \sigma^2\right) \\ &\propto& \exp\left(-\frac{1}{2\sigma^2}\sumin \left[z^{(i)} - m\left(\fxit\right)\right]^2\right)\,.
+	\end{eqnarray*}
+%
+	So, the negative log-likelihood is
+	
+	\begin{eqnarray*}
+		- \loglt &=& - \log\left(\LL(\thetab)\right) \\
+		&=& - \log\left(  \exp\left(-\frac{1}{2\sigma^2} \sumin \left[z^{(i)} - m\left(\fxit\right)\right]^2\right)  \right) \\
+		&\propto& \sumin \left[z^{(i)} - m\left(\fxit\right)\right]^2 \\
+		&=& \sumin \left[ m(\yi) - m\left(\fxit\right)\right]^2.
+	\end{eqnarray*}
+%
+	Thus, the negative log-likelihood is proportional to the empirical risk generalized L2-loss function of Exercise sheet 1, i.e., $\Lxy= \big(m(y)-m(\fx)\big)^2.$ 
+%
+
+\item First, we specify the feature space: $\Xspace = \{1\} \times \R,$ i.e., any feature $\xv \in \Xspace$ is of the form $\xv=(x_1,x_2)^\top = (1,x_2)^\top$ for some $x_2\in \R.$
+%
+According to the exercise we use $m(x)=\log(x),$ whose inverse is $m^{-1}(x)=\exp(x).$ 
+%
+Let us rewrite Forbes' conjectured model $  y = \theta_1 \exp(\theta_2 x + \eps)$ into $y = m^{-1} \left( m(f(\xv~|~ \thetab)) + \eps \right),$ for some suitable hypothesis $f(\xv~|~ \thetab):$
+%
+\begin{align*}
+%	
+	y &=  \theta_1 \exp(\theta_2 x + \eps) \\
+%	
+	&=  \exp( \log(\theta_1)  \exp(\theta_2 x + \eps) \\
+%	
+	&= \exp( \log(\theta_1) +  \theta_2 x + \eps) \tag{Functional equation of $\exp$} \\
+%	
+	&= \exp( \log(\theta_1) +  \log(\exp(\theta_2 x)) + \eps)  \\
+%	
+	&= \underbrace{\exp}_{=m^{-1}}( \underbrace{\log}_{=m}(\theta_1 \exp(\theta_2 x)) + \eps) \tag{Functional equation of $\log$} \\
+	%	
+	&= m^{-1}( m(\theta_1 \exp(\theta_2 x)) + \eps).
+%	
+\end{align*}
+%
+With this, we see that $f(\xv~|~ \thetab) = \theta_1 x_1 \exp(\theta_2 x_2) = \theta_1 \exp(\theta_2 x_2)$ is a suitable functional form for the hypotheses.
+%
+Thus, we use as our parameter space $\Theta = \R_+ \times \R$ which gives rise to the hypothesis space
+%
+\begin{equation*}
+	\begin{split}
+		\Hspace = \{f(\xv~|~ \thetab) = \theta_1 x_1 \exp(\theta_2 x_2) ~|~   \thetab \in \Theta \}.
+	\end{split}
+\end{equation*}
+%
+
+
+\textbf{Alternative:}
+Note that we could alternatively rephrase the learning problem by applying the logarithm on both sides of Forbes' model:
+%
+\begin{align*}
+	%	
+	y =  \theta_1 \exp(\theta_2 x + \eps) 	
+	\quad 	\Leftrightarrow \quad 
+	\log(y)  =   \log(\theta_1) + \theta_2 x + \eps,
+%
+\end{align*}
+%
+so that we work with the logarithm of the original labels, i.e., we consider $z^{(1)} = \log(y^{(1)}),\ldots,z^{(n)}=\log(y^{(n)})$ instead of $y^{(1)},\ldots,y^{(n)}.$
+%
+A suitable hypothesis space is then
+%
+\begin{equation*}
+	\begin{split}
+		\Hspace = \{f(\xv~|~ \thetab) = \log(\theta_1) x_1 + \theta_2 x_2 ~|~   \thetab \in \Theta \},
+	\end{split}
+\end{equation*}
+%
+which are the linear functions\footnote{Note that $\log(\theta_1)$ can be any value in $\R.$} $\xv^\top \thetab$ of features in $\Xspace.$
+%
+The empirical risk minimizer in this case is specified by the parameter 
+%
+$$(\log(\hat{\theta}_1),\hat{\theta}_2)^\top = \thetabh=\left(\Xmat^T \Xmat\right)^{-1}\Xmat^T \bm{z}, \qquad  \bm{z} = (\log y^{(1)},\ldots,\log y^{(n)})^\top,$$
+%
+(see \href{https://slds-lmu.github.io/i2ml/chapters/02_supervised_regression/02-02-linearmodel/}{Chapter 02.02 of I2ML}) which for this simple case is:
+%		
+		\begin{align*}
+%			
+			\hat{\theta}_2 &= \frac{\sum_{i=1}^n  (\xi_2  - \bar{\xv}_2 ) ( \log(\yi) - \overline{ \log(y)}    )  }{\sum_{i=1}^n  (\xi_2  - \bar{\xv}_2 )^2}, \\
+%			
+			\hat{\theta}_1 &= \exp\left(\overline{ \log(y)} -  \hat{\theta}_2 \bar{\xv}_2 \right),
+%			 
+%			
+		\end{align*}
+%	
+	where $\bar{\xv}_2 = \frac1n \sum_{i=1}^n  \xi_2$ and $\overline{ \log(y)} =  \frac1n \sum_{i=1}^n  \log(\yi).$
+%	
+
+
+
+<<eval=TRUE, fig.height=4, warning=FALSE, message=FALSE>>=
+#' @param X the feature input matrix X
+#' @param y the outcome vector y
+#' @param theta coefficient vector for the model (2-dimensional)
+		
+# Load MASS and data set forbes
+library(MASS)
+data(forbes)
+attach(forbes)
+
+# initialize the data set
+X = cbind(rep(1,17),bp)
+y = pres
+
+#' function to represent your models via the parameter vector theta = c(theta_1, theta_2)
+#' @return a predicted label y_hat for x
+f <- function(x, theta){
+ 
+  return((exp(theta[2]*x[2])*theta[1]*x[1]))
+  
+}
+
+#' @return a vector consisting of the optimal parameter vector 
+optim_coeff <- function(X,y){
+  
+  #' @return the empirical risk of a parameter vector theta
+  emp_risk <- function(theta){
+    sum( (log(y) - log(apply(X,1,f,theta)))^2   )
+  }
+ 
+  
+  return( 
+    optim(c(0.4,0.5), 
+          emp_risk, 
+          method = "L-BFGS-B", 
+          lower=c(0,-Inf), 
+          upper=c(Inf,Inf))$par)
+  # note that c(0.4,0.5) can be replaced by any other theta vector 
+  # satisfying the constraint theta[1]>0
+}
+
+# optimal coefficients
+hat_theta = optim_coeff(X,y)
+print(hat_theta)
+
+# Checking Forbes' model visually
+
+f_x <- function(x, theta){
+  
+  return((exp(theta[2]*x)*theta[1]))
+  
+}
+
+curve(f_x(x,theta = hat_theta),min(bp),max(bp),xlab="x (bp)",ylab="y (pres)")
+points(pres~bp,col=2)
+
+
+
+# Alternative solution
+
+hat_theta_2 = cov(bp,log(pres))/(var(bp)) 
+hat_theta_1 = exp(mean(log(pres))-hat_theta_2*mean(bp))
+
+curve(f_x(x,theta = hat_theta),min(bp),max(bp),xlab="x (bp)",ylab="y (pres)")
+curve(f_x(x,theta = c(hat_theta_1,hat_theta_2)),min(bp),max(bp),add=T,col=2)
+points(pres~bp)
+
+@
+
+\end{enumerate}
