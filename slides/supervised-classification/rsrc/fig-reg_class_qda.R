@@ -37,7 +37,7 @@ createPlot <- function(dfTrain, upper, lower, sLearner, task) {
   dfPredict$y <- predictions
   
   # create data for contour plots 
-  means <- learner_qda$model$means
+  means <- learner$model$means
   muA = as.numeric(means[1,])
   muB = as.numeric(means[2,])
   foo_a = foo_b = matrix(c(0, 0, 0, 0), ncol = 2)
