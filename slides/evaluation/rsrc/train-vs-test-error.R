@@ -111,7 +111,7 @@ results_train2 <- results_train2 %>%
 # Increasing test set size (Test error)
 #-------------------------------------------------------------------------------
 
-train_size = 306 
+train_size = 206 
 tests_sizes = as.integer(c(seq(50, n-train_size, length.out = 6)))
 
 length = length(tests_sizes)*ss_iters
@@ -126,14 +126,17 @@ for (j in seq_along(tests_sizes)) {
   for(k in seq_len(ss_iters)){
     
     #select train set
-    train_set = sample(n, train_sizes[[j]])
-    
+    #train_set = sample(n, train_sizes[[j]])
+    train_set = sample(n, 100)
     #train model
     lm =lm(formula, data=data[train_set,])
     
+    test_set_options = (1:506)[-train_set]
+    test_set = sample(test_set_options, tests_sizes[[j]])
+      
     # true and predicted values of the test set
-    pred_test = predict(lm, data[-train_set,])
-    true_value = data$medv[-train_set]
+    pred_test = predict(lm, data[test_set,])
+    true_value = data$medv[test_set]
     
     #calc MSE
     test_err = mean((pred_test - true_value)^2)
