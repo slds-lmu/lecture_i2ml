@@ -20,7 +20,8 @@ learner = lrn("classif.kknn", k=3, kernel = "rectangular", distance = 2, predict
 # PLOT -------------------------------------------------------------------------
 
 p = plot_learner_prediction(learner, task)
-p = p + scale_fill_viridis_d(end = .9, name = "Prediction") + guides(shape = FALSE, alpha = FALSE)
+p = p + scale_fill_viridis_d(end = .9, name = "Prediction") + guides(shape = FALSE, alpha = FALSE) + 
+    geom_point(aes(color = y), size = 1.5) + scale_colour_viridis_d(end = .9, name = "Truth")
 p
 
 ggsave("../figure/eval_bad_model_auc.pdf", p, width = 8L, height = 4L)
