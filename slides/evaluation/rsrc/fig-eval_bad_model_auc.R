@@ -15,7 +15,7 @@ df = data.frame(df, y)
 # MODEL -----------------------------------------------------------------------
 
 task = as_task_classif(df, id = "chess", target = "y")
-learner = lrn("classif.kknn", k=3, kernel = "rectangular", distance = 2, predict_type = "prob")
+learner = lrn("classif.kknn", k=3, kernel = "rectangular", distance = 2, predict_type = "response")
 
 # PLOT -------------------------------------------------------------------------
 
@@ -28,6 +28,7 @@ ggsave("../figure/eval_bad_model_auc.pdf", p, width = 8L, height = 4L)
 
 # AUC -------------------------------------------------------------------------
 
+learner = lrn("classif.kknn", k=3, kernel = "rectangular", distance = 2, predict_type = "prob")
 predictions = learner$train(task)$predict_newdata(df)
 auc = msr("classif.auc")$score(predictions)
 auc
