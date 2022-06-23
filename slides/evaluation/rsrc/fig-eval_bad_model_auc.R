@@ -3,6 +3,7 @@
 library(ggplot2)
 library(mlr3)
 library(mlr3viz)
+library(mlr3learners)
 
 # DATA -------------------------------------------------------------------------
 
