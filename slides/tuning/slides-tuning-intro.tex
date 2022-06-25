@@ -27,13 +27,13 @@
 \begin{itemize}
 \item Given a data set, we want to train a classification tree. 
 \item We feel that a maximum tree depth of $4$ has worked out well for us previously, so we decide to set this hyperparameter to $4$. 
-\item The learner ("inducer") $\ind$ takes the input data, internally performs \textbf{empirical risk minimization}, and returns a fitted tree model $\fxh = f(\xv, \thetah)$ of at most depth $\lambda = 4$ that minimizes the empirical risk.
+\item The learner ("inducer") $\ind$ takes the input data, internally performs \textbf{empirical risk minimization}, and returns a fitted tree model $\fxh = f(\xv, \thetah)$ of at most depth $\lambda = 4$ that minimizes empirical risk.
 \end{itemize}
 
 % FIGURE SOURCE: https://docs.google.com/presentation/d/14xwcs5zncTjFL4hIHAprjZMmyGIPqk5vs8DS32vEAvQ/edit?usp=sharing
 \begin{center}
 \begin{figure}
-\includegraphics[width=0.6\textwidth]{figure_man/riskmin_bilevel1.png}
+\includegraphics[width=0.6\textwidth]{figure_man/riskmin_bilevel1}
 \end{figure}
 \end{center}
 
@@ -41,15 +41,18 @@
 
 \begin{itemize}
 \item We are \textbf{actually} interested in the \textbf{generalization performance} $\GEf$ of the estimated model on new, previously unseen data. 
-\item We estimate the generalization performance by evaluating the model $\fh$ on a test set $\Dtest$: $$
-\GEh{\Dtest}\left(\fh\right) = \frac{1}{|\Dtest|} \sum\limits_{(\xv, y) \in \Dtest} L\left(y, \fxh \right)
+\item We estimate the generalization performance by evaluating the model $\fh = \ind(\Dtrain, \lamv)$ on a test set $\Dtest$: $$
+\GEh_{\Dtrain, \Dtest}(\ind,
+  \lamv, \ntrain, \rho) =
+  \rho \left( \yv_{\Dtest}, \F_{\Dtest, 
+  \fh} \right)
 $$
 \end{itemize}
 \vspace*{-0.6cm}
 % FIGURE SOURCE: https://docs.google.com/presentation/d/14xwcs5zncTjFL4hIHAprjZMmyGIPqk5vs8DS32vEAvQ/edit?usp=sharing
 \begin{center}
 \begin{figure}
-\includegraphics[width=0.75\textwidth]{figure_man/riskmin_bilevel2.png}
+\includegraphics[width=0.6\textwidth]{figure_man/riskmin_bilevel3.png}
 \end{figure}
 \end{center}
 
@@ -57,7 +60,18 @@ $$
 
 \begin{itemize}
 \item But many ML algorithms are sensitive w.r.t. a good setting of their hyperparameters,
-  and generalization performance might be bad if we have chosen a suboptimal configuration:
+  and generalization performance might be bad if we have chosen a suboptimal configuration.
+\item Consider a simulation example of 3 ML algorithms below, where we use the dataset $mlbench.spiral$ and 10,000 testing points. As can be seen, variating hyperparameters can lead to big difference in model's generalization performance.
+  
+  \begin{center}
+\begin{figure}
+\includegraphics[width=0.95\textwidth]{figure/tuning_importance.png}
+\end{figure}
+\end{center}
+
+\framebreak
+For our examples this could mean:
+
 \begin{itemize}
 \item The data may be too complex to be modeled by a tree of depth $4$ 
 \item The data may be much simpler than we thought, and a tree of depth $4$ overfits
@@ -109,14 +123,15 @@ Examples:
 \item The maximum depth of a tree 
 \item $k$ and which distance measure to use for $k$-NN
 \item The number and maximal order of interactions to be included in a linear regression model
+\item Number of optimization steps when the empirical risk minimization
+is done via gradient descent
 \end{itemize}
 
 \end{vbframe}
 
 
 \begin{vbframe}{Types of hyperparameters}
-
-We summarize all hyperparameters we want to tune over in a vector $\lamv \in \Lambda$ of (possibly) mixed type. HPs can have different types: 
+We summarize all hyperparameters we want to tune over in a vector $\lamv \in \Lam$ of (possibly) mixed type. HPs can have different types: 
 
 \begin{itemize}
 \item Real-valued parameters, e.g.:

@@ -1,0 +1,126 @@
+\input{../../style/preamble}
+\newcommand{\titlefigure}{figure_man/learner_autotuned}
+\newcommand{\learninggoals}{
+\item Understand the possible design choices for HPO
+\item Know termination criteria of HPO}
+\usepackage{../../style/lmu-lecture}
+\captionsetup[figure]{labelformat=empty, justification=raggedright}% redefines the caption setup of the figures environment in the beamer class.
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-hpo.tex}
+\input{../../latex-math/ml-eval.tex}
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+
+\begin{document}
+
+\lecturechapter{Hyperparameter Tuning - Practical Aspects}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+\begin{vbframe}{Practical Aspects of HPO}
+\begin{itemize}
+    \item Choosing resampling
+    \begin{itemize} 
+        \item Nr of observations, i.i.d assumption for data sampling process
+        \item Higher resampling rates likely result in a better model; however they are computiationally more expensive \\
+        \begin{figure}\includegraphics[width=0.7\textwidth]{figure/resa_hpo.pdf}
+        \caption{\footnotesize Tuning a CART on the \texttt{spirals} data with a k-fold CV (k=1 means here a $2/3$ \\ holdout split) using grid search and estimating the true $\GE$ with a very large \\test set (5 repetitions)}
+        \end{figure}
+    \end{itemize}
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Practical Aspects of HPO}
+\begin{footnotesize}
+\begin{itemize}
+    \item Choosing performance measure
+
+    \begin{itemize}
+        \begin{footnotesize}
+        \item Desired implications when applying the model in practice
+          \end{footnotesize}
+    \end{itemize}
+  
+    \item Choosing a pipeline and search space
+
+    \begin{itemize}
+        \begin{footnotesize}
+        %\item Encoding categorical hyperparameters as integers degrades the performance of optimizers relying on information about distances
+        \item Numeric HPs of arbitrary size should be tuned on log scale
+        \item Size of search space results in different trade-offs:\\
+        too small may miss out well performing HPCs;\\
+        too large makes optimization more difficult \\
+                \begin{figure} 
+                \includegraphics[width=0.65\textwidth]{figure/search_space.pdf}
+               
+        \caption{\begin{footnotesize} Tuning cp and minsplit for a CART on the \texttt{titanic} data over 3 increasing \\ rectangular search spaces with random search (candidates number fixed) and \\comparing the result with the optimal model (found with exhaustive grid search)\end{footnotesize} }
+        \end{figure}
+         \end{footnotesize}
+    \end{itemize}
+   
+\end{itemize}
+\end{footnotesize}
+\end{vbframe}
+
+\begin{vbframe}{Practical Aspects of HPO}
+\begin{itemize}
+    \item Choosing HPO algorithm
+    \begin{itemize}
+        \item For few HPS (1-3), grid search can be used
+        \item BO with GPs for upto 10 numeric HPs 
+        %(but standard GPs scale cubically with the number of evaluations)
+        \item BO with RFs handle mixed HP spaces
+        \item Random search and Hyperband work well as long as the ``effective'' dimension is low
+        \item EAs are somewhat in-between BO and RS, can handle very complex spaces, but less sample efficient than BO
+        \item \textbf{Also: use something that's stable and robust! 
+          More an aspect of the implementation than the algo!}
+    \end{itemize}
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Practical Aspects of HPO}
+\begin{footnotesize}
+    When to terminate HPO
+    \begin{itemize}
+        \item Specify a certain amount of runtime/budget beforehand
+        \item Set a lower bound regarding $\GEh{}$
+        \item Terminate if performance improvement stagnates
+    \end{itemize}
+    \end{footnotesize}
+    \begin{figure} 
+        \includegraphics[width=0.6\textwidth]{figure/term.pdf}
+               
+        \caption{\begin{footnotesize} Different stopping points while tunining CART on the
+        \texttt{titanic} data depending on which termination criterion is used \end{footnotesize}}
+        \end{figure}
+\end{vbframe}
+
+
+\begin{vbframe}{Practical Aspects of HPO}
+\begin{itemize}
+    \item Warm starts
+    \begin{itemize}
+        \item Evaluations (e.g., weight sharing of neural networks)
+        \item Optimization (intializing with HPCs that worked well before)
+    \end{itemize}
+    \item Control of execution
+    \begin{itemize}
+        \item Parallelizability of HPO algorithms differs strongly 
+        %(e.g., random search ``embarrassingly'' parallel)
+        \item  HPO execution can be parallelized at different levels (outer resampling, iteration, evaluation, inner resampling, model fit)
+    \end{itemize}
+    %\item Multi-criteria, Sparseness and Interpretability
+    %\begin{itemize}
+        %\item Often: unknown trade-off between multiple metrics, e.g., performance, sparseness and interpretability $\rightarrow$ multi-criteria optimization
+    %\end{itemize}
+\end{itemize}
+\end{vbframe}
+
+
+\endlecture
+\end{document}
