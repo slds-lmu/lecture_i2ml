@@ -1,8 +1,8 @@
 library(bbotk)
 library(ggplot2)
 library(viridis)
-library(gridExtra)
 library(reshape2)
+library(patchwork)
 
 set.seed(7)
 
@@ -68,27 +68,30 @@ obj = apply(x_dom, 1, objective_func)
 obj_df = data.frame(x = x_dom, obj = obj)
 
 rs_p <- ggplot(data = rs_df, mapping = aes(x=x1, y=x2)) +
+  geom_contour_filled(data = obj_df, aes(x=x.Var1, y=x.Var2, z=obj)) + 
+  labs(fill=expression(g(x[1], x[2]))) +  
   geom_point(shape=21, fill=viridis(1, end=0.9)[1]) +
   geom_rug() +
-  geom_contour(data = obj_df, aes(x=x.Var1, y=x.Var2, z=obj)) + 
   xlab(expression(x[1])) +
   ylab(expression(x[2])) + 
   ggtitle("Random Search")
 
 gs_p <- ggplot(data = gs_df, mapping = aes(x=x1, y=x2)) +
+  geom_contour_filled(data = obj_df, aes(x=x.Var1, y=x.Var2, z=obj)) +
+  labs(fill=expression(g(x[1], x[2]))) +  
   geom_point(shape=21, fill=viridis(1, end=0.9)[1]) +
   geom_rug() +
-  geom_contour(data = obj_df, aes(x=x.Var1, y=x.Var2, z=obj)) +
   xlab(expression(x[1])) +
   ylab(expression(x[2])) + 
-  ggtitle("Grid Search")
+  ggtitle("Grid Search") 
 
 performance_p <- ggplot(data = performance_df, mapping = aes(x=iter,y=cummax, color=optimizer)) +
   geom_line() +
   scale_color_viridis(end = 0.9, discrete = TRUE) +
   labs(y="Maximal Target") +
-  ggtitle("Performance")
+  ggtitle("Performance") 
 
-p <- grid.arrange(rs_p, gs_p, performance_p, nrow=1, ncol=3)
+combined <- rs_p + gs_p & theme(legend.position = "bottom")
+p <- combined + plot_layout(guides = "collect") + performance_p
 
-ggsave("../figure/rs_gs_simulation_plot.png", plot=p, width = 15, height = 5)
+ggsave("../figure/rs_gs_simulation_plot.png", plot=p, width = 12.5, height = 4.73)
