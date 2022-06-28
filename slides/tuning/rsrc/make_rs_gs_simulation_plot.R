@@ -69,7 +69,7 @@ obj_df = data.frame(x = x_dom, obj = obj)
 
 rs_p <- ggplot(data = rs_df, mapping = aes(x=x1, y=x2)) +
   geom_contour_filled(data = obj_df, aes(x=x.Var1, y=x.Var2, z=obj)) + 
-  labs(fill=expression(g(x[1], x[2]))) +  
+  labs(fill=expression(f(x[1], x[2]))) +  
   geom_point(shape=21, fill=viridis(1, end=0.9)[1]) +
   geom_rug() +
   xlab(expression(x[1])) +
@@ -78,7 +78,7 @@ rs_p <- ggplot(data = rs_df, mapping = aes(x=x1, y=x2)) +
 
 gs_p <- ggplot(data = gs_df, mapping = aes(x=x1, y=x2)) +
   geom_contour_filled(data = obj_df, aes(x=x.Var1, y=x.Var2, z=obj)) +
-  labs(fill=expression(g(x[1], x[2]))) +  
+  labs(fill=expression(f(x[1], x[2]))) +  
   geom_point(shape=21, fill=viridis(1, end=0.9)[1]) +
   geom_rug() +
   xlab(expression(x[1])) +
