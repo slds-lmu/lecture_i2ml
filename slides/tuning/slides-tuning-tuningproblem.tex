@@ -111,9 +111,9 @@
 %\usetheme{lmu-lecture}
 \newcommand{\titlefigure}{figure_man/riskmin_bilevel3.png}
 \newcommand{\learninggoals}{
-\item Understand the definition of $c$ and know its properties
-\item Know the components of a tuning problem
-\item Be able to explain what makes tuning a complex problem}
+\item Definition of HPO objective and components
+\item Understand its properties
+\item What makes tuning challenging}
 \usepackage{../../style/lmu-lecture}
 
 \let\code=\texttt
@@ -156,17 +156,16 @@
 \sloppy
 
 
-\begin{vbframe}{HPO as black-box optimization}
+\begin{vbframe}{Hyperparameter Optimization}
 
 \vskip 3em
-Recall: \textbf{Hyperparameters (HP)} $\lamv$ are parameters that are \emph{inputs} to the 
-training problem in which a learner $\ind$ minimizes the empirical risk on a training data set in order
-to find optimal \textbf{model parameters} $\thetab$ which define the fitted model $\fh$. Usually  HPs influence the generalization  performance in  a  non-trivial  and  subtle  way. 
+\textbf{Hyperparameters (HP)} $\lamv$ are parameters that are \emph{inputs} to learner $\ind$ which performs ERM on training data set to find optimal \textbf{model parameters} $\thetab$. 
+HPs can influence the generalization performance in a non-trivial and subtle way. 
 
 \vskip 2em
 
-\textbf{Hyperparameter optimization (HPO) / Tuning} is the process of finding good model hyperparameters $\lamv$. 
-
+\textbf{Hyperparameter optimization (HPO) / Tuning} is the process of finding a well-performing hyperparameter configuration (HPC) $\lamv \in \LamS$ for an learner $\Ilam$. 
+\end{vbframe}
 
 % \begin{vbframe}{Hyperparameter Tuning}
 % \begin{itemize}
@@ -184,55 +183,88 @@ to find optimal \textbf{model parameters} $\thetab$ which define the fitted mode
 
 % \end{vbframe}
 
-\framebreak
-\begin{itemize}
-\item HPO  algorithms  automatically identify  a  well-performing  hyperparameter configuration (HPC) $\lamv \in \LamS$ for an learner $\Ilam$. 
-\item As input they take the search space $\LamS \subset \Lam$ which contains all considered HPs for optimization and their respective ranges:
+% \framebreak
+\begin{vbframe}{Objective and Search Space}
+% \begin{itemize}
+% \item HPO  algorithms  automatically identify  a  well-performing  hyperparameter configuration (HPC) $\lamv \in \LamS$ for an learner $\Ilam$. 
+Search space $\LamS \subset \Lam$ with all optimized HPs and ranges:
 $$\LamS = \LamS_1 \times \LamS_2 \times \dots \times \LamS_l$$
- where $\LamS_i$ is a bounded subset of the domain of the i-th HP $\Lam_i$,  and can be either continuous, discrete, or categorical. 
-\end{itemize}
+ where $\LamS_i$ is a bounded subset of the domain of the i-th HP $\Lam_i$, and can be either continuous, discrete, or categorical. 
+% \end{itemize}
 
-\framebreak
-\begin{footnotesize}
+% \framebreak
+% \begin{footnotesize}
+
+\vspace{1cm}
+
 The general HPO problem is defined as:
 \begin{eqnarray*}
     \lams \in \argmin_{\lamv \in \LamS} \clam = \argmin_{\lamv \in \LamS} 
     %\GEhlamsubIJrho
     \GEhresa
 \end{eqnarray*}
-where $\lams$ denotes the theoretical optimum, and $\clam$ is a shorthand for the estimated generalization error when $\ind$, resampling splits $\JJ$, performance measure $\rho$ are fixed.
+with $\lams$ as theoretical optimum, and $\clam$ is short for estim. gen. error
+when $\ind$, resampling splits $\JJ$, performance measure $\rho$ are fixed.
+\end{vbframe}
 
+% \begin{vbframe}{Objective and Search Space}
+% \begin{itemize}
+% \item The data set $\D$
+% \item A learner $\Ilam$ (possibly: several competing learners?) to be tuned %(e.g. a decision tree classifier)
+% \item The learner's hyperparameters and their respective regions-of-interest $\LamS$ over which we optimize % (e.g. $\texttt{tree depth} \in \{1, 2, ..., 20\}$)
+% \item The performance measure $\rho$, as determined by the application.\\ Not necessarily identical to the loss function that defines the risk minimization problem for the learner!\\ 
+% % We could even be interested in multiple measures simultaneously, e.g., accuracy and computation time of our model, TPR and PPV, etc. 
+% \item A (resampling) procedure for estimating the predictive performance which gives rise to the splits $\JJ$
+%    % The expected performance on unseen data can be estimated by holdout (i.e., a single train-test-split) or more advanced techniques like cross-validation.
+% % More on this later.
+% \end{itemize}
+% \end{vbframe}
+
+\begin{vbframe}{Objective and Search Space}
+\begin{eqnarray*}
+    \lams \in \argmin_{\lamv \in \LamS} \clam = \argmin_{\lamv \in \LamS} 
+    %\GEhlamsubIJrho
+    \GEhresa
+\end{eqnarray*}
 \begin{figure}[h]
     \centering
     \includegraphics[width = 0.65\textwidth]{figure/hpo_loop_1.eps}
     %{figures/riskmin_bilevel3.png}
 \end{figure}
 
-HPs and their respective evaluations successively are stored  in the \textit{archive} $\archive = ((\lamv^{(1)}, c(\lamv^{(1)})), (\lamv^{(2)}, c(\lamv^{(2)})), \dots)$, with $\archivet[t+1] = \archivet[t] \cup (\lamp, \clamp)$ if a single point is proposed by the tuner.
-\end{footnotesize}
-\framebreak
-
 \begin{itemize}
-\item This means we estimate and optimize the generalization error 
-\begin{equation*}
-\small
-\begin{split}
-\clam = \GEhresa = \agr\Big(
- &\rho\Big(\yv_{\Jtesti[1]}, \FJtestftraini[1]\Big), \\ &\large{\vdots} \\
-& \rho\Big(\yv_{\Jtesti[1]}, \FJtestftraini[B]\Big)
-    \Big),
-\end{split}
-\end{equation*}
-of a learner $\Ilam$, w.r.t.\ an HPC $\lamv$
-\item  $\clam$ is a black-box, as it usually has no closed-form mathematical representation, and hence no analytic gradient information is available. 
-\item The evaluation of $\clam$ can take a significant amount of time.
-\item Therefore, the minimization of $\clam$ forms an \emph{expensive black-box} optimization problem.
+    \item Evals are stored in \textbf{archive} $\archive = ((\lamv^{(1)}, c(\lamv^{(1)})), (\lamv^{(2)}, c(\lamv^{(2)})), \dots)$, with $\archivet[t+1] = \archivet[t] \cup (\lamp, \clamp)$.
+% \end{footnotesize}
+
+% \medskip
+
+ \item We can define tuner as function $\tau: (\D, \ind, \LamS, \JJ, \rho)\mapsto \lamh$ 
+     % that proposes its estimate $\lamh$ of the true optimal configuration $\lams$ given $\D, \Ilam$ with corresponding search space $\LamS$ to optimize, and a target measure $\rho$.
 \end{itemize}
+% \framebreak
+
+% \begin{itemize}
+% \item This means we estimate and optimize the generalization error 
+% \begin{equation*}
+% \small
+% \begin{split}
+% \clam = \GEhresa = \agr\Big(
+%  &\rho\Big(\yv_{\Jtesti[1]}, \FJtestftraini[1]\Big), \\ &\large{\vdots} \\
+% & \rho\Big(\yv_{\Jtesti[1]}, \FJtestftraini[B]\Big)
+%     \Big),
+% \end{split}
+% \end{equation*}
+% of a learner $\Ilam$, w.r.t.\ an HPC $\lamv$
+% \item  $\clam$ is a black-box, as it usually has no closed-form representation, and hence no analytic gradients are available. 
+% \item The evaluation of $\clam$ can take a significant amount of time.
+% \item Hence, \textbf{expensive black-box} optimization problem.
+% \end{itemize}
+
 
 \end{vbframe}
 
 
-\begin{vbframe}{Tuning components} 
+% \begin{vbframe}{Tuner} 
 
 % \vspace{0.2cm} 
 % 
@@ -326,20 +358,10 @@ of a learner $\Ilam$, w.r.t.\ an HPC $\lamv$
 % 
 % \framebreak
 
-The components of a tuning problem are: 
+% The components of a tuning problem are: 
 
-\begin{itemize}
-\item The data set $\D$
-\item A learner $\Ilam$ (possibly: several competing learners?) to be tuned %(e.g. a decision tree classifier)
-\item The learner's hyperparameters and their respective regions-of-interest $\LamS$ over which we optimize % (e.g. $\texttt{tree depth} \in \{1, 2, ..., 20\}$)
-\item The performance measure $\rho$, as determined by the application.\\ Not necessarily identical to the loss function that defines the risk minimization problem for the learner!\\ 
-% We could even be interested in multiple measures simultaneously, e.g., accuracy and computation time of our model, TPR and PPV, etc. 
-\item A (resampling) procedure for estimating the predictive performance which gives rise to the splits $\JJ$
-   % The expected performance on unseen data can be estimated by holdout (i.e., a single train-test-split) or more advanced techniques like cross-validation.
-% More on this later.
-\end{itemize}
-\medskip
-We can thus define the HP tuner $\tau: (\D,\ind,\LamS,\rho)\mapsto \lamh$ that proposes its estimate $\lamh$ of the true optimal configuration $\lams$ given $\D, \Ilam$ with corresponding search space $\LamS$ to optimize, and a target measure $\rho$.
+% \medskip
+% We can thus define the HP tuner $\tau: (\D,\ind,\LamS,\rho)\mapsto \lamh$ that proposes its estimate $\lamh$ of the true optimal configuration $\lams$ given $\D, \Ilam$ with corresponding search space $\LamS$ to optimize, and a target measure $\rho$.
 
 % \framebreak 
 
@@ -350,7 +372,7 @@ We can thus define the HP tuner $\tau: (\D,\ind,\LamS,\rho)\mapsto \lamh$ that p
 % \end{figure}
 % \end{center}
 
-\end{vbframe}
+% \end{vbframe}
 
 
 
@@ -372,11 +394,13 @@ We can thus define the HP tuner $\tau: (\D,\ind,\LamS,\rho)\mapsto \lamh$ that p
 
 \begin{vbframe}{Why is tuning so hard?}
   \begin{itemize}
-\item Tuning is derivative-free (\enquote{black box problem}): It is usually impossible to compute derivatives of the objective (i.e., the resampled performance measure) that we optimize with regard to the HPs. All we can do is evaluate the performance for a given hyperparameter configuration.
-\item Every evaluation requires one or multiple train and predict steps of the learner. I.e., every evaluation is very \textbf{expensive}.
+\item Tuning is usually \textbf{black box}: No derivatives of the objective are availabe. 
+    We can only eval the performance for a given HPC via a computer program (CV of learner on data).
+\item Every evaluation can require multiple train and predict steps, hence it's \textbf{expensive}.
 \item Even worse: the answer we get from that evaluation is \textbf{not exact, but stochastic} in most settings, as we use resampling.
-\item Categorical and dependent hyperparameters aggravate our difficulties: the space of hyperparameters we optimize over has a non-metric, complicated structure.
-  \end{itemize}
+\item \textbf{Categorical and dependent hyperparameters} aggravate our difficulties: the space of hyperparameters we optimize over can have non-metric, complicated structure.
+\item Many standard optimization algorithms cannot handle these properties.
+\end{itemize}
 
   \end{vbframe}
 
