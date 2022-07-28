@@ -2,11 +2,11 @@
 
 % \maketag{SUPERVISED} 
 \maketag{regression} \maketag{classification} \maketag{PARAMETRIC} 
-\maketag{WHITE-BOX}
+\maketag{WHITE-BOX} \maketag[50]{Feature selection}
 \medskip
 
 \highlight{General idea} ~~ Represent target as function of linear predictor
-$\thx$
+$\thx$ with interpretable effect coefficients $\thetab$
 
 \medskip
 
@@ -40,7 +40,8 @@ with suitable transformation $\phi(\cdot)$, e.g.,
   \begin{center}
     % \includegraphics[width=0.7\textwidth, trim=0 40 0 0, clip]{
     % ../slides/supervised-classification/figure_man/logreg-2vars-surface}\\
-    \includegraphics[width=0.7\textwidth, trim=30 50 0 0, clip]{figure/logreg_3d}\\
+    \includegraphics[width=0.7\textwidth, trim=30 50 0 0, clip]{
+    figure/logreg_3d}\\
     \tiny{Logistic function for bivariate input and loss-minimal $\thetab$}
   \end{center}
 \end{minipage}
@@ -62,32 +63,41 @@ with suitable transformation $\phi(\cdot)$, e.g.,
   \begin{itemize}
     
     \item Typically, based on \textbf{quadratic} loss: $\risket = 
-    \sumin \left(\yi - \fxit \right)^2$ \\
-    $\Rightarrow$ corresponding to ordinary-least-squares (OLS) estimation
-    \item Alternatives: e.g., \textbf{absolute} or \textbf{Huber} loss (both 
-    improving robustness)
+    \sumin \left(\yi - \fxit \right)^2$ ~~
+    $\Rightarrow$ OLS estimation
+    % \item Alternatives: e.g., \textbf{absolute} or \textbf{Huber} loss (both 
+    % improving robustness)
   \end{itemize}
   \item \textbf{Logistic regression:} based on 
-  \textbf{Bernoulli/log/cross-entropy} loss ~ 
+  \textbf{Bernoulli / log / cross-entropy} loss ~ 
   $\Rightarrow \risket = \sumin -\yi \log 
   \left(\pixii\right) - (1 - \yi) \log \left(1 - \pixii \right)$
 \end{itemize}
 
 \medskip
 
-\highlight{Optimization}
+\highlight{Optimization} ~~ For \textbf{OLS}: analytical solution
+  $\thetabh = \olsest$, for other loss functions: numerical 
+  optimization 
+
+\medskip
+
+% \highlight{Hyperparameters} ~~ None
+
+\medskip
+
+\highlight{Multi-class extension of logistic regression}
+
 \begin{itemize}
-  \item For \textbf{OLS}: analytically with 
-  $\thetabh = \olsest$ ~~
-  ($\Xmat \in \R^{n \times p}$ : matrix of feature vectors)
-  \item For \textbf{other loss functions}: numerical optimization 
+  \item Estimate \textbf{class-wise} scoring functions:
+  $\Rightarrow \pi: \Xspace \rightarrow \unitint^g, ~
+  \pix = (\pikx[1], \dots, \pikx[g]), ~\sumkg \pikx = 1$
+  \item Achieved through \textbf{softmax} transformation: 
+  $\pikx = \left. \exp(\thetab_k^\top \xv) \middle/ \sumkg \exp(\thetab_j^\top 
+  \xv) \right.$
+  \item Multi-class log-loss: $\Lpixy = - \sumjg \I_{\{y = k\}} \log(\pikx)$
+  \item Predict class with maximum score (or use thresholding variant)
 \end{itemize}
-
-\medskip
-
-\highlight{Hyperparameters} ~~ None
-
-\medskip
 
 % \highlight{Runtime behavior} ~~ $\mathcal{O}(p^2 \cdot n + p^3)$ for $n$ 
 % observations and $p$ features
@@ -104,7 +114,9 @@ with suitable transformation $\phi(\cdot)$, e.g.,
   \begin{column}{0.5\textwidth}
     \highlight{Advantages}
     
-    \begin{itemize}
+    \begin{procon}
+      \setlength{\itemsep}{1pt}
+      \setlength{\parskip}{1pt}
       \positem \textbf{Simple and fast} implementation
       \positem \textbf{Analytical} solution for quadratic loss
       \positem \textbf{Cheap} computation
@@ -113,10 +125,9 @@ with suitable transformation $\phi(\cdot)$, e.g.,
       \positem Flexibility \textbf{beyond linearity} with polynomials, 
       trigonometric transformations etc.
       \positem Intuitive \textbf{interpretability} via feature effects
-      % \positem fits \textbf{linearly} separable data sets very well
+      % \item fits \textbf{linearly} separable data sets very well
       \positem Statistical hypothesis \textbf{tests} for effects available
-
-    \end{itemize}
+    \end{procon}
   \end{column}
 
   \begin{column}{0.5\textwidth}
@@ -149,13 +160,14 @@ with strong assumptions, practical limitations, and risk of overfitting}
 
 \begin{frame}{Linear Models -- regularization}
 
-\highlight{Idea}
+\highlight{General idea}
 
 \begin{itemize}
   \item Unregularized LM: risk of \textbf{overfitting} in high-dimensional 
   space with only few observations
   \item \textbf{Goal}: find compromise between model fit and generalization by 
   adding \textbf{penalty term}
+  \item Regularization ubiquitous in ML, with similar techniques
 \end{itemize}
 
 \medskip
@@ -174,7 +186,7 @@ with strong assumptions, practical limitations, and risk of overfitting}
 \begin{itemize}
   \item Empirical risk function \textbf{plus complexity penalty} 
   $J(\thetab)$, controlled by shrinkage parameter $\lambda > 0$: \\
-  $\riskrt := \risket + \lambda \cdot J(\thetab).$ 
+  $\riskrt := \risket + \lambda \cdot J(\thetab)$ 
   \item Popular regularizers
   \begin{itemize} 
     \item \textbf{Ridge} regression: L2 penalty $J(\thetab) = \|\thetab\|_2^2 $
@@ -213,19 +225,23 @@ with strong assumptions, practical limitations, and risk of overfitting}
 \begin{itemize}
   \item \textbf{Ridge}
   \begin{itemize} 
-    \item Overall smaller, but still dense $\thetab$
+    \item Global shrinkage, leading to overall smaller but still dense $\thetab$
     \item Applicable with large number of influential features, handling 
     correlated variables by shrinking their coefficients to equal degree
   \end{itemize}
   \item \textbf{LASSO}
   \begin{itemize} 
-    \item Actual variable selection
+    \item Actual variable selection by shrinking coefficients for irrelevant 
+    features all the way to zero
     \item Suitable for sparse problems, ineffective with correlated 
     features (randomly selecting one)
   \end{itemize}  
-  \item Neither overall better $\rightarrow$ compromise: \textbf{elastic net}
-  = weighted 
-  combination of Ridge and LASSO
+  \item Neither overall better $\Rightarrow$ compromise: \textbf{elastic net}
+  \begin{itemize} 
+    \item Weighted combination of Ridge and LASSO
+    \item Introducing additional penalization coefficient: $\riskrt = \risket 
+    + \lambda_1 \cdot \|\thetab\|_1 + \lambda_2 \cdot \|\thetab\|_2^2$
+  \end{itemize}  
 \end{itemize}
 
 
@@ -246,6 +262,8 @@ with strong assumptions, practical limitations, and risk of overfitting}
     \item \textbf{Regularized:} \texttt{mlr3} learners 
     \texttt{LearnerClassifGlmnet} / 
     \texttt{LearnerRegrGlmnet}, calling \texttt{glmnet::glmnet()}
+    \item For \textbf{large classification} models: \texttt{mlr3} learner     
+    \texttt{LearnerClassifLiblineaR}, calling \texttt{LiblineaR::LiblineaR()}
   \end{itemize}
   \item \textbf{Python:} \texttt{LinearRegression} from package 
   \texttt{sklearn.linear\_model}, package for advanced statistical parameters 
