@@ -1,0 +1,649 @@
+%<<setup-child, include = FALSE>>=
+%library(knitr)
+%library(qrmix)
+%library(mlr)
+%library(quantreg)
+%library(reshape2)
+%set_parent("../style/preamble.Rnw")
+%@
+
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+\input{../../latex-math/ml-hpo} 
+
+
+\newcommand{\titlefigure}{figure_man/math_robot.jpg}
+\newcommand{\learninggoals}{
+	\item Refresher on the basics of probability theory
+%	\item Bayes risk
+%    \item Consistent learners
+%    \item Bayes regret, estimation and approximation error    
+%	\item Optimal constant model
+%	\item Proper scoring rules
+}
+
+\title{Supervised Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+
+\begin{document}
+
+\lecturechapter{Refreshing Mathematical Tools}
+\lecture{Supervised Learning}
+
+\newcommand{\F}{\mathcal{F}}
+
+\begin{vbframe}{Probability Space}
+	
+	\textbf{Probability space.} A probability space is a triple $(\Omega,\F,\P)$ which is modeling a specific random experiment/process.
+		%		
+		The components are
+		%		
+		\begin{itemize}
+			%			
+			\item a sample space $\Omega,$ which is the set of all possible outcomes of the random process modeled by the probability space.
+			%			
+			\item a $\sigma$-algebra $\F,$ which is a family of sets representing the allowable events of the random process modeled by the probability space.
+			In particular, each set in $\F$ is a subset of the sample space $\Omega.$
+			%
+			\item a probability function $\P,$ which assigns each allowable event  a probability value, i.e., $\P:\F\to[0,1].$ It satisfies the following axioms of probability:
+			%			
+			\begin{itemize}
+				%				
+				\item  \emph{Completeness ---} $\P(\Omega)=1,$  
+				%				
+				\item  \emph{$\sigma$-additivity ---} For any finite or countably infinite sequence of mutually disjoint events $E_1,E_2,\ldots,$ it holds that
+				%				
+				$$\P(\cup_{i\geq1}  E_i) = \sum\nolimits_{i\geq 1} \P(E_i).$$
+				%
+			\end{itemize}
+			%
+		\end{itemize}
+		%		
+		\framebreak
+		Examples:
+		%		
+		\begin{itemize}
+			%			
+			\item \emph{Coin Tossing ---} Possible samples are $\Omega=\{\texttt{H},\texttt{T} \}$ with \texttt{H} resp.\ \texttt{T} representing ''heads'' resp.\ ''tails''. The allowable events are contained in $\F=\{\varnothing,  \{\texttt{H}\} , \{\texttt{T}\}, \{\texttt{H},\texttt{T}\}  \}.$ If the coin is fair, then $\P(\texttt{H})=\P(\texttt{T})=1/2.$
+			%			
+			\item \emph{Dice Rolling---} Possible samples are $\Omega=\{1,2,3,4,5,6\}.$  The allowable events are contained in $2^\Omega,$ i.e., the power set of $\Omega.$
+			If the dice is fair, then $\P(i)=1/6$ for $i=1,\ldots,6.$
+			%			
+		\end{itemize}
+		%
+		\textbf{Further properties.} For any probability space $(\Omega,\F,\P)$ the following properties hold
+		%		
+		\begin{itemize}
+			%			
+			\item \emph{Monotonicity ---} $A,B\in \F,$ and $A\subset B,$ then $\P(A)\leq \P(B).$
+			%			
+			\item \emph{Union bound ---}  For any finite or countably infinite sequence events $E_1,E_2,\ldots,$ 
+			%			
+			$$\P(\cup_{i\geq1}  E_i) \leq \sum\nolimits_{i\geq 1} \P(E_i).$$
+			%			
+		\end{itemize}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Running Exercise}  
+An urn contains five blue, three green, and one red ball. Two balls are randomly selected (without replacement).
+
+\lz
+
+
+
+What is the sample space of this experiment?
+
+
+\lz
+
+\lz
+\lz
+\lz
+
+What is the probability of each point in the sample space?
+
+
+
+\end{vbframe}
+
+\begin{vbframe}{Independence}  
+
+
+\textbf{Independence of events:} 
+%		
+\begin{itemize}
+	%		
+	\item 		Two events $A,B\in \F$ are \emph{independent} iff $\P(A \cap B)=\P(A)\P(B).$
+	%			
+	\item Events $E_1,\ldots,E_n \in \F$ are called \emph{pairwise independent} iff any pair $E_i,E_j$ with $i \neq j$ is independent.
+	%	
+	\item Events $E_1,\ldots,E_n \in \F$ are called \emph{mutually independent} iff for any  subset $I \subset \{1,\ldots,n\}$ it holds that  $\P(\bigcap_{i \in I} E_i )= \prod_{i \in I}\P(E_i).$
+	%		
+\end{itemize}
+%		
+Note that pairwise independence does not imply mutual independence! 
+
+\lz
+
+Example: One urn with four balls with the labels $110,101,011,000.$ We select one ball randomly.
+\begin{itemize}
+%	
+	\item For $i=1,2,3$ let $E_i:=\{ \mbox{Selected ball has zero at the $i$-th position}  \}.$ 
+%	
+	\item $\P(E_i) = 1/2,$ $i=1,2,3$ and $\P(E_1 \cap E_2) = \P(E_1 \cap E_3) = \P(E_2 \cap E_3) =1/4.$
+%	
+	\item But $\P(E_1 \cap E_2 \cap E_3) = 1/4 \neq 1/8 = \P(E_1)\P(E_2)\P(E_3).$
+%	
+\end{itemize}
+ 
+
+
+\framebreak
+
+%
+\textbf{Conditional probability.} The \emph{conditional probability} that event $A\in \F$ occurs given that event $B\in\F$ occurs is $\P(A|B)= \frac{\P(A\cap B)}{\P(B)}.$ The conditional probability is well-defined only if $\P(B) > 0.$
+
+
+%	
+\textbf{Bayes rule.} For two events $A,B\in \F$  it holds that $$\P(A|B)=\frac{\P(B|A) \P(A)}{\P(B)}.$$
+%
+\lz 
+
+%
+\textbf{The law of total probability.} Let $E_1,\ldots,E_n \in \F$  be mutually disjoint events, such that $\cup_{i=1}^n E_i = \Omega,$ then $ \forall A\in \F,$ {  $$\P(A) = \sum_{i=1}^n \P(A \cap E_i) = \sum_{i=1}^n \P(A | E_i) \P(E_i).$$}
+%	
+
+\end{vbframe}
+
+
+\begin{vbframe}{Running Exercise}  
+	An urn contains five blue, three green, and one red ball. Two balls are randomly selected (without replacement).
+	
+	\lz
+	
+	
+	
+	Consider the event $A=\{\mbox{First ball is red}\}$ and the event $B=\{\mbox{Second ball is red}\}.$ 
+	Are these events independent?
+	
+	
+	\lz
+	
+	\lz
+	\lz
+	\lz
+	
+	Are the events independent if we put a ball back into the urn after each selection?
+	
+	
+	
+\end{vbframe}
+
+
+\begin{vbframe}{Random variables}  
+ 
+ \textbf{Random variables.} A random variable $X$ on a sample space $\Omega$ is a real-valued function on $\Omega,$ that is $X:\Omega \to \R.$ The following observations can be made:
+ %
+ \begin{itemize}
+ 	%		
+ 	\item 	A random variable defines a probability space $(\Omega_X,\F_X,\P_X)$ with $\Omega_X= Im(X)$ and $\P_X(A)=\P(\{\omega\in\Omega \, | \, X(\omega) \in A \})$ for any $A\subset \Omega_X.$ Usually, one writes just $\P(X\in A)$ to denote the latter term, which is the \emph{probability distribution of $X$.}\\
+ 	
+ 	{\tiny (Technical remark: $\F_X$ is usually the Borel-$\sigma$-algebra on $\R$.)}
+ 	%	
+ 	\item In practical applications oftentimes the original probability space $(\Omega,\F,\P)$ is not the interesting object, but rather the induced probability space by $X.$ 
+ 	%		
+ 	One is rather interested in the probability of the outcome of the random variable:
+ 	%		
+ 	\begin{itemize}
+ 		%			
+ 		\item \emph{Coin tossing ---} Let $X$ be the random variable counting the number of tails after 100 flips.
+ 		%			
+ 		%			The 
+ 		%			
+ 		\item \emph{Financial market ---} Let $X_t$ be the  price of some asset in a future time $t.$
+ 		%			
+ 		%			
+ 	\end{itemize}
+ 	%	
+ 	\framebreak
+ 	%
+ 	\item Functions of random variables are again random variables, i.e., if $f:\R \to \R$ is some (measurable) function, then $Z=f(X)$ is also a random variable.\\
+ 	%	
+% 	{\tiny (Technical remark: to be rigorously one has to require that the function is measurable.)}
+ 	%	
+ 	\item Identical distributed --- Two random variables $X$ and $Y$ are identical distributed if their probability distributions coincide, i.e., $\P_X = \P_Y.$ 
+ 	%		
+ 	%	\item The \emph{cumulative distribution function} of a random variable  determines the probability that the random variable will take a value smaller than or equal a specific value.
+ 	%%	\\
+ 	%	More specifically, $F_X:\R \to [0,1]$ with $F_X(x) := \P(X \leq x)$ for any $x\in \R$ is the cumulative distribution function of the random variable $X.$
+ 	%
+ \end{itemize}
+ %	
+ One distinguishes between two types of random variables:
+ %	
+ \begin{itemize}
+ 	%		
+ 	
+ 	\item A \emph{discrete random variable} is a random variable that can take only a finite or countably
+ 	infinite number of values. Its probability distribution is determined by the \emph{probability mass function}  which assigns a probability to each value in the image of $X.$
+ 	%	
+ 	\item A \emph{continuous random variable} is a random variable which can take uncountably
+ 	infinite number of values. Usually its probability distribution is determined by a \emph{density function,} which assigns probabilities to intervals of the image of $X.$
+ 	%		
+ \end{itemize}
+
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{Discrete random variables} 
+
+If the image $\Omega_X$ of $X$ is discrete (e.g., finite or countably infinite), then $X$ is called a \emph{discrete RV}.
+ 
+ \lz
+ 
+ For a discrete RV $X$, the function 
+ $$p:\, \Omega_X \to [0,1], \,  x \mapsto  \P \left(X \in \{x\} \right) = \P \left(X = x \right)
+ $$ 
+ is called a probability function or probability mass function of $X$. 
+ 
+ 
+ \lz 
+ 
+ Obviously, $p(x) \geq 0$ and $\sum_{x \in \Omega_X} p(x) = 1$.
+% 
+ 
+	Examples:
+	\begin{itemize}
+		\item \emph{Bernoulli distribution}: For a binary RV with $\Omega_X = \{0,1\}$, $X \sim \mathrm{Ber}(\theta)$ if $p(1) = \theta$ and $p(0)= 1 - \theta$.
+		\item \emph{Binomial distribution}: $X \sim \mathrm{Bin}(n,\theta)$ if $$
+p(k) = \left\{ \begin{array}{cl}
+	{n \choose k} \theta^k (1-\theta)^{n-k} & \text{ if } k \in \{0, \ldots , n\}\\
+	0 & \text{ otherwise}
+\end{array} \right. \, .
+$$
+	\end{itemize}
+ 
+
+
+\end{vbframe}
+
+
+\begin{vbframe}{Continuous random variables} 
+	
+	$X$ is a \emph{continuous RV} if $\Omega_X$ is non-discrete and there exists a function $p: \R \to \R$ such that 
+%	
+	\begin{itemize}
+%		
+		\item 
+		$p(x) \geq 0$ for all $x \in \mathbb{R}$
+%		
+		\item $\int_{-\infty}^\infty p(x) \, dx = 1$,
+%		
+		\item for all $a \leq b$ it holds that	$
+		\P(a \leq X \leq b) = \int_a^b p(x) \, dx .
+		$
+%
+	\end{itemize} 
+% 
+	The function $p$ is called the probability density function (PDF) of $X$.
+	
+	\lz
+	
+	Examples.
+	
+	\begin{itemize}
+			\item \emph{Uniform distribution}: $X \sim U(a,b)$ if 
+		$$
+		p(x) = \left\{ \begin{array}{cl}
+			1/(b-a) & \text{ if } a \leq x \leq b  \\
+			0 & \text{ otherwise}
+		\end{array} \right. .
+		$$
+		\item \emph{Normal/Gaussian distribution}: $X \sim \normal(\mu, \sigma)$ if
+		$$
+		p(x) = \frac{1}{\sigma \sqrt{2\pi}} \exp \left( -\frac{(x- \mu)^2 }{2 \sigma^2} \right)\, .
+		$$ 
+	\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Cumulative distribution function}
+ 
+ The cumulative distribution function (CDF) of a random variable $X$ is the function
+		$$
+		F_X:\, \mathbb{R} \to [0,1], \, x \mapsto \P(X \leq x) \, .
+		$$
+		
+A CDF fully characterizes a RV: If $F_X(x) = F_Y(x)$ for all $x \in \mathbb{R}$, then $X$ and $Y$ are identical distributed.
+		
+		\lz
+		
+%		A function $F:\, \mathbb{R} \to [0,1]$ is a CDF for some probability measure $\P$ if and only if the following properties are satisfied: 
+%\begin{itemize}
+%	\item $F$ is non-decreasing, i.e., $x_1 < x_2$ implies $F(x_1) \leq F(x_2)$;
+%	\item $F$ is normalized: $\lim_{x \rightarrow - \infty} F(x) = 0$ and $\lim_{x \rightarrow \infty} F(x) = 1$;
+%	\item $F$ is right-continuous, i.e., $\lim_{y \downarrow x} F(y) = F(x)$ for all $x \in \mathbb{R}$.
+%\end{itemize}
+
+If $X$ is 
+\begin{itemize}
+%	
+	\item discrete with probability mass function $p$, then for all $x \in \mathbb{R}$, 
+	$
+	F_X(x) = \sum_{y \in \Omega_X \cap (-\infty, x]} p(y) \, .
+	$
+%	
+	\item continuous with probability density function $p$, then 
+	$
+	F_X(x)  = \int_{-\infty}^x p(t) \, dt 
+	$
+	for all $x \in \mathbb{R}$, and $p(x) = F_X'(x)$ whenever $F_X$ is differentiable at $x$. 
+%	
+\end{itemize}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Running Exercise}  
+	An urn contains five blue, three green, and one red ball. Two balls are randomly selected (without replacement).
+	
+	\lz
+	
+	
+	
+	Let $X$ be the number of green balls selected. What are the possible values of $X?$
+	
+	
+	\lz
+	
+	\lz
+	\lz
+	\lz
+	
+	What is the cumulative distribution function of $X$?
+	
+	
+	
+\end{vbframe}
+
+\begin{frame}[t]{Expected value/Expectation} 
+%	
+	Expectation is the most basic characteristic of a random variable. Let $X$ be a random variable, then the expectation of $X$, denoted by $\E(X),$ is 
+	%	
+	$$	\E(X) = \int x \, dF(x) = \left\{ \begin{array}{ll}
+		\sum_{x \in \Omega_X} x \, p(x) & \text{ if } X \text{ is discrete} \\
+		\int_{\Omega_X} x \, p(x) \, dx& \text{ if } X \text{ is continuous} 
+	\end{array} \right.  	$$
+	%	
+ provided the sum resp.\ the integral is well-defined and exists.
+	
+	%	
+	Some important properties of the expected value are:
+	%
+	\begin{itemize}
+		%		
+		\item Linearity --- For any constants $c_1,c_2 \in \R$ and any pair of random variables $X$ and $Y$ it holds that $ \E(c_1 X + c_2 Y) = c_1 \E(X) + c_2 \E(Y).$
+		%		 
+%		\item Independence --- If $X$ and $Y$ are independent random variables, then $\E(XY)=\E(X)\E(Y).$
+		%		
+		\item Transformations --- If $f:\R \to \R$  is a (measurable) function, then the expectation of $f(X)$ is 
+		%		
+		$$\E(f(X)) = \int f(x) \, dF(x) = \left\{ \begin{array}{ll}
+			\sum_{x \in \Omega_X} f(x) \, p(x) & \text{ if } X \text{ is discrete} \\
+			\int_{\Omega_X} f(x) \, p(x) \, dx& \text{ if } X \text{ is continuous} 
+		\end{array} \right.  	$$   
+		%		 
+		{\tiny (provided the sum resp.\ integral exists.)}
+		% 
+		%		
+	\end{itemize}
+\end{frame}
+
+
+\begin{vbframe}{Running Exercise}  
+	An urn contains five blue, three green, and one red ball. Two balls are randomly selected (without replacement).
+	
+	\lz
+	
+	
+	
+	Let $X$ be the number of green balls selected. What is the expected value of $X?$
+	
+	 
+	
+	
+	
+\end{vbframe}
+
+
+\begin{vbframe}{Variance and covariance}
+%	 
+		The variance of a RV $X$ is defined as follows:
+		$$
+		\var(X) = \E \left[ (X - \E(X))^2 \right] = \int_{\Omega_X} (x-\E(X))^2  \, dF(x)  \, ,
+		$$
+		provided the integral on the right-hand side exists. 
+		
+		\lz
+		 
+		The \emph{standard deviation} is defined by $\sqrt{\var(X)}$.
+		
+		
+		\lz
+		 
+		The \emph{covariance} between RVs $X$ and $Y$ is  
+		$$
+		\cov(X,Y) = \E \left[  (X- \E[X]) (Y - \E[Y]) \right]
+		$$
+%		 
+\end{vbframe}
+
+
+
+\begin{frame}[t]{Multivariate random variables}
+	
+	
+	RVs $X_1  , \ldots  , X_n$ over the same probability space can be combined into a \emph{random vector} $\bm{X}=(X_1, \ldots , X_n)$. 
+	
+	\lz
+	
+	Their joint distribution is specified by the joint mass/density function $p_{\bm{X}}$, such that for any measurable set $A$ it holds that
+	$$ \P(\bm{X}  \in A) =  \left\{ \begin{array}{ll}
+		\sum_{  (x_1 , \ldots , x_n) \in A  } p_{\bm{X}}(x_1 , \ldots , x_n) & \text{ if } X_1,\ldots,X_n \text{ are discrete} \\
+		\int_{  A}   p_{\bm{X}}(x_1 , \ldots , x_n) \, dx_1\ldots dx_n& \text{ if }  X_1,\ldots,X_n  \text{ are continuous} 
+	\end{array} \right.      $$ 
+%
+	The marginal distribution $p_1$ of $X_1$ is given by
+	\[
+	p_1(x_1) =  \left\{ \begin{array}{ll}
+		\sum_{  (x_2 , \ldots , x_n) \in \Omega_{X_2} \times \ldots \times \Omega_{X_n}  } p_{\bm{X}}(x_1 , \ldots , x_n) & \text{ if } \text{  discrete} \\
+		\int_{  \Omega_{X_2} \times \ldots \times \Omega_{X_n} }   p_{\bm{X}}(x_1 , \ldots , x_n) \, dx_2\ldots dx_n& \text{ if }   \text{  continuous} 
+	\end{array} \right.     
+	\]
+%	
+	In the same way, the marginal distributions of $X_2, \ldots , X_n$ are defined. 
+%	
+ 
+	
+%	\item 
+	The same type of projection (summation/integration over all remaining variables) is used to define marginal distributions on subsets of variables $(X_{i_1} , \ldots  , X_{i_k})$ with 
+	$\{ i_1 ,  \ldots  , i_k \} \subseteq \{1 , \ldots ,  n\}$.
+	
+	
+\end{frame}
+
+
+
+\begin{vbframe}{Running Exercise}  
+	An urn contains five blue, three green, and one red ball. Two balls are randomly selected (without replacement).
+	
+	\lz
+	
+	
+	
+	Let $X_1$ be the number of green balls selected and $X_2$ the number of blue balls selected. What is the joint mass function of $(X_1,X_2)?$
+	
+	
+	
+	
+	
+\end{vbframe}
+
+
+\begin{vbframe}{Independence of random variables}  
+ 
+\begin{itemize}
+	%		
+	\item 	Two discrete random variables X and Y are independent iff for any $x\in \Omega_X,y\in \Omega_Y$ it holds that $	p_{XY}(x,y) =	p_X(x) p_Y(y).$
+	%	
+	\item Random variables $X_1, \ldots, X_n$ are pairwise independent iff for any pair $i,j$ and any $x_i\in \Omega_{X_i},x_j\in \Omega_{X_j}$ it holds that $	p_{X_iX_j}(x_i,x_j) =	p_{X_i}(x_i) p_{X_j}(x_j).$
+%	$	\P(X_i=x_i, X_j=x_j) =	\P(X_i=x_i)\P(X_j=x_j).$
+	%		
+	\item Random variables  $X_1, \ldots, X_n$ are mutually independent iff for any subset $I \subset \{1,\ldots,n\}$ it holds that the joint probability mass/density function of $(X_i)_{i\in I}$ is given by
+	$  \prod_{i \in I}	p_{X_i}(x_i)$  for any $x_i \in \Omega_{X_i},$ $i\in I.$
+%	$	\P( \bigcap_{i \in I} X_i=x_i ) =	\prod_{i \in I}\P(X_i=x_i)$ for $x_i \in Im(X_i).$
+	%		
+\end{itemize}
+%
+Similar to independence of events, pairwise independence of random variables does not imply their
+mutual independence. If we say that random variables are independent without further specifications we
+are referring to mutual independence.
+%
+\framebreak
+
+%
+ Some important properties and concepts with respect to independence are:
+%	
+\begin{itemize}
+	%		
+	\item The iid assumption --- Random variables  $X_1, \ldots, X_n$ are called  \emph{independent and identically distributed} (iid) iff they are mutually independent and each random variable has the same probability distribution as the others.
+	%		
+	\item Independence under transformations --- Let $X$ and $Y$ be independent random variables and $f,g:\R \to \R$ are (measurable) functions. Then, $f(X)$ and $g(Y)$ are independent as well. 
+	%		
+\end{itemize}
+%
+\end{vbframe}
+
+
+
+\begin{frame}[t]{Conditional distributions}
+	 
+		 If $(X,Y)$ have a joint distribution with mass function $p_{X,Y}$, then the \emph{conditional probability mass function} for $X$ given $Y$ is defined by
+		$$
+		p_{X|Y}(x ~|~ y) = \frac{p(X=x, Y=y)}{p(Y = y)}  = \frac{p_{X,Y}(x,y)}{p_Y(y)} 
+		$$
+		provided $p(Y = y) > 0$.
+		\lz
+		
+		Likewise, in the continuous case, the \emph{conditional probability density function} is given by
+		$$
+		p_{X|Y}(x ~|~ y) = \frac{p_{X,Y}(x,y)}{p_Y(y)} 
+		$$
+		provided $p_Y(y) > 0$. Then,
+		$$
+		p(X \in A ~|~ Y= y) = \int_A  p_{X|Y}(x ~|~ y) \, dx \, .
+		$$
+		The soundness of this definition is less obvious than in the discrete case, due to conditioning on an event of probability 0 here. 
+		
+\end{frame}
+
+
+\begin{vbframe}{Conditional expected value/expectation} 
+%	
+	Let $X$ and $Y$ be random variables, then the conditional expectation of $X$ given $Y=y$, denoted by $\E(X|Y=y),$ is given by
+	%	
+	$$	\E(X|Y=y) = \left\{ \begin{array}{ll}
+		\sum_{x \in \Omega_X} x \, p_{X|Y}(x ~|~ y) & \text{ discrete case} \\
+		\int_{\Omega_X} x \, p_{X|Y}(x ~|~ y) \, dx& \text{ continuous case} 
+	\end{array} \right.  	$$
+	%	
+	
+	%	
+	\emph{Interpretation:} The expected value of $X$ under the condition that $Y=y$ holds.
+	%	
+	\lz
+	
+	Note that $\E(X|Y=y)$ induces a mapping from $\Omega_Y$ to $\R$ according to $y \mapsto \E(X|Y=y).$
+	%	
+	This function is called the \emph{conditional expectation of $X$ given $Y$} and simply denoted by $\E(X|Y).$
+	%	
+	Note that $\E(X|Y)$ is a random variable!
+	%
+	
+	\lz
+	
+	$\E(X|Y)$ can be also interpreted as a prediction of $X$ under the information encoded by the random variable $Y.$
+	
+	\framebreak
+	
+	
+	%
+	Some important properties of the conditional expected value are the following. For any random variables $X,Y,Z$ it holds that
+	%
+	\begin{itemize}
+		%		
+		\item Linearity ---  For any constants $c_1,c_2 \in \R$  it holds that $ \E(c_1 X + c_2 Y | Z) = c_1 \E(X|Z) + c_2 \E(Y|Z).$
+		%		
+		\item Independence --- If $X$ and $Y$ are independent random variables,Im then $\E(X|Y)=\E(X).$
+		%		
+		%		
+		\item Transformations --- If $f:\R \to \R$  is a (measurable) function, then the conditional expectation of $f(X)$ given $Y=y$ is 
+		%		
+		$$\E(f(X)|Y=y)  = \left\{ \begin{array}{ll}
+			\sum_{x \in \Omega_X} f(x) \, p_{X|Y}(x ~|~ y) & \text{ discrete case} \\
+			\int_{\Omega_X} f(x) \, p_{X|Y}(x ~|~ y) \, dx & \text{ continuous case} 
+		\end{array} \right.  	$$
+		%		 
+		%
+		\item Law of total expectation ---
+		$\E(\E(X|Y)) = \E(X)$.  
+%		{\tiny (Note: Here, the outer expectation on the left hand-side is taken with respect to the distribution of $Y$.)}
+		%		 
+		\item Tower property --- $ \E(\E(X|Y,Z)|Y) = \E(X|Y).$
+		%		
+	\end{itemize}
+	
+\end{vbframe}
+
+
+\begin{frame}[t]{Conditional variance} 
+	%	
+	Let $X$ and $Y$ be random variables, then the conditional variance of $X$ given $Y=y$, denoted by $\var(X|Y=y),$ is given by
+	%	
+	$$	\var(X|Y=y)  = \E \left[ (X - \E[X~|~Y=y])^2  ~|~ Y=y  \right]	$$
+	%	
+	
+	%	
+	\emph{Interpretation:} Variance of the prediction $\E[X~|~Y]$ for $X.$
+	%	
+	\lz
+	
+	Note that $\var(X|Y=y)$ induces a mapping from $\Omega_Y$ to $\R$ according to $y \mapsto \var(X|Y=y).$
+	%	
+	This function is called the \emph{conditional variance of $X$ given $Y$} and simply denoted by $\var(X|Y).$
+	%	
+	Note that $\var(X|Y)$ is a random variable!
+	%
+	
+	\lz
+	
+	An important property is the law of total variance:
+	
+	$$  \var(X) = \E(\var(X~|~Y)) + \var(\E(X~|~Y)).  $$
+
+	
+\end{frame}
+
+
+
+
+\endlecture
+
+\end{document} 
