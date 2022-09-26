@@ -1,0 +1,345 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\sens}{\mathbf{A}} % vector x (bold)
+\newcommand{\ba}{\mathbf{a}}
+\newcommand{\batilde}{\tilde{\mathbf{a}}}
+\newcommand{\Px}{\mathbb{P}_{x}} % P_x
+\newcommand{\Pxj}{\mathbb{P}_{x_j}} % P_{x_j}
+\newcommand{\indep}{\perp \!\!\! \perp} % independence symbol
+% ml - ROC
+\newcommand{\np}{n_{+}} % no. of positive instances
+\newcommand{\nn}{n_{-}} % no. of negative instances
+\newcommand{\rn}{\pi_{-}} % proportion negative instances
+\newcommand{\rp}{\pi_{+}} % proportion negative instances
+% true/false pos/neg:
+\newcommand{\tp}{\# \text{TP}} % true pos
+\newcommand{\fap}{\# \text{FP}} % false pos (fp taken for partial derivs)
+\newcommand{\tn}{\# \text{TN}} % true neg
+\newcommand{\fan}{\# \text{FN}} % false neg
+
+\usepackage{multicol}
+
+\newcommand{\titlefigure}{figure/SMOTE.png}
+\newcommand{\learninggoals}{
+	\item Know the idea of sampling methods for coping with imbalanced data
+	\item Understand the different undersampling techniques
+	\item Understand the state-of-art oversampling technique SMOTE
+}
+
+\title{Advanced Machine Learning}
+\date{}
+
+\begin{document}
+	
+	\lecturechapter{Imbalanced Learning: Sampling Methods}
+	\lecture{Advanced Machine Learning}
+	
+	
+	
+	\sloppy
+	
+	
+	
+	\begin{frame}{Sampling Methods: Overview}
+		\footnotesize
+		\begin{itemize}
+			%		
+			\item Another popular way to deal with imbalanced data sets is to pre-process the data such that using standard classifiers (focusing on accuracy) is fine.
+%			
+			\item The typical pre-processing approach is to use a \emph{sampling technique}: one tries to manipulate the distribution of the training examples (make it more balanced) in order to improve the performance of the classifier on the minority classes.
+			%			
+			\item The advantage is that these techniques are independent of the underlying classifier making it a very flexible and general approach to deal with imbalanced data sets.
+			\item Sampling techniques can be distinguished into three groups: \lz
+			%		
+			\begin{minipage}{0.5\textwidth}
+%	
+				%			
+				\begin{itemize} \footnotesize
+					%				
+					\item[]
+%					
+					\item Undersampling --- Eliminating/Removing instances of the majority class(es) in the original data set.
+					%				
+					\item Oversampling --- Adding/Creating new instances of the minority class(es) to the original data set.
+					%				
+					\item Hybrid approaches --- Combining undersampling and oversampling.
+					%				
+				\end{itemize}
+				%			
+			\end{minipage}
+			\begin{minipage}{0.4\textwidth}
+					\begin{figure}
+					\centering
+					\scalebox{0.6}{\includegraphics{figure/under_oversampling.png}}
+				\end{figure}
+			\end{minipage}
+			%		
+		\end{itemize}
+		
+	\end{frame}
+	
+	\begin{frame}{Random Undersampling/Oversampling}
+		\begin{small}
+		\begin{itemize}
+%			
+			\item A very common and oftentimes quite effective way of sampling is by doing simply random undersampling or random oversampling.
+			
+			\begin{columns}
+				\footnotesize
+				\begin{column}{0.45\textwidth}
+					\begin{itemize}\small
+						\item Random oversampling (ROS): Expand the minority.
+						\item Replicate uniformly at random instances from the minority class(es) until a desired imbalance ratio is reached.
+						\item Prone to overfitting due to multiple tied instances!
+					\end{itemize}
+				\end{column}
+				\begin{column}{0.45\textwidth}
+					\begin{itemize}\small
+						\item Random undersampling (RUS): Shrink the majority.
+						 \item Eliminate uniformly at random instances from the majority class(es) until a desired imbalance ratio is reached.
+						 \item This might remove informative data points and destroy the important concepts in the data!
+					\end{itemize}
+				\end{column}
+			\end{columns}
+%			
+			\item Better: Introduce heuristics in the removal process (RUS) and do not create exact copies (ROS).
+%			
+			\end{itemize}
+		\end{small}	
+%
+	\end{frame}
+	
+	\begin{frame}{Undersampling: Tomek Links}
+		
+		\footnotesize{
+			\begin{itemize}
+				%				
+				\item One idea to make undersampling more meaningful is to remove only noisy borderline examples of the majority class(es).
+				%
+				\item Tomek link: Let $E^{(i)} = (\xi,\yi)$ and $E^{(j)} = (\xv^{(j)},y^{(j)})$ be two data points in $\D$ with $\yi\neq y^{(j)}.$ A pair $(E^{(i)},E^{(j)})$ is called \emph{Tomek link} iff there is no other data point $E^{(k)} = (\xv^{(k)},y^{(k)})$ such that
+%				
+				\begin{itemize} \footnotesize
+%					
+					\item [] $d(\xv^{(i)}, \xv^{(k)}) < d(\xv^{(i)}, \xv^{(j)}) $
+					\item [] or $d(\xv^{(j)}, \xv^{(k)}) < d(\xv^{(i)}, \xv^{(j)}) $ holds,
+%					
+				\end{itemize}
+%			
+				where $d$ is some distance on $\Xspace.$
+					
+			\end{itemize}
+				%	
+%						
+			\begin{minipage}{0.55\textwidth}	
+%				
+			\begin{itemize} \footnotesize
+				\item Since $E^{(i)}$ and $E^{(j)}$ have different $y$'s they correspond to a bordeline case.
+				%				
+				\item By removing each data pair in a Tomek link, where the $y$ belongs to a majority class, we shrink the majority class(es) in the data set. 
+%				
+				\item Note that we do not sample here, but this approach can be combined with RUS. 	
+					
+			\end{itemize}		
+			\end{minipage}
+%		
+			\begin{minipage}{0.4\textwidth}
+				\begin{figure}
+					\centering
+					\scalebox{0.7}{\includegraphics{figure/tomek_link_plot.png}}			\tiny
+					\\ Franciso Herrera (2013), Imbalanced Classification: Common
+					Approaches and Open Problems (\href{https://sci2s.ugr.es/sites/default/files/files/TutorialsAndPlenaryTalks/SSTiC-Trends in-Classification-Imbalanced-data-sets.pdf}{\underline{URL}}).
+				\end{figure}
+			\end{minipage}
+				%				
+				%			
+		}
+	\end{frame}
+	
+	
+	
+	\begin{frame}{Undersampling: CNN}
+	
+	\footnotesize{
+		\begin{itemize}
+			%				
+			\item Another idea for shrinking the majority class is to remove examples (instances) from the majority class(es) which are far away from the decision boundary. This could be realized by constructing a consistent subset $\tilde{\D}$ of $\D$ in terms of the 1-NN classifier. 
+%			
+			\item A subset $\tilde{\D}$ of $\D$ is called consistent if using a 1-NN classifier on $\tilde{\D}$ classifies each instance in $\D$ correctly.
+%			
+		\end{itemize}
+		%	
+		%						
+		\begin{minipage}{0.55\textwidth}	
+			%		
+			\begin{itemize}
+%				
+				\item The Condensed Nearest Neighbor (CNN) methods creates a consistent data subset by doing the following:
+%				
+				\begin{enumerate} \footnotesize
+	%				
+					\item Initialize $\tilde{\D}$ by selecting all minority class instances and by picking one majority class instance at random.
+					%				
+					\item Classify each instance in $\D$ with the 1-NN classifier based on $\tilde{\D}.$
+					%				
+					\item Move all misclassified instances from $\D$ to $\tilde{\D}.$
+					
+				\end{enumerate}	
+%		
+			\end{itemize}			
+		\end{minipage}
+		%		
+		\begin{minipage}{0.4\textwidth}
+			\begin{figure}
+				\centering
+				\scalebox{0.7}{\includegraphics{figure/CNN_plot.png}}			\tiny
+				\\ Franciso Herrera (2013), Imbalanced Classification: Common
+				Approaches and Open Problems (\href{https://sci2s.ugr.es/sites/default/files/files/TutorialsAndPlenaryTalks/SSTiC-Trends in-Classification-Imbalanced-data-sets.pdf}{\underline{URL}}).
+			\end{figure}
+		\end{minipage}
+		%				
+		%			
+	}
+	\end{frame}
+	
+	\begin{frame}{Undersampling: Other Approaches}
+		%	
+		\footnotesize
+		\begin{itemize}
+%			
+			\item Neighborhood cleaning rule (NCL):
+%			
+			\begin{enumerate} \footnotesize
+%				
+				\item Find the three nearest neighbors for each instance $(\xi,\yi)$ in $\D.$
+%				
+				\item If $\yi$ belongs to the majority class \emph{and} the three nearest neighbors classify it to be a minority class $\leadsto$ Remove $(\xi,\yi)$ from $\D.$
+%				
+				\item If $\yi$ belongs to the minority class \emph{and} the three nearest neighbors classify it to be a majority class $\leadsto$ Remove the three nearest neighbors from $\D.$
+%				
+			\end{enumerate} 
+%			
+			\item One-sided selection (OSS): Tomek link + CNN
+%			
+			\item CNN + Tomek link: Since finding Tomek links is computationally expensive, it would be more reasonable to first use CNN and then apply the reduction by removing the Tomek links on the reduced data set.
+%			
+			\item Clustering approaches: Class Purity Maximization (CPM) and Undersampling based on Clustering (SBC).
+%			
+			\item Near-Miss approaches: Techniques based on informed heuristics and 3-NN classification.
+%			
+			\item See Fern\'andez et al. (2018), Learning from imbalanced data sets.
+%
+		\end{itemize}
+		%	
+	\end{frame}
+	
+	\begin{frame}{Oversampling: SMOTE}
+		%	
+		\footnotesize
+		\begin{itemize}
+			%			
+			\item The Synthetic Minority Oversampling TEchnique (SMOTE) is an oversampling approach, where instead of replicating instances of the minority class one is creating new synthetic instances.
+%			
+			\item Idea: Form new minority class examples by interpolating between several minority examples being close together.
+			%			
+			\item Note that the examples are created in the feature space $\Xspace$ rather than in the data space $\Xspace\times\Yspace.$
+%			
+			\item Algorithm: For each minority class example 
+%			
+			\begin{itemize} \footnotesize
+%				
+				\item Find its $k$ nearest minority neighbors.
+%				
+				\item Randomly select $j$ of these neighbors.
+%				
+				\item Randomly generate new examples along the lines connecting the minority example and its $j$ selected neighbors.
+%				
+			\end{itemize}
+			%
+		\end{itemize}
+%	
+		\includegraphics{figure/SMOTE.png} 
+		%	
+	\end{frame}
+	
+	\begin{frame}{SMOTE: Generating new examples}
+		%	
+		\footnotesize
+		
+			\begin{itemize}
+				%			
+				\item Let $\xi$ be the feature of the minority instance and let $\xv^{(j)}$ be its nearest neighbor. The line segment connecting the two is given by
+				
+				$$		(1-\lambda) \xi + \lambda\xv^{(j)} = \xi + \lambda(\xv^{(j)} - \xi)	$$
+%				
+				where $\lambda \in [0,1].$
+				%			
+				\item Thus, by sampling randomly a $\lambda \in [0,1],$ say $\tilde{\lambda},$ we can create a new example on the connecting line via
+%				
+				$$   \tilde{\xv}^{(i)} =  \xi + \tilde{\lambda}(\xv^{(j)} - \xi)	 $$
+				%	
+			\end{itemize}		
+				
+				Example: Let $\xi = (1,2)^\top$ and $\xv^{(j)} = (3,1)^\top.$ Assume we draw $\tilde{\lambda} \approx 0.25.$
+				%
+			\begin{figure}
+				\centering
+				\includegraphics[width=0.8\linewidth]{figure_man/coordinate_system}
+			\end{figure}
+		%			
+		
+		%	
+	\end{frame}
+
+		
+	\begin{frame}{SMOTE: Example}
+		%	
+		\footnotesize
+		
+		\begin{itemize}
+			%			
+			\item Let us consider the iris data set with $\Yspace=\{ \texttt{setosa},\texttt{versicolor},\texttt{virginica}  \}$ with 50 examples for each class.
+%			
+			\item We can make the data set ``imbalanced'' by encoding each instance of one class as positive and the remaining instances of the two other classes as negative.
+%			
+			\item [] NB: This is a common approach to create imbalanced data sets artificially.
+%			
+			\item Running SMOTE with different $k$'s leads to the following:
+			%	
+		\end{itemize}		
+%		
+		%
+		\begin{figure}
+			\centering
+			\includegraphics[width=0.8\linewidth]{figure_man/smoted_iris_data.jpeg}
+		\end{figure}
+		%			
+		We created now (minority) data points which make it now slightly harder to separate the two classes with a separating hyperplane.
+		%	
+	\end{frame}
+
+
+	\begin{frame}{SMOTE: Dis-/Advantages}
+		%	
+		\small
+%		
+		\begin{itemize}
+			%			
+			\item SMOTE's oversampling approach generalizes the decision region for the minority class instead of making it quite specific such as by random oversampling. 
+			%			
+			\item SMOTE is, however, prone to overgeneralizing as it generalizes the minority area without paying attention to the majority class(es).
+			%			
+			\item Nevertheless, SMOTE still belongs to the state-of-art techniques to deal with imbalanced data sets via oversampling and is the basis for a plethora of other oversampling methods oftentimes tailored towards specific data situations: Borderline-SMOTE, LN-SMOTE, $\ldots$ (over 90 extensions!)
+%			
+			\item A quite common approach is also to combine SMOTE with undersampling techniques such as Tomek link or NCL.
+			%	
+		\end{itemize}		
+		%		
+		%
+		%	
+	\end{frame}
+
+	%
+	\endlecture
+\end{document}

@@ -1,0 +1,110 @@
+
+\newcommand{\ba}{\mathbf{a}}
+
+%
+	%
+	Consider the multivariate regression setting on $\Xspace \subset \R^p$ without target features, i.e., $\Yspace=\R$ and $\mathcal{T} = \{1,\ldots,m\}.$	
+%	
+	Furthermore, consider the approach of learning a (simple) linear model $f_j(\xv) = \ba_j^\top \xv$ for each target $j$ independently.
+%	
+	For this purpose, we would face the following optimization problem:
+%	
+	\begin{equation*}	\label{eq:multiridge}
+%		
+		\min_A \|Y - \Xmat A \|^2_F,
+%		
+	\end{equation*}
+%
+	where  $ \| B \|_F  = \sqrt{ \sum_{i=1}^n \sum_{j=1}^m B_{i,j}^2 } $ is the Frobenius norm for a matrix $B \in \R^{n \times m}$ and 
+	%		
+	\begin{equation*}
+		\label{eq:notation}
+		\Xmat = \begin{bmatrix} (\xv^{(1)} )^\top \\ \vdots \\ (\xv^{(n)})^\top \end{bmatrix}, \qquad A = [\ba_1 \quad \cdots \quad \ba_m] \,, \qquad Y = \begin{bmatrix} \yv^{(1)}\\ \vdots \\ \yv^{(n)} \end{bmatrix}.
+	\end{equation*}
+	
+	\begin{enumerate}
+%	
+	\item Show that $\hat A = (\Xmat^\top \Xmat)^{-1} \Xmat^\top Y$ is the optimal solution in this case (provided that $\Xmat^\top \Xmat$ is invertible).
+%	
+	\item Assume that the data $(\xi,\yv^{(i)}) \in \Xspace \times \Yspace^m$ is generated\footnote{Of course, in an iid fashion and the $\xv$'s are independent of the $\bm{\eps}$'s.} according to the following statistical model
+%	
+	$$	(y_1,\ldots,y_m) =	\yv = (\xi)^\top A^* + \bm{\eps}^\top,		$$
+%	
+	where $A^* \in \R^{p\times m}$ and $\bm{\eps} \sim \normal(\bm{0},\bm{\Sigma}).$
+%
+	Show that the maximum likelihood estimate for $A^*$ coincides with the estimate in (a). 
+	%		
+	\item Write a function implementing a gradient descent routine for the optimization of this linear model. Start with (for R):
+%	
+<<eval=FALSE>>=
+#' @param step_size the step_size in each iteration
+#' @param X the feature input matrix X
+#' @param Y the score matrix Y
+#' @param A a starting value for the parameter matrix
+#' @param eps a small constant measuring the changes in each update step. 
+#' Stop the algorithm if the estimated model parameters do not change
+#' more than \code{eps}.
+
+#' @return a parameter matrix A
+gradient_descent <- function(step_size, X, Y, A, eps = 1e-8){
+ 
+  # >>> do something <<<
+  
+  return(A)
+  
+}
+@
+%
+\emph{Hint:} You have computed the gradient in (a).
+%
+ \item Run a small simulation study by creating 20 data sets as indicated below and test different step sizes $\alpha$ (fixed across iterations) against each other and against the state-of-the-art routine for linear models (in R, using the function \texttt{lm}, in Python, e.g., \texttt{sklearn.linear\_model.LinearRegression}).
+ %
+  \begin{itemize}
+%  	
+    \item Compare the difference in the estimated parameter matrices $\hat A$ using the mean squared error, i.e., 
+    %
+    $$ \frac{1}{m\cdot p} \sum_{i=1}^p \sum_{j=1}^m (\ba^{*}_{i,j}-\hat{\ba}_{i,j})^2$$ 
+    %
+    and summarize the difference over all 100 simulation repetitions.
+%    
+    \item Compare the estimation also with the James-Stein estimate of $A^*$, which is given by 
+%    
+	$$  A^{JS} = \left(  \ba_1^{JS} \ldots \ba_m^{JS}  \right),$$
+%	
+	where $$  \ba_j^{JS} = \left (1 - \frac{(m-2)\sigma^2}{n\|\hat{\ba}_j - \ba_j^* \|^2_2} \right )  (\hat{\ba}_j - \ba_j^*) + \ba_j^*, \quad j=1,\ldots,m.$$
+%	
+	and $\hat{\ba}_j$ is the MLE for the $j$th target parameter.
+%    
+    \end{itemize}
+<<eval=FALSE>>=
+# settings
+n <- 10000
+p <- 100
+m <- 6
+nr_sims <- 20
+
+# create data (only once)
+X <- matrix(rnorm(n*p), ncol=p)
+A_truth <- matrix(runif(p*m, -2, 2),ncol=m)
+f_truth <- X%*%A_truth 
+
+# create result object
+result_list <- vector("list", nr_sims)
+
+for(sim_nr in nr_sims)
+{
+  
+  # create response
+  Y <- f_truth + rnorm(n*m, sd = 2) 
+  
+  # >>> do something <<<
+  
+  
+  # save results in list (performance, time)
+  result_list[[sim_nr]] <- add_something_meaningful_here
+  
+}
+@
+%
+
+\end{enumerate}

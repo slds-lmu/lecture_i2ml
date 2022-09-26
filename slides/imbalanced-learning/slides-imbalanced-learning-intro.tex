@@ -1,0 +1,245 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\sens}{\mathbf{A}} % vector x (bold)
+\newcommand{\ba}{\mathbf{a}}
+\newcommand{\batilde}{\tilde{\mathbf{a}}}
+\newcommand{\Px}{\mathbb{P}_{x}} % P_x
+\newcommand{\Pxj}{\mathbb{P}_{x_j}} % P_{x_j}
+\newcommand{\indep}{\perp \!\!\! \perp} % independence symbol
+% ml - ROC
+\newcommand{\np}{n_{+}} % no. of positive instances
+\newcommand{\nn}{n_{-}} % no. of negative instances
+\newcommand{\rn}{\pi_{-}} % proportion negative instances
+\newcommand{\rp}{\pi_{+}} % proportion negative instances
+% true/false pos/neg:
+\newcommand{\tp}{\# \text{TP}} % true pos
+\newcommand{\fap}{\# \text{FP}} % false pos (fp taken for partial derivs)
+\newcommand{\tn}{\# \text{TN}} % true neg
+\newcommand{\fan}{\# \text{FN}} % false neg
+
+\usepackage{multicol}
+
+\newcommand{\titlefigure}{figure_man/imbalanced_data_plot_title}
+\newcommand{\learninggoals}{
+  \item Know what is meant by imbalanced data sets and how they occur in practice
+  \item Understand why accuracy is not an optimal performance measure for imbalanced data sets
+  \item Get an overview of the prevalent techniques for dealing with imbalanced data sets
+}
+
+\title{Advanced Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Introduction to Imbalanced Learning}
+\lecture{Advanced Machine Learning}
+
+
+
+\sloppy
+
+\begin{vbframe}{Imbalanced Data Sets}
+%
+\small{
+  \begin{itemize}
+%  	
+	\begin{minipage}{0.45\textwidth}
+%		    
+		    \item Class imbalance refers to the case in which the occurrences of the classes are significantly different. Usually one or more classes are underrepresented in the data.
+%		     
+		    \item Such situations are common in practice, and classical classification algorithms sometimes exhibit undesirable predictive behavior without adaptation to this imbalance.
+	\end{minipage}
+	\begin{minipage}{0.45\textwidth}    
+		\begin{center}
+			%    	
+			\includegraphics[width=0.5\textwidth]{figure_man/balanced_data_plot}
+			\includegraphics[width=0.5\textwidth]{figure_man/imbalanced_data_plot}
+			%    	
+		\end{center}
+	\end{minipage}
+
+%	
+	\item In binary classification (i.e., $\Yspace =\{-1,+1\}$) the minority (underrepresented) class is usually the positive class ($y=+1$), while the majority (overrepresented) class is the negative ($y=-1$). This is because the positive class is oftentimes the more important one in real-world applications.
+%
+
+  \end{itemize}}
+%
+\end{vbframe}
+
+\begin{vbframe}{Imbalanced Data Sets: Examples}
+%	
+\footnotesize{
+	\begin{itemize}
+%		
+		\item Some real-life examples, in which we have to deal with imbalanced data sets:
+%		
+		\begin{itemize}
+			\scriptsize
+			%    	
+			\item Medicine --- If we are interested in predicting whether a patient has a serious disease, we often encounter imbalanced class distributions, since not many people have the disease.
+%			
+			\item Information Retrieval --- We want to filter out the relevant items (e.g.\ documents, websites, $\ldots$) for a user query. However, the number of relevant items is very small compared to the size of available items in the entire database.  
+%			
+			\item Tracking criminals --- We want to detect terrorists in social networks in order to prevent fatal terrorist attacks. However, there are only a few terrorists and most people are righteous people. 
+%			
+			\item (Extreme) Weather prediction ---  We want to predict whether an extreme weather event (e.g., tornado, hurricane, $\ldots$ ) will occur. (Fortunately) the weather is mostly ''normal'' and we have only few data points available for predicting such events.
+%			
+			\item $\ldots$
+			%    	
+		\end{itemize}
+%	 
+	\item Note that the positive class in all examples is the more important one: present disease, relevant documents, terrorists, extreme weather event, $\ldots$
+%
+	\item Recall that imbalanced data sets can also be a source of bias related to the concept of fairness in ML, e.g.\ more data on white recidivism outcomes than for blacks.
+%
+	\end{itemize}}
+%
+\end{vbframe}
+
+\frame{
+\frametitle{Issues with Classical Classifiers}
+%
+\small
+%
+\begin{itemize}
+%
+ 	\item  As usual in classification learning settings, we want a classifier which classifies as many instances as possible correctly, i.e., one which has a high accuracy, preferably 100\%.
+% 	
+	\item What can be observed in practice when dealing with imbalanced data sets is that classical classifiers have
+%	
+	\begin{itemize}
+		\small
+%		
+		\item a good accuracy on the majority class(es),
+%		
+		\item a poor accuracy on the minority class(es). 
+%		
+	\end{itemize}
+%
+	\item The reason for this is essentially that they are biased towards the majority class(es), as predicting the majority class pays off in terms of accuracy.
+%
+	\item This problem can be illustrated by means of the \textbf{accuracy paradox}.
+%
+\end{itemize}
+%
+}
+ 
+
+\begin{vbframe}{Accuracy Paradox: Example}
+%
+	\footnotesize
+	\begin{itemize}
+		%	
+		\item Consider the following setting:
+%		
+
+		\begin{minipage}{0.55\textwidth}    
+%			
+		\begin{itemize}
+			\scriptsize
+%			
+			\item $p(\xv ~| -1) \sim \normal_2\left( 
+			\begin{pmatrix}
+				0 \\ 0
+			\end{pmatrix}  , 
+			\begin{pmatrix}
+			1  & 0 \\ 0 & 1
+			\end{pmatrix}   \right) $
+%		 
+			\item  $p(\xv ~| ~ +1) \sim \normal_2\left( 
+			\begin{pmatrix}
+				0 \\ -2
+			\end{pmatrix}  , 
+			\begin{pmatrix}
+				0.1  & 0 \\ 0 & 0.1
+			\end{pmatrix}   \right)  $
+%		
+			\item $n_+ = 25$ and $n_- = 1000$
+%		
+		\end{itemize}
+		\end{minipage}
+		\begin{minipage}{0.35\textwidth}    
+		\begin{center}
+			%    	 
+			\includegraphics[width=0.8\textwidth]{figure_man/accuracy_paradox}
+			%    	
+		\end{center}
+		\end{minipage}
+%	
+	\item We compare two models $f_1(\xv) \equiv -1$ and $f_2(\xv) = 2 \cdot \mathds{1}_{[ \xv \in [-0.66,0.47]\times [-2.74,-1.12] ]} -1.$
+%	
+	\item $f_1$ has an overall accuracy of $\approx 0.976,$ while $f_2$ has an overall accuracy of $\approx 0.951.$
+%	
+	\item However, $f_1$ has not a single correct classification for the positive class, i.e., an accuracy of $0$ for the positive class, while $f_2$ classifies \textbf{all} positives correctly, i.e., an accuracy of $1$ for the positive class.
+%	
+		%
+	\end{itemize}
+	%	
+\end{vbframe} 
+
+
+
+\begin{vbframe}{Accuracy Paradox: Consequences}
+	%
+	\small
+	\begin{itemize}
+		%	
+		\item Focusing only on the overall accuracy can have serious consequences in real-life applications. Take the disease prediction example:
+%		
+		\begin{itemize}
+			\small
+%			
+			\item Assume that only 0.5\% of the patients have the disease,
+%			
+			\item Always predicting ``no disease'' has an accuracy of 99.5\% , but this would mean that every patient is send back home \\
+%			
+			$\leadsto$ a very bad doctor!
+%			
+		\end{itemize}
+		%		
+		\item Accuracy is a questionable performance measure for imbalanced learning settings and consequently we need more informative performance measures for such cases.
+		%
+		\item Ideally the performance measure should be such that the learning is biased towards the minority class(es), but of course we should not overdo it.
+%		
+	\end{itemize}
+	%	
+\end{vbframe} 
+
+
+\begin{vbframe}{Dealing with Imbalanced Data Sets}
+%
+\footnotesize
+  \begin{itemize}
+  	\footnotesize
+%    
+    \item  There are four prevalent techniques how to deal with imbalanced data sets:
+%	
+	\begin{enumerate}
+		\footnotesize
+%		
+		\item  Algorithm-level/internal approaches --- Modify existing classifiers (e.g.\ SVMs, decision trees, $\ldots$) such that they are biased towards the minority class(es). \\
+%		
+		$\leadsto$ Special knowledge of the classifier, but sometimes also on the application domain is needed, i.e., one needs to understand why the classifier fails for the underlying learning scenario.
+%		
+		\item Data-level/external approaches --- (Re-)Balance the classes by (re-)sampling from the data space.\\
+%		
+		$\leadsto$ No modification of a ``classical'' classifier is needed, as the data itself is pre-processed such that accuracy as the used performance measure is fine.
+%		
+		\item Cost-sensitive learning --- Introducing different costs for misclassification and incorporating these costs into the learning process. \\
+%		
+		$\leadsto$  This approach is somewhere between the data-level approaches due to adding costs to instances and the algorithm-level approaches due to (possibly) modifying learning algorithms to consider costs.
+%		
+		\item Ensemble-based approaches --- Combining ensemble learning algorithms with one of the three techniques above.
+%
+	\end{enumerate}
+%
+  \end{itemize}
+%
+\end{vbframe}
+
+
+%
+\endlecture
+\end{document}

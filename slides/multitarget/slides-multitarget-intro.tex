@@ -1,0 +1,385 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\sens}{\mathbf{A}} % vector x (bold)
+\newcommand{\ba}{\mathbf{a}}
+\newcommand{\batilde}{\tilde{\mathbf{a}}}
+\newcommand{\Px}{\mathbb{P}_{x}} % P_x
+\newcommand{\Pxj}{\mathbb{P}_{x_j}} % P_{x_j}
+\newcommand{\indep}{\perp \!\!\! \perp} % independence symbol
+% ml - ROC
+\newcommand{\np}{n_{+}} % no. of positive instances
+\newcommand{\nn}{n_{-}} % no. of negative instances
+\newcommand{\rn}{\pi_{-}} % proportion negative instances
+\newcommand{\rp}{\pi_{+}} % proportion negative instances
+% true/false pos/neg:
+\newcommand{\tp}{\# \text{TP}} % true pos
+\newcommand{\fap}{\# \text{FP}} % false pos (fp taken for partial derivs)
+\newcommand{\tn}{\# \text{TN}} % true neg
+\newcommand{\fan}{\# \text{FN}} % false neg
+
+\newcommand{\Tspace}{\mathcal{T}}
+\newcommand{\tv}{\mathbf{t}}
+\newcommand{\tj}{\mathbf{t}_j}
+
+\usepackage{multicol}
+
+\newcommand{\titlefigure}{figure/Slide2}
+\newcommand{\learninggoals}{
+  \item Understand the practical relevance of multi-target prediction problems
+  \item Know the relevant special cases of multi-target prediction
+  \item Understand the difference between inductive and transductive learning problems
+}
+
+\title{Advanced Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Introduction to Multi-Target Prediction}
+\lecture{Advanced Machine Learning}
+
+
+
+\sloppy
+
+\begin{vbframe}{Multi-target prediction: Motivation}
+\scriptsize{
+  \begin{itemize}
+%  	
+%	\begin{minipage}{0.45\textwidth}
+%		    
+			\item Conventional supervised learning: Label/Outcome space $\Yspace$ is one-dimensional.
+%			
+			\item[$\leadsto$] The learner predicts \emph{one target variable}, i.e., faces a single-target prediction problem. 
+%			 where a single target variable needs to be
+
+		\begin{minipage}{0.45\textwidth}    
+
+%
+		    \item In practice we often have to deal with multi-target prediction (MTP) problems, where multiple target variables of possibly different type (binary, nominal, ordinal, real-valued) need to be predicted.
+	%		     
+			\item Why not just \emph{reducing} an MTP problem to a single-target prediction problem by learning one model per target, independently of the other targets? 
+	%	
+		\end{minipage}
+		\begin{minipage}{0.45\textwidth}    
+			\begin{center}
+				%    	
+				\includegraphics[width=0.9\textwidth]{figure/image_annotation} 		\tiny
+				\\ Iliadis et al. (2021), Multi-target prediction for dummies using
+				two-branch neural networks (\href{https://arxiv.org/abs/2104.09967}{\underline{URL}}).
+				%    	
+			\end{center}
+		\end{minipage}
+
+%	
+		\item In most practical cases, the targets are not completely \emph{independent} of each other. Instead, they can be more or less \emph{similar} to each other and exhibit \emph{statistical dependencies}.
+%		
+		\item Therefore, one target is (implicitly) also providing \emph{information} about another target, and vice versa.
+%		
+		\item Consequently, there is hope to achieve better performance by tackling the targets \emph{simultaneously}.
+%
+
+  \end{itemize}}
+%
+\end{vbframe}
+
+\begin{frame}{Multi-target prediction: Characteristics}
+% 
+	\small
+		A multi-target prediction setting is characterized by instances $\xv \in \Xspace$ and targets $\tv \in \Tspace$ with the following properties: 
+%		
+		\begin{itemize} \small
+%		
+			\item[P1] A training data set $\D$ consists of triplets $(\xi,\tj,y_{ij})$, where $y_{ij} \in \Yspace$ denotes a score that characterizes the relationship between the instance $\xi \in \Xspace$ and the target $\tj \in \Tspace$.  
+%			
+			\item[P2] In total, $n$ different instances and $m$ different targets are observed during training, with $n$ and $m$ being finite numbers. Thus, the scores $y_{ij}$ of the training data can be arranged in an $n \times m$ matrix $Y$, which is in general incomplete, i.e., $Y$ may have missing values.
+%			
+			\item[P3] The score set $\Yspace$ is one-dimensional and can be nominal, ordinal or real-valued.  
+%			
+			\item[P4] The goal is to predict scores for any instance-target pair $(\xv,\tv) \in \Xspace \times \Tspace$.   
+%		
+		\end{itemize}
+% 
+%
+In the conventional MTP setting there is no side information for targets available. 
+%	
+%Note that we abuse here the notation, as we use $\Yspace$ to denote the score set. 
+%
+\end{frame}
+
+\section{Special Cases of Multi-target Prediction}
+
+\begin{frame}{Multivariate regression}
+	\small
+% 
+		A multivariate regression problem is a special case of an MTP problem with the following additional properties: 
+%		
+		\begin{enumerate}\small
+%			
+			\item[P5] $|\Tspace|=m$ $\leadsto$ all targets are observed during training. 
+%			
+			\item[P6] No side information is available for targets. Without loss of generality, we can hence assign the numbers $1$ to $m$ as identifiers to targets, such that the target space is $\Tspace = \{1,...,m\}$. 
+%			
+			
+			\begin{minipage}{0.45\textwidth}    
+%				
+			\item[P7] The score matrix $Y$ has no missing values. 
+%			
+			\item[P8a] The score set is $\Yspace = \mathbb{R}$. 
+%			
+				\end{minipage}
+			\begin{minipage}{0.45\textwidth}    
+				\begin{center}
+						%    	
+				\includegraphics[width=0.99\textwidth,trim = 0 0 100 100,clip]{figure/Slide1} 	\tiny
+				\\ Waegeman et al. (2019), Multi-target prediction:
+				A unifying view on problems and methods (\href{https://arxiv.org/pdf/1809.02352.pdf}{\underline{URL}}).
+						%    	
+					\end{center}
+			\end{minipage}
+		\end{enumerate}
+%	
+	Example: Predict whether a protein (rows) will bind to a set of experimentally developed small molecules (columns).
+%
+\end{frame}
+
+
+
+
+
+\begin{frame}{Multi-label classification}
+	\small
+%	 
+		A multi-label classification problem is a special case of an MTP problem with the following additional properties: 
+		\begin{enumerate} \small
+			\item[P5] $|\Tspace|=m$ $\leadsto$ all targets are observed during training. 
+%			
+			\item[P6] No side information is available for targets. Again, without loss of generality, we can hence identify targets with natural numbers, such that the target space is $\Tspace = \{1,...,m\}$. 
+%			
+
+		\begin{minipage}{0.45\textwidth}  
+%			
+			\item[P7] The score matrix $Y$ has no missing values. 
+%			
+			\item[P8b] The score set is $\Yspace = \{0,1\}$. 
+%			
+		\end{minipage}
+		\begin{minipage}{0.45\textwidth}    
+		\begin{center}
+			%    	
+			\includegraphics[width=0.9\textwidth,trim = 0 0 100 100,clip]{figure/Slide2} \tiny
+			\\ Waegeman et al. (2019), Multi-target prediction:
+			A unifying view on problems and methods (\href{https://arxiv.org/pdf/1809.02352.pdf}{\underline{URL}}).
+			%    	
+		\end{center}
+		\end{minipage}
+	\end{enumerate}	
+%
+	Example: Assign for documents (rows) the appropriate category tags (columns).
+% 
+\end{frame}
+
+
+\begin{frame}{Label ranking}
+	\small
+%	\begin{definition}[Label ranking] 
+		In \emph{label ranking}, each instance is associated with a ranking (total order) of the targets.
+		A label ranking problem is a special case of an MTP problem with the following additional properties: 
+%		
+		\begin{enumerate}\small
+%			
+			\item[P5] $|\Tspace|=m$ $\leadsto$ all targets are observed during training. 
+%			
+			\item[P6] No side information is available for targets. Again, without loss of generality, we can hence identify targets with natural numbers, such that the target space is $\Tspace = \{1,...,m\}$. 
+			
+			\item[]
+			
+			\begin{minipage}{0.5\textwidth}    
+				\item[]
+%				
+			\item[P7] The score matrix $Y$ has no missing values. 
+%			
+			\item[P8c] The score set is $\Yspace = \{1, \ldots , m\}$, and the scores (interpreted as ranks) are such that $y_{ij} \neq y_{ik}$ for all $1 \leq j,k \neq m$. 
+			\end{minipage}
+			\begin{minipage}{0.4\textwidth}    
+			\begin{center}
+				%    	
+				\includegraphics[width=0.9\textwidth,trim = 0 0 100 0,clip]{figure/labelranking} \tiny
+				\\ Waegeman et al. (2019), Multi-target prediction:
+				A unifying view on problems and methods (\href{https://arxiv.org/pdf/1809.02352.pdf}{\underline{URL}}).
+				%    	
+			\end{center}
+		\end{minipage}
+		\end{enumerate}
+%	
+	Example: Predict for users (rows) their preferences over specific activities (columns).
+%	
+\end{frame}
+
+
+\begin{frame}{Multi-task learning}
+	%	 
+		\small
+		A multi-task learning problem is a special case of an MTP problem with the following additional properties: 
+%		
+		\begin{enumerate}\small
+%		
+			\item[P5] $|\Tspace|=m$ $\leadsto$ all targets are observed during training. 
+%			
+			\item[P6] No side information is available for targets. Again, the target space can hence be taken as $\Tspace = \{1,...,m\}$. 
+			
+			\begin{minipage}{0.45\textwidth}  
+%				
+				\item[P8d] The score set is homogenous across columns of $Y$, e.g., $\Yspace = \{0,1\}$ or $\Yspace = \mathbb{R}$.
+%			
+			\end{minipage}
+			\begin{minipage}{0.45\textwidth}    
+				\begin{center}
+					%    	
+					\includegraphics[width=0.99\textwidth,trim = 0 0 100 100,clip]{figure/Slide3} \tiny
+					\\ Waegeman et al. (2019), Multi-target prediction:
+					A unifying view on problems and methods (\href{https://arxiv.org/pdf/1809.02352.pdf}{\underline{URL}}).
+					%    	
+				\end{center}
+			\end{minipage}
+		\end{enumerate}
+	%	
+	Example: Predict for students (rows) the final grades for a specific high-school course (columns).
+	%	
+%	
+\end{frame}
+
+
+\section{Learning with Side Information on Targets}
+
+
+\begin{vbframe}{Side information on targets}
+	\small
+	\begin{itemize}
+		\item In some practical applications additional side information about the target space is available.
+		\item Examples: 
+		\begin{itemize} \small
+			
+			\begin{minipage}{0.45\textwidth}    
+				\item Representation for the target molecules in drug design application (\emph{structured representation}).
+				\item []
+				\item[]
+			\end{minipage}
+			\begin{minipage}{0.4\textwidth}    
+			\begin{center}
+				%    	
+				\includegraphics[width=0.9\textwidth,trim = 0 0 50 80,clip]{figure/Slide4}
+				%    	
+			\end{center}
+			\end{minipage}
+			\item[]
+			\item[]
+			\begin{minipage}{0.45\textwidth}   
+				\item Taxonomy on document categories (\emph{hierarchy}).
+				\item[]
+				\item[]
+			\end{minipage}
+			\begin{minipage}{0.4\textwidth}    
+			\begin{center}
+				%    	
+				\includegraphics[width=0.9\textwidth,trim = 0 0 100 20,clip]{figure/Slide5}
+				%    	
+			\end{center}
+			\end{minipage}
+		\item[]
+		\item[]
+			\begin{minipage}{0.45\textwidth}    
+			\item Information about schools and courses (geographical location, qualifications of the teachers, reputation of the school, etc.) in student mark forecasting application (\emph{feature representation}).
+			\item[]
+			\item[]
+			\end{minipage}
+			\begin{minipage}{0.4\textwidth}    
+			\begin{center}
+				%    	
+				\includegraphics[width=0.9\textwidth,trim = 0 0 100 20,clip]{figure/Slide6} \tiny
+				\\ Waegeman et al. (2019), Multi-target prediction:
+				A unifying view on problems and methods (\href{https://arxiv.org/pdf/1809.02352.pdf}{\underline{URL}}).
+				%    	
+			\end{center}
+		\end{minipage}
+		\end{itemize}
+		\footnotesize
+		\item Such problems are often referred to as dyadic prediction, link prediction, or network inference settings.
+		\item Generally speaking, such settings cover problems that obey the four properties listed in the MTP definition. 
+		\item Scores $y_{ij}$ can be arranged in a matrix $Y$, which is often sparse. 
+		\item Thus, \emph{dyadic prediction} can be seen as \emph{multi-target prediction with target features}. 
+%		\item However, MTP terminology is rarely used in the dyadic prediction literature.
+	\end{itemize}
+\end{vbframe}
+
+
+
+
+
+
+\begin{frame}{Inductive vs.\ Transductive Learning}
+	\small
+	\begin{itemize} 
+		\item In all of the previous problems, 
+		\begin{enumerate} \small
+			\item predictions need be be generated for novel instances, 
+			\item whereas the set of targets is known beforehand and observed during the training phase.
+		\end{enumerate}
+		\item[$\leadsto$] These problems are \emph{inductive} w.r.t.\ instances (1) and \emph{transductive} w.r.t.\ targets (2).
+		\item  [] 
+
+		\begin{minipage}{0.45\textwidth}    
+			\item []
+			\item 	\emph{Side information} is of crucial importance for generalizing to novel targets that are unobserved during the training phase such as a novel target molecule in the drug design example, a novel tag in the document annotation example, or a novel school in the student grading example. 
+			\item[]
+		\end{minipage}
+		\begin{minipage}{0.4\textwidth}    
+			\begin{center}
+				%    	
+				\tiny{$$\qquad g(.,.): \mbox{target similarity}$$}
+				\includegraphics[width=0.9\textwidth,trim = 0 0 0 50,clip]{figure/Slide7}  \tiny
+				\\ Waegeman et al. (2019), Multi-target prediction:
+				A unifying view on problems and methods (\href{https://arxiv.org/pdf/1809.02352.pdf}{\underline{URL}}).
+				%    	
+			\end{center}
+		\end{minipage}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Subdivision of different learning settings}
+%	
+	\footnotesize
+	In light of this, one can distinguish between four different learning settings:
+%	
+	\begin{itemize} \footnotesize
+	%		
+		\item Setting A --- The problem is transductive w.r.t.\ both the targets and the instances, i.e., both are observed during the training phase, albeit not for all instance-target combinations. The goal is then to predict missing values of the score matrix (\emph{matrix completion problem}).
+		%	
+		\item Setting B --- The problem is transductive w.r.t.\ the targets and inductive w.r.t. the instances. 
+%	
+	\end{itemize}
+%
+	\begin{minipage}{0.45\textwidth}
+		\begin{itemize} \footnotesize
+			\item Setting C --- The problem is inductive w.r.t.\ the targets and transductive w.r.t. the instances. This means that some targets are hence not observed during training, but may nevertheless appear at prediction time.
+			%		
+			\item Setting D --- The problem is inductive w.r.t.\ both the targets and the instances (\emph{zero-shot learning}).
+		\end{itemize}
+	\end{minipage}
+%	
+	\begin{minipage}{0.4\textwidth}
+	\center
+%	\vspace{0.4cm}
+	\includegraphics[width=0.99\textwidth,trim = 0 0 50 0,clip]{figure/Slide16}  \tiny
+	\\ Waegeman et al. (2019), Multi-target prediction:
+	A unifying view on problems and methods (\href{https://arxiv.org/pdf/1809.02352.pdf}{\underline{URL}}).
+	\end{minipage}
+\end{frame}
+
+
+
+%
+\endlecture
+\end{document}

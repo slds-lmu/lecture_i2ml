@@ -1,0 +1,97 @@
+%
+Similar to probabilistic classifier chains, conditional random fields try to model the conditional distribution $\P(\yv~|~\xv)$ by means of
+%
+$$		\pi(\xv,\yv) = \frac{\exp(s(\xv,\yv))}{\sum_{\yv' \in \Yspace^m} \exp(s(\xv,\yv'))},	$$
+%
+where $x\in \Xspace$ and $\yv \in \Yspace$ with $\Yspace$ being a finite set (e.g., multi-label classification), and $s:\Xspace \times \Yspace \to \R$ being a scoring function.
+%
+Training of a conditional random field is based on (regularized) empirical risk minimization using the negative log-loss:
+%
+$$ \ell_{log}(\xv,\yv,s) = \log\left(\sum_{\yv' \in \Yspace^m} \exp(s(\xv,\yv'))\right) - s(\xv,\yv).	$$
+%
+Predictions are then made by means of
+%
+\begin{align}\label{prediction}
+%	
+	h(\xv) = \argmax_{\yv \in \Yspace^m} s(\xv,\yv).
+%	
+\end{align}
+%
+Structured Support Vector Machines (Structured SVMs) are also using scoring functions for the prediction, but use the structured hinge loss for the (regularized) empirical risk minimization approach:
+%
+$$	\ell_{shinge}(\xv,\yv,s) = \max_{\yv' \in \Yspace^m} \left( \ell(\yv,\yv') + s(\xv,\yv')	 - s(\xv,\yv) \right),	$$
+%
+where $\ell:\Yspace^m \times \Yspace^m \to \R$ is some target loss function (e.g., Hamming loss or subset 0/1 loss).
+
+Show that if we use scoring functions $s$ of the form
+%
+$$	s(\xv,\yv) = \sum_{j=1}^m s_j(\xv,y_j),	$$
+%
+where $s_j:\Xspace \times \Yspace \to \R$ are scoring functions for the $j$-th target, then
+%
+\begin{enumerate}
+%	
+	\item conditional random fields are very well suited to model the case, where the distributions of the targets $y_1,\ldots,y_m$ are conditionally independent,
+%	
+
+	\textbf{Solution:}
+%	
+	
+	The idea of conditional random fields is to model the joint conditional distribution $\P(\yv~|~\xv)$ by means of $\pi(\xv,\yv).$
+%	
+	Thus, it should hold $\P(\yv~|~\xv) \approx \pi(\xv,\yv)$ and with this,
+%	
+	\begin{align*}
+%		
+		\P(\yv~|~\xv) 
+%		
+		&\approx \pi(\xv,\yv) \\
+%		
+		&= \frac{\exp(s(\xv,\yv))}{\sum_{\yv' \in \Yspace^m} \exp(s(\xv,\yv'))} \\
+%		
+		&=  \frac{\exp\left(\sum_{j=1}^m s_j(\xv,y_j)\right)}{\sum_{\yv' \in \Yspace^m} \exp \left(  \sum_{j=1}^m s_j(\xv,y_j') \right)} \\
+%		
+		&=  \frac{ \prod_{j=1}^m \exp\left( s_j(\xv,y_j)\right)}{\sum_{\yv' \in \Yspace^m} \prod_{j=1}^m \exp \left(  s_j(\xv,y_j') \right)} \\
+%		
+		&=  \frac{ \prod_{j=1}^m \exp\left( s_j(\xv,y_j)\right)}{ \prod_{j=1}^m \sum_{y_j' \in \Yspace}  \exp \left(  s_j(\xv,y_j') \right)} \\
+%		
+		&= \prod_{j=1}^m \underbrace{\frac{  \exp\left( s_j(\xv,y_j)\right)}{ \sum_{y_j' \in \Yspace}  \exp \left(  s_j(\xv,y_j') \right)}}_{ =:\pi_j(\xv,y_j) }. \\
+%		
+	\end{align*}
+%
+	So, if $\pi_j(\xv,y_j)$ is interpreted as a model for the marginal conditional distribution $\P(y_j~|~\xv),$ we see from above
+%	
+	$$   \P(\yv~|~\xv) \approx \prod_{j=1}^m \P(y_j~|~\xv),	$$
+%	
+	i.e., the targets are conditionally independent.
+
+	
+
+	\item the structured hinge loss corresponds to the multiclass hinge loss for the targets if we use the (non-averaged) Hamming loss for $\ell(\yv,\yv')= \sum_{j=1}^m \mathds{1}_{[y_j \neq y_j']} $, i.e.,
+%	
+	$$	\ell_{shinge}(\xv,\yv,s) =  \sum_{j=1}^m \max_{y_j' \in \Yspace} \left( \mathds{1}_{[y_j \neq y_j']} + s_j(\xv,y_j')	- s_j(\xv,y_j) \right).	$$
+%	
+
+	\textbf{Solution:}
+%	
+	
+	This can be seen immediately from the definition:
+%	
+	\begin{align*}
+%		
+		\ell_{shinge}(\xv,\yv,s) 
+%		
+		&= \max_{\yv' \in \Yspace^m} \left( \ell(\yv,\yv') + s(\xv,\yv')	 - s(\xv,\yv) \right) \\
+%		
+		&=  \max_{\yv' \in \Yspace^m} \left( \sum_{j=1}^m \mathds{1}_{[y_j \neq y_j']} + s(\xv,\yv')	 - s(\xv,\yv) \right) \\
+%		
+		&=  \max_{\yv' \in \Yspace^m} \left( \sum_{j=1}^m \mathds{1}_{[y_j \neq y_j']} +  \sum_{j=1}^m s_j(\xv,y_j')	 -  \sum_{j=1}^m s_j(\xv,y_j) \right) \\
+%		
+		&=  \max_{\yv' \in \Yspace^m} \left( \sum_{j=1}^m \mathds{1}_{[y_j \neq y_j']} +   s_j(\xv,y_j')	 -   s_j(\xv,y_j) \right) \\
+%		
+		&=  \sum_{j=1}^m \max_{y_j' \in \Yspace} \left( \mathds{1}_{[y_j \neq y_j']} + s_j(\xv,y_j')	- s_j(\xv,y_j) \right). \tag{Summands are independent.}
+%		 
+%		
+	\end{align*}
+	
+\end{enumerate} 

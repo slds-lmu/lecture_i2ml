@@ -1,0 +1,554 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\sens}{\mathbf{A}} % vector x (bold)
+\newcommand{\ba}{\mathbf{a}}
+\newcommand{\batilde}{\tilde{\mathbf{a}}}
+\newcommand{\Px}{\mathbb{P}_{x}} % P_x
+\newcommand{\Pxj}{\mathbb{P}_{x_j}} % P_{x_j}
+\newcommand{\indep}{\perp \!\!\! \perp} % independence symbol
+% ml - ROC
+\newcommand{\np}{n_{+}} % no. of positive instances
+\newcommand{\nn}{n_{-}} % no. of negative instances
+\newcommand{\rn}{\pi_{-}} % proportion negative instances
+\newcommand{\rp}{\pi_{+}} % proportion negative instances
+% true/false pos/neg:
+\newcommand{\tp}{\# \text{TP}} % true pos
+\newcommand{\fap}{\# \text{FP}} % false pos (fp taken for partial derivs)
+\newcommand{\tn}{\# \text{TN}} % true neg
+\newcommand{\fan}{\# \text{FN}} % false neg
+
+\usepackage{multicol}
+
+\newcommand{\titlefigure}{figure/f1_score_plot}
+\newcommand{\learninggoals}{
+  \item Get to know alternative performance measures for accuracy
+  \item See their advantages over accuracy for imbalanced data sets
+  \item Understand the extensions of these measures for multiclass settings
+}
+
+\title{Advanced Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Imbalanced Learning: Performance Measures}
+\lecture{Advanced Machine Learning}
+
+
+
+\sloppy
+
+
+\begin{vbframe}{Confusion Matrix}
+	%	
+	\scriptsize{
+		%
+		%
+		\begin{itemize}
+%			
+		\item The confusion matrix gives an overview over the errors as well as correct classifications in a tabulated form. Most performance/evaluation measures can be computed from the confusion matrix.
+%
+		\item In binary classification  (i.e., $\Yspace = \{-1,+1\}$):
+%
+		\end{itemize}
+		
+		\begin{center}
+			\scriptsize
+			\begin{tabular}{cc|>{\centering\arraybackslash}p{7em}>{\centering\arraybackslash}p{8em}}
+				& & \multicolumn{2}{c}{\bfseries True Class $y$} \\
+				& & $+$ & $-$ \\
+				\hline
+				\bfseries Classification     & $+$ & True Positive (TP)  & False Positive (FP) \\
+				$\yh$ & $-$ & False Negative (FN) & True Negative (TN) \\
+			\end{tabular}
+		\end{center}
+		% \\
+%		
+	
+	\begin{itemize}
+%		
+		\item In multiclass classification (i.e., $\Yspace = \{1,\ldots,g\}$):
+%	
+	\end{itemize}
+			\begin{center}
+			\scriptsize
+			\begin{tabular}{cc|>{\centering\arraybackslash}p{7em}>{\centering\arraybackslash}p{8em}>{\centering\arraybackslash}p{5em}>{\centering\arraybackslash}p{7em}}
+				& & \multicolumn{4}{c}{\bfseries True Class $y$} \\
+				& & $1$ & $2$ & $\ldots$ & $g$  \\
+				\hline
+				\bfseries Classification     & $1$ & True 1's  & False 1's for 2's & $\ldots$ & False 1's for $g$'s  \\
+				 & $2$ & False 2's for 1's & True 2's & $\ldots$ & False 2's for $g$'s \\
+				 $\yh$ & $\vdots$ & $\vdots$ & $\vdots$ & $\ldots$ & $\vdots$ \\
+				 & $g$ & False $g$'s for 1's &  False $g$'s for 2's & $\ldots$ & True $g$'s \\
+			\end{tabular}
+		\end{center}
+	%
+	}
+\end{vbframe}
+
+
+\begin{vbframe}{Performance measures for binary classification}
+%	
+\scriptsize{
+%	
+	We first focus on the binary classification setting and review the relevant performance measures.
+%	
+	\begin{center}
+		\tiny
+		\renewcommand{\arraystretch}{1.1}
+		\begin{tabular}{cc||cc|c}
+			& & \multicolumn{2}{c|}{\bfseries True Class $y$} & \\
+			& & $+$ & $-$ & \\ 
+			\hline \hline
+			\bfseries Classification     & $+$ & TP & FP & $\rho_{PPV} = \frac{\text{TP}}{\text{TP} + \text{FP}}$\\
+			$\yh$ & $-$ & FN & TN & $\rho_{NPV} = \frac{\text{TN}}{\text{FN} + \text{TN}}$\\
+			\hline
+			& & $\rho_{TPR} = \frac{\text{TP}}{\text{TP} + \text{FN}}$ & $\rho_{TNR} = \frac{\text{TN}}{\text{FP} + \text{TN}}$ & $\rho_{ACC} = \frac{\text{TP}+ \text{TN}}{\text{TOTAL}}$
+		\end{tabular}
+		\renewcommand{\arraystretch}{1}
+	\end{center}
+%	
+	\begin{itemize}
+%		
+		\item True positive rate (\textbf{Recall}) $\rho_{TPR}$: fraction of correctly classified 1s over all 1s.
+%		
+		\item [$\leadsto$] Population counterpart: $\P (\yh =1 ~|~ y=1)$
+%		
+		\item True negative rate $\rho_{TNR}$: fraction of correctly classified -1s over all -1s.
+%		
+		\item [$\leadsto$] Population counterpart: $\P (\yh = -1 ~|~ y= -1)$
+%		
+		\item Positive predictive value (\textbf{Precision}) $\rho_{PPV}$: fraction of correctly classified 1s over all 1 classifications.
+%		
+		\item [$\leadsto$] Population counterpart: $\P (y = 1 ~|~ \yh = 1)$
+%		
+		\item Negative predictive value $\rho_{NPV}$: fraction of correctly classified -1s over all -1 classifications.
+%		
+		\item [$\leadsto$] Population counterpart: $\P (y = -1 ~|~ \yh = -1)$
+%
+		\item Accuracy $\rho_{ACC}$: fraction of correct classifications.
+%		
+		\item [$\leadsto$] Population counterpart: $\P (\yh = y  )$
+	\end{itemize}
+}
+\end{vbframe}
+
+
+%\begin{vbframe}{Performance measures for binary classification}
+%	%	
+%	\footnotesize{
+%		%	
+%		The confusion matrix gives rise to common classification/decision criteria, which highlight different aspects
+%		of the decision making
+%		%	
+%		\begin{center}
+%			\tiny
+%			\renewcommand{\arraystretch}{1.1}
+%			\begin{tabular}{cc||cc|c}
+%				& & \multicolumn{2}{c|}{\bfseries True Class $y$} & \\
+%				& & $+$ & $-$ & \\ 
+%				\hline \hline
+%				\bfseries Classification    & $+$ & TP & FP & $\rho_{PPV} = \frac{\text{TP}}{\text{TP} + \text{FP}}$\\
+%				$\yh$ & $-$ & FN & TN & $\rho_{NPV} = \frac{\text{TN}}{\text{FN} + \text{TN}}$\\
+%				\hline
+%				& & $\rho_{TPR} = \frac{\text{TP}}{\text{TP} + \text{FN}}$ & $\rho_{TNR} = \frac{\text{TN}}{\text{FP} + \text{TN}}$ & $\rho_{ACC} = \frac{\text{TP}+ \text{TN}}{\text{TOTAL}}$
+%			\end{tabular}
+%			\renewcommand{\arraystretch}{1}
+%		\end{center}
+%		%	
+%		\begin{itemize}\footnotesize
+%			%		
+%			\item False positive rate $\rho_{FPR} = \frac{\text{FP}}{\text{FP} + \text{TN}}$: fraction of incorrectly classified 1s over all -1s.
+%			%		
+%			\item [$\leadsto$] Population counterpart: $\P (\yh = +1 ~|~ y= -1)$
+%			%		
+%			\item False Negative rate $\rho_{FNR} = \frac{\text{FN}}{\text{TP} + \text{FN}}$: fraction of incorrectly classified -1s over all 1s.
+%			%		
+%			\item [$\leadsto$] Population counterpart: $\P (\yh = -1 ~|~ y= 1)$
+%			%		
+%			\item Error $\rho_{err} = 1- \rho_{ACC}$ for how many instances did we decide incorrectly?
+%			%		
+%			\item [$\leadsto$] Population counterpart:  $\P (\yh \neq y  )$
+%			%		
+%		\end{itemize}
+%	}
+%\end{vbframe}
+
+
+
+\begin{vbframe}{$F_1$ Score in Binary classification}
+	
+	\small
+	
+	\begin{itemize}
+		\item It is difficult to achieve high \textbf{positive predictive value} and 
+		high \textbf{true positive rate} simultaneously:
+		\begin{itemize}
+			\small
+			\item A classifier predicting more positive will be more 
+			sensitive (higher $\rho_{TPR}$), but it will also tend to give more 
+			\textit{false} positives (lower $\rho_{TNR}$, lower $\rho_{PPV}$).
+			\item A classifier that predicts more negatives will be more precise 
+			(higher $\rho_{PPV}$), but it will also produce more \textit{false} negatives 
+			(lower $\rho_{TPR}$).
+		\end{itemize}
+	
+	\item The \textbf{$F_1$ score} 	$\rho_{F_1}$ balances two conflicting goals:\\%[.5em]
+	\begin{enumerate}
+		\small
+		\item Maximizing positive predictive value
+		\item Maximizing true positive rate \\%[.5em]
+	\end{enumerate}
+	
+	\item 	$\rho_{F_1}$ is the harmonic mean of $\rho_{PPV}$ and $\rho_{TPR}$:
+	$$\rho_{F_1} = 2 \cdot \cfrac{\rho_{PPV} \cdot \rho_{TPR}}{\rho_{PPV} + 
+		\rho_{TPR}}$$
+	
+	\item Note $\rho_{F_1}$ does not account for the number of true negatives.
+	
+	\end{itemize}
+
+	\framebreak
+	
+	\footnotesize
+	
+	\begin{minipage}[c]{0.5\textwidth}
+		\footnotesize
+		$F_1$ score for different combinations of $\rho_{PPV}$ \& $\rho_{TPR}$. \\
+		$\rightarrow$ Tends more towards the lower of the two combined values.
+	\end{minipage}%
+	\begin{minipage}[c]{0.5\textwidth}
+		\centering
+		\includegraphics[width=0.8\textwidth]{figure/f1_score_plot.pdf}
+	\end{minipage}
+	
+	\begin{itemize}
+		\item A model with $\rho_{TPR} = 0$ (no positive instance predicted as 
+		positive) or 
+		$\rho_{PPV} = 0$ (no true positives among the predicted) has $\rho_{F_1} = 0$.
+		\item Always predicting \enquote{negative}: $\rho_{F_1} = 0$.
+		\item [$\leadsto$] No ``$F_1$ score paradox''!
+		\item Always predicting \enquote{positive}: $\rho_{F_1} = 2 \cdot \rho_{PPV} / 
+		(\rho_{PPV} + 1) = 2 \cdot \np / (\np + n)$,\\ 
+		which will be small when the size of the positive class $\np$ is small.
+	\end{itemize}
+	
+\end{vbframe}
+
+
+\begin{vbframe}{Accuracy Paradox Example: $F_1$ Score}
+	%
+	\footnotesize
+	\begin{itemize}
+		%	
+		\item Recalling our exemplary setting to illustrate the accuracy paradox:
+		%		
+		
+		\begin{minipage}{0.55\textwidth}    
+			%			
+			\begin{itemize}
+				\scriptsize
+				%			
+				\item $p(\xv ~| -1) \sim \normal_2\left( 
+				\begin{pmatrix}
+					0 \\ 0
+				\end{pmatrix}  , 
+				\begin{pmatrix}
+					1  & 0 \\ 0 & 1
+				\end{pmatrix}   \right), $
+				%		 
+				\item  $p(\xv ~| ~ +1) \sim \normal_2\left( 
+				\begin{pmatrix}
+					0 \\ -2
+				\end{pmatrix}  , 
+				\begin{pmatrix}
+					0.1  & 0 \\ 0 & 0.1
+				\end{pmatrix}   \right),  $
+				%		
+				\item $n_+ = 25,$ $n_- = 1000,$
+%				
+				\item $f_1(\xv) \equiv -1,$ 
+%				
+				\item  $f_2(\xv) = 2 \cdot \mathds{1}_{[ \xv \in [-0.66,0.47]\times [-2.74,-1.12] ]} -1.$
+				%		
+			\end{itemize}
+		\end{minipage}
+		\begin{minipage}{0.35\textwidth}    
+			\begin{center}
+				%    	 
+				\includegraphics[width=0.8\textwidth]{figure_man/accuracy_paradox}
+				%    	
+			\end{center}
+		\end{minipage}
+		%	
+		\item $f_1$ has an overall accuracy of $\approx 0.976,$ while $f_2$ has an overall accuracy of $\approx 0.951.$
+		%	
+		\item The $F_1$ score of $f_1$ is zero, as it has $\rho_{TPR}=0=$ (since $TP=0$), while $f_2$ has  $F_1$ score of $1/2,$ since TP=25, FN = 0 and FP=50, so that $\rho_{PPV}=1/3$ and $\rho_{TPR}=1.$
+		%	
+		%
+	\end{itemize}
+	%	
+\end{vbframe} 
+
+
+
+
+\begin{vbframe}{G Score}
+	\footnotesize
+	
+	\begin{minipage}[c]{0.5\textwidth}
+	\footnotesize
+	\begin{itemize}
+		\item 	Instead of the harmonic mean in the $F_1$ score one can use also the geometric mean, which results in the G score: 
+		%	
+		$$\rho_{G} = \sqrt{\rho_{PPV} \cdot \rho_{TPR}}$$
+		%	
+		\item  Its behavior is similar to the $F_1$ score for different combinations of $\rho_{PPV}$ \& $\rho_{TPR}$, i.e., it tends more towards the lower of the two combined values.
+		%	
+	\end{itemize}
+\end{minipage}%
+\begin{minipage}[c]{0.5\textwidth}
+	\centering
+	\includegraphics[width=0.8\textwidth]{figure/g_score_plot.pdf}
+\end{minipage}
+%
+\begin{itemize}
+	\item %	
+	Closely related is the G mean, which uses the geometric mean of TPR and TNR:
+	%
+	$$\rho_{Gm} = \sqrt{\rho_{TNR} \cdot \rho_{TPR}}.$$
+	%	
+	It also takes the true negative rate into account, i.e., also true negatives.
+%	
+	\item For the accuracy paradox example we get a G score of $\approx 0.577$ and a G mean of $\approx 0.975$ for $f_2,$ while $f_1$ achieves G score and G mean of zero, respectively.
+%	
+	\item Always predicting \enquote{negative}: $\rho_{G} = \rho_{Gm}  = 0 \leadsto$ No ``$G$ score/mean paradox''!
+%
+\end{itemize}
+	
+\end{vbframe}
+
+
+
+\begin{vbframe}{Balanced Accuracy}
+	\footnotesize
+	
+	\begin{minipage}[c]{0.5\textwidth}
+		\footnotesize
+		\begin{itemize}
+			\item 	Finally, one can also replace the geometric mean in the $G$ mean by the arithmetic mean, which results in the balanced accuracy (BAC): 
+			%	
+			$$\rho_{BAC} = \frac{\rho_{TNR} + \rho_{TPR}}{2}$$
+			%	
+			\item  It tends more towards the higher of the two combined values.
+			%	
+		\end{itemize}
+	\end{minipage}%
+	\begin{minipage}[c]{0.5\textwidth}
+		\centering
+		\includegraphics[width=0.7\textwidth]{figure/bac_plot.pdf}
+	\end{minipage}
+	%
+	\begin{itemize}
+		\item If a classifier has good predictive accuracy on both classes or the data set is almost balanced, then $\rho_{BAC} $ is essentially the classical accuracy $\rho_{ACC}$.
+%		
+		\item However, if a classifier always predicts ``negative'' for an imbalanced data set, i.e. $n_+  \ll n_-,$ then $\rho_{BAC} $ is much lower than $\rho_{ACC}$.
+		%	
+		It also takes the true negative rate into account, i.e., also true negatives.
+		%	
+		\item For the accuracy paradox example we get a BAC of $0.975$ for $f_2,$ while $f_1$ achieves a BAC of 0.5. As a reminder, $f_1$ has an overall accuracy ($\rho_{ACC}$) of $\approx 0.976,$ while $f_2$ has an overall accuracy of $\approx 0.951.$
+		%	
+	\end{itemize}
+	
+\end{vbframe}
+
+
+\begin{vbframe}{Mattheus Correlation Coefficient}
+	%	
+	\footnotesize{
+	\begin{itemize}
+		%
+		\item Mattheus Correlation Coefficient (MCC) (aka Phi coefficient) is a measure for the correlation between two binary random variables. In the classification setting the "predicted" classes and the "true" classes are the two discrete random variables:
+%		
+		$$   \rho_{MCC} = \frac{TP\cdot TN - FP \cdot FN}{\sqrt{(TP+FN)(TP+FP)(TN+FN)(TN+FP)}}$$
+		%	
+%		
+		 \item In contrast to all previous measures the MCC uses all entries of the confusion matrix and its value is in $[-1,1]$ with the following interpretation:
+%		 
+		\begin{itemize}
+			\footnotesize
+			%			
+			\item $\rho_{MCC} \approx 1$ $\leadsto$ good classification, i.e., strong correlation between correct classifications and true classes.
+			%			
+			\item $\rho_{MCC} \approx 0$ $\leadsto$ no correlation, i.e., the classification is no better than random guessing.
+			%			
+			\item $\rho_{MCC} \approx -1$ $\leadsto$ reversed classification, i.e., the classifier is essentially switching the labels.
+			%			
+		\end{itemize}
+		%
+	 \item While for the previous measures it is important which class is the positive one (especially in light of imbalanced data), MCC does not depend on which class is the positive one.
+%		
+	\item For the accuracy paradox example we get an MCC of $\approx 0.563$ for $f_2,$ while $f_1$ achieves an MCC of 0. 
+\end{itemize}
+		%		
+	}
+\end{vbframe}
+
+
+\begin{vbframe}{Performance Measures for Multiclass Classification}
+	%	
+	\scriptsize{
+		%	
+		Now consider the multiclass classification setting and the corresponding confusion matrix:
+		%	
+		\begin{center}
+			\tiny
+			\begin{tabular}{cc|>{\centering\arraybackslash}p{8em}>{\centering\arraybackslash}p{8em}>{\centering\arraybackslash}p{5em}>{\centering\arraybackslash}p{8em}}
+				& & \multicolumn{4}{c}{\bfseries True Class $y$} \\
+				& & $1$ & $2$ & $\ldots$ & $g$  \\
+				\hline
+				\bfseries Classification     & $1$ & $n(1,1)$  &  $n(1,2)$  & $\ldots$ &  $n(1,g)$ \\
+				& & (True 1's) & (False 1's for 2's) & $\ldots$ &  (False 1's for $g$'s)  \\
+				& $2$ &  $n(2,1)$  &  $n(2,2)$  & $\ldots$ & $n(2,g)$  \\
+				$\yh$ & & (False 2's for 1's) & (True 2's) & $\ldots$ &  (False 2's for $g$'s)  \\
+				& $\vdots$ & $\vdots$ & $\vdots$ & $\ldots$ & $\vdots$ \\
+				& $g$ & $n(g,1)$ & $n(g,2)$  & $\ldots$ &  $n(g,g)$\\
+				& & (False $g$'s for 1's) & (False $g$'s for 2's) & $\ldots$ &  (True $g$'s)  \\
+			\end{tabular}
+		\end{center}
+		%	
+		Here, $n(i,j)$ is the number of $j$ instances classified as $i$ and $n_i = \sum_{j=1}^g n(j,i)$ the total number of $i$ instances.
+%		
+		
+		We can get multiclass counterparts of the binary evaluation measures by making them class specific: 
+		
+		\begin{itemize}
+			%		
+			
+			\item True positive rate (\textbf{Recall}): $\rho_{TPR_i} = \frac{n(i,i)}{n_i}$ \quad the fraction of correctly classified instances $i$ among all $i$ instances.
+			%		
+			\item True negative rate $\rho_{TNR_i} = \frac{\sum_{j\neq i}n(j,j)}{n-n_i}$ \quad the fraction of correctly classified non-$i$ instances among all non-$i$ instances.
+%			
+			\item Positive predictive value (\textbf{Precision}) $\rho_{PPR_i} = \frac{n(i,i)}{\sum_{j=1}^g n(i,j)},$  the fraction of correctly classified instances $i$ among all $i$ classifications.
+%			%		
+		\end{itemize}
+	}
+\end{vbframe}
+
+
+\begin{vbframe}{Macro $F_1$ Score}
+	%	
+	\footnotesize{
+		%
+	\begin{itemize}
+%		
+		\item In order to obtain a single ``true positive rate'',  ``true negative rate'', or ``positive predictive value'' we can simply average all class-specific rates over all available classes:
+		%		
+		\begin{itemize}
+			\footnotesize
+			%			
+			\item Macro average true positive rate (macro average precision): $\rho_{mTPR} = \frac{1}{g}\sum_{i=1}^g  \rho_{TPR_i}$
+			%			
+			\item Macro average true negative rate : $\rho_{mTNR} = \frac{1}{g}\sum_{i=1}^g  \rho_{TNR_i}$
+			%			
+			\item Macro positive predictive value (macro average recall): $\rho_{mPPR} = \frac{1}{g}\sum_{i=1}^g  \rho_{PPR_i}$
+			%			
+		\end{itemize}
+		%	
+		\item With this, one can simply define a macro $F_1$ score by using the harmonic mean of the macro average precision and macro average recall:
+		%		
+		$$\rho_{mF_1} = 2 \cdot \cfrac{\rho_{mPPV} \cdot \rho_{mTPR}}{\rho_{mPPV} + 
+			\rho_{mTPR}}$$
+		%	
+		\item The problem of this extension for imbalanced data sets is that each class gets an equal weight in the macro average such that the class sizes are not taken into account.
+%
+	\end{itemize}
+	}
+\end{vbframe}
+
+\begin{vbframe}{Weighted Macro $F_1$ Score}
+	%	
+	\footnotesize{
+		%
+	\begin{itemize}
+%		
+		\item For imbalanced data sets it is thus better to use a weighted average of the class-specific rates with weights giving more weight to minority classes and few weight to majority classes, i.e., $w_1,\ldots,w_g \in[0,1]$  such that $w_i > w_j$ iff $n_i < n_j$ and $\sum_{i=1}^g w_i = 1.$
+%		
+		With this, we obtain
+		%		
+		\begin{itemize}
+			\footnotesize
+			%			
+			\item Macro weighted average true positive rate (macro average precision): $\rho_{wmTPR} = \sum_{i=1}^g  \rho_{TPR_i} w_i$
+			%			
+			\item Macro weighted average true negative rate : $\rho_{wmTNR} = \sum_{i=1}^g  \rho_{TNR_i} w_i$
+			%			
+			\item Macro weighted positive predictive value (macro average recall): $\rho_{wmPPR} = \sum_{i=1}^g  \rho_{PPR_i} w_i$
+			%			
+		\end{itemize}
+%	 
+		\item Example: $w_i = \frac{n - n_i}{(g-1)n}$ are suitable weights.
+		%	
+		\item This leads to the weighted macro $F_1$ score:
+		%		
+		$\rho_{wmF_1} = 2 \cdot \cfrac{\rho_{wmPPV} \cdot \rho_{wmTPR}}{\rho_{wmPPV} + 
+			\rho_{wmTPR}}$
+		%	
+		\item Following this idea, it is straightforward to obtain a weighted macro G score/measure or weighted BAC.
+%		
+		\item \textbf{Usually} the weighted $F_1$ score is used with weights $w_i = n_i/n,$ i.e., the relative frequency of the $i$-th class in the data set. However, for imbalanced data sets  this is not appropriate as this would give majority classes even more weight.
+%
+	\end{itemize}
+	}
+\end{vbframe}
+
+
+\begin{vbframe}{Other Performance Measures}
+	%	
+	\footnotesize{
+		%
+		\begin{itemize}
+%			
+			\item There are also ``micro'' versions of the $F_1$ score for the multiclass setting, where, for example, the micro weighted average true positive rate (micro average precision) is $\sum_{i=1}^g  \rho_{TPR_i} \frac{1}{n}.$ However, the micro $F_1$ score essentially boils down to the accuracy in this case.
+%			
+			\item Moreover, the Mattheus Correlation Coefficient (MCC) can be extended to the multiclass setting:
+%			
+			$$   \rho_{MCC} = \frac{ n  \sum_{i=1}^g n(i,i) -  \sum_{i=1}^g \hat n_i n_i}{\sqrt{ (n^2 - \sum_{i=1}^g \hat n_i^2)(n^2 - \sum_{i=1}^g n_i^2)  }},$$
+%			
+			where $\hat n_i = \sum_{j=1}^g n(i,j)$ is the total number of instances classified as $i.$
+%			
+			\item Finally, there are also other performance measures which are based on the idea of treating the "predicted" classes and the "true" classes as two discrete (or categorical) random variables, e.g.\ Cohen's Kappa or Cross Entropy (see Grandini et al.\ (2021)).
+			%	
+			%		
+%			 
+%			
+		\end{itemize}
+	}
+\end{vbframe}
+
+
+\begin{vbframe}{Which Performance Measure to use?}
+	%	
+	\small{
+		%
+		\begin{itemize}
+			%			
+			\item As we have seen, there is a plethora of measures available, which gives rise to the question which of them should be used?	
+			%			
+			\item  Since all of these measures are focusing on different characteristics of the data, this is a question which in general cannot be answered unambiguously, as this is often depending on the application at hand, which characteristic is more important than another.
+			%			
+			\item However, it is clear that the usage of accuracy is inappropriate if the data set is imbalanced and another alternative measures should be considered. Usually, the overall picture obtained by the alternative measures will not differ too much.
+			%			 
+			\item Finally, one needs to be careful by comparing the absolute values of the different measures, as these can be on different ``scales'', e.g.\ MCC and BAC. 
+			%			
+		\end{itemize}
+	}
+\end{vbframe}
+
+
+
+%
+\endlecture
+\end{document}

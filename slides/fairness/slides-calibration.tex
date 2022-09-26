@@ -1,0 +1,192 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\sens}{\mathbf{A}} % vector x (bold)
+\newcommand{\ba}{\mathbf{a}}
+\newcommand{\batilde}{\tilde{\mathbf{a}}}
+\newcommand{\Px}{\mathbb{P}_{x}} % P_x
+\newcommand{\Pxj}{\mathbb{P}_{x_j}} % P_{x_j}
+\newcommand{\indep}{\perp \!\!\! \perp} % independence symbol
+
+\usepackage{multicol}
+
+\newcommand{\titlefigure}{figure/pic-pava}
+\newcommand{\learninggoals}{
+  \item Get to know the three common methods for calibration
+}
+
+\title{Advanced Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Fairness in Machine Learning: Calibration}
+\lecture{Advanced Machine Learning}
+
+
+
+\sloppy
+
+\begin{frame}[t]
+	\frametitle{Calibration}
+	\small
+	\begin{itemize}
+%		
+		\item Consider binary classification with a probabilistic score  classifier
+%		
+		$$\fx = 2 \cdot \mathds{1}_{[ s(\xv) \ge c]} -1,$$
+%		
+		leading to the prediction random variable $\yh = f(\xv).$ Let $\mathbf{S}=s(\xv)$ be the score random variable. 
+%		
+		\item $f$ is calibrated iff $P(y=1~|~\mathbf{S}=s) = s$ for all $s\in [0,1].$
+%		
+		\item Different \emph{post-processing} methods have been proposed for the purpose of calibration, i.e., to construct a \emph{calibration function} 
+%		
+		$$C: \, \mathbb{S} \to [0,1], $$
+		such that $C(s(\xv))$ is well-calibrated.
+%		
+		Here, $\mathbb{S}$ is the possible score set of the classifier (the image of $s$).
+		
+		\item For learning $C$, a set of \emph{calibration data} is used:
+		$$
+		\mathcal{D}_{cal} = \big\{ (s^{(1)}, y^{(1)}) , \ldots , (s^{(N)}, y^{(N)}) \big\} \subset \mathbb{S} \times \{ -1 , 1 \}
+		$$ 
+		
+		\item This data should be different from the training data used to learn the scoring classifier. Otherwise, there is a risk of introducing a bias. 
+		
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[t]
+	\frametitle{Empirical binning and Platt scaling}
+	
+	\begin{itemize}
+		\item \emph{Binning} offers a first obvious approach: % is which can be used to define a (piecewise constant) calibration function $C$.
+		Partition $\mathbb{S}$ into bins (intervals) $B_1, \ldots , B_M$, and define 
+		$C(s) = \bar{p}_{J(s)}$, 
+		where $J(s)$ denotes the index of the bin of $s$ (i.e., $s \in B_{J(s)}$), and 
+		$$
+		\bar{p}_m = \frac{\sum_{n=1}^N \mathds{1}_{[ s^{(n)} \in B_m  , \, y^{(n)} = +1  ]} }{\sum_{n=1}^N \mathds{1}_{[ s^{(n)} \in B_m  ]} } 
+		$$
+		is the average proportion of positives in bin $B_m$.
+		
+		\item Another method is \emph{Platt scaling}, which essentially applies logistic regression to predicted scores $s \in \mathbb{R}$, i.e., it fits a calibration function $C$ such that
+		$$
+		C(s) = \frac{1}{1 + \exp( \gamma + \theta \cdot s) } \, ,
+		$$
+		minimizing log-loss on $\mathcal{D}_{cal}$.
+	\end{itemize}
+\end{frame}
+
+
+
+
+
+
+\begin{frame}[t]
+	\frametitle{Isotonic regression}
+	
+	\begin{itemize}
+		\item The sigmoidal transformation fit by Platt scaling is appropriate for some methods (e.g., support vector machines) but not for others. 
+		\item \emph{Isotonic regression} combines the nonparametric character of binning with Platt scaling's guarantee of monotonicity.
+		\item Isotonic regression minimizes 
+		$$
+		\sum_{n=1}^N w_n \, (C(s^{(n)}) - y^{(n)})^2 
+		$$
+		subject to the constraint that $C$ is isotonic: $C(s) \leq C(t)$ for $s <t$. 
+		\item 
+		Note that $C$ is evaluated only at a finite number of points; in-between, one may (linearly) interpolate or assume a piecewise constant function. 
+		
+	\end{itemize}
+\end{frame}
+
+
+\begin{frame}[t]
+	\frametitle{Pair-adjacent violators algorithm (PAVA)}
+	
+	\begin{itemize}
+		\item Let the scores observed for calibration be sorted (and without ties), such that
+		$$
+		s^{(1)} < s^{(2)} < \ldots < s^{(N)}\, .
+		$$
+		We then seek values $c_1 \leq c_2 \leq \ldots \leq c_N$ which minimize
+		$$
+		\sum_{n=1}^N w_n ( c_n - y^{(n)})^2 \, .
+		$$
+		\item Initialize one block $B_n$ for each observation $(s^{(n)} , y^{(n)})$; the value of the block is $c(B_n) = y^{(n)}$ and the width is $w(B_n) = 1$.
+		
+		\item A merge operation combines two blocks $B'$ and $B''$ into a new block $B$ with width $w(B) = w(B') + w(B'')$ and value
+		$$
+		c = \frac{w(B') c(B') + w(B'') c(B'')}{w(B') + w(B'')} \, .
+		$$
+		
+		
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[t]
+	\frametitle{Pair-adjacent violators algorithm (PAVA)}
+	
+	\begin{itemize}
+		\item PAVA iterates the following steps (the description is somewhat simplified to avoid notational overload):
+		
+		\medskip
+		
+		\begin{itemize}
+			\item[(1)] Find the first violating pair, namely, adjacent blocks $B_i$ and $B_{i+1}$ such that $c_i > c_{i+1}$; if there is no such pair, then stop.
+			\item[(2)] Merge $B_i$ and $B_{i+1}$ into a new block $B$.
+			\item[(3)] If $c(B) < c(B_{i-1})$ for the left neighbor block $B_{i-1}$, merge also these blocks and continue doing so until no more violations are encountered.
+			\item[(4)] Continue with (1).
+		\end{itemize}
+	\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}[t]
+	\frametitle{Pair-adjacent violators algorithm (PAVA)}
+	
+	\medskip 
+	
+	\begin{center}
+		\includegraphics[width=0.9\textwidth]{figure/pic-pava}
+		
+	\end{center}
+\end{frame}
+
+\begin{frame}[t]
+	\frametitle{Pair-adjacent violators algorithm (PAVA)}
+	
+	\begin{itemize}
+		\item Note that, in the case of binary classification, the target values $y^{(n)}$ are all in $\{ 0, 1 \}$:
+	\end{itemize}
+	
+	\medskip 
+	
+	\begin{center}
+		\includegraphics[width=0.4\textwidth]{figure/pic-pava2}
+		
+	\end{center}
+\end{frame}
+
+
+\begin{frame}[t]
+	\frametitle{Multi-class calibration}
+	
+	\begin{itemize}
+		\item Calibration methods also exist for the multi-class case (i.e., classification problems with more than two classes).
+		\item Then, however, the problem becomes conceptually more difficult (and is still a topic of ongoing research).
+		\item 
+		While essentially coinciding for binary classification, the following definitions of calibration (leading to increasingly difficult problems) can be distinguished for more than two classes:
+		\begin{itemize}
+			\item Calibration of the highest predicted probability (confidence calibration) 
+			\item Calibration of the marginal probabilities (class-wise calibration)
+			\item Calibration of the entire vector of predicted probabilities (multi-class calibration)
+		\end{itemize}
+	\end{itemize}
+\end{frame}
+
+%
+\endlecture
+\end{document}

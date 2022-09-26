@@ -1,0 +1,700 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\sens}{\mathbf{A}} % vector x (bold)
+\newcommand{\ba}{\mathbf{a}}
+\newcommand{\batilde}{\tilde{\mathbf{a}}}
+\newcommand{\Px}{\mathbb{P}_{x}} % P_x
+\newcommand{\Pxj}{\mathbb{P}_{x_j}} % P_{x_j}
+\newcommand{\indep}{\perp \!\!\! \perp} % independence symbol
+% ml - ROC
+\newcommand{\np}{n_{+}} % no. of positive instances
+\newcommand{\nn}{n_{-}} % no. of negative instances
+\newcommand{\rn}{\pi_{-}} % proportion negative instances
+\newcommand{\rp}{\pi_{+}} % proportion negative instances
+% true/false pos/neg:
+\newcommand{\tp}{\# \text{TP}} % true pos
+\newcommand{\fap}{\# \text{FP}} % false pos (fp taken for partial derivs)
+\newcommand{\tn}{\# \text{TN}} % true neg
+\newcommand{\fan}{\# \text{FN}} % false neg
+
+\newcommand{\Tspace}{\mathcal{T}}
+\newcommand{\tv}{\mathbf{t}}
+\newcommand{\tj}{\mathbf{t}_j}
+
+\usepackage{multicol}
+\usepackage{color,colortbl} 
+\definecolor{putblue}{RGB}{0,0,124}
+\definecolor{putred}{RGB}{204,33,69}
+
+\usetikzlibrary{mindmap,trees}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{decorations.pathmorphing}
+\usetikzlibrary{arrows}
+\usetikzlibrary{positioning}
+\usetikzlibrary{decorations.text}
+\usetikzlibrary{decorations.markings}
+\usetikzlibrary{decorations.shapes}
+\usetikzlibrary{shapes,snakes}
+\usetikzlibrary{calc,trees,positioning,arrows,chains,shapes.geometric,
+	decorations.pathreplacing,decorations.pathmorphing,shapes,matrix,shapes.symbols}
+\usetikzlibrary{shapes.misc}
+
+
+\newcommand{\titlefigure}{figure/mean_relation}
+\newcommand{\learninggoals}{
+  \item Get an overview of the existing groups of methods for MTP
+  \item Know that treating targets independently is often sub-optimal
+%  \item 
+}
+
+\title{Advanced Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Methods for Multi-Target Prediction}
+\lecture{Advanced Machine Learning}
+
+
+
+\sloppy
+
+
+\begin{frame}{Independent models}
+%	
+	\begin{itemize}
+		\item 	The most naive way to make multi-target predictions is by learning a model for each target independently , i.e., for each target one uses one model to make the predictions for (only) that target.
+%	
+	\end{itemize}
+
+	\begin{figure}
+		\centering
+		\includegraphics[width=0.3\textwidth,trim = 0 0 100 100,clip]{figure/Slide13}
+		\includegraphics[width=0.3\textwidth,trim = 0 0 100 100,clip]{figure/Slide14} 
+%		
+		$\ldots$
+%		
+		\includegraphics[width=0.3\textwidth,trim = 0 0 100 100,clip]{figure/Slide15}
+	\end{figure}
+%	
+%
+	\begin{itemize}
+%		
+		\item In multi-label classification this approach is also known as \emph{binary relevance learning.}
+	%	
+		\item The advantage of this approach is that it is quite easy to realize, as for single-target prediction we have a wealth of methods available.
+	%
+	\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Independent Models}
+%	
+	\footnotesize
+%	
+	\begin{itemize}
+%		
+		\item 	We illustrate the typical approach by means of linear basis function model for the $j$-th target: 
+		\begin{equation*}
+			f_j(\xv) = \ba_j^\intercal \phi(\xv) \,,
+			\label{eq:binrel}
+		\end{equation*}
+%	
+		where $\ba_j$ is a target-specific parameter vector and $\phi$ some feature mapping.
+%
+		\item The parameter vectors are found by solving a (regularized) optimization problem: 
+%		
+		\begin{equation*}
+			\label{eq:multiridge}
+			\min_A \|Y - \Xmat A \|^2_F +  \sum_{j=1}^m \lambda_j \,\|\ba_j\|^2 \,,
+		\end{equation*}
+%	
+		where $ \| B \|^2_F  = \sqrt{ \sum_{i=1}^n \sum_{j=1}^m B_{i,j}^2 } $ is the Frobenius norm for a matrix $B \in \R^{n \times m}$ and 
+%		
+		\begin{equation*}
+			\label{eq:notation}
+			\Xmat = \begin{bmatrix} \phi(\xv^{(1)})^\top \\ \vdots \\ \phi(\xv^{(n)})^\top \end{bmatrix} \qquad A = [\ba_1 \quad \cdots \quad \ba_m] \,.
+		\end{equation*}
+% 	$$Y: (n \times m) \qquad  X: (n \times p) \qquad A: (p \times m)$$
+%
+		\item The norm for regularizing the target-specific parameters can vary:
+%		
+			\begin{itemize} \footnotesize
+%				
+				\item L2-norm $\leadsto$ Multivariate Ridge Regression.
+%				
+				\item L1-norm $\leadsto$ Multivariate Lasso Regression.
+%				
+%				\item Combination of 
+%				
+			\end{itemize}
+%	
+	\end{itemize}
+%
+\end{frame}
+
+\begin{frame}{Independent Models: Practical Performance}
+%	
+	The experimental results section of a typical MTP paper: 
+%	
+	\begin{center}
+		\includegraphics[scale=0.45, trim = 0 50 0 100,clip]{figure/barplots} \\
+	\end{center}
+%
+	$\leadsto$ Independent models do not exploit target dependencies compared to more sophisticated methods, which seems to be a key for better performance in MTP problems.
+%	
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{James-Stein estimation}
+%	
+	\footnotesize
+%	
+	\begin{itemize}
+%		
+		\item Consider a sample of a multivariate normal distribution $\yv \sim \normal(\thetab, \sigma^2\mathbf{I}),$ i.e., the components $y_1,\ldots,y_m$ of $\yv$ are independent of each other.
+%		
+		\begin{center}
+			\includegraphics[width = 4cm]{figure/biva}
+		\end{center}
+%		
+		\item What is the best estimator of the mean vector $\thetab$ w.r.t.\ mean-squared error (MSE): $\mathbb{E}[(\thetab - \thetabh)^2]?$  
+%		
+		\item The single-observation maximum likelihood estimator (which is also the least-squares estimate in this case) is $\thetabh^{\mathrm{ML}} = \yv.$  
+%		
+		\item The James-Stein estimator [James \& Stein (1961)]:
+%		Estimation with quadratic loss 
+		$$
+		\thetabh^{\mathrm{JS}} = \left (1 - \frac{(m-2)\sigma^2}{\|\yv\|^2_2} \right )\yv
+		$$
+		has a smaller MSE than the maximum likelihood estimator!
+%		
+		\item[$\leadsto$] Improvements over independent predictions can be achieved even for problems without any statistical dependence between the targets!
+%
+		\item Explanation: The variance is reduced by introducing a bias.
+%		
+%
+	\end{itemize}
+	
+\end{frame}
+
+
+
+
+\begin{frame}
+	\frametitle{James-Stein estimation}
+	
+	\footnotesize
+	\begin{itemize}
+		%\item Similar principle as many target regularization methods.
+		
+		\item Works best when the norm of the mean vector is close to zero:\\
+		\begin{center}
+			\includegraphics[width=5cm]{figure/JS}
+		\end{center}  
+		\item Regularization towards other directions, say $\bm{v}$, is also possible:
+		$$
+		\thetabh^{\mathrm{JS}}(\bm{v}) = \left (1 - \frac{(m-2)\sigma^2}{\|\yv - \bm{v}\|^2} \right )(\yv - \bm{v}) + \bm{v}
+		$$
+		\item Only outperforms the maximum likelihood estimator w.r.t.\ the sum of squared errors over all components, and only when $m \geq 3.$
+		\item The result can be generalized to the case with $n$ iid observations of $\normal(\thetab, \sigma^2\mathbf{I})$ as well as for the case of iid samples of $\normal(\thetab, \bm{\Sigma})$ for a general covariance matrix $\bm{\Sigma}.$
+%		\item Take-away message: 
+	\end{itemize}
+\end{frame}
+
+\section{Similarity-enforcing methods}
+
+\begin{frame}[t]
+	\frametitle{Mean-regularized multi-task learning}
+	
+	\vspace{0.2cm}
+	\begin{columns}
+		\column{5cm}
+		\footnotesize{
+			\begin{itemize} 
+%				
+				\item \emph{Idea}: The models for the different targets should behave similar. How?
+%				One can enforce similarity of the parametrizations of the models for the different targets.
+%				
+				\item \emph{Simple solution}: The parameters of these models should have similar values.
+%				
+				\item \emph{Approach}: Bias the parameter vectors towards their overall mean vector:
+					\vspace{0.2cm}
+				\begin{equation*}
+					\label{eq:meanreg}
+					\min_A \|Y - \Xmat A \|^2_F + \lambda \sum\nolimits_{j=1}^m \|\ba_j - \frac{1}{m} \sum\nolimits_{j'=1}^m \ba_{j'} \|^2 \, ,
+				\end{equation*}
+%				
+				\item \emph{Disadvantage}: The assumption of all target models being similar might be invalid for many applications. \lz
+			\end{itemize}
+		}
+		\column{4.5cm}
+		
+		\begin{tikzpicture}[
+			level 1 concept/.append style={font=\sf, level distance = 21mm},
+			level 2 concept/.append style={font=\sf, level distance = 21mm},
+			every node/.append style={scale=0.5}]
+			
+			\path[mindmap, concept color=black,text=white]
+			
+			node[concept] {Mean}
+			child[grow = 90, concept color=green!50!black] { node[concept] {Target 1}}
+			child[grow = 180,concept color=blue] { node[concept] {Target 2}}
+			child[grow = 270,concept color=red] { node[concept] {Target 3} }
+			child[grow = 360,concept color=orange] { node[concept] {Target 4} };   
+		\end{tikzpicture}
+%	
+	\end{columns}
+
+{\tiny Evgeniou and Pontil, Regularized multi--task learning, KDD 2004}
+\end{frame}
+
+
+%\begin{frame}{Joint feature selection}
+%	\small
+%\begin{itemize}
+%%	
+%\item Enforce that the same features are selected for different targets:
+%$$
+%\min_A \|Y - XA \|^2_F +  \sum_{i=1}^p \lambda_j \|\ba^{(i)} \|^2  
+%$$   
+%%
+%\item The vectors $\ba^{(i)}$ now represent the columns of matrix $A^T$:
+%%
+%\end{itemize}
+%\begin{center}
+%\includegraphics[width=0.9\textwidth,trim = 0 240 30 50,clip]{figure/Dia21}
+%\end{center}
+%%
+%\begin{itemize}
+%	%	
+%	\item Using L1-norm or a combination of L1- and L2-norm can lead to sparsity.
+%%	
+%\end{itemize}
+%%
+%	{\tiny Obozinski et al., Joint covariate selection and joint subspace selection for multiple classification problems. Statistics and Computing 2010.}
+%\end{frame}
+
+
+\begin{frame}
+	\frametitle{Stacking (Stacked generalization)}
+	
+	\begin{itemize}
+%		
+		\item Originally introduced as a general ensemble learning or blending technique.
+%		
+		\item Level 1 learners: apply a series of ML methods on the same dataset (or, one ML method on bootstrap samples of the dataset)
+		\item Level 2 learner: apply an ML method to a new dataset consisting of the predictions obtaining at Level 1 
+	\end{itemize}
+	
+	\begin{center}
+		\def\layersep{1.25cm}
+		\begin{tikzpicture}[shorten >=1pt,->,draw=black!50, node distance=\layersep]
+			\tikzstyle{every pin edge}=[<-,shorten <=1pt]
+			\tikzstyle{neuron}=[circle,fill=black!25,minimum size=17pt,inner sep=0pt]
+			\tikzstyle{input neuron}=[neuron, fill=green!50];
+			\tikzstyle{output neuron}=[neuron, fill=red!50];
+			\tikzstyle{hidden neuron}=[neuron, fill=blue!50];
+			\tikzstyle{annot} = [text width=4em, text centered]
+			
+			% Draw the input layer nodes
+			\foreach \name / \y in {1,...,4}
+			% This is the same as writing \foreach \name / \y in {1/1,2/2,3/3,4/4}
+			\node[input neuron] (I-\name) at (\y, 0) {$f_\y$};
+			
+			% Draw the hidden layer nodes
+			\foreach \name / \y in {1}
+			% \path%[yshift=0.5cm]
+			\node[hidden neuron] (H-\name) at (2.5, \layersep) {$h_\y$};
+			
+			
+			% % Draw the output layer node
+			\node[output neuron] (I) at (2.5, -\layersep) {$\xv$};
+			%%
+			%%    % Connect every node in the input layer with every node in the
+			%%    % hidden layer.
+			\foreach \source in {1,...,4}
+			\foreach \dest in {1}
+			\path (I-\source) edge (H-\dest);
+			%%
+			%    % Connect every node in the hidden layer with the output layer
+			\foreach \source in {1,...,4}
+			\path (I) edge (I-\source);
+			%
+			% Annotate the layers
+			\node[annot,left of=H-1, node distance=3cm] (hl) {Level 2}; 
+			\node[annot,below of=hl, node distance=\layersep] {Level 1};
+			%%    \node[annot,right of=hl] {Output layer};
+		\end{tikzpicture}
+	\end{center}
+	{\tiny Wolpert, Stacked generalization. Neural Networks 1992.}
+	%D. Wolpert, Stacked Generalization, Machine Learning, 1992
+\end{frame}
+
+\begin{frame}
+	\frametitle{Stacking applied to MTP }
+	\footnotesize
+	\begin{columns}
+		\begin{column}{4.5cm}
+			\begin{itemize}
+%				
+				\item Level 1 learners: learn a model for every target independently 
+%				
+				\item   [$\leadsto$] $f_1,\ldots,f_m$
+%				
+				\item Level 2 learner: learn again a model for every target independently, using the predictions of the first step as features
+%				
+				\item   [$\leadsto$] $f(\xv) = h(f_1(\xv),\ldots,f_m(\xv))$ \\
+				Or alternatively: $f(\xv) = h(f_1(\xv),\ldots,f_m(\xv),\xv)$  \\
+%				
+%				 
+			\end{itemize}
+		\end{column}
+		
+		\begin{column}{5cm}
+			\def\layersep{2cm}
+			\begin{tikzpicture}[shorten >=1pt,->,draw=black!50, node distance=\layersep]
+				\tikzstyle{every pin edge}=[<-,shorten <=1pt]
+				\tikzstyle{neuron}=[circle,fill=black!25,minimum size=17pt,inner sep=0pt]
+				\tikzstyle{input neuron}=[neuron, fill=green!50];
+				\tikzstyle{output neuron}=[neuron, fill=red!50];
+				\tikzstyle{hidden neuron}=[neuron, fill=blue!50];
+				\tikzstyle{annot} = [text width=4em, text centered]
+				
+				% Draw the input layer nodes
+				\foreach \name / \y in {1,...,4}
+				% This is the same as writing \foreach \name / \y in {1/1,2/2,3/3,4/4}
+				\node[input neuron] (I-\name) at (\y, 0) {$f_\y$};
+				
+				% Draw the hidden layer nodes
+				\foreach \name / \y in {1,...,4}
+				% \path%[yshift=0.5cm]
+				\node[hidden neuron] (H-\name) at (\y, \layersep) {$h_\y$};
+				
+				
+				% % Draw the output layer node
+				\node[output neuron] (I) at (2.5, -\layersep) {$\xv$};
+				%%
+				%%    % Connect every node in the input layer with every node in the
+				%%    % hidden layer.
+				\foreach \source in {1,...,4}
+				\foreach \dest in {1,...,4}
+				\path (I-\source) edge (H-\dest);
+				%%
+				%    % Connect every node in the hidden layer with the output layer
+				\foreach \source in {1,...,4}
+				\path (I) edge (I-\source);
+				%
+				% Annotate the layers
+				\node[annot,left of=H-1, node distance=1cm] (hl) {Level 2}; 
+				\node[annot,left of=I-1, node distance=1cm] {Level 1};
+				%%    \node[annot,right of=hl] {Output layer};
+			\end{tikzpicture}
+		\end{column}
+	\end{columns}
+%
+	\begin{itemize}
+%		\item 
+		\item Advantages: Easy to implement and general (usable with any level-1 learner). 
+		\item Has been shown to avoid overfitting in multivariate regression.
+		\item If level 2 learner uses regularization $\leadsto$ models are forced to learn similar parameters for different targets.  
+	\end{itemize}
+	% 
+	{\tiny Cheng and H\"ullermeier, Combining Instance-based learning and Logistic Regression for Multi-Label classification, Machine Learning, 2009.}
+	
+\end{frame}
+
+\begin{frame}{Enforcing similarity in (Deep) Neural Networks}
+	\small
+	\begin{center}
+		Commonly-used architecture: weight sharing in the final layer with $m$ nodes, i.e., weight sharing among the targets \\
+		\vspace{0.2cm}
+		\includegraphics[scale=0.4]{figure/weightsharing}
+	\end{center}
+
+{\tiny Caruana, Multitask learning: A knowledge-based source of inductive bias. Machine	Learning 1997.}
+\end{frame}
+
+
+\section{Similarity-exploiting methods}
+
+
+\begin{frame}{Kronecker kernel ridge regression}
+	\footnotesize
+	\begin{itemize}
+%		
+	\item In the case of multi-target prediction with target features one typically uses kernel methods for learning.
+%		
+	\item In particular, one considers the following pairwise model representation in the primal: 
+		\begin{equation*}
+			\label{eq:pairwise}
+			f(\xv,\tv) = \bm\omega^\top \left(\phi(\xv) \otimes \psi(\tv) \right) ,
+		\end{equation*}
+%	
+	where $\phi$ is some feature map for the features and $\psi$ is a feature map for the target (features) and $\otimes$ is the Kronecker product.
+%
+	\item This leads to the Kronecker product pairwise kernel in the dual:
+%	
+	\begin{eqnarray*} 
+		f(\xv,\tv)= \sum_{(\xv',\tv') \in \D} \alpha_{(\xv',\tv')}  \cdot  k(\xv,\xv') \cdot g(\tv,\tv')  = \sum_{(\xv',\tv') \in \D} \alpha_{(\xv',\tv')} \Gamma((\xv,\tv),(\xv',\tv')),
+	\end{eqnarray*}
+%
+	where $k$ is the kernel for the feature map $\phi,$  $g$ the kernel for the feature map $\psi$  and $\alpha_{(\xv',\tv')}$ are the dual parameters, which can be found by least-squares minimization:
+%	 
+	$$ \min_{\bm{\alpha}} \, ||\bm{\Gamma}\bm{\alpha} -\bm{z} ||^2_2 +\lambda\bm{\alpha }^\top \bm{\Gamma}\bm{\alpha}, $$
+%	
+	where $\bm{z} = \mathrm{vec}{(Y)}.$
+%
+%	\item Idea: Model the joint kernel as a product of an instance kernel $k(\cdot,\cdot)$ and a target kernel $g(\cdot,\cdot)$: 
+%		$$\Gamma((\xv,\tv),(\xv',\tv')) = k(\xv,\xv') \cdot g(\tv,\tv')$$
+%
+	\item This approach is commonly used in the zero-shot learning framework.
+
+%
+\end{itemize}
+%	
+	{\tiny Stock et al., A comparative study of pairwise learning methods based on kernel ridge regression, Neural Computation 2018.}
+%	
+\end{frame}
+
+
+
+\begin{frame}{Exploiting relations in regularization terms}
+	\footnotesize
+%
+	\begin{center}
+		\includegraphics[width=\textwidth]{figure/targetrelations}
+	\end{center} 
+%	
+	\begin{itemize}
+%		
+		\item 	Graph-based regularization is an approach that can be applied to the tree types of relations in the targets: 
+		%
+		\begin{equation*}
+			\min_A \|Y - XA \|^2_F + \lambda \sum_{j=1}^m \sum_{j' \in \mathcal{N}(j)} \|\ba_j - \ \ba_{j'}\|^2,
+		\end{equation*}
+		%
+		where $\mathcal{N}(j)$ is the set of targets that are related to target $j.$
+%		
+		\item Can also be used in a weighted version taking the similarities (or correlations) into account.
+%		
+	\end{itemize}
+	
+%
+	{\tiny Gopal and Yang, Recursive regularization for large-scale classification with hierarchical and graphical dependencies, KDD 2013.}
+\end{frame}
+
+\begin{frame}{Hierarchical multi-label classification}
+	\small
+	\vspace{-0.2cm}
+	\begin{center}
+		\includegraphics[width=\textwidth]{figure/hloss}
+	\end{center}
+	
+	\vspace{-0.2cm}
+	\begin{minipage}{0.75\textwidth}   
+	\begin{itemize}
+%		
+		\item %	
+		In addition to performance gains in general, hierarchies can also be used to define specific loss functions, such as the Hierarchy-loss: 
+		%	
+		$$\ell_{Hier}(\yv,\hat{\yv}) = \sum_{j: y_j \neq \hat{y_j}} c_j \, \mathds{1}_{ [\textit{anc}(y_j) = \textit{anc}(\hat{y}_j)]  },$$
+		%	
+		where $c_j$ are costs depending on the depth of node $j.$
+		%	
+%		
+	\end{itemize}
+\end{minipage}
+\begin{minipage}{0.2\textwidth}    
+	\begin{center}
+		%    	
+		\includegraphics[width=0.99\textwidth,trim = 0 0 100 20,clip]{figure/Slide5}
+		%    	
+	\end{center}
+\end{minipage}
+\begin{itemize}
+%	
+	\item This is rather common in multi-label classification problems.
+%	
+\end{itemize}
+
+	{\tiny Bi and Kwok, Bayes-optimal hierarchical multi-label classification, IEEE Transactions on Knowledge and Data Engineering, 2014.}
+%
+\end{frame}
+
+
+
+\section{Similarity-constructing methods}
+
+
+
+
+\begin{frame}
+	\frametitle{Probabilistic classifier chains}
+	
+	\begin{itemize}
+		\item Estimate the \alert{joint} conditional distribution $\P(\yv ~|~  \xv)$. 
+		\item For optimizing the \alert{subset 0/1} loss:  $$ \ell_{0/1}(\yv, \hat{y}) = \mathds{1}_{[\yv \ne \hat{y}]}$$
+		\item Repeatedly apply the \emph{product rule} of probability:
+		$$
+		\P(\yv ~|~ \xv) = \prod_{j=1}^{m} \P(y_j ~|~ \xv, y_1, \ldots,y_{j-1}) \, .
+		$$
+		\item  Learning relies on constructing \alert{probabilistic classifiers} for estimating 
+		$$
+		\P( y_i|\xv, y_1, \ldots,y_{j-1}) \,,
+		$$
+		{independently} for each $j = 1, \ldots, m$. 
+		%\item One can use scoring functions $f_i(\xv^\prime,y_i)$ and use logistic transformation.
+		%\item By using the linear models, the overall scoring function takes the form:
+		%$$
+		%f(\xv,\yv) = \sum_{i=1}^m f_i(\xv, y_i) + \sum_{y_k,y_l} \! f_{k,l}(y_k,y_l) 
+		%$$
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Probabilistic classifier chains}
+	\begin{itemize}
+		\item Inference relies on exploiting a probability tree:
+	\end{itemize}
+	\vspace{0.1cm}
+	\begin{center}
+		\begin{tikzpicture}[scale = 0.85,every node/.style={scale=0.85},
+			regnode/.style={circle,draw,minimum width=1.5ex,inner sep=0pt},
+			leaf/.style={circle,fill=black,draw,minimum width=1.5ex,inner sep=0pt},
+			pleaf/.style={rectangle,rounded corners=1ex,draw,font=\scriptsize,inner sep=3pt,line width=1pt},
+			pnode/.style={rectangle,rounded corners=1ex,draw,font=\scriptsize,inner sep=3pt},
+			rootnode/.style={rectangle,rounded corners=1ex,draw,font=\small,inner sep=4pt},
+			level/.style={sibling distance=16em/#1, level distance=12ex}
+			]
+			\node (z) [rootnode] {$\xv$}
+			child {node (a) [pnode] {$P(y_1=0 ~|~ \xv)=0.4$} 
+				child {node [label=below:{\scriptsize \thickmuskip=0mu $P(\yv=(0,0)~|~ \xv)=0$}] (b) [pleaf] {\thickmuskip=-1.5mu $P(y_2=0 ~|~ y_1=0, \xv)=0.0$} edge from parent node[above left]{$y_2=0$}}
+				child {node [label=below:{\color{blue} \scriptsize \thickmuskip=0mu $P(\yv=(0,1) ~|~ x)=0.4$}] (g) [pleaf] {\thickmuskip=-1.5mu $P(y_2=1 ~|~ y_1=0, \xv)=1.0$} edge from parent node[above right]{$y_2=1$}}
+				edge from parent node[above left]{$y_1=0$}
+			}
+			child {node (j) [pnode] {$P(y_1=1 ~|~ \xv)=0.6$}
+				child {node [label=below:{\scriptsize \thickmuskip=0mu $P(\yv=(1,0) ~|~ \xv)=0.24$}] (k) [pleaf] {\thickmuskip=-1.5mu $P(y_2=0 ~|~ y_1=1, \xv)=0.4$} edge from parent node[above left]{$y_2=0$}}
+				child {node [label=below:{\color{red} \scriptsize \thickmuskip=0mu $P(\yv=(1,1) ~|~ \xv)=0.36$}] (l) [pleaf] {\thickmuskip=-1.5mu $P(y_2=1 ~|~ y_1=1, \xv)=0.6$}
+					{
+						child [grow=right] {node (s) {} edge from parent[draw=none]
+							child [grow=up] {node (t) {} edge from parent[draw=none]
+								child [grow=up] {node (u) {} edge from parent[draw=none]}
+							}
+						}
+					}
+					edge from parent node[above right]{$y_2=1$}
+				}
+				edge from parent node[above right]{$y_1=1$}
+			};
+			
+			%\path (s) -- (t) node [midway] {$\lambda_{2}$};
+			%\path (t) -- (u) node [midway] {$\lambda_{1}$};
+		\end{tikzpicture}
+	\end{center}
+	
+	\vspace{0.1cm}
+	\begin{itemize}\small
+		\item For subset 0/1 loss one needs to find $
+		\fbayes(\xv) = \argmax_{\yv \in \Yspace^m} \P(\yv ~|~ \xv)
+		$.
+		\item Greedy and approximate search techniques with guarantees exist.
+%		\footnote{Kumar et al., Beam search algorithms for multilabel
+%	learning, Machine Learning 2013}
+		\item Other losses: compute the prediction on a sample from $\P(\yv ~|~  \xv).$
+%		\footnote}
+		%\item[]
+	\end{itemize}
+{\tiny Dembczynski et al., An analysis of chaining in multi-label classification, ECAI 2012.}
+	
+\end{frame}
+
+
+
+\begin{frame}{Low-rank approximation}
+	
+	\begin{center}
+		\includegraphics[width=9cm]{figure/lowrank}
+	\end{center}
+
+	\begin{itemize}
+%		
+		\item Low rank materializes the idea that some structure is shared across different targets.
+%
+		\item 	Typically perform a low-rank approximation of the parameter matrix:
+		$$\min_A \|Y - \Xmat A \|^2_F + \lambda \, \mathrm{rank}(A)$$
+%		
+	\end{itemize}
+	{\tiny Chen et al., A convex formulation for learning shared structures from
+	multiple tasks, ICML 2009.}
+\end{frame}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+\frame{
+	\frametitle{Low-rank approximation}
+	
+	
+	
+	\begin{itemize}
+		\item $A$: parameter matrix of dimensionality $p \times m$ 
+		\item $p$: the number of features
+		\item $m$: the number of targets
+		\item Assume a low-rank structure of $A$:\\
+%		
+		$ \qquad  \qquad\qquad \quad  U  \quad \times \qquad  V \qquad \quad  =  \qquad  A$
+		\begin{center}
+%					
+			\includegraphics[width=0.6\textwidth,trim = 0 0 0 0,clip]{figure/uv_decomp}
+%
+		\end{center}
+		
+		\item We can write $A=UV$ and $A \xv = UV \xv$
+		\item $V$ is a $p \times \hat{m}$ matrix
+		\item  $U$ is an $\hat{m} \times m$ matrix
+		
+		\item $\hat{m}$ is the rank of $A$
+		
+	\end{itemize}
+	
+}
+
+\begin{frame}{Low-rank approximation: Overview of methods}
+	
+	\begin{itemize}
+		\item Popular for multi-output regression, multi-task learning and multi-label classification.
+		\item Linear as well as nonlinear methods.
+		\item Algorithms: 
+		\begin{itemize}
+			\item Principal component analysis, Canonical correlation analysis, Partial least squares.
+			\item Singular value decomposition, Alternating structure optimization.
+			\item Compressed sensing, Output codes, Landmark labels, Bloom filters, Auto-encoders.
+		\end{itemize}
+	\end{itemize}
+%   \footnote{Weston et al., Kernel dependency estimation, NIPS 2002}
+% 	\footnote{Multi-label prediction via sparse infinite CCA, NIPS 2009}
+%\footnote{Tai and Lin, Multilabel classification with principal label space transformation, Neural Computation 2012}
+%  	\footnote{Zhou et al., Clustered Multi-Task Learning Via Alternating Structure Optimization, NIPS 2011}
+%	\footnote{Hsu et al., Multi-label prediction via compressed sensing. NIPS 2009}
+%	\footnote{Zhang and Schneider, Multi-label Output Codes using Canonical Correlation Analysis, UAI 2011}
+%	\footnote{Balasubramanian and Lebanon, The landmark selection method for multiple output
+%	prediction, ICML 2012}
+%	\footnote{Ciss\'e et al., Robust bloom filters for large multilabel
+%	classification tasks, NIPS 2013}
+% 	\footnote{Wicker et al., A nonlinear label compression and transformation
+%	method for multi-label classification using autoencoders, PAKDD 2016}
+	\vspace{0.3cm}
+\end{frame}
+
+
+%
+\endlecture
+\end{document}

@@ -1,0 +1,189 @@
+
+
+\renewcommand{\l}{L}
+\newcommand{\Algo}{\texttt{Algo}}
+\newcommand{\Aspace}{\mathcal{A}}
+\newcommand{\Zspace}{\mathcal{Z}}
+%
+	%		
+Suppose $\Algo$ is an (online learning) algorithm for an online learning problem characterized by some action space $\Aspace,$ an environmental data space $\Zspace$ and a loss function $\l.$  
+%	
+Further, assume that $\Algo$ enjoys a (cumulative) regret bound of the form $R_T^{\Algo} \leq C \cdot T^\alpha$, for some $\alpha \in (0, 1)$ and some constant $C>0$, if its parameters are set as a function of $T,$ so that for notational convenience $\Algo$ can be identified by $\Algo_T.$ 
+%	
+Now, define a second online learning algorithm $\widetilde{\Algo}$ for the same online learning problem as follows:
+%	
+\begin{center}
+	\fbox{
+		\parbox{5in}{ 
+				\begin{algorithmic}
+					\State {Algorithm $\widetilde{\Algo}$} 
+					\For{epoch $m=0, 1, 2, \dots$} 
+						\State Reset $\Algo$ with parameters chosen for $T = 2^m,$ i.e., use $\Algo_T.$ 
+					\For{time steps $t = 2^m, \dots, 2^{m+1} - 1$} 
+					\State Run $\Algo_T$
+					\EndFor
+					\EndFor
+				\end{algorithmic}		}}
+\end{center}
+
+%
+\begin{enumerate}
+%	
+	\item   Illustrate by means of a timeline  what $\widetilde{\Algo}$ is doing. In particular, what is the length of an epoch and in which time window is $\Algo_T$ for the occurring $T$'s used?
+	%		
+	
+	\textbf{Solution:}
+	
+	
+	\definecolor{myLightGray}{RGB}{191,191,191}
+	\definecolor{myGray}{RGB}{160,160,160}
+	\definecolor{myDarkGray}{RGB}{144,144,144}
+	\definecolor{myDarkRed}{RGB}{167,114,115}
+	\definecolor{myRed}{RGB}{255,58,70}
+	\definecolor{myGreen}{RGB}{0,255,71}
+	
+	\begin{center}
+			\begin{tikzpicture}[%
+			every node/.style={
+				font=\scriptsize,
+				% Better alignment, see https://tex.stackexchange.com/questions/315075
+				text height=1ex,
+				text depth=.25ex,
+				scale = 0.9
+			}, scale = 0.9
+			]
+			% draw horizontal line   
+			\draw[->] (0,0) -- (17.5,0);
+			
+			% draw vertical lines
+			\foreach \x in {0,1,...,17}{
+				\draw (\x cm,3pt) -- (\x cm,0pt);
+				\node[anchor=north] at (\x,0) {$\x$};
+			}
+			
+%			% place axis labels
+			\node[anchor=north] at (17.5,0) {t};
+			
+			% draw scale above
+			\fill[myDarkGray] (1.7,0.25) rectangle (3.3,1);
+			\node[anchor=south]  at (2.4,0.5) { \tiny Epoch 1  };; 
+			\node[anchor=south]  at (2.4,0.3) { \tiny $\leadsto$ Run $\Algo_2$};;
+			\fill[myDarkGray] (4,-0.4) rectangle (7,-1);
+			\node[anchor=south]  at (5.5,-0.9) {Epoch 2 $\leadsto$ Run $\Algo_4$};;
+			\fill[myDarkGray] (8,0.25) rectangle (15,1);
+			\node[anchor=south]  at (11,0.4) {Epoch 3 $\leadsto$ Run $\Algo_8$};;
+			\fill[myDarkGray] (16,-0.4) rectangle (17.5,-1);
+			\fill[myLightGray] (17,-0.4) rectangle (19,-1);
+			\node[anchor=south]  at (17.5,-0.9) {Epoch 4 $\leadsto$ Run $\Algo_{16}$};;
+			
+			
+			\draw[->] (1,-1) -- (1,-0.3); 
+			\fill[myDarkGray] (-1,-1) rectangle (2,-1.5);
+			\node[anchor=south]  at (0.5,-1.5) { \tiny Epoch 0 $\leadsto$ Run $\Algo_1$ };; 
+
+		\end{tikzpicture}
+	\end{center}
+	
+	Length of epoch $m$ is $2^m$ for any $m\in \N_0$ and the time window for $\Algo_{2^m}$ is $[2^m,2^{m+1}-1]  \cap \N.$ 
+	
+	\item  Show that the regret of $\widetilde{\Algo}$ up to time $\tilde T$ is bounded by $\sum_{m=0}^{\lfloor\log_2(\tilde T)\rfloor} R^{\Algo}_{2^m}$  for any $\tilde T,$ that is, show
+	%		
+	$$	R_{\tilde T}^{\widetilde{\Algo}} \leq \sum\nolimits_{m=0}^{\lfloor\log_2(\tilde T)\rfloor} R^{\Algo}_{2^m}.	$$ 
+%	
+	Here, $\lfloor x \rfloor:= \max \{z \in \mathbb Z \, | \, z \leq x\}.$
+	
+	\textbf{Solution:}
+	
+	
+	Recall the closed formula for geometric series: For any $N\in \N$ and $\rho\neq 1$ it holds that
+%	
+	\begin{align} \label{def_geom_sum}
+%		
+		\sum_{j=0}^N \rho^j = \frac{1-\rho^{N+1}}{1-\rho} = \frac{\rho^{N+1}-1}{\rho -1 }.
+%		
+	\end{align}
+%
+	Consider an arbitrary $\tilde T \in \N.$ How many epochs have started at most till $\tilde T?$
+%	
+	Formally, we want $\tilde m \in \N$ such that
+%	
+	$$	\sum_{m=0}^{\tilde m -1} 2^m \leq \tilde T.	$$
+%	
+	We can answer this questions with the help of the following equivalent reformulations:
+%	
+	\begin{align*}
+%		
+		\sum_{m=0}^{\tilde m -1} 2^m \leq \tilde T 
+%		
+		&\Leftrightarrow \quad \frac{2^{\tilde m} -1}{2-1} \leq \tilde T \tag{Using \eqref{def_geom_sum}} \\
+%		
+		&\Leftrightarrow \quad  2^{\tilde m} \leq \tilde T +1 \\
+%		
+		&\Leftrightarrow \quad  \tilde m \leq \log_2 \left(\tilde T +1\right). 
+%		
+	\end{align*}
+%
+	Note that $ \log_2 \left(\tilde T +1\right)$ is not necessarily an integer, so that we use $\tilde m = \lfloor \log_2 (\tilde T ) \rfloor +1,$ which can be used, since $\log_2(N+1) \leq \lfloor \log_2 (N ) \rfloor  +1$ holds for any $N \in \N.$
+%
+	Thus, at most $\tilde m = \lfloor \log_2 (\tilde T ) \rfloor +1$ epochs have started till $\tilde T$ and we can infer
+%	
+	\begin{align} \label{bound_regret}
+%		
+		R_{\tilde T}^{\widetilde{\Algo}} \leq \sum_{\mbox{epochs $m$ started till $\tilde T$}} R_{2^m}^{\Algo} \leq 
+		\sum\nolimits_{m=0}^{\lfloor\log_2(\tilde T)\rfloor} R^{\Algo}_{2^m}.	 
+%		
+	\end{align}
+%	
+	\item Conclude that the regret of $\widetilde{\Algo}$ up to time $\tilde T$ is of order $O(\tilde T^\alpha),$ i.e.,\ $R^{\widetilde{\Algo}}_{\tilde T} \leq  \tilde C \cdot \tilde T^\alpha$ for some constant $\tilde C>0.$
+	%		
+	Finally, explain why the strategy of algorithm $\widetilde{\Algo}$ is called the \emph{doubling trick} and what  its advantages and disadvantages are. 
+	
+	\textbf{Solution:}
+	
+	From \eqref{bound_regret} we infer that
+%	
+	\begin{align*}
+%		
+				R_{\tilde T}^{\widetilde{\Algo}} 
+%				
+				&\leq 	\sum\nolimits_{m=0}^{\lfloor\log_2(\tilde T)\rfloor} R^{\Algo}_{2^m} \tag{Using \eqref{bound_regret}} \\
+%				
+				&\leq  \sum\nolimits_{m=0}^{\lfloor\log_2(\tilde T)\rfloor} C \cdot \left( 2^m \right)^{\alpha} \tag{Regret guarantee of \Algo} \\
+%				
+				&\leq  C \sum\nolimits_{m=0}^{\lfloor\log_2(\tilde T)\rfloor} \left( 2^\alpha \right)^{m}  \\
+%				
+				&\leq  C  \frac{ \left(2^\alpha\right)^{\lfloor\log_2(\tilde T)\rfloor+1}-1}{2^\alpha-1}  
+				\tag{Using \eqref{def_geom_sum}} \\
+%				
+				&\leq  \frac{C}{2^\alpha-1}  \cdot \left(2^\alpha\right)^{\lfloor\log_2(\tilde T)\rfloor+1} \\
+%				
+				&=  \frac{2^\alpha C}{2^\alpha-1}  \cdot  \left(2^\alpha\right)^{\lfloor\log_2(\tilde T)\rfloor}.
+%		
+	\end{align*}
+%	
+	Since$ \lfloor\log_2(N)\rfloor \leq \log_2(N) $ and $2^{\log_2(N)} = N$ for any $N\in \N$, we have that
+%	
+		\begin{align*}
+		%		
+		R_{\tilde T}^{\widetilde{\Algo}} 
+		%				
+		&\leq  \underbrace{\frac{2^\alpha C}{2^\alpha-1} }_{=:\tilde C} \cdot  \tilde T^\alpha = \tilde C \cdot \tilde T^\alpha.
+		%		
+	\end{align*}
+
+	\emph{Why do we call this the ``doubling trick''?}
+	
+	The algorithm $\widetilde{\Algo}$ guesses at the beginning of each epoch $m$ that the \emph{unknown} time horizon of the underlying online learning problem will be reached in $2^m$ time steps and consequently starts $\Algo$ with the parameter configuration for the time horizon $T=2^m.$
+
+	If the guess turned out to be wrong  (i.e., too short) the algorithm \emph{doubles} its guess for the subsequent epoch $m+1$ $\leadsto$ $2\cdot 2^m = 2^{m+1}$ and restarts $\Algo$ with the respective parameter configuration. \\
+%	
+	$\leadsto$ ``doubling''
+	
+	This strategy results in a regret upper bound (for $\widetilde{\Algo}$) which is still of the same order w.r.t.\ the time horizon as if we would know the time horizon, although we don't know it.\\
+%	
+	$\leadsto$ ``trick'' (also the advantage)
+	
+	Disadvantage: Every time we restart $\Algo,$ we throw away valuable knowledge, namely what $\Algo$ has learned in that epoch. 
+
+%	
+\end{enumerate}

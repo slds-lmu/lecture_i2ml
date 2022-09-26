@@ -1,0 +1,325 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\sens}{\mathbf{A}} % vector x (bold)
+\newcommand{\ba}{\mathbf{a}}
+\newcommand{\batilde}{\tilde{\mathbf{a}}}
+\newcommand{\Px}{\mathbb{P}_{x}} % P_x
+\newcommand{\Pxj}{\mathbb{P}_{x_j}} % P_{x_j}
+\newcommand{\indep}{\perp \!\!\! \perp} % independence symbol
+% ml - ROC
+\newcommand{\np}{n_{+}} % no. of positive instances
+\newcommand{\nn}{n_{-}} % no. of negative instances
+\newcommand{\rn}{\pi_{-}} % proportion negative instances
+\newcommand{\rp}{\pi_{+}} % proportion negative instances
+% true/false pos/neg:
+\newcommand{\tp}{\# \text{TP}} % true pos
+\newcommand{\fap}{\# \text{FP}} % false pos (fp taken for partial derivs)
+\newcommand{\tn}{\# \text{TN}} % true neg
+\newcommand{\fan}{\# \text{FN}} % false neg
+
+\usepackage{multicol}
+
+\newcommand{\titlefigure}{figure/roc-pr_edited.png}
+\newcommand{\learninggoals}{
+	\item Know the limits of ROC curves for imbalanced data
+	\item Understand PR curves 
+	\item Understand cost curves for cost-sensitive learning settings
+}
+
+\title{Advanced Machine Learning}
+\date{}
+
+\begin{document}
+	
+	\lecturechapter{Imbalanced Learning: Ranking Metrics}
+	\lecture{Advanced Machine Learning}
+	
+	
+	
+	\sloppy
+	
+	
+	
+	\begin{frame}{ROC Curves for scoring classifiers}
+		\small
+		\begin{itemize}
+			%		
+			\item 	Many binary classification methods use a score (function) $s:\Xspace \to \R$ and a threshold value $c$ to make the prediction:
+			%	
+			$$\fx = 2 \cdot \mathds{1}_{[ s(\xv) \ge c]} -1.$$
+			%	
+			\item The choice of threshold affects the TPR and FPR, so it is interesting to examine the effects of different thresholds on these.
+			
+			\item A ROC curve is a visual tool to help in finding good threshold values.
+%			
+			
+			\begin{figure}
+				\centering
+				\scalebox{0.5}{\includegraphics{figure/roc-pr.png}}
+				\tiny
+				\\Davis and Goadrich (2006): The Relationship Between Precision-Recall and
+				ROC Curves (\href{https://www.biostat.wisc.edu/~page/rocpr.pdf}
+				{\underline{URL}}).
+				% \tiny{\\ Credit: Jesse Davis and Mark Goadrich \\}
+			\end{figure}
+			%		
+		\end{itemize}
+
+	\end{frame}
+
+	\begin{frame}{FPR vs. PPV}
+			\small	
+		\begin{itemize}
+%			
+			\item For imbalanced data sets, i.e., if $\nn \gg \np,$ if the number of negative instances is large, then we are typically less interested in a high TNR or equivalently a low FPR.
+%			
+			\item Instead PPV (precision) is more interesting, i.e., the fraction of positives we correctly classified among all positive classifications. 
+%			
+			\item The reason is that a large (absolute) change in the number of FP yields only a small change in FPR, but the PPV might be affected significantly and consequently is more informative.
+%			
+		\end{itemize}
+	
+		
+		\begin{columns}
+			\footnotesize
+			\begin{column}{0.45\textwidth}
+				\centering
+				\underline{FP=10}:\\
+				%Proportion $\np/\nn = 1$\\
+				\lz
+				{
+					\tiny
+					\centering
+					\tiny
+					\begin{tabular}{|l|c|c|}
+						\hline
+						& True +1 & True -1 \\ \hline
+						Pred. Pos & 100            & 10            \\ \hline
+						Pred. Neg & 10            & 9990           \\ \hline
+						Total  & 110            & 10000           \\ \hline
+					\end{tabular}
+				}
+				
+				\medskip
+				%$\text{E} = 35/100 = 0.35$\\
+				$\text{TPR} = 10/11$\\
+				$\text{FPR} = 0.001$\\
+				$\text{PPV} = 10/11$
+			\end{column}
+			\begin{column}{0.45\textwidth}
+				\centering
+				\underline{FP=100}:\\
+				%%  Proportion $\np/\nn = 2$\\
+				\lz
+				{
+					\tiny
+					\begin{tabular}{|l|c|c|}
+						\hline
+						& True +1 & True -1 \\ \hline
+						Pred. +1 & 100            & 100            \\ \hline
+						Pred. -1 & 10            & 9900           \\ \hline
+						Total  & 110            & 10000           \\ \hline
+					\end{tabular}
+				}
+				
+				\medskip
+				$\text{TPR} = 10/11$\\
+				$\text{FPR} = 0.01$\\
+				$\text{PPV} = 1/2$
+			\end{column}
+		\end{columns}
+		
+%		\vfill
+		
+%		RHS: Given test says +1, it's now a coin flip that this is correct.
+		
+		
+		
+	\end{frame}
+	
+	\begin{frame}{Precision-Recall Curves}
+		
+		\footnotesize{
+			\begin{itemize}
+%				
+				\item Instead of the TPR-FPR curve in ROC plots, we could consider TPR-PPV curves. These are also called Precision-Recall (PR) curves, since precision = $\rho_{PPV}$ = $\frac{TP}{TP + FP}$ and recall = $\rho_{TPR}$ = $\frac{TP}{TP + FN}.$
+%
+				\item Note that performance measures such as the $F_1$ score or the $G$ score also consider exactly the trade-off between precision and recall rather than the TPR-FPR tradeoff. 
+%				
+				\item Considering the figures below: both learning algorithms seem to perform well w.r.t.\ the ROC curves, but the PR-curves reveal that: 
+%				
+				\begin{enumerate}
+%					
+					\footnotesize
+					\item both algorithms have room for improvement, as the best we can get is in the top-right corner,
+%					
+					\item the 2nd algorithm is better than the 1st in terms of recall-precision combinations.
+%					
+				\end{enumerate}
+%				
+%				
+			\end{itemize}
+		\vfill
+		
+		\begin{figure}
+			\centering
+			\scalebox{0.6}{\includegraphics{figure/roc-pr_edited.png}}
+			\tiny
+			\\Davis and Goadrich (2006): The Relationship Between Precision-Recall and
+			ROC Curves (\href{https://www.biostat.wisc.edu/~page/rocpr.pdf}
+			{\underline{URL}}).
+			% \tiny{\\ Credit: Jesse Davis and Mark Goadrich \\}
+		\end{figure}
+		
+		% {\tiny{Davis and Goadrich (2006): The Relationship Between Precision-Recall and
+				% ROC Curves (\href{https://www.biostat.wisc.edu/~page/rocpr.pdf}{\underline{URL}}).
+				% \emph{\url{https://www.biostat.wisc.edu/~page/rocpr.pdf}}}\par}
+		
+		% Source: http://people.cs.bris.ac.uk/~flach/ICML04tutorial/ROCtutorialPartI.pdf
+		%\tiny{Source for material: https://www.biostat.wisc.edu/~page/rocpr.pdf}
+		%\tiny{Source for material: https://towardsdatascience.com/what-metrics-should-we-use-on-imbalanced-data-set-precision-recall-roc-e2e79252aeba}
+		%\tiny{Source for material: https://machinelearningmastery.com/roc-curves-and-precision-recall-curves-for-classification-in-python/}
+		%\tiny{Source 6: http://binf.gmu.edu/mmasso/ROC101.pdf}
+		% Source: https://link.springer.com/content/pdf/10.1007/s10994-006-8199-5.pdf
+		
+	}
+	\end{frame}
+	
+	
+	\begin{vbframe}{ROC/PR curves for Imbalanced data}
+
+			
+		% \begin{footnotesize}
+			\small
+			\vspace{-0.2cm}
+			\begin{itemize}
+				\item Top row: Imbalanced classes with $\P(y=1) = 0.003.$
+				\item Bottom row: Balanced classes, i.e., $\P(y=1) = 0.5.$
+				% \item Task and learners remain the same, only class distribution has changed.
+				\item Note that the ROC curves (LHS) are similar in both cases. However, the PR curve (RHS) changes strongly from the imbalanced to the balanced case.
+				%\item Note that the superiority of classifiers in terms of performance can change with a skewed class distribution.
+			\end{itemize}
+			
+			% \end{footnotesize}
+		
+		%replaced graph: (too small)
+		% \begin{figure}
+			%     \centering
+			%     \includegraphics[width=\textwidth]{figure_man/roc-pr-all.png}
+			%     \tiny{\\ Credit: Tom Fawcett \\}
+			% \end{figure}
+		% {\tiny{Tom Fawcett (2004): ROC Graphs: Notes and Practical Considerations for Researchers. \emph{\url{http://binf.gmu.edu/mmasso/ROC101.pdf}}}\par}
+		
+		\begin{figure}
+			\centering
+			\scalebox{0.5}{\includegraphics[width=\textwidth]
+				{figure/roc-pr-imbalanced_edited.png}}
+			\tiny
+			\\ Wissam Siblini et. al. (2004): Master your Metrics with Calibration
+			(\href{https://arxiv.org/pdf/1909.02827.pdf}{\underline{URL}}).
+			% \tiny{\\ Wissam Siblini et. al. (2004): Master your Metrics with Calibration.
+				% \emph{\url{https://arxiv.org/pdf/1909.02827.pdf}}}\par
+			% \tiny{\\ Credit: Wissam Siblini et. al. \\}
+		\end{figure}
+		
+		% \vspace{-0.25cm}
+		%
+		% {\tiny{Wissam Siblini et. al. (2004): Master your Metrics with Calibration. \emph{\url{https://arxiv.org/pdf/1909.02827.pdf}}}\par}
+		
+	\end{vbframe}
+
+	\begin{frame}{Expected Costs}
+	%	
+	\footnotesize
+%		\begin{itemize}
+%			
+			In the case of cost-sensitive learning, where we are provided with a cost matrix $\mathbf{C}$ (no costs for correct classifications), we can compute the expected costs of a classifier $f$ with the corresponding prediction (random) variable $\yh = f(\xv)$ as follows:
+%			
+			\begin{align*}
+%				
+				\E[ \mathrm{Cost}(f) ] 
+%
+				&= \P(\yh=1, y=-1) C(+1,-1) + \P(\yh= - 1, y=1) C(-1,+1) \\
+%
+				&= \P(\yh=1~|~ y=-1) \P(y=-1) C(+1,-1)  \\
+				&\quad + \P(\yh = - 1 ~|~ y=1) \P(y=1) C(-1,+1) \\
+%				
+				&= \mathrm{FPR }\cdot \P(y=-1) C(+1,-1) \\
+%				
+				&\quad + \mathrm{FNR}\cdot  \P(y=1) C(-1,+1) \\
+%				
+				&= \mathrm{FPR }\cdot (1- \P(y=1)) C(+1,-1) + \mathrm{FNR}\cdot  \P(y=1) C(-1,+1)
+%				
+			\end{align*}
+%			
+		Since the highest costs are achieved if $\mathrm{FPR } = \mathrm{FNR } = 1$ we can normalize the expected costs:
+%		
+		$$  \E[ \mathrm{Cost}_{norm}(f) ] = \frac{\mathrm{FPR }\cdot (1- \P(y=1)) C(+1,-1) + \mathrm{FNR}\cdot  \P(y=1) C(-1,+1)}{(1- \P(y=1)) C(+1,-1) + \P(y=1) C(-1,+1)} $$
+%
+		Setting $\pi_+ =  \P(y=1),$ this specifies a function in $\pi_+:$
+%		
+		$$  \mathrm{Costs}_{norm}(\pi_+ | f) = \frac{\mathrm{FPR }\cdot (1- \pi_+) C(+1,-1) + \mathrm{FNR}\cdot  \pi_+ C(-1,+1)}{(1- \pi_+) C(+1,-1) + \pi_+ C(-1,+1)}  $$
+%		\end{itemize}
+	%	
+	\end{frame}
+	
+		\begin{frame}{Cost Curves}
+		%	
+		\footnotesize
+			\begin{itemize}
+				%			
+				\item A cost curve of a classifier $f$ is simply the plot of the function $\pi_+ \mapsto \mathrm{Costs}_{norm}(\pi_+ | f).$
+				%			
+				\item Consider as an example the cost matrix $\mathbf{C}$ such that $C(+1,-1)  = 1$ and $C(-1,+1) = 2.$ Moreover, consider three classifiers with:
+				\begin{minipage}{0.45\textwidth}
+					\begin{itemize}
+						\scriptsize
+						\item 1st classifier: FNR = 0.6, FPR = 0.3
+						\item {\color{red} 2nd classifier}: FNR = 0.3, FPR = 0.5
+						\item {\color{green} 3rd classifier}: FNR = 0.4, FPR = 0.2
+					\end{itemize}
+				\end{minipage}
+				\begin{minipage}{0.45\textwidth}
+					\begin{figure}
+						\centering
+						\includegraphics[width=0.7\linewidth]{figure_man/cost_curve_example}
+					\end{figure}
+				\end{minipage}
+%			
+				\item 3rd classifier is always better than the 1st, while 2nd classifier is better than the 3rd if $\pi_+\geq 0.6.$
+			
+				%
+			\end{itemize}
+		%	
+	\end{frame}
+
+		\begin{frame}{Cost Curves}
+		%	
+		\footnotesize
+		
+		\begin{minipage}{0.55\textwidth}
+		\begin{itemize}
+			%			
+			\item In the case of equal costs for false positives and false negatives, the cost curves correspond to straight lines. 
+			%			
+			\item The {\color{blue} perfect classifier} is in every case the one which has for every $\pi_+$ (normalized) costs of zero. The worst classifier is in every case the one having (normalized) costs of 1.
+%			
+			\item The (normalized) cost curves of the {\color{red} always-positive classifier} and the {\color{green} always-negative classifier} meet each other at $c^* = \frac{C(1,-1)}{C(-1,1)+C(1,-1)},$ i.e., the perfect threshold value we derived to minimize the expected costs for predicting the positive class.
+			%
+		\end{itemize}
+			\end{minipage}
+			\begin{minipage}{0.4\textwidth}
+				\begin{figure}
+					\centering
+					\includegraphics[width=0.8\linewidth]{figure_man/cost_curves_trivial_classifiers}
+				\end{figure}
+			\end{minipage}
+			%			
+
+		%	
+	\end{frame}
+	%
+	\endlecture
+\end{document}
