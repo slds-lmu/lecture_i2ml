@@ -1,0 +1,449 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\sens}{\mathbf{A}} % vector x (bold)
+\newcommand{\ba}{\mathbf{a}}
+\newcommand{\batilde}{\tilde{\mathbf{a}}}
+\newcommand{\Px}{\mathbb{P}_{x}} % P_x
+\newcommand{\Pxj}{\mathbb{P}_{x_j}} % P_{x_j}
+\newcommand{\indep}{\perp \!\!\! \perp} % independence symbol
+% ml - ROC
+\newcommand{\np}{n_{+}} % no. of positive instances
+\newcommand{\nn}{n_{-}} % no. of negative instances
+\newcommand{\rn}{\pi_{-}} % proportion negative instances
+\newcommand{\rp}{\pi_{+}} % proportion negative instances
+% true/false pos/neg:
+\newcommand{\tp}{\# \text{TP}} % true pos
+\newcommand{\fap}{\# \text{FP}} % false pos (fp taken for partial derivs)
+\newcommand{\tn}{\# \text{TN}} % true neg
+\newcommand{\fan}{\# \text{FN}} % false neg
+
+\newcommand{\Tspace}{\mathcal{T}}
+\newcommand{\tv}{\mathbf{t}}
+\newcommand{\tj}{\mathbf{t}_j}
+
+\usepackage{multicol}
+\usepackage{color,colortbl} 
+\definecolor{putblue}{RGB}{0,0,124}
+\definecolor{putred}{RGB}{204,33,69}
+
+\newcommand{\titlefigure}{figure/fmeasure}
+\newcommand{\learninggoals}{
+  \item Get to know loss functions for multi-target prediction problems
+  \item Know the Bayes predictor for Hamming loss and subset $0/1$ loss
+  \item Understand the difference between macro-, micro-, and instance-wise-losses 
+}
+
+\title{Advanced Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Loss Functions for Multi-Target Prediction}
+\lecture{Advanced Machine Learning}
+
+
+
+\sloppy
+
+
+\begin{frame}
+	\frametitle{Multivariate Loss Functions}
+	\begin{itemize}
+%		
+		\small
+%		
+		\item In multi-target prediction we want to the following: For a feature vector $\xv$, predict a vector of scores $\yv = (y_1, y_2, \ldots, y_m)^\top$ by means of a function (hypothesis) $f$:
+		$$
+		\xv = (x_1,x_2,\ldots,x_p)^\top \quad \xrightarrow{~~\fx~~} \quad \yh = ( \hat{y}_1, \hat{y}_2, \ldots, \hat{y}_m)^\top
+		$$
+%		
+		\item If we want to follow the machine learning paradigm based on loss minimization, we need a \emph{multivariate loss functions} 
+		$$
+		\ell: \, \Yspace^m \times \Yspace^m \rightarrow \mathbb{R}.
+		$$  
+		Compared to single-target prediction,  a broad spectrum of such multivariate loss functions	is conceivable. 
+%		
+		\item In case we have an appropriate multivariate loss function $\ell$, we want to find a (Bayes) predictor $\fbayes$ that minimizes expected loss with regard to $\ell:$
+%		
+		\begin{eqnarray*}
+			\fbayes &=& \argmin_{f: \Xspace \to \Yspace^m} \risk_\ell \left(f\right) = \argmin_{f: \Xspace \to \Yspace^m}\Exy\left[ \ell(y,\fx) \right]\\ &=&  \argmin_{f: \Xspace \to \Yspace^m }\int \ell(y,\fx) \text{d}\Pxy. 
+		\end{eqnarray*}
+%				
+%		\item Can we achieve this goal through simple reduction, i.e., by training one model for each target independently? Or can we do better with more sophisticated methods?  
+%		
+%		\item There are \emph{two views:} the individual target and joint target view.
+%
+	\end{itemize}
+	
+\end{frame}
+
+
+
+
+\begin{frame}
+	\frametitle{Examples of MTP loss functions}
+	\begin{itemize}
+		
+		\small 
+		\item \emph{Squared error loss} (typically used in multivariate regression):
+		$$
+		\ell(\yv, \yh) = \sum_{j=1}^m (y_j - \hat{y}_j)^2 \, ,
+		$$
+		where $\yv , \yh \in \mathbb{R}^m$.
+		
+		
+		\medskip
+		
+		
+		%		
+		%		\item \emph{F-measure}:
+		%		$$
+		%		F(\mathbf{Y}, \hat{\mathbf{Y}}) = \frac{2 \sum_{i=1}^K y_i \hat{y}_i}{\sum_{i=1}^K y_i + \sum_{i=1}^K \hat{y}_i} \, ,
+		%		$$
+		%		where $\mathbf{Y} = (y_1, \ldots , y_K) \in \{ 0,1 \}^K$ and $\hat{\mathbf{Y}} = (\hat{y}_1, \ldots , \hat{y}_K) \in \{ 0,1 \}^K$. Can be used in macro- and micro-averaging, but also instance-wise. 
+		%		
+		
+		
+		\item The \emph{Hamming loss} averages over mistakes on individual scores:    
+		$$
+		\displaystyle \ell_H(\yv, \hat{y}) = \frac{1}{m}  \, \sum_{j=1}^m \, \mathds{1}_{[y_j \neq  \hat y_j ]}
+		$$
+		
+		\item The \emph{subset 0/1 loss} simply checks for entire correctness:  
+		\begin{align*}
+			\displaystyle \ell_{0/1}(\yv, \hat{y}) & = \mathds{1}_{[ \yv \ne \hat{y} ]}  =  \max_j \, \mathds{1}_{[y_j \neq  \hat y_j]}
+		\end{align*}
+		
+		
+	\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}
+	\frametitle{Hamming vs.\ subset 0/1 loss}
+	\begin{itemize}
+		\item The risk minimizer for the Hamming loss is the  \emph{marginal mode}:
+		$$
+		f_j^*(\xv) = \arg \max_{y_j \in \{0,1\}} \Pr( y_j  ~|~ \xv )\,, \quad j = 1,\ldots,m ,
+		$$
+		%\item 
+		while for the subset 0/1 loss it is the \emph{joint mode}:
+		$$
+		\mathbf{f}^*(\xv) = \arg \max_{\yv \in \mathcal{Y}^m} \Pr(\yv ~|~ \xv) \,.
+		$$
+		\item Marginal mode vs. joint mode:\\[6pt]
+		\begin{center}
+			\begin{tabular}{@{}cc@{}}
+				\toprule
+				$\yv$ & $\Pr(\yv)$ \\
+				\hline
+				$0~0~0~0$ & $0.30$ \\
+				$0~1~1~1$ & $0.17$ \\
+				$1~0~1~1$ & $0.18$ \\
+				$1~1~0~1$ & $0.17$ \\
+				$1~1~1~0$ & $0.18$ \\
+				\toprule
+			\end{tabular}
+			$\qquad$
+			\footnotesize{
+				\begin{tabular}{lr}
+					Marginal mode: & $1~1~1~1$ \\
+					Joint mode: & $0~0~0~0$ \\
+				\end{tabular}
+			}
+		\end{center}
+	\end{itemize}
+\end{frame}
+
+
+
+%\begin{frame}
+%	\frametitle{The individual target view}
+%	
+%	\begin{itemize} 
+%		\item How can we improve the predictive accuracy of a single label \yv exploiting information about other labels?
+%		\item Goal: predict a value of $y_i$ using $\xv$ and any available information on other targets $y_j$.
+%		\item The problem is usually defined through univariate losses $\ell_i(y_i, \hat{y}_i)$.
+%		%\item The problem is usually decomposable over the targets.
+%		\item  Domain of $y_i$ is either continuous or nominal.
+%		\item  Independent models vs.\ regularized (shrunken) models.
+%%		\item James-Stein paradox (to be discussed later).
+%		
+%	\end{itemize}
+%	
+%\end{frame}
+%
+%
+%
+%\begin{frame}
+%	\frametitle{The joint target view}
+%	
+%	\begin{itemize}
+%		\item The problem is defined through multivariate losses $\ell(\yv, \yh)$.
+%		%\item What are examples of such loss functions ?
+%		\item Is reduction to single-target prediction (decomposition over targets) still possible, and even if so, can we improve over such strategies \yv using more expressive models?
+%		%\item What are the relations between the losses?
+%		%\item Goal: predict a vector $\yv$ using $\xv$.
+%		\item Important: \emph{Structure of loss} $\ell(\cdot, \cdot)$, possible \emph{dependencies between targets}, multivariate distribution of $\yv$.
+%		
+%		%\item The problem might not be easily decomposable over the targets.
+%		%\item Domain of $\yv$ is usually finite, but contains a large number of elements.
+%		%\item Independent models vs.\ more expressive models.
+%		%\item Loss function perspective.
+%		
+%	\end{itemize}
+%\end{frame}
+
+
+\begin{frame}
+	\frametitle{Multivariate loss functions}
+	\small
+	\begin{itemize}
+%		
+%		\item 
+%
+		\item A loss $L$ (on test data) is decomposable over examples if it can be written in the form
+		$$
+		L = \sum_{i=1}^n \ell(\yv^{(i)}, f(\xi)) 
+		%\quad \text{vs.} \quad L \ne \sum_{i=1}^n \ell(\yv^{(i)}, f(\xi)) 
+		\, ,
+		$$
+		i.e., as a sum of losses over all (test) examples. 
+		
+		
+		\item A multivariate loss $\ell$ is decomposable over targets if it can be written as
+		$$
+		\ell(\yv, \fx) = \sum_{j=1}^m \ell_j(y_j, f_j(\xv)) 
+		%\quad \text{vs.} \quad \ell(\yv, \fx) \ne \sum_{i=1}^m \ell(y_i, h_i(\xv))
+		$$
+		with suitable single-target losses $\ell_j$. 
+		
+%		
+
+		\begin{minipage}{0.45\textwidth}
+%			
+			\item  In general, we distinguish between three categories of losses: macro-, micro-, and instance-wise-losses. 
+%			
+		\end{minipage}
+%	
+		\begin{minipage}{0.45\textwidth}
+			\begin{center}
+				\includegraphics[width=0.9\textwidth]{figure/fmeasure}
+			\end{center}
+		\end{minipage}
+%		
+	\end{itemize}
+%
+\end{frame}
+
+
+
+
+
+
+\begin{frame}
+	\frametitle{Macro- and micro-Losses}
+	
+	\begin{itemize}
+		\item<1-> Macro-losses: The overall loss corresponds to aggregating the losses over the targets.
+		
+		\begin{center}
+			\begin{tabular}{|c|c|c|c|}
+				\multicolumn{4}{c}{True scores} \\
+				\hline
+				{\only<2>{\color{putred}}$y_{11}$} & {\only<3>{\color{putred}}$y_{12}$} & {\only<4>{\color{putred}}$y_{13}$} & {\only<5>{\color{putred}}$y_{14}$} \\
+				{\only<2>{\color{putred}}$y_{21}$} & {\only<3>{\color{putred}}$y_{22}$} & {\only<4>{\color{putred}}$y_{23}$} & {\only<5>{\color{putred}}$y_{24}$} \\
+				{\only<2>{\color{putred}}$y_{31}$} & {\only<3>{\color{putred}}$y_{32}$} & {\only<4>{\color{putred}}$y_{33}$} & {\only<5>{\color{putred}}$y_{34}$} \\
+				{\only<2>{\color{putred}}$y_{41}$} & {\only<3>{\color{putred}}$y_{42}$} & {\only<4>{\color{putred}}$y_{43}$} & {\only<5>{\color{putred}}$y_{44}$} \\
+				{\only<2>{\color{putred}}$y_{51}$} & {\only<3>{\color{putred}}$y_{52}$} & {\only<4>{\color{putred}}$y_{53}$} & {\only<5>{\color{putred}}$y_{54}$} \\
+				{\only<2>{\color{putred}}$y_{61}$} & {\only<3>{\color{putred}}$y_{62}$} & {\only<4>{\color{putred}}$y_{63}$} & {\only<5>{\color{putred}}$y_{64}$} \\
+				\hline
+			\end{tabular}
+			$\quad$
+			\begin{tabular}{|c|c|c|c|}
+				\multicolumn{4}{c}{Predicted scores} \\
+				\hline
+				{\only<2>{\color{putred}}$\hat{y}_{11}$} & {\only<3>{\color{putred}}$\hat{y}_{12}$} & {\only<4>{\color{putred}}$\hat{y}_{13}$} & {\only<5>{\color{putred}}$\hat{y}_{14}$} \\
+				{\only<2>{\color{putred}}$\hat{y}_{21}$} & {\only<3>{\color{putred}}$\hat{y}_{22}$} & {\only<4>{\color{putred}}$\hat{y}_{23}$} & {\only<5>{\color{putred}}$\hat{y}_{24}$} \\
+				{\only<2>{\color{putred}}$\hat{y}_{31}$} & {\only<3>{\color{putred}}$\hat{y}_{32}$} & {\only<4>{\color{putred}}$\hat{y}_{33}$} & {\only<5>{\color{putred}}$\hat{y}_{34}$} \\
+				{\only<2>{\color{putred}}$\hat{y}_{41}$} & {\only<3>{\color{putred}}$\hat{y}_{42}$} & {\only<4>{\color{putred}}$\hat{y}_{43}$} & {\only<5>{\color{putred}}$\hat{y}_{44}$} \\
+				{\only<2>{\color{putred}}$\hat{y}_{51}$} & {\only<3>{\color{putred}}$\hat{y}_{52}$} & {\only<4>{\color{putred}}$\hat{y}_{53}$} & {\only<5>{\color{putred}}$\hat{y}_{54}$} \\
+				{\only<2>{\color{putred}}$\hat{y}_{61}$} & {\only<3>{\color{putred}}$\hat{y}_{62}$} & {\only<4>{\color{putred}}$\hat{y}_{63}$} & {\only<5>{\color{putred}}$\hat{y}_{64}$} \\
+				\hline
+			\end{tabular}
+		\end{center}
+	\lz
+	\item Example: Averaging the target losses.
+	$$
+	L = \frac{1}{4} \left( {\only<2>{\color{putred}}L_1} + {\only<3>{\color{putred}}L_2} + {\only<4>{\color{putred}}L_3} + {\only<5>{\color{putred}}L_4} \right)
+	$$
+	\end{itemize}
+	
+
+	
+\end{frame}
+
+
+
+
+\begin{frame}
+	\frametitle{Macro- and micro-Losses}
+	
+	\begin{itemize}
+		\item<1-> Micro-losses: The overall loss corresponds to aggregating the pointwise losses over the targets and the instances.
+		
+		\begin{center}
+			\begin{tabular}{|c|c|c|c|}
+				\multicolumn{4}{c}{True scores} \\
+				\hline
+				\color{putred}$y_{11}$ & \color{putred}$y_{12}$ & \color{putred}$y_{13}$ & \color{putred}$y_{14}$ \\
+				\color{putred}$y_{21}$ & \color{putred}$y_{22}$ & \color{putred}$y_{23}$ & \color{putred}$y_{24}$ \\
+				\color{putred}$y_{31}$ & \color{putred}$y_{32}$ & \color{putred}$y_{33}$ & \color{putred}$y_{34}$ \\
+				\color{putred}$y_{41}$ & \color{putred}$y_{42}$ & \color{putred}$y_{43}$ & \color{putred}$y_{44}$ \\
+				\color{putred}$y_{51}$ & \color{putred}$y_{52}$ & \color{putred}$y_{53}$ & \color{putred}$y_{54}$ \\
+				\color{putred}$y_{61}$ & \color{putred}$y_{62}$ & \color{putred}$y_{63}$ & \color{putred}$y_{64}$ \\
+				\hline
+			\end{tabular}
+			$\quad$
+			\begin{tabular}{|c|c|c|c|}
+				\multicolumn{4}{c}{Predicted scores} \\
+				\hline
+				\color{putred}$\hat{y}_{11}$ & \color{putred}$\hat{y}_{12}$ & \color{putred}$\hat{y}_{13}$ & \color{putred}$\hat{y}_{14}$ \\
+				\color{putred}$\hat{y}_{21}$ & \color{putred}$\hat{y}_{22}$ & \color{putred}$\hat{y}_{23}$ & \color{putred}$\hat{y}_{24}$ \\
+				\color{putred}$\hat{y}_{31}$ & \color{putred}$\hat{y}_{32}$ & \color{putred}$\hat{y}_{33}$ & \color{putred}$\hat{y}_{34}$ \\
+				\color{putred}$\hat{y}_{41}$ & \color{putred}$\hat{y}_{42}$ & \color{putred}$\hat{y}_{43}$ & \color{putred}$\hat{y}_{44}$ \\
+				\color{putred}$\hat{y}_{51}$ & \color{putred}$\hat{y}_{52}$ & \color{putred}$\hat{y}_{53}$ & \color{putred}$\hat{y}_{54}$ \\
+				\color{putred}$\hat{y}_{61}$ & \color{putred}$\hat{y}_{62}$ & \color{putred}$\hat{y}_{63}$ & \color{putred}$\hat{y}_{64}$ \\
+				\hline
+			\end{tabular}
+		\end{center}
+	\lz
+	\item Thus, we have	
+	$$
+	L =  \sum_{i,j} \ell(y_{ij} , \hat{y}_{ij}),
+	$$
+	where $\ell: \Yspace \times \Yspace \to \R$ in this case.
+%	
+	\end{itemize}
+
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{Macro- and micro-Losses}
+	
+	\begin{itemize}
+		\item<1-> Micro-losses: The overall loss corresponds to averaging the pointwise losses over the targets and the instances.
+		
+		\begin{center}
+			\begin{tabular}{|c|c|c|c|}
+				\multicolumn{4}{c}{True scores} \\
+				\hline
+				\color{putred}$y_{11}$ & \color{putred}$y_{12}$ &   & \color{putred}$y_{14}$ \\
+				\color{putred}$y_{21}$ &   & \color{putred}$y_{23}$ & \color{putred}$y_{24}$ \\
+				\color{putred}$y_{31}$ & \color{putred}$y_{32}$ & \color{putred}$y_{33}$ & \color{putred}$y_{34}$ \\
+				\color{putred}$y_{41}$ &   & \color{putred}$y_{43}$ & \color{putred}$y_{44}$ \\
+				\color{putred}$y_{51}$ & \color{putred}$y_{52}$ & \color{putred}$y_{53}$ & \color{putred}$y_{54}$ \\
+				& \color{putred}$y_{62}$ & \color{putred}$y_{63}$ &   \\
+				\hline
+			\end{tabular}
+			$\quad$
+			\begin{tabular}{|c|c|c|c|}
+				\multicolumn{4}{c}{Predicted scores} \\
+				\hline
+				\color{putred}$\hat{y}_{11}$ & \color{putred}$\hat{y}_{12}$ &   & \color{putred}$\hat{y}_{14}$ \\
+				\color{putred}$\hat{y}_{21}$ &   & \color{putred}$\hat{y}_{23}$ & \color{putred}$\hat{y}_{24}$ \\
+				\color{putred}$\hat{y}_{31}$ & \color{putred}$\hat{y}_{32}$ & \color{putred}$\hat{y}_{33}$ & \color{putred}$\hat{y}_{34}$ \\
+				\color{putred}$\hat{y}_{41}$ &   & \color{putred}$\hat{y}_{43}$ & \color{putred}$\hat{y}_{44}$ \\
+				\color{putred}$\hat{y}_{51}$ & \color{putred}$\hat{y}_{52}$ & \color{putred}$\hat{y}_{53}$ & \color{putred}$\hat{y}_{54}$ \\
+				& \color{putred}$\hat{y}_{62}$ & \color{putred}$\hat{y}_{63}$ &   \\
+				\hline
+			\end{tabular}
+		\end{center}	
+	\lz
+	\item Thus, we have	
+		$$
+	L =  \sum_{i,j} \ell(y_{ij} , \hat{y}_{ij}),
+	$$
+	where $\ell: \Yspace \times \Yspace \to \R$ in this case.
+%	
+	\item 	
+		Can be used also for cases with missing entries.
+	\end{itemize}
+ 
+
+	
+\end{frame}
+
+
+
+
+\begin{frame}
+	\frametitle{Instance-wise losses}
+	
+	\begin{itemize}
+		\item<1-> Instance-wise losses: Aggregating the losses over the instances.
+		
+		\begin{center}
+			\begin{tabular}{|c|c|c|c|}
+				\multicolumn{4}{c}{True scores} \\
+				\hline
+				{\only<2>{\color{putred}}$y_{11}$} & {\only<2>{\color{putred}}$y_{12}$} & {\only<2>{\color{putred}}$y_{13}$} & {\only<2>{\color{putred}}$y_{14}$} \\
+				{\only<3>{\color{putred}}$y_{21}$} & {\only<3>{\color{putred}}$y_{22}$} & {\only<3>{\color{putred}}$y_{23}$} & {\only<3>{\color{putred}}$y_{24}$} \\
+				{\only<4>{\color{putred}}$y_{31}$} & {\only<4>{\color{putred}}$y_{32}$} & {\only<4>{\color{putred}}$y_{33}$} & {\only<4>{\color{putred}}$y_{34}$} \\
+				{\only<5>{\color{putred}}$y_{41}$} & {\only<5>{\color{putred}}$y_{42}$} & {\only<5>{\color{putred}}$y_{43}$} & {\only<5>{\color{putred}}$y_{44}$} \\
+				{\only<6>{\color{putred}}$y_{51}$} & {\only<6>{\color{putred}}$y_{52}$} & {\only<6>{\color{putred}}$y_{53}$} & {\only<6>{\color{putred}}$y_{54}$} \\
+				{\only<7>{\color{putred}}$y_{61}$} & {\only<7>{\color{putred}}$y_{62}$} & {\only<7>{\color{putred}}$y_{63}$} & {\only<7>{\color{putred}}$y_{64}$} \\
+				\hline
+			\end{tabular}
+			$\quad$
+			\begin{tabular}{|c|c|c|c|}
+				\multicolumn{4}{c}{Predicted scores} \\
+				\hline
+				{\only<2>{\color{putred}}$\hat{y}_{11}$} & {\only<2>{\color{putred}}$\hat{y}_{12}$} & {\only<2>{\color{putred}}$\hat{y}_{13}$} & {\only<2>{\color{putred}}$\hat{y}_{14}$} \\
+				{\only<3>{\color{putred}}$\hat{y}_{21}$} & {\only<3>{\color{putred}}$\hat{y}_{22}$} & {\only<3>{\color{putred}}$\hat{y}_{23}$} & {\only<3>{\color{putred}}$\hat{y}_{24}$} \\
+				{\only<4>{\color{putred}}$\hat{y}_{31}$} & {\only<4>{\color{putred}}$\hat{y}_{32}$} & {\only<4>{\color{putred}}$\hat{y}_{33}$} & {\only<4>{\color{putred}}$\hat{y}_{34}$} \\
+				{\only<5>{\color{putred}}$\hat{y}_{41}$} & {\only<5>{\color{putred}}$\hat{y}_{42}$} & {\only<5>{\color{putred}}$\hat{y}_{43}$} & {\only<5>{\color{putred}}$\hat{y}_{44}$} \\
+				{\only<6>{\color{putred}}$\hat{y}_{51}$} & {\only<6>{\color{putred}}$\hat{y}_{52}$} & {\only<6>{\color{putred}}$\hat{y}_{53}$} & {\only<6>{\color{putred}}$\hat{y}_{54}$} \\
+				{\only<7>{\color{putred}}$\hat{y}_{61}$} & {\only<7>{\color{putred}}$\hat{y}_{62}$} & {\only<7>{\color{putred}}$\hat{y}_{63}$} & {\only<7>{\color{putred}}$\hat{y}_{64}$} \\
+				\hline
+			\end{tabular}
+		\end{center}
+		\lz
+%		
+		\item Example: Averaging over the instance-losses.
+%		
+		\begin{align*}
+%			
+			L = \frac{1}{6} \Big( {\only<2>{\color{putred}}\ell(\yv^{(1)},\hat{y}^{(1)})}  & + 
+			{\only<3>{\color{putred}}\ell(\yv^{(2)},\hat{y}^{(2)})} +
+			{\only<4>{\color{putred}}\ell(\yv^{(3)},\hat{y}^{(3)})} + \\
+			& {\only<5>{\color{putred}}\ell(\yv^{(4)},\hat{y}^{(4)})} +
+			{\only<6>{\color{putred}}\ell(\yv^{(5)},\hat{y}^{(5)})} +
+			{\only<7>{\color{putred}}\ell(\yv^{(6)},\hat{y}^{(6)})} 
+			\Big)
+%			
+		\end{align*}
+%
+	\end{itemize}
+	
+
+	
+\end{frame}
+
+
+
+
+
+
+
+
+
+
+
+%
+\endlecture
+\end{document}

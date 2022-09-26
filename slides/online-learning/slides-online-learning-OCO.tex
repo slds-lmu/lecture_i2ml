@@ -1,0 +1,374 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\sens}{\mathbf{A}} % vector x (bold)
+\newcommand{\ba}{\mathbf{a}}
+\newcommand{\batilde}{\tilde{\mathbf{a}}}
+\newcommand{\Px}{\mathbb{P}_{x}} % P_x
+\newcommand{\Pxj}{\mathbb{P}_{x_j}} % P_{x_j}
+\newcommand{\indep}{\perp \!\!\! \perp} % independence symbol
+% ml - ROC
+\newcommand{\np}{n_{+}} % no. of positive instances
+\newcommand{\nn}{n_{-}} % no. of negative instances
+\newcommand{\rn}{\pi_{-}} % proportion negative instances
+\newcommand{\rp}{\pi_{+}} % proportion negative instances
+% true/false pos/neg:
+\newcommand{\tp}{\# \text{TP}} % true pos
+\newcommand{\fap}{\# \text{FP}} % false pos (fp taken for partial derivs)
+\newcommand{\tn}{\# \text{TN}} % true neg
+\newcommand{\fan}{\# \text{FN}} % false neg
+
+\newcommand{\Tspace}{\mathcal{T}}
+\newcommand{\tv}{\mathbf{t}}
+\newcommand{\tj}{\mathbf{t}_j}
+\renewcommand{\l}{L}
+\newcommand{\Aspace}{\mathcal{A}}
+\newcommand{\Zspace}{\mathcal{Z}}
+\newcommand{\norm}[1]{\left|\left|#1\right|\right|_2}
+
+
+\newcommand{\llin}{\l^{\texttt{lin}}}
+\newcommand{\lzeroone}{\l^{0-1}}
+\newcommand{\lhinge}{\l^{\texttt{hinge}}}
+\newcommand{\lexphinge}{\widetilde{\l^{\texttt{hinge}}}}
+\newcommand{\lconv}{\l^{\texttt{conv}}}
+\newcommand{\FTL}{\texttt{FTL}}
+\newcommand{\FTRL}{\texttt{FTRL}}
+\newcommand{\OGD}{{\texttt{OGD}}}
+\newcommand{\EWA}{{\texttt{EWA}}} 
+\newcommand{\REWA}{{\texttt{REWA}}} 
+\newcommand{\EXPthree}{{\texttt{EXP3}}}
+\newcommand{\EXPthreep}{{\texttt{EXP3P}}}
+\newcommand{\reg}{\psi}
+\newcommand{\Algo}{\texttt{Algo}}
+
+\usepackage{multicol}
+
+\newcommand{\titlefigure}{figure/gradienten_verfahren}
+\newcommand{\learninggoals}{
+  \item Get to know the class of online convex optimization problems
+  \item See the online gradient descent as a satisfactory learning algorithm for such cases
+  \item Know its connection to the FTRL via linearization of convex functions
+}
+
+\title{Advanced Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Online Convex Optimization}
+\lecture{Advanced Machine Learning}
+
+
+
+\sloppy
+
+\begin{frame} 
+	\frametitle{Online Convex Optimization}
+	%	
+	\small
+	\begin{itemize}
+%		
+		\item 	One of the most relevant instantiations of the online learning problem is the problem of \emph{online convex optimization} (OCO), which is characterized by a loss function $\l:\Aspace \times \Zspace \to \R,$ which is convex w.r.t.\ the action, i.e., 
+		$a \mapsto \l(a,z)$ is convex for any $z \in \Zspace.$ 
+%		
+	 	 {\visible<2->{ \item Note that both OLO and OQO belong to the class of online convex optimization problems:
+		%	
+		\begin{itemize} \small
+			%		
+			%		
+			\item \emph{Online linear optimization (OLO) with convex action spaces:}  $\l(a,z)=a^\top z$ is a convex function in $a\in \Aspace,$ provided $\Aspace$ is convex.
+			%		
+			\item \emph{Online quadratic optimization (OQO) with convex action spaces:}  $\l(a,z)=\frac12 \norm{a-z}^2$ is a convex function in $a\in \Aspace,$ provided $\Aspace$ is convex.
+			%	{\tiny (We will show the convexity for specific choices in an exercise on the third assignment sheet.)}
+			%
+		\end{itemize} }}
+		%		
+	\end{itemize}  
+	%	
+\end{frame}
+
+
+
+\begin{vbframe} 
+	\frametitle{Online Gradient Descent: Motivation}
+	%	
+	\small
+	\begin{itemize}
+		%		
+		\item We have seen that the FTRL algorithm with the $\l_2$ norm regularization $\reg(a) = \frac{1}{2 \eta}  \norm{a}^2$ achieves satisfactory results for online linear optimization (OLO) problems, that is, if $\l(a,z)=\llin(a,z):=a^\top z,$ then we have
+		%		
+		\begin{itemize} \small
+			%			
+			\item \emph{Fast updates ---} If $\Aspace = \R^d,$ then 
+			$$	a_{t+1}^{\FTRL} = a_t^{\FTRL} - \eta \, z_t, \qquad t=1,\ldots,T; $$ 
+			%			
+			\item \emph{Regret bounds ---} By an appropriate choice of $\eta$ and some (mild) assumptions on $\Aspace$ and $\Zspace,$ we have $$	R_T^{\FTRL} = o(T).$$
+			%			
+		\end{itemize}
+		%	
+	\end{itemize}
+%
+\end{vbframe}
+%
+	\begin{frame} 
+			\frametitle{Online Gradient Descent: Motivation}
+			%	
+		\small 
+		Apparently, the nice form of the loss function $\llin$ is responsible for the appealing properties of FTRL in this case. 
+		Indeed, 
+		since $\nabla_a \llin(a,z) = z$   note that the update rule can be written as 
+		%		
+		\begin{equation*}
+%			\label{eq:forel_update}
+			%	
+			a_{t+1}^{\FTRL} = a_t^{\FTRL} - \eta \, z_t =  a_t^{\FTRL} - \eta \, \nabla_a \llin(a_t^{\FTRL},z_t).
+			%	
+		\end{equation*}
+		%		
+		%since $\nabla \llin(a,z) = z.$  
+		%		
+		\begin{minipage}{.6\textwidth}
+		{\visible<2->{ \emph{Interpretation}: In each time step $t+1,$  we are following the direction with the steepest decrease of the loss (represented by $- \nabla \llin(a_t^{\FTRL},z_t)$) from the current ''position'' $a_t^{\FTRL}$ with the step size $\eta$ }}
+		\lz 
+		
+		{\visible<3>{ $\Rightarrow $ Gradient Descent. }}
+		
+		\end{minipage}
+		\begin{minipage}{.3\textwidth}{\visible<3>{ 
+			\begin{figure}
+				\centering
+				\includegraphics[width=0.8\linewidth]{figure/gradienten_verfahren}
+			\end{figure}}}
+		\end{minipage}
+		%		
+	%
+\end{frame}
+
+
+\begin{frame} 
+	\frametitle{Online Gradient Descent: Motivation}
+	%	
+	\small
+	\begin{itemize}
+		%	
+		\item \textbf{Question:} How to transfer this idea of the Gradient Descent for the update formula to other loss functions, while still preserving the regret bounds?
+		%	
+		{\visible<2->{  \item \textbf{Solution (for convex losses):} Recall the equivalent characterization of convexity of differentiable convex functions:
+		%	
+		\begin{align*}
+			%		
+			f:S\to \R \mbox{ is convex } 
+			&\Leftrightarrow  f(y) \geq f(x)+(y-x)^\top  \nabla f(x)  \mbox{ for any } x,y\in S \\
+			 &\Leftrightarrow  f(x) - f(y) \leq (x-y)^\top  \nabla f(x)  \mbox{ for any } x,y\in S.	
+			%		
+		\end{align*}}
+		}
+		%		
+		{\visible<3>{  \item This means if we are dealing with a loss function $\l:\Aspace \times \Zspace \to \R,$ which is convex and differentiable in its first argument ($\Aspace$ has also to be convex), then 
+		%	
+		$$		\l(a,z) - \l(\tilde a, z) \leq 	(a-\tilde a )^\top \, \nabla_a \l(a,z), \quad \forall a,\tilde a\in \Aspace, z\in \Zspace. $$}}
+		%
+	\end{itemize}
+	%
+\end{frame}
+
+
+\begin{frame} 
+	\frametitle{Online Gradient Descent: Motivation}
+	%	
+	\footnotesize
+	\begin{itemize}
+		%
+		\item \textbf{Reminder:} $		\l(a,z) - \l(\tilde a, z) \leq 	(a-\tilde a )^\top \, \nabla_a \l(a,z), \quad \forall a,\tilde a\in \Aspace, z\in \Zspace. $
+		\item {\visible<2->{  Let  $z_1,\ldots,z_T$ arbitrary environmental data and $a_1,\ldots,a_T$ be some arbitrary action sequence. Substitute $\tilde z_t := \nabla_a \l(a_t,z_t)$ and note that }}
+		%	
+		%
+		{\visible<3->{		
+		\begin{align*}
+			%		
+			 	{\color{blue} R_T(\tilde a) } 
+					%		 
+					&= \sum_{t=1}^T \l(a_t,z_t) -  \l(\tilde a ,z_t) 
+			%		
+			   \leq  \sum_{t=1}^T  (a_t -\tilde a )^\top \, \nabla_a \l(a_t,z_t)	\\
+			%		
+			  &= \sum_{t=1}^T  (a_t -\tilde a )^\top \, \tilde z_t 
+			%			
+			  = \sum_{t=1}^T  a_t^\top \, \tilde z_t  - \tilde a^\top \, \tilde z_t 
+			%			
+			  =  {\color{orange} \sum_{t=1}^T \llin(a_t,\tilde z_t) - \llin(\tilde a,\tilde z_t)}. 
+			%		
+		\end{align*}  }}
+		%
+		{\visible<4->{  \emph{Conclusion:} {\color{blue}The regret of a learner with respect to a differentiable and convex loss function $\l$} is bounded by {\color{orange} the regret corresponding to an online linear optimization problem with environmental data $\tilde z_t = \nabla_a \l(a_t,z_t).$} }}
+		%	
+		\item {\visible<5->{ \textbf{We know:} Online linear optimization problems can be tackled by means of the FTRL algorithm!}}
+		%		 
+		\item [$\leadsto$] {\visible<6->{ Incorporate the substitution $\tilde z_t = \nabla_a \l(a_t,z_t)$ into the update formula of FTRL with squared L2-norm regularization.}}
+		%	
+		%
+	\end{itemize}
+\end{frame}
+%
+\begin{frame} 
+	\frametitle{Online Gradient Descent: Definition and properties}
+	\small
+	\begin{itemize}
+		%	
+		\item 
+		%	
+		The corresponding algorithm which chooses its action according to these considerations is called the \emph{Online Gradient Descent} (OGD) algorithm with step size $\eta>0.$ It holds in particular,
+		%	
+		%	More specifically, the action are chosen as 
+		%	
+		\begin{equation}
+			\label{eq:OGD_update}
+			%		
+			a_{t+1}^\OGD = a_{t}^\OGD - \eta \nabla_a \l(a_{t}^\OGD,z_t ), \quad t=1,\ldots T.
+			%		
+		\end{equation}
+		{\tiny (Technical side note:  For this update formula we assume that $\Aspace=\R^d.$ Moreover, the first action $a_1^\OGD$ is arbitrary. )}
+		%
+		 {\visible<2->{ \item We have the following connection between FTRL and OGD:
+		\begin{itemize}\small
+			%		
+			\item Let $\tilde z_t^\OGD :=  \nabla_a \l(a_{t}^\OGD,z_t )$ for any $t=1,\ldots,T.$ 
+			%		be the substituted environmental data.
+			%		
+			\item The update formula for FTRL with $\l_2$ norm regularization for the linear loss $\llin$ and the environmental data $\tilde z_t^\OGD$ is
+			{\footnotesize		$$a_{t+1}^{\FTRL} = a_{t}^{\FTRL} - \eta \tilde z_t^\OGD =  a_{t}^{\FTRL} - \eta  \nabla_a \l(a_{t}^\OGD,z_t ). $$}
+			%		
+			\item If we have that $a_{1}^{\FTRL} = a_{1}^\OGD,$ then it iteratively follows that $a_{t+1}^{\FTRL} = a_{t+1}^\OGD$ for any $t=1,\ldots,T$ in this case.
+			%
+		\end{itemize} }}
+		%
+	\end{itemize}
+\end{frame}
+%
+\begin{frame} 
+	\frametitle{Online Gradient Descent: Definition and properties}
+	\footnotesize
+	\begin{itemize}
+		\small
+		%
+		\item With the deliberations above we can infer that
+		%	
+		\begin{align*}
+%			
+		 R_{T,\l}^\OGD(\tilde a ~|~ (z_t)_{t} ) 
+%			
+			&= \sum\nolimits_{t=1}^T \l(a_t^\OGD,z_t) -  \l(\tilde a ,z_t)  \\
+%			
+		 	&\leq \sum\nolimits_{t=1}^T \llin(a_t^\OGD,\tilde z_t^\OGD) - \llin(\tilde a,\tilde z_t^\OGD) \\ 
+%			
+			&\stackrel{\mbox{(if $a_1^\OGD=a_1^{\FTRL}$})}{=} 
+			\sum\nolimits_{t=1}^T \llin(a_t^{\FTRL},\tilde z_t^\OGD) - \llin(\tilde a,\tilde z_t^\OGD) \\
+			%
+			&= R_{T,\llin}^{\FTRL}(\tilde a ~|~ (\tilde z_t^\OGD)_{t}), 
+		\end{align*}
+		%	
+		where we write in the subscripts of the regret the corresponding loss function and also include the corresponding environmental data as a second argument in order to emphasize the connections.
+		%	
+		\item 
+		%	It holds for any $\tilde a \in \Aspace$ that $R_{T,\l}^\OGD(\tilde a| (z_t)_{t})\leq R_{T,\llin}^{\FTRL}(\tilde a| (\tilde z_t)_{t}).$ \\
+		{\visible<2->{  \emph{Interpretation:} The regret of the FTRL algorithm (with $\l_2$ norm regularization) for the online linear optimization problem (characterized by the linear loss $\llin$) with environmental data $\tilde z_t^\OGD$ is an upper bound for the OGD algorithm for the online convex problem (characterized by a differentiable convex loss $\l$) with the original environmental data $z_t.$ }}
+		%	
+	\end{itemize}
+\end{frame}
+%
+\begin{frame} 
+	\frametitle{Online Gradient Descent:  Regret}
+	\footnotesize
+	\begin{itemize}
+		%	
+		%	
+		\item Due to this connection we immediately obtain a similar decomposition of the regret upper bound into a bias term and a variance term as for the FTRL algorithm for OLO problems.
+		% 
+		\item \textbf{Corollary.} Using the OGD algorithm on any online convex optimization problem (with differentiable loss function $\l$)  leads to a regret of OGD with respect to any action $\tilde a \in \Aspace$  of
+		%	 
+		\begin{align*}
+			%	
+			R_T^{\OGD}(\tilde a)  
+%			
+			&\leq \frac{1}{2\eta}  \norm{\tilde a}^2 +   \eta  \sum\nolimits_{t=1}^T \norm{\tilde z_t^\OGD}^2 \\
+%			
+			&= \frac{1}{2\eta}  \norm{\tilde a}^2 +   \eta  \sum\nolimits_{t=1}^T \norm{ \nabla_a \l(a_t^\OGD,z_t) }^2.
+			%		
+		\end{align*}	
+		%
+		 {\visible<2->{ \item Note that the step size $\eta>0$ of OGD has the same role as the regularization magnitude of FTRL: It should balance the trade-off between the bias- and the variance-term. }}
+		%
+	\end{itemize}
+\end{frame}
+
+
+\begin{frame} 
+	\frametitle{Online Gradient Descent:  Regret}
+	\small
+	\begin{itemize}
+		%	
+		%	
+		%
+		\item As a consequence, we can also derive a similar order of the regret for the OGD algorithm on OCO problems as for the FTRL on OLO problems by imposing a slightly different assumption on the (new) ``variance'' term $\sum\nolimits_{t=1}^T \norm{ \nabla_a \l(a_t^\OGD,z_t) }^2.$
+		%	
+		{\visible<2->{\item  \textbf{Corollary:}
+		%	
+		Suppose we use the OGD algorithm on an online convex optimization problem with a convex action space  $\Aspace \subset \mathbb{R}^d$ such that 
+%		
+		\begin{itemize}\small
+%			
+			\item $\sup_{\tilde a \in \Aspace}\norm{\tilde a} \leq B$ for some finite constant $B>0$
+%			
+			\item $\sup_{a\in \Aspace, z \in \Zspace}\norm{ \nabla_a \l(a,z) } \leq V$ for some finite constant $V>0.$
+%			
+		\end{itemize}
+		%	
+		Then, by choosing the step size $\eta$ for OGD as $\eta = \frac{B}{V\sqrt{2\, T}}$ we get
+		%	
+		$$	R_T^\OGD \leq   BV\sqrt{2\, T}.		$$ }}
+		%	
+		%	
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+%	
+	\frametitle{Regret lower bounds for OCO}
+	%     
+	\small
+	%	
+	\begin{itemize}
+		%    		
+		\item   \textbf{Theorem.} For any online learning algorithm there exists an online convex optimization problem characterized by a convex loss function $\l,$ a  bounded (convex) action space  $\Aspace= [-B,B]^d $ and bounded gradients $\sup_{a\in \Aspace, z \in \Zspace}\norm{ \nabla_a \l(a,z) } \leq V$  for some finite constants $B,V>0,$	such that the algorithm incurs a regret of $\Omega(\sqrt{T})$ in the worst case.
+		%		
+		{\visible<2->{\item Recall that  under (almost) the same assumptions as the theorem above, we have $R_T^\OGD \leq   BV\sqrt{2\, T}.$ }}
+		%    		
+		{\visible<3->{	\item [$\leadsto$] This result shows that the Online Gradient Descent 
+		%		and the Exponentiated Gradient Descent algorithm are 
+		is \emph{optimal} regarding its order of its regret with respect to the time horizon $T.$  }}
+%		
+	\end{itemize}
+	%    
+\end{frame}
+
+
+
+
+\section{Outlook}
+
+\begin{frame} {Online Machine Learning: Outlook}
+%	
+	Online machine learning is a very large field of research.	
+	%    
+	\begin{figure}
+		\centering
+		\includegraphics[width=0.99\linewidth]{figure/online_learning_overview}
+		\caption{Hoi et al. (2018), ''Online Learning: A Comprehensive Survey''.}
+	\end{figure}
+\end{frame}
+
+%
+\endlecture
+\end{document}

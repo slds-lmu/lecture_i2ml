@@ -1,0 +1,355 @@
+
+\newcommand{\ba}{\mathbf{a}}
+
+%
+	%
+	Consider the multivariate regression setting on $\Xspace \subset \R^p$ without target features, i.e., $\Yspace=\R$ and $\mathcal{T} = \{1,\ldots,m\}.$	
+%	
+	Furthermore, consider the approach of learning a (simple) linear model $f_j(\xv) = \ba_j^\top \xv$ for each target $j$ independently.
+%	
+	For this purpose, we would face the following optimization problem:
+%	
+	\begin{equation*}	\label{eq:multiridge}
+%		
+		\min_A \|Y - \Xmat A \|^2_F,
+%		
+	\end{equation*}
+%
+	where  $ \| B \|^2_F  = \sqrt{ \sum_{i=1}^n \sum_{j=1}^m B_{i,j}^2 } $ is the Frobenius norm for a matrix $B \in \R^{n \times m}$ and 
+	%		
+	\begin{equation*}
+		\label{eq:notation}
+		\Xmat = \begin{bmatrix} (\xv^{(1)} )^\top \\ \vdots \\ (\xv^{(n)})^\top \end{bmatrix}, \qquad A = [\ba_1 \quad \cdots \quad \ba_m] \,, \qquad Y = \begin{bmatrix} \yv^{(1)}\\ \vdots \\ \yv^{(n)} \end{bmatrix}.
+	\end{equation*}
+	
+	\begin{enumerate}
+%	
+	\item Show that $\hat A = (\Xmat^\top \Xmat)^{-1} \Xmat^\top Y$ is the optimal solution in this case (provided that $\Xmat^\top \Xmat$ is invertible).
+	
+	\textbf{Solution:}
+	
+	Note that for a matrix $B = (\bm{b}_1 \ldots \bm{b}_m) \in \R^{n\times m},$ it holds that
+%	
+	\begin{align*} 
+%		\label{frobenius}
+%		
+		\| B \|^2_F  
+%		 
+	 	=  \sum_{i=1}^n \sum_{j=1}^m B_{i,j}^2 
+%		 
+		=  \sum_{j=1}^m \sum_{i=1}^n B_{i,j}^2 
+%		
+		&=  \sum_{j=1}^m \bm{b}_j^\top \bm{b}_j. 
+%		
+	\end{align*}
+%
+	Thus, the function $f(A)=\|Y - \Xmat A \|^2_F$ we want to minimize can be written as
+%	
+	\begin{align*}
+%		
+		\|Y - \Xmat A \|^2_F 
+%		
+		&= \sum_{j=1}^m (\bm{y}_j -\Xmat \bm{a}_j)^\top(\bm{y}_j -\Xmat \bm{a}_j) \\
+%		
+		&= \sum_{j=1}^m \bm{y}_j^\top\bm{y}_j - 2 \bm{y}_j^\top \Xmat \bm{a}_j + \bm{a}_j^\top \Xmat^\top  \Xmat \bm{a}_j,
+%		
+	\end{align*}
+%
+	where $\bm{y}_j$ is the $j$-th column of $Y.$
+%	
+	Therefore, we can write $f(A) = \sum_{j=1}^m f_j(\ba_j),$ where 
+%	
+	$$	f_j(\ba) = 	\bm{y}_j^\top\bm{y}_j - 2 \bm{y}_j^\top \Xmat \bm{a} + \bm{a}^\top \Xmat^\top  \Xmat \bm{a}	$$
+%	
+	and we can minimize each $f_j$ separately (w.r.t.\ to $\ba_j$).
+%	
+	We compute the gradient of $f_j$ and set it to $\bm{0}$ and solve w.r.t.\ $\ba:$
+%	
+	\begin{align*}
+%		
+		\nabla f_j(\ba) 
+%		
+		&= - 2 \bm{y}_j^\top \Xmat  + 2 \Xmat^\top  \Xmat \bm{a} \stackrel{!}{=} \bm{0} \\
+%		
+		&\Leftrightarrow \ba = (\Xmat^\top \Xmat)^{-1} \Xmat^\top \bm{y}_j.
+%		
+	\end{align*}
+%
+	We check that this is indeed a minimum, by checking that the Hessian matrix is positive semi-definite:
+%	
+	The Hessian matrix is
+%
+		\begin{align*}
+		%		
+		\nabla \nabla^\top f_j(\ba) 
+		%		
+		&=   2 \Xmat^\top  \Xmat.
+		%		 
+		%		
+	\end{align*}
+%
+	It is positive semi-definite, since for any $\bm{z}\in \R^p$ it holds that
+%	
+	\begin{align*}
+%		
+		\bm{z}^\top (2 \Xmat^\top  \Xmat) \bm{z} 
+%		
+		= 2 \bm{z}^\top  \Xmat^\top  \Xmat  \bm{z} 
+%		
+		= 	2   (\Xmat  \bm{z})^\top \Xmat  \bm{z} 
+%		
+		= 2 \| \Xmat  \bm{z} \|_2^2 \geq 0.
+%		
+	\end{align*}
+%
+	Consequently, the minimizer of $f_j$ is $\hat{\ba}_j= (\Xmat^\top \Xmat)^{-1} \Xmat^\top \bm{y}_j,$ so that the minimizer of $f$ is 
+%	
+	$$	\hat{A} = (\hat{\ba}_1 ~ \ldots ~ \hat{\ba}_m) = \left(	(\Xmat^\top \Xmat)^{-1} \Xmat^\top \bm{y}_1 ~ \ldots ~ (\Xmat^\top \Xmat)^{-1} \Xmat^\top \bm{y}_m		\right) = (\Xmat^\top \Xmat)^{-1} \Xmat^\top Y.	$$
+%	
+	In particular, the gradient of $f$ w.r.t.\ matrix $A=(\ba_1 ~ \ldots ~ \ba_m)$ is 
+%	
+	\begin{align*}
+%		
+		\nabla f(A) 
+%		
+		&= ( \nabla f_1(\ba_1) ~ \ldots ~ \nabla f_m(\ba_m) )  \\
+%		
+		&= \left( - 2 \bm{y}_1^\top \Xmat  + 2 \Xmat^\top  \Xmat \bm{a}_1 \quad \ldots \quad - 2 \bm{y}_m^\top \Xmat  + 2 \Xmat^\top  \Xmat \bm{a}_m\right) \\
+%		
+		&= -2Y^\top \Xmat  + 2 \Xmat^\top  \Xmat A.
+%		
+	\end{align*}
+%
+	Hence, a gradient descent routine with (fixed) step size $\alpha$ for $f$ would iterate as follows:
+%	
+	\begin{align*}
+%		
+		\hat A \leftarrow \hat A - 2 \alpha \left( -Y^\top \Xmat  +  \Xmat^\top  \Xmat \hat A \right).
+%		
+	\end{align*}
+%
+	\item Assume that the data $(\xi,\yv^{(i)}) \in \Xspace \times \Yspace^m$ is generated\footnote{Of course, in an iid fashion and the $\xv$'s are independent of the $\bm{\eps}$'s.} according to the following statistical model
+%	
+	$$	(y_1,\ldots,y_m) =	\yv = (\xi)^\top A^* + \bm{\eps}^\top,		$$
+%	
+	where $A^* \in \R^{p\times m}$ and $\bm{\eps} \sim \normal(\bm{0},\bm{\Sigma}).$
+%
+	Show that the maximum likelihood estimate for $A^*$ coincides with the estimate in (a). 
+	
+	\textbf{Solution:}
+%	
+	
+	Under the statistical model it holds that $\yv^{(i)}~|~\xi \sim \normal\left(	(\xi)^\top A^*, \bm{\Sigma}	\right),$ i.e.\footnote{Note that $\yv^{(i)} - (\xi)^\top A^* $ is a row vector.},
+%	
+	\begin{align}\label{def_distr}
+%		
+		p(\yv^{(i)}~|~\xi,A^*) 
+%		
+		&= (2\pi)^{-m/2} |\bm{\Sigma}|^{-1/2} \, \exp\left[	-\frac12 (\yv^{(i)} - (\xi)^\top A^* )	\bm{\Sigma}^{-1} (\yv^{(i)} - (\xi)^\top A^* )^\top	\right] \notag \\
+%		
+		&\propto \exp\left[	-\frac12 \left(\yv^{(i)} - (\xi)^\top A^* \right)	\bm{\Sigma}^{-1} \left(\yv^{(i)} - (\xi)^\top A^* \right)^\top	\right] .
+%		
+	\end{align}
+%
+	So the log-likelihood for $A$ is
+%	
+	\begin{align*}
+%		
+		l(A~|~\D) 
+%		
+		&= \log\left(	\prod_{i=1}^n 		p(\yv^{(i)}~|~\xi,A)	\right) \\
+%		
+		&\propto \log\left(	 	\exp\left[	-\frac12 \sum_{i=1}^n \left(\yv^{(i)} - (\xi)^\top A \right)	\bm{\Sigma}^{-1} \left(\yv^{(i)} - (\xi)^\top A \right)^\top	\right]	\right) \\
+%		
+		&= 	-\sum_{i=1}^n  \left(\yv^{(i)} - (\xi)^\top A \right)	\bm{\Sigma}^{-1} \left(\yv^{(i)} - (\xi)^\top A \right)^\top.		 
+%		
+	\end{align*}
+%	
+	So, we want to maximize the function 
+%	
+	\begin{align*}
+%		
+		g(A) 
+%		
+		&= 	-\sum_{i=1}^n  \left(\yv^{(i)} - (\xi)^\top A \right)	\bm{\Sigma}^{-1} \left(\yv^{(i)} - (\xi)^\top A \right)^\top \\
+%		
+		&= 	-\sum_{i=1}^n  \yv^{(i)} \bm{\Sigma}^{-1} (\yv^{(i)})^\top  
+		- 2 (\xi)^\top A \bm{\Sigma}^{-1} (\yv^{(i)})^\top 
+		+ (\xi)^\top A	\bm{\Sigma}^{-1}  A^\top \xi.	
+%		
+	\end{align*}
+%	
+	We compute the gradient of $g$ and set it to $\bm{0}_{p\times m}$ and solve w.r.t.\ $A:$
+	%	
+	\begin{align*}
+		%		
+		\nabla g(A) 
+		%		
+		&= 	\sum_{i=1}^n   2 \xi \yv^{(i)}   \bm{\Sigma}^{-1}
+		- 2   \xi	(\xi)^\top  A \bm{\Sigma}^{-1}   \stackrel{!}{=} \bm{0}_{p\times m} \\
+		%		
+		&\Leftrightarrow 	\Xmat^\top Y  \bm{\Sigma}^{-1}
+		-   \Xmat^\top \Xmat  A \bm{\Sigma}^{-1}   \stackrel{!}{=} \bm{0}_{p\times m} \\
+		&\Leftrightarrow A = (\Xmat^\top \Xmat)^{-1} \Xmat^\top Y,
+		%		
+	\end{align*}
+%
+	where we used for computing the gradient that 
+%	
+	\begin{align*}
+%		
+		&\frac{\partial \bm{z}^\top \bm{B} \tilde{\bm{z}} }{\partial  \bm{B} } = \bm{z} \tilde{\bm{z}}^\top, \qquad \forall \bm{z}\in\R^n,\tilde{\bm{z}}\in \R^{m}, \bm{B}\in\R^{n \times m}, \\
+%		
+		&\frac{\partial \bm{z}^\top \bm{B} \bm{C} \bm{B}^\top \tilde{\bm{z}} }{\partial  \bm{B} } 
+%		
+		= 2 \bm{z} \tilde{\bm{z}}^\top \bm{B} \bm{C}^\top  , \qquad \forall \bm{z}\in\R^n,\tilde{\bm{z}}\in \R^{m}, \bm{B}\in\R^{n \times m}, \bm{C} \in \R^{n \times n}.
+%		
+	\end{align*}
+%
+	Moreover, any matrix product $\Xmat^\top Y$ can be written as the sum of outer products of the column and row vectors: $ \sum_{i=1}^n    \xi \yv^{(i)}.$
+	
+%
+	Thus, the MLE coincides with the OLS in (a).		
+	\item Write a function implementing a gradient descent routine for the optimization of this linear model.
+	%
+	 \item Run a small simulation study by creating 20 data sets as indicated below and test different step sizes $\alpha$ (fixed across iterations) against each other and against the state-of-the-art routine for linear models (in R, using the function \texttt{lm}, in Python, e.g., \texttt{sklearn.linear\_model.LinearRegression}).
+ %
+  \begin{itemize}
+%  	
+    \item Compare the difference in the estimated parameter matrices $\hat A$ using the mean squared error, i.e., 
+    %
+    $$ \frac{1}{m\cdot p} \sum_{i=1}^p \sum_{j=1}^m (\ba^{*}_{i,j}-\hat{\ba}_{i,j})^2$$ 
+    %
+    and summarize the difference over all 100 simulation repetitions.
+%    
+    \item Compare the estimation also with the James-Stein estimate of $A^*$, which is given by 
+%    
+	$$  A^{JS} = \left(  \ba_1^{JS} \ldots \ba_m^{JS}  \right),$$
+%	
+	where $$  \ba_j^{JS} = \left (1 - \frac{(m-2)\sigma^2}{n\|\hat{\ba}_j - \ba_j^* \|^2_2} \right )  (\hat{\ba}_j - \ba_j^*) + \ba_j^*, \quad j=1,\ldots,m.$$
+%	
+	and $\hat{\ba}_j$ is the MLE for the $j$th target parameter.
+%    
+    \end{itemize}
+%	
+<<eval=TRUE, fig.height=4, warning=FALSE, message=FALSE>>=
+#' @param step_size the step_size in each iteration
+#' @param X the feature input matrix X
+#' @param Y the score matrix Y
+#' @param A the parameter matrix
+#' @param eps a small constant measuring the changes in each update step. 
+#' Stop the algorithm if the estimated model parameters do not change
+#' more than \code{eps}.
+
+#' @return a set of optimal parameter matrix A
+gradient_descent <- function(step_size, X, Y, A = matrix(rep(0,ncol(X)*m),ncol=m), 
+                             eps = 1e-8){
+  
+  change <- 1 # something larger eps
+  
+  XtX <- crossprod(X)
+  XtY <- crossprod(X,Y)
+
+  while(sum(abs(change)) > eps){
+    
+    # Use standard gradient descent:
+    change <- + step_size * (XtY - XtX%*%A) 
+    
+    # update A in the end
+    A <- A + change
+    
+    
+  }
+
+  return(A)
+  
+}
+
+# make it all reproducible
+set.seed(123)
+
+# settings
+n <- 10000
+p <- 100
+m <- 6
+nr_sims <- 20
+
+# define mse
+mse <- function(x,y) mean((x-y)^2)
+
+# create data (only once)
+X <- matrix(rnorm(n*p), ncol=p)
+A_truth <- matrix(runif(p*m, -2, 2),ncol=m)
+f_truth <- X%*%A_truth 
+
+# create result object
+result_list <- vector("list", nr_sims)
+
+
+
+js_estimate <- function(A,A_truth){
+A_JS = A
+
+	for(i in 1:ncol(A)){
+		A_JS[,i]= (1-4*(m-2)/(n*sum((A[,i]-A_truth[,i])^2)))*
+		  (A[,i]-A_truth[,i])+A_truth[,i]
+	}
+A_JS
+}
+
+for(sim_nr in seq_len(nr_sims))
+{
+  
+  # create response
+  Y <- f_truth + rnorm(n*m, sd = 2)
+  
+  time_lm <- system.time(
+    coef_lm <- coef(lm(Y~-1+X))
+  )["elapsed"]
+
+  time_js <- system.time(
+    coef_js <- js_estimate(coef_lm,A_truth)
+  )["elapsed"]
+  time_js = time_js + time_lm
+  
+  time_gd_1 <- system.time(
+    coef_gd_1 <- gradient_descent(step_size = 0.0001, X = X, Y = Y)
+  )["elapsed"]
+  
+  time_gd_2 <- system.time(
+    coef_gd_2 <- gradient_descent(step_size = 0.00005, X = X, Y = Y)
+  )["elapsed"]
+  
+  
+  mse_lm <- mse(coef_lm, A_truth)
+  mse_js <- mse(coef_js, A_truth)
+  mse_gd_1 <- mse(coef_gd_1, A_truth)
+  mse_gd_2 <- mse(coef_gd_2, A_truth)
+  
+  # save results in list (performance, time)
+  result_list[[sim_nr]] <- data.frame(mse_lm = mse_lm,
+						  mse_js = mse_js,
+                                      mse_gd_1 = mse_gd_1,
+                                      mse_gd_2 = mse_gd_2,
+                                      time_lm = time_lm,
+                                      time_js = time_js,
+                                      time_gd_1 = time_gd_1,
+                                      time_gd_2 = time_gd_2)
+  
+}
+
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+do.call("rbind", result_list) %>% 
+  gather() %>% 
+  mutate(what = ifelse(grepl("mse", key), "MSE", "Time"),
+         algorithm = gsub("(mse|time)\\_(.*)","\\2", key)) %>% 
+  ggplot(aes(x = algorithm, y = value)) +
+  geom_boxplot() + theme_bw() + 
+  facet_wrap(~ what, scales = "free")
+@
+%
+
+\end{enumerate}

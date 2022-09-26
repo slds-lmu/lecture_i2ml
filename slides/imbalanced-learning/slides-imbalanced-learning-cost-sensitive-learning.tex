@@ -1,0 +1,487 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+%\usepackage{algorithm}
+%\usepackage{algorithmic}
+
+\newcommand{\sens}{\mathbf{A}} % vector x (bold)
+\newcommand{\ba}{\mathbf{a}}
+\newcommand{\batilde}{\tilde{\mathbf{a}}}
+\newcommand{\Px}{\mathbb{P}_{x}} % P_x
+\newcommand{\Pxj}{\mathbb{P}_{x_j}} % P_{x_j}
+\newcommand{\indep}{\perp \!\!\! \perp} % independence symbol
+% ml - ROC
+\newcommand{\np}{n_{+}} % no. of positive instances
+\newcommand{\nn}{n_{-}} % no. of negative instances
+\newcommand{\rn}{\pi_{-}} % proportion negative instances
+\newcommand{\rp}{\pi_{+}} % proportion negative instances
+% true/false pos/neg:
+\newcommand{\tp}{\# \text{TP}} % true pos
+\newcommand{\fap}{\# \text{FP}} % false pos (fp taken for partial derivs)
+\newcommand{\tn}{\# \text{TN}} % true neg
+\newcommand{\fan}{\# \text{FN}} % false neg
+
+\usepackage{multicol}
+
+\newcommand{\titlefigure}{figure/cost_matrix}
+\newcommand{\learninggoals}{
+  \item Learn the modelling approach via the cost matrix in cost-sensitive learning settings
+  \item Understand the connection between cost-sensitive and imbalanced learning
+  \item Get to know MetaCost as a general approach to make classifiers cost-sensitve
+}
+
+\title{Advanced Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Imbalanced Learning via Cost-Sensitive Learning}
+\lecture{Advanced Machine Learning}
+
+
+
+\sloppy
+
+
+\begin{vbframe}{Cost-Sensitive learning: In a Nutshell}
+	%	
+	\scriptsize{
+		%
+		%
+		\begin{itemize}
+%			
+		\item Cost-sensitive learning is a learning paradigm, where different (mis-)classification costs are taken into consideration and the learner seeks to minimize the total costs in expectation.
+%
+		\item Thus, the major difference to the ``classical'' cost-insensitive learning setting is that cost-sensitive learning deals differently with misclassifications. Most of the algorithms of the latter kind assume that the data sets are balanced, and all errors have the same cost.
+		
+%
+		\item This is motivated by a plethora of real-world applications, where different costs between misclassifications are present:
+%		
+		\begin{itemize}
+			\scriptsize
+%			
+			\item Medicine --- Misdiagnosing a cancer patient as healthy vs.\ misdiagnosing a healthy patient as having cancer (and then check again).
+			%					
+			\item Tracking criminals ---  Classify an innocent person as a terrorist vs.\ overlooking a terrorist.
+			%			
+			\item (Extreme) Weather prediction ---  Incorrectly predicting that no hurricane occurs vs.\ predicting a strong wind as a hurricane.
+%			
+			\item Credit granting --- Lending to a risky client vs. not lending to a trustworthy client.
+			%			
+			\item $\ldots$
+%    	
+%			
+		\end{itemize}
+%	
+		\item In all these examples the costs of a false negative is much higher than the costs of a false positive.
+%
+		\end{itemize}
+		
+	%
+	}
+\end{vbframe}
+
+
+\begin{vbframe}{Cost matrix}
+%	
+\scriptsize{
+%	
+	\begin{itemize}
+%		
+		\item In cost-sensitive learning we are provided with a cost matrix $\mathbf{C}$ of the form
+%		
+	\end{itemize}
+	%	
+	\begin{center}
+		\tiny
+		\begin{tabular}{cc|>{\centering\arraybackslash}p{8em}>{\centering\arraybackslash}p{8em}>{\centering\arraybackslash}p{5em}>{\centering\arraybackslash}p{8em}}
+			& & \multicolumn{4}{c}{\bfseries True Class $y$} \\
+			&  & $1$ & $2$ & $\ldots$ & $g$  \\
+			\hline
+			\bfseries Classification     & $1$ & $C(1,1)$  &  $C(1,2)$  & $\ldots$ &  $C(1,g)$ \\
+			& & (True 1's) & (False 1's for 2's) & $\ldots$ &  (False 1's for $g$'s)  \\
+			& $2$ &  $C(2,1)$  &  $C(2,2)$  & $\ldots$ & $C(2,g)$  \\
+			$\yh$ & & (False 2's for 1's) & (True 2's) & $\ldots$ &  (False 2's for $g$'s)  \\
+			& $\vdots$ & $\vdots$ & $\vdots$ & $\ldots$ & $\vdots$ \\
+			& $g$ & $C(g,1)$ & $C(g,2)$  & $\ldots$ &  $C(g,g)$\\
+			& & (False $g$'s for 1's) & (False $g$'s for 2's) & $\ldots$ &  (True $g$'s)  \\
+		\end{tabular}
+	\end{center}
+	%	
+	\begin{itemize}
+		%		
+		\item 	Here, $C(i,j)$ is the cost of classifying $j$ as $i,$ which in the cost-insensitive learning case is simply $C(i,j) = \mathds{1}_{[ i \neq j ]},$ i.e., each misclassification has the same cost of 1.
+		%		
+		
+		\item Sometimes the cost matrix is provided by the application at hand, e.g.\ in the credit granting example, or provided by a domain expert. In many cases, however, the cost matrix needs to be estimated. This is usually done by using a heuristic or by learning a proper cost matrix from the training data.
+%		
+		\item The cost matrix is essential for the learning process, as
+%		
+		\begin{enumerate}
+%			
+			\scriptsize
+%			
+		\item too low costs might not change the decision boundaries significantly leading to (still) costly predictions,
+%		
+		\item too high costs might harm the generalization capability of the classifier on costly classes.
+%			
+		\end{enumerate}
+
+%		
+%		
+	\end{itemize}
+
+}
+\end{vbframe}
+
+
+\begin{vbframe}{Cost matrix for Imbalanced Learning}
+	%	
+	\footnotesize{
+		%	
+		\begin{itemize}
+			%		
+%			
+			\item For imbalanced data sets biases towards majority classes can be enlarged or even too strong biases towards the minority can be created if the cost matrix is set inappropriately.
+%			 
+			\item A common heuristic for imbalanced data sets is to use 
+%			
+			\begin{itemize}
+%				
+				\footnotesize \item the imbalance ratio between majority and minority classes for misclassifying a minority class $j$ as a majority class $i$, i.e., $C(i,j) = \frac{n_i}{n_j}$ for classes $i$ and $j$ such that $n_j  \ll n_i,$  
+%				
+				\item and costs of 1 for misclassifying a majority class $j$ as a minority class $i$, i.e., $C(i,j) = 1$ for classes $i$ and $j$ such that $n_i \ll n_j.$ 
+%				
+				\item Usually, the costs of a correct classification is set to 0, which is justified also from a theoretical point of view as we will see later.
+%				
+			\end{itemize}
+%
+		\begin{minipage}{0.45\textwidth}    
+					\item In an imbalanced binary classification problem we obtain the following cost matrix using this heuristic:
+		\end{minipage}
+%		
+		\begin{minipage}{0.35\textwidth}    
+						\hfill		
+				\begin{tabular}{cc|cc}
+					& &\multicolumn{2}{c}{True class} \\
+					& & $y=1$ & $y=-1$  \\
+					\hline
+					\multirow{2}{*}{\parbox{0.3cm}{Pred.  class}}& $\hat y$ = 1     & $0$                & $ 1 $\\
+					& $\hat y$ = -1 & $ \frac{n_-}{n_+} $              &  $0$   \\
+				\end{tabular}
+		\end{minipage}
+			%		
+	\item Thus, this heuristic is consistent with the general real case that the cost of false negatives is much higher than the cost of false positives.	
+%	
+%	\item Although this is a simple heuristic which provides a cost matrix very quickly, it has a couple of drawbacks.
+%	
+	\end{itemize}
+		
+	}
+\end{vbframe}
+
+
+\begin{vbframe}{Minimum expected Cost Principle}
+	%	
+	\footnotesize{
+		%	
+
+		\begin{itemize}\footnotesize
+			%		
+			\item Suppose we are provided with a cost matrix $\mathbf{C}$ and also we have knowledge of the true posterior distribution $p(\cdot ~|~ \xv).$ The most natural way to classify a given feature $\xv$ is then by following the \emph{minimum expected cost principle}.
+%			
+			\item Minimum expected cost principle: Use the class for prediction with the smallest expected costs, where the expected costs of a class $i\in\{1,\ldots,g\}$ is
+%			
+			$$ 	\E_{J \sim p(\cdot ~|~ \xv)}( C(i,J) ) = \sum_{j=1}^g 	p(j ~|~ \xv) C(i,j).	$$
+			%
+			\item Thus, if we have a classifier $f$ which uses a probabilistic score function $\pi:\Xspace \to [0,1]^g$ with $\pi(\xv) = (\pi(\xv)_1,\ldots,\pi(\xv)_g)^\top$ and $\sum_{j=1}^g \pi(\xv)_j = 1$ for the classification, then one can easily modify $f$ to take the expected costs into account:
+%			
+			$$  \tilde f (\xv) = \argmin_{i=1,\ldots,g} \sum_{j=1}^g 	\pi(\xv)_j C(i,j). $$
+%					
+		\end{itemize}
+	}
+\end{vbframe}
+
+
+\begin{vbframe}{Minimum expected Cost Principle: Binary Case}
+	%	
+	\footnotesize{
+		%		
+		\begin{itemize}\footnotesize
+			%		
+			\item In the binary classification setting (i.e., $\Yspace = \{-1,1\}$) the minimum expected costs principle translates to predict the positive class if 
+%			
+			\begin{align*}
+%				
+					&\E_{J \sim p(\cdot ~|~ \xv)}( C(1,J) )  \leq \E_{J \sim p(\cdot ~|~ \xv)}( C(-1,J) ) \\
+%
+				 	&\Leftrightarrow p(-1 ~|~ \xv ) C(1,-1)  + 	p(1 ~|~ \xv ) C(1,1) \\ &
+				 	\qquad \leq  p(-1 ~|~ \xv ) C(-1,-1)  + 	p(1 ~|~ \xv ) C(-1,1)  \\
+%				 	
+					&\Leftrightarrow p(-1 ~|~ \xv ) \left( C(1,-1) - C(-1,-1) \right)  \leq  	p(1 ~|~ \xv ) \left( C(-1,1) -C(1,1)\right)  
+%				
+			\end{align*}
+			%			
+			\item Note that the decision for predicting the positive class does not change if we use instead of $\mathbf{C}$ the simpler cost matrix $\mathbf{C}_{simple}$, where 
+			\begin{itemize}
+				\footnotesize
+				 \item $C_{simple}(-1,-1)=C_{simple}(1,1) = 0$ 
+				 \item  $C_{simple}(1,-1) =  C(1,-1) - C(-1,-1) $ 
+				 \item $C_{simple}(-1,1) = C(-1,1) -C(1,1).$
+			\end{itemize} 
+%		
+		\item Thus, one can assume without loss of generality that the cost matrix $\mathbf{C}$
+		\lz
+		
+%		\centerline{Cost matrix }
+		\begin{tabular}{cc|cc}
+			& &\multicolumn{2}{c}{True class} \\
+			& & $y=1$ & $y=-1$  \\
+			\hline
+			\multirow{2}{*}{\parbox{0.3cm}{Pred.  class}}& $\hat y$ = 1     & $C(1,1)$                & $C(1,-1)$\\
+			& $\hat y$ = -1 & $C(-1,1)$              &  $C(-1,-1)$   \\
+		\end{tabular}
+%		
+
+		\lz
+		is of a simpler form  $\mathbf{C}_{simple}$:
+		\lz
+		\lz
+		
+%		
+%		\centerline{Simple Cost matrix $\mathbf{C}_{simple}$}
+		\begin{tabular}{cc|cc}
+			& &\multicolumn{2}{c}{True class} \\
+			& & $y=1$ & $y=-1$  \\
+			\hline
+			\multirow{2}{*}{\parbox{0.3cm}{Pred.  class}}& $\hat y$ = 1     & 0                 & $C(1,-1) - C(-1,-1) $\\
+			& $\hat y$ = -1 & $C(-1,1) -C(1,1)$              & 0\\
+		\end{tabular}
+
+		\lz
+		\item An analogous result can be shown for the multiclass setting.
+		
+		
+		\item With this simpler cost matrix (relabeling $\mathbf{C}$ by $\mathbf{C}_{simple}$), the decision to predict the positive class boils down to 
+%		
+		\begin{align*}
+%			 	
+			& p(-1 ~|~ \xv ) C(1,-1)   \leq  	p(1 ~|~ \xv ) C(-1,1)  \\
+%			
+			&\Leftrightarrow (1- p(1 ~|~ \xv ) ) C(1,-1)   \leq  	p(1 ~|~ \xv ) C(-1,1) \\
+%			
+			&\Leftrightarrow \underbrace{\frac{C(1,-1)}{C(1,-1) + C(-1,1) } }_{=:c^*}  \leq  	p(1 ~|~ \xv ) \\
+			%				
+		\end{align*}
+%	
+		\item This yields the optimal threshold value $c^*$ for probabilistic score classifiers, so that any probabilistic classifier $f$ using a probabilistic score $\pi:\Xspace \to [0,1]$ can be modified to
+%		
+		$$   \tilde f(\xv) = 2 \cdot \mathds{1}_{[ \pi(\xv) \geq c^*]} -1. $$
+							
+		\end{itemize}
+	}
+\end{vbframe}
+
+%%	\begin{itemize}
+	%		
+	%		
+	%		%\begin{center}
+	%		\centerline{Confusion matrix}
+	%		\begin{tabular}{cc|cc}
+		%			& &\multicolumn{2}{c}{True class} \\
+		%			& & $y=1$ & $y=-1$  \\
+		%			\hline
+		%			\multirow{2}{*}{\parbox{0.3cm}{Pred.  class}}& $\hat y$ = 1     & TP                 & FP\\
+		%			& $\hat y$ = -1 & FN              & TN\\
+		%			%& & P(y = 1) & P(y = 0)
+		%		\end{tabular}
+	%		
+	%		\lz
+	%		
+	%		\centerline{Cost matrix }
+	%		\begin{tabular}{cc|cc}
+		%			& &\multicolumn{2}{c}{True class} \\
+		%			& & $y=1$ & $y=-1$  \\
+		%			\hline
+		%			\multirow{2}{*}{\parbox{0.3cm}{Pred.  class}}& $\hat y$ = 1     & $C(1,1)$                & $C(1,-1)$\\
+		%			& $\hat y$ = -1 & $C(-1,1)$              &  $C(-1,-1)$   \\
+		%		\end{tabular}
+	%		%\end{center}
+	%		
+	
+	
+	%	\end{itemize}
+
+
+
+\begin{vbframe}{MetaCost: Overview}
+%	
+	\small{
+	\begin{itemize}
+%		
+		\item Substantial work has gone into making individual algorithms cost-sensitive. A better solution would be to have a procedure that can convert a broad variety of cost-insensitive classifiers into cost-sensitive ones.
+%		
+		\item MetaCost is a wrapper method which can be used for \emph{any} type of classifier to obtain a cost-sensitive classifier. It treats the underlying classifier as a black-box in the sense that neither knowledge about its mechanism is required nor changes to its mechanism is needed.
+%		
+		\item MetaCost needs only a cost-matrix $\mathbf{C}$ for the underlying learning setting, which is used to adapt the decision boundaries towards predictions with low expected costs. \\
+		{\scriptsize (Some tuning parameters are also needed.)}
+%		
+		\item Roughly speaking, the procedure of MetaCost is: relabel the training examples with their ``optimal'' classes, i.e., the ones with low expected costs, and apply the classifier on the relabeled data set.
+		
+%		
+	\end{itemize}
+%
+	}
+%	
+\end{vbframe}
+
+
+\begin{vbframe}{MetaCost: Algorithm}
+	
+	\scriptsize{
+%		
+ 	The procedure of MetaCost is divided into three phases:
+			%			
+		\begin{minipage}{0.53\textwidth} 
+%				
+				\begin{enumerate}
+%					
+					\scriptsize
+					\item Bagging --- The underlying classifier is used (trained) $L$ times on different bootstrapped samples of the training data, respectively.
+%					
+					\item Relabeling --- These $L$ trained classifiers are used to relabel the original training data set by taking the cost-matrix into account.
+%					
+					\item Cost-sensitivity ---  The classifier is trained on the relabeled data set resulting in a cost-sensitive classifier.
+%					
+				\end{enumerate}
+%
+	\scriptsize
+	\lz 
+			Predictions of the classifier $f$ are converted (if necessary) into probabilistic prediction:
+			\begin{center}
+				\tiny
+							ProbPrediction$(j,f,\xv) = \begin{cases}
+					(f(\xv))_j & \mbox{$f$ is a prob.\ classifier,} \\
+					\mbox{One-hot$(f(\xv))$}& \mbox{else,}
+				\end{cases}$
+			\end{center}
+%		
+		\scriptsize
+		where One-hot$(f(\xv))$ uses a one-hot-encoding of the prediction to make it a probability, i.e., one for the predicted class and 0 else. 
+				%		
+		\end{minipage}
+		\begin{minipage}{0.45\textwidth} 
+			\begin{algorithmic}
+				
+				\tiny
+%				
+				\State \textbf{MetaCost}  
+				\State \textbf{Input:} 
+				$\D = \{(\xi,\yi)\}_{i=1}^n$ training data, \\
+				$L \in \N$ number of bagging iterations, \\
+				$B \in \N$ bootstrap size, \\
+				$f$ (black-box) classifier, 
+				$\mathbf{C}$ cost matrix, 
+%				$g = |\Yspace|$ number of classes
+				\State \# 1st phase:
+				\For{$l=1,\ldots,L$}
+					\State $\D_l  \leftarrow $ BootstrapSample ($\D,B$)
+					\State $f_l  \leftarrow $ train $f$ on $\D_l$
+				\EndFor
+				\State \# 2nd phase:
+				\For{$i=1,\ldots,n$}
+					\If{$\xi \in \D_l$ for all $l=1,\ldots,L$}
+						\State $\tilde L \leftarrow \{1,\ldots,L\}$
+					\Else
+						\State $\tilde L \leftarrow \bigcup_{l: \xi \notin \D_l} \{l\}$
+					\EndIf
+					\For{$j=1,\ldots,g$} (relabel for binary case)
+						\State $p_j(\xi)  \leftarrow \frac{1}{|\tilde L| } \sum_{l \in \tilde L}   p_j(\xi~|~ f_l) $
+						\State $p_j(\xi~|~ f_l) = $ ProbPrediction$(j,f_l,\xi)$
+						\State $\tilde y^{(i)} \leftarrow \argmin_{i^*} \sum_{j=1}^g p_j(\xi) C(i^*,j) $
+					\EndFor
+					\State $\tilde D \leftarrow \tilde D \cup \{(\xi,\tilde y^{(i)})\} $
+				\EndFor
+				\State \# 3rd phase:
+%				
+				\State $f_{meta} \leftarrow$ train $f$ on $\tilde D$
+%			
+			\end{algorithmic}
+		\end{minipage}
+		%
+	}
+	%	
+\end{vbframe}
+
+
+%\begin{vbframe}{MetaCost: Example}
+%	%	
+%	\small{
+%		\begin{itemize}
+%			%		
+%			\item We compare C4.5 (decision tree) with MetaCost using C4.5 for the \href{http://staffwww.itn.liu.se/~aidvi/courses/06/dm/
+%				labs/heart-c.arff}{heart data set}  in \href{ http://www.cs.waikato.ac.nz/ml/weka/}{Weka}. 
+%			%		
+%			\item The cost matrix $\mathbf{C}$ is 
+%			
+%			\begin{center}
+%				\begin{tabular}{cc|cc}
+%					& &\multicolumn{2}{c}{True class} \\
+%					& & $y=1$ & $y=-1$  \\
+%					\hline
+%					\multirow{2}{*}{\parbox{0.3cm}{Pred.  class}}& $\hat y$ = 1     & $0$                & $ 1 $\\
+%					& $\hat y$ = -1 & $ 4 $              &  $0$   \\
+%				\end{tabular}
+%			\end{center}
+%		
+%			\item The resulting confusion matrices are 
+%			
+%						
+%			\begin{center}
+%				\begin{tabular}{cc|cc}
+%					& &\multicolumn{2}{c}{True class} \\
+%					& MetaCost & $y=1$ & $y=-1$  \\
+%					\hline
+%					\multirow{2}{*}{\parbox{0.3cm}{Pred.  class}}& $\hat y$ = 1     & $104$                & $ 21 $\\
+%					& $\hat y$ = -1 & $ 61 $              &  $117$   \\
+%				\end{tabular}
+%							\begin{tabular}{cc|cc}
+%				& &\multicolumn{2}{c}{True class} \\
+%				& C4.5 & $y=1$ & $y=-1$  \\
+%				\hline
+%				\multirow{2}{*}{\parbox{0.3cm}{Pred.  class}}& $\hat y$ = 1     & $138$                & $ 40 $\\
+%				& $\hat y$ = -1 & $ 27$              &  $98$   \\
+%			\end{tabular}
+%			\end{center}
+%		
+%		
+%			%		
+%			\item The total cost of MetaCost is 145, while C4.5 has total costs of 187. However, MetaCost has $0.729$ correct classifications and C4.5 has $0.779.$ 
+%			
+%			%		
+%		\end{itemize}
+%		%
+%	}
+%	%	
+%\end{vbframe}
+
+
+
+%\begin{vbframe}{Cost-Sensitive Decision Trees}
+%	%	
+%	\small{
+%		\begin{itemize}
+%			%		
+%			\item 
+%			%		
+%		\end{itemize}
+%		%
+%	}
+%	%	
+%\end{vbframe}
+
+
+%
+\endlecture
+\end{document}
