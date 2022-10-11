@@ -14,28 +14,24 @@ x_2 <- c(19, 22, 18, 20, 12, 13, 11, 5, 2, 5)
 class <-  c(1, 1, 1, -1, 1, -1, -1, 1, -1, -1)
 label <- seq(1, 10)
 
-dt <- data.table::data.table(
-  x_1 = x_1, 
-  x_2 = x_2, 
-  class = factor(class), 
-  label = label)
-
 # PLOTS ------------------------------------------------------------------------
 
-plot_adaboost <- function(dt, n_baselearners) {
+plot_adaboost <- function(n_baselearners) {
+
+  dt <- data.table::data.table(
+  x_1 = x_1,
+  x_2 = x_2,
+  class = factor(class),
+  label = label)
 
   # Initialize vectors
   
   beta_hat <- c()
-  b_hat <- list()
   
   # Initialize observation weights: w[1](i) = 1/n
   
   dt[, weights := 1 / nrow(dt)]
-  
-  # Initialize plots
-  
-  plots = list()
+
   
   # Iterate
   
@@ -74,12 +70,20 @@ plot_adaboost <- function(dt, n_baselearners) {
     # Normalize weights
     
     dt[, weights := weights / sum(weights)]
-
-    # Plot
     
-    print(m) 
-    
-    plots[[m]] <- mlr3viz::plot_learner_prediction(learner, task) +
+  }
+  
+  mlr3viz::plot_learner_prediction(learner, task) +
+      ggplot2::geom_text(
+        data = dt,
+        aes(label=round(weights, digits = 2)),
+        vjust = -1,
+        size = 3) +
+      ggplot2::geom_point(
+        data = dt,
+        aes(size=weights, fill=class),
+        shape=21) +
+      ggplot2::scale_size(range=c(2,5)) +
       ggplot2::ggtitle("") +
       ggplot2::xlab(expression(x[1])) +
       ggplot2::ylab(expression (x[2])) +
@@ -87,27 +91,27 @@ plot_adaboost <- function(dt, n_baselearners) {
       ggplot2::theme(
         text = element_text(size = 20L),
         legend.title = element_blank()) +
-      ggplot2::guides(shape = FALSE, alpha = FALSE)
-    
-  }
-  
-  plots
+      ggplot2::guides(shape = FALSE, alpha = FALSE, size = FALSE) +
+      ggplot2::scale_fill_hue() +
+      ggplot2::xlim(3, 18) +
+      ggplot2::ylim(3, 21)
   
 }
 
-plots <- plot_adaboost(dt, 3L)
+p1 <- plot_adaboost(1L)
+p2 <- plot_adaboost(2L)
+p3 <- plot_adaboost(3L)
 
-p_1 <- plots[[1]]
-p_2 <- do.call(gridExtra::grid.arrange, c(plots[2L:3L], nrow = 2L))
+p23 <- gridExtra::grid.arrange(p2, p3, nrow = 2L)
 
 ggplot2::ggsave(
-  "../figure/adaboost_viz_mlr3_1.png", 
-  p_1, 
-  height = 4L, 
+  "../figure/adaboost_viz_mlr3_1.png",
+  p1,
+  height = 4L,
   width = 5L)
 
 ggplot2::ggsave(
-  "../figure/adaboost_viz_mlr3_2.png", 
-  p_2, 
-  height = 6L, 
+  "../figure/adaboost_viz_mlr3_2.png",
+  p23,
+  height = 6L,
   width = 4L)
