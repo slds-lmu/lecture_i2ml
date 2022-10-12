@@ -94,7 +94,7 @@ plot_adaboost <- function(n_baselearners) {
       ggplot2::guides(shape = FALSE, alpha = FALSE, size = FALSE) +
       ggplot2::scale_fill_hue() +
       ggplot2::xlim(3, 18) +
-      ggplot2::ylim(3, 21)
+      ggplot2::ylim(2, 22.6)
   
 }
 
