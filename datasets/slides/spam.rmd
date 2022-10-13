@@ -1,0 +1,133 @@
+---
+title: "Spam Dataset"
+output: 
+  bookdown::pdf_document2:
+    citation_package: default
+    latex_engine: xelatex
+    toc: false
+    includes:
+        in_header: "preamble.tex"
+---
+
+# Introduction
+```{r, warning = FALSE, message = FALSE, echo = FALSE}
+# import necessary libraries
+library(corrplot)
+library(skimr)
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+library(reshape2)
+library(lares)
+```
+A data set collected at Hewlett-Packard Labs, that classifies 4601 **e-mails as spam or non-spam** (variable "class").
+The spam dataset is one of the datasets used in **The Elements of Statistical Learning** by Trevor Hastie, Robert Tibshirani, and Jerome Friedman.
+Besides the option to import it from **OpenML** it also comes as an example dataset in the packages **ElemStatLearn** and **kernlab**.
+
+(ref:spam-cap) Source: vectorjuice ([link](https://www.freepik.com/free-vector/businessmen-get-advertising-phishing-spreading-malware-irrelevant-unsolicited-spam-message-spam-unsolicited-messages-malware-spreading-concept_11667625.htm#query=spam%20mail&position=4&from_view=search))
+```{r, echo=FALSE,out.width="90%",fig.cap='(ref:spam-cap)',fig.show='hold',fig.align='center'}
+knitr::include_graphics("figure_man/spam_illustration.jpg")
+```
+Dataset basic information:
+
+- **`class`** (target)      : 0 = no spam, 1 = spam
+- `word_freq_*`: 48 features corresponding to the relative frequency of a specific word in an e-mail
+- `char_freq_*`: 6 features that measures the percentage of a sequence of specific characters occurs relative to the total number of characters
+- `capital_run_length_average`: average length of uninterrupted sequences of capital letters
+- `capital_run_length_longest`: length of the longest uninterrupted sequence of capital letters
+- `capital_run_length_total`: total number of capital letters
+
+We use [OpenML](https://www.openml.org) ([R-Package](https://cran.r-project.org/package=OpenML)) to download the dataset in a machine-readable format and convert it into a `data.frame`:
+
+```{r, message = FALSE, warning = FALSE}
+# load the dataset from OpenML Library
+d <- OpenML::getOMLDataSet(data.id = 44)
+
+# convert the OpenML object to a tibble (enhanced data.frame)
+spam <- d %>% dplyr::as_tibble()
+skimmed_spam <- skimr::skim(spam)
+print(spam)
+```
+
+# Exploratory Data Analysis (EDA)
+In this part, we will walk through a few characteristics of spam dataset using library `skimr` and `DataExplorer`.
+
+## Factor variables
+General statistics about factor variables from spam dataset:
+```{r, warning = FALSE, message = FALSE}
+skimr::partition(skimmed_spam)$factor %>%
+        knitr::kable(format = 'latex', booktabs = TRUE) %>%
+        kableExtra::kable_styling(latex_options = 'HOLD_position')
+```
+```{r, warning = FALSE, message = FALSE, fig.height = 2}
+DataExplorer::plot_bar(spam, ggtheme = ggpubr::theme_pubr(base_size = 10))
+```
+
+The dataset has 1 factor variable, i.e. `class`. The variable does not have missing values. From the statistics and the discrete distribution of `class`, there are 1813 emails in this dataset classified as spam, which account for more than 39% of the total number of emails.
+
+## Numerical variables
+First, let's check if the numerical variables have any missing values:
+```{r, warning = FALSE, message = FALSE}
+spam_numerical <- spam %>% select(where(is.numeric))
+# Number of numerical features
+ncol(spam_numerical)
+# List any numerical features having more than one NA value
+names(which(colSums(is.na(spam_numerical))>0))
+```
+As can be seen, there is no missing value in 57 numerical features.
+
+Next, we plot histograms for the numerical features to get to know better their distributions.
+```{r, warning = FALSE, message = FALSE, fig.height = 8}
+DataExplorer::plot_histogram(
+        spam_numerical,
+        ggtheme = ggpubr::theme_pubr(base_size = 10),
+        nrow = 5
+)
+```
+
+According to these histograms, it is clear that the distributions of most numerical variables are highly skewed. We can also plot the boxplots for these numerical variables and separate by class (spam/non-spam) to discover more information:
+
+```{r, warning = FALSE, message = FALSE, fig.height = 8}
+DataExplorer::plot_boxplot(
+        spam,
+        by = "class",
+        ggtheme = ggpubr::theme_pubr(base_size = 10),
+        nrow = 5
+)
+```
+
+From these boxplots, it can be seen that the numerical features have a lot of outliers. Another interesting point is that the word count for `you` and `your` can potentially be an indicator for specifying spam emails as spam emails tend to have more occurrences of these words.
+
+To understand more the linear relationship between the pairs of numerical variables, we create a correlation ranking of top 20 with the highest magnitude of correlation:
+
+```{r, warning = FALSE, message = FALSE}
+corr_cross(spam_numerical,
+  max_pvalue = 0.05, # display only significant correlations (at 5% level)
+  top = 20 # display top 20 couples of variables (by correlation coefficient)
+)
+```
+From this ranking, we can infer a few things. First, the words/numbers `857`, `415`, `direct`, `telnet`, `technology` are highly correlated. This suggests these words might belong to an underlying group. Moreover, the high level of correlation between `857` and `415` may also suggest the presence of collinearity.
+
+Next, we begin with the data preprocessing notes.
+
+# Data preprocessing notes
+In this section, we present a few notes that can be beneficial for preprocessing the data.
+
+## Data quality assessment
+From the EDA, we can see that this dataset is clean with no missing data, mismatched data types, the measurement is consistent between features, which is simply the count.
+
+## Data cleaning
+The dataset has a lot of outliers in the numerical features. However, handling outliers needs to be taken with care. Do those outliers exist because of some errors in measurements? Or do they just represent natural variations in the true population? In the case of this dataset, numerical features have highly right skewed distribution, which can be the cause of outliers.
+
+## Data transformation
+As the numerical features are highly right skewed, it may be helpful for some models to perform `log` transformation to mitigate the skewness and reduce the outliers. Here are some examples after applying log scale:
+
+```{r, warning = FALSE, message = FALSE}
+spam_numerical_log <- spam_numerical %>%
+        mutate_all(~(log(.) %>% as.vector)) %>%
+        rename_with(~paste0(.x, "_log"))
+DataExplorer::plot_histogram(
+        spam_numerical_log[,1:16],
+        ggtheme = ggpubr::theme_pubr(base_size = 10)
+)
+```

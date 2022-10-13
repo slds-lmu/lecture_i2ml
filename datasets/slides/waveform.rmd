@@ -1,0 +1,81 @@
+---
+title: "Waveform Dataset"
+output:
+  bookdown::pdf_document2:
+    citation_package: default
+    latex_engine: xelatex
+    toc: false
+    includes:
+        in_header: "preamble.tex"
+bibliography: references.bib
+---
+
+# Introduction
+```{r, warning = FALSE, message = FALSE, echo = FALSE}
+# import necessary libraries
+library(skimr)
+library(ggplot2)
+library(gridExtra)
+library(reshape2)
+library(lares)
+library(tidyverse)
+library(mlbench)
+library(corrplot)
+theme_set(theme_bw())
+```
+
+This synthetic dataset consists of 21 features with continuous values and a variable representing the three classes (33% for each). Each class is created by combining two of three "base" waves.
+
+(ref:waveform-cap) Source: pikisuperstar ([link](https://www.freepik.com/free-vector/abstract-equalizer-waves-background_4665586.htm#query=waveform&position=5&from_view=search))
+
+```{r, echo=FALSE,out.width="90%",fig.cap='(ref:waveform-cap)',fig.show='hold',fig.align='center'}
+knitr::include_graphics("figure_man/waveform.jpg")
+```
+
+\newpage
+To generate the dataset, we need to define `n` - number of patterns to create.
+
+```{r, message = FALSE, warning = FALSE}
+# load the dataset from mlbench
+waveform <- mlbench.waveform(n = 300) %>% as_tibble()
+print(waveform, width = Inf)
+```
+# Dataset Generation Mechanism
+The dataset is generated based on the three base waveforms $h_1(t)$ (Figure \@ref(fig:h1)), $h_2(t)$ (Figure \@ref(fig:h2)), $h_3(t)$ (Figure \@ref(fig:h3)). Each class is defined as a random convex combination of two base waveforms with added standard Gaussian noise.
+
+The procedure for generating a data point $\textbf{x}=(x_1,...,x_{21})$ (vector of 21 features) is as follows:
+
+- Independently sample a uniform random number $u$ and 21 standard Gaussian distributed random numbers $\epsilon_1,...,\epsilon_{21}$.
+- Choose a class for the data point and obtain the data point based on the class:
+  - Class `1`: $x_m=u\times h_1(m)+(1-u)\times h_2(m)+\epsilon_m, m=1,...,21$
+  - Class `2`: $x_m=u\times h_1(m)+(1-u)\times h_3(m)+\epsilon_m, m=1,...,21$
+  - Class `3`: $x_m=u\times h_2(m)+(1-u)\times h_3(m)+\epsilon_m, m=1,...,21$
+
+For more details regarding the dataset and the source code for generating the dataset, please refer to @classifbreiman and @ucidatasets.
+
+(ref:h1-cap) Base waveform $h_1(t)$
+```{r h1, echo = FALSE, out.width = "90%", fig.height = 4, warning = FALSE, fig.cap = '(ref:h1-cap)', fig.show = 'asis',fig.align = 'center'}
+ggplot() +
+        geom_segment(aes(x = 1, y = 0, xend = 7, yend = 6)) +
+        geom_segment(aes(x = 7, y = 6, xend = 13, yend = 0)) +
+        geom_segment(aes(x = 13, y = 0, xend = 21, yend = 0))
+```
+(ref:h2-cap) Base waveform $h_2(t)$
+```{r h2, echo = FALSE, out.width = "90%", fig.height = 4, warning = FALSE, fig.cap = '(ref:h2-cap)', fig.show = 'asis',fig.align = 'center'}
+ggplot() +
+        geom_segment(aes(x = 1, y = 0, xend = 9, yend = 0)) +
+        geom_segment(aes(x = 9, y = 0, xend = 15, yend = 6)) +
+        geom_segment(aes(x = 15, y = 6, xend = 21, yend = 0))
+```
+(ref:h3-cap) Base waveform $h_3(t)$
+```{r h3, echo = FALSE, out.width = "90%", fig.height = 4, warning = FALSE, fig.cap = '(ref:h3-cap)', fig.show = 'asis',fig.align = 'center'}
+ggplot() +
+        geom_segment(aes(x = 1, y = 0, xend = 5, yend = 0)) +
+        geom_segment(aes(x = 5, y = 0, xend = 11, yend = 6)) +
+        geom_segment(aes(x = 11, y = 6, xend = 17, yend = 0)) +
+        geom_segment(aes(x = 17, y = 0, xend = 21, yend = 0))
+```
+
+\clearpage
+
+# References

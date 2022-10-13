@@ -1,0 +1,176 @@
+---
+title: "Titanic Dataset"
+output:
+  bookdown::pdf_document2:
+    citation_package: default
+    latex_engine: xelatex
+    toc: false
+    includes:
+        in_header: "preamble.tex"
+---
+
+# Introduction
+```{r, warning = FALSE, message = FALSE, echo = FALSE}
+# import necessary libraries
+library(skimr)
+library(ggplot2)
+library(gridExtra)
+library(reshape2)
+library(lares)
+library(tidyverse)
+theme_set(theme_bw())
+```
+The original Titanic dataset, describing the **survival status of individual passengers** (1309) on the Titanic.
+The Titanic data does not contain information from the crew, but it does contain actual ages of half of the passengers.
+The principal source for data about Titanic passengers is the Encyclopedia Titanica.
+
+One of the original sources is Eaton & Haas (1994) Titanic: Triumph and Tragedy, Patrick Stephens Ltd.
+It includes a passenger list created by many researchers (edited by Michael A. Findlay).
+
+(ref:titanic-cap) The infamous Titanic. Source: https://wallpapercave.com
+```{r, echo=FALSE,out.width="90%",fig.cap='(ref:titanic-cap)',fig.show='hold',fig.align='center'}
+knitr::include_graphics("figure_man/titanic.jpg")
+```
+
+Dataset basic information:
+
+| Variable                | Description                                                                |
+|-------------------------|----------------------------------------------------------------------------|
+| **`survived`** (target) | 0 = No, 1 = Yes                                                            |
+| `pclass`                | 1 = 1st; 2 = 2nd; 3 = 3rd                                                  |
+| `name`                  | First and Last Name                                                        |
+| `sex`                   | Sex                                                                        |
+| `age`                   | Age                                                                        |
+| `sibsp`                 | Number of Siblings/Spouses Aboard                                          |
+| `parch`                 | Number of Parents/Children Aboard                                          |
+| `ticket`                | Ticket Number                                                              |
+| `fare`                  | Passenger Fare                                                             |
+| `cabin`                 | Cabin                                                                      |
+| `embarked`              | Port of Embarkation C = Cherbourg; Q = Queenstown;\newline S = Southampton |
+| `body`                  | Body Identification Number                                                 |
+| `boat`                  | Rescue Boat Number                                                         |
+| `home.dest`             | Home Destination                                                           |
+
+We use [OpenML](https://www.openml.org) ([R-Package](https://cran.r-project.org/package=OpenML)) to download the dataset in a machine-readable format and convert it into a `data.frame`:
+
+```{r, message = FALSE, warning = FALSE}
+# load the dataset from OpenML Library
+d <- OpenML::getOMLDataSet(data.id = 40945)
+
+# convert the OpenML object to a tibble (enhanced data.frame)
+titanic <- d %>% dplyr::as_tibble()
+skimmed_titanic <- skimr::skim(titanic)
+print(titanic, width = Inf)
+```
+
+# Exploratory Data Analysis (EDA)
+In this part, we will walk through a few characteristics of Titanic dataset using library `skimr` and `DataExplorer`.
+
+## Factor variables
+General statistics about factor variables from Titanic dataset:
+```{r, warning = FALSE, message = FALSE}
+skimr::partition(skimmed_titanic)$factor %>%
+        knitr::kable(format = 'latex', booktabs = TRUE) %>%
+        kableExtra::kable_styling(latex_options = 'HOLD_position')
+```
+
+```{r, warning = FALSE, message = FALSE, fig.height = 2}
+titanic_factor <- titanic %>% select(where(is.factor))
+DataExplorer::plot_bar(titanic_factor, ggtheme = ggpubr::theme_pubr(base_size = 10))
+```
+There are 3 factor variables from this dataset, namely `survived` (also the target), `sex`, and `embarked`. Both `survived` and `sex` don't have missing values, `embarked` only has 2 missing values (still 99.8% complete). The class distribution is not very imbalanced with 38% of passengers survived. Of all 1309 passengers, 36% are female and the majority of the passengers onboarded from Southampton (accounting for 70%). Looking at the `embarked` features, we may be tempted to figure out the two rows that miss this value:
+
+```{r, warning = FALSE, message = FALSE, fig.height = 2, results='asis'}
+titanic_embarked_na <- titanic %>% filter(is.na(embarked))
+split(1:ncol(titanic_embarked_na), sort(rep_len(1:2, ncol(titanic_embarked_na)))) %>%
+        map(~select(titanic_embarked_na, .)) %>%
+        map(knitr::kable, booktabs = T) %>%
+        map(kableExtra::column_spec, column = 3, width = "3cm") %>%
+        map(kableExtra::kable_styling, latex_options = 'HOLD_position') %>%
+        walk(print)
+```
+According to the two rows, these two passengers have the same ticket number, so it is likely that they onboarded together. Looking for the name of the two passengers, it leads to [this link](https://www.encyclopedia-Titanica.org/Titanic-survivor/martha-evelyn-stone.html) showing that both departed from Southampton (S).
+
+We may also want to know if the `sex` affects the survival rate of a passenger.
+```{r, warning = FALSE, message = FALSE, fig.height = 2}
+titanic %>%
+        select(sex, survived) %>%
+        ggplot(mapping = aes(fill = survived, x = sex)) + geom_bar()
+```
+Looking from this bar plot, it suggests that `sex` does have an impact on survival rate and being a female can lead to higher survival rate. This can be an indicator that people prioritized to save women before men during the wreckage.
+
+Next we take a brief look at the character (text) variables.
+
+## Character (text) variables
+General statistics about character variables from Titanic dataset:
+```{r, warning = FALSE, message = FALSE}
+skimr::partition(skimmed_titanic)$character %>%
+        knitr::kable(format = 'latex', booktabs = TRUE) %>%
+        kableExtra::kable_styling(latex_options = 'HOLD_position')
+```
+There are 5 character variables: `name`, `ticket`, `cabin`, `boat`, and `home.dest`. `name` and `ticket` don't have any missing values, while `cabin`, `boat`, and `home.dest` only have 22.5%, 37.1% and 56.9% as complete rate, respectively.
+
+## Numerical variables
+General statistics about numerical variables from Titanic dataset:
+```{r, warning = FALSE, message = FALSE}
+skimr::partition(skimmed_titanic)$numeric %>%
+        knitr::kable(format = 'latex', booktabs = TRUE, digits = 2) %>%
+        kableExtra::kable_styling(latex_options = 'HOLD_position')
+```
+
+Next, we plot histograms for the numerical features to get to know better their distributions.
+```{r, warning = FALSE, message = FALSE}
+titanic_numerical <- titanic %>% select(where(is.numeric))
+DataExplorer::plot_histogram(titanic_numerical, ggtheme = ggpubr::theme_pubr(base_size = 10))
+```
+There are 6 numerical features in this dataset, i.e. `pclass`, `age`, `sibsp`, `parch`, `fare`, and `body`. Except for `body` with extremely low complete rate (only 9%), the other variables have acceptable complete rate where the worst is feature `age` with 80%. Regarding the reason for the high number of missing values for `body`, the reasons can be that at least 509 of survivors are in this list and also the remaining passengers were still not found.
+
+We are specifically interested in `age` and `fare` to see if they have any impact on survival rate. We can uncover that by using the segmented histograms:
+```{r, warning = FALSE, message = FALSE}
+p_age <- titanic %>%
+        select(age, survived) %>%
+        ggplot(mapping = aes(fill = survived, x = age)) + geom_histogram()
+
+p_fare <- titanic %>%
+        select(fare, survived) %>%
+        ggplot(mapping = aes(fill = survived, x = fare)) + geom_histogram()
+
+grid.arrange(p_age, p_fare, ncol = 2)
+```
+
+Looking at the histograms, we can see that smaller age (< 15) may increase the chance of surviving (maybe because they prioritized to save younger children first). Furthermore, the higher the fare, the better chance of getting out of the Titanic's wreckage alive. It can be due to the priority of the VIP passengers and the locations of high-class seats that helped them evacuate more easily.
+
+After looking at the distributions, we may also look at the correlation between pairs of numerical variables:
+
+```{r, warning = FALSE, message = FALSE}
+corr_cross(drop_na(titanic_numerical),
+  max_pvalue = 0.05, # display only significant correlations (at 5% level)
+  top = 20 # display top 20 couples of variables (by correlation coefficient)
+)
+```
+
+From this plot, it can be seen that there is a fairly high negative correlation between `pclass` and `fare` (roughly 0.6). This makes much sense as the higher the fare, the higher the ticket class (1 is the first class). Another notable correlation is between `pclass` and `age`, these two features are also negatively correlated. Maybe it is the case that older passengers had more money to spend on higher class tickets.
+
+## Missing data
+Seems we have quite some missing observations. Let's take a closer look:
+
+```{r, warning = FALSE, message = FALSE}
+DataExplorer::plot_missing(titanic, ggtheme = ggpubr::theme_pubr(base_size = 10))
+```
+As can be seen, `age` has acceptable missing rate. However, `home.dest`, `boat`, `cabin`, and especially `body` have too high missing rate. The other variables have very low missing rate or don't have missing values at all.
+
+# Data preprocessing notes
+In this section, we present a few notes that can be beneficial for preprocessing the data.
+
+## Data quality assessment
+From the EDA, we can see that this dataset has a lot of missing data depending on the features. Apart from that, the data seems to be well-formatted.
+
+## Data cleaning
+Missing data needs to be dealt with in this dataset as we have a ton of them. For example, with feature `age`, we can consider filling in by using the median of age per `pclass` group (due to the observation that `pclass` has fairly high correlation with `age`).
+
+## Data transformation
+The feature `fare` is highly right skewed, so it can be helpful for some models to apply `log` transformation on it.
+```{r, warning = FALSE, message = FALSE}
+fare_log <- titanic_numerical %>% mutate(fare_log = log(fare))
+DataExplorer::plot_histogram(fare_log %>% select(fare, fare_log))
+```

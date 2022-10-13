@@ -1,0 +1,51 @@
+---
+title: "Circle Dataset"
+output:
+  bookdown::pdf_document2:
+    citation_package: default
+    latex_engine: xelatex
+    toc: false
+    includes:
+        in_header: "preamble.tex"
+---
+
+# Introduction
+
+```{r, warning = FALSE, message = FALSE, echo = FALSE}
+# import necessary libraries
+library(mlbench)
+library(ggplot2)
+library(dplyr)
+library(scatterplot3d)
+library(viridis)
+theme_set(theme_bw())
+```
+
+The circle dataset is a synthetic dataset from `mlbench`. The circle problem's inputs are uniformly distributed across the `d`-dimensional cube with corners. This is basically a 2-class classification problem: the first class is a `d`-dimensional ball in the centre of the cube, while the remainder forms the second class. The ball size is selected so that both classes have an identical prior probability of 0.5.
+
+To generate the dataset, we need to define two parameters: `n` - the sample size and `d` - the number of dimensions. Below is an example of the problem with 2 dimensions.
+
+```{r, message = FALSE, warning = FALSE}
+# load the dataset from mlbench
+circle_2d <- mlbench.circle(n = 300, d = 2) %>% as_tibble()
+print(circle_2d)
+```
+
+As we define it to be a 2-d problem, it has 2 features/coordinates and a target named `classes`. Let's visualize this 2-d dataset with `ggplot2`:
+
+```{r, message = FALSE, warning = FALSE}
+viridis_2 <- viridis(2, end = 0.9)
+ggplot(data = circle_2d, mapping = aes(color = classes, x = x.1, y = x.2)) +
+        geom_point() +
+        scale_color_manual(values = viridis_2)
+```
+We can also easily create and visualize the circle dataset at 3 dimensions:
+```{r, message = FALSE, warning = FALSE}
+circle_3d <- mlbench.circle(n = 300, d = 3) %>% as_tibble()
+scatterplot3d(
+        circle_3d[,1:3],
+        pch = 16,
+        type = "h",
+        color = viridis_2[as.numeric(circle_3d$classes)]
+)
+```

@@ -1,0 +1,174 @@
+---
+title: "German Credit Dataset"
+output:
+  bookdown::pdf_document2:
+    citation_package: default
+    latex_engine: xelatex
+    toc: false
+    includes:
+        in_header: "preamble.tex"
+bibliography: references.bib
+---
+
+# Introduction
+```{r, warning = FALSE, message = FALSE, echo = FALSE}
+# import necessary libraries
+library(mlbench)
+library(ggplot2)
+library(dplyr)
+library(scatterplot3d)
+library(viridis)
+library(purrr)
+library(corrplot)
+theme_set(theme_bw())
+```
+
+German Credit Dataset is a research dataset from the University of Hamburg from 1994 and donated by Prof. Hans Hoffman. Each entry represents a person who takes a credit by a bank. Each person is classified as "good" or "bad" credit risks according to the set of attributes. For more information regarding the dataset, please refer to @ucidatasets.
+
+(ref:credit-cap) Source: freepik ([link](https://www.freepik.com/free-vector/hand-drawn-credit-score-concept_20059328.htm#query=credit%20score&position=2&from_view=search))
+
+```{r, echo=FALSE,out.width="90%",fig.cap='(ref:credit-cap)',fig.show='hold',fig.align='center'}
+knitr::include_graphics("figure_man/credit.jpg")
+```
+
+Dataset basic information:
+
+| Variable               | Description                                               |
+|------------------------|-----------------------------------------------------------|
+| **`class`** (target)   | "good"/"bad"                                              |
+| checking_status        | Status of the existing checking account, in Deutsche Mark |
+| duration               | Duration in months                                        |
+| credit_history         | Credit history                                            |
+| credit_amount          | Amount of the desired credit                              |
+| saving_status          | Status of savings account/bonds, in Deutsche Mark         |
+| employment             | Present employment, in number of years                    |
+| installment_commitment | Installment rate in percentage of disposable income       |
+| personal_status        | Personal status and sex                                   |
+| other_parties          | Other debtors or guarantors                               |
+| residence_since        | Current residence since, in years                         |
+| age                    | Age in years                                              |
+| other_payment_plans    | Other installment plans                                   |
+| existing_credits       | Number of existing credits at this bank                   |
+| job                    | Current job                                               |
+| num_dependents         | Number of people being liable to provide maintenance for  |
+| own_telephone          | Telephone ("yes"/"none")                                  |
+| foreign_worker         | Foreign worker ("yes"/"no")                               |
+
+We use [OpenML](https://www.openml.org) ([R-Package](https://cran.r-project.org/package=OpenML)) to download the dataset in a machine-readable format and convert it into a `data.frame`:
+
+```{r, message = FALSE, warning = FALSE}
+# load the dataset from OpenML Library
+d <- OpenML::getOMLDataSet(data.id = 31)
+
+# convert the OpenML object to a tibble (enhanced data.frame)
+credit <- d %>% dplyr::as_tibble()
+skimmed_credit <- skimr::skim(credit)
+print(credit, width = Inf)
+```
+
+# Exploratory Data Analysis (EDA)
+In this part, we will walk through a few characteristics of credit dataset using library `skimr` and `DataExplorer`.
+
+## Factor variables
+General statistics about factor variables from credit dataset:
+```{r, warning = FALSE, message = FALSE}
+skimr::partition(skimmed_credit)$factor %>%
+        knitr::kable(format = 'latex', booktabs = TRUE) %>%
+        kableExtra::kable_styling(latex_options = 'HOLD_position')
+```
+From the general statistics, it can be seen that there is no missing value. The majority of factor variables has fewer than 5 unique values, the exceptions are `credit_history`, `saving_status`, `employment` with 5 unique values and `purpose` with 10 unique values.
+
+```{r, warning = FALSE, message = FALSE, fig.height = 4}
+credit_factor <- credit %>% select(where(is.factor))
+DataExplorer::plot_bar(
+        credit_factor %>% select(1:7),
+        ggtheme = ggpubr::theme_pubr(base_size = 10),
+        nrow = 2,
+        ncol = 2
+)
+DataExplorer::plot_bar(
+        credit_factor %>% select(8:14),
+        ggtheme = ggpubr::theme_pubr(base_size = 10),
+        nrow = 2,
+        ncol = 2
+)
+```
+
+According to the bar plots, it can be seen that most of the factor variables are imbalanced, including the response variable `class`. The majority of data points in this dataset has good credit (70%). Foreign workers account for 96.3% of the whole dataset. 71.3% owns real estate and 63% of the data comes from skilled workers. The majority of people in the dataset applies for the credit to buy appliances and new cars: radio/tv (28%), new car (23.4%) and furniture (18.1%). Notably, more than 90% of the records apply for credit alone without other guarantor or co applicant.
+```{r, warning = FALSE, message = FALSE, fig.height = 7}
+DataExplorer::plot_bar(
+        credit_factor %>% select(c(1:7, class)),
+        by = "class",
+        by_position = "dodge",
+        ggtheme = ggpubr::theme_pubr(base_size = 10),
+        nrow = 4,
+        ncol = 2
+)
+```
+\clearpage
+```{r, warning = FALSE, message = FALSE, fig.height = 5}
+DataExplorer::plot_bar(
+        credit_factor %>% select(8:14),
+        by = "class",
+        by_position = "dodge",
+        ggtheme = ggpubr::theme_pubr(base_size = 10),
+        ncol = 2,
+        nrow = 4
+)
+```
+
+After taking the class into consideration, the one thing that stands out is that for every unique value of each factor variable, the proportion of people who have good credit is always higher than the ones having bad credit.
+
+## Numerical variables
+General statistics about numerical variables from credit dataset:
+```{r, warning = FALSE, message = FALSE, results='asis'}
+skimmed_credit_numeric <- skimr::partition(skimmed_credit)$numeric
+split(1:ncol(skimmed_credit_numeric),
+      sort(rep_len(1:2, ncol(skimmed_credit_numeric)))) %>%
+        map(~select(skimmed_credit_numeric, .)) %>%
+        map(knitr::kable, booktabs = T) %>%
+        map(kableExtra::kable_styling, latex_options = 'HOLD_position') %>%
+        walk(print)
+```
+
+As can be seen from the statistics, similar to the factor variables, numerical variables in this dataset don't have missing values. The ranges of values of the numerical features extremely differ from one to another.
+
+To have a better view at the distributions of these features, let's take a look at their histograms and their boxplots (broken down by class labels).
+
+```{r, warning = FALSE, message = FALSE, fig.height = 3.5}
+DataExplorer::plot_histogram(
+        credit,
+        ggtheme = ggpubr::theme_pubr(base_size = 10),
+        ncol = 3, nrow = 2)
+```
+```{r, warning = FALSE, message = FALSE, fig.height = 3.5}
+DataExplorer::plot_boxplot(
+        credit,
+        by = "class",
+        ggtheme = ggpubr::theme_pubr(base_size = 10),
+        ncol = 3, nrow = 2)
+```
+
+Three numerical variables `age`, `credit_amount` and `duration` have right-skewed distribution. The majority of the age of people applying for credit varies within the range from 25-40. The usual credit amount in this dataset is less than 4000. The typical duration that people from this dataset applied for is less than 2 years.
+
+From the boxplots, it can be seen that there is no visible strong connection between the numerical variables and the response.
+
+To understand more the linear relationship between the pairs of numerical variables, we create a correlation matrix:
+
+```{r, warning = FALSE, message = FALSE}
+credit %>% select(where(is.numeric)) %>%
+        cor() %>%
+        corrplot(
+           type = "upper",
+           order = "hclust",
+           tl.col = "black",
+           tl.srt = 45,
+           tl.cex = 0.7
+        )
+```
+
+According to the correlation plot, there is a notable positive correlation between `duration` and `credit_amount`. This makes much sense in real life as the more money people loan, the more time they need to pay it back.
+
+\clearpage
+
+# References
