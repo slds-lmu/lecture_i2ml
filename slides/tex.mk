@@ -35,4 +35,4 @@ texclean:
 	rm -rf *-concordance.tex
 	
 clean: texclean
-	rm $(TPDFS)
+	-rm $(TPDFS) 2>/dev/null || true
