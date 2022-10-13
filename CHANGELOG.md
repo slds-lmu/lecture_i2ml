@@ -1,5 +1,8 @@
 ## Changelog
 
+### 10-2022
+- Fixed Adaboost slides
+
 ### 02-2022
 - Reworked all exercise sheets in Chapter 1-9
 
