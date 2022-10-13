@@ -1,14 +1,18 @@
 TSLIDES = $(shell find . -maxdepth 1 -iname "slides-*.tex")
 TPDFS = $(TSLIDES:%.tex=%.pdf)
+FLSFILES = $(TSLIDES:%.tex=%.fls)
 
 .PHONY: all most copy texclean clean
 
 all: texclean $(TPDFS) copy texclean
 
-most: $(TPDFS)
+most: $(FLSFILES)
 
 $(TPDFS): %.pdf: %.tex
 	latexmk -pdf $<
+
+$(FLSFILES): %.fls: %.tex
+	latexmk -pdf -g $<
 
 copy: 
 	cp *.pdf ../../slides-pdf
