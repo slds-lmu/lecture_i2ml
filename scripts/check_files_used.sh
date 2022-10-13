@@ -21,6 +21,6 @@ folderpath="$(realpath --relative-to=. -- "$1")"/
 
 comm $commarg \
   <(find ./"$folderpath" -type f | xargs realpath --relative-to=. -- | sort -u ) \
-  <(grep -hPo '(?<=^INPUT ).*' ./*.fls | xargs realpath --relative-to=. -- | sort -u ) | \
+  <(perl -nle'print $& while m{(?<=^INPUT ).*}g' ./*.fls | xargs realpath --relative-to=. -- | sort -u ) | \
   awk -v s="$folderpath" 'index($0, s) == 1'  # https://stackoverflow.com/a/43579906
 
