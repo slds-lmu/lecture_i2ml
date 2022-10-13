@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eo pipefail
 
 case "$2" in
   "used")
