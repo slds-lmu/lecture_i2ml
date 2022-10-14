@@ -47,7 +47,7 @@ what material needs to be understood before what else. Please do add appropriate
   - If you create a new plot or change an existing plot, you need to commit your changes of the r-files as well as the corresponding pdf-files. This means in if you create a new plot, you will have to add the pdf-files with `git add -f *.pdf` since pdf-files are ignored in this repo by default.
   - Utility functions used by more than one R-file should be exported to a separate R-file (also located in the respective rsrc folder)
   - Heavy simulations should not be done in the figures producing R-files. Instead, we only load Rdata files which were produced by separate R-files (also located in the rsrc folder)
-- If you replace graphics with new files with a different file name, or if you remove slides with graphics in them, make sure that you remove the files that become unused. To check if there are unused files in a `figure/` or `figure_man/`-folder, do the following:
+- If you replace graphics with new files with a different file name, or if you remove slides with graphics in them, then make sure that you remove unused files. To check if there are unused files in a `figure/` or `figure_man/`-folder, do the following:
   1. Make sure you are in the folder that contains the `.tex`-files.
   2. Run `make most`, which re-compiles all `.pdf`-files while creating a log of what files were used.
   3. Run `../../scripts/check_files_used.sh figure unused slides-*.tex` to list all files in the `figure/`-folder that are unused.
