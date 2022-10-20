@@ -1,6 +1,7 @@
 ## Changelog
 
 ### 10-2022
+- Created dataset appendix
 - Fixed Adaboost slides
 
 ### 02-2022
