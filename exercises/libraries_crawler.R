@@ -1,15 +1,32 @@
 # SET CURRENT WORKING DIRECTORY TO THE ONE CONTAINING THIS SCRIPT
 # e.g. setwd("D:/Work/I2ML/lecture_i2ml/exercises")
 
-install.packages(c("stringr", "readr", "magrittr"))
-library(magrittr)
-
 # Get all R and Rnw files from the folder recursively
 get_all_eligible_files <- function() {
   return(list.files(path = ".", pattern = "R|Rnw", recursive = TRUE))
 }
 
-res <- NULL
+install_or_update_package <- function(package_name) {
+  # Attempt to find the package in the file system and return a boolean
+  is_package_available <- nzchar(system.file(package = package_name))
+
+  if (is_package_available) {
+    # Update package if found
+    update.packages(oldPkgs = package_name, ask = FALSE, repos = "https://cloud.r-project.org/")
+  } else {
+    # Install package if not found
+    install.packages(package_name, repos = "https://cloud.r-project.org/")
+  }
+}
+
+# Install prerequisite packages
+prerequisites <- c("stringr", "readr", "magrittr")
+invisible(lapply(prerequisites, install_or_update_package))
+
+
+library(magrittr)
+
+package_names <- NULL
 files <- get_all_eligible_files()
 
 for (file in files) {
@@ -22,14 +39,15 @@ for (file in files) {
     stringr::str_replace_all("'", "") %>%
     stringr::str_replace_all('"', "")
 
-  res <- c(res, preprocessed)
+  package_names <- c(package_names, preprocessed)
 }
 
 # Format the resulting list of dependencies
-res <- res %>% unique() %>% sort(decreasing = FALSE)
+package_names <- package_names %>% unique() %>% sort(decreasing = FALSE)
 
 # Show the list of dependencies
-print(res)
+print("The following packages will be installed/updated:")
+print(package_names)
 
 # Start installing every dependency
-install.packages(res)
+invisible(lapply(package_names, install_or_update_package))
