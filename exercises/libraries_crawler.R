@@ -12,10 +12,14 @@ install_or_update_package <- function(package_name) {
 
   if (is_package_available) {
     # Update package if found
+    cat("Package ", package_name," is available and will possibly be updated \n")
     update.packages(oldPkgs = package_name, ask = FALSE, repos = "https://cloud.r-project.org/")
+    cat("done \n")
   } else {
     # Install package if not found
+    cat("Package ", package_name," is not available and will be installed \n")
     install.packages(package_name, repos = "https://cloud.r-project.org/")
+    cat("done \n")
   }
 }
 
@@ -50,4 +54,5 @@ print("The following packages will be installed/updated:")
 print(package_names)
 
 # Start installing/updating every dependency
-invisible(lapply(package_names, install_or_update_package))
+# invisible(lapply(package_names, install_or_update_package))
+lapply(package_names, install_or_update_package)
