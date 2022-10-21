@@ -49,5 +49,5 @@ package_names <- package_names %>% unique() %>% sort(decreasing = FALSE)
 print("The following packages will be installed/updated:")
 print(package_names)
 
-# Start installing every dependency
+# Start installing/updating every dependency
 invisible(lapply(package_names, install_or_update_package))
