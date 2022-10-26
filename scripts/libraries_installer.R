@@ -1,4 +1,4 @@
-# SET CURRENT WORKING DIRECTORY TO THE ONE CONTAINING THIS SCRIPT
+# SET CURRENT WORKING DIRECTORY TO THE ONE YOU WANT TO CRAWL LIBRARIES FROM
 # e.g. setwd("D:/Work/I2ML/lecture_i2ml/exercises")
 
 # Get all R and Rnw files from the folder recursively
