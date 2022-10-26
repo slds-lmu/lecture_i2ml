@@ -66,6 +66,9 @@ what material needs to be understood before what else. Please do add appropriate
 - `make` will automatically move a copy of the compiled `ex_` and `sol_` PDFs (i.e., those that will appear on the Website) to the `exercises-pdf` directory. From there, files can be copied into the [course website repository](https://github.com/teaching-data-science/intro2ml) in case of a new release.
 - When creating new exercise sheets or collection files, please use the setup provided in `style/preamble_ueb.Rnw` and `style/preamble_ueb_coll.Rnw`.
 
+### Install Necessary R packages
+- Please refer to the file `scripts/libraries_installer.R` to install the R packages necessary for running successfully some folders.
+
 ### Code Snippets
 
 - Please follow this [style guide](https://style.tidyverse.org)
