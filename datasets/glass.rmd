@@ -1,0 +1,149 @@
+---
+title: "Glass Dataset"
+output:
+  bookdown::pdf_document2:
+    citation_package: default
+    latex_engine: xelatex
+    toc: false
+    includes:
+        in_header: "preamble.tex"
+---
+
+# Introduction
+```{r, warning = FALSE, message = FALSE, echo = FALSE}
+# import necessary libraries
+library(skimr)
+library(ggplot2)
+library(gridExtra)
+library(reshape2)
+library(lares)
+library(tidyverse)
+library(mlbench)
+library(corrplot)
+theme_set(theme_bw())
+```
+
+The glass identification dataset was created by B. German, Central Research Establishment, Home Office Forensic Science Service, Aldermaston, Reading, Berkshire RG7 4PNA. The data frame with 214 observations has examples of the chemical analysis of 7 varieties of glass. The target is to predict the kind of glass type based on the chemical analysis.
+
+(ref:glass-cap) Source: macrovector ([link](https://www.freepik.com/free-vector/empty-realistic-glasses-set-different-alcohol-drinks-cocktails-isolated_10347034.htm#query=glass&position=4&from_view=search))
+
+```{r, echo=FALSE,out.width="90%",fig.cap='(ref:glass-cap)',fig.show='hold',fig.align='center'}
+knitr::include_graphics("figure_man/glass.jpg")
+```
+
+Dataset basic information:
+
+- **`Type`** (target): 7 types of glass:
+  - `1`: building_windows_float_processed
+  - `2`: building_windows_non_float_processed
+  - `3`: vehicle_windows_float_processed
+  - `4`: vehicle_windows_non_float_processed
+  - `5`: containers
+  - `6`: tableware
+  - `7`: headlamps
+- `RI`: refractive index
+- `Na`: Sodium (unit measurement: weight percent in corresponding oxide, as are the following attributes)
+- `Mg`: Magnesium
+- `Al`: Aluminum
+- `Si`: Silicon
+- `K`: Potasium
+- `Ca`: Calcium
+- `Ba`: Barium
+- `Fe`: Iron
+
+
+To load the dataset, we use `mlbench`:
+
+```{r, message = FALSE, warning = FALSE}
+# load the dataset from mlbench
+data(Glass)
+glass <- Glass %>% as_tibble()
+skimmed_glass <- skimr::skim(glass)
+print(glass)
+```
+
+# Exploratory Data Analysis (EDA)
+In this part, we will walk through a few characteristics of glass dataset using library `skimr` and `DataExplorer`.
+
+## Factor variables
+General statistics about factor variables from glass dataset:
+```{r, warning = FALSE, message = FALSE}
+skimr::partition(skimmed_glass)$factor %>%
+        knitr::kable(format = 'latex', booktabs = TRUE) %>%
+        kableExtra::kable_styling(latex_options = 'HOLD_position')
+```
+```{r, warning = FALSE, message = FALSE, fig.height = 2}
+DataExplorer::plot_bar(glass, ggtheme = ggpubr::theme_pubr(base_size = 10))
+dplyr::count(glass, Type, sort = TRUE)
+```
+
+The dataset has one factor variable, that is the target `Type`. This variable does not have missing values and only contains 6 unique values, i.e. 6 types of glass (as opposed to 7  as expected from the dataset description). From the bar plot, it can be seen that `Type`'s discrete distribution is highly imbalanced, with the majority of data points belongs to class `1` or `2`. Types `3`, `5`, `6` have the fewest observations with 17, 13, and 9 observations, respectively.
+
+## Numerical variables
+General statistics about numerical variables from glass dataset:
+```{r, warning = FALSE, message = FALSE}
+skimr::partition(skimmed_glass)$numeric %>%
+        knitr::kable(format = 'latex', booktabs = TRUE, digits = 2) %>%
+        kableExtra::kable_styling(latex_options = 'HOLD_position')
+```
+
+As can be seen from the statistics, similar to the factor variable, numerical variables in this dataset don't have missing values. Except for `RI`, the values of other numerical variables are on the same scale, i.e. weight percent in corresponding oxide, as mentioned in the introduction. A quick look at the percentiles of these variables shows that they have very different distribution.
+
+For more detailed view into the distribution of these variables, we can plot their histograms and (scaled) boxplots:
+
+```{r, warning = FALSE, message = FALSE, fig.height = 4}
+DataExplorer::plot_histogram(
+        glass,
+        ncol = 3,
+        ggtheme = ggpubr::theme_pubr(base_size = 10)
+)
+```
+
+```{r, warning = FALSE, message = FALSE, fig.height = 3}
+glass_numerical <- glass %>% select(where(is.numeric))
+glass_numerical_scale <- glass_numerical %>% mutate_all(~(scale(.) %>% as.vector))
+glass_numerical_scale_melt <- melt(glass_numerical_scale)
+ggplot(data = glass_numerical_scale_melt, aes(x=variable, y=value)) +
+        geom_boxplot() +
+        theme(axis.title.x=element_blank(),
+              axis.title.y=element_blank())
+```
+
+According to the plots above, `Ba`, `Fe`, `K` and `Mg` have highly skewed distributions. Furthermore, apart from `Mg`, other numerical features have a lot of outliers.
+
+To understand more the linear relationship between the pairs of numerical variables, we create a correlation matrix:
+
+
+```{r, warning = FALSE, message = FALSE}
+glass_numerical %>%
+        cor() %>%
+        corrplot(
+           type = "upper",
+           order = "hclust",
+           tl.col = "black",
+           tl.srt = 45,
+           tl.cex = 0.7
+        )
+```
+We can also create a ranking of top 20 pairs of variables by the magnitude of correlation to interpret the result with `corr_cross` function from library `lares`:
+```{r, warning = FALSE, message = FALSE}
+corr_cross(glass_numerical,
+  max_pvalue = 0.05, # display only significant correlations (at 5% level)
+  top = 20 # display top 20 couples of variables (by correlation coefficient)
+)
+```
+
+From the correlation plot and the cross-correlation ranking, the linear relationship between `Ri` and `Ca` stands out with correlation greater than 0.8.
+
+It might also be worth taking a look at the relationship between each numerical variable and the target by plotting the boxplots broken down by class type:
+
+```{r, warning = FALSE, message = FALSE, fig.height = 8}
+DataExplorer::plot_boxplot(
+        glass,
+        by = "Type",
+        ggtheme = ggpubr::theme_pubr(base_size = 10),
+        nrow = 5
+)
+```
+
+From the boxplots, there are a few interesting points. First, feature `Ba` appears to be able to easily distinguish glass type `7` from the others. Second, higher values of `Na` (> 14) might be a useful indicator for the class `6` or `7`. Furthermore, `Mg` values might be used to differentiate class `5`, `6` and `7` from `1`, `2` and `3`.

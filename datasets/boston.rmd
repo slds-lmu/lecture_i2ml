@@ -1,0 +1,148 @@
+---
+title: "Boston Dataset"
+output: 
+  bookdown::pdf_document2:
+    citation_package: default
+    latex_engine: xelatex
+    toc: false
+    includes:
+        in_header: "preamble.tex"
+
+---
+
+# Introduction
+```{r, warning = FALSE, message = FALSE, echo = FALSE}
+# import necessary libraries
+library(corrplot)
+library(skimr)
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+library(reshape2)
+library(lares)
+```
+A widely used dataset to benchmark algorithms is the Boston housing dataset.
+This dataset comprises information gathered by the United States Census Bureau about housing in the Boston, Massachusetts area. It was collected from the StatLib repository (http://lib.stat.cmu.edu/datasets/boston) and has been frequently used to benchmark algorithms in the literature. With only 506 instances, the dataset is tiny.
+
+Harrison, D., and D.L. Rubinfeld published the data in 'Hedonic prices and the demand for clean air,' J. Environ. Economics & Management, vol.5, 81-102, 1978.
+
+The target of this dataset is to predict the median value of a home.
+
+(ref:boston-cap) Boston Landscape (Internet images)
+```{r, echo=FALSE,out.width="45%",fig.cap='(ref:boston-cap)',fig.show='hold',fig.align='center'}
+knitr::include_graphics(c("figure_man/boston_housing.png", "figure_man/boston_housing_park.jpg"))
+```
+Dataset basic information:
+
+| Variable            | Description                                                           |
+|---------------------|-----------------------------------------------------------------------|
+| **`MEDV`** (target) | median value of owner-occupied homes in USD 1000's                    |
+| `CRIM`              | per capita crime rate by town                                         |
+| `ZN`                | prop. of residential land zoned for lots over 25,000 sq.ft            |
+| `INDUS`             | proportion of non-retail business acres per town                      |
+| `CHAS`              | Charles River dummy variable (= 1 if tract bounds river; 0 otherwise) |
+| `NOX`               | nitric oxides concentration (parts per 10 million)                    |
+| `RM`                | average number of rooms per dwelling                                  |
+| `AGE`               | proportion of owner-occupied units built prior to 1940                |
+| `DIS`               | weighted distances to five Boston employment centres                  |
+| `RAD`               | index of accessibility to radial highways                             |
+| `TAX`               | full-value property-tax rate per USD 10,000                           |
+| `PTRATIO`           | pupil-teacher ratio by town                                           |
+| `B`                 | $1000(B - 0.63)^2$ where B is the prop. of Black people by town       |
+| `LSTAT`             | percentage of lower status of the population                          |
+
+__Warning__: One thing to keep in mind when using this dataset is that it has an ethical issue, as pointed out in the official documentation of scikit-learn ([link](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_boston.html#rec2f484fdebe-1)). Based on the idea that racial segregation had a beneficial influence on property prices, the authors of this dataset created the variable "B". As a result, unless the goal is to research and teach about ethical considerations in data science and machine learning, we strongly advise against utilizing this dataset.
+
+We use [OpenML](https://www.openml.org) ([R-Package](https://cran.r-project.org/package=OpenML)) to download the dataset in a machine-readable format and convert it into a `data.frame`:
+
+```{r, message = FALSE, warning = FALSE}
+# load the dataset from OpenML Library
+d <- OpenML::getOMLDataSet(data.id = 531)
+
+# convert the OpenML object to a tibble (enhanced data.frame)
+boston <- d %>% dplyr::as_tibble()
+skimmed_boston <- skimr::skim(boston)
+print(boston, width = Inf)
+```
+
+# Exploratory Data Analysis (EDA)
+In this part, we will walk through a few characteristics of Boston dataset using library `skimr` and `DataExplorer`.
+
+## Factor variables
+General statistics about factor variables from Boston dataset:
+```{r, warning = FALSE, message = FALSE}
+skimr::partition(skimmed_boston)$factor %>%
+        knitr::kable(format = 'latex', booktabs = TRUE) %>%
+        kableExtra::kable_styling(latex_options = 'HOLD_position')
+```
+```{r, warning = FALSE, message = FALSE, fig.height = 2}
+DataExplorer::plot_bar(boston, ggtheme = ggpubr::theme_pubr(base_size = 10))
+```
+
+The dataset has 2 factor variables, i.e. `CHAS` and `RAD`. The two variables don't have missing values. Looking at the discrete distributions of the two variables, we can see that they are very skewed. Feature `CHAS`'s value 0 accounts for roughly 93% of the data, this indicates that in the Boston dataset, not many homes' tracts bound the Charles River. Similarly, feature `RAD`'s values 24 & 5 & 4 account for 70% of the data.
+
+## Numerical variables
+General statistics about numerical variables from Boston dataset:
+```{r, warning = FALSE, message = FALSE}
+skimr::partition(skimmed_boston)$numeric %>%
+        knitr::kable(format = 'latex', booktabs = TRUE, digits = 2) %>%
+        kableExtra::kable_styling(latex_options = 'HOLD_position')
+```
+As can be seen from the statistics, similar to the factor variables, numerical variables in this dataset don't have missing values. The ranges of values of the numerical features extremely differ from one to another.
+
+Next we create the boxplots of (scaled) numerical variables. Due to the differences in measurements and values of the numerical features, we need to scale the features first before creating boxplots to better visualize the results, here we use standard scaling (0 mean and unit variance).
+
+```{r, warning = FALSE, message = FALSE, fig.height = 3}
+boston_numerical <- boston %>% select(where(is.numeric))
+boston_numerical_scale <- boston_numerical %>% mutate_all(~(scale(.) %>% as.vector))
+boston_numerical_scale_melt <- melt(boston_numerical_scale)
+ggplot(data = boston_numerical_scale_melt, aes(x=variable, y=value)) +
+        geom_boxplot() +
+        theme(axis.title.x=element_blank(),
+              axis.title.y=element_blank())
+```
+. From the boxplots, we notice that apart from the features `INDUS`, `NOX`, `AGE`, and `TAX`, the other features have a lot of outliers, especially `CRIM`, `ZN` and `B`. `CRIM` and `ZN` have right-skewed distribution and `B` has left-skewed distribution. `NOX` and `RM` are the most balanced and seem to be not skewed at all.
+
+To understand more the linear relationship between the pairs of numerical variables, we create a correlation matrix:
+
+
+```{r, warning = FALSE, message = FALSE}
+boston_numerical %>%
+        cor() %>%
+        corrplot(
+           type = "upper",
+           order = "hclust",
+           tl.col = "black",
+           tl.srt = 45,
+           tl.cex = 0.7
+        )
+```
+We can also create a ranking of top 20 pairs of variables by the magnitude of correlation to interpret the result with `corr_cross` function from library `lares`:
+```{r, warning = FALSE, message = FALSE}
+corr_cross(boston_numerical,
+  max_pvalue = 0.05, # display only significant correlations (at 5% level)
+  top = 20 # display top 20 couples of variables (by correlation coefficient)
+)
+```
+
+Looking at the correlation matrix and ranking, there are a few patterns that we can see. First, `DIS` has strongly negative correlation with `INDUS`, `NOX`, and `AGE`, while these three features have positive correlation with each other. This suggests that five Boston employment centers are located far from industrial areas, where the non-retail businesses are and that the employment centers have lower level of pollution and newer buildings. This might depict the evolution of the Boston metropolitan region throughout time. The positive correlation between the three features `INDUS`, `NOX`, and `AGE` also indicate that industrial areas have a lot of older buildings and are associated with pollution. Furthermore, `DIS` is positively associated with `ZN`, which implies that proportion of residential area zoned for large lots are concentrated near the Boston centers. Moreover, taking a look at our target variable `MEDV`, we can see that it has highly negative correlation with `LSTAT` and positive correlation with `RM`. It is not surprising if the area having high housing price is not an ideal place for low incomers. Another unsurprising thing is that the number of rooms per home is one possible metric of housing size, so we also expect that it can be a positive indicator for the housing prices.
+
+Next, we begin with the data preprocessing notes.
+
+# Data preprocessing notes
+In this section, we present a few notes that can be beneficial for preprocessing the data.
+
+## Data quality assessment
+From the EDA, we can see that this dataset is clean with no missing data, mismatched data types. The fact that the measurements are different across numerical features (much different ranges of values) and that there are a lot of highly skewed features indicate the need for data transformation.
+
+## Data cleaning
+It can be seen from the EDA's boxplots of the numerical features that there are a lot of outliers for most of them. However, handling outliers needs to be taken with care. Do those outliers exist because of some errors in measurements? Or do they just represent natural variations in the true population? In the case of this dataset, a few features like `CRIM`, `ZN` or `DIS` have highly right skewed distribution, which can be the cause of outliers.
+
+## Data transformation
+Because the majority of the numerical variables are asymmetric, with a larger density on the left side, it may be helpful to some models to perform some transformations. `log` or `exp` (to the power of `x < 1`) transformation can be used as it can potentially reduce the skewness of the original data and also mitigate the problem with outlier. Below is an example with feature `DIS`.
+
+(ref:dis-cap) Histogram of feature `DIS` before (left) and after (right) `log` transformation
+```{r, warning = FALSE, message = FALSE, fig.height = 3, fig.cap = '(ref:dis-cap)'}
+boston_numerical <- boston_numerical %>% mutate(DIS_LOG = log(DIS))
+DataExplorer::plot_histogram(boston_numerical %>% select(DIS, DIS_LOG))
+```

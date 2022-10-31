@@ -1,10 +1,18 @@
 TSLIDES = $(shell find . -maxdepth 1 -iname "slides-*.tex")
 TPDFS = $(TSLIDES:%.tex=%.pdf)
+FLSFILES = $(TSLIDES:%.tex=%.fls)
 
-all: texclean $(TPDFS) copy texclean 
+.PHONY: all most copy texclean clean
+
+all: texclean $(TPDFS) copy texclean
+
+most: $(FLSFILES)
 
 $(TPDFS): %.pdf: %.tex
 	latexmk -pdf $<
+
+$(FLSFILES): %.fls: %.tex
+	latexmk -pdf -g $<
 
 copy: 
 	cp *.pdf ../../slides-pdf
@@ -30,3 +38,5 @@ texclean:
 	rm -rf *.synctex.gz
 	rm -rf *-concordance.tex
 	
+clean: texclean
+	-rm $(TPDFS) 2>/dev/null || true

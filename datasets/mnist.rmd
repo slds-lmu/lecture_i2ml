@@ -1,0 +1,117 @@
+---
+title: "MNIST Dataset"
+output:
+  bookdown::pdf_document2:
+    citation_package: default
+    latex_engine: xelatex
+    toc: false
+    includes:
+        in_header: "preamble.tex"
+---
+
+# Introduction
+This dataset contains 60,000 28x28 grayscale photos of the ten digits, as well as a test set of 10,000 images. More information is available at the [MNIST homepage](http://yann.lecun.com/exdb/MNIST/).
+```{r, warning = FALSE, message = FALSE, echo = FALSE}
+# import necessary libraries
+library(keras)
+library(ggplot2)
+library(dplyr)
+library(scatterplot3d)
+library(viridis)
+library(reshape2)
+theme_set(theme_bw())
+```
+
+```{r, warning = FALSE, message = FALSE, echo = FALSE}
+# Load MNIST dataset from Keras
+MNIST <- dataset_mnist()$train
+x <- MNIST$x
+y <- MNIST$y
+
+# visualize the digits
+par(mfcol=c(4,4))
+par(mar=c(0, 0, 3, 0), xaxs='i', yaxs='i')
+for (idx in 1:16) {
+    im <- x[idx,,]
+    im <- t(apply(im, 2, rev))
+    image(1:28, 1:28, im, col=gray((0:255)/255),
+          xaxt='n', main=paste(y[idx]),
+          yaxt='n')
+}
+```
+MNIST dataset can be easily retrieved using `dataset_MNIST()` function from library `keras`. Because this is a grayscale image dataset, every data point is an image (2D matrix of pixels) and each pixel of an image has value within the range from 0 (black) to 255 (white). Therefore, for ease of handling, we can reshape it to lay out all the pixels as features.
+```{r, warning = FALSE, message = FALSE}
+mnist <- dataset_mnist()$train
+x <- mnist$x
+y <- mnist$y
+# reshape
+dim(x) <- c(nrow(x), 784)
+# convert to data.frame
+x <- as.data.frame(x)
+y <- as.data.frame(y) %>% rename(label = y)
+mnist_features <- x %>% as_tibble()
+mnist_df <- cbind(y, x) %>% as_tibble()
+skimmed_mnist_10_features <- skimr::skim(mnist_df[,1:11])
+print(mnist_df)
+```
+
+# Exploratory Data Analysis (EDA)
+In this part, we will walk through a few characteristics of MNIST dataset.
+
+## Numerical variables
+First let's check if the MNIST dataset has any missing values.
+```{r, warning = FALSE, message = FALSE}
+mnist_numerical <- mnist_df %>% select(where(is.numeric))
+# Number of numerical features
+ncol(mnist_numerical)
+# List any numerical features having more than one NA value
+names(which(colSums(is.na(mnist_numerical))>0))
+```
+As can be seen, there is no missing value found in the features (image pixels) or the labels.
+
+General statistics about the first 10 numerical variables from MNIST dataset:
+```{r, warning = FALSE, message = FALSE}
+skimr::partition(skimmed_mnist_10_features)$numeric %>%
+        knitr::kable(format = 'latex', booktabs = TRUE) %>%
+        kableExtra::kable_styling(latex_options = 'HOLD_position')
+```
+From the first 10 pixels, we can see that the majority of values is 0.
+
+We can also take a look into the distribution of values of all the pixels in the dataset:
+```{r, warning = FALSE, message = FALSE}
+mnist_features %>%
+  melt() %>%
+  ggplot() + geom_histogram(aes(x=value))
+```
+
+Similar to the observation from the first 10 pixels, the majority of the pixels has value 0 (black) and the second-highest frequency value is 255 (white). This corresponds to the fact that the images in this dataset have black background and white numbers on them.
+
+We are also interested in whether the images within the same class share similar characteristics if we average out their corresponding pixels. To do that, we create an average summary for pixels as follows:
+
+```{r, warning = FALSE, message = FALSE}
+pixels_summary <- mnist_df %>%
+  tidyr::gather(pixel, value, -label) %>%
+  tidyr::extract(pixel, "pixel", "(\\d+)", convert = TRUE) %>%
+  mutate(pixel = pixel - 2,
+         y = pixel %% 28,
+         x = 28 - pixel %/% 28) %>%
+  group_by(x, y, label) %>%
+  summarize(mean_value = mean(value)) %>%
+  ungroup()
+print(pixels_summary)
+```
+And then use `geom_tile` from `ggplot` for visualization:
+```{r, warning = FALSE, message = FALSE}
+pixels_summary %>%
+  ggplot(aes(x, y, fill = mean_value)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "black", high = "white", mid = "gray", midpoint = 127.5) +
+  facet_wrap(~ label, nrow = 2) +
+  scale_x_reverse() +
+  scale_y_reverse() +
+  labs(fill="Average Value") +
+  theme(axis.ticks.x = element_blank(),
+        axis.ticks.y = element_blank())
+```
+
+From the plot, we can see that using our human eyes, it is still easy to distinguish numbers within these averaged-out images. This indicates that there is not much variability between images from the same class.

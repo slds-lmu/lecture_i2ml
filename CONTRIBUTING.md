@@ -32,7 +32,7 @@ or similar, where applicable.
 - We try to keep slides modular: slidesets should represent about 15-20 minutes of material and be moderately self-contained.
 - Don't put code on the slides, the theory is orthogonal to issues of implementation (... in theory..). Code is strictly for exercises/ practice sessions. 
 - Compiling the slides should be done via the Makefile: just type `make all` in the specific folder and it will render all slidesets in the folder, or `make <SLIDES>.pdf` to render a specific file `<SLIDES>.tex`.
-- `make` will automatically move a copy of the compiled PDFs to the `slides-pdf` directory. From there, files can be copied into the [course website repository](https://github.com/teaching-data-science/intro2ml) in case of a new release.
+- `make` will automatically move a copy of the compiled PDFs to the `slides-pdf` directory. From there, files can be copied into the [course website repository](https://github.com/teaching-data-science/intro2ml) in case of a new release. If you use Windows we recommend that you access make via the [Ubuntu bash](https://apps.microsoft.com/store/detail/ubuntu/9PDXGNCFSCZV?hl=en-us&gl=US) (take a look at the installation tips)
 - We try to keep a "dependency graph" between slide sets up to date so that it's easier to keep track of
 what material needs to be understood before what else. Please do add appropriate `%! includes:`-comments in your slides to keep this up-to-date, see also `attic/slide-dependencies.R` and `slides/slide-dependencies.pdf`.
 - We recommend usage of `{tinytex}` (install via `tinytex::install_tinytex()`)
@@ -47,6 +47,13 @@ what material needs to be understood before what else. Please do add appropriate
   - If you create a new plot or change an existing plot, you need to commit your changes of the r-files as well as the corresponding pdf-files. This means in if you create a new plot, you will have to add the pdf-files with `git add -f *.pdf` since pdf-files are ignored in this repo by default.
   - Utility functions used by more than one R-file should be exported to a separate R-file (also located in the respective rsrc folder)
   - Heavy simulations should not be done in the figures producing R-files. Instead, we only load Rdata files which were produced by separate R-files (also located in the rsrc folder)
+- If you replace graphics with new files with a different file name, or if you remove slides with graphics in them, then make sure that you remove unused files. To check if there are unused files in a `figure/` or `figure_man/`-folder, do the following:
+  1. Make sure you are in the folder that contains the `.tex`-files.
+  2. Run `make most`, which re-compiles all `.pdf`-files while creating a log of what files were used.
+  3. Run `../../scripts/check_files_used.sh figure unused slides-*.tex` to list all files in the `figure/`-folder that are unused.
+  4. Do the same for the `figure_man/`-folder: `../../scripts/check_files_used.sh figure_man unused slides-*.tex`.
+  5. Remove the unused files from git. The easiest way to do this is to use `git rm <file>`, but you can also delete the file first and then "add the deletion": `rm <file>` followed by `git add <the file that was deleted>`. You can then commit.
+  6. If you find that you deleted a file that should not have been deleted, you can retrieve it from the git history: [through the command line](https://stackoverflow.com/questions/7203515/how-to-find-a-deleted-file-in-the-project-commit-history) or by browsing the GitHub git history.
   
 ### Exercises
 
@@ -58,6 +65,9 @@ what material needs to be understood before what else. Please do add appropriate
 - Compiling the slides should be done via the Makefile: just type `make all` and it will render all exercises, solutions and collection files, or `make <FILE>.pdf` to render a specific file `<FILE>.Rnw`.
 - `make` will automatically move a copy of the compiled `ex_` and `sol_` PDFs (i.e., those that will appear on the Website) to the `exercises-pdf` directory. From there, files can be copied into the [course website repository](https://github.com/teaching-data-science/intro2ml) in case of a new release.
 - When creating new exercise sheets or collection files, please use the setup provided in `style/preamble_ueb.Rnw` and `style/preamble_ueb_coll.Rnw`.
+
+### Install Necessary R packages
+- Please refer to the file `scripts/libraries_installer.R` to install the R packages necessary for running successfully some folders.
 
 ### Code Snippets
 

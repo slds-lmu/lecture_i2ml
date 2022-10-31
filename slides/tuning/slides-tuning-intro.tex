@@ -4,7 +4,7 @@
 \input{../../latex-math/ml-eval.tex}
 \input{../../latex-math/ml-hpo.tex}
 
-\newcommand{\titlefigure}{figure_man/riskmin_bilevel2.png}
+\newcommand{\titlefigure}{figure_man/riskmin_bilevel3.png}
 \newcommand{\learninggoals}{
 \item Understand the difference between model parameters and hyperparameters
 \item Know different types of hyperparameters
@@ -27,13 +27,13 @@
 \begin{itemize}
 \item Given a data set, we want to train a classification tree. 
 \item We feel that a maximum tree depth of $4$ has worked out well for us previously, so we decide to set this hyperparameter to $4$. 
-\item The learner ("inducer") $\inducer$ takes the input data, internally performs \textbf{empirical risk minimization}, and returns a fitted tree model $\fxh = f(\xv, \thetah)$ of at most depth $\lambda = 4$ that minimizes the empirical risk.
+\item The learner ("inducer") $\ind$ takes the input data, internally performs \textbf{empirical risk minimization}, and returns a fitted tree model $\fxh = f(\xv, \thetah)$ of at most depth $\lambda = 4$ that minimizes empirical risk.
 \end{itemize}
 
 % FIGURE SOURCE: https://docs.google.com/presentation/d/14xwcs5zncTjFL4hIHAprjZMmyGIPqk5vs8DS32vEAvQ/edit?usp=sharing
 \begin{center}
 \begin{figure}
-\includegraphics[width=0.6\textwidth]{figure_man/riskmin_bilevel1.png}
+\includegraphics[width=0.6\textwidth]{figure_man/riskmin_bilevel1}
 \end{figure}
 \end{center}
 
@@ -41,15 +41,18 @@
 
 \begin{itemize}
 \item We are \textbf{actually} interested in the \textbf{generalization performance} $\GEf$ of the estimated model on new, previously unseen data. 
-\item We estimate the generalization performance by evaluating the model $\fh$ on a test set $\Dtest$: $$
-\GEh{\Dtest}\left(\fh\right) = \frac{1}{|\Dtest|} \sum\limits_{(\xv, y) \in \Dtest} L\left(y, \fxh \right)
+\item We estimate the generalization performance by evaluating the model $\fh = \ind(\Dtrain, \lamv)$ on a test set $\Dtest$: $$
+\GEh_{\Dtrain, \Dtest}(\ind,
+  \lamv, \ntrain, \rho) =
+  \rho \left( \yv_{\Dtest}, \F_{\Dtest, 
+  \fh} \right)
 $$
 \end{itemize}
 \vspace*{-0.6cm}
 % FIGURE SOURCE: https://docs.google.com/presentation/d/14xwcs5zncTjFL4hIHAprjZMmyGIPqk5vs8DS32vEAvQ/edit?usp=sharing
 \begin{center}
 \begin{figure}
-\includegraphics[width=0.75\textwidth]{figure_man/riskmin_bilevel2.png}
+\includegraphics[width=0.6\textwidth]{figure_man/riskmin_bilevel2.png}%figure_man/riskmin_bilevel3.png}
 \end{figure}
 \end{center}
 
@@ -57,14 +60,33 @@ $$
 
 \begin{itemize}
 \item But many ML algorithms are sensitive w.r.t. a good setting of their hyperparameters,
-  and generalization performance might be bad if we have chosen a suboptimal configuration:
+  and generalization performance might be bad if we have chosen a suboptimal configuration.
+\item Consider a simulation example of 3 ML algorithms below, where we use the dataset $mlbench.spiral$ and 10,000 testing points. As can be seen, variating hyperparameters can lead to big difference in model's generalization performance.
+  
+  \begin{center}
+\begin{figure}
+\includegraphics[width=0.95\textwidth]{figure/tuning_importance.png}
+\end{figure}
+\end{center}
+
+\framebreak
+For our example this could mean:
+
 \begin{itemize}
-\item The data may be too complex to be modeled by a tree of depth $4$ 
-\item The data may be much simpler than we thought, and a tree of depth $4$ overfits
+\item Data too complex to be modeled by a tree of depth $4$ 
+\item Data much simpler than we thought, a tree of depth $4$ overfits
 \end{itemize}
 \item[$\implies$] Algorithmically try out different values for the tree depth. For each maximum depth $\lambda$, we have to train the model \textbf{to completion} and evaluate its performance on the test set. 
 \item We choose the tree depth $\lambda$ that is \textbf{optimal} w.r.t. the generalization error of the model. 
 \end{itemize}
+
+%\vspace*{-0.6cm}
+% FIGURE SOURCE: https://docs.google.com/presentation/d/14xwcs5zncTjFL4hIHAprjZMmyGIPqk5vs8DS32vEAvQ/edit?usp=sharing
+\begin{center}
+\begin{figure}
+\includegraphics[width=0.6\textwidth]{figure_man/riskmin_bilevel3.png}
+\end{figure}
+\end{center}
 
 % $\to$ Finding the hyperparameter $\lambda$ that is optimal w.r.t. the generalization performance constitutes an optimization problem. 
 
@@ -89,7 +111,12 @@ It is critical to understand the difference between model parameters and hyperpa
 
 \lz
 
-\textbf{Model parameters} are optimized during training, typically via loss minimization. They are an \textbf{output} of the training. Examples:
+\textbf{Model parameters} $\thetab$ are optimized during training. %, typically via loss minimization. 
+They are an \textbf{output} of the training. 
+
+\lz
+
+Examples:
 \begin{itemize}
 \item The splits and terminal node constants of a tree learner 
 \item Coefficients $\thetab$ of a linear model $\fx = \thx$
@@ -97,26 +124,31 @@ It is critical to understand the difference between model parameters and hyperpa
 
 \framebreak
   
-In contrast, \textbf{hyperparameters} (HPs) are not decided during training. They must be specified before the training, they are an \textbf{input} of the training. 
+In contrast, \textbf{hyperparameters} (HPs) $\lambda$ are not optimized during training. They must be specified in advance, are an \textbf{input} of the training. 
 Hyperparameters often control the complexity of a model, i.e., how flexible the model is.
-But they can in principle influence any structural property of a model or computational part of the training process.
+They can in principle influence any structural property of a model or computational part of the training process.
+
+\lz
+
+The process of finding the best hyperparameters is called \textbf{tuning}.
 
 \lz
 
 Examples:
 
 \begin{itemize}
-\item The maximum depth of a tree 
+\item Maximum depth of a tree 
 \item $k$ and which distance measure to use for $k$-NN
-\item The number and maximal order of interactions to be included in a linear regression model
+\item Number and maximal order of interactions to be included in a linear regression model
+\item Number of optimization steps if the empirical risk minimization
+is done via gradient descent
 \end{itemize}
 
 \end{vbframe}
 
 
 \begin{vbframe}{Types of hyperparameters}
-
-We summarize all hyperparameters we want to tune over in a vector $\lamv \in \Lambda$ of (possibly) mixed type. HPs can have different types: 
+We summarize all hyperparameters we want to tune in a vector $\lamv \in \Lam$ of (possibly) mixed type. HPs can have different types: 
 
 \begin{itemize}
 \item Real-valued parameters, e.g.:

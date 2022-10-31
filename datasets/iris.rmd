@@ -1,0 +1,99 @@
+---
+title: "Iris Dataset"
+output: 
+  bookdown::pdf_document2:
+    citation_package: default
+    latex_engine: xelatex
+    toc: false
+    includes:
+        in_header: "preamble.tex"
+bibliography: references.bib
+---
+
+# Introduction
+```{r, warning = FALSE, message = FALSE, echo = FALSE}
+# import necessary libraries
+library(skimr)
+library(dplyr)
+library(ggplot2)
+library(reshape2)
+```
+The iris dataset was introduced by the statistician Ronald Fisher and is one of the most frequently used datasets. Originally it was designed for linear discriminant analysis.
+
+The set is a typical test case for many statistical classification techniques and has its own **[wikipedia page](https://en.wikipedia.org/wiki/Iris_flower_data_set).**
+
+More information about iris dataset can be found at @ucidatasets.
+
+(ref:iris-cap) Types of iris flowers. Source: https://rpubs.com/vidhividhi/irisdataeda
+
+```{r, echo=FALSE,out.width="95%",fig.cap='(ref:iris-cap)',fig.show='hold',fig.align='center'}
+knitr::include_graphics(c("figure_man/iris_species.png"))
+```
+
+We use [OpenML](https://www.openml.org) ([R-Package](https://cran.r-project.org/package=OpenML)) to download the dataset in a machine-readable format and convert it into a `data.frame`:
+
+```{r, message = FALSE, warning = FALSE}
+# load the dataset from OpenML Library
+d <- OpenML::getOMLDataSet(data.id = 61)
+
+# convert the OpenML object to a tibble (enhanced data.frame)
+iris <- d %>%
+        dplyr::as_tibble() %>%
+        dplyr::mutate(class = as.factor(stringr::str_extract(class, "[^-]+$")))
+skimmed_iris <- skimr::skim(iris)
+print(iris)
+```
+
+The dataset has 3 classes, each with 50 instances, and each class represents a different species of iris plant. The dataset contains five columns: Sepal Length (`sepallength`), Sepal Width (`sepalwidth`), Petal Length (`petallength`), Petal Width (`petalwidth`), and the species type (`class`, the target of the dataset). The sepal length / width and petal length / width are recorded in [cm].
+
+# Exploratory Data Analysis (EDA)
+In this part, we will walk through a few characteristics of iris dataset using library `skimr` and `DataExplorer`.
+
+## Factor variables
+General statistics about factor variables from iris:
+```{r, warning = FALSE, message = FALSE}
+skimr::partition(skimmed_iris)$factor %>%
+        knitr::kable(format = 'latex', booktabs = TRUE) %>%
+        kableExtra::kable_styling(latex_options = 'HOLD_position')
+```
+
+There is only one factor variable in this dataset, and it is the iris class. There is no missing data and there are 3 values corresponding to 3 iris species types. The 150 data points are evenly distributed to 3 classes.
+
+## Numeric variables
+General statistics about numerical variables from iris:
+```{r, warning = FALSE, message = FALSE}
+skimr::partition(skimmed_iris)$numeric %>%
+        knitr::kable(format = 'latex', booktabs = TRUE) %>%
+        kableExtra::kable_styling(latex_options = 'HOLD_position')
+```
+
+Boxplots of numerical variables:
+
+```{r, warning = FALSE, message = FALSE, fig.height = 3}
+iris_numeric <- iris %>% select(where(is.numeric))
+iris_numeric_melt <- melt(iris_numeric)
+ggplot(data = iris_numeric_melt, aes(x=variable, y=value)) +
+        geom_boxplot() +
+        theme(axis.title.x=element_blank(),
+              axis.title.y=element_blank())
+```
+Similar to the factor variable, numerical variables in this dataset don't have missing values and have only a few outliers with feature `sepalwidth`. From the statistics and the boxplots of the dataset's features, it can be seen that iris sepal length/width's size is generally larger than iris petal length/width's size.
+
+Next, we will create a pairs plot using library `GGally` to check the correlations, the scatter plots of pairwise features and the distributions of classes for each feature.
+
+```{r, warning = FALSE, message = FALSE}
+GGally::ggpairs(iris,
+                columns = 1:4,
+                aes(color = class),
+                upper = list(continuous = GGally::wrap("cor", size = 3))) +
+        theme(text = element_text(size = 11))
+```
+From the plot above, looking at the diagonal plots, which are the density plots for classes in each feature, it can be seen that with only information from `petallength` or `petalwidth` alone, we can already easily distinguish `setosa` species from the other two species. To be more specific, it can be interpreted from the dataset that small `petallength` (< 2cm) or small `petalwidth` (< 0.5cm) is a great hint to predict the class to be `setosa`.
+
+Regarding the correlation, it is worth noting that we can observe the [_Simpson's Paradox_](https://en.wikipedia.org/wiki/Simpson%27s_paradox) from some pairs of features such as `petallength`-`sepalwidth` and `petalwidth`-`sepalwidth`, i.e. for each class, those pairs are positively correlated but when the classes combine, this trend reverses.
+
+About the features' pairwise scatter plots, it can be easily seen that the class setosa is linearly separable from the other two classes. The plots also indicate that different pairs of features can bring back much different level of separation between classes. For example, with the pair `sepallength`-`sepalwidth`, it is almost impossible to separate linearly the class `versicolor` and the class `virginica`, the opposite case is the pair `petallength`-`petalwidth`. This is a clear illustration about the importance of feature engineering and data analysis.
+
+\clearpage
+
+# References

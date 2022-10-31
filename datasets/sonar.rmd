@@ -1,0 +1,141 @@
+---
+title: "Sonar Dataset"
+output:
+  bookdown::pdf_document2:
+    citation_package: default
+    latex_engine: xelatex
+    toc: false
+    includes:
+        in_header: "preamble.tex"
+---
+
+# Introduction
+```{r, warning = FALSE, message = FALSE, echo = FALSE}
+# import necessary libraries
+library(skimr)
+library(ggplot2)
+library(gridExtra)
+library(reshape2)
+library(lares)
+library(tidyverse)
+theme_set(theme_bw())
+```
+
+This is the data set used by Gorman and Sejnowski in their [study](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.299.8959&rep=rep1&type=pdf) ("Analysis of Hidden Units in a Layered Network Trained to Classify Sonar Targets" in Neural Networks, Vol. 1, pp. 75-89. ) of the classification of sonar signals using a neural network.
+The task is to train a network to discriminate between sonar signals bounced off a metal cylinder and those bounced off a roughly cylindrical rock.
+
+(ref:sonar-cap) Source: macrovector ([link](https://www.freepik.com/free-vector/radar-screen-illustration_11053463.htm#query=sonar%20radar%20screen&position=0&from_view=search))
+
+```{r, echo=FALSE,out.width="50%",fig.cap='(ref:sonar-cap)',fig.show='hold',fig.align='center'}
+knitr::include_graphics("figure_man/sonar.jpg")
+```
+
+Dataset basic information:
+
+- **`class`** (target): "Rock" / "Mine" (metal cylinder)
+- `attribute_[1-60]`: 60 variables, each variable represents the energy within a particular frequency band, integrated over a certain period of time.
+The integration aperture for higher frequencies occur later in time, since these frequencies are transmitted later during the chirp.
+
+The numbers in the labels are in increasing order of aspect angle, but they do not encode the angle directly.
+
+We use [OpenML](https://www.openml.org) ([R-Package](https://cran.r-project.org/package=OpenML)) to download the dataset in a machine-readable format and convert it into a `data.frame`:
+
+```{r, message = FALSE, warning = FALSE}
+# load the dataset from OpenML Library
+d <- OpenML::getOMLDataSet(data.id = 40)
+
+# convert the OpenML object to a tibble (enhanced data.frame)
+sonar <- d %>% dplyr::as_tibble()
+skimmed_sonar <- skimr::skim(sonar)
+print(sonar)
+```
+
+# Exploratory Data Analysis (EDA)
+In this part, we will walk through a few characteristics of sonar dataset using library `skimr` and `DataExplorer`.
+
+## Factor variables
+General statistics about factor variables from sonar dataset:
+```{r, warning = FALSE, message = FALSE}
+skimr::partition(skimmed_sonar)$factor %>%
+        knitr::kable(format = 'latex', booktabs = TRUE) %>%
+        kableExtra::kable_styling(latex_options = 'HOLD_position')
+```
+
+```{r, warning = FALSE, message = FALSE, fig.height = 2}
+sonar_factor <- sonar %>% select(where(is.factor))
+DataExplorer::plot_bar(sonar_factor, ggtheme = ggpubr::theme_pubr(base_size = 10))
+```
+
+There is only one factor variable in this dataset, and it is also the target variable: `class`. The factor variable does not have missing values and have a balanced distribution between two of its factors: `Mine` accounts for roughly 53.4% and `Rock` accounts for roughly 46.6% of total data points.
+
+## Numerical Variables
+First, let's check if the numerical variables have any missing values:
+```{r, warning = FALSE, message = FALSE}
+sonar_numerical <- sonar %>% select(where(is.numeric))
+# Number of numerical features
+ncol(sonar_numerical)
+# List any numerical features having more than one NA value
+names(which(colSums(is.na(sonar_numerical))>0))
+```
+As can be seen, there is no missing value in 60 numerical features.
+
+Next, we plot histograms for the numerical features to get to know better their distributions.
+
+```{r, warning = FALSE, message = FALSE, fig.height = 8}
+DataExplorer::plot_histogram(
+        sonar_numerical,
+        ggtheme = ggpubr::theme_pubr(base_size = 10),
+        nrow = 5
+)
+```
+As can be seen from the histograms, there are a lot of features with highly skewed distribution. We can also plot the boxplots for these numerical variables and separate by `Class` to discover more information:
+```{r, warning = FALSE, message = FALSE, fig.height = 8}
+DataExplorer::plot_boxplot(
+        sonar,
+        by = "Class",
+        ggtheme = ggpubr::theme_pubr(base_size = 10),
+        nrow = 5
+)
+```
+ According to these boxplots, there are features that have stronger separation between the two classes and can be used as indicators for separating them. For example, with features `attribute_10`, `attribute_11`, `attribute_12`, lower values of these features may indicate the data point to be from class `Rock` and vice versa.
+
+To understand more the linear relationship between the pairs of numerical variables, we create a correlation ranking of top 30 with the highest magnitude of correlation:
+
+```{r, warning = FALSE, message = FALSE}
+corr_cross(sonar_numerical,
+  max_pvalue = 0.05, # display only significant correlations (at 5% level)
+  top = 30 # display top 30 couples of variables (by correlation coefficient)
+)
+```
+
+From the cross correlation graph, we can see that there are pairs of numerical variables that have strong positive correlation (>0.8): `attribute_9` - `attribute_10`, `attribute_19` - `attribute_20`, `attribute_29` - `attribute_30`, `attribute_39` - `attribute_40`. There are also other 16 pairs having positive correlation > 0.6. These signals may suggest the presence of collinearity.
+
+Next, we begin with the data preprocessing notes.
+
+# Data preprocessing notes
+In this section, we present a few notes that can be beneficial for preprocessing the data.
+
+## Data quality assessment
+From the EDA, we can see that this dataset is clean with no missing data, mismatched data types, the measurement is consistent between features, which is the energy within a particular frequency band, integrated over a certain period of time.
+
+## Data cleaning
+The dataset has a lot of outliers in the numerical features. However, handling outliers needs to be taken with care. Do those outliers exist because of some errors in measurements? Or do they just represent natural variations in the true population? In the case of this dataset, some numerical features have highly right skewed distribution, which can be the cause of outliers.
+
+## Data transformation
+As the numerical features are highly right skewed, it can be helpful for some models to apply `log` transformation to mitigate the skewness and reduce the outliers. Here are some examples after applying log scale:
+
+```{r, warning = FALSE, message = FALSE, fig.height = 2}
+# Here are the features before log transforming
+DataExplorer::plot_histogram(
+        sonar_numerical[,57:60],
+        ggtheme = ggpubr::theme_pubr(base_size = 10)
+)
+# Here are the features after log transforming
+sonar_numerical_log <- sonar_numerical %>%
+        mutate_all(~(log(.) %>% as.vector)) %>%
+        rename_with(~paste0(.x, "_log"))
+DataExplorer::plot_histogram(
+        sonar_numerical_log[,57:60],
+        ggtheme = ggpubr::theme_pubr(base_size = 10)
+)
+```
