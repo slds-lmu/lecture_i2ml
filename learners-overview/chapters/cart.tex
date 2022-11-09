@@ -8,41 +8,55 @@
 
 \medskip
 
+\begin{columns}[T, totalwidth=\textwidth]
+\begin{column}{0.6\textwidth}
 \highlight{General idea}
 \begin{itemize}
-  \item Starting from root node containing all data, perform repeated 
-  \textbf{binary splits}, subsequently dividing input space into
-  \textbf{rectangular partitions} $Q_t$
+  \item Start at root node containing all data
+  \item Perform repeated \textbf{binary splits} in feature space to obtain
+  \textbf{rectangular partitions} at terminal nodes $Q_t$
+  \item Splits based on reduction of node \textbf{impurity} \\
+  $\rightarrow$ empirical risk minimization (\textbf{ERM})
+  \item In each step:
   \begin{itemize}
-    \item In each step, find \textbf{optimal split} (feature-threshold 
-    combination) $\rightarrow$ greedy search
-    \item Assign same prediction $c_t$ to all observations in terminal region 
-    $Q_t$
+    \item Find \textbf{optimal split} (feature-threshold combination) \\
+    $\rightarrow$ greedy search
+    \item Assign constant prediction $c_t$ to all obs. in region $Q_t$\\
+    $\rightarrow$ Regression: $c_t$ is average of $y$ \\
+    $\rightarrow$ Classif.: $c_t$ is majority class (or class proportions)
+    
+  \item Stop when a pre-defined criterion is reached\\
+  $\rightarrow$ See \highlight{Complexity control}
   \end{itemize}
-  \item Splits based on node \textbf{impurity}, equivalently interpretable as 
-  \textbf{ERM}
   % \item Unless interrupted, splitting continues until each observation ends up 
   % in its own leaf node $\rightarrow$ \textbf{control complexity}
 \end{itemize}
 
 \medskip
- 
-\highlight{Hypothesis space} ~~
+
+%\medskip
+    \highlight{Hypothesis space} ~~
 $\Hspace = \left\{ \fx: \fx = \sum\limits_{t = 1}^T c_t \I(\xv \in Q_t) 
 \right\}$
 
-\medskip
+\end{column}
+\begin{column}{0.45\textwidth}
+\includegraphics[width=\textwidth]{../slides/trees/figure/cart_treegrow_22}
+\includegraphics[width=\textwidth]{   ../slides/trees/figure/cart_splitcriteria_1} 
+\end{column}
+\end{columns}
 
-\begin{minipage}[b]{0.5\textwidth}
-  \includegraphics[width=\textwidth]{../slides/trees/figure/cart_treegrow_32} \\
-  \tiny{Classification tree for \texttt{iris} data after 3 splits}
-\end{minipage}
-\begin{minipage}[b]{0.49\textwidth}
-  \centering
-  \includegraphics[width=0.9\textwidth]{
-  ../slides/trees/figure/cart_splitcriteria_1} \\
-  \tiny{Corresponding prediction surface with axis-aligned boundaries}
-\end{minipage}%
+
+% \begin{minipage}[b]{0.5\textwidth}
+%   \includegraphics[width=\textwidth]{../slides/trees/figure/cart_treegrow_22} \\
+%   \tiny{Classification tree for \texttt{iris} data after 3 splits}
+% \end{minipage}
+% \begin{minipage}[b]{0.49\textwidth}
+%   \centering
+%   \includegraphics[width=0.9\textwidth]{
+%   ../slides/trees/figure/cart_splitcriteria_1} \\
+%   \tiny{Corresponding prediction surface with axis-aligned boundaries}
+% \end{minipage}%
 
 \end{frame}
 
@@ -55,8 +69,7 @@ $\Hspace = \left\{ \fx: \fx = \sum\limits_{t = 1}^T c_t \I(\xv \in Q_t)
 \highlight{Empirical risk} \\
 
 \begin{itemize}
-  \item Calculated for each potential terminal node $\Np_t$
-  of a split
+  \item Calculated after each split, i.e., at each node $\Np_t$ (which is not necessarily the terminal node $Q_t$)
   \item In general, compatible with arbitrary losses -- typical choices:
   \begin{itemize}
     \footnotesize
@@ -88,14 +101,13 @@ $\Hspace = \left\{ \fx: \fx = \sum\limits_{t = 1}^T c_t \I(\xv \in Q_t)
 \begin{itemize}
   \item \textbf{Exhaustive} search over all split candidates, choice of 
   risk-minimal split
-  \item In practice: limit number of candidates, use tricks to avoid 
-  combinatorial explosion
+  \item In practice: reduce number of split candidates (e.g., using quantiles instead of all observed values)
 \end{itemize}
 
 \medskip
 
 \highlight{Hyperparameters} ~~ \textbf{Complexity}, i.e., 
-number of leaves $T$ (controlled indirectly, see \textit{Implementation}) 
+number of terminal nodes $T$ (controlled indirectly, see \highlight{Implementation}) 
 
 \end{frame}
 
@@ -114,7 +126,7 @@ number of leaves $T$ (controlled indirectly, see \textit{Implementation})
       \positem Applicable to \textbf{non-numerical} features
       \positem Handling of \textbf{missings} possible via surrogate splits
       \positem \textbf{Interaction} effects between features naturally included, 
-      even of higher orders
+      even of higher order
       \positem \textbf{Fast} computation and good scalability
       \positem High \textbf{flexibility} (custom split criteria or leaf-node 
       prediction rules)   
@@ -166,7 +178,7 @@ the most performant learner}
 \medskip
 
 \highlight{Bagging / boosting} ~~ 
-As CART are highly \textbf{instable} predictors on their own, they are typically 
+As CART are highly \textbf{unstable} predictors on their own, they are typically 
 used as base learners in bagging (random forest) or boosting ensembles.
 
 \medskip

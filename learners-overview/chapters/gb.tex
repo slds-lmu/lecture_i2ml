@@ -11,14 +11,13 @@
 \highlight{General idea}
 
 \begin{itemize}
-  \item Create \textbf{ensemble} in \textbf{sequential}, stage-wise manner
+  \item \textbf{Sequential ensemble} of $M$ \textbf{base learners} by greedy forward stagewise additive modeling
   \begin{itemize}
-    \item In each iteration, add new model component in risk-minimal fashion
-    \item Final model: weighted sum of base learners (frequently, \textbf{CART})
+      \item In each iteration a base learner is fitted to current \textbf{pseudo residuals} $\Rightarrow$ one boosting iteration is one approximate \textbf{gradient step in function space}
+      \item Base learners are either \textbf{trees} or \textbf{linear regressions}
   \end{itemize}
-  \item Fit each base learner to current \textbf{point-wise residuals} 
-  \\ $\Rightarrow$ one boosting iteration $\widehat{=}$ one approximate 
-  \textbf{gradient step in function space}
+  \item \textbf{Predict} via (weighted) sum of base learners
+  
 \end{itemize}
 
 \medskip
@@ -56,18 +55,17 @@ $\Hspace = \left\{ \fx: \fx = \sum_{m = 1}^M \betam b(\xv, \thetam) \right\}$
 \highlight{Empirical risk}
 
 \begin{itemize}
-  \item \textbf{Outer loss} used to compute pseudo-residuals -- error of 
-  current model fit \\
-  $\Rightarrow$ arbitrary \textbf{differentiable} loss function
-  \item \textbf{Inner loss} used to fit next base learner component to 
-  current pseudo-residuals \\
-  $\Rightarrow$ typically, \textbf{quadratic loss}
+  \item In general, compatible with any \textbf{differentiable} loss
+  \item Base learner in iteration $m$ is fitted on \textbf{Pseudo residuals}: $\tilde{r}^{(i)} = - \pd{\Lxyi}{\fxi}$ by minimizing the \textbf{L2-loss}: $\sumin (\rmi - b(\xi, \bm{\theta}))^2$
 \end{itemize}
 
 \medskip
 
-\highlight{Optimization} ~~ \textbf{Functional gradient descent} for outer 
-optimization loop
+\highlight{Optimization} ~~
+\begin{itemize}
+    \item Same optimization procedure as base learner, while keeping the current ensemble $\fmdh$ fixed
+    \item $\betam$ is found via \textbf{line search} or fixed to a \textbf{small constant value} and combined with the leaf values $\ctm$ for tree base learners: $\ctmt = \betam \cdot \ctm$
+\end{itemize}
 
 \medskip
 
@@ -97,14 +95,10 @@ optimization loop
     \highlight{Advantages}
     \footnotesize
     \begin{itemize}
-      \positem Powerful \textbf{off-the-shelf} method for supercharging weak 
-      learners' performance
-      \positem High predictive \textbf{performance} that is hard to outperform
-      \positem Translation of most of \textbf{base learners'} advantages 
-      % (e.g., for tree boosting: inherent 
-      % variable selection, handling of missing data)
-      \positem High \textbf{flexibility} (custom loss functions, many tuning 
-      options) 
+      \positem Retains of most of \textbf{base learners'} advantages 
+      \positem Very \textbf{good predctor}: mitigating base learners' weakness through ensembling
+      \positem Often state-of-the-art results, only outperformed by heterogenous \textbf{stacking ensembles}
+      \positem High \textbf{flexibility} via custom loss functions and choice of base learner
       % \positem Applicable to \textbf{unbalanced} data
     \end{itemize}
   \end{column}
@@ -112,13 +106,8 @@ optimization loop
     \highlight{Disadvantages}
     \footnotesize
     \begin{itemize}
-      \negitem Hard to \textbf{interpret} -- black-box method
-      \negitem Hard to \textbf{visualize}
-      % \negitem Prone to \textbf{overfitting}
-      % \negitem Sensitive to \textbf{outliers}
-      \negitem Hard to \textbf{tune} (high sensitivity to variations in 
-      hyperparameter values)
-      \negitem Rather \textbf{slow} in training
+      \negitem Loss of base learners' potential \textbf{interpretability}
+      \negitem \textbf{Many hyperparameters} that need to be tuned carefully
       \negitem Hard to \textbf{parallelize}
     \end{itemize}
   \end{column}
@@ -138,21 +127,30 @@ optimization loop
 
 \footnotesize
 
-\highlight{XGBoost (extreme gradient boosting)} 
+\highlight{Scalable Gradient Boosting} 
 
 \begin{itemize}
-  \item Fast, efficient implementation of gradient-boosted decision trees
-  \item \textbf{State of the art} for many machine learning problems
+  \item \textbf{Feature and data subsampling} for each base learner fit
+  \item \textbf{Parallelization} and \textbf{approximate split finding} for tree base learners
+  \item GPU accelaration
 \end{itemize}
 
 \medskip
 
-\highlight{Stochastic gradient boosting (SGB)} ~~ Faster, approximate version of 
-GB that performs each iteration only on \textbf{random data subset} 
+\highlight{Explainable / Componentwise Gradient Boosting}
+\begin{itemize}
+    \item Base learners of \textbf{simple linear regression} models or \textbf{splines}, selecting a single feature in each iteration
+    \item Allows \textbf{feature selection} and creates an \textbf{interpretable} model
+    \item Feature interactions can be learned via ranking techniques (e.g., GA$^2$M FAST)
+\end{itemize}
 
 \medskip
 
-\highlight{Tuning} ~~ \textcolor{blue}{Tipps??}
+\highlight{Tuning}
+\begin{itemize}
+    \item Use \textbf{early-stopping} to determine ensemble size
+    \item Tune learning rate and base learner complexity hyperparameters on \textbf{log-scale}
+\end{itemize}
 
 \medskip
 
