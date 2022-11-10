@@ -8,16 +8,13 @@
 
 \highlight{General idea} 
 \begin{itemize}
-  \item \textbf{Bagging ensemble} of $M$ tree \textbf{base learners} fitted on \textbf{bootstrap} data samples
+  \item \textbf{Bagging ensemble} of $M$ tree \textbf{base learners} fitted on \textbf{bootstrap} data samples\\
+   ~~ $\Rightarrow$ Reduce \textbf{variance} by ensembling while slightly increasing \textbf{bias} by bootstrapping  
    \begin{itemize}
-    \item Use unstable, \textbf{high-variance} base learners ~~$\Rightarrow$
-    let trees grow to full size
-    \item Mitigate individual trees' bias by promoting \textbf{decorrelation} 
-    ~~ $\Rightarrow$ use random subset of 
-    candidate features for each split
+    \item Use unstable, \textbf{high-variance} base learners by letting trees grow to full size
+    \item Promoting \textbf{decorrelation} by random subset of candidate features for each split
   \end{itemize}
-  \item \textbf{Predict} via averaging (regression) or majority vote 
-  (classification) of base learners
+  \item \textbf{Predict} via averaging (regression) or majority vote (classification) of base learners
 \end{itemize}
 
 \medskip
@@ -48,35 +45,7 @@ c_t^{[m]} \I(\xv \in Q_t^{[m]}) \right\}$
 
 \begin{frame}{Random Forests -- method summary}
 
-\highlight{Empirical risk} (just like tree base learners)
-
-\begin{itemize}
-  \item In general, compatible with arbitrary losses
-  \item Computation of empirical risk for all potential child nodes of all trees
-\end{itemize}
-
-\medskip
-
-\highlight{Optimization} (just like tree base learners)
-
-\begin{itemize}
-    \item \textbf{Exhaustive} search over all split candidates choice of risk-minimal split (greedy optimization)
-    \item Base learners can be fitted independently of each other (in parallel)
-\end{itemize}
-
-\medskip
-
-\highlight{Hyperparameters}
-
-\begin{itemize}
-  \item \textbf{Ensemble size}, i.e., number of trees
-  \item \textbf{Complexity} of base learners
-  \item \textbf{Number of split candidates}, i.e., number of features to be
-  considered at each split \\
-  $\Rightarrow$ frequently used heuristics with total of $p$ features: 
-  $\left \lfloor{\sqrt{p}}\right \rfloor$ for classification,
-  $\left \lfloor{p/3}\right \rfloor$ for regression
-\end{itemize}
+\highlight{Empirical risk \& Optimization} ~~ Just like tree base learners
 
 \medskip
 
@@ -84,62 +53,8 @@ c_t^{[m]} \I(\xv \in Q_t^{[m]}) \right\}$
 \begin{itemize}
   \item Ensemble prediction for obs. outside individual trees' bootstrap training sample $\Rightarrow$ unseen test sample
   \item Use resulting loss as unbiased estimate of \textbf{generalization error}
+  \item Mainly useful for hyperparameter tuning and less for model comparison
 \end{itemize}
-
-% \highlight{Runtime behavior} ~~
-% $\mathcal{O}(M \cdot n^2 \cdot p)$ for $M$ trees, $n$ observations and $p$ 
-% features
-  
-\end{frame}
-
-% ------------------------------------------------------------------------------
-
-\begin{frame}{Random Forests -- Pro's \& Con's}
-
-\begin{columns}[onlytextwidth]
-  \begin{column}{0.5\textwidth}
-    \highlight{Advantages}
-    \footnotesize
-    \begin{itemize}
-      \positem Retains most of \textbf{trees'} advantages (e.g., feature selection, feature interactions)
-      \positem Fairly \textbf{good predictor}: mitigating base learners' weakness through bagging
-      \positem Quite \textbf{robust} w.r.t. small changes in data
-      \positem Good with \textbf{high-dimensional} data, even in presence of noisy features
-      % \positem Applicable to \textbf{unbalanced} data
-      \positem Easy to \textbf{parallelize}
-      \positem Robust to its hyperparameter configuration
-      \positem Intuitive measures of \textbf{feature importance}
-    \end{itemize}
-  \end{column}
-  \begin{column}{0.5\textwidth}
-    \highlight{Disadvantages}
-    \footnotesize
-    \begin{itemize}
-      \negitem Loss of individual trees' \textbf{interpretability}
-      \negitem Often suboptimal for \textbf{regression}
-      \negitem \textbf{Bias} toward selecting features with many categories
-      \negitem Rather large model size and slow inference time for large ensembles
-      \negitem Typically inferior in \textbf{performance} to tuned gradient tree boosting.
-    \end{itemize}
-  \end{column}
-\end{columns}
-
-\vfill
-
-\small
-
-\conclbox{Fairly good and stable predictor with built-in feature selection, but 
-black-box method}
-
-\end{frame}
-
-% ------------------------------------------------------------------------------
-
-\begin{frame}{Random Forests -- Practical hints}
-
-\highlight{Pre-processing} ~~ Inherent feature selection, but high 
-\textbf{computational cost} for large number of features \\
-$\Rightarrow$ upstream feature selection (e.g., via PCA) might be advisable
 
 \medskip
 
@@ -154,8 +69,41 @@ $\Rightarrow$ upstream feature selection (e.g., via PCA) might be advisable
 
 \medskip
 
-\highlight{Tuning} ~~ Number of split candidates often more impactful than 
-number of trees
+\highlight{Hyperparameters}
+
+\begin{itemize}
+  \item \textbf{Ensemble size}, i.e., number of trees
+  \item \textbf{Complexity} of base learners, e.g., tree depth, min-split, min-leaf-size
+  \item \textbf{Number of split candidates}, i.e., number of features to be considered at each split \\
+  $\Rightarrow$ frequently used heuristics with total of $p$ features: 
+  $\left \lfloor{\sqrt{p}}\right \rfloor$ for classification, $\left \lfloor{p/3}\right \rfloor$ for regression
+\end{itemize}
+
+% \highlight{Runtime behavior} ~~
+% $\mathcal{O}(M \cdot n^2 \cdot p)$ for $M$ trees, $n$ observations and $p$ 
+% features
+  
+\end{frame}
+
+
+% ------------------------------------------------------------------------------
+
+\begin{frame}{Random Forests -- Practical hints}
+
+\highlight{Extremely Randomized Trees}
+\begin{itemize}
+    \item Variance of the base learners can be further increased by \textbf{randomizing split points} instead of using the optimal one
+    \item Alternatively consider $k$ random splits and pick the best one according to impurity 
+\end{itemize}
+
+\medskip
+
+\highlight{Tuning} 
+\begin{itemize}
+    \item \textbf{Ensemble size} should not be tuned as it only decreases variance $\longrightarrow$ choose sufficiently large ensemble
+    \item While default values for the \textbf{number of split candidates} is often good, tuning it can still improve performance
+    \item Tuning the \textbf{minimum samples in leafs} and \textbf{minimum samples for splitting} can be benificial but no huge performance increases are to be expected 
+\end{itemize}
 
 \medskip
 
@@ -163,9 +111,50 @@ number of trees
 
 \begin{itemize}
   \item \textbf{R:} \texttt{mlr3} learners \texttt{LearnerClassifRanger} / 
-    \texttt{LearnerRegrRanger}, calling \texttt{ranger::ranger()}
+    \texttt{LearnerRegrRanger}, calling \texttt{ranger::ranger()} as a highly efficient and flexible implementation
   \item \textbf{Python:} \texttt{RandomForestClassifier} / 
   \texttt{RandomForestRegressor} from package \texttt{scikit-learn}
 \end{itemize}
+
+\end{frame}
+
+% ------------------------------------------------------------------------------
+
+\begin{frame}{Random Forests -- Pro's \& Con's}
+
+\begin{columns}[onlytextwidth]
+  \begin{column}{0.5\textwidth}
+    \highlight{Advantages}
+    \footnotesize
+    \begin{itemize}
+      \positem Retains most of \textbf{trees'} advantages (e.g., feature selection, feature interactions)
+      \positem Fairly \textbf{good predictor}: mitigating base learners' variance through bagging
+      \positem Quite \textbf{robust} w.r.t. small changes in data
+      \positem Good with \textbf{high-dimensional} data, even in presence of noisy features
+      % \positem Applicable to \textbf{unbalanced} data
+      \positem Easy to \textbf{parallelize}
+      \positem Robust to its hyperparameter configuration
+      \positem Intuitive measures of \textbf{feature importance}
+    \end{itemize}
+  \end{column}
+  \begin{column}{0.5\textwidth}
+    \highlight{Disadvantages}
+    \footnotesize
+    \begin{itemize}
+      \negitem Loss of individual trees' \textbf{interpretability}
+      \negitem Can be suboptimal for \textbf{regression} when extrapolation is needed
+      \negitem \textbf{Bias} toward selecting features with many categories (same as CART)
+      \negitem Rather large model size and slow inference time for large ensembles
+      \negitem Typically inferior in \textbf{performance} to tuned gradient tree boosting.
+    \end{itemize}
+  \end{column}
+\end{columns}
+
+\vfill
+
+\small
+
+\conclbox{Fairly good and stable predictor with built-in feature selection, but 
+black-box method}
 
 \end{frame}
