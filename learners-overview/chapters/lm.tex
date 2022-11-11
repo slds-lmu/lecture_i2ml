@@ -95,8 +95,8 @@ with suitable transformation $\phi(\cdot)$, e.g.,
   $\Rightarrow \pi: \Xspace \rightarrow \unitint^g, ~
   \pix = (\pikx[1], \dots, \pikx[g]), ~\sumkg \pikx = 1$
   \item Achieved through \textbf{softmax} transformation: 
-  $\pikx = \left. \exp(\thetab_k^\top \xv) \middle/ \sumjg \exp(\thetab_j^\top 
-  \xv) \right.$
+  $\pikx = \exp(\thetab_k^\top \xv) \big/ \sum_{j=1}^g \exp(\thetab_j^\top 
+  \xv)  $
   \item Multi-class log-loss: $\Lpixy = - \sumkg \I_{\{y = k\}} \log(\pikx)$
   \item Predict class with maximum score (or use thresholding variant)
 \end{itemize}
@@ -121,7 +121,7 @@ with suitable transformation $\phi(\cdot)$, e.g.,
   \item Regularization ubiquitous in ML, with similar techniques
 \end{itemize}
 
-\medskip
+%\medskip
 
 % \highlight{Hypothesis space} ~~\\
 % $\Hspace = \left\{f: \Xspace \to \R ~|~\fx = \phi(\thetab^\top \xv)\right\}$, 
@@ -130,19 +130,21 @@ with suitable transformation $\phi(\cdot)$, e.g.,
 
 %$\Hspace = \{ \theta_0 + \thx\ |\ (\theta_0, \thetab) \in \R^{p+1} \} $
 
-\medskip
-
+%\medskip
+\begin{columns}[c, totalwidth=\textwidth]
+    \begin{column}{0.55\textwidth}
+        
 \highlight{Regularized empirical risk}
 
 \begin{itemize}
   \item Empirical risk function \textbf{plus complexity penalty} 
-  $J(\thetab)$, controlled by shrinkage parameter $\lambda > 0$: \\
-  $\riskrt := \risket + \lambda \cdot J(\thetab)$ 
-  \item Popular regularizers
-  \begin{itemize} 
+  $J(\thetab)$, controlled by shrinkage parameter $\lambda > 0$:
+  $\riskrt := \risket + \lambda \cdot J(\thetab)$
+  %\item Popular regularizers
+  %\begin{itemize} 
     \item \textbf{Ridge} regression: L2 penalty $J(\thetab) = \|\thetab\|_2^2 $
     \item \textbf{LASSO} regression: L1 penalty $J(\thetab) = \|\thetab\|_1 $
-  \end{itemize}
+  %\end{itemize}
 \end{itemize}
 
 \medskip
@@ -155,12 +157,15 @@ with suitable transformation $\phi(\cdot)$, e.g.,
   \item \textbf{LASSO}: numerically with, e.g., (sub-)gradient descent
 \end{itemize}
 
-\end{frame}
 
-% ------------------------------------------------------------------------------
 
-\begin{frame}{Linear Models -- regularization}
+    \end{column}
+        \begin{column}{0.45\textwidth}
+          \includegraphics[width=\textwidth]{figure/l1_l2_hat.png}
+    \end{column}
+\end{columns}
 
+\medskip
 \highlight{Choice of regularization parameter}
 
 \begin{itemize}
@@ -168,15 +173,24 @@ with suitable transformation $\phi(\cdot)$, e.g.,
   \item E.g., choose $\lambda$ with minimum mean cross-validated error 
   (default in R package \texttt{glmnet})
 \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------------------
+
+\begin{frame}{Linear Models -- regularization}
+
+  \begin{columns}[T, totalwidth=\textwidth]
+  \begin{column}{0.62\textwidth}
 
 \medskip
+
 
 \highlight{Ridge vs. LASSO} 
 
 \begin{itemize}
   \item \textbf{Ridge}
   \begin{itemize} 
-    \item Global shrinkage, leading to overall smaller but still dense $\thetab$
+    \item Global shrinkage $\Rightarrow$ overall smaller but still dense $\thetab$
     \item Applicable with large number of influential features, handling 
     correlated variables by shrinking their coefficients by equal amount
   \end{itemize}
@@ -194,6 +208,43 @@ with suitable transformation $\phi(\cdot)$, e.g.,
     + \lambda_1 \cdot \|\thetab\|_1 + \lambda_2 \cdot \|\thetab\|_2^2$
   \end{itemize}  
 \end{itemize}
+
+\end{column}
+
+\begin{column}{0.38\textwidth}
+\tiny
+\centering
+Simulate two scenarios with 50 data sets of size $n = 100$: 
+
+$\yv =\Xmat \boldsymbol{\beta}+ \epsilon, \quad \epsilon \sim N(0,1)$
+\begin{columns}[T, totalwidth=\textwidth]
+\begin{column}{0.5\textwidth}
+\tiny
+\begin{center}
+\textbf{Ridge} performs better for: \\ 
+$\boldsymbol{\beta}=(\underbrace{2,\ldots,2}_{5},\underbrace{0,\ldots,0}_{5})$\\
+$ \operatorname{cor}(\Xmat_{i},\Xmat_{j})=0.8^{|i-j|}, \forall i, j$
+  \end{center}
+\end{column}
+\begin{column}{0.5\textwidth} \tiny
+
+\begin{center}
+\textbf{Lasso} performs better for: \\
+$\boldsymbol{\beta}=(2, 2, 2,\underbrace{0,\ldots,0}_{7})$ \\
+$\operatorname{cor}(\Xmat_{i},\Xmat_{j})= 0, \forall i \neq j$
+\end{center}
+\end{column}
+\end{columns}
+
+
+
+          \includegraphics[width=\textwidth]{figure/enet_lasso_ridge_mse.png}
+          
+          \includegraphics[width=\textwidth]{figure/enet_tradeoff.png}
+\end{column}
+
+\end{columns}
+
 
 
 \end{frame}
