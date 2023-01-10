@@ -1,0 +1,125 @@
+\documentclass[11pt,compress,t,notes=noshow, xcolor=table]{beamer}
+\input{../../style/preamble}
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-ensembles.tex}
+
+\newcommand{\titlefigure}{figure_man/forest.png}
+\newcommand{\learninggoals}{
+\item Understand the problem of high variance learners
+\item Understand the idea behind the bagging approach
+\item Understand the main idea of random forests
+}
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+\begin{document}
+
+
+\lecturechapter{Random Forests: Overview}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+\begin{vbframe}{Motivation: Initial Problem}
+Some learners (e.g. CARTs) tend to have a very high variance:
+\begin{itemize}
+  \item[$\rightarrow$] Very sensitive to changes in the training data:
+  Small changes in the trainig data can lead to vastly different outcomes
+\end{itemize}
+\ \\
+\ \\
+Why is this problematic?
+\begin{itemize}
+  \item Depending on the training dataset the predictions for the same
+  data point can  be completly different
+  \item[$\rightarrow$] The high variance makes predictions of these learners unreliable
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Motivation: Example}
+We draw three bootstrap samples from a two class spiral data set:
+\begin{center}
+\includegraphics[height=0.60\textheight, keepaspectratio]{figure/cart_forest_overview_bs_datasets.pdf}
+\end{center}
+$\rightarrow$ The three data sets only differ in 30\% of points
+\end{vbframe}
+
+\begin{vbframe}{Motivation: Example}
+We train a CART on all 3 datasets an look at the outcomes:
+\begin{center}
+\includegraphics[height=0.60\textheight, keepaspectratio]{figure/cart_forest_overview_1.pdf}
+\end{center}
+$\rightarrow$ The resulting learnes differ in their decision boundaries, therefore in some predictions and also in their estimated performance.\footnote[frame]{CE calculated via test set of 1000 obs. randomly drawn from the same distribution}
+\end{vbframe}
+
+
+\begin{vbframe}{Motivation: Example }
+What happens when we use a majority vote to combine the three learners?
+\begin{figure}
+\includegraphics[height=0.60\textheight, keepaspectratio]{figure/cart_forest_overview_2.pdf}
+%\includegraphics{figure/cart_forest_overview_1.pdf}
+\end{figure}
+$\rightarrow$ The combination of the three learners improves our performance.\footnote[frame]{CE calculated on the same test as on p.3}
+\end{vbframe}
+
+\begin{vbframe}{Motivation: Example}
+By increasing the number of learners, we can further improve our predictions:
+\begin{figure}
+\includegraphics[width=0.8\textwidth]{figure/cart_forest_overview_6.pdf}
+\end{figure}
+\end{vbframe}
+
+\begin{vbframe}{Solution to the initial problem}
+Why does combining different learners (trained on different parts of the data) improve our performance?
+\begin{itemize}
+  \item They make different assumptions abt. the
+  underlying data structure
+  \item They make different mistakes
+\end{itemize}
+$\rightarrow$ By combining  the results of the different learners trained on different parts of the data we can cover a lot of assumptions and smooth out mistakes. This increases the performance wrt. a single learner.
+%\begin{figure}
+%\includegraphics[width=0.50\textwidth]{figure/cart_forest_overview_5.pdf}
+%\end{figure}
+\end{vbframe}
+
+\begin{vbframe}{Bagging}
+The idea of combining individual base learners can be formalized as the concept of bagging:
+\begin{itemize}
+  \item Combination of bootstrapping data and aggregrating models (Bagging = \textbf{B}ootstrap \textbf{Agg}regation)
+  \item Approach to stabelize learners and thereby reduce variance of predictions
+%\begin{enumerate}
+%  \item Draw m subsamples from dataset via bootstrapping
+%  \item Construct m base learners from these m subsamples (can be done in parallel)
+%  \item Aggregate the m single base learners to construct one ensemble learner
+%  \item Ensemble learner is used to make predictions
+%\end{enumerate}
+\end{itemize}
+\ \\
+\ \\
+Several ways to further improve the performance bagging ensembles e.g. via:
+\begin{itemize}
+  \item Increase variance of the ensemble (the combination of base learners) to improve performance
+  \item Decorrelate the base learners to make learners even more different
+\end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{Random Forests}
+Random forests implement these improvement measures and thereby extend bagging:
+\begin{itemize}
+  \item RF implement the bagging algorithm using CARTs as base learners
+  \item Decorrelation by randomizing splits in each base learner
+  \item Increased variance of the ensemble by fully expanding each learner (no pruning etc.)
+\end{itemize}
+\begin{center}
+% FIGURE SOURCE: https://docs.google.com/presentation/d/1lU1qPlY-NQkvWCDrrV6PdDYkloF3eFudM9v2NFYg1rY/edit?usp=sharing
+\includegraphics[height=0.4\textheight, keepaspectratio]{figure_man/forest.png}
+\end{center}
+\end{vbframe}
+
+
+\endlecture
+\end{document}
