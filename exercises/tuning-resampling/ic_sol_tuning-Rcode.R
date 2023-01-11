@@ -18,7 +18,7 @@ ks <- sample(search_space, max_evals, replace = F)
 
 
 do_CV <- function(folds, k){
-  data_indcs <- seq_along(nrow_task)
+  data_indcs <- c(1:nrow_task)
   # start index of test set
   start_index <- 1
   # nmb. of elements per fold
