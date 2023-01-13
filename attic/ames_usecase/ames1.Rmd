@@ -1,0 +1,108 @@
+---
+output: pdf_document
+title: "mlr3 Exercises Day 1 - Ames Housing Dataset"
+---
+
+This exercise is intended to use mlr3 to perform a benchmark analysis on the _Ames Dataset_.
+
+The main objectives of this exercise are as follows:
+
+- To build machine learning models able to predict house price based on house features
+- To analyze and compare models performance in order to choose the best model
+
+## Accessing the dataset
+
+The dataset is available on Kaggle https://bit.ly/2l0uWoz.
+Kaggle is a platform which provides data science competitions and datasets which can be used to get familiar with typical machine learning methods.
+
+## Importing the data
+
+```{r}
+train_set = read.csv("data/ames_housing_train.csv")
+```
+
+1. Load the `mlr3` and `mlr3learners` packages.
+
+```{r}
+library(mlr3)
+library(mlr3learners)
+```
+
+2. Create a regression task object.
+
+```{r}
+task = TaskRegr$new(id = "ames_housing", backend = train_set, target = "SalePrice")
+task
+```
+
+3. Create a list of learning algorithms which you want to use in the benchmark.
+
+```{r}
+# get a featureless learner as baseline
+# Additionally, we can train a regression tree, a knn learner
+# for different values of k and a random forest (ranger)
+learners = list(
+  featureless = lrn("regr.featureless"),
+  knn3 = lrn("regr.kknn", id = "regr.knn3", k = 3),
+  knn7 = lrn("regr.kknn", id = "regr.knn7", k = 7), #default
+  knn15 = lrn("regr.kknn", id = "regr.knn15", k = 15),
+  knn30 = lrn("regr.kknn", id = "regr.knn30", k = 30),
+  tree = lrn("regr.rpart"),
+  random_forest = lrn("regr.ranger")
+)
+```
+
+4. Create a resampling object for your benchmark evaluation.
+
+```{r}
+# compare via 10-fold cross validation
+resamplings = rsmp("cv", folds = 10)
+```
+
+5. Create a grid corresponding to the planned benchmark including the task, all learners and the resampling strategy.
+
+```{r}
+# create a BenchmarkDesign object
+design = benchmark_grid(task, learners, resamplings)
+print(design)
+```
+
+6. Run the benchmark
+
+```{r}
+# execute the benchmark
+bmr = benchmark(design)
+```
+
+7. Use appropriate regression measures to measure the performance of each learner in the benchmark.
+
+```{r}
+# get some measures: Mean Squared Error (which we use for the competition)
+# and Mean Absolute Error
+measures = mlr_measures$mget(c("regr.mse", "regr.mae"))
+bmr$aggregate(measures)
+```
+
+8. Use an appropriate plot to illustrate the benchmark results.
+Have e.g. a look at the `mlr3viz` package.
+
+```{r}
+# create a nice boxplot
+library(mlr3viz)
+autoplot(bmr)
+```
+
+9. Finally, we choose the ranger as final algrithm, train it on the complete training data and predict on the test data.
+
+```{r}
+test_set = read.csv("data/ames_housing_test.csv")
+final_learner = learners$random_forest
+final_learner$train(task)
+pred = final_learner$predict_newdata(task, test_set)
+
+# we can save the predictions as data.table and export them for Kaggle
+pred = as.data.table(pred)
+pred$truth = NULL
+write.csv(pred, "data/ames_housing_submission_day1.csv")
+```
+
