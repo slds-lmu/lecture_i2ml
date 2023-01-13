@@ -1,68 +1,47 @@
-We want to predict the median value of owner-occupied homes
-(variable \textit{medv}) in the area of Boston. Therefore
-we want to use a K-nearest neighbors algorithm. We have already loaded the
-corresponding task:
+We want to predict the scored home runs
+(variable \texttt{runs\_scored}) from a number of characteristics of US
+baseball games.
+You can find the corresponding data on Moodle.
+
+The corresponding task is created (adapt your path if necessary) as follows:
 
 <<Start, eval=FALSE>>=
-library(mlr3)
-library(mlr3learners)
-
-task = tsk("boston_housing")
-nrow_task <- (task$backend$nrow)
-lrn_knn = lrn("regr.kknn")
+library(data.table)
+data_baseball <- fread("baseball.csv")
+data_baseball$team <- as.factor(data_baseball$team)
+data_baseball$league <- as.factor(data_baseball$league)
 @
 
-However, we are not sure what number of neighbors (k) yields the best result.
-This is why we want to use tuning to determine the best value for k.
+We want to use a $k$-NN algorithm.
+However, we are not sure what number of neighbors $k$ yields the best result.
+This is why we want to use tuning to determine the best value for $k$.
 We assume that it might be somewhere in the range from 1 to 100.
 
-\begin{enumerate}\bfseries
-  \item[1)] Define a meaningful search space for the hyperparameter k.
-\end{enumerate}
-
-Furthermore, we want to use random search to search our defined search space.
+Furthermore, we want to use \textbf{random search} to search our defined search
+space.
 In addition, we only want to carry out the tuning a maximum of 80 times.
 
-\begin{enumerate}\bfseries
-  \item[2)] Think about what random search actually means with regard to the
+\begin{enumerate}[1)]
+  \item Think about what random search actually means with regard to the
   search space and a suitable stopping criterion.
-  \item[3)] Put these building blocks together so that they form the basic
-  structure of a tuning procedure. Think about what tuning actually means (Keyword: iterative) and how
-  to translate this into code!
 \end{enumerate}
 
-However, we still need to define which resampling method is supposed to be used
-during tuning. We want to use a 5-fold CV and use the MSE in each iteration to
-calculate the estimated performance of the respective split.
+We still need to define which resampling method is supposed to be used
+during tuning.
+We want to use 5-fold CV and compute the MSE in each iteration to
+estimate the generalization error of the respective candidate.
 
-\begin{enumerate}\bfseries
-  \item[4)] Implement the 5-fold CV in the context of the tuning procedure
-  specified above. You can use and modify the learner specified in the code
-  block above. Keep in mind, that:
-  \begin{itemize}
-  \item The result of one CV is the average of the estimated performances
-  per split.
-  \item The number of k of the learner needs to vary depending on the tuning
-  step we are in.
-  \item Take a look at the code fragment below to get some inspiration.
-  \end{itemize}
-\end{enumerate}
-
-<<CV, eval=FALSE>>=
-do_CV <- function(folds, k){
-  ....
-  # CV iterations
-  for (i in seq(folds)) {
-    ...
-  }
-  return(...)
-}
-@
-
-Now, the last step we have to do is to plug our resampling strategy for tuning
-into the tuning framework from 3)!
-
-\begin{enumerate}\bfseries
-  \item[5)] Include the 5-fold CV in your tuning procedure. Make sure that at the end of
-  your tuning procedure you receive the optimal value for k!
+\begin{enumerate}[1), resume]
+  \item Implement the resampling procedure for $n$-fold CV as an auxiliary
+  function that returns the train and test indices for each fold.
+  The user should be able to feed in the data indices (\texttt{idx}), the number
+  of \texttt{folds}, and a random \texttt{seed}.
+  <<eval=FALSE>>=
+    resample_cv <- function(idx, folds, seed = 123) {
+        ...
+    }
+    @
+  \item Perform the random search with the above specifications, storing the
+  results for each candidate configuration.
+  Plot the estimated generalization error for different values of $k$.
 \end{enumerate}
