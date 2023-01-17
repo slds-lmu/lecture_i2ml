@@ -3,7 +3,8 @@
 # ------------------------------------------------------------------------------
 
 library(data.table)
-library(mlr3verse)
+library(mlr3)
+library(mlr3learners)
 library(ggplot2)
 
 # DATA -------------------------------------------------------------------------
@@ -11,7 +12,7 @@ library(ggplot2)
 # Data adapted from 
 # https://www.openml.org/search?type=data&sort=runs&status=active&qualities.NumberOfClasses=lte_1&id=41021
 
-data_baseball <- fread("baseball.csv")
+data_baseball <- fread("exercises/tuning-resampling/ex_rnw/baseball.csv")
 data_baseball$team <- as.factor(data_baseball$team)
 data_baseball$league <- as.factor(data_baseball$league)
 
