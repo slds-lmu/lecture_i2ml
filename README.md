@@ -5,8 +5,12 @@ This Project offers a free, open source introductory and applied overview of sup
 Main course site: https://slds-lmu.github.io/i2ml/
 
 
-# Contents, License, Team and Further Info
+## Contents, License, Team and Further Info
 Please see the main course site.
+
+## Future Development
+We are collecting ideas for future development in [this list](https://docs.google.com/document/d/1-Qj-i-dgRMiLyniBV2-_bQKtlBUMoMpktc2oGVgll3k/edit?usp=sharing).
+For suggestions regarding the existing material, please open an issue.
 
 
 ## Help is appreciated and welcome!
