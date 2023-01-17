@@ -26,13 +26,9 @@ resample_cv <- function(idx, folds, seed = 123) {
     set.seed(seed)
     idx <- idx[sample(idx, length(idx))]
     
-    # start index of test set
+    # prepare objects needed to store indices
     start_index <- 1
-    
-    # number of elements per fold
-    interval_length <- round(length(idx) / folds)
-    
-    # list of indices
+    interval_length <- floor(length(idx) / folds)
     idx_list <- vector(mode = "list", length = folds)
     
     # CV iterations
@@ -49,6 +45,7 @@ resample_cv <- function(idx, folds, seed = 123) {
         
     }
     
+    # return
     idx_list
     
 }
