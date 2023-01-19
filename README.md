@@ -42,4 +42,7 @@ See also our [contributing guidelines](CONTRIBUTING.md)
 We would appreciate if you contact us in case you are re-using our course.
 Knowing this helps us to keep the project alive. Thank you!
 
+## Further topics
+
+We also have a list of unfinished topics that could be again interesting in the future: <a href="https://docs.google.com/spreadsheets/d/1fHbLj4w4J9A9wSqtfQWJsDiWjjnUEyJIEks5cgPLTs0/edit#gid=0">Link to G-Drive</a>
 
