@@ -14,7 +14,7 @@
   \item \textbf{Sequential ensemble} of $M$ \textbf{base learners} by greedy forward stagewise additive modeling
   \begin{itemize}
       \item In each iteration a base learner is fitted to current \textbf{pseudo residuals} $\Rightarrow$ one boosting iteration is one approximate \textbf{gradient step in function space}
-      \item Base learners are either \textbf{trees} or \textbf{linear regressions}
+      \item Base learners are typically \textbf{trees}, \textbf{linear regressions} or \textbf{splines}
   \end{itemize}
   \item \textbf{Predict} via (weighted) sum of base learners
   
@@ -57,14 +57,15 @@ $\Hspace = \left\{ \fx: \fx = \sum_{m = 1}^M \betam b(\xv, \thetam) \right\}$
 \begin{itemize}
   \item In general, compatible with any \textbf{differentiable} loss
   \item Base learner in iteration $m$ is fitted on \textbf{Pseudo residuals}: \\
-  $\tilde{r}^{(i)} = - \pd{\Lxyi}{\fxi}$ by minimizing the \textbf{L2-loss}: $\sumin (\rmi - b(\xi, \bm{\theta}))^2$
+  $\tilde{r}^{(i)} = - \pd{\Lxyi}{\fxi}$ by minimizing the \textbf{L2-loss}: $\sumin (\tilde{r}^{(i)} - b(\xi, \bm{\theta}))^2$
 \end{itemize}
 
 \medskip
 
 \highlight{Optimization} ~~
 \begin{itemize}
-    \item Same optimization procedure as base learner, while keeping the current ensemble $\fmdh$ fixed
+    \item Same optimization procedure as base learner, while keeping the current ensemble $\fmdh$ fixed\\
+    $\Rightarrow$ Efficient and generally applicable since \textit{inner} loss is always L2
     \item $\betam$ is found via \textbf{line search} or fixed to a \textbf{small constant value} and combined with the leaf values $\ctm$ for tree base learners: $\ctmt = \betam \cdot \ctm$
 \end{itemize}
 
@@ -75,7 +76,7 @@ $\Hspace = \left\{ \fx: \fx = \sum_{m = 1}^M \betam b(\xv, \thetam) \right\}$
 \begin{itemize}
   \item \textbf{Ensemble size}, i.e., number of base learners
   \item \textbf{Complexity} of base learners (depending on type used)
-  \item \textbf{Learning rate}, i.e., impact of next base learner
+  \item \textbf{Learning rate} $\beta$, i.e., impact of next base learner
 \end{itemize}
 
 \medskip
@@ -105,7 +106,7 @@ $\Hspace = \left\{ \fx: \fx = \sum_{m = 1}^M \betam b(\xv, \thetam) \right\}$
 \highlight{Explainable / Componentwise Gradient Boosting}
 \begin{itemize}
     \item Base learners of \textbf{simple linear regression} models or \textbf{splines}, selecting a single feature in each iteration
-    \item Allows \textbf{feature selection} and creates an \textbf{interpretable} model
+    \item Allows \textbf{feature selection} and creates an \textbf{interpretable} model since uni- and bivariate effects can be visualized directly.
     \item Feature interactions can be learned via ranking techniques (e.g., GA$^2$M FAST)
 \end{itemize}
 
@@ -114,27 +115,44 @@ $\Hspace = \left\{ \fx: \fx = \sum_{m = 1}^M \betam b(\xv, \thetam) \right\}$
 \highlight{Tuning}
 \begin{itemize}
     \item Use \textbf{early-stopping} to determine ensemble size
+    \item Various \textbf{regularization parapemeters}, e.g., L1/L2, number of leaves, ... that need to be carefully tuned
     \item Tune learning rate and base learner complexity hyperparameters on \textbf{log-scale}
 \end{itemize}
 
-\medskip
+\end{frame}
 
-\highlight{Implementation}
+\begin{frame}{Implementation}
 
+\highlight{Gradient Tree Boosting}
 \begin{itemize}
   \item \textbf{R:} \texttt{mlr3} learners \texttt{LearnerClassifXgboost} / 
-  \texttt{LearnerRegrXgboost}, calling \texttt{xgboost::xgb.train()}
+  \texttt{LearnerRegrXgboost}, \texttt{LearnerClassifLightGBM} / 
+  \texttt{LearnerRegrLightGBM}
   \item \textbf{Python:} \texttt{GradientBoostingClassifier} / 
   \texttt{GradientBoostingRegressor} from package \texttt{scikit-learn}, 
-  \texttt{XGBClassifier} / \texttt{XGBRegressor} from package \texttt{xgboost}
+  \texttt{XGBClassifier} / \texttt{XGBRegressor} from package \texttt{xgboost},
+  \texttt{lgb.train} from package \texttt{lightgbm}
 \end{itemize}
+
+$\Rightarrow$ \textttt{LightGBM} current state-of-the-art but slightly more complicated to use than \texttt{xgboost} 
+
+\medskip
+
+\highlight{Componentwise Gradient Boosting}
+\begin{itemize}
+    \item \textbf{R:} \texttt{mboost} from package \texttt{mboost}, 
+    \texttt{boostLinear} / \texttt{boostSplines} from package \texttt{compboost}
+   \item \textbf{Python:} /
+\end{itemize}
+
+$\Rightarrow$ \texttt{mboost} very flexible but slow while \texttt{compboost} is much faster with limited features
 
 \end{frame}
 
 
 % ------------------------------------------------------------------------------
 
-\begin{frame}{Gradient Boosting -- Pro's \& Con's}
+\begin{frame}{Gradient Boosting -- Pros \& Cons}
 
 \footnotesize
 
@@ -144,9 +162,9 @@ $\Hspace = \left\{ \fx: \fx = \sum_{m = 1}^M \betam b(\xv, \thetam) \right\}$
     \footnotesize
     \begin{itemize}
       \positem Retains of most of \textbf{base learners'} advantages 
-      \positem Very \textbf{good predctor}: mitigating base learners' weakness through ensembling
-      \positem Often state-of-the-art results, only outperformed by heterogenous \textbf{stacking ensembles}
+      \positem Very \textbf{good predictor} due to aggressive loss minimization, typically only outperformed by heterogenous \textbf{stacking ensembles}
       \positem High \textbf{flexibility} via custom loss functions and choice of base learner
+      \positem Highly efficient implementations exist (\texttt{lightgbm} / \texttt{xgboost}) that work well on large (distributed) data sets
       % \positem Applicable to \textbf{unbalanced} data
     \end{itemize}
   \end{column}
@@ -157,7 +175,7 @@ $\Hspace = \left\{ \fx: \fx = \sum_{m = 1}^M \betam b(\xv, \thetam) \right\}$
       \negitem Loss of base learners' potential \textbf{interpretability}
       \negitem \textbf{Many hyperparameters} 
       to be carefully tuned
-      \negitem Hard to \textbf{parallelize}
+      \negitem Hard to \textbf{parallelize} ($\rightsquigarrow$ solved by efficient implementation)
     \end{itemize}
   \end{column}
 \end{columns}

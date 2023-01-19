@@ -17,29 +17,26 @@ $\Hspace = \left\{f: \Xspace \to \R ~|~\fx = \phi(\thetab^\top \xv)\right\}$,
 with suitable transformation $\phi(\cdot)$, e.g.,
 
 \begin{itemize}
-  \item Identity $\phi(\thetab^\top \xv) = \thetab^\top \xv$ 
-  ~ $\Rightarrow$ \textbf{linear regression}
+  \item \textbf{Lin. Regr.}: $\Yspace = \R$, $\phi$ identity
   % $\rightarrow$ continous output
-  \item Logistic sigmoid function $\phi(\thx) = \frac{1}{1 + \exp(- \thx)} 
-  =: \pixt$
-  ~ $\Rightarrow$ \textbf{(binary) logistic regression}
-  \begin{itemize}
-    
-    \item Probability $\pixt = \P_{\thetab} (y = 1 ~|~ \xv)$
-    of belonging to one of two classes
-    \item Separating hyperplane via decision rule 
-    (e.g., $\yh = 1 \Leftrightarrow \pix > 0.5$)
-  \end{itemize}
+  \item \textbf{Log. Regr.}: $\Yspace = \{0, 1\}$, logistic sigmoid $\phi(\thx) = \frac{1}{1 + \exp(- \thx)} 
+  =: \pixt$\\
+  $\Rightarrow$ Decision rule: Linear hyperplane
 \end{itemize}
-
-\begin{minipage}[b]{0.32\textwidth}
+\begin{minipage}[b]{0.24\textwidth}
+  \begin{center}
+     \includegraphics[width=0.7\textwidth, trim=0 40 0 0, clip]{../slides/supervised-classification/figure/reg_class_log_1}\\
+    \tiny{Logistic sigmoid function}
+  \end{center}
+\end{minipage}
+\begin{minipage}[b]{0.24\textwidth}
   \begin{center}
     \includegraphics[width=0.8\textwidth, trim=0 40 0 0, clip]{
     figure/lm_3d.png} \\
     \tiny{Linear regression hyperplane}
   \end{center}
 \end{minipage}
-\begin{minipage}[b]{0.32\textwidth}
+\begin{minipage}[b]{0.24\textwidth}
   \begin{center}
     % \includegraphics[width=0.7\textwidth, trim=0 40 0 0, clip]{
     % ../slides/supervised-classification/figure_man/logreg-2vars-surface}\\
@@ -48,7 +45,7 @@ with suitable transformation $\phi(\cdot)$, e.g.,
     \tiny{Logistic function for bivariate input and loss-minimal $\thetab$}
   \end{center}
 \end{minipage}
-\begin{minipage}[b]{0.32\textwidth}
+\begin{minipage}[b]{0.24\textwidth}
   \begin{center}
     \includegraphics[width=0.5\textwidth]{figure/logreg_2d}\\
     % \includegraphics[width=0.6\textwidth]{
@@ -59,29 +56,50 @@ with suitable transformation $\phi(\cdot)$, e.g.,
 
 \framebreak
 
-\highlight{Empirical risk}
+\highlight{Loss functions}
 
 \begin{itemize}
-  \item \textbf{Linear regression}
+  \item \textbf{Lin. Regr.}:
   \begin{itemize}
     
-    \item Typically, based on \textbf{quadratic} loss: $\risket = 
-    \sumin \left(\yi - \fxit \right)^2$ ~~
-    $\Rightarrow$ OLS estimation
+    \item Typically, based on \textbf{quadratic} loss (OLS estimation): 
+    $$L\left(\yi, \fxi\right) = \left(\yi - \fxi \right)^2$$ %~~
+    %$\Rightarrow$ OLS estimation
     % \item Alternatives: e.g., \textbf{absolute} or \textbf{Huber} loss (both 
     % improving robustness)
   \end{itemize}
-  \item \textbf{Logistic regression:} based on 
-  \textbf{Bernoulli / log / cross-entropy} loss ~ 
-  $\Rightarrow \risket = \sumin -\yi \log 
-  \left(\pixii\right) - (1 - \yi) \log \left(1 - \pixii \right)$
+  \item \textbf{Log. Regr.}: Based on \textbf{bernoulli / log / cross-entropy} loss ~ 
+  %$\Rightarrow \risket = \sumin -\yi \log \left(\pixii\right) - (1 - \yi) \log \left(1 - \pixii \right)$
+  \begin{itemize}
+      \item Loss based on scores
+      \begin{eqnarray*}
+    L\left(\yi, \fxi\right) &=& \ln\left(1+\exp\left(-\yi \cdot \fxi\right)\right) \quad \text{for } \yi \in \setmp\\
+    L\left(\yi, \fxi\right) &=& - \yi \cdot \fxi + \log\left(1 + \exp\left(\fxi\right)\right) \quad \text{for } \yi \in \setzo 
+    \end{eqnarray*}
+    \item Loss based on probabilities:
+      \begin{eqnarray*}
+    L\left(\yi, \pixii\right) &=& \ln\left(1+\exp\left(-\yi \cdot \log \left(\pixii\right)\right)\right) \quad \text{for } \yi \in \setmp\\
+    L\left(\yi, \pixii\right) &=& -\yi \log \left(\pixii\right) - (1 - \yi) \log \left(1 - \pixii \right)  \quad \text{for } \yi \in \setzo 
+    \end{eqnarray*}
+  \end{itemize}
 \end{itemize}
+
+\framebreak
 
 \medskip
 
-\highlight{Optimization} ~~ For \textbf{OLS}: analytical solution
-  $\thetabh = \olsest$, for other loss functions: numerical 
-  optimization 
+\highlight{Optimization} 
+
+\begin{itemize}
+    \item Minimization of the empirical risk
+    \item For \textbf{OLS}: analytical solution $\thetabh = \olsest$
+    \item For other loss functions: 
+    \begin{itemize}
+        \item \textbf{Log. Regr.}: Convex problem, solvable via second-order optimization methods (e.g. BFGS)
+        \item \textbf{Else}: Numerical optimization 
+    \end{itemize}
+    
+\end{itemize}
 
 \medskip
 
@@ -117,8 +135,8 @@ with suitable transformation $\phi(\cdot)$, e.g.,
 \begin{itemize}
   \item Unregularized LM: risk of \textbf{overfitting} in high-dimensional 
   space with only few observations
-  \item \textbf{Goal}: find compromise between model fit and generalization by 
-  adding \textbf{penalty term}
+  %\item \textbf{Goal}: find compromise between model fit and generalization by adding \textbf{penalty term}
+  \item \textbf{Goal}: avoidance of overfitting by adding \textbf{penalty term}
   \item Regularization ubiquitous in ML, with similar techniques
 \end{itemize}
 
@@ -172,7 +190,7 @@ with suitable transformation $\phi(\cdot)$, e.g.,
 \begin{itemize}
   \item Standard hyperparameter optimization problem
   \item E.g., choose $\lambda$ with minimum mean cross-validated error 
-  (default in R package \texttt{glmnet})
+  %(default in R package \texttt{glmnet})
 \end{itemize}
 \end{frame}
 
@@ -182,9 +200,6 @@ with suitable transformation $\phi(\cdot)$, e.g.,
 
   \begin{columns}[T, totalwidth=\textwidth]
   \begin{column}{0.62\textwidth}
-
-\medskip
-
 
 \highlight{Ridge vs. LASSO} 
 
@@ -205,8 +220,10 @@ with suitable transformation $\phi(\cdot)$, e.g.,
   \item Neither overall better $\Rightarrow$ compromise: \textbf{elastic net}
   \begin{itemize} 
     \item Weighted combination of Ridge and LASSO
-    \item Introducing additional penalization coefficient: $\riskrt = \risket 
-    + \lambda_1 \cdot \|\thetab\|_1 + \lambda_2 \cdot \|\thetab\|_2^2$
+    \item Introducing additional penalization coefficient: %$\riskrt = \risket + \lambda_1 \cdot \|\thetab\|_1 + \lambda_2 \cdot \|\thetab\|_2^2$\\
+    $\riskrt = \risket 
+    + \lambda \cdot P_{\alpha}(\thetab)$, with\\
+    $P_{\alpha}(\thetab) = [\alpha \cdot \|\thetab\|_1 + (1 - \alpha) \cdot \frac{1}{2} \cdot \|\thetab\|_2^2]$
   \end{itemize}  
 \end{itemize}
 
@@ -246,8 +263,6 @@ $\operatorname{cor}(\Xmat_{i},\Xmat_{j})= 0, \forall i \neq j$
 
 \end{columns}
 
-
-
 \end{frame}
 
 % ------------------------------------------------------------------------------
@@ -266,11 +281,18 @@ $\operatorname{cor}(\Xmat_{i},\Xmat_{j})= 0, \forall i \neq j$
     \texttt{LearnerClassifGlmnet} / 
     \texttt{LearnerRegrGlmnet}, calling \texttt{glmnet::glmnet()}
     \item For \textbf{large classification} models: \texttt{mlr3} learner     
-    \texttt{LearnerClassifLiblineaR}, calling \texttt{LiblineaR::LiblineaR()}
+    \texttt{LearnerClassifLiblineaR}, calling \texttt{LiblineaR::LiblineaR()} which uses coordinate descent for optimization
   \end{itemize}
-  \item \textbf{Python:} \texttt{LinearRegression} from package 
-  \texttt{sklearn.linear\_model}, package for advanced statistical parameters 
-  \texttt{statsmodels.api} 
+  \item \textbf{Python:} From package \texttt{sklearn.linear\_model} 
+  \begin{itemize}
+    \item \textbf{Unregularized:}\\ 
+    - \texttt{LinearRegression()}\\
+    - \texttt{LogisticRegression(penalty = None)}
+    \item \textbf{Regularized:}\\
+    - \textit{Linear regression:} \texttt{Lasso(),Ridge(),ElasticNet()} \\
+    - \textit{Logistic regression:} \texttt{LogisticRegression(penalty = \{‘l1’, ‘l2’, ‘elasticnet’\})}
+    \item Package for advanced \textbf{statistical} models: \texttt{statsmodels.api} 
+  \end{itemize}
 \end{itemize}
 
 %% WOULD DELTETE THIS!
@@ -288,7 +310,7 @@ $\operatorname{cor}(\Xmat_{i},\Xmat_{j})= 0, \forall i \neq j$
 
 % ------------------------------------------------------------------------------
 
-\begin{frame}{(Generalized) Linear Models -- Pro's \& Con's}
+\begin{frame}{(Generalized) Linear Models -- Pros \& Cons}
 
 
 
@@ -300,8 +322,8 @@ $\operatorname{cor}(\Xmat_{i},\Xmat_{j})= 0, \forall i \neq j$
       \setlength{\itemsep}{1pt}
       \setlength{\parskip}{1pt}
       \positem \textbf{Simple and fast} implementation
-      \positem \textbf{Analytical} solution for quadratic loss
-      \positem \textbf{Cheap} computation
+      \positem \textbf{Analytical} solution for L2 loss
+      %\positem \textbf{Cheap} computation
       \positem Applicable for any \textbf{dataset size}, as long as number of 
       observations $\gg$ number of features
       \positem Flexibility \textbf{beyond linearity} with polynomials, 

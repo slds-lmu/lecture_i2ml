@@ -11,24 +11,26 @@
 
 \highlight{General idea}
 \begin{itemize}
-  \item Learn \textbf{composite function} through series of feature 
-  transformations, with components distributed over \textbf{neurons}, organized 
+  \item Learn \textbf{composite function} through series of nonlinear feature 
+  transformations, represented as \textbf{neurons}, organized hierarchically 
   in \textbf{layers}
   \begin{itemize}
-    \item Basic neuron operation: 1) affine \textbf{transformation} with 
-    weights \& bias term, 
+    \item Basic neuron operation: 1) affine \textbf{transformation} $\phi$ (weighted sum of inputs), 
     % multiplying inputs with weights (possibly including bias term), 
-    2) (nonlinear) \textbf{activation}
+    2) nonlinear \textbf{activation} $\sigma$
     % , applying (nonlinear) function to transformed inputs
-    \item \textbf{Arbitrarily complex} combinations of fundamental building 
-    blocks
+    \item Combinations of simple building 
+    blocks to create a complex model
   \end{itemize}
-  \item Optimize through \textbf{backpropagation}, performing alternating steps:
+  \item Optimize via \textbf{mini-batch gradient descent} variants:
   \begin{itemize}
-    \item \textbf{Forward pass}: predict result with current parameters and 
-    compute empirical risk 
-    \item \textbf{Backward pass}: update each parameter in proportion to its 
-    error contribution $\Rightarrow$ gradients
+    \item Gradient of each weight can be infered from the \textbf{computational graph} of the network\\
+    $\rightarrow$ \textit{automated differentiation} (AutoDiff)
+    \item Training progress is measured in full passes over the full training data, called \textbf{epochs}
+    %\textbf{Forward pass}: predict result with current parameters and 
+    %compute empirical risk 
+    %\item \textbf{Backward pass}: update each parameter in proportion to its 
+    %error contribution $\Rightarrow$ gradients
   \end{itemize}
 \end{itemize}
 
@@ -40,18 +42,101 @@ $\Hspace = \left\{ \fx: \fx = \tau \circ \phi \circ \sigma^{(h)} \circ
 \sigma^{(1)} \circ \phi^{(1)} (\xv) \right\}$
 
 \smallskip
-
+\begin{center}
 \begin{minipage}[b]{0.24\textwidth}
   \includegraphics[width=0.9\textwidth]{figure/nn-single-neuron} \\
-  \tiny{Single neuron}
+  %\tiny{Single neuron}
 \end{minipage}%
 \begin{minipage}[b]{0.24\textwidth}
   \includegraphics[width=0.9\textwidth]{figure/nn-feedforward} \\
-  \tiny{Feedforward network, 1 hidden layer}
+  %\tiny{(Fully-connected) Feedforward network, 1 hidden layer}
 \end{minipage}%
-\begin{minipage}[b]{0.5\textwidth}
-  \includegraphics[width=\textwidth]{figure/nn-cnn-1} \\
-  \tiny{Convolutional network architecture}
+\end{center}
+
+
+\end{frame}
+
+% ------------------------------------------------------------------------------
+
+\begin{frame}{Neural Networks -- method summary}
+
+\footnotesize
+
+\highlight{Architecture}
+
+\begin{itemize}
+    \item Input layer: original features $\xv$
+    \item Hidden layers: nonlinear transformation of previous layer $\phi^{(h)} = \sigma^{(h - 1)}(\phi^{(h-1)})$
+    \item Output layer: number of output neurons and activation depends on problem $\tau(\phi)$
+    \begin{itemize}
+    \item Regression: one output neuron, $\tau = $ identity
+    \item Binary classification: one output neuron, $\tau = \frac{1}{1 + \exp(- \thx)}$ (logistic sigmoid)
+    \item Multiclass Classification: $g$ output neurons, $\tau_j = \frac{\exp(f_j)}{\sum_{j=1}^g \exp(f_j)}$ (softmax)
+\end{itemize}
+\end{itemize}
+
+
+\highlight{Empirical risk} \\% ~~
+In principle: Any \textbf{differentiable} loss function
+\begin{itemize}
+    \item \textbf{Regression}: Quadratic loss (cf. Lin. Regr.)
+    \item \textbf{Classification}: (Binary) cross-entropy (cf. Log. Regr.)
+\end{itemize}
+
+\medskip
+
+\highlight{Optimization}
+
+\begin{itemize}
+  \item Variety of different optimizers, mostly based on some form of 
+  \textbf{stochastic gradient descent (SGD)}\\
+  $\Rightarrow$ ADAM optimizer oder SGD with Momentum
+  \item Backbone: 
+    \begin{itemize}
+        \item Gradient computation for arbitrary functions via 
+  \textbf{computational graphs}
+        \item \textbf{Automatic differentiation (autodiff)} calculates derivatives automatically
+    \end{itemize}
+  
+  % \item Crucial role of \textbf{regularization} due to high expressivity of 
+  % NNs' hypothesis spaces
+\end{itemize}
+
+\end{frame}
+
+% ------------------------------------------------------------------------------
+
+\begin{frame}{Neural Networks -- method summary}
+
+\highlight{NN types} ~~ Large variety of architectures for different purposes
+\begin{itemize}
+  \item \textbf{Feedforward NNs / multi-layer perceptrons (MLPs):} sequence of 
+  \textbf{fully-connected} layers
+  \item \textbf{Convolutional NNs (CNNs):} sequence of feature map extractors 
+  with spatial awareness $\Rightarrow$ images
+  \item \textbf{Recurrent NNs (RNNs):} handling of sequential, variable-length 
+  information $\Rightarrow$ times series, text, audio
+  \item \textbf{Transformer networks:} de-facto standard for handling text data or data of multiple modalities
+  \item Unsupervised: \textbf{autoencoders}, \textbf{generative adversarial 
+  networks (GANs)}, \dots
+  % \item \textbf{Autoencoders:} learning unsupervised embeddings
+  % \item \textbf{Generative adversarial networks (GANs):} learning to generate 
+  % artificial samples
+\end{itemize}
+
+\begin{minipage}[b]{0.49\textwidth}
+\begin{center}
+  \includegraphics[width=.9\textwidth]{figure/nn-cnn-1} \\
+  \tiny{Convolutional network architecture}\\ \medskip
+  \includegraphics[width=.9\textwidth]{learners-overview/figure/one_to_one.png} \\
+  \tiny{Recurrent network architecture}
+\end{center}
+\end{minipage}
+\begin{minipage}[b]{0.49\textwidth}
+\begin{center}
+  \includegraphics[width=.4\textwidth]{learners-overview/figure/transformer.png} \\
+  \tiny{Transformer network architecture}
+\end{center}
 \end{minipage}
 
 \end{frame}
@@ -62,37 +147,6 @@ $\Hspace = \left\{ \fx: \fx = \tau \circ \phi \circ \sigma^{(h)} \circ
 
 \footnotesize
 
-\highlight{Empirical risk} ~~ Any \textbf{differentiable} loss function
-
-\medskip
-
-\highlight{Optimization}
-
-\begin{itemize}
-  \item Variety of different optimizers, mostly based on some form of 
-  \textbf{stochastic gradient descent}
-  \item Backbone: gradient computation for arbitrary functions via 
-  \textbf{computational graphs}
-  % \item Crucial role of \textbf{regularization} due to high expressivity of 
-  % NNs' hypothesis spaces
-\end{itemize}
-
-\medskip
-
-\highlight{NN types} ~~ Large variety of architectures for different purposes
-\begin{itemize}
-  \item \textbf{Feedforward NNs / multi-layer perceptrons (MLPs):} sequence of 
-  \textbf{fully-connected} layers
-  \item \textbf{Convolutional NNs (CNNs):} sequence of feature map extractors 
-  with spatial awareness $\Rightarrow$ images
-  \item \textbf{Recurrent NNs (RNNs):} handling of sequential, variable-length 
-  information $\Rightarrow$ times series, text, audio
-  \item Unsupervised: \textbf{autoencoders}, \textbf{generative adversarial 
-  networks (GANs)}, \dots
-  % \item \textbf{Autoencoders:} learning unsupervised embeddings
-  % \item \textbf{Generative adversarial networks (GANs):} learning to generate 
-  % artificial samples
-\end{itemize}
 
 \highlight{Hyperparameters}
 
@@ -113,6 +167,16 @@ $\Hspace = \left\{ \fx: \fx = \tau \circ \phi \circ \sigma^{(h)} \circ
 \end{itemize}
 
 \medskip
+
+\highlight{Transfer Learning}
+
+\begin{itemize}
+    \item Makes choice of the architecture dispensable\\
+          $\Rightarrow$ Pre-defined architecture with pre-trained weights is used
+    \item Reduces training cost a lot, since pre-trained weights are only adapted during fine-tuning
+    \item \textbf{Pre-training} done in a self-supervised fashion on ubiquituous amount of data\\
+          $\Rightarrow$ In self-supervised learning, labels are generated from the data itself, no human labeling effort needed
+\end{itemize}
 
 % \highlight{Runtime behavior} ~~ \textcolor{blue}{???}
 
@@ -137,11 +201,10 @@ $\Hspace = \left\{ \fx: \fx = \tau \circ \phi \circ \sigma^{(h)} \circ
 
 \highlight{Optimization tricks}
 \begin{itemize}
-  \item Accelerate training by incorporating \textbf{momentum}
+  \item Accelerate training via optimizer (ADAM, Momentum)
   \item Control learning rate with \textbf{schedulers}, or keep it 
   \textbf{adaptive}
-  \item Use \textbf{batch normalization} for stability by keeping 
-  input distributions fixed throughout transformations
+  \item Use \textbf{batch normalization} for stability by keeping input distributions fixed throughout transformations
   \item \dots
 \end{itemize}
 
@@ -173,8 +236,12 @@ $\Hspace = \left\{ \fx: \fx = \tau \circ \phi \circ \sigma^{(h)} \circ
 
 \begin{itemize}
   \item \textbf{R:} packages \texttt{reticulate}, \texttt{neuralnet}
-  \item \textbf{Python:} libraries \texttt{PyTorch} and \texttt{PyTorch 
-  Lightning}, \texttt{TensorFlow} (high-level API: \texttt{keras})
+  \item \textbf{Python libraries:} 
+  \begin{itemize}
+      \item \texttt{PyTorch} and \texttt{PyTorch Lightning}
+      \item \texttt{TensorFlow} (high-level API: \texttt{keras})
+      \item \texttt{huggingface}
+  \end{itemize}
 \end{itemize}
 
 \end{frame}
@@ -182,7 +249,7 @@ $\Hspace = \left\{ \fx: \fx = \tau \circ \phi \circ \sigma^{(h)} \circ
 
 % ------------------------------------------------------------------------------
 
-\begin{frame}{Neural Networks -- Pro's \& Con's}
+\begin{frame}{Neural Networks -- Pros \& Cons}
 
 \footnotesize
 
