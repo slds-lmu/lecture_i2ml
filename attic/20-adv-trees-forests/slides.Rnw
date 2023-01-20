@@ -1,0 +1,1171 @@
+<<setup-child, include = FALSE>>=
+library(knitr)
+library(mlr)
+library(partykit)
+library(vcd)
+library(mlbench)
+library(survival)
+library(survminer)
+library(rpart)
+library(randomForestSRC)
+
+
+ 
+set_parent("../style/preamble.Rnw")
+
+@
+
+\lecturechapter{18}{Advanced Trees and Forests}
+\lecture{Fortgeschrittene Computerintensive Methoden}
+
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+\input{../../latex-math/ml-trees}
+\input{../../latex-math/ml-bagging}
+\input{../../latex-math/ml-rf}
+
+
+\section{Recap: Trees and Random Forests}
+
+\begin{vbframe}{CART}
+\begin{itemize}
+ \item Classification and Regression Trees, introduced by Breiman
+ \item Only constant prediction in each leaf, either a numerical value, a class label or a probability vector.
+ \item Each point in input space is assigned to one leaf node, and each leaf node has a set of input points leading to it, through axis-parallel splits. Hence, trees divide the feature space $\Xspace$ into rectangles. We can write the tree as a additive model over the leaf-rectangles: 
+\begin{align*}
+ \fx = \sum_{m=1}^M c_m \I(x \in Q_m),
+\end{align*}
+where $M$ rectangles $Q_m$ are used. $c_m$ is a predicted numerical response, a class label or a class distribution.
+\end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{Splitting criteria}
+Let $\Np \subseteq \D$ be the data of a parent node with two child nodes $\Nl$ and $\Nr$, which are created by a split w.r.t. feature $\xj$ at split point $t$:
+\begin{align*}
+ \Nl &= \{ (x,y) \in \Np: \xj \leq t \} \text{ and } \Nr = \{ (x,y) \in \Np: \xj > t \}.
+\end{align*}
+In order to quantify the (negative) quality of the considered split we compute the empirical risks of both child nodes and sum it up
+$$\risk(j, t) = \risk(\Nl) + \risk(\Nr)$$
+The risk $\risk(N)$ for a node is simply the summed loss for the data contained in that node under a selected loss function $L$
+  $$\risk(\Np) = \sum\limits_{(x,y) \in \Np} L(y, c), $$
+if we model the data in that node with an optimal constant $c = \argmin_c \risk(\Np)$. This is basically pretending that after split $(j,t)$ our two child nodes become leafs.
+\end{vbframe}
+
+
+\begin{vbframe}{Split criteria: Regression}
+\begin{itemize}
+ \item For regression, we usually use $L_2$ loss / the SSE-criterion
+$$\risk(\Np) = \sum\limits_{(x,y) \in \Np} (y - c)^2$$
+  \item The best constant under $L_2$ is the mean 
+$c = \bar{y}_\Np = \frac{1}{|\Np|} \sum\limits_{(x,y) \in \Np} y$
+  \item Up to a constant, we just computed the variance of the label distribution in $\Np$; we can also interpret this as a way of measuring the impurity of the distribution / fluctuation around the constant. 
+ \item We could have also used the $L_1$ loss and the median
+\end{itemize}
+
+<<result='hide', fig.height=2.2>>=
+set.seed(2)
+x = rnorm(20)
+m = mean(x)
+s = var(x)
+d = data.frame(x = x, y = 1)
+pl = ggplot(d, aes(x = x, y = y))
+pl = pl + geom_point()
+pl = pl + geom_segment(x = m, xend = m, y = 0.9, yend = 1.1)
+pl = pl + geom_segment(x = m-s, xend = m+s, y = 1.05, yend = 1.05)
+pl = pl + geom_text(x = m, y = 1.15, label = "mean +- 1 std")
+pl = pl + xlab("y") + ylab("")
+pl = pl + coord_map(xlim = c(-2, 2),ylim = c(0.75, 1.25))
+print(pl)
+@
+\end{vbframe}
+
+
+\begin{vbframe}{Splitting Criteria: Classification}
+\begin{itemize}
+ \item We normally use either Brier (so $L_2$ loss on probabilities) or the Bernoulli loss (from logistic regression) as loss function 
+ \item We usually model constant predictions in node $\Np$ by simply calculating the class proportions 
+$$ \pikN = \frac{1}{|\Np|} \sum\limits_{(x,y) \in \Np} [y = k] $$
+  This is the optimal constant under the 2 mentioned losses above
+\end{itemize}
+
+<<fig.height=2.2>>=
+d = data.frame(prob = c(0.1, 0.7, 0.2), label = 1:3)
+pl = ggplot(data = d, aes(x = label, y = prob, fill = label)) 
+pl = pl + geom_bar(stat = "identity")  + theme(legend.position = "none")
+pl = pl + ylab("Class prob.") + xlab("Label")
+print(pl)
+@
+\end{vbframe}
+
+
+\begin{vbframe}{Splitting Criteria: Comments}
+ \begin{itemize}
+  \item Tree splitting is usually introduced under the concept of "impurity reduction", but our approach above is simpler and more in line with empirical risk minimization and our previous concepts
+  \item Splitting on Brier score is normally called splitting on Gini impurity
+$$I(\Np) = \sum_{k\neq k'} \pikNh \hat\pi^{\Np k'} = \sum_{k=1}^g    \pikNh(1-\pikNh)$$
+  \item Splitting on Bernoulli loss is normally called splitting on entropy impurity
+$$I(\Np) = -\sum_{k=1}^g \pikNh \log \pikNh$$
+  \item The pairs Brier score / Gini and Bernoulli / entropy are equivalent (which is not hard to prove, but will not be done here)
+ \end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{CART: Overfitting}
+\begin{itemize}
+ \item The CART-Algorithm could just continue until there is a single observation in each node
+\lz
+ \item [$\Rightarrow$] Complexity (and hence the danger of overfitting) increases with the number of splits / levels / leafs
+\end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{Pruning}
+\begin{itemize}
+ \item Method to select optimal size of the tree, to avoid overfitting
+\lz
+ \item During tree growing, it is hard to tell when we should stop, as we don't know if the addition  of further splits down the line will dramatically decrease error (called horizon effect).
+\lz
+\item Aggressive (early) stopping criteria can be used, sometimes this is called pre-pruning, and you would have to tune over their settings
+\lz
+ \item Or post-pruning: Grow a deep tree, then remove parts, so that the resulting smaller tree is optimal  w.r.t. cross-validated error
+\end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{CART: Minimal cost complexity pruning}
+\begin{itemize}
+ \item Method to optimize the trade-off between goodness-of-fit and complexity
+ \item Criteria: cost function
+\begin{align*}
+ R_{\alpha} &= R(T) + \alpha \cdot \# \text{leafs},
+\end{align*}
+where $R(T)$ represents the error of tree $T$ on the training set\\
+$\rightarrow$ $R_{\alpha}$ = Training error + Complexity term.
+ \item For every $\alpha$ there is a distinctly defined smallest sub-tree of the original tree, which minimizes the cost function.
+ \item $\hat{\alpha}$ can be assessed with cross-validation.
+ \item Final tree is fitted on the whole data, where $\hat{\alpha}$ is used to find the optimal size of the tree
+\end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{Advantages}
+\begin{itemize}
+ \item Model is easy to comprehend, graphical representation
+ \item Not much preprocessing required: 
+a) native handling of categorical features and missing values 
+b) no problems with outliers in features
+c) Monotone transformations of features change nothing, so no feature scaling
+ \item Interaction effects between features are easily possible
+ \item Works for (some) non-linear functions, but see "disadvantages"
+ \item Inherent feature selection
+ \item Quite fast, scales well with larger data
+ \item Trees are flexible by creating a custom split criterion and leaf-node prediction rule (clustering trees, semi-supervised trees, density estimation, etc.)
+ \item Handles features regardless of scale (nominal - ordinal - metric) 
+ \item Missing values can be handled
+\end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{Disadvantages}
+\begin{itemize}
+ \item High instability (variance) of the trees. 
+Small changes in the data could lead to very different trees. This leads to a) less trust in interpretability b) is a reason why prediction error of trees is usually not best.
+ \item In regression, due to fitting piecewise constant models, trees often do not extrapolate well
+ \item Prediction function is not smooth because a step function is fitted.  
+ \item Linear dependencies must be modeled over several splits: Simple linear correlations must be translated into a complex tree structure\\
+$\rightarrow$ Model-Based Trees
+ \item Really not the best predictor \\
+$\rightarrow$ Combine with bagging (\enquote{random forest}) or boosting!
+\end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{Ensemble methods}
+General homogenous approach (often it works like this but not always)
+\begin{itemize}
+ \item A \enquote{base learner} is selected and fitted multiple times to either resampled or reweighted versions of the original data.\\
+%\item The base learner is applied to either resampled or reweighted versions of the original dataset.
+% \item his results in $M$ prediction functions $g^{(1)}(x),\dots,g^{(M)}(x)$.
+This results in $M$ prediction functions $\bl{1},\dots,\bl{M}$.
+ \item These $M$ function are aggregated, usually in a linear fashion.
+
+This results in the following final prediction function:
+  $$f(x) = \sum_{m=1}^M \betam \blm$$
+  with coefficients $\betai,\dots,\betaM$.
+\end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{Bagging}
+\begin{algorithm}[H]
+\small
+\setstretch{1.15}
+\caption*{Bagging algorithm}
+\begin{algorithmic}[1]
+ \State {\bf Input: } Dataset $\D$, base learner, number of bootstraps $M$
+ \For {$m = 1 \to M$}
+ \State Draw a bootstrap sample $\D^{[m]}$ from $\D$.
+ \State Train base learner on $\D^{[m]}$ to obtain model $\blm$
+ \EndFor
+ \State Aggregate the predictions of the $M$ estimators (via averaging or majority voting), to determine the bagging estimator:
+\begin{align*}
+ \fM &= \frac{1}{M} \sum_{m=1}^M \blm \\
+ \text{or}\quad \fM &= \argmax_{k \in \Yspace} \sum_{m=1}^M \I\left(\blm = k\right)
+\end{align*}
+\end{algorithmic}
+\end{algorithm}
+\end{vbframe}
+
+
+\begin{vbframe}{Random Forest}
+\begin{itemize}
+ \item Modification of bagging for trees.
+ \item Construction of bootstrapped {\bf decorrelated} trees.
+ \item Variance of the bagging prediction $\fM$ depends on (mean) correlation between trees $\rho =  \corr\left(\bl{m}, \bl{m'}\right)$
+\begin{align*}
+ \var\left(\fM\right) = \rho \sigma^2 + \frac{1-\rho}{M} \sigma^2,
+\end{align*}
+where $\sigma^2 = \var(\blm)$ describes the average variance of the trees.
+ \item we want to have as much $\var(\blm)$ as possible (diverse ensemble!), but mimize $\var\left(\fM\right)$ at the same time
+ \item[$\Rightarrow$] Reduce correlation by randomization in each node:
+  Instead of all $p$ features, draw $\texttt{mtry} \le p$ random split candidates for each node.
+\framebreak
+ \item[$\Rightarrow$] Trees $\blm$ are expanded liberally, without aggressive early stopping or pruning, to increase the diversity of the ensemble.
+
+ \item The following values are recommended for $\texttt{mtry}$:
+   \begin{itemize}
+     \item Classification: $\lfloor \sqrt{p} \rfloor$
+     \item Regression: $\lfloor p/3 \rfloor$
+\end{itemize}
+
+ \item Out-of-bag error: On average $\approx$ 1/3 of points are not drawn.
+\begin{align*}
+ \P(\text{Obs. not drawn}) &= \left(1 - \frac{1}{n}\right)^n
+ \ \stackrel{n \to \infty}{\longrightarrow} \ \frac{1}{e} \approx
+ \Sexpr{round(exp(-1), digits = 2)}.
+ % e^x = lim_n(1 + x/n)^n
+\end{align*}
+
+To compute the OOB error, each observation $x$ is predicted only with those trees that did not use $x$ in their fit.
+ \item The OOB error is similar to cross-validation estimation. It can also be used for a quicker model selection.
+\end{itemize}
+
+\framebreak
+
+\begin{algorithm}[H]
+\caption*{Random Forest algorithm}
+\begin{algorithmic}[1]
+\State {\bf Input: }A dataset $\D$ of $n$ observations, number $M$ of trees
+in the forest, number $\texttt{mtry}$ of variables to draw for each split
+ \For {$m = 1 \to M$}
+  \State Draw a bootstrap sample $\D^{[m]}$ from $\D$
+  \State Grow tree $\blm$ using $\D^{[m]}$
+  \State For each split only consider $\texttt{mtry}$ randomly selected features
+  \State Grow tree without early stopping or pruning
+\EndFor
+  \State Aggregate the predictions of the $M$ estimators (via averaging or majority voting), to predict on new data.
+\end{algorithmic}
+\end{algorithm}
+\end{vbframe}
+
+
+\begin{vbframe}{Random Forest: Advantages}
+ \begin{itemize}
+  \item Easy to implement
+  \item Can be applied to basically any model
+  \item Easy to parallelize
+  \item Often works well (enough) 
+  \item Enables variance analysis
+  \item Integrated estimation of OOB error
+  \item Can work on high-dimensional data
+  \item Often not much tuning necessary
+ \end{itemize}
+\end{vbframe}
+
+
+
+
+\section{Model-Based Trees}
+
+\begin{vbframe}{Motivation: Model-Based Trees}
+ \begin{itemize}
+   \item For regression problems, both linear models and decision trees are two popular methods ,but in general, neither of them is the best.
+   \item Find a hybrid model, which improves accuracy of predictions and outperforms the either model alone.
+$\Rightarrow$ Model-based tree
+ \end{itemize}
+
+\begin{center}
+  \includegraphics[width=0.62\textwidth]{figure_man/model_trees2} 
+\end{center}
+
+%pic.
+\tiny{Dimitri P. Solomatine and Yunpeng Xue(2004). "M5 Model Trees and Neural Networks: Application to Flood Forecasting in the Upper Reach of the Huai River in China."}
+
+ \pagebreak
+ \normalsize
+
+ \begin{itemize}
+  \item Model-based tree is a more generalized approach, which allows you to build decision trees out of any model of your choice.
+  \lz
+  \item Model-based trees can be used for regression or classification(see the example later).
+  \lz
+  \item The purpose of a model-based tree is to build a model, which is a variation of  decision tree. Constant prediction in each leaf is replaced by any chosen model(i.e. linear regression, logistic regression, neural network).
+  \lz
+  \item The model tree outperforms the decision tree in general.
+ \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Random Forest: Disadvantages}
+ \begin{itemize} 
+   \item Often suboptimal for regression
+   \item Hard to interpret, especially interactions
+   \item Does not really optimize loss aggressively
+   \item No real way to adapt to problem\\
+(see e.g. loss in GBM, kernel in SVM)
+   \item Implementations sometimes memory-hungry
+   \item Prediction can be slow
+ \end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{Example: Decision tree vs Model-Based Trees}
+ \begin{table}[h]
+  \begin{tabular}{ccc}
+Data& Tree & Model Tree  \\
+   \includegraphics[width=1.46in]{figure_man/data} &
+   \includegraphics[width=1.3in]{figure_man/example_trees} &
+   \includegraphics[width=1.3in]{figure_man/example_model_trees.jpg} 
+  \end{tabular}
+ \end{table}
+
+\small{The first figure shows the artificial "polynomial-noise" dataset and the uncorrupted class boundary. The 2th and 3th figure show the class probability estimates from a C4.5 and a LMT model for the "polynomial-noise" dataset. Colors (from light to dark) indicate class probability estimates in the different regions.}
+\lz
+
+\tiny{Landwehr, N., Hall, M. \& Frank, E. Mach Learn (2005) 59: 161. https://doi.org/10.1007/s10994-005-0466-3}
+\end{vbframe}
+
+
+\begin{vbframe}{Regression: Linear Model Trees}
+\begin{itemize}
+ \item mixture of linear models and decision trees
+ \item For esch node, population mean is now replaced by a linear regression model. The parameters of the linear model is on current sample, also a subset of full data at the current node.
+\end{itemize}
+
+\begin{center}
+  \includegraphics[width=0.6\textwidth]{figure_man/model_trees} 
+\end{center}
+
+\tiny{Anson Wong(2018). Introduction to Model Trees from scratch. Retrieved from https://towardsdatascience.com/introduction  -to-model-trees-6e396259379a}
+
+\normalsize
+\pagebreak
+
+\begin{tikzpicture}[sibling distance=15em,
+                    vertex/.style = {shape=rectangle, rounded corners,
+                    draw, align=center,
+                    top color=white, bottom color=blue!20}]]
+\node[vertex](Start) {All dataset} 
+child {node[vertex](A) {node 1 $\Np_{1}$\\ $f_{1}(x) = x^{T}\beta_{1}$} }
+child {node[vertex](B){node 2 $\Np_{2}$}
+  child { node[vertex](C){node 3 $\Np_{3}$\\ $f_{3}(x) = x^{T}\beta_{3}$}}
+  %child { node[vertex] {$\cdot\cdot\cdot$} }
+  %child { node[vertex] {$\cdot\cdot\cdot$} } }
+child { node[vertex](D){node 4 $\Np_{4}$\\ $f_{4}(x) = x^{T}\beta_{4}$} } };
+\begin{scope}[nodes = {below = 11pt}]
+\node at (-1.8,+.4)  {$Z_{1}<z_{1}$};
+\node at (+1.8,+.4)  {$Z_{1}\geq z_{1}$};
+\node at(+.8,-1.2)  {$Z_{2}<z_{2}$}; 
+\node at(+4.8,-1.2)  {$Z_{2}\geq z_{2}$}; 
+\node at(+6,+.6)  {$Z_{i}$: split variable}; 
+\node at(+6,+.2)  {$z_{i}$: split point}; 
+%\node at (C) {$Z_{3}>z_{3}?$};
+\end{scope}
+\end{tikzpicture}
+
+\lz
+Linear model trees: $$f(x) = \sum_{i} \I\{ x \in \Np_{i} \} \cdot x^{T}\beta_{i}$$ for $i = 1, 2, \cdot\cdot\cdot \cdot\cdot\cdot$
+\end{vbframe}
+
+
+\begin{vbframe}{Example for Linear Model Trees}
+\begin{figure}
+<<lmt-bh-plot1, echo=FALSE, message=FALSE, warning=FALSE, size="tiny", fig.height=5.2, out.height="60%">>=
+ data("BostonHousing", package = "mlbench")
+ BostonHousing <- transform(BostonHousing,chas = factor(chas, levels = 0:1, labels = c("no", "yes")),rad = factor(rad, ordered = TRUE))
+
+## linear model tree
+ bh_tree <- lmtree(medv ~ log(lstat) + I(rm^2) | zn + indus + chas + nox + age + dis + rad + tax + crim + b + ptratio, data = BostonHousing, minsize = 40)
+
+## plottin
+# plot(bh_tree)  
+ plot(bh_tree, tp_args = list(which = "log(lstat)"))
+@
+\end{figure}
+\tiny{Linear model trees  from the \pkg{partykit} \pkg{R}-package trained on the \enquote{BostonHousing} data from the \pkg{mlbench} \pkg{R}-package with increasing number of trees}
+
+\pagebreak
+
+\begin{figure}
+<<lmt-bh-plot7, echo=FALSE, message=FALSE, warning=FALSE, size="footnotesize", fig.height = 5>>=
+  plot(bh_tree, terminal_panel = NULL)
+@
+\end{figure}
+
+\pagebreak
+
+\begin{figure}
+<<lmt-bh-plot2, echo=FALSE, message=FALSE, warning=FALSE, size="footnotesize", fig.height = 5>>=
+  ## printing individual node
+  print(bh_tree,node = 3)
+@
+  %\caption{Coef. of linear model for the 3th node}
+\end{figure}
+
+\pagebreak
+
+\begin{figure}
+<<lmt-bh-plot3, echo=FALSE, message=FALSE, warning=FALSE, size="footnotesize", fig.height = 5>>=
+  ## printing individual node
+  print(bh_tree,node = 6)
+@
+  %\caption{Coef. of linear model for the 6th node}
+\end{figure}
+
+\pagebreak
+
+\begin{figure}
+<<lmt-bh-plot4, echo=FALSE, message=FALSE, warning=FALSE, size="footnotesize", fig.height = 5>>=
+  ## printing individual node
+  print(bh_tree,node = 7)
+@
+  %\caption{Coef. of linear model for the 7th node}
+\end{figure}
+
+\pagebreak
+
+\begin{figure}
+<<lmt-bh-plot5, echo=FALSE, message=FALSE, warning=FALSE, size="footnotesize", fig.height = 5>>=
+  ## printing individual node
+  print(bh_tree,node = 8)
+@
+  %\caption{Coef. of linear model for the 8th node}
+\end{figure}
+
+\pagebreak
+
+\begin{figure}
+<<lmt-bh-plot6, echo=FALSE, message=FALSE, warning=FALSE, size="footnotesize", fig.height = 5>>=
+  ## printing individual node
+  print(bh_tree,node = 9)
+@
+  %\caption{Coef. of linear model for the 9th node}
+\end{figure}
+\end{vbframe}
+
+
+\begin{vbframe}{Advantages vs Disadvantages:}
+Advantages:
+\begin{itemize}
+ \item produce better predictions and lead to better insights than standalone linear models or standalone decision trees
+ \item powerfully interpretable.
+ \item can work on high-dimensional data
+ \item can identify subpopulations with dissimilar behavior.
+ \item Overfitting can be avoided
+ \item not require many splits to approximate a linear relationship as tree-based models (including random forests and gradient boosting decision trees)
+\end{itemize}
+
+Disadvantages:
+\begin{itemize}
+ \item Preditions of gradient boosting decision tree can be better, but the result is not easily interpretable.
+\end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{Classification: Logistic Model Trees}
+\begin{itemize}
+ \item Use the linear model trees for classification tasks by transforming
+the classification problem into a regression task by binarizing the class (Frank et al., 1998)\\
+$\Rightarrow$ several trees (one per class) and the final model is harder
+to be interpreted.
+ \item Way out: Logistic model trees
+ \item Analog to linear model trees, use logistic regression instead of linear regression
+ \item can be seen as a piecewise logistic regression with knots learned via a decision tree algorithm
+ \item For each node, population mode is replaced by a logistic regression and the parameters in a logistic regression will be estimated
+\end{itemize}
+
+\pagebreak
+
+\begin{tikzpicture}[sibling distance=15em,
+                    vertex/.style = {shape=rectangle, rounded corners,
+                    draw, align=center,
+                    top color=white, bottom color=blue!20}]]
+\node[vertex](Start) {All dataset} 
+child {node[vertex](A) {node 1 $\Np_{1}$\\ $\pi_{1}(x) = \frac{exp(x^{T}\beta_{1})}{1+exp(x^{T}\beta_{1})}$ } }
+child {node[vertex](B){node 2 $\Np_{2}$}
+  child { node[vertex](C){node 3 $\Np_{3}$\\ $\pi_{3}(x) = \frac{exp(x^{T}\beta_{3})}{1+exp(x^{T}\beta_{3})}$ }}
+  %child { node[vertex] {$\cdot\cdot\cdot$} }
+  %child { node[vertex] {$\cdot\cdot\cdot$} } }
+child { node[vertex](D){node 4 $\Np_{4}$\\ $\pi_{4}(x) = \frac{exp(x^{T}\beta_{4})}{1+exp(x^{T}\beta_{4})}$ } } };
+\begin{scope}[nodes = {below = 11pt}]
+\node at (-1.8,+.4)  {$Z_{1}<z_{1}$};
+\node at (+1.8,+.4)  {$Z_{1}\geq z_{1}$};
+\node at(+.8,-1.2)  {$Z_{2}<z_{2}$}; 
+\node at(+4.8,-1.2)  {$Z_{2}\geq z_{2}$}; 
+\node at(+6,+.6)  {$Z_{i}$: split variable}; 
+\node at(+6,+.2)  {$z_{i}$: split point}; 
+%\node at (C) {$Z_{3}>z_{3}?$};
+\end{scope}
+\end{tikzpicture}
+
+\lz
+Logistic model trees: $$\pi(x) = \sum_{i} \I\{x \in \Np_{i}\} \cdot \pi_{i}(x)$$ for $i = 1, 2, \cdot\cdot\cdot \cdot\cdot\cdot$
+\end{vbframe}
+
+
+\begin{vbframe}{Example: Logistic Model Trees}
+\begin{figure}
+<<logit-mt-Pima Indians diabetes data-plot1, echo=FALSE, message=FALSE, warning=FALSE, size="tiny", fig.height=4>>=
+## Pima Indians diabetes data
+  data("PimaIndiansDiabetes", package = "mlbench")
+## recursive partitioning of a logistic regression model
+ pid_tree2 <- glmtree(diabetes ~ glucose | pregnant + pressure + triceps + insulin + mass + pedigree + age, data = PimaIndiansDiabetes, family = binomial)
+
+## plotting
+ plot(pid_tree2)
+# plot(pid_tree2, tp_args = list(cdplot = TRUE))
+@
+
+\caption{Logistic model trees from the \pkg{partykit} \pkg{R}-package trained on the \enquote{Pima Indians diabetes} data from the \pkg{mlbench} \pkg{R}-package with increasing number of trees}
+\end{figure}
+
+\pagebreak
+
+\begin{figure}
+<<logit-mt-Pima Indians diabetes data-plot2, echo=FALSE, message=FALSE, warning=FALSE, size="footnotesize", fig.height = 4.5>>=
+## printing individual node
+ print(pid_tree2, node = 2)
+@
+\end{figure}
+
+\pagebreak
+
+\begin{figure}
+<<logit-mt-Pima Indians diabetes data-plot3, echo=FALSE, message=FALSE, warning=FALSE, size="footnotesize", fig.height = 4.5>>=
+## printing individual node
+ print(pid_tree2, node = 4)
+@
+\end{figure}
+
+\pagebreak
+
+\begin{figure}
+<<logit-mt-Pima Indians diabetes data-plot4, echo=FALSE, message=FALSE, warning=FALSE, size="footnotesize", fig.height = 4.5>>=
+## printing individual node
+  print(pid_tree2, node = 5)
+@
+\end{figure}
+\end{vbframe}
+
+
+\begin{vbframe}{Advantages vs Disadvantages:}
+Advantages:\\
+\begin{itemize}
+ \item Missing values can be handled
+ \item can be implemented (LogitBoost algorithm(Friedman, Hastie \& Tibshirani, 2000)) 
+ \item Model is fairly easy to comprehend and visualize
+ \item Usually produces more accurate models than those produced by decision trees(like C4.5, CART) and standalone logistic regression on real-world datasets.
+ \item can work on high-dimensional data
+\end{itemize}
+
+Disadvantages:\\
+\begin{itemize}
+ \item Implement quite slow due to the high computational complexity
+ \item Only uses a simple global imputation(at present) to deal with missing values, which might lead to lower accuracy of predictions.
+\end{itemize}
+\end{vbframe}
+
+
+\begin{vbframe}{Summary and Implementation in R}
+%% add random forest, svm and so on
+\begin{center}
+\begin{tikzpicture}
+\tikzset{
+  vertex/.style = {
+    style = every edge, 
+    fill = white!80!orange , draw = orange, 
+    font =\scriptsize,  
+    text width = 1.8cm, 
+    text justified, text centered
+  }
+}
+\draw [->] (-5,0) -- (6,0) node [above left]  {Accuracy};
+\draw [->] (0,-3.2) -- (0,3.2) node [below right] {Interpretability};
+\node [rectangle,vertex] at (+2.4,+1) {Linear/Logistic Model Tree};
+\node [rectangle,vertex] at (+2.4,0) {SVM};
+\node [rectangle,vertex] at (-2.8,+0.5) {Tree Induction};
+\node [rectangle,vertex] at (-2.2,+1.5) {Linear Model};
+\node [rectangle,vertex] at (+4,-1) {Boosting};
+\node [rectangle,vertex] at (+1.2,-1) {Random Forest};
+\node  at (-2.6,-2) {Dead Zone};
+\end{tikzpicture}
+\end{center}
+
+\pagebreak 
+
+\begin{itemize}
+ \item For Linear model trees, implemented in the R-package \pkg{partykit}(Hothorn and Zeileis, 2015) with function \code{lmtree()}.
+\lz
+ \item For Logistic model trees, implemented in the R-package \pkg{partykit}
+(Hothorn and Zeileis, 2015) with function \code{glmtree()}.
+\end{itemize}
+\end{vbframe}
+
+
+\section{Survival Trees and Forests}
+
+
+\begin{vbframe}{Survival Analysis}
+
+% What is survival analysis
+\textbf{Survival analysis} is analyzing the expected duration of time until one or more events happen. 
+
+\lz 
+
+\textbf{Questions} to answer are: 
+
+\begin{itemize}
+
+
+%%??     what is this?
+  \item Given an input $\xb \in \Xspace$ takes a certain value, what is the probability to survice a past a certain die?%%
+  \item How do particular circumstances or characteristics increase or decrease the probability of survival? 
+\end{itemize}
+
+
+
+
+\textbf{Examples:}
+\begin{itemize}
+\item How long will the marriage last for a specific age group?
+  \item How long will the cell phone battery last, after being suceessfully used for two years?
+  \item What is the likelihood that a patient survive, after receiving the given treatment?
+\end{itemize}
+\end{vbframe}
+
+
+
+\begin{vbframe}{Survival Analysis: Example}
+\textbf{Example:} Lung data set
+
+\begin{table}
+\scalebox{0.8}{
+  \begin{tabular}{|l | l | l | l | l |l|}
+  \hline
+  Observations & Survival time (days) & sex &wt.loss & $\dots$ & ph.ecog \\
+  \hline
+   1 & 306  & Male & NA &  & 1 \\
+  \hline
+  2 & 455 &  Male & 15 &  & 0 \\
+  \hline
+  3 & 1010 & Male & 15 &  & 0 \\
+  \hline
+  4 & 210 & Male & 11 &  & 1 \\
+  \hline
+  5 & 883 & Male & 0 &  & 0\\
+  \hline
+  6 & 1022 & Male & 0 &  & 1 \\
+  \hline
+  7 & 310 & Female & 10 &  & 2 \\
+  \hline
+  8 & 361 & Female & 1 &  & 2 \\
+  \hline
+  $\hdots$ & $\hdots$ & $\hdots$ & $\hdots$ & $\hdots$ & $\hdots$ \\
+  \hline
+  224 &  188 & Male & 3 &  & 1 \\
+  \hline
+  225 &  191 & Male & -5 &  & 0 \\
+  \hline
+  226 &  105 & Female& 5 &  & 2 \\
+  \hline
+  227 &  174 & Male & 1 &  & 0 \\
+  \hline
+  228 &  177 & Female & 0 &  & 1 \\
+  \hline
+  \end{tabular}
+}
+\end{table}
+
+\begin{footnotesize}
+ph.ecog: ECOG performance score(0=good 5=dead)\\
+wt.loss:	Weight loss in last six months
+\end{footnotesize}
+
+\pagebreak
+
+This dataset gives us infomation about the patients from the North Central Cancer Treatment Group who were diagnosed with lung cancer. For instance, ECOG Performance score describes the ability of doing usual daily activities among those patients. Survival time tells us how many days those patients survive after entering this study.\\
+\lz
+\textbf{Task:} How long will those patients survive, after being diagnosed with lung cancer?
+\end{vbframe} 
+
+
+\begin{vbframe}{Formalization: Survival function}
+
+A survival task is given by a dataset $\D \subset \left(\Xspace \times \R\right)^n$ with $t \in \R$ denoting the survival time. 
+
+\lz 
+
+We are usually interested in predicting the probabilty to survive
+
+$$
+  \P(t > t_0 ~|~ \xb = \xb_{i})
+$$
+
+given an input $\xb_{i}$.
+
+\lz 
+
+This allows us to introduce the \textbf{survival function} in general
+
+$$
+  S(t_0) = \P(t > t_0)
+$$
+
+and the survival function conditioned on feature $\xb$
+
+
+ $$
+ S(t_0 ~|~ \xb) := \P(t > t_0 ~|~ \xb). 
+ $$ 
+
+ \framebreak 
+
+\begin{tikzpicture}
+  % The graphic
+  \draw[->, line width=1pt] (0,0) -- (0, 2.5);
+  \draw[->, line width=1pt] (0,0) -- (3,0);
+  \draw (0.2, 2.3) .. controls (1.2, 0.)  and (2, 0.3) .. (2.8, 0.2);
+  \node at (-.2, -.2)  {0};
+  \node at (-.4, 2)  {S(t)};
+  \node at (2.6, -.3) {t};
+\end{tikzpicture}
+\\
+The survival function S(t) decreases monotonically with time t.\\
+
+Survival function can be estimated with \textbf{Kaplan-Meier Estimiate}:\\
+
+\begin{equation}
+ \hat S(t) = \left\{
+ \begin{array}{rcl}
+ 1& & t<t_{(1)}\\
+ \Pi_{t_{(k)} \leq t}(1-d_{k}/n_{k})& & t \geq t_{(1)}
+\end{array} \right.
+\end{equation}
+
+
+where $\hat S(t)$ is a step function with jumps at $t_{(1)}$, $t_{(2)}$,$\hdots \hdots \hdots$
+If T is continously distributed, then the probability of $d_{k} = 1$ is 1. However, $d_{k} > 1$ due to rounding and imprecise measurements.$ d_{k}/n_{k}$ is as estimate for $\lambda_{k}$.
+
+\pagebreak
+
+   <<lung data-plot1, echo=FALSE, message=FALSE, warning=FALSE, size="tiny", fig.height=4>>=
+   lung.fit = survfit(Surv(time,status)~ sex, data = lung)
+  ## plot the Kaplan-Meier curve for lung data
+   ggsurvplot(lung.fit, data = lung)
+  @
+
+
+\end{vbframe} 
+
+\begin{vbframe}{Formalization: Hazard function}
+
+\textbf{Hazard function} describes the risk that an event happens at time t, given that no event has happened until t.
+
+
+$$ \lambda(t):= \lim\limits_{\Delta t \to 0} \frac{Pr(t\leq T < t + \Delta t | T \geq t)}{\Delta t}$$
+
+If $t$ is discrete and pos. $\mathds{Z}$, then $$ \lambda(t) = Pr(T = t | T \geq t)$$
+
+\lz
+Cumulative hazard function(CHF):
+
+$$\Lambda(t) = \int_{0}^{t}\lambda(r)dr$$
+
+\end{vbframe}
+
+\begin{vbframe}{Censoring of the Data}
+
+\begin{itemize}
+  \item \textbf{Censoring} is a form of missing data where the time to event is not observed.
+  \item A subject is censored, if the event doesn't occur during observation time
+  \item Reasons might be:
+  \begin{itemize}
+    \item A subject leaves the study before an event of interest occurs (\textbf{right ceonsoring})
+    \item The study ends before the event of interest has occured for some subjects (\textbf{right ceonsoring})
+    \item The event of interest has already occured before the study begins (\textbf{left censoring})
+  \end{itemize}
+  \item If we observe the event of interest, the subject is called \textbf{uncensored.}
+\end{itemize}
+
+We will introduce a so-called \textbf{censoring variable} $y \in \Yspace$, denoting the type of censoring. 
+
+\begin{center}
+  \includegraphics[width=0.6\textwidth]{figure_man/survival_analysis} 
+\end{center}
+\tiny{Tom Briggs(2014). survival-analysis-for-predicting-employee-turnover Retrieved from https://www.slideshare.net/twbriggs/survival-analysis-for-predicting-employee-turnover}
+
+
+??  Is this plot better??  I have also saved the plot from https://scikit-survival.readthedocs.io/en/latest/understanding_predictions.html in figure_man as survival_analysis1, you can choose
+
+\normalsize
+\framebreak 
+
+\begin{table}
+\scalebox{0.6}{
+  \begin{tabular}{|l | l | l | l | l |l|l|}
+  \hline
+  Observations & Survival time (days) & sex &wt.loss & $\dots$ & ph.ecog & status \\
+  \hline
+   1 & 306  & Male & NA &  & 1 & 2\\
+  \hline
+  2 & 455 &  Male & 15 &  & 0 & 2\\
+  \hline
+  3 & 1010 & Male & 15 &  & 0 & 1\\
+  \hline
+  4 & 210 & Male & 11 &  & 1 & 2\\
+  \hline
+  5 & 883 & Male & 0 &  & 0 & 2\\
+  \hline
+  6 & 1022 & Male & 0 &  & 1 & 1\\
+  \hline
+  7 & 310 & Female & 10 &  & 2 & 2\\
+  \hline
+  8 & 361 & Female & 1 &  & 2 & 2\\
+  \hline
+  $\hdots$ & $\hdots$ & $\hdots$ & $\hdots$ & $\hdots$ & $\hdots$ & $\hdots$ \\
+  \hline
+  224 &  188 & Male & 3 &  & 1 & 1\\
+  \hline
+  225 &  191 & Male & -5 &  & 0 & 1\\
+  \hline
+  226 &  105 & Female& 5 &  & 2 & 1\\
+  \hline
+  227 &  174 & Male & 1 &  & 0 & 1\\
+  \hline
+  228 &  177 & Female & 0 &  & 1 & 1\\
+  \hline
+  \end{tabular}
+}
+\end{table}
+
+\begin{footnotesize}
+ph.ecog: ECOG performance score(0=good 5=dead)\\
+wt.loss:	Weight loss in last six months\\
+status: censoring variable, 1 = censored, 2 = dead
+\end{footnotesize}
+\\
+\lz
+Here, the patient with censoring(status = 1) indicate that the patient survive until the end of this study, otherwise, the patient died during of observation time.
+
+\framebreak 
+
+What is difficult when handling survival data? 
+\lz
+\begin{itemize}
+ \item Mostly, restriction asumptions are needed when using conventional methods for modeling censored survival data.
+ \lz
+ % This is better??
+ \item There are also restrictions for parameters in the model, for instance, the survival time to be predicted must to be greater than zero.
+ \lz
+ \item Nonlinear effects of variables should be dealt with transformation or exand the design matrix
+\end{itemize}
+
+\end{vbframe}
+
+
+
+% Survival function, also reliability function:
+ 
+%  with $F(t) = \int_{0}^{t}f(r)dr$ and $f(t) = \frac{\partial}{\partial t}F(t)$\\
+%  \lz
+%  S(t) shows the probability that a subject hasn't experienced a event of interest until a specific time.\\
+
+%  \lz
+
+% \end{vbframe}
+
+
+\begin{vbframe}{Survival Trees/Random Forest: Motivation}
+
+\textbf{Goal:} Predict survival behaviour (e.g. a survival function, stratified/personalised treatment effect) given some input $\xb$
+
+  \begin{itemize}
+   \item (Semi)parametric model, i.e., cox proportional hazard regression model and its extensions, are popular models for censored survival data.
+   \item In clinical trials, we always estimate average treatment effects for subgroups of all patients. Because the same treatment may works differently on two patients with different disease subcategory. A famous example: "Trastuzumab increases the clinical benefit of first-line chemotherapy in metastatic breast cancer that overexpresses HER2."(Slamon et al., 2001; Frueh and Gurwitz, 2004).
+   \item One can estimate the treatment effect for different patient subgroups in subgroup analysis.
+   \item In subgroup analyses, the subgroups are often predefined by the experts, which can be wrong.
+   \item Can we construct a model that it can estimate stratified/personalised treatment effect for patients? 
+   \item Can we build a personalised model for any given patient?
+    $\Rightarrow$ survival trees and random forests
+  \end{itemize}
+
+\end{vbframe}
+
+
+\begin{vbframe}{}
+ \begin{center}
+  \includegraphics[width=0.9\textwidth]{figure_man/survival_tree_motiv} 
+\end{center}
+\begin{footnotesize}
+Survival tree model for incidence of CHD events in men and the distribution of survival times in the terminal nodes, Tehran Lipid and Glucose Study (1999¨C2012). At each level, the most significant split based on log-rank (LR) and permutation P value is shown. SBP: Systolic blood pressure; FPG: Fasting plasma glucose; female-CVDH: Family history of CVD in female relatives.
+\end{footnotesize}
+\normalsize
+\tiny{Azra Ramezankhani, Farideh Bagherzadeh-Khiabani, Davood Khalili, Fereidoun Azizi & Farzad Hadaegh(2017). "A new look at risk patterns related to coronary heart disease incidence using survival tree analysis: 12 Years Longitudinal Study"}
+\end{vbframe}
+
+
+\begin{vbframe}{Survival Trees}
+
+\textbf{Idea:} Recursevily split the regression trees into groups of observations that have \enquote{similar} survival behaviour. 
+
+
+ \begin{itemize}
+    \item Binary splits are constructed top-down 
+    \item combine with (semi)parametric model for survival analysis, also for nonparametric model
+    \item In the greedy top-down construction, features and split points are selected by exhaustive search.
+    \item Predetermined survival criterion is used as split criterion
+    \item The best feature and split point which make the maximal survival difference between parent node and child nodes.
+    \item The procedure is then applied to the child nodes in a recursive manner.
+    \item estimate stratified treatment effects for patients within same group
+    \item the subgroups are identified automatically
+    \end{itemize}
+
+Survival trees are constructed as the well-known decision trees, if we use an appropriate \textbf{splitting criterion}. 
+
+\end{vbframe}
+
+\begin{vbframe}{Splitting Criteria : instability of parameter}
+There are several splitting criterions for building a survival tree. One popular of them is splitting w.r.t. instability of parameter, which is implemented in package Model4you.
+
+ \begin{itemize}
+  \item Start with a initial model that describes the conditional distribution of the primary endpoint Y (or certain characteristics of this distribution) as a function of the treatment arm and potentially further covariates (both contained in X) through parameters $\theta$ as defined in the study protocol. Parameter vector $\theta$ contain intercept parameters $\alpha$, one or more treatment effect $\beta$ and other model parameters $\gamma$.
+  \item Estimate $\theta$ by minimizing an objective function $\phi$, which usually is the negative log-likelihood.
+  \item calculate the gradient of the objective function $\phi$ w.r.t.$\theta$ to get the score equation and then solve the score equation.
+   \item implement independence tests to know whether partitioning variable are associated with the partial score functions(w.r.t. $\alpha$ and $\beta$, which we are interested in). If $H_{0}$( $H_{0}$: partitioning variable and partial score functions are independent) is rejected, then split again.
+   \item repeat recursively until $H_{0}$ is not rejected.
+ \end{itemize}
+\tiny{Heidi Seibold, Achim Zeileis, Torsten Hothorn (2016). "Model-Based Recursive Partitioning for Subgroup Analyses."}
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{Splitting Criteria: Exponential Splitting}
+ \begin{itemize}
+    \item  exponential log-likelihood loss, which is implemented in package CART.
+    \lz
+    \item The exponential model is used as survival distribution. In order to make the prognostic differences, which is base on covariate information, the constant hazard function in each node is modified:  $h(y) = \lambda_j$ , for all y in group j.
+    \lz
+    \item Loss function can be updated by the survival experience because of using simple model (exponential model), when we change the split variable. This make the execution of algorithm more efficient for spliting with all possible variable. 
+    \lz
+    \item In each leaf, the exponential log-likelihood loss is used:
+  $$
+    R(z) = - \hat L(z) = D_z - D_z*log(D_z/Y_z) 
+  $$
+  for a node z.\\
+  
+  Here, $D_z = \sum_{z} d_i$ is the number of complete observations at the node z and $Y_t = \sum_{t} y_i$ is the summe of all observation time.
+  
+%% number ?? of complete observations at the node
+ \end{itemize}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Other Splitting Criteria}
+ 
+ \begin{itemize}
+    \item Idea is proposed by Gordon and Olshen(1985)
+    \item Ciampi et al.(1986) suggested using the logrank statistic to compare measure the dissimilarity between the two children nodes. 
+    \item a general formulation is proposed by Ciampi et al.(1987). It is based on using the likelihood ratio statistic(LRS) under an specific model to measure the "distance" between the two children nodes
+    \item using a staturated model log-likelihood and a maxiximized log-likelihood to measure node deviance(Leblanc and Crowley(1992)). With this method, the baseline cummulative hazard function by the Nelson-Aalen estimator can be use to approximate the unknown full likelihood. This method is implemented in rpart.
+    \item Cho and Hong(2008) advised to train a median survival tree by using the $L_{1}$ loss function 
+ \end{itemize}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Example: Survival Trees}
+\begin{figure}
+<<lung-data-plot1, echo=FALSE, fig.height=7.6, fig.width=15, out.height = "100%", out.width = "100%", message=FALSE, results="hide", warning=FALSE, size="large">>=
+#logrank test
+#survdiff(Surv(time,status)~ sex, data = lung)
+ lung.surv.tree <- rpart(Surv(time,status)~ sex + age + ph.ecog + ph.karno + pat.karno + meal.cal +  wt.loss, data = lung)
+ plot(lung.surv.tree, uniform = T, branch = .005, compress = T)
+ text(lung.surv.tree, use.n=T)
+@
+\end{figure}
+
+\end{vbframe}
+
+
+\begin{vbframe}{Example: Survival Trees}
+
+\begin{figure}
+ \begin{center}
+  \includegraphics[width=0.52\textwidth]{figure_man/model4you-tree} 
+ \end{center}
+\end{figure}
+
+\tiny{Heidi Seibold, Achim Zeileis, Torsten Hothorn (2019). "odel4you: An R Package for Personalised Treatment Effect Estimation." Journal of Open Research Software, 7(17), 1-6. doi:10.5334/jors.219}
+
+\end{vbframe}
+
+
+%\begin{center}
+%\includegraphics[width=0.9\textwidth]{figure_man/lung_forest} 
+%\end{center}
+% \end{figure}
+% \tiny{Survival Tree from the \pkg{rpart} \pkg{R}-package trained on the \enquote{lung} data from the \pkg{survival} \pkg{R}-package with increasing number of trees}
+
+% \pagebreak
+
+% \begin{figure}
+% <<lung-data-plot2, echo=FALSE, message=FALSE, warning=FALSE, size="tiny", fig.height=5.2>>=
+%  print(lung.surv.tree)
+% @
+% \end{figure}
+% \end{vbframe}
+
+
+% \begin{vbframe}
+% \begin{figure}
+% <<lung-data-plot3, echo=FALSE, message=FALSE, warning=FALSE, size="tiny", fig.height=5.2>>=
+%  summary(lung.surv.tree)
+% @
+% \end{figure}
+% \end{vbframe}
+
+
+
+\begin{vbframe}{Survival Forests}
+ \begin{itemize}
+    \item extension of Breimans random forest techniques 
+    \item an efficient non-parametric analysis for survival data
+    \item an ensemble of survival trees
+   % \item It can handle automatically many difficulties when we deal with time to event data, also right censored data
+   %  \item Censoring information and survival time is included when growing a tree
+   %  \item For each node, survival difference are used for find a split.
+   % \item survival tree and construct the ensemble CHF
+    \item can extract personalized treatment effects for patients
+    \item more powerful preditive tools
+    \item help to estimate a personalised model for any given patient
+  
+ \end{itemize}
+
+  \framebreak
+
+  \begin{algorithm}[H]
+  \caption*{Survival Forests algorithm}
+  \begin{algorithmic}[1]
+  \State {\bf Input: }A dataset $\D$ of $n$ observations, number $M$ of trees
+  in the forest, number $\texttt{mtry}$ of variables to draw for each split
+  \For {$m = 1 \to M$}
+  \State Draw a bootstrap sample $\D^{[m]}$ from $\D$
+  \State Grow survival tree $\blm$ using $\D^{[m]}$
+  \State For each split only consider $\texttt{mtry}$ randomly selected features
+  \State Calculate the cumulative hazard function for the tree
+\EndFor
+\State Aggregate cumulative hazard function of the $M$ estimators via averaging, to get the ensemble cumulative hazard function.
+\end{algorithmic}
+\end{algorithm}
+\end{vbframe}
+
+
+\begin{vbframe}{Example: Survival Forests}
+
+\begin{figure}
+ \begin{center}
+  \includegraphics[width=0.52\textwidth]{figure_man/model4you-beeswarm} 
+ \end{center}
+\end{figure}
+ 
+\tiny{Heidi Seibold, Achim Zeileis, Torsten Hothorn (2019). ¡°model4you: An R Package for Personalised Treatment Effect Estimation.¡± Journal of Open Research Software, 7(17), 1-6. doi:10.5334/jors.219}
+
+\end{vbframe}
+
+
+
+%\begin{vbframe}{Example: Survival Forests}
+%\begin{figure}
+%<<lung-data-forestplot1, echo=FALSE, message=FALSE, warning=FALSE, size="tiny", fig.height=5.2>>=
+%##  2/3 of the sample size
+%smp_size <- floor(2/3 * nrow(lung))
+%## set the seed to make your partition reproducible
+%set.seed(123)
+%train.ind <- sample(seq_len(nrow(lung)), size = smp_size)
+%lung.train <- lung[train.ind, ]
+%lung.test <- lung[-train.ind, ]
+%lung.rfsrc <- rfsrc(Surv(time, status) ~ ., data = lung.train,
+%                   nsplit = 10, na.action = "na.impute",
+%                  tree.err = TRUE,importance = TRUE)
+%print(lung.rfsrc)
+%@
+%\caption{Survival Forest from the \pkg{randomForestSRC} \pkg{R}-package trained on the \enquote{lung} data from the \pkg{survival} \pkg{R}-package with increasing number of trees}
+%\end{figure}
+
+%\pagebreak
+
+%\begin{figure}
+%<<lung-data-forestplot2, echo=FALSE, message=FALSE, warning=FALSE, size="tiny", fig%.height=5.2>>=
+% plot(lung.rfsrc)
+%@
+%\end{figure}
+%\end{vbframe}
+
+
+
+
+\section{Density Estimation Trees}
+
+% https://mlpack.org/papers/det.pdf
+
+\begin{vbframe}{Density Estimation}
+
+% What is density estimation?
+
+% Why is it hard? --> unsupervsied task
+
+\end{vbframe}
+
+\begin{vbframe}{Motivating Example: Iris }
+
+% https://mlpack.org/papers/det.pdf, page 3, column 2
+
+
+\end{vbframe}
+
+
+\begin{vbframe}{Motivation: Density Estimation Trees }
+
+% Why using density estimation trees?
+
+% https://mlpack.org/papers/det.pdf, page 3, column 2
+
+% page 2 mainly the right column
+
+
+\end{vbframe}
+
+\begin{vbframe}{Density Estimation Trees}
+
+% https://mlpack.org/papers/det.pdf, page 3, column 2
+
+% Summarize 3.1
+
+% Summarize 3.3
+
+
+\end{vbframe}
+
+\endlecture
