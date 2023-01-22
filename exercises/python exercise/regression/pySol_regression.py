@@ -25,7 +25,7 @@ import sklearn.metrics as metrics
 # Model classes representing a certain hypothesis are stored in subpackages of sklearn.
 # You can reach it with importing the desired class with e.g.
 from sklearn.linear_model import LinearRegression  #repeated because of emphasis
-# It is good pratice to import evverything in the beginning of your code.
+# It is good pratice to import everything in the beginning of your code.
 
 # You initialize your "learner" or model with its properties defined by the Parameters, e.g.
 model = LinearRegression(fit_intercept = True)
@@ -94,7 +94,7 @@ rtree.get_n_leaves() # not working because no tree was fitted yet
 
 # In general: 
 # DecisionTreeRegressor inherits from class sklearn.tree
-# As it used for regression, it predicts regression value for input X
+# as it is used for regression, it predicts regression value for input X
 
 # Important parameters
 # criterion: choose between L2, L1, and others as Loss function
@@ -136,6 +136,7 @@ np.random.seed(43)
 y = fun_y(x) + np.random.normal(size = 60)
 
 poly3d = np.poly1d(np.polyfit(x,y,3)) # Polyfit function for polynomial functions
+print(np.polyfit(x,y,3)) # coefficients
 
 # create plot from mathplotlib.pyplot
 plt.figure(figsize=(12, 6))
