@@ -10,11 +10,11 @@ library(parttree)
 plot_boundaries <- function(data, formula, x_axis, y_axis, cols, alpha = 1, 
                             verbose = FALSE, maxdepth = 5L) {
   res <- vector("list", 0L)
+  cols2 <- res
   res$trees <- vector("list", maxdepth)
   splits_old <- NULL
   splits_list <- res
   counter <- 0
-  cols2 <- res
   for (i in 1:maxdepth) { 
     tree <- rpart(formula, data = data, maxdepth = i)
     plot_splits <- parttree(tree)
@@ -27,8 +27,7 @@ plot_boundaries <- function(data, formula, x_axis, y_axis, cols, alpha = 1,
     splits_list[[i]] <- plot_splits
     res$trees[[i]] <- tree
     target_present <- levels(data[[colnames(plot_splits)[2]]]) %in% plot_splits[, 2]
-    cols2[[i]] <- cols[target_present]
-    cols2[[i]] <- cols[unique(plot_splits[, 2])]
+    cols2 <- append(cols2, list(cols[levels(data[[colnames(plot_splits)[2]]])][target_present]))
   }
   target <- colnames(plot_splits)[2]
   res$trees <- res$trees[1:counter]
@@ -129,16 +128,6 @@ annotate_all <- function(base_plot, plot_splits, cols, alpha = .25) {
   }
   base_plot
 }
-
-node_depth <- function(node.number) {
-  node.depth <- 1
-  while(node.number > 1) {
-    node.number <- node.number %/% 2
-    node.depth <- node.depth + 1
-  }
-  node.depth
-}
-
 
 p <- plot_boundaries(iris, Species ~ Sepal.Length + Sepal.Width, 
                      "Sepal.Length", "Sepal.Width", 
