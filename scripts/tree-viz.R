@@ -1,3 +1,12 @@
+#' This script combines code and examples for a visualization function for
+#' classification trees using the rpart package.
+#' The function(s) visualizes:
+#' a) the tree structure (using rpart.plot)
+#' b) the resulting prediction areas (using ggplot2)
+#' The function harmonizes both plots so they can be printed vis-a-vis
+#' and corrects the areas of plot b) so there is no overlap
+
+
 #install.packages("rpart")
 #install.packages("rpart.plot")
 #install.packages("tidyverse")
@@ -7,8 +16,32 @@ library(rpart.plot)
 library(tidyverse)
 library(parttree)
 
-plot_boundaries <- function(data, formula, x_axis, y_axis, cols, alpha = 1, 
-                            verbose = FALSE, maxdepth = 5L) {
+#' Main function
+#' This function creates tree structure and area plots for classification trees.
+#' The tree structure is plotted using the rpart.plot function.
+#' The area is plotted using ggplot2. The resulting plot visualizes 
+#' the predictive surface with rectangles of different color.
+#' There is one tree plot and area plot per depth of the tree.
+#' @param data a data.frame containing the data for the tree fit.
+#' @param formula a formula, as specified when passed to the rpart function.
+#' must consist of two features
+#' @param x_axis a single character, the feature displayed on the area plot on 
+#' the x-axis. Must be contained in the formula.
+#' @param y_axis a single character, the feature displayed on the area plot on 
+#' the x-axis. Must be contained in the formula.
+#' @param cols a named vector that has the same length as there are classes. 
+#' The names must correspond with the classes. The values must be explicit colours
+#' recognized by both rpart.plot and ggplot2
+#' @param alpha a single numeric value between 0 and 1, the alpha value of ggplot2
+#' steering the opacity of the retangles in the area plot.
+#' @param maxdepth a single integer value, the maximum depth of the tree.
+#' @return a list of length 3, a) the tree at the current depth,
+#' b) the corresponding classification plot ($plot_tree), c) the corresponding
+#' area plot ($plot_area). Both latter elements are functions that can be supplied
+#' with an index. The index corresponds to the current depth of the tree.
+#' That means $plot_area(2) produces the area plot for the tree at depth = 2.
+plot_boundaries <- function(data, formula, x_axis, y_axis, cols, 
+                            alpha = 0.25, maxdepth = 5L) {
   res <- vector("list", 0L)
   cols2 <- res
   res$trees <- vector("list", maxdepth)
@@ -49,6 +82,7 @@ plot_boundaries <- function(data, formula, x_axis, y_axis, cols, alpha = 1,
   res
 }
 
+#' Function that corrects rectangles when they overlap.
 correct_rectangles <- function(rect) {
   for (i in (nrow(rect) - 1):1) {
     old <- rect[nrow(rect):(i + 1), , drop = FALSE]
@@ -115,6 +149,8 @@ correct_rectangles <- function(rect) {
   rect
 }
 
+#' Function using the annotate function of ggplot2 to plot rectangles for the
+#' area plot. 
 annotate_all <- function(base_plot, plot_splits, cols, alpha = .25) {
   target <- colnames(plot_splits)[2]
   for (i in 1:nrow(plot_splits)) {
@@ -128,6 +164,8 @@ annotate_all <- function(base_plot, plot_splits, cols, alpha = .25) {
   }
   base_plot
 }
+
+####### Examples
 
 p <- plot_boundaries(iris, Species ~ Sepal.Length + Sepal.Width, 
                      "Sepal.Length", "Sepal.Width", 
