@@ -2,84 +2,43 @@
 
 library(ggplot2)
 library(data.table)
-
-mylm <- function(x, coeffs) coeffs[1] + coeffs[2] * x
+source("libfuns_lm.R")
 
 # DATA -------------------------------------------------------------------------
 
+set.seed(pi)
+x <- 1:5
+y <- x + rnorm(5, 0, 2)
 coeffs <- list(c(1.8, .3), c(1, .1), c(0.5, .8))
-my_df <- lapply(
+colors <- c("darkgreen", "orange", "red")
+
+lapply(
     seq_along(coeffs),
     function(i) {
-        set.seed(pi)
-        my_df <- data.table(x = 1:5)
-        my_df[, y := x + rnorm(5, 0, 2)]
-        my_df[
-            , `:=`(
-                intercept = coeffs[[i]][1],
-                slope = coeffs[[i]][2],
-                yhat = mylm(x, coeffs[[i]]),
-                xmax = x + abs(y - mylm(x, coeffs[[i]])),
-                ymax = mylm(x, coeffs[[i]]),
-                coeff_set = i
-            ),
-            by = seq_len(nrow(my_df))
-            ][, sq_error := (y - yhat)^2, by = seq_len(nrow(my_df))]
-        my_df
+        intercept <- coeffs[[i]][1]
+        slope <- coeffs[[i]][2]
+        sse <- round(sum((y - univariate_lm(x, coeffs[[i]]))^2), 2)
+        p <- make_lm_l2_plot(x, y, coeffs[[i]], colors[i]) +
+            xlim(c(0, 8)) +
+            ggtitle(
+                substitute(
+                    paste(
+                        theta, " = (", intercept, ", ", slope, "), SSE = ", sse
+                    )
+                )
+            )
+        ggsave(
+            sprintf("../figure/reg_lm_sse_1%i.pdf", i), 
+            p, 
+            width = 3, 
+            height = 2.8
+        )
+            
     }
 )
-my_df <- do.call(rbind, my_df)
 
-# LINE PLOTS -------------------------------------------------------------------
 
-make_line_plot <- function(df, plot_color) {
-    intercept <- df$intercept
-    slope <- df$slope
-    sse <- round(sum(df$sq_error), 2)
-    p <- ggplot(data = df, aes(x, y)) +
-        theme_bw() +
-        xlim(c(0, 8)) +
-        ylim(c(-2, 6)) +
-        labs(
-            x = expression(x[1]),
-            title = substitute(
-                paste(theta, " = (", intercept, ", ", slope, "), SSE = ", sse)
-            )
-        ) +
-        geom_point(shape = 4, size = 5) +
-        geom_abline(
-            slope = df$slope, intercept = df$intercept, col = plot_color
-        ) +
-        geom_rect(
-            df,
-            mapping = aes(
-                xmin = df$x, xmax = df$xmax, ymin = df$y, ymax = df$ymax
-            ),
-            alpha = 0.1,
-            col = plot_color,
-            fill = plot_color,
-        ) 
-    p
-}
 
-ggsave(
-    "../figure/reg_lm_sse_11.pdf", 
-    make_line_plot(my_df[my_df$coeff_set == 1, ], "blue"), 
-    width = 3, 
-    height = 3.1
-)
-ggsave(
-    "../figure/reg_lm_sse_12.pdf", 
-    make_line_plot(my_df[my_df$coeff_set == 2, ], "orange"), 
-    width = 3, 
-    height = 3.1
-)
-ggsave(
-    "../figure/reg_lm_sse_13.pdf", 
-    make_line_plot(my_df[my_df$coeff_set == 3, ], "red"), 
-    width = 3, 
-    height = 3.1
-)
 
 # FUNCTIONS --------------------------------------------------------------------
 
@@ -243,39 +202,6 @@ sse_blank = quote(persp(x = c1_grid,
 opar <- par(no.readonly = FALSE)
 par(mar = opar$mar / 2)
 
-# PLOT 1 -----------------------------------------------------------------------
-
-pdf("../figure/reg_lm_plot_31.pdf", height = 3)
-
-par(mfrow = c(1, 3))
-rect_plots(1)
-#par(opar)
-
-ggsave("../figure/reg_lm_plot_31.pdf", width = 3, height = 3)
-dev.off()
-
-# PLOT 2 -----------------------------------------------------------------------
-
-pdf("../figure/reg_lm_plot_32.pdf", height = 3)
-
-par(mfrow = c(1, 3))
-rect_plots(2)
-#par(opar)
-
-ggsave("../figure/reg_lm_plot_32.pdf", width = 4, height = 3)
-dev.off()
-
-# PLOT 3 -----------------------------------------------------------------------
-
-pdf("../figure/reg_lm_plot_33.pdf", height = 3)
-
-par(mfrow = c(1, 3))
-rect_plots(3)
-
-#par(opar)
-
-ggsave("../figure/reg_lm_plot_33.pdf", width = 4, height = 3)
-dev.off()
 
 # PLOT 4 -----------------------------------------------------------------------
 
