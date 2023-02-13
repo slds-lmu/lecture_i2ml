@@ -59,7 +59,7 @@ p_1 <- make_lm_l2_plot(
         ), 
         vjust = 2,
     )
-ggsave("../figure/reg_lm_plot.pdf", p_1, width = 3, height = 2)
+ggsave("../figure/reg_lm_plot.pdf", p_1, width = 2.5, height = 2)
 
 highlight <- data.frame(x_1, x_2, y)[33, ]
 p_2 <- make_lm_l2_plot(

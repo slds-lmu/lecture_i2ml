@@ -12,6 +12,8 @@ y <- x + rnorm(5, 0, 2)
 coeffs <- list(c(1.8, .3), c(1, .1), c(0.5, .8))
 colors <- c("darkgreen", "orange", "red")
 
+# LINE PLOTS -------------------------------------------------------------------
+
 lapply(
     seq_along(coeffs),
     function(i) {
@@ -37,6 +39,42 @@ lapply(
     }
 )
 
+# SURFACE PLOTS ----------------------------------------------------------------
+
+setwd("/home/lisa-wm/Documents/1_work/2_teaching/repos/vistool")
+devtools::load_all()
+setwd(
+    paste0(
+        "/home/lisa-wm/Documents/1_work/2_teaching/repos/lecture_i2ml/slides/",
+        "supervised-regression"
+    )
+)
+
+mylm <- function(x, Xmat, y) l2norm(Xmat %*% x - y)
+dt <- data.table(x, y)
+Xmat <- model.matrix(~ x, data = dt)
+true_coeffs <- lm(y ~ x, dt)$coefficients
+
+obj_lm <- Objective$new(
+    id = "exmpl_lm", fun = mylm, xdim = 2, Xmat = Xmat, y = y, minimize = TRUE
+)
+oo1 <- OptimizerGD$new(
+    obj_lm, x_start = c(0, 4), step_size = 0.05, print_trace = FALSE
+)
+
+n_steps <- 100
+oo1$optimize(steps = n_steps)
+oo1$archive
+
+viz <- Visualizer$new(obj_lm, x1limits = c(-2, 0), x2limits = c(0, 3.5))
+viz$initLayerSurface(colorscale = list(c(0, 1), c("darkgray", "white")))
+viz$addLayerOptimizationTrace(
+    oo1, add_marker_at = c(1, round(n_steps / 2), n_steps), line_color = "blue"
+)
+viz$setScene(-3, -1.2, 2)
+viz$plot()
+
+viz$save("myfigure.png")
 
 
 
