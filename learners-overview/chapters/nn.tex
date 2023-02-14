@@ -22,11 +22,11 @@
     \item Combinations of simple building 
     blocks to create a complex model
   \end{itemize}
-  \item Optimize via \textbf{mini-batch gradient descent} variants:
+  \item Optimize via \textbf{mini-batch stochastic gradient descent (SGD)} variants:
   \begin{itemize}
     \item Gradient of each weight can be infered from the \textbf{computational graph} of the network\\
-    $\rightarrow$ \textit{automated differentiation} (AutoDiff)
-    \item Training progress is measured in full passes over the full training data, called \textbf{epochs}
+    $\rightarrow$ \textbf{Automatic Differentiation} (AutoDiff)
+    \item Algorithm to compute weight updates based on the loss is called \textbf{Backpropagation}
     %\textbf{Forward pass}: predict result with current parameters and 
     %compute empirical risk 
     %\item \textbf{Backward pass}: update each parameter in proportion to its 
@@ -76,12 +76,7 @@ $\Hspace = \left\{ \fx: \fx = \tau \circ \phi \circ \sigma^{(h)} \circ
 \end{itemize}
 
 
-\highlight{Empirical risk} \\% ~~
-In principle: Any \textbf{differentiable} loss function
-\begin{itemize}
-    \item \textbf{Regression}: Quadratic loss (cf. Lin. Regr.)
-    \item \textbf{Classification}: (Binary) cross-entropy (cf. Log. Regr.)
-\end{itemize}
+\highlight{Empirical risk} In general, compatible with any differentiable loss
 
 \medskip
 
@@ -90,14 +85,15 @@ In principle: Any \textbf{differentiable} loss function
 \begin{itemize}
   \item Variety of different optimizers, mostly based on some form of 
   \textbf{stochastic gradient descent (SGD)}\\
-  $\Rightarrow$ ADAM optimizer oder SGD with Momentum
-  \item Backbone: 
+  \item Improvements: 
     \begin{itemize}
-        \item Gradient computation for arbitrary functions via 
-  \textbf{computational graphs}
-        \item \textbf{Automatic differentiation (autodiff)} calculates derivatives automatically
+        \item[(1)] Accumulation of previous gradients $\rightarrow$ \textbf{Momentum}
+        \item[(2)] Weight specific scaling based on previous squared gradients $\rightarrow$ \textbf{RMSProb}\\
+        $\Rightarrow$ \textbf{ADAM} combines (1) and (2) 
+        \item[(3)] Learning rate schedules, e.g., decaying or cyclical learning rates
     \end{itemize}
-  
+    \item Training progress is measured in full passes over the full training data, called \textbf{epochs}
+    \item \textbf{Batch size} is a hyperparameter and limited by input data dimension
   % \item Crucial role of \textbf{regularization} due to high expressivity of 
   % NNs' hypothesis spaces
 \end{itemize}
@@ -108,17 +104,16 @@ In principle: Any \textbf{differentiable} loss function
 
 \begin{frame}{Neural Networks -- method summary}
 
-\highlight{NN types} ~~ Large variety of architectures for different purposes
+\highlight{Network types} ~~ Large variety of architectures for different data modelities
 \begin{itemize}
   \item \textbf{Feedforward NNs / multi-layer perceptrons (MLPs):} sequence of 
-  \textbf{fully-connected} layers
+  \textbf{fully-connected} layers $\Rightarrow$ tabular data
   \item \textbf{Convolutional NNs (CNNs):} sequence of feature map extractors 
-  with spatial awareness $\Rightarrow$ images
+  with spatial awareness $\Rightarrow$ images, time series
   \item \textbf{Recurrent NNs (RNNs):} handling of sequential, variable-length 
   information $\Rightarrow$ times series, text, audio
-  \item \textbf{Transformer networks:} de-facto standard for handling text data or data of multiple modalities
-  \item Unsupervised: \textbf{autoencoders}, \textbf{generative adversarial 
-  networks (GANs)}, \dots
+  \item \textbf{Transformers:} Learning invariances from data, handling multiple/any data modalities
+  %\item Unsupervised: \textbf{autoencoders}, \textbf{generative adversarial networks (GANs)}, \dots
   % \item \textbf{Autoencoders:} learning unsupervised embeddings
   % \item \textbf{Generative adversarial networks (GANs):} learning to generate 
   % artificial samples
@@ -151,32 +146,42 @@ In principle: Any \textbf{differentiable} loss function
 \highlight{Hyperparameters}
 
 \begin{itemize}
-  \item Regarding \textbf{architecture}
+  \item \textbf{Architecture}:
   \begin{itemize}
-    \item Lots of design choices ~~$\Rightarrow$ tuning problem of its own: 
-    \textbf{neural architecture search (NAS)}
-    \item E.g., network depth, layer types, activation functions, \dots
+    \item Lots of design choices $\Rightarrow$ tuning problem of its own.
+    \item Typically: hierachical optimization of components (cells) and macro structure of network\\ 
+    $\rightarrow$ \textbf{Neural Architecture Search (NAS)}
+    \item Many predifined (well working) architectures exist for standard tasks
   \end{itemize}
-  \item Regarding \textbf{optimization \& regularization}
+  \item \textbf{Training}:
   \begin{itemize}
-    \item Crucial due to \textbf{overparameterization} and strong 
-    \textbf{nonconvexity} 
-    \item E.g., weight initialization, choice of optimizer, learning rate, 
-    batch size, number of epochs, \dots
+    \item Initial learning rate and various regularization parameters
+    \item Number of epochs is determined by \textbf{early-stopping}
+    \item \textbf{Data-augmentation}, e.g., applying random rotations to input images
+    %Crucial due to \textbf{overparameterization} and strong 
+    %\textbf{nonconvexity} 
+    %\item E.g., weight initialization, choice of optimizer, learning rate, 
+    %batch size, number of epochs, \dots
   \end{itemize}
 \end{itemize}
 
 \medskip
 
-\highlight{Transfer Learning}
+\highlight{Foundation models}
 
 \begin{itemize}
-    \item Makes choice of the architecture dispensable\\
-          $\Rightarrow$ Pre-defined architecture with pre-trained weights is used
-    \item Reduces training cost a lot, since pre-trained weights are only adapted during fine-tuning
-    \item \textbf{Pre-training} done in a self-supervised fashion on ubiquituous amount of data\\
-          $\Rightarrow$ In self-supervised learning, labels are generated from the data itself, no human labeling effort needed
+    \item \textbf{Enormous} models trained on vast amounts of (general) data, e.g., all of wikipedia, in \textbf{self supervised} fashion
+    \item Used as starting point (\textbf{pre-trained}) and fintuned via \textbf{transfer} or \textbf{few-shot} learning for other tasks requiring little data
+    \item Examples: GPT-3 for language, CLIP for vision-language, \dots
 \end{itemize}
+
+%\begin{itemize}
+%    \item Makes choice of the architecture dispensable\\
+%          $\Rightarrow$ Pre-defined architecture with pre-trained weights is used
+%    \item Reduces training cost a lot, since pre-trained weights are only adapted during fine-tuning
+%    \item \textbf{Pre-training} done in a self-supervised fashion on ubiquituous amount of data\\
+%          $\Rightarrow$ In self-supervised learning, labels are generated from the data itself, no human labeling effort needed
+%\end{itemize}
 
 % \highlight{Runtime behavior} ~~ \textcolor{blue}{???}
 
@@ -187,26 +192,35 @@ In principle: Any \textbf{differentiable} loss function
 
 \begin{frame}{Neural Networks -- Practical hints}
 
-\highlight{Some options for regularization} 
+\highlight{General hints}
 \begin{itemize}
-  \item Control weight magnitude with \textbf{weight decay} (L2 
-  regularization)
-  \item Interrupt training when validation error starts to pick up 
-  $\Rightarrow$ \textbf{early stopping}
-  \item Use \textbf{dropout} to deactivate neurons at random, thus down-sizing 
-  network
-  \item Expand training data and enforce invariances via \textbf{augmentation}
-  \item \dots
+    \item Instead of NAS, use a standard architecture and tune training hyperparameters
+    \item Training pipeline (data-augmentation, training schedules, ...) is much crucial than the specific architecture
+    \item While NNets are state-of-the-art for \textbf{computer vision (CV)} and \textbf{natural language processing (NLP)} do not use them for tabular data
+    \item Computational efforts for training (and inference) can be very high, requiring specific hardware.\\
+    $\rightarrow$ Using a service (esp. for foundation models) can be more cost efficient
 \end{itemize}
 
-\highlight{Optimization tricks}
-\begin{itemize}
-  \item Accelerate training via optimizer (ADAM, Momentum)
-  \item Control learning rate with \textbf{schedulers}, or keep it 
-  \textbf{adaptive}
-  \item Use \textbf{batch normalization} for stability by keeping input distributions fixed throughout transformations
-  \item \dots
-\end{itemize}
+%\highlight{Some options for regularization} 
+%\begin{itemize}
+%  \item Control weight magnitude with \textbf{weight decay} (L2 
+%  regularization)
+%  \item Interrupt training when validation error starts to pick up 
+%  $\Rightarrow$ \textbf{early stopping}
+%  \item Use \textbf{dropout} to deactivate neurons at random, thus down-sizing 
+%  network
+%  \item Expand training data and enforce invariances via \textbf{augmentation}
+%  \item \dots
+%\end{itemize}
+
+%\highlight{Optimization tricks}
+%\begin{itemize}
+%  \item Accelerate training via optimizer (ADAM, Momentum)
+%  \item Control learning rate with \textbf{schedulers}, or keep it 
+%  \textbf{adaptive}
+%  \item Use \textbf{batch normalization} for stability by keeping input distributions fixed throughout transformations
+%  \item \dots
+%\end{itemize}
 
 % \highlight{Types of neural networks (RNNs, CNNs)}
 % 
@@ -235,12 +249,13 @@ In principle: Any \textbf{differentiable} loss function
 \highlight{Implementation}
 
 \begin{itemize}
-  \item \textbf{R:} packages \texttt{reticulate}, \texttt{neuralnet}
+  \item \textbf{R:} Use python libraries (below) via \texttt{reticulate}, but not really recommendet except for toy applications.
   \item \textbf{Python libraries:} 
   \begin{itemize}
-      \item \texttt{PyTorch} and \texttt{PyTorch Lightning}
-      \item \texttt{TensorFlow} (high-level API: \texttt{keras})
-      \item \texttt{huggingface}
+      \item \texttt{keras} for simple high level API 
+      \item \texttt{PyTorch} for flexible design with a focus on research
+      \item \texttt{TensorFlow} for flexible design with a focus on deployment / industry
+      \item \texttt{huggingface} for pre-trained / foundation models
   \end{itemize}
 \end{itemize}
 
@@ -260,7 +275,7 @@ In principle: Any \textbf{differentiable} loss function
     \begin{itemize}
       \positem Applicable to \textbf{complex, nonlinear} problems
       \positem Very \textbf{versatile} w.r.t. architectures
-      \positem Suitable for \textbf{unstructured} data (e.g., images)
+      \positem State-of-the-art for CV and NLP
       \positem Strong \textbf{performance} if done right
       \positem Built-in \textbf{feature extraction}, obtained by intermediate
       representations
