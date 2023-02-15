@@ -71,7 +71,10 @@ viz$initLayerSurface(colorscale = list(c(0, 1), c("darkgray", "white")))
 viz$addLayerOptimizationTrace(
     oo1, add_marker_at = c(1, round(n_steps / 2), n_steps), line_color = "blue"
 )
-viz$setScene(-3, -1.2, 2)
+viz$addLayerOptimizationTrace(
+    oo1, add_marker_at = c(n_steps), line_color = "red", marker_shape = "star"
+)
+viz$setScene(-1.5, -0.6, 1)
 viz$plot()
 
 viz$save("myfigure.png")
