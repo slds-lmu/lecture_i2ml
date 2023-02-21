@@ -165,29 +165,53 @@ annotate_all <- function(base_plot, plot_splits, cols, alpha = .25) {
   base_plot
 }
 
-####### Examples
+plot_contin <- function(data, formula, maxdepth = 5L) {
+  res <- vector("list", 0L)
+  cols2 <- res
+  res$trees <- vector("list", maxdepth)
+  splits_old <- NULL
+  splits_list <- res
+  counter <- 0
+  for (i in 1:maxdepth) { 
+    tree <- rpart(formula, data = data, maxdepth = i)
+    plot_splits <- parttree(tree)
+    if (identical(plot_splits, splits_old[, 1:ncol(plot_splits)])) {
+      break
+    }
+    counter <- counter + 1
+    plot_splits$depth <- i
+    splits_old <- plot_splits
+    splits_list[[i]] <- plot_splits
+    res$trees[[i]] <- tree
+  }
+  target <- colnames(plot_splits)[2]
+  res$trees <- res$trees[1:counter]
+  base_plot <- ggplot(data, aes(.data[["x"]], .data[["y"]])) +
+    geom_point()
+  res$plot_area <- function(i) base_plot %>% annotate_contin(splits_list[[i]])
+  res$plot_tree <- function(i) rpart.plot(res$trees[[i]])
+  res
+}
 
-p <- plot_boundaries(iris, Species ~ Sepal.Length + Sepal.Width, 
-                     "Sepal.Length", "Sepal.Width", 
-                     cols = c(virginica = "blue", versicolor = "green", setosa = "red"), 
-                     maxdepth = 4, alpha = 0.2)
-p$plot_tree(1)
-p$plot_area(1)
-p$plot_tree(2)
-p$plot_area(2)
-p$plot_tree(3)
-p$plot_area(3)
 
-iris2 <- iris[1:100,] %>% mutate(Species = as.factor(as.character(Species)))
-p2 <- plot_boundaries(iris2, Species ~ Sepal.Length + Sepal.Width, 
-                      "Sepal.Length", "Sepal.Width", 
-                      cols = c(setosa = "red", versicolor = "green"), 
-                      maxdepth = 4, alpha = 0.2)
+annotate_contin <- function(base_plot, plot_splits) {
+  target <- colnames(plot_splits)[2]
+  for (i in 1:nrow(plot_splits)) {
+    base_plot <- base_plot + 
+      annotate("rect", xmin = plot_splits$xmin[i], 
+               xmax = plot_splits$xmax[i], 
+               ymin = plot_splits$ymin[i], 
+               ymax = plot_splits$ymax[i], 
+               alpha = 0,
+               col = "black") +
+      annotate("rect", xmin = plot_splits$xmin[i], 
+               xmax = plot_splits$xmax[i],
+               ymin = plot_splits[i, target], 
+               ymax = plot_splits[i, target], 
+               col = "red", alpha = 0)
+  }
+  base_plot
+}
 
-p2$plot_tree(1)
-p2$plot_area(1)
-p2$plot_tree(2)
-p2$plot_area(2)
-p2$plot_tree(3) #should obviously fail
-p2$plot_area(3) #as well
+
 
