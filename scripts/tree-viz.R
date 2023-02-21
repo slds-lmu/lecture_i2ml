@@ -166,8 +166,10 @@ annotate_all <- function(base_plot, plot_splits, cols, alpha = .25) {
 }
 
 plot_contin <- function(data, formula, maxdepth = 5L) {
+  vars <- all.vars(formula)
+  y <- vars[1]
+  x <- vars[2]
   res <- vector("list", 0L)
-  cols2 <- res
   res$trees <- vector("list", maxdepth)
   splits_old <- NULL
   splits_list <- res
@@ -186,7 +188,7 @@ plot_contin <- function(data, formula, maxdepth = 5L) {
   }
   target <- colnames(plot_splits)[2]
   res$trees <- res$trees[1:counter]
-  base_plot <- ggplot(data, aes(.data[["x"]], .data[["y"]])) +
+  base_plot <- ggplot(data, aes(.data[[x]], .data[[y]])) +
     geom_point()
   res$plot_area <- function(i) base_plot %>% annotate_contin(splits_list[[i]])
   res$plot_tree <- function(i) rpart.plot(res$trees[[i]])
