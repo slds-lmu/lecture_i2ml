@@ -29,8 +29,6 @@ analytically
     $~\rightsquigarrow$ find loss-optimal hyperplane to describe relation 
     $y | \xv$
     \item Hypothesis space: $\Hspace = \{\fx = \thx\ |\ \thetab \in \R^{p+1} \}$
-    \item Key advantage: interpretable feature effects \\ $~\rightsquigarrow$
-    "marginally increasing $x_j$ by 1 unit increases $y$ by \dots"
     
 \end{itemize}
 \vfill
@@ -56,11 +54,28 @@ analytically
     \item Trick: pad feature vectors with leading 1, s.t. 
     \begin{itemize}
         \item $\xv \mapsto \xv = (1, x_1, \dots, x_p)^\top$, and 
-        \item $\thx = \theta_0 + \theta_1 x_1 + \dots + \theta_p x_p$
+        \item $\thx = \theta_0 \cdot 1 + \theta_1 x_1 + \dots + \theta_p x_p$
     \end{itemize}
     \item Collect all observations in \textbf{design matrix} 
     $\Xmat \in \R^{n \times (p + 1)}$
-    $$\Xmat = \left(
+    \item Linear model:
+
+
+% $$
+% \Xmat = \left(
+% \begin{smallmatrix}
+%     1 & x^{(1)}_1 & \ldots & x^{(1)}_p \\
+%     1 & x^{(2)}_1 & \ldots & x^{(2)}_p \\
+%     \vdots & \vdots & & \vdots \\
+%     1 & x^{(n)}_1 & \ldots & x^{(n)}_p \\
+% \end{smallmatrix}
+% \right)
+% $$
+
+\begin{align*}
+\Xmat \thetab = 
+    % \underbrace{
+    \left(
     \begin{smallmatrix}
         1 & x^{(1)}_1 & \ldots & x^{(1)}_p \\
         1 & x^{(2)}_1 & \ldots & x^{(2)}_p \\
@@ -68,7 +83,15 @@ analytically
         1 & x^{(n)}_1 & \ldots & x^{(n)}_p \\
     \end{smallmatrix}
     \right)
-    ~~ \rightsquigarrow \Xmat \thetab =
+    % }_{\Xmat}
+    % \underbrace{
+    \left(
+    \begin{smallmatrix}
+        \theta_0 \\ \theta_1 \\ \vdots \\ \theta_p
+    \end{smallmatrix}
+    \right)
+    % }_{\thetab}
+    &=
     \left(
     \begin{smallmatrix}
         \theta_0 + \theta_1 x_1^{(1)} + \dots + \theta_p x_p^{(1)} \\
@@ -76,8 +99,8 @@ analytically
         \vdots \\
         \theta_0 + \theta_1 x_1^{(n)} + \dots + \theta_p x_p^{(n)} \\
     \end{smallmatrix}
-    \right)
-    =
+    \right) \\[2ex]
+    &=
     \left(
     \begin{smallmatrix}
         \thetab^\top \xv^{(1)} \\
@@ -86,8 +109,25 @@ analytically
         \thetab^\top \xv^{(n)} \\
     \end{smallmatrix}
     \right)
-    $$
+\end{align*}
+
 \end{itemize}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Effect interpretation}
+
+\begin{itemize}
+    \item Big plus of LM: immediately \textbf{interpretable} feature effects
+    \item "Marginally increasing $x_j$ by 1 unit increases $y$ by $\theta_j$ 
+    units" \\
+    $\rightsquigarrow$ \textit{ceteris paribus} assumption: 
+    $x_1, \dots, x_{j - 1}, x_{j + 1}, \dots, x_p$ fixed
+\end{itemize}
+
+\includegraphics[width=0.6\textwidth]{figure/reg_lm_plot_interpreted} 
 
 \end{vbframe}
 
@@ -96,83 +136,65 @@ analytically
 \begin{frame}{Model fit}
 
 \begin{itemize}
-    \item How to determine LM fit?
-    \item E.g., consider \textbf{SSE}: part of total 
-    variance model fails to explain
-    \begin{minipage}[b]{0.6\textwidth}
-        \footnotesize
-        \begin{align*}
-            \underbrace{\sumin \left(\yi - \bar y\right)^2}_{\text{sum of 
-            squares total (SST)}} &= 
-            \underbrace{\sumin \left(\fxi - \bar y\right)^2}_{\text{
-            sum of squares regression (SSR)}} \\
-            &+ \underbrace{\sumin \left(\yi - \fxi\right)^2}_{\color{blue} 
-            \text{sum of squared errors (SSE)} ~\rightarrow ~ \text{min}}
-        \end{align*}
+    \item How to determine LM fit? $\rightsquigarrow$ define risk \& optimize
+    \item Popular: \textbf{$L2$ loss} / \textbf{quadratic loss} / 
+    \textbf{squared error}
+    $$\Lxy = (y-\fx)^2 ~~ \text{or} ~~ \Lxy = \textcolor{blue}{0.5} (y-\fx)^2$$
+    \begin{minipage}{0.5\textwidth}
+        \includegraphics[width=0.9\textwidth]{figure/plot_quad_loss} 
     \end{minipage}
-    \begin{minipage}[b]{0.3\textwidth}
-        \includegraphics[width=\textwidth]{figure/reg_lm_sse}
+    \begin{minipage}{0.3\textwidth}
+        \footnotesize \raggedright
+        \textcolor{red}{\footnotesize TODO: adapt style}
     \end{minipage}
-    \item Example with $n = 5$ $\rightsquigarrow$ varying SSE for 
-    different models:
-    \vfill
-    \only<1>{
-        \phantom{\includegraphics[width=0.25\textwidth]{
-        figure/reg_lm_sse_11.pdf}}
-    }
-    \only<2>{
-        \includegraphics[width=0.25\textwidth]{figure/reg_lm_sse_11.pdf}
-    }
-    \only<3>{
-        \includegraphics[width=0.25\textwidth]{figure/reg_lm_sse_11.pdf}
-        \includegraphics[width=0.25\textwidth]{figure/reg_lm_sse_12.pdf}
-    }
-    \only<4>{
-        \includegraphics[width=0.25\textwidth]{figure/reg_lm_sse_11.pdf}
-        \includegraphics[width=0.25\textwidth]{figure/reg_lm_sse_12.pdf}
-        \includegraphics[width=0.25\textwidth]{figure/reg_lm_sse_13.pdf}
-    }
+    \item Why penalize \textbf{quadratic} differences between $y$ and $\hat y$?
+    \begin{itemize}
+        \item Easy to optimize (convex, differentiable)
+        \item Theoretically appealing (connection to classic stats LM)
+    \end{itemize}
 \end{itemize}
 
 \end{frame}
 
 % ------------------------------------------------------------------------------
 
-\begin{vbframe}{Linear model: optimization}
+\begin{frame}{Linear model: optimization}
 
 \begin{itemize}
-    \item Instead of guessing, use \textbf{optimization}
-    \item Minimizing SSE equivalent to minimizing popular $L2$ loss
-    \item \textbf{$L2$ loss} / \textbf{quadratic loss} / \textbf{squared error}
-    $$\Lxy = (y-\fx)^2 ~~ \text{or} ~~ \Lxy = 0.5 (y-\fx)^2$$
-    \item \textbf{Convex \& differentiable} $\rightsquigarrow$ first-order 
-    numerical optimization
-    % \footnotesize
-    \begin{align*}
-        \min_{\fx} \Lxy ~&\Longleftrightarrow ~ 0 = \pd{0.5 (y-\fx)^2}{\fx} 
-        = -(\underbrace{y - \fx}_{=: \epsilon \text{ (residual)}}) \\
-        &\Longleftrightarrow ~ y = \fx
-    \end{align*}
-    \normalsize
+    \item Resulting risk equivalent to 
+    \textbf{sum of squared errors (SSE)}:
+    $$\risket = \sumin \left(\yi - \thetab^\top \xi \right)^2$$
+    \item Consider example with $n = 5$ $\rightsquigarrow$ 
+    different models with varying SSE
 \end{itemize}
 
-\begin{minipage}{0.65\textwidth}
-    \includegraphics[width=0.9\textwidth]{figure/plot_quad_loss} 
-\end{minipage}
-\begin{minipage}{0.3\textwidth}
-    \footnotesize \raggedright
-    \textcolor{red}{\footnotesize TODO: adapt style}
-    Quadratic relationship between $\epsilon$ and loss $\rightsquigarrow$ 
-    $L2$ focuses on reducing large residuals
-\end{minipage}
+\vfill
+\only<1>{
+    \phantom{\includegraphics[width=0.25\textwidth]{
+    figure/reg_lm_sse_11.pdf}}
+}
+\only<2>{
+    \includegraphics[width=0.3\textwidth]{figure/reg_lm_sse_11.pdf}
+}
+\only<3>{
+    \includegraphics[width=0.3\textwidth]{figure/reg_lm_sse_11.pdf}
+    \includegraphics[width=0.3\textwidth]{figure/reg_lm_sse_12.pdf}
+}
+\only<4>{
+    \includegraphics[width=0.3\textwidth]{figure/reg_lm_sse_11.pdf}
+    \includegraphics[width=0.3\textwidth]{figure/reg_lm_sse_12.pdf}
+    \includegraphics[width=0.3\textwidth]{figure/reg_lm_sse_13.pdf}
+}
 
-\end{vbframe}
+\end{frame}
 
 % ------------------------------------------------------------------------------
 
 \begin{frame}{Linear model: optimization}
 
-Example revisited: optimization on $L2$ loss surface
+% Example revisited: optimization on $L2$ loss surface
+Instead of guessing, of course, use \textbf{optimization}
+
 \vspace{0.2cm}
 \begin{minipage}{0.45\textwidth}
     \only<1>{
