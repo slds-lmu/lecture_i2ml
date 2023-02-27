@@ -10,10 +10,10 @@
 
 \begin{columns}[T, totalwidth=\textwidth]
 \begin{column}{0.6\textwidth}
-\highlight{General idea}
+\highlight{General idea (CART -- Classification and Regression Trees)}
 \begin{itemize}
   \item Start at root node containing all data
-  \item Perform repeated \textbf{binary splits} in feature space to obtain
+  \item Perform repeated \textbf{axis-parallel binary splits} in feature space to obtain
   \textbf{rectangular partitions} at terminal nodes $Q_1, \dots, Q_M$
   \item Splits based on reduction of node \textbf{impurity} \\
   $\rightarrow$ empirical risk minimization (\textbf{ERM})
@@ -21,7 +21,7 @@
   \begin{itemize}
     \item Find \textbf{optimal split} (feature-threshold combination) \\
     $\rightarrow$ greedy search
-    \item Assign constant prediction $c_m$ to all obs. in terminal region $Q_m$\\
+    \item Assign constant prediction $c_m$ to all obs. in $Q_m$\\
     $\rightarrow$ Regression: $c_m$ is average of $y$ \\
     $\rightarrow$ Classif.: $c_m$ is majority class (or class proportions)
     
@@ -78,7 +78,7 @@ $\Hspace = \left\{ \fx: \fx = \sum\limits_{m = 1}^M c_m \I(\xv \in Q_m)
   
 \end{itemize}
     \end{column}
-    \begin{column}{0.4\linewidth}
+    \begin{column}{0.375\linewidth}
 {\centering \includegraphics[width=0.975\textwidth]{../slides/trees/figure/cart_splitcriteria_2.pdf} 
 }
 \end{column}
@@ -86,8 +86,9 @@ $\Hspace = \left\{ \fx: \fx = \sum\limits_{m = 1}^M c_m \I(\xv \in Q_m)
 \begin{itemize}
   \item Compute empirical risks in child nodes and minimize their sum to find best split (impurity reduction):
      \begin{align*}
-      \argmin_{j, t} \risk(\Np, j, t) &= \argmin_{j, t} \tfrac{|\Nl|}{|\Np|} \risk(\Nl) + \tfrac{|\Nr|}{|\Np|} \risk(\Nr)
+      \argmin_{j, t} \risk(\Np, j, t) &= \argmin_{j, t} \risk(\Nl) + \risk(\Nr) \;\;\; %\tfrac{|\Nr|}{|\Np|} 
       \end{align*}
+      Note: If $\risk$ is the average instead of the sum of loss functions, we need to reweight: $\tfrac{|\Np_t|}{|\Np|} \risk(\Np_t)$
       
   \item In general, compatible with arbitrary losses -- typical choices:
   \begin{itemize}
@@ -113,17 +114,17 @@ $\Hspace = \left\{ \fx: \fx = \sum\limits_{m = 1}^M c_m \I(\xv \in Q_m)
       \begin{tabular}{c |@{\vline}| c} 
  \textbf{Brier score} $\rightarrow$ \textbf{Gini} impurity & \textbf{Bernoulli} loss $\rightarrow$ \textbf{entropy} impurity \\ 
  \hline\\[-2ex]
- $\risk(\Np) = \sum_{(\xv,y) \in \Np} \sum_{k=1}^g
-      \hat{\pik}^{(\Np)} (1 - \hat{\pik}^{(\Np)} )$ & $\risk(\Np) = -\sum_{(\xv,y) \in \Np} \sum_{k=1}^g
+ $\risk(\Np) = \sum\limits_{(\xv,y) \in \Np} \sum\limits_{k=1}^g
+      \hat{\pik}^{(\Np)} (1 - \hat{\pik}^{(\Np)} )$ & $\risk(\Np) = -\sum\limits_{(\xv,y) \in \Np} \sum\limits_{k=1}^g
       \hat{\pik}^{(\Np)} \log \hat{\pik}^{(\Np)}$
 \end{tabular}
       
     \item Regression (\textbf{quadratic} loss): ~~
-    $\risk(\Np_t) = \sum_{(\xv,y) \in \Np} (y - c)^2$ with $c = \frac{1}{|\Np|} \sum_{(\xv,y) \in \Np} y$
+    $\risk(\Np) = \sum\limits_{(\xv,y) \in \Np} (y - c)^2$ with $c = \frac{1}{|\Np|} \sum\limits_{(\xv,y) \in \Np} y$
   \end{itemize}
 \end{itemize}
 
-\medskip
+%\medskip
 
 \highlight{Optimization}
 
@@ -135,8 +136,8 @@ $\Hspace = \left\{ \fx: \fx = \sum\limits_{m = 1}^M c_m \I(\xv \in Q_m)
 
 \medskip
 
-\highlight{Hyperparameters} ~~ \textbf{Complexity}, i.e., 
-number of terminal nodes $T$ (controlled indirectly, see \highlight{Implementation}) 
+% \highlight{Hyperparameters} ~~ \textbf{Complexity}, i.e., 
+% number of terminal nodes $T$ (controlled indirectly, see \highlight{Implementation}) 
 
 \end{frame}
 
@@ -149,8 +150,9 @@ number of terminal nodes $T$ (controlled indirectly, see \highlight{Implementati
 \highlight{Hyperparameters and complexity control}
 
 \begin{itemize}
+%\item \textbf{Complexity} control affects number of terminal nodes using different parameters
   \item Unless interrupted, splitting continues until we have pure leaf nodes (costly + overfitting)
-  \item Hyperparameters: Complexity controlled via tree depth, minimum number of observations per node, maximum number of leaves, minimum risk reduction per split, ...
+  \item Hyperparameters: Complexity (i.e., number of terminal nodes) controlled via tree depth, minimum number of observations per node, maximum number of leaves, minimum risk reduction per split, ...
   \item Limit tree growth / complexity via
   \begin{itemize}
     \item \textbf{Early stopping:} stop growth prematurely \\ $\rightarrow$ hard 
@@ -161,37 +163,41 @@ number of terminal nodes $T$ (controlled indirectly, see \highlight{Implementati
 
 \medskip
 
-\highlight{Bagging / boosting} ~~ 
-As CART is a highly \textbf{unstable} learner, it is used as base learner in bagging (random forest) or boosting ensembles.
-
-\medskip
-
-\highlight{Some other decision trees}
-\begin{columns}[T, totalwidth=\linewidth]
-    \begin{column}{0.39\linewidth}
-    \vspace{-\parsep}
-        \begin{itemize}
-%\item AID (Sonquist and Morgan, 1964)
-\item CHAID (Kass, 1980)%\\
-%$\rightarrow$ Multi-level splits
-\item C4.5 (Quinlan, 1993)
-\end{itemize}
-    \end{column}
-    \begin{column}{0.59\linewidth}
-    \vspace{-\parsep}
-        \begin{itemize}
-\item Linear Model Trees (Potts, 2004)
-\item Unbiased Recursive Partitioning (Hothorn et al., 2006)
-\end{itemize}
-    \end{column}
-\end{columns}
+% \highlight{Decision tree algorithms other than CART}
+% %CART is a popular decision tree algorithm, 
+% \begin{columns}[T, totalwidth=\linewidth]
+%     \begin{column}{0.39\linewidth}
+%     \vspace{-\parsep}
+%         \begin{itemize}
+% %\item AID (Sonquist and Morgan, 1964)
+% \item CHAID (Kass, 1980)\\
+% $\rightarrow$ Multi-way instead of binary splits
+% \item C5.0 (Quinlan, 1993)
+% \end{itemize}
+%     \end{column}
+%     \begin{column}{0.59\linewidth}
+%     \vspace{-\parsep}
+%         \begin{itemize}
+% %\item Linear Model Trees (Potts, 2004)
+% \item Unbiased Recursive Partitioning (Hothorn et al., 2006)\\
+% $\rightarrow$ Conditional inference trees for unbiased splits
+% \item Model-Based Recursive Partitioning (Hothorn et al., 2008)
+% \end{itemize}
+%     \end{column}
+% \end{columns}
    
-\medskip
+% \medskip
 
-\highlight{Implementation}
+\highlight{Implementations}
 \begin{itemize}
-  \item \textbf{R:} \texttt{mlr3} learners \texttt{LearnerClassifRpart} / 
+  \item \textbf{R:}
+  \begin{itemize}
+      \item \textbf{CART}: \texttt{mlr3} learners \texttt{LearnerClassifRpart} / 
     \texttt{LearnerRegrRpart}, calling \texttt{rpart::rpart()}
+    \item \textbf{Conditional inference trees}: \texttt{partykit::ctree()}
+    \item \textbf{Model-based recursive partitioning}: \texttt{partykit::mob()}
+    \item \textbf{Rule-based models}: \texttt{Cubist::cubist()} for regression and \texttt{C50::C5.0()} for classification
+  \end{itemize}
   \item \textbf{Python:} \texttt{DecisionTreeClassifier} / 
   \texttt{DecisionTreeRegressor} from package \texttt{scikit-learn}
 \end{itemize}
@@ -201,6 +207,14 @@ As CART is a highly \textbf{unstable} learner, it is used as base learner in bag
 
 \begin{frame}{CART -- Pros \& Cons}
 
+\highlight{Dual purpose} ~~ 
+% As CART is a highly \textbf{unstable} learner, it is used as a base learner in bagging (random forest) or boosting ensembles to reduce the variance and improve its performance.
+\begin{itemize}
+    \item \textbf{Exploration purpose} to obtain interpretable decision rules (here: performance/tuning is secondary)
+    \item \textbf{Prediction model}: CART as base learner in \textbf{ensembles} (bagging, random forest, boosting) can improve stability and performance (if tuned properly), but becomes less interpretable
+\end{itemize}
+
+\medskip
 \begin{columns}[onlytextwidth]
   \begin{column}{0.5\textwidth}
     \highlight{Advantages}
@@ -213,11 +227,14 @@ As CART is a highly \textbf{unstable} learner, it is used as base learner in bag
       $\rightarrow$ e.g., $2^m$ possible binary splits for $m$ categories\\
        $\rightarrow$ trick for regr. with L2-loss and binary classif.: categories can be sorted $\Rightarrow$ $m-1$ binary splits 
       \positem Handling of \textbf{missings} possible via surrogate splits
-      \positem \textbf{Interaction} effects between features naturally included, 
+      \positem Models  \textbf{interactions}, 
+      %effects between features 
+      %naturally included, 
       even of higher order
       \positem \textbf{Fast} computation and good scalability
       \positem High \textbf{flexibility} with custom split criteria or leaf-node 
       prediction rules
+      %\positem Used in \textbf{ensembles} (bagging, random forest, boosting), improves stability and performance
     \end{itemize}
   \end{column}
   \begin{column}{0.5\textwidth}
@@ -237,7 +254,7 @@ As CART is a highly \textbf{unstable} learner, it is used as base learner in bag
 
 \small
 
-\conclbox{Simple, good with feature selection and highly interpretable, but not 
+\conclbox{Simple, implicit feature selection, and highly interpretable, but not 
 the most performant learner}
 
 \end{frame}
