@@ -1,57 +1,40 @@
 # PREREQ -----------------------------------------------------------------------
 
-library(knitr)
-library(ggplot2)
+library(plotly)
+library(reshape2)
 
 # DATA -------------------------------------------------------------------------
 
-set.seed(3)
+petal_lm <- lm(Petal.Length ~ 0 + Sepal.Length + Sepal.Width, data = iris)
 
-x = 1:5
-y = 0.2 * x + rnorm(length(x), sd = 2)
-d = data.frame(x = x, y = y)
-m = lm(y ~ x)
+# PLOTS ------------------------------------------------------------------------
 
-# PLOT -------------------------------------------------------------------------
+axis_x <- seq(min(iris$Sepal.Length), max(iris$Sepal.Length), by = 0.05)
+axis_y <- seq(min(iris$Sepal.Width), max(iris$Sepal.Width), by = 0.05)
 
-pdf("../figure/reg_lm_plot_2.pdf", width = 7.5, height = 3)
-
-pl = ggplot(aes(x = x, y = y), data = d)
-
-pl = pl + geom_abline(intercept = m$coefficients[1], slope = m$coefficients[2])
-
-pl = pl + geom_rect(aes(ymin = y[3], 
-                        ymax = y[3] + (m$fit[3] - y[3]), 
-                        xmin = 3, 
-                        xmax = 3 + abs(y[3] - m$fit[3])), 
-                    color = "black", 
-                    linetype = "dotted", 
-                    fill = "transparent")
-
-pl = pl + geom_rect(aes(ymin = y[4], 
-                        ymax = y[4] + (m$fit[4] - y[4]), 
-                        xmin = 4, 
-                        xmax = 4 + abs(y[4] - m$fit[4])), 
-                    color = "black", 
-                    linetype = "dotted", 
-                    fill = "transparent")
-
-pl = pl + geom_segment(aes(x = 3, y = y[3], xend = 3, yend = m$fit[3]), 
-                       color = "white")
-
-pl = pl + geom_segment(aes(x = 4, y = y[4], xend = 4, yend = m$fit[4]), 
-                       color = "white")
-
-pl = pl + geom_segment(aes(x = 3, y = y[3], xend = 3, yend = m$fit[3]), 
-                       linetype = "dotted", color = "red")
-
-pl = pl + geom_segment(aes(x = 4, y = y[4], xend = 4, yend = m$fit[4]), 
-                       linetype = "dotted", color = "red")
-
-pl = pl + geom_point()
-pl = pl + coord_fixed()
-
-print(pl)
-
-ggsave("../figure/reg_lm_plot_2.pdf", width = 7.5, height = 3)
-dev.off()
+petal_lm_surface <- expand.grid(
+    Sepal.Length = axis_x, Sepal.Width = axis_y, KEEP.OUT.ATTRS = F
+)
+petal_lm_surface$Petal.Length <- predict.lm(
+    petal_lm, newdata = petal_lm_surface
+)
+petal_lm_surface <- acast(
+    petal_lm_surface, Sepal.Width ~ Sepal.Length, value.var = "Petal.Length"
+)
+p_1 <- plot_ly(
+    iris,
+    x = ~Sepal.Length, 
+    y = ~Sepal.Width, 
+    z = ~Petal.Length,
+    type = "scatter3d",
+    marker = list(color = "darkgray", symbol = "cross")
+) %>% 
+    add_trace(
+        z = petal_lm_surface,
+        x = axis_x,
+        y = axis_y,
+        type = "surface",
+        colorscale = list(c(0, 1), c("blue", "blue")), 
+        opacity = 0.7
+    )
+p_1

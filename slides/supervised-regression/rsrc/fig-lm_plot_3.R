@@ -1,19 +1,77 @@
 # PREREQ -----------------------------------------------------------------------
 
-library(knitr)
 library(ggplot2)
+library(data.table)
+library(vistool)
+source("libfuns_lm.R")
 
 # DATA -------------------------------------------------------------------------
 
 set.seed(pi)
+x <- 1:5
+y <- x + rnorm(5, 0, 2)
+coeffs <- list(c(1.8, .3), c(1, .1), c(0.5, .8))
+colors <- c("darkgreen", "orange", "red")
 
-x = 1:5
-y = x + rnorm(5, 0, 2)
-m = lm(y ~ x)
+# LINE PLOTS -------------------------------------------------------------------
 
-coef1 <- c(1.8, .3)
-coef2 <- c(1, .1)
-coef3 <- c(0.5, .8)
+lapply(
+    seq_along(coeffs),
+    function(i) {
+        intercept <- coeffs[[i]][1]
+        slope <- coeffs[[i]][2]
+        sse <- round(sum((y - univariate_lm(x, coeffs[[i]]))^2), 2)
+        p <- make_lm_l2_plot(x, y, coeffs[[i]], colors[i]) +
+            xlim(c(0, 8)) +
+            ggtitle(
+                substitute(
+                    paste(
+                        theta, " = (", intercept, ", ", slope, "), SSE = ", sse
+                    )
+                )
+            )
+        ggsave(
+            sprintf("../figure/reg_lm_sse_1%i.pdf", i), 
+            p, 
+            width = 3, 
+            height = 2.8
+        )
+            
+    }
+)
+
+# SURFACE PLOTS ----------------------------------------------------------------
+
+mylm <- function(x, Xmat, y) l2norm(Xmat %*% x - y)
+dt <- data.table(x, y)
+Xmat <- model.matrix(~ x, data = dt)
+true_coeffs <- lm(y ~ x, dt)$coefficients
+
+obj_lm <- Objective$new(
+    id = "exmpl_lm", fun = mylm, xdim = 2, Xmat = Xmat, y = y, minimize = TRUE
+)
+oo1 <- OptimizerGD$new(
+    obj_lm, x_start = c(0, 4), step_size = 0.05, print_trace = FALSE
+)
+
+n_steps <- 100
+oo1$optimize(steps = n_steps)
+oo1$archive
+
+viz <- Visualizer$new(obj_lm, x1limits = c(-2, 0), x2limits = c(0, 3.5))
+viz$initLayerSurface(colorscale = list(c(0, 1), c("darkgray", "white")))
+viz$addLayerOptimizationTrace(
+    oo1, add_marker_at = c(1, round(n_steps / 2), n_steps), line_color = "blue"
+)
+viz$addLayerOptimizationTrace(
+    oo1, add_marker_at = c(n_steps), line_color = "red", marker_shape = "star"
+)
+viz$setScene(-1.5, -0.6, 1)
+viz$plot()
+
+viz$save("myfigure.png")
+
+
 
 # FUNCTIONS --------------------------------------------------------------------
 
@@ -177,39 +235,6 @@ sse_blank = quote(persp(x = c1_grid,
 opar <- par(no.readonly = FALSE)
 par(mar = opar$mar / 2)
 
-# PLOT 1 -----------------------------------------------------------------------
-
-pdf("../figure/reg_lm_plot_31.pdf", height = 3)
-
-par(mfrow = c(1, 3))
-rect_plots(1)
-#par(opar)
-
-ggsave("../figure/reg_lm_plot_31.pdf", width = 4, height = 3)
-dev.off()
-
-# PLOT 2 -----------------------------------------------------------------------
-
-pdf("../figure/reg_lm_plot_32.pdf", height = 3)
-
-par(mfrow = c(1, 3))
-rect_plots(2)
-#par(opar)
-
-ggsave("../figure/reg_lm_plot_32.pdf", width = 4, height = 3)
-dev.off()
-
-# PLOT 3 -----------------------------------------------------------------------
-
-pdf("../figure/reg_lm_plot_33.pdf", height = 3)
-
-par(mfrow = c(1, 3))
-rect_plots(3)
-
-#par(opar)
-
-ggsave("../figure/reg_lm_plot_33.pdf", width = 4, height = 3)
-dev.off()
 
 # PLOT 4 -----------------------------------------------------------------------
 
