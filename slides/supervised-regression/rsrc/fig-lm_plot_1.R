@@ -66,6 +66,8 @@ p_1 <- make_lm_l2_plot(
     )
 ggsave("../figure/reg_lm_plot_interpreted.pdf", p_1, width = 2.5, height = 2)
 
+summary(lm(y ~ x_1)) # save screenshot to figure_man
+
 highlight <- data.frame(x_1, x_2, y)[33, ]
 p_2 <- make_lm_l2_plot(
     highlight$x_1, highlight$y, coeffs, "blue", pcol = "gray"
