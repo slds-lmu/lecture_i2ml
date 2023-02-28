@@ -2,6 +2,7 @@
 
 library(ggplot2)
 library(data.table)
+library(vistool)
 source("libfuns_lm.R")
 
 # DATA -------------------------------------------------------------------------
@@ -40,15 +41,6 @@ lapply(
 )
 
 # SURFACE PLOTS ----------------------------------------------------------------
-
-setwd("/home/lisa-wm/Documents/1_work/2_teaching/repos/vistool")
-devtools::load_all()
-setwd(
-    paste0(
-        "/home/lisa-wm/Documents/1_work/2_teaching/repos/lecture_i2ml/slides/",
-        "supervised-regression"
-    )
-)
 
 mylm <- function(x, Xmat, y) l2norm(Xmat %*% x - y)
 dt <- data.table(x, y)
