@@ -1,47 +1,89 @@
 # PREREQ -----------------------------------------------------------------------
 
-library(knitr)
 library(ggplot2)
+source("libfuns_lm.R")
 
-# PLOT -------------------------------------------------------------------------
+# DATA -------------------------------------------------------------------------
 
-pdf("../figure/reg_lm_plot.pdf", width = 4.8, height = 3.1)
+set.seed(123)
+x_1 <- rnorm(50, mean = 1, sd = 1)
+set.seed(456)
+x_2 <- rnorm(50, mean = 1, sd = 1)
+y <- 0.5 * x_1 + rnorm(length(x_1), sd = 0.5) + 1
+coeffs <- lm(y ~ x_1)$coefficients
 
-ggplot(data = data.frame(x = c(-0.5, 4)), aes(x = x)) +
-  
-  stat_function(fun = function (x) { 1 + 0.5 * x }) +
-  
-  geom_vline(xintercept = 0, 
-             color = "gray", 
-             linetype = "dashed") +
-  
-  geom_segment(mapping = aes(x = 2, y = 2, xend = 3, yend = 2), 
-               linetype = "dashed") +
-  
-  geom_segment(mapping = aes(x = 3, y = 2, xend = 3, yend = 2.5), 
-               linetype = "dashed", 
-               color = "red") +
-  
-  geom_segment(mapping = aes(x = 0, y = 0, xend = 0, yend = 1), 
-               linetype = "dashed", 
-               color = "blue") +
-  
-  geom_text(mapping = aes(x = 2.5, y = 2, label = "1 Unit"), vjust = 2) +
-  
-  geom_text(mapping = aes(x = 3, y = 2.25, 
-                          label = "{theta[1] == slope} == 0.5"), 
-            hjust = -0.05, 
-            parse = TRUE, 
-            color = "red") +
-  
-  geom_text(mapping = aes(x = 0, y = 1, 
-                          label = "{theta[0] == intercept} == 1"), 
-            hjust = -0.1, 
-            parse = TRUE, 
-            color = "blue") +
-  
-  ylim(c(0, 3.5)) + 
-  xlim(c(-0.5, 4.3))
+# PLOTS ------------------------------------------------------------------------
 
-ggsave("../figure/reg_lm_plot.pdf", width = 4.8, height = 3.1)
-dev.off()
+p_0 <- make_lm_l2_plot(
+    x_1, y, coeffs, "blue", pcol = "gray", add_squares = FALSE
+)
+ggsave("../figure/reg_lm_plot.pdf", p_0, width = 2.5, height = 2)
+
+p_1 <- make_lm_l2_plot(
+    x_1, y, coeffs, "black", pcol = "gray", add_squares = FALSE
+) +
+    geom_vline(xintercept = 0, color = "gray", linetype = "dashed") +
+    geom_segment(
+        mapping = aes(x = 0, y = 0, xend = 0, yend = coeffs[1]),
+        color = "blue"
+    ) +
+    geom_segment(
+        mapping = aes(
+            x = 2, 
+            y = univariate_lm(1, coeffs), 
+            xend = 2, 
+            yend = univariate_lm(2, coeffs)
+        ),
+        color = "blue"
+    ) +
+    geom_segment(
+        mapping = aes(
+            x = 1, 
+            y = univariate_lm(1, coeffs), 
+            xend = 2, 
+            yend = univariate_lm(1, coeffs)
+        ),
+    ) +
+    geom_text(
+        mapping = aes(x = 0.2, y = coeffs[1], label = "{theta[0]}"),
+        color = "blue",
+        vjust = 2,
+        parse = TRUE
+    ) +
+    geom_text(
+        mapping = aes(
+            x = 2.2, y = univariate_lm(2, coeffs), label = "{theta[1]}"
+        ),
+        color = "blue",
+        vjust = 2,
+        parse = TRUE
+    ) +
+    geom_text(
+        mapping = aes(
+            x = 1.5, y = univariate_lm(1, coeffs), label = "1 unit"
+        ), 
+        vjust = 2,
+    )
+ggsave("../figure/reg_lm_plot_interpreted.pdf", p_1, width = 2.5, height = 2)
+
+summary(lm(y ~ x_1)) # save screenshot to figure_man
+
+highlight <- data.frame(x_1, x_2, y)[33, ]
+p_2 <- make_lm_l2_plot(
+    highlight$x_1, highlight$y, coeffs, "blue", pcol = "gray"
+) + 
+    geom_point(
+        data.frame(x_1, y), 
+        mapping = aes(x_1, y), 
+        col = "gray", 
+        size = 3,
+        shape = 4
+    ) +
+    geom_hline(yintercept = mean(y)) +
+    geom_point(highlight, mapping = aes(x_1, y), col = "red", size = 3)+
+    geom_text(
+        mapping = aes(x = -1, y = mean(y) - 1, label = "{bar(y)}"),
+        vjust = 1,
+        parse = TRUE
+    )
+ggsave("../figure/reg_lm_sse.pdf", p_2, width = 3, height = 2.6)
