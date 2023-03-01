@@ -14,7 +14,7 @@ if (FALSE) devtools::install_github("slds-lmu/vistool")
 # BASE CLASS -------------------------------------------------------------------
 
 #' BasePlotter class
-#' Create plots from univariate or bivariate data.
+#' Creates plots from univariate or bivariate data.
 BasePlotter <- R6Class(
     "BasePlotter",
     public = list(
@@ -32,6 +32,163 @@ BasePlotter <- R6Class(
             if (!all(is.na(x_2))) assertTRUE(length(x_2) == length(y))
             self$data_table <- data.table(x_1, x_2, y)
             return(invisible(self))
+        }
+    )
+)
+
+# BASE REGRESSION CLASS --------------------------------------------------------
+
+#' BaseRegressionPlotter class
+#' Creates regression plots from univariate or bivariate data.
+BaseRegressionPlotter <- R6Class(
+    "BaseRegressionPlotter",
+    inherit = BasePlotter,
+    public = list(
+        #' @field model Regression model.
+        model = NULL,
+        #' @field covariates (`character()`) Regression covariate names.
+        covariates = NULL,
+        #' @field loss (`character(1)`) Loss function.
+        loss = NULL,
+        #' @description Compute regression.
+        #' @param loss (`character(1)`) Loss function to use.
+        #' @param formula (`character(1)`) LM formula to use.
+        compute_regression = function(loss = "quadratic", formula) {
+            self$loss <- loss
+            self$covariates <- unlist(
+                str_split(as.character(formula)[3], " \\+ ")
+            )
+            if (self$loss == "quadratic") {
+                self$model <- lm(as.formula(formula), self$data_table)
+                self$data_table[, y_hat := predict(self$model)]
+                self$data_table[, residuals := (y - y_hat)**2]
+            }
+            else if (self$loss == "absolute") {
+                self$model <- quantreg::rq(
+                    as.formula(formula), data = self$data_table
+                )
+                self$data_table[, y_hat := predict(self$model)]
+                self$data_table[, residuals := abs(y - y_hat)]
+            }
+            else stop(sprintf("Unknown loss function `%s`", loss))
+            return(invisible(self))
+        },
+        #' @description Set plot details..
+        #' @param idx_residuals (`integer()`) Optional indices for which to plot
+        #' residuals.
+        #' @param coefficients (`numeric(2)`) Optional vector of LM
+        #' coefficients.
+        #' @param point_color (`character(1)`) Color of scatter points.
+        #' @param point_size (`numeric(1)`) Size of scatter points.
+        #' @param point_shape (`character(1)`) Shape of scatter points.
+        #' @param hyperplane_color (`character(1)`) Color of hyperplane.
+        #' @param hyperplane_size (`numeric(1)`) Size of hyperplane.
+        #' @param hyperplane_linetype (`character(1)`) Line type of hyperplane.
+        #' @param residuals_color (`character(1)`) Color of residuals.
+        #' @param residuals_alpha (`numeric(1)`) Opacity of residuals.
+        set_plot_parameters = function(
+            idx_residuals = NULL,
+            coefficients = NULL,
+            point_color = "black",
+            point_size = 1,
+            point_shape = "circle",
+            hyperplane_color = "blue",
+            hyperplane_size = 1,
+            hyperplane_linetype = "solid",
+            residuals_color = "blue",
+            residuals_alpha = 0.1
+        ) {
+            private$idx_residuals <- idx_residuals
+            private$coefficients <- coefficients
+            private$point_color <- point_color
+            private$point_size <- point_size
+            private$point_shape <- point_shape
+            private$hyperplane_color <- hyperplane_color
+            private$hyperplane_size <- hyperplane_size
+            private$hyperplane_linetype <- hyperplane_linetype
+            private$residuals_color <- residuals_color
+            private$residuals_alpha <- residuals_alpha
+        }
+    ),
+    private = list(
+        idx_residuals = NULL,
+        coefficients = NULL,
+        point_color = NULL,
+        point_size = NULL,
+        point_shape = NULL,
+        hyperplane_color = NULL,
+        hyperplane_size = NULL,
+        hyperplane_linetype = NULL,
+        residuals_color = NULL,
+        residuals_alpha = NULL,
+    )
+)
+
+# BASE UNIVARIATE REGRESSION CLASS ---------------------------------------------
+
+#' BaseUnivariateRegressionPlotter class
+#' Creates regression plots from univariate data.
+BaseUnivariateRegressionPlotter <- R6Class(
+    "BaseUnivariateRegressionPlotter",
+    inherit = BaseRegressionPlotter,
+    public = list(
+        plot_lm = function() private$plot_lm(),
+        plot_lm_and_loss = function() {
+            p_1 <- private$plot_lm()
+            p_2 <- private$plot_loss()
+        }
+    ),
+    private = list(
+        plot_lm = function() {
+            p <- ggplot(self$data_table, aes(.data[[self$covariates]], y)) +
+                theme_bw() +
+                labs(x = expression(x[1])) +
+                geom_point(
+                    col = private$point_color, 
+                    shape = private$point_shape, 
+                    size = private$point_size
+                ) +
+                geom_abline(
+                    intercept = private$coefficients[1], 
+                    slope = private$coefficients[2], 
+                    col = private$hyperplane_color,
+                    linetype = private$hyperplane_linetype,
+                    linewidth = private$hyperplane_size,
+                )
+            if (length(private$idx_residuals > 0)) {
+                if (self$loss == "quadratic") {
+                    p <- p +
+                        geom_rect(
+                            self$data_table[private$idx_residuals, ],
+                            mapping = aes(
+                                xmin = .data[[self$covariates]], 
+                                xmax = .data[[self$covariates]] + (y_hat - y), 
+                                ymin = y, 
+                                ymax = y_hat
+                            ),
+                            alpha = 0.1,
+                            col = private$residuals_color,
+                            fill = private$residuals_color,
+                        )
+                }
+                else {
+                    p <- p +
+                        geom_segment(
+                            self$data_table[private$idx_residuals, ],
+                            mapping = aes(
+                                x = .data[[self$covariates]], 
+                                xend = .data[[self$covariates]], 
+                                y = y, 
+                                yend = y_hat
+                            ),
+                            col = private$residuals_color,
+                        )
+                }
+            }
+            p
+        },
+        plot_loss = function() {
+            # TODO
         }
     )
 )
