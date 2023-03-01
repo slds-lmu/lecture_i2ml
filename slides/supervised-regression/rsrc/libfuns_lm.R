@@ -36,9 +36,9 @@ BasePlotter <- R6Class(
     )
 )
 
-# BASE LM CLASS ----------------------------------------------------------------
+# LM CLASS ---------------------------------------------------------------------
 
-#' BaseLMPlotter class
+#' LMPlotter class
 #' Create plots related to linear models from univariate or bivariate data.
 LMPlotter <- R6Class(
     "LMPlotter",
@@ -72,6 +72,16 @@ LMPlotter <- R6Class(
             }
             else stop(sprintf("Unknown loss function `%s`", loss))
         },
+        idx_residuals = NULL,
+        coefficients = NULL,
+        point_color = NULL,
+        point_size = NULL,
+        point_shape = NULL,
+        hyperplane_color = NULL,
+        hyperplane_size = NULL,
+        hyperplane_linetype = NULL,
+        residuals_color = NULL,
+        residuals_alpha = NULL,
         #' @description Plots univariate regression.
         #' @param idx_residuals (`integer()`) Optional indices for which to plot
         #' residuals.
@@ -80,9 +90,9 @@ LMPlotter <- R6Class(
         #' @param point_color (`character(1)`) Color of scatter points.
         #' @param point_size (`numeric(1)`) Size of scatter points.
         #' @param point_size (`character(1)`) Shape of scatter points.
-        #' @param line_color (`character(1)`) Color of line.
-        #' @param line_size (`numeric(1)`) Size of line.
-        #' @param line_linetype (`character(1)`) Line type of line.
+        #' @param hyperplane_color (`character(1)`) Color of hyperplane.
+        #' @param hyperplane_size (`numeric(1)`) Size of hyperplane.
+        #' @param hyperplane_linetype (`character(1)`) Line type of hyperplane.
         #' @param residuals_color (`character(1)`) Color of residuals.
         #' @param residuals_alpha (`numeric(1)`) Opacity of residuals.
         plot_lm = function(
@@ -91,9 +101,9 @@ LMPlotter <- R6Class(
             point_color = "black",
             point_size = 1,
             point_shape = "circle",
-            line_color = "blue",
-            line_size = 1,
-            line_linetype = "solid",
+            hyperplane_color = "blue",
+            hyperplane_size = 1,
+            hyperplane_linetype = "solid",
             residuals_color = "blue",
             residuals_alpha = 0.1
         ) {
@@ -102,97 +112,142 @@ LMPlotter <- R6Class(
             }
             if (is.null(coefficients)) coefficients <- coef(self$model)
             else assertNumeric(coefficients, len = 2L)
-            if (length(self$covariates == 1L)) {
-                private$plot_lm_univariate(
-                    covariates = self$covariates,
-                    idx_residuals = idx_residuals,
-                    coefficients,
-                    point_color,
-                    point_size,
-                    point_shape,
-                    line_color,
-                    line_size,
-                    line_linetype,
-                    residuals_color,
-                    residuals_alpha
-                )
+            fun_args <- list(
+                idx_residuals = idx_residuals,
+                coefficients = coefficients,
+                point_color = point_color,
+                point_size = point_size,
+                point_shape = point_shape,
+                hyperplane_color = hyperplane_color,
+                hyperplane_size = hyperplane_size,
+                hyperplane_linetype = hyperplane_linetype,
+                residuals_color = residuals_color,
+                residuals_alpha = residuals_alpha
+            )
+            if (length(self$covariates) == 1L) {
+                do.call(private$plot_lm_univariate, c(fun_args))
             }
-            else if (length(covariates == 2L)) {
-                private$plot_lm_bivariate()
+            else if (length(self$covariates) == 2L) {
+                do.call(private$plot_lm_bivariate, c(fun_args))
             }
             else stop("Can only plot univariate or bivariate regression")
         }
     ),
     private = list(
-        plot_lm_univariate = function(
-            covariates,
-            idx_residuals,
-            coefficients,
-            point_color,
-            point_size,
-            point_shape,
-            line_color,
-            line_size,
-            line_linetype,
-            residuals_color,
-            residuals_alpha
-        ) {
-            p <- ggplot(self$data_table, aes(.data[[covariates]], y)) +
+        plot_lm_univariate = function(...) {
+            args <- list(...)
+            p <- ggplot(self$data_table, aes(.data[[self$covariates]], y)) +
                 theme_bw() +
                 labs(x = expression(x[1])) +
                 geom_point(
-                    col = point_color, shape = point_shape, size = point_size
+                    col = args$point_color, 
+                    shape = args$point_shape, 
+                    size = args$point_size
                 ) +
                 geom_abline(
-                    intercept = coefficients[1], 
-                    slope = coefficients[2], 
-                    col = line_color,
-                    linetype = line_linetype,
-                    linewidth = line_size,
+                    intercept = args$coefficients[1], 
+                    slope = args$coefficients[2], 
+                    col = args$hyperplane_color,
+                    linetype = args$hyperplane_linetype,
+                    linewidth = args$hyperplane_size,
                 )
-            if (length(idx_residuals > 0)) {
+            if (length(args$idx_residuals > 0)) {
                 if (self$loss == "quadratic") {
                     p <- p +
                         geom_rect(
-                            self$data_table[idx_residuals, ],
+                            self$data_table[args$idx_residuals, ],
                             mapping = aes(
-                                xmin = .data[[covariates]], 
-                                xmax = .data[[covariates]] + (y_hat - y), 
+                                xmin = .data[[self$covariates]], 
+                                xmax = .data[[self$covariates]] + (y_hat - y), 
                                 ymin = y, 
                                 ymax = y_hat
                             ),
                             alpha = 0.1,
-                            col = residuals_color,
-                            fill = residuals_color,
+                            col = args$residuals_color,
+                            fill = args$residuals_color,
                         )
                 }
                 else {
                     p <- p +
                         geom_segment(
-                            self$data_table[idx_residuals, ],
+                            self$data_table[args$idx_residuals, ],
                             mapping = aes(
-                                x = .data[[covariates]], 
-                                xend = .data[[covariates]], 
+                                x = .data[[self$covariates]], 
+                                xend = .data[[self$covariates]], 
                                 y = y, 
                                 yend = y_hat
                             ),
-                            col = residuals_color,
+                            col = args$residuals_color,
                         )
                 }
             }
             p
         },
         plot_lm_bivariate = function(...) {
-            # TODO create
-            return NULL
+            args <- list(...)
+            axis_x <- seq(
+                min(self$data_table$x_1), max(self$data_table$x_1), by = 0.05
+            )
+            axis_y <- seq(
+                min(self$data_table$x_2), max(self$data_table$x_2), by = 0.05
+            )
+            lm_surface <- expand.grid(
+                x_1 = axis_x, x_2 = axis_y, KEEP.OUT.ATTRS = F
+            )
+            
+            lm_surface$y <- predict(self$model, newdata = lm_surface)
+            lm_surface <- acast(
+                lm_surface, x_2 ~ x_1, value.var = "y"
+            )
+            plot_ly(
+                self$data_table,
+                x = ~x_1, 
+                y = ~x_2, 
+                z = ~y
+            ) %>%
+                add_markers(
+                    marker = list(
+                        color = args$point_color, symbol = args$point_shape
+                    )
+                ) %>%
+                add_trace(
+                    z = lm_surface,
+                    x = seq(
+                        min(self$data_table$x_1),
+                        max(self$data_table$x_1),
+                        by = 0.05
+                    ),
+                    y = seq(
+                        min(self$data_table$x_2),
+                        max(self$data_table$x_2),
+                        by = 0.05
+                    ),
+                    type = "surface",
+                    colorscale = list(c(0, 1), rep(args$hyperplane_color, 2)), 
+                    opacity = 0.7
+                ) %>% 
+                layout(showlegend = FALSE) %>% 
+                hide_colorbar()
         }
     )
 )
 
-# x_1 <- rnorm(10)
-# y <- 1 + x_1 + rnorm(10)
-# 
-# plotter <- LMPlotter$new(x_1 = x_1, y = y)
-# plotter$compute_regression(formula = y ~ x_1, loss = "absolute")
-# plotter$plot_lm(idx_residuals = c(1, 3, 8, 10)) +
-#     ylim(c(0, 10))
+x_1 <- rnorm(10)
+x_2 <- rnorm(10)
+y <- 1 + x_1 + x_2 + rnorm(10)
+plotter <- LMPlotter$new(x_1 = x_1, x_2 = x_2, y = y)
+plotter$compute_regression(formula = y ~ x_1 + x_2, loss = "quadratic")
+plotter$plot_lm()
+
+# LOSS PLOT CLASS --------------------------------------------------------------
+
+#' LossFunPlotter class
+#' Create loss plots, optionally: with (univariate) data and residuals.
+LossFunPlotter <- R6Class(
+    "LossFunPlotter",
+    inherit = BasePlotter,
+    public = list(
+        #' @field loss (`function`) Loss function.
+        loss = NULL,
+    )
+)
