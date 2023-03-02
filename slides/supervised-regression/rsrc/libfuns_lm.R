@@ -41,20 +41,28 @@ BaseRegressionPlotter <- R6Class(
     inherit = BasePlotter,
     public = list(
         #' @field formula Regression formula.
-        formula = NULL,
-        #' @field model Regression model.
-        model = list(),
+        formula = list(),
+        #' @field coefficients Regression coefficients
+        coefficients = list(),
+        #' @field loss_names (`list()`) Loss function name.
+        loss_names = list(),
+        #' @param loss_params (`list()`) List of parameters to loss function.
+        loss_params = list(),
+        #' @param loss_function (`list()`) Loss function.
+        loss_functions = list(),
         #' @field regression_data Regression data.
         regression_data = list(),
         #' @description Compute regression.
         #' @param formula (`character(1)`) LM formula to use.
-        #' @param loss_names (`list()`) List of loss functions to use.
-        #' @param loss_params (`list()`) List of parameters to loss functions.
+        #' @param loss (`character(1)`) Loss function to use.
+        #' @param custom_loss (`function()`) Custom loss acting on residuals.
         compute_regression = function(
-            formula, loss_names, loss_params = NULL, ...
+            formula, loss, loss_params = NULL, custom_loss = NULL, ...
         ) {
             args = list(...)
-            self$formula <- formula
+            self$formula <- append(self$formula, list(formula))
+            self$loss_names <- append(self$loss_names, list(loss))
+            self$loss_params <- append(self$loss_params, loss_params)
             supported_losses <- c(
                 "quadratic",
                 "absolute",
@@ -62,87 +70,103 @@ BaseRegressionPlotter <- R6Class(
                 "logcosh",
                 "logbarrier",
                 "epsiloninsensitive",
-                "pinball"
+                "pinball",
+                "cauchy",
+                "custom"
             )
-            private$loss_names <- loss_names
-            private$loss_params <- loss_params
-            for (i in seq_along(private$loss_names)) {
-                loss_name <- private$loss_names[[i]]
-                loss_param <- private$loss_params[[i]]
-                if (!loss_name %in% supported_losses) {
-                    stop(
-                        sprintf(
-                            "Unknown loss Supported losses: %s",
-                            paste(supported_losses, collapse = ", ")
-                        )
+            if (!loss %in% supported_losses) {
+                stop(
+                    sprintf(
+                        "Unknown loss. Supported losses: %s",
+                        paste(supported_losses, collapse = ", ")
                     )
-                }
-                else if (loss_name == "quadratic") {
-                    model <- lm(as.formula(self$formula), self$data_table)
-                    loss_fun <- function(x) x**2 
-                    private$add_regression_data(loss_name, loss_fun, model)
-                }
-                else if (loss_name == "absolute") {
-                    model <- quantreg::rq(
-                        as.formula(self$formula), data = self$data_table
-                    )
-                    loss_fun <- function(x) abs(x) 
-                    private$add_regression_data(loss_name, loss_fun, model)
-                }
-                else if (loss_name == "huber") {
-                    model <- MASS::rlm(
-                        as.formula(self$formula),
-                        data = self$data_table,
-                        scale.est = "Huber",
-                        k2 = ifelse(!is.null(loss_param), loss_param, 2L),
-                        maxit = 100
-                    )
-                    loss_fun <- function(x, epsilon) {
-                        ifelse(
-                            x <= epsilon, 
-                            0.5 * x**2, 
-                            epsilon * x - 0.5 * epsilon**2
-                        )
-                    } 
-                    private$add_regression_data(loss_name, loss_fun, model)
-                }
-                else if (loss_name == "logcosh") {
-                    loss_fun <- function(x) log(cosh(x))
-                    private$add_regression_data(loss_name, loss_fun)
-                }
-                else if (loss_name == "logbarrier") {
-                    loss_fun <- function(x, epsilon) {
-                            res2 = abs(res) 
-                            res2[res2 > a] = Inf
-                            res2[res2 <= a] = - a^2 * log(1 - (abs(res2[res2 <= a]) / a)^2)
-                            
-                            return(res2)
-                    }
-                    private$add_regression_data(loss_name, loss_fun)
-                }
-                else if (loss_name == "epsiloninsensitive") {
-                    function() {}
-                }
-                else if (loss_name == "pinball") {
-                    function() {}
-                }
+                )
             }
-            self$regression_data <- do.call(rbind, self$regression_data)
+            else if (loss == "quadratic") {
+                model <- lm(as.formula(formula), self$data_table)
+                loss_fun <- function(x) x**2 
+                private$add_regression_data(formula, loss, loss_fun, model)
+            }
+            else if (loss == "absolute") {
+                model <- quantreg::rq(
+                    as.formula(formula), data = self$data_table
+                )
+                loss_fun <- function(x) abs(x) 
+                private$add_regression_data(formula, loss, loss_fun, model)
+            }
+            else if (loss == "huber") {
+                epsilon <- private$set_loss_param("epsilon", 0.5)
+                model <- MASS::rlm(
+                    as.formula(formula),
+                    data = self$data_table,
+                    scale.est = "Huber",
+                    k2 = epsilon,
+                    maxit = 100
+                )
+                loss_fun <- function(x) {
+                    ifelse(
+                        abs(x) <= epsilon, 
+                        0.5 * x**2, 
+                        epsilon * abs(x) - 0.5 * epsilon**2
+                    )
+                } 
+                private$add_regression_data(formula, loss, loss_fun, model)
+            }
+            else if (loss == "logcosh") {
+                loss_fun <- function(x) log(cosh(abs(x)))
+                private$add_regression_data(formula, loss, loss_fun)
+            }
+            else if (loss == "logbarrier") {
+                epsilon <- private$set_loss_param("epsilon", 1)
+                loss_fun <- function(x) {
+                    abs_res <- abs(x)
+                    abs_res[abs_res > epsilon] <- Inf
+                    abs_res[abs_res <= epsilon] <- -epsilon**2 * log(
+                        1 - (abs_res[abs_res <= epsilon] / epsilon)**2
+                    )
+                    abs_res
+                }
+                private$add_regression_data(formula, loss, loss_fun)
+            }
+            else if (loss == "epsiloninsensitive") {
+                epsilon <- private$set_loss_param("epsilon", 1L)
+                loss_fun <- function(x) {
+                    ifelse(abs(x) > epsilon, abs(x) - epsilon, 0L)
+                }
+                private$add_regression_data(formula, loss, loss_fun)
+            }
+            else if (loss == "pinball") {
+                quantile <- private$set_loss_param("quantile", 1L)
+                print(quantile)
+                loss_fun <- function(x) {
+                    ifelse(x < 0, ((1 - quantile) * (-x)), quantile * x)
+                }
+                private$add_regression_data(formula, loss, loss_fun)
+            }
+            else if (loss == "cauchy") {
+                epsilon <- private$set_loss_param("epsilon", 1L)
+                loss_fun <- function(x) {
+                    0.5 * epsilon**2 * log(1 + (x / epsilon)**2)
+                }
+                private$add_regression_data(formula, loss, loss_fun)
+            }
+            else if (loss == "custom") {
+                if (is.null(custom_loss)) stop("Please provide loss function.")
+                else loss_fun <- custom_loss
+                private$add_regression_data(formula, loss, loss_fun)
+            }
         }
     ),
     private = list(
-        #' @field loss_names (`list()`) List of loss function names.
-        loss_names = list(),
-        #' @param loss_params (`list()`) List of parameters to loss functions.
-        loss_params = list(),
-        #' @param loss_functions (`list()`) List of loss functions.
-        loss_functions = list(),
         #' @description Compute regression and store results.
-        #' @param loss_name (`character(1)`) LM formula to use.
+        #' @param formula (`character(1)`) LM formula to use.
+        #' @param loss (`character(1)`) LM formula to use.
         #' @param loss_fun (`function()`) List of loss functions to use.
         #' @param model (`lm()`) Optional model object.
-        add_regression_data = function(loss_name, loss_fun, model = NULL) {
-            base_model <- lm(as.formula(self$formula), self$data_table)
+        add_regression_data = function(
+            formula, loss, loss_fun, model = NULL
+        ) {
+            base_model <- lm(as.formula(formula), self$data_table)
             x_mat <- model.matrix(base_model)
             if (is.null(model)) {
                 model <- base_model
@@ -152,23 +176,37 @@ BaseRegressionPlotter <- R6Class(
                         sum(loss_fun(y - model.matrix(model) %*% theta))
                     )
                 }
-                coefs <- optim(
+                coefficients <- optim(
                     coefficients(model), objective, method = "BFGS"
                 )$par
             }
-            else coefs <- coefficients(model)
-            self$model <- append(self$model, list(coefs))
+            else coefficients <- coefficients(model)
+            self$coefficients <- append(self$coefficients, list(coefficients))
             dt <- copy(self$data_table)[
-                , loss := loss_name
-                ][, y_hat := x_mat %*% coefs
+                , loss := loss
+                ][, y_hat := x_mat %*% coefficients
                   ][, residual := y - y_hat]
             self$regression_data <- append(
                 self$regression_data, 
                 list(dt)
             )
-            private$loss_functions <- append(
-                private$loss_functions, list(loss_fun)
-            )
+            self$loss_functions <- append(self$loss_functions, list(loss_fun))
+        },
+        set_loss_param = function(param_name, default) {
+            if (is.null(self$loss_params[[param_name]])) {
+                print(
+                    paste(
+                        sprintf(
+                            "Setting %s to %.2f. Change by specifying",
+                            param_name,
+                            default
+                        ),
+                        sprintf("`loss_params = list(%s = ...)`", param_name)
+                    )
+                )
+                return(default)
+            }
+            else return(self$loss_params[[param_name]])
         }
     )
 )
