@@ -10,36 +10,16 @@ library(mlr3verse)
 library(quantreg)
 library(R6)
 library(stringr)
-# if (FALSE) devtools::install_github("slds-lmu/vistool")
-# library(vistool)
-
-# BASE CLASS -------------------------------------------------------------------
-
-#' BasePlotter class
-#' Creates plots from univariate or bivariate data.
-BasePlotter <- R6Class(
-    "BasePlotter",
-    public = list(
-        #' @field data_table Data (two covariates, single target) to plot.
-        data_table = NULL,
-        #' @description Creates a new instance of this class.
-        #' @param data_table (`data.frame()`) Data to plot in long format.
-        initialize = function(data_table) {
-            assert_data_frame(data_table)
-            self$data_table = as.data.table(data_table)
-            return(invisible(self))
-        }
-    )
-)
 
 # BASE REGRESSION CLASS --------------------------------------------------------
 
-#' BaseRegressionPlotter class
-#' Creates regression plots from univariate or bivariate data.
-BaseRegressionPlotter <- R6Class(
-    "BaseRegressionPlotter",
-    inherit = BasePlotter,
+#' RegressionComputer class
+#' Computes regression for tabular data.
+RegressionComputer <- R6Class(
+    "RegressionComputer",
     public = list(
+        #' @field data_table Data to predict on.
+        data_table = NULL,
         #' @field formula Regression formula.
         formula = list(),
         #' @field coefficients Regression coefficients
@@ -52,12 +32,23 @@ BaseRegressionPlotter <- R6Class(
         loss_functions = list(),
         #' @field regression_data Regression data.
         regression_data = list(),
+        #' @description Creates a new instance of this class.
+        #' @param data_table (`data.frame()`) Data to plot in long format.
+        initialize = function(data_table) {
+            assert_data_frame(data_table)
+            self$data_table = as.data.table(data_table)
+            return(invisible(self))
+        },
         #' @description Compute regression.
         #' @param formula (`character(1)`) LM formula to use.
         #' @param loss (`character(1)`) Loss function to use.
         #' @param custom_loss (`function()`) Custom loss acting on residuals.
-        compute_regression = function(
-            formula, loss, loss_params = NULL, custom_loss = NULL, ...
+        computeRegression = function(
+            formula = y ~ ., 
+            loss = "quadratic", 
+            loss_params = NULL, 
+            custom_loss = NULL, 
+            ...
         ) {
             args = list(...)
             self$formula <- append(self$formula, list(formula))
@@ -208,6 +199,129 @@ BaseRegressionPlotter <- R6Class(
             }
             else return(self$loss_params[[param_name]])
         }
+    )
+)
+
+# BASE REGRESSION CLASS --------------------------------------------------------
+
+#' RegressionPlotter class
+#' Creates regression plots from univariate or bivariate data.
+RegressionPlotter <- R6Class(
+    "RegressionPlotter",
+    public = list(
+        #' @field data_table Data to plot.
+        data_table = NULL,
+        #' @description Creates a new instance of this class.
+        #' @param data_table (`data.frame()`) Data to plot in long format.
+        initialize = function(data_table) {
+            assert_data_frame(data_table)
+            self$data_table = as.data.table(data_table)
+            return(invisible(self))
+        },
+        
+        #' @description Initialize two-dimensional plot.
+        #' @param formula (`formula()`) Formula to plot.
+        #' @param ... Further arguments passed to `ggplot(...)`.
+        initLayer2D = function(formula, ...) {
+            covariate <- unlist(str_split(as.character(formula)[3], " \\+ "))
+            if (length(covariate) > 1) {
+                stop("Provided multiple covariates to 2D plot.")
+            }
+            private$p_covariates <- covariate
+            private$p_formula <- formula
+            private$p_layer_primary <- "twodim"
+            private$p_plot <- ggplot(
+                self$data_table, aes(.data[[private$p_covariates]], y)) +
+                theme_bw() +
+                labs(x = expression(x[1]))
+            return(invisible(self))
+        },
+        #' @description Add data points to two-dimensional plot.
+        #' @param shape (`character(1)`) Shape of points.
+        #' @param ... Further arguments passed to `geom_point(...)`.
+        addScatter2D = function(shape = "cross", ...) {
+            private$p_plot <- private$p_plot +
+                geom_point(shape = shape, ...)
+            return(invisible(self))
+        },
+        #' @description Add regression line to two-dimensional plot.
+        #' @param coefficients (`numeric(2)`) Regression coefficients.
+        #' @param col (`character(1)`) Line color.
+        #' @param ... Further arguments passed to `geom_abline(...)`.
+        addPredictionHyperplane2D = function(coefficients, col = "blue", ...) {
+            private$p_coefficients <- append(
+                private$p_coefficients, coefficients
+            )
+            private$p_plot <- private$p_plot +
+                geom_abline(
+                    intercept = coefficients[1], 
+                    slope = coefficients[2], 
+                    col = col,
+                    ...
+                )
+            return(invisible(self))
+        },
+        #' @description Add residuals to two-dimensional plot.
+        #' @param idx_residuals (`integer()`) Indices of points whose residuals
+        #' to highlight in plot.
+        #' @param col (`character(1)`) Line color.
+        #' @param ... Further arguments passed to `geom_segment(...)`.
+        addResiduals2D = function(
+            idx_residuals, 
+            quadratic = FALSE, 
+            col = "blue", 
+            fill = "blue",
+            alpha = 0.1, ...
+        ) {
+            if (quadratic) {
+                private$p_plot <- private$p_plot +
+                    geom_rect(
+                        self$data_table[idx_residuals, ],
+                        mapping = aes(
+                            xmin = .data[[private$p_covariates]], 
+                            xmax = .data[[private$p_covariates]] + (y_hat - y), 
+                            ymin = y, 
+                            ymax = y_hat
+                        ),
+                        alpha = alpha,
+                        col = col,
+                        fill = fill,
+                        ...
+                    )
+            }
+            else {
+                private$p_plot <- private$p_plot +
+                    geom_segment(
+                        self$data_table[idx_residuals, ],
+                        mapping = aes(
+                            x = .data[[private$p_covariates]], 
+                            xend = .data[[private$p_covariates]], 
+                            y = y, 
+                            yend = y_hat
+                        ),
+                        col = col,
+                        ...
+                    )
+            }
+            return(invisible(self))
+        },
+        
+        initLayer3D = function() {},
+        
+        #' @description Return the plot.
+        plot = function() private$p_plot
+    ),
+    private = list(
+        #' @field p_formula (`formula()`) Formula to plot.
+        p_formula = NULL,
+        #' @field p_covariates (`character()`) Covariates to plot.
+        p_covariates = NULL,
+        #' @field p_coefficients (`list()`) Regression coefficients per layer.
+        p_coefficients = list(),
+        #' @field p_layer_primary (`character(1)`) Type of initial layer.
+        p_layer_primary = NULL,
+        #' @field p_plot (`ggplot(`) Plot.
+        p_plot = NULL
     )
 )
 
