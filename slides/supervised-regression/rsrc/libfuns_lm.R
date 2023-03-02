@@ -40,6 +40,8 @@ BaseRegressionPlotter <- R6Class(
     "BaseRegressionPlotter",
     inherit = BasePlotter,
     public = list(
+        #' @field formula Regression formula.
+        formula = NULL,
         #' @field model Regression model.
         model = list(),
         #' @field regression_data Regression data.
@@ -52,6 +54,7 @@ BaseRegressionPlotter <- R6Class(
             formula, loss_names, loss_params = NULL, ...
         ) {
             args = list(...)
+            self$formula <- formula
             supported_losses <- c(
                 "quadratic",
                 "absolute",
@@ -75,20 +78,20 @@ BaseRegressionPlotter <- R6Class(
                     )
                 }
                 else if (loss_name == "quadratic") {
-                    model <- lm(as.formula(formula), self$data_table)
+                    model <- lm(as.formula(self$formula), self$data_table)
                     loss_fun <- function(x) x**2 
-                    private$add_regression_data(loss_name, model, loss_fun)
+                    private$add_regression_data(loss_name, loss_fun, model)
                 }
                 else if (loss_name == "absolute") {
                     model <- quantreg::rq(
-                        as.formula(formula), data = self$data_table
+                        as.formula(self$formula), data = self$data_table
                     )
                     loss_fun <- function(x) abs(x) 
-                    private$add_regression_data(loss_name, model, loss_fun)
+                    private$add_regression_data(loss_name, loss_fun, model)
                 }
                 else if (loss_name == "huber") {
                     model <- MASS::rlm(
-                        as.formula(formula),
+                        as.formula(self$formula),
                         data = self$data_table,
                         scale.est = "Huber",
                         k2 = ifelse(!is.null(loss_param), loss_param, 2L),
@@ -101,13 +104,21 @@ BaseRegressionPlotter <- R6Class(
                             epsilon * x - 0.5 * epsilon**2
                         )
                     } 
-                    private$add_regression_data(loss_name, model, loss_fun)
+                    private$add_regression_data(loss_name, loss_fun, model)
                 }
                 else if (loss_name == "logcosh") {
-                    function() {}
+                    loss_fun <- function(x) log(cosh(x))
+                    private$add_regression_data(loss_name, loss_fun)
                 }
                 else if (loss_name == "logbarrier") {
-                    function() {}
+                    loss_fun <- function(x, epsilon) {
+                            res2 = abs(res) 
+                            res2[res2 > a] = Inf
+                            res2[res2 <= a] = - a^2 * log(1 - (abs(res2[res2 <= a]) / a)^2)
+                            
+                            return(res2)
+                    }
+                    private$add_regression_data(loss_name, loss_fun)
                 }
                 else if (loss_name == "epsiloninsensitive") {
                     function() {}
@@ -120,14 +131,36 @@ BaseRegressionPlotter <- R6Class(
         }
     ),
     private = list(
+        #' @field loss_names (`list()`) List of loss function names.
         loss_names = list(),
+        #' @param loss_params (`list()`) List of parameters to loss functions.
         loss_params = list(),
+        #' @param loss_functions (`list()`) List of loss functions.
         loss_functions = list(),
-        add_regression_data = function(loss_name, model, loss_fun) {
-            self$model <- append(self$model, list(model))
+        #' @description Compute regression and store results.
+        #' @param loss_name (`character(1)`) LM formula to use.
+        #' @param loss_fun (`function()`) List of loss functions to use.
+        #' @param model (`lm()`) Optional model object.
+        add_regression_data = function(loss_name, loss_fun, model = NULL) {
+            base_model <- lm(as.formula(self$formula), self$data_table)
+            x_mat <- model.matrix(base_model)
+            if (is.null(model)) {
+                model <- base_model
+                objective <- function(theta) {
+                    with(
+                        self$data_table, 
+                        sum(loss_fun(y - model.matrix(model) %*% theta))
+                    )
+                }
+                coefs <- optim(
+                    coefficients(model), objective, method = "BFGS"
+                )$par
+            }
+            else coefs <- coefficients(model)
+            self$model <- append(self$model, list(coefs))
             dt <- copy(self$data_table)[
                 , loss := loss_name
-                ][, y_hat := predict(model)
+                ][, y_hat := x_mat %*% coefs
                   ][, residual := y - y_hat]
             self$regression_data <- append(
                 self$regression_data, 
