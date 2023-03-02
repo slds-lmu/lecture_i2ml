@@ -5,11 +5,13 @@
 library(checkmate)
 library(data.table)
 library(ggplot2)
+library(MASS)
 library(mlr3verse)
 library(quantreg)
 library(R6)
 library(stringr)
-if (FALSE) devtools::install_github("slds-lmu/vistool")
+# if (FALSE) devtools::install_github("slds-lmu/vistool")
+# library(vistool)
 
 # BASE CLASS -------------------------------------------------------------------
 
@@ -21,22 +23,122 @@ BasePlotter <- R6Class(
         #' @field data_table Data (two covariates, single target) to plot.
         data_table = NULL,
         #' @description Creates a new instance of this class.
-        #' @param x_1 (`numeric()`) Data vector in first dimension.
-        #' @param x_2 (`numeric()`) Data vector in second dimension.
-        #' @param y (`numeric()`) Data target.
-        initialize = function(x_1 = NA, x_2 = NA, y = NA) {
-            assertNumeric(x_1)
-            assertNumeric(x_2)
-            assertNumeric(y)
-            assertTRUE(length(x_1) == length(y))
-            if (!all(is.na(x_2))) assertTRUE(length(x_2) == length(y))
-            self$data_table <- data.table(x_1, x_2, y)
+        #' @param data_table (`data.frame()`) Data to plot in long format.
+        initialize = function(data_table) {
+            assert_data_frame(data_table)
+            self$data_table = as.data.table(data_table)
             return(invisible(self))
         }
     )
 )
 
 # BASE REGRESSION CLASS --------------------------------------------------------
+
+#' BaseRegressionPlotter class
+#' Creates regression plots from univariate or bivariate data.
+BaseRegressionPlotter <- R6Class(
+    "BaseRegressionPlotter",
+    inherit = BasePlotter,
+    public = list(
+        #' @field model Regression model.
+        model = list(),
+        #' @field regression_data Regression data.
+        regression_data = list(),
+        #' @description Compute regression.
+        #' @param formula (`character(1)`) LM formula to use.
+        #' @param loss_names (`list()`) List of loss functions to use.
+        #' @param loss_params (`list()`) List of parameters to loss functions.
+        compute_regression = function(
+            formula, loss_names, loss_params = NULL, ...
+        ) {
+            args = list(...)
+            supported_losses <- c(
+                "quadratic",
+                "absolute",
+                "huber",
+                "logcosh",
+                "logbarrier",
+                "epsiloninsensitive",
+                "pinball"
+            )
+            private$loss_names <- loss_names
+            private$loss_params <- loss_params
+            for (i in seq_along(private$loss_names)) {
+                loss_name <- private$loss_names[[i]]
+                loss_param <- private$loss_params[[i]]
+                if (!loss_name %in% supported_losses) {
+                    stop(
+                        sprintf(
+                            "Unknown loss Supported losses: %s",
+                            paste(supported_losses, collapse = ", ")
+                        )
+                    )
+                }
+                else if (loss_name == "quadratic") {
+                    model <- lm(as.formula(formula), self$data_table)
+                    loss_fun <- function(x) x**2 
+                    private$add_regression_data(loss_name, model, loss_fun)
+                }
+                else if (loss_name == "absolute") {
+                    model <- quantreg::rq(
+                        as.formula(formula), data = self$data_table
+                    )
+                    loss_fun <- function(x) abs(x) 
+                    private$add_regression_data(loss_name, model, loss_fun)
+                }
+                else if (loss_name == "huber") {
+                    model <- MASS::rlm(
+                        as.formula(formula),
+                        data = self$data_table,
+                        scale.est = "Huber",
+                        k2 = ifelse(!is.null(loss_param), loss_param, 2L),
+                        maxit = 100
+                    )
+                    loss_fun <- function(x, epsilon) {
+                        ifelse(
+                            x <= epsilon, 
+                            0.5 * x**2, 
+                            epsilon * x - 0.5 * epsilon**2
+                        )
+                    } 
+                    private$add_regression_data(loss_name, model, loss_fun)
+                }
+                else if (loss_name == "logcosh") {
+                    function() {}
+                }
+                else if (loss_name == "logbarrier") {
+                    function() {}
+                }
+                else if (loss_name == "epsiloninsensitive") {
+                    function() {}
+                }
+                else if (loss_name == "pinball") {
+                    function() {}
+                }
+            }
+            self$regression_data <- do.call(rbind, self$regression_data)
+        }
+    ),
+    private = list(
+        loss_names = list(),
+        loss_params = list(),
+        loss_functions = list(),
+        add_regression_data = function(loss_name, model, loss_fun) {
+            self$model <- append(self$model, list(model))
+            dt <- copy(self$data_table)[
+                , loss := loss_name
+                ][, y_hat := predict(model)
+                  ][, residual := y - y_hat]
+            self$regression_data <- append(
+                self$regression_data, 
+                list(dt)
+            )
+            private$loss_functions <- append(
+                private$loss_functions, list(loss_fun)
+            )
+        }
+    )
+)
 
 #' BaseRegressionPlotter class
 #' Creates regression plots from univariate or bivariate data.
