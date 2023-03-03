@@ -22,7 +22,7 @@ RegressionComputer <- R6Class(
     public = list(
         #' @field data_table Data to predict on.
         data_table = NULL,
-        #' @field formula Regression formula.
+        #' @field id ID of regression computation.
         formula = list(),
         #' @field coefficients Regression coefficients
         coefficients = list(),
@@ -42,10 +42,12 @@ RegressionComputer <- R6Class(
             return(invisible(self))
         },
         #' @description Compute regression.
+        #' @param id (`character(1)`) ID to reference results.
         #' @param formula (`character(1)`) LM formula to use.
         #' @param loss (`character(1)`) Loss function to use.
         #' @param custom_loss (`function()`) Custom loss acting on residuals.
         computeRegression = function(
+            id,
             formula = y ~ ., 
             loss = "quadratic", 
             loss_params = NULL, 
@@ -53,6 +55,9 @@ RegressionComputer <- R6Class(
             ...
         ) {
             args = list(...)
+            if (id %in% do.call(rbind, self$regression_data)$id) {
+                stop(sprintf("ID `%s` already exists.", id))
+            }
             self$formula <- append(self$formula, list(formula))
             self$loss_names <- append(self$loss_names, list(loss))
             self$loss_params <- append(self$loss_params, loss_params)
@@ -78,14 +83,14 @@ RegressionComputer <- R6Class(
             else if (loss == "quadratic") {
                 model <- lm(as.formula(formula), self$data_table)
                 loss_fun <- function(x) x**2 
-                private$add_regression_data(formula, loss, loss_fun, model)
+                private$add_regression_data(id, formula, loss, loss_fun, model)
             }
             else if (loss == "absolute") {
                 model <- quantreg::rq(
                     as.formula(formula), data = self$data_table
                 )
                 loss_fun <- function(x) abs(x) 
-                private$add_regression_data(formula, loss, loss_fun, model)
+                private$add_regression_data(id, formula, loss, loss_fun, model)
             }
             else if (loss == "huber") {
                 epsilon <- private$set_loss_param("epsilon", 0.5)
@@ -103,11 +108,11 @@ RegressionComputer <- R6Class(
                         epsilon * abs(x) - 0.5 * epsilon**2
                     )
                 } 
-                private$add_regression_data(formula, loss, loss_fun, model)
+                private$add_regression_data(id, formula, loss, loss_fun, model)
             }
             else if (loss == "logcosh") {
                 loss_fun <- function(x) log(cosh(abs(x)))
-                private$add_regression_data(formula, loss, loss_fun)
+                private$add_regression_data(id, formula, loss, loss_fun)
             }
             else if (loss == "logbarrier") {
                 epsilon <- private$set_loss_param("epsilon", 1)
@@ -119,45 +124,45 @@ RegressionComputer <- R6Class(
                     )
                     abs_res
                 }
-                private$add_regression_data(formula, loss, loss_fun)
+                private$add_regression_data(id, formula, loss, loss_fun)
             }
             else if (loss == "epsiloninsensitive") {
                 epsilon <- private$set_loss_param("epsilon", 1L)
                 loss_fun <- function(x) {
                     ifelse(abs(x) > epsilon, abs(x) - epsilon, 0L)
                 }
-                private$add_regression_data(formula, loss, loss_fun)
+                private$add_regression_data(id, formula, loss, loss_fun)
             }
             else if (loss == "pinball") {
                 quantile <- private$set_loss_param("quantile", 1L)
-                print(quantile)
                 loss_fun <- function(x) {
                     ifelse(x < 0, ((1 - quantile) * (-x)), quantile * x)
                 }
-                private$add_regression_data(formula, loss, loss_fun)
+                private$add_regression_data(id, formula, loss, loss_fun)
             }
             else if (loss == "cauchy") {
                 epsilon <- private$set_loss_param("epsilon", 1L)
                 loss_fun <- function(x) {
                     0.5 * epsilon**2 * log(1 + (x / epsilon)**2)
                 }
-                private$add_regression_data(formula, loss, loss_fun)
+                private$add_regression_data(id, formula, loss, loss_fun)
             }
             else if (loss == "custom") {
                 if (is.null(custom_loss)) stop("Please provide loss function.")
                 else loss_fun <- custom_loss
-                private$add_regression_data(formula, loss, loss_fun)
+                private$add_regression_data(id, formula, loss, loss_fun)
             }
         }
     ),
     private = list(
         #' @description Compute regression and store results.
+        #' @param id (`character(1)`) ID to reference results.
         #' @param formula (`character(1)`) LM formula to use.
         #' @param loss (`character(1)`) LM formula to use.
         #' @param loss_fun (`function()`) List of loss functions to use.
         #' @param model (`lm()`) Optional model object.
         add_regression_data = function(
-            formula, loss, loss_fun, model = NULL
+            id, formula, loss, loss_fun, model = NULL
         ) {
             base_model <- lm(as.formula(formula), self$data_table)
             x_mat <- model.matrix(base_model)
@@ -176,9 +181,12 @@ RegressionComputer <- R6Class(
             else coefficients <- coefficients(model)
             self$coefficients <- append(self$coefficients, list(coefficients))
             dt <- copy(self$data_table)[
-                , loss := loss
-                ][, y_hat := x_mat %*% coefficients
-                  ][, residual := y - y_hat]
+                , `:=`(id = id, loss = loss, y_hat = x_mat %*% coefficients)
+                ][, `:=`(
+                    residual = y - y_hat,
+                    formula = list(formula),
+                    coefficients = list(coefficients)
+                )]
             self$regression_data <- append(
                 self$regression_data, 
                 list(dt)
@@ -231,7 +239,9 @@ RegressionPlotter <- R6Class(
             }
             private$p_covariates <- covariates
             private$p_formula <- formula
-            private$p_layer_primary <- "twodim"
+            private$p_layers <- append(
+                private$p_layers, list(initial = "twodim")
+            )
             private$p_plot <- ggplot(
                 self$data_table, aes(.data[[private$p_covariates]], y)) +
                 theme_bw() +
@@ -249,18 +259,22 @@ RegressionPlotter <- R6Class(
             }
             private$p_covariates <- covariates
             private$p_formula <- formula
-            private$p_layer_primary <- "threedim"
+            private$p_layers <- append(
+                private$p_layers, list(initial = "threedim")
+            )
             private$p_plot <- plotly_empty(
                 self$data_table, x = ~x_1, y = ~x_2, z = ~y, ...
             )
         },
         
         #' @description Add data points to two-dimensional plot.
+        #' @param id (`character(1)`) ID to reference layer.
         #' @param shape (`character(1)`) Shape of points.
         #' @param ... Further arguments passed to `geom_point(...)` or 
         #' `plot_ly(...)`.
-        addScatter = function(shape = "cross", ...) {
-            if (private$p_layer_primary == "twodim") {
+        addScatter = function(id = "scatter", shape = "cross", ...) {
+            private$p_layers <- append(private$p_layers, list(scatter = id))
+            if (private$p_layers$initial == "twodim") {
                 private$p_plot <- private$p_plot +
                     geom_point(shape = shape, ...)
             }
@@ -271,15 +285,20 @@ RegressionPlotter <- R6Class(
             return(invisible(self))
         },
         #' @description Add regression line to two-dimensional plot.
-        #' @param coefficients (`numeric(2)`) Regression coefficients.
+        #' @param id (`character(1)`) ID to reference layer.
+        #' @param coefficients (`numeric()`) Regression coefficients.
         #' @param col (`character(1)`) Line color.
         #' @param ... Further arguments passed to `geom_abline(...)` or 
         #' `add_trace(...)`.
-        addPredictionHyperplane = function(coefficients, col = "blue", ...) {
+        addPredictionHyperplane = function(
+            id, coefficients, col = "blue", ...
+        ) {
+            private$p_layers <- append(private$p_layers, list(id))
             private$p_coefficients <- append(
-                private$p_coefficients, coefficients
+                private$p_coefficients, list(id = coefficients)
             )
-            if (private$p_layer_primary == "twodim") {
+            
+            if (private$p_layers$initial == "twodim") {
                 private$p_plot <- private$p_plot +
                     geom_abline(
                         intercept = coefficients[1], 
@@ -313,31 +332,36 @@ RegressionPlotter <- R6Class(
                         colorscale = list(c(0, 1), rep(col, 2)), 
                         opacity = 0.7,
                         ...
-                    ) %>% 
-                        layout(showlegend = FALSE) %>% 
-                        hide_colorbar()
+                    )
             }
             return(invisible(self))
         },
         #' @description Add residuals to two-dimensional plot.
+        #' @param y_hat (`numeric()`) Corresponding predictions.
         #' @param idx_residuals (`integer()`) Indices of points whose residuals
         #' to highlight in plot.
         #' @param col (`character(1)`) Line color.
         #' @param ... Further arguments passed to `geom_segment(...)`.
         addResiduals = function(
+            y_hat,
             idx_residuals, 
             quadratic = FALSE, 
             col = "blue", 
             fill = "blue",
             alpha = 0.1, ...
         ) {
-            if (private$p_layer_primary == "threedim") {
+            if (private$p_layers$initial == "threedim") {
                 stop("Only implemented for two-dimensional plots.")
             }
+            plot_columns <- c(private$p_covariates, "y")
+            # TODO unique not optimal here, might throw error if two obs are 
+            # actually identical
+            plot_data <- unique(self$data_table[, ..plot_columns])
+            plot_data[, y_hat := y_hat]
             if (quadratic) {
                 private$p_plot <- private$p_plot +
                     geom_rect(
-                        self$data_table[idx_residuals, ],
+                        plot_data[idx_residuals, ],
                         mapping = aes(
                             xmin = .data[[private$p_covariates]], 
                             xmax = .data[[private$p_covariates]] + (y_hat - y), 
@@ -353,7 +377,7 @@ RegressionPlotter <- R6Class(
             else {
                 private$p_plot <- private$p_plot +
                     geom_segment(
-                        self$data_table[idx_residuals, ],
+                        plot_data[idx_residuals, ],
                         mapping = aes(
                             x = .data[[private$p_covariates]], 
                             xend = .data[[private$p_covariates]], 
@@ -377,8 +401,8 @@ RegressionPlotter <- R6Class(
         p_covariates = NULL,
         #' @field p_coefficients (`list()`) Regression coefficients per layer.
         p_coefficients = list(),
-        #' @field p_layer_primary (`character(1)`) Type of initial layer.
-        p_layer_primary = NULL,
+        #' @field p_layers (`list()`) List of layer IDs.
+        p_layers = list(),
         #' @field p_plot (`ggplot(`) Plot.
         p_plot = NULL
     )
