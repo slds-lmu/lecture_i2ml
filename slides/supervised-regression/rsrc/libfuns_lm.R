@@ -280,7 +280,9 @@ RegressionPlotter <- R6Class(
             }
             else {
                 private$p_plot <- private$p_plot %>%
-                    add_markers(marker = list(symbol = shape, ...))
+                    add_markers(
+                        marker = list(symbol = shape, showscale = FALSE, ...)
+                    )
             }
             return(invisible(self))
         },
@@ -333,11 +335,17 @@ RegressionPlotter <- R6Class(
                 lm_surface <- acast(lm_surface, x_2 ~ x_1, value.var = "y")
                 private$p_plot <- private$p_plot %>%
                     add_trace(
+                        name = id,
                         z = lm_surface,
                         x = axis_x1,
                         y = axis_x2,
                         type = "surface",
-                        colorscale = list(c(0, 1), rep(col, 2)), 
+                        colorbar = list(
+                            title = id, 
+                            ticks = "", 
+                            nticks = 1
+                        ),
+                        colorscale = list(c(0, 1), rep(col, 2)),
                         opacity = 0.7,
                         ...
                     )
@@ -414,7 +422,8 @@ RegressionPlotter <- R6Class(
                 p
             }
             # TODO implement legend for 3D plot
-            else private$p_plot
+            else private$p_plot %>%
+                layout(showlegend = FALSE)
         }
     ),
     private = list(

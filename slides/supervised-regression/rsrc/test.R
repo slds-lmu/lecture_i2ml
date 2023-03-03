@@ -43,11 +43,9 @@ plotter_3d$initLayer3D(y ~ x_1 + x_2)
 plotter_3d$addScatter(col = "blue")
 plotter_3d$addPredictionHyperplane("custom", computer$coefficients[[3]])
 plotter_3d$addPredictionHyperplane(
-    "huber", computer$coefficients[[4]], col = "green"
+    "huber", computer$coefficients[[4]]
 )
-plotter_3d$plot() %>%
-    layout(showlegend = FALSE) %>% 
-    colorbar(title = "foo") # meh
+plotter_3d$plot()
 
 # TODO make appropriate legends
 # TODO implement loss hypersurface plots
