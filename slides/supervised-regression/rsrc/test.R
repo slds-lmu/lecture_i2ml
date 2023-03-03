@@ -20,14 +20,16 @@ computer$computeRegression(
 )
 
 plot_data <- do.call(rbind, computer$regression_data)
-
 plotter_2d <- RegressionPlotter$new(plot_data)
 plotter_2d$initLayer2D(y ~ x_1)
-plotter_2d$addScatter(col = "blue")
-plotter_2d$addPredictionHyperplane("l1", computer$coefficients[[1]])
+plotter_2d$addScatter()
 plotter_2d$addPredictionHyperplane(
-    "l2", computer$coefficients[[2]], col = "red"
+    "L1", computer$coefficients[[1]], col = "blue"
 )
+plotter_2d$addPredictionHyperplane(
+    "L2", computer$coefficients[[2]], col = "red"
+)
+plotter_2d$plot("loss function")
 plotter_2d$addResiduals(
     plot_data[id == "l2", y_hat], c(2, 4), quadratic = FALSE, col = "red"
 )

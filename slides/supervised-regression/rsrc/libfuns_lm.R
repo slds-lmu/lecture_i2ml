@@ -294,6 +294,9 @@ RegressionPlotter <- R6Class(
             id, coefficients, col = "blue", ...
         ) {
             private$p_layers <- append(private$p_layers, list(id))
+            this_color <- vector(mode = "list", length = 1)
+            this_color[[id]] <- col
+            private$p_colors <- append(private$p_colors, this_color)
             private$p_coefficients <- append(
                 private$p_coefficients, list(id = coefficients)
             )
@@ -301,9 +304,14 @@ RegressionPlotter <- R6Class(
             if (private$p_layers$initial == "twodim") {
                 private$p_plot <- private$p_plot +
                     geom_abline(
-                        intercept = coefficients[1], 
-                        slope = coefficients[2], 
-                        col = col,
+                        data.frame(
+                            intercept = coefficients[1],
+                            slope = coefficients[2],
+                            color = id
+                        ),
+                        mapping = aes(
+                            intercept = intercept, slope = slope, col = color
+                        ),
                         ...
                     )
             }
@@ -392,7 +400,22 @@ RegressionPlotter <- R6Class(
         },
         
         #' @description Return the plot.
-        plot = function() private$p_plot
+        #' @param legend_title (`character(1)`) Title of legend. If NULL, no
+        #' legend will be used.
+        plot = function(legend_title = NULL) {
+            if (private$p_layers$initial == "twodim") {
+                p <- private$p_plot +
+                    scale_color_manual(
+                        legend_title, values = private$p_colors
+                    )
+                if (is.null(legend_title))  {
+                    p <- p + theme(legend.position = "none")
+                }
+                p
+            }
+            # TODO implement legend for 3D plot
+            else private$p_plot
+        }
     ),
     private = list(
         #' @field p_formula (`formula()`) Formula to plot.
@@ -403,6 +426,8 @@ RegressionPlotter <- R6Class(
         p_coefficients = list(),
         #' @field p_layers (`list()`) List of layer IDs.
         p_layers = list(),
+        #' @field p_colors (`list()`) List of specified layer colors.
+        p_colors = list(),
         #' @field p_plot (`ggplot(`) Plot.
         p_plot = NULL
     )
