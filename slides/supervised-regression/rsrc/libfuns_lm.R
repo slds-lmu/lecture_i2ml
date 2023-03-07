@@ -58,8 +58,11 @@ RegressionComputer <- R6Class(
             if (id %in% do.call(rbind, self$regression_data)$id) {
                 stop(sprintf("ID `%s` already exists.", id))
             }
-            self$formula <- append(self$formula, list(formula))
-            self$loss_names <- append(self$loss_names, list(loss))
+            this_formula <- list(formula)
+            this_loss_name <- list(loss)
+            names(this_formula) <- names(this_loss_name) <- id
+            self$formula <- append(self$formula, this_formula)
+            self$loss_names <- append(self$loss_names, this_loss_name)
             self$loss_params <- append(self$loss_params, loss_params)
             supported_losses <- c(
                 "quadratic",
@@ -179,7 +182,10 @@ RegressionComputer <- R6Class(
                 )$par
             }
             else coefficients <- coefficients(model)
-            self$coefficients <- append(self$coefficients, list(coefficients))
+            this_coefficients <- list(coefficients)
+            this_loss_fun <- list(loss_fun)
+            names(this_coefficients) <- names(this_loss_fun) <- id
+            self$coefficients <- append(self$coefficients, this_coefficients)
             dt <- copy(self$data_table)[
                 , `:=`(id = id, loss = loss, y_hat = x_mat %*% coefficients)
                 ][, `:=`(
@@ -191,7 +197,7 @@ RegressionComputer <- R6Class(
                 self$regression_data, 
                 list(dt)
             )
-            self$loss_functions <- append(self$loss_functions, list(loss_fun))
+            self$loss_functions <- append(self$loss_functions, this_loss_fun)
         },
         set_loss_param = function(param_name, default) {
             if (is.null(self$loss_params[[param_name]])) {
@@ -272,16 +278,20 @@ RegressionPlotter <- R6Class(
         #' @param shape (`character(1)`) Shape of points.
         #' @param ... Further arguments passed to `geom_point(...)` or 
         #' `plot_ly(...)`.
-        addScatter = function(id = "scatter", shape = "cross", ...) {
+        addScatter = function(
+            id = "scatter", shape = "cross", col = "black", ...
+        ) {
             private$p_layers <- append(private$p_layers, list(scatter = id))
             if (private$p_layers$initial == "twodim") {
                 private$p_plot <- private$p_plot +
-                    geom_point(shape = shape, ...)
+                    geom_point(shape = shape, col = col, ...)
             }
             else {
                 private$p_plot <- private$p_plot %>%
                     add_markers(
-                        marker = list(symbol = shape, showscale = FALSE, ...)
+                        marker = list(
+                            symbol = shape, color = col, showscale = FALSE, ...
+                        )
                     )
             }
             return(invisible(self))
@@ -505,8 +515,8 @@ LossPlotter <- R6Class(
         #' @param col (`character(1)`) Color.
         #' @param ... Further arguments passed to `geom_segment(...)`.
         addAnnotation = function(
-            loss_id, 
-            idx_residuals, 
+            loss_fun, 
+            residuals, 
             type = "segment", 
             col = "blue",
             nudge_x = 0.05 * diff(range(self$data_table$x)),
@@ -514,17 +524,15 @@ LossPlotter <- R6Class(
             ...
         ) {
             supported_types <- c("segment", "point", "text")
-            plot_columns <- c("x", loss_id)
-            plot_data <- self$data_table[, ..plot_columns]
             if (type == "segment") {
                 private$p_plot <- private$p_plot +
                     geom_segment(
-                        plot_data[idx_residuals, ],
+                        data.frame(x = residuals, y = loss_fun(residuals)),
                         mapping = aes(
                             x = x,
                             xend = x,
                             y = 0,
-                            yend = .data[[loss_id]]
+                            yend = y
                         ),
                         col = col,
                         ...
@@ -533,8 +541,8 @@ LossPlotter <- R6Class(
             else if (type == "point") {
                 private$p_plot <- private$p_plot +
                     geom_point(
-                        plot_data[idx_residuals, ],
-                        mapping = aes(x = x, y = .data[[loss_id]]),
+                        data.frame(x = residuals, y = loss_fun(residuals)),
+                        mapping = aes(x = x, y = y),
                         col = col,
                         ...
                     )
@@ -542,11 +550,11 @@ LossPlotter <- R6Class(
             else if (type == "text") {
                 private$p_plot <- private$p_plot +
                     geom_text(
-                        plot_data[idx_residuals, ],
+                        data.frame(x = residuals, y = loss_fun(residuals)),
                         mapping = aes(
                             x = x, 
-                            y = .data[[loss_id]],
-                            label = sprintf("%.2f", .data[[loss_id]])
+                            y = y,
+                            label = sprintf("%.2f", y)
                         ),
                         col = col,
                         hjust = hjust,
