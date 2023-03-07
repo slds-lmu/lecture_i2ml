@@ -286,6 +286,7 @@ RegressionPlotter <- R6Class(
             }
             return(invisible(self))
         },
+        
         #' @description Add regression line to two-dimensional plot.
         #' @param id (`character(1)`) ID to reference layer.
         #' @param coefficients (`numeric()`) Regression coefficients.
@@ -296,8 +297,8 @@ RegressionPlotter <- R6Class(
             id, coefficients, col = "blue", ...
         ) {
             private$p_layers <- append(private$p_layers, list(id))
-            this_color <- vector(mode = "list", length = 1)
-            this_color[[id]] <- col
+            this_color <- list(col)
+            names(this_color) <- id
             private$p_colors <- append(private$p_colors, this_color)
             private$p_coefficients <- append(
                 private$p_coefficients, list(id = coefficients)
@@ -352,6 +353,7 @@ RegressionPlotter <- R6Class(
             }
             return(invisible(self))
         },
+        
         #' @description Add residuals to two-dimensional plot.
         #' @param y_hat (`numeric()`) Corresponding predictions.
         #' @param idx_residuals (`integer()`) Indices of points whose residuals
@@ -433,6 +435,151 @@ RegressionPlotter <- R6Class(
         p_covariates = NULL,
         #' @field p_coefficients (`list()`) Regression coefficients per layer.
         p_coefficients = list(),
+        #' @field p_layers (`list()`) List of layer IDs.
+        p_layers = list(),
+        #' @field p_colors (`list()`) List of specified layer colors.
+        p_colors = list(),
+        #' @field p_plot (`ggplot(`) Plot.
+        p_plot = NULL
+    )
+)
+
+# LOSS PLOTTER CLASS -----------------------------------------------------------
+
+#' RegressionPlotter class
+#' Creates regression plots from univariate or bivariate data.
+LossPlotter <- R6Class(
+    "LossPlotter",
+    public = list(
+        #' @field data_table Data to plot.
+        data_table = NULL,
+        #' @description Creates a new instance of this class.
+        #' @param residuals (`numeric()`) Residuals to plot on x-axis.
+        initialize = function(residuals) {
+            assert_numeric(residuals)
+            self$data_table = data.table(x = residuals)
+            return(invisible(self))
+        },
+        
+        #' @description Initialize two-dimensional plot.
+        #' @param residuals (`numeric()`) Residuals to plot on x-axis.
+        #' @param ... Further arguments passed to `ggplot(...)`.
+        initLayer = function() {
+            private$p_layers <- append(
+                private$p_layers, list(initial = "initial")
+            )
+            private$p_plot <- ggplot(
+                self$data_table, aes(x)) +
+                theme_bw() +
+                labs(x = expression(y - f(x)), y = expression(L(f(x), y)))
+            return(invisible(self))
+        },
+        
+        #' @description Add loss function.
+        #' @param id (`character(1)`) ID to reference layer.
+        #' @param loss_fun (`function()`) Loss function to plot.
+        #' @param col (`character(1)`) Line color.
+        #' @param ... Further arguments passed to `stat_function(...)`.
+        addLossCurve = function(id, loss_fun, col = "blue", ...) {
+            private$p_layers <- append(private$p_layers, list(id))
+            this_color <- list(col)
+            names(this_color) <- id
+            private$p_colors <- append(private$p_colors, this_color)
+            self$data_table[[id]] <- loss_fun(self$data_table$x)
+            private$p_plot <- private$p_plot +
+                geom_function(
+                    data.frame(x = self$data_table$x, color = id), 
+                    mapping = aes(x = x, col = color), 
+                    fun = loss_fun,
+                    ...
+                )
+            return(invisible(self))
+
+        },
+        
+        #' @description Highlight residuals in loss plot with vertical segments.
+        #' @param loss_id (`character()`) ID of loss layer residuals
+        #' @param idx_residuals (`integer()`) Indices of points whose residuals
+        #' to highlight in plot.
+        #' @param type (`character(1)`) Type of annotation.
+        #' @param col (`character(1)`) Color.
+        #' @param ... Further arguments passed to `geom_segment(...)`.
+        addAnnotation = function(
+            loss_id, 
+            idx_residuals, 
+            type = "segment", 
+            col = "blue",
+            nudge_x = 0.05 * diff(range(self$data_table$x)),
+            hjust = 1,
+            ...
+        ) {
+            supported_types <- c("segment", "point", "text")
+            plot_columns <- c("x", loss_id)
+            plot_data <- self$data_table[, ..plot_columns]
+            if (type == "segment") {
+                private$p_plot <- private$p_plot +
+                    geom_segment(
+                        plot_data[idx_residuals, ],
+                        mapping = aes(
+                            x = x,
+                            xend = x,
+                            y = 0,
+                            yend = .data[[loss_id]]
+                        ),
+                        col = col,
+                        ...
+                    )
+            }
+            else if (type == "point") {
+                private$p_plot <- private$p_plot +
+                    geom_point(
+                        plot_data[idx_residuals, ],
+                        mapping = aes(x = x, y = .data[[loss_id]]),
+                        col = col,
+                        ...
+                    )
+            }
+            else if (type == "text") {
+                private$p_plot <- private$p_plot +
+                    geom_text(
+                        plot_data[idx_residuals, ],
+                        mapping = aes(
+                            x = x, 
+                            y = .data[[loss_id]],
+                            label = sprintf("%.2f", .data[[loss_id]])
+                        ),
+                        col = col,
+                        hjust = hjust,
+                        nudge_x = nudge_x,
+                        ...
+                    )
+            }
+            else {
+                stop(
+                    sprintf(
+                        "Supported types: %s", 
+                        paste(supported_types, collapse = ", ")
+                    )
+                )
+            }
+            return(invisible(self))
+        },
+
+        #' @description Return the plot.
+        #' @param legend_title (`character(1)`) Title of legend. If NULL, no
+        #' legend will be used.
+        plot = function(legend_title = NULL) {
+            p <- private$p_plot +
+                scale_color_manual(
+                    legend_title, values = unlist(private$p_colors)
+                )
+            if (is.null(legend_title))  {
+                p <- p + theme(legend.position = "none")
+            }
+            p
+        }
+    ),
+    private = list(
         #' @field p_layers (`list()`) List of layer IDs.
         p_layers = list(),
         #' @field p_colors (`list()`) List of specified layer colors.

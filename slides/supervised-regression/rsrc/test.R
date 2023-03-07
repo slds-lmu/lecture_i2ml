@@ -36,7 +36,17 @@ plotter_2d$addResiduals(
 plotter_2d$addResiduals(
     plot_data[id == "l2", y_hat], 3, quadratic = TRUE, col = "red", fill = "red"
 )
-plotter_2d$plot()
+plotter_2d$plot("losses")
+
+plotter_loss <- LossPlotter$new(seq(-5, 5, by = 1))
+plotter_loss$initLayer()
+plotter_loss$addLossCurve("l2", function(x) x**2, col = "orange")
+plotter_loss$addLossCurve("l1", function(x) abs(x), col = "green")
+plotter_loss$addAnnotation("l2", c(3, 5), linetype = 2)
+plotter_loss$addAnnotation("l2", c(3, 5), type = "point")
+plotter_loss$addAnnotation("l2", c(3, 5), type = "text")
+plotter_loss$plot("hi")
+
 
 plotter_3d <- RegressionPlotter$new(plot_data)
 plotter_3d$initLayer3D(y ~ x_1 + x_2)
