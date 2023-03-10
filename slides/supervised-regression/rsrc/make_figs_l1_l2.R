@@ -35,6 +35,18 @@ ggsave(
     height = 2
 )
 
+# BIVARIATE PLOT ---------------------------------------------------------------
+
+computer_biv <- RegressionComputer$new(dt_biv)
+computer_biv$computeRegression("l2_biv", y ~ x_1 + x_2, loss = "quadratic")
+plotter_3d <- RegressionPlotter$new(
+    do.call(rbind, computer_biv$regression_data)
+)
+plotter_3d$initLayer3D(y ~ x_1 + x_2)
+plotter_3d$addScatter(col = "black")
+plotter_3d$addPredictionHyperplane("l2", computer_biv$coefficients[["l2_biv"]])
+plotter_3d$plot() # screenshot, saving doesn't work properly yet...
+
 # UNIVARIATE PLOT WITH INTERPRETATION ------------------------------------------
 
 theta_0 <- computer$coefficients[["l2_univ"]][1]
@@ -129,15 +141,3 @@ ggsave(
     width = 6, 
     height = 2.4
 )
-
-# BIVARIATE PLOT ---------------------------------------------------------------
-
-computer_biv <- RegressionComputer$new(dt_biv)
-computer_biv$computeRegression("l2_biv", y ~ x_1 + x_2, loss = "quadratic")
-plotter_3d <- RegressionPlotter$new(
-    do.call(rbind, computer_biv$regression_data)
-)
-plotter_3d$initLayer3D(y ~ x_1 + x_2)
-plotter_3d$addScatter(col = "black")
-plotter_3d$addPredictionHyperplane("l2", computer_biv$coefficients[["l2_biv"]])
-plotter_3d$plot()

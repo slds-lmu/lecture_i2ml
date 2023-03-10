@@ -318,12 +318,12 @@ RegressionPlotter <- R6Class(
                 private$p_plot <- private$p_plot +
                     geom_abline(
                         data.frame(
-                            intercept = coefficients[1],
-                            slope = coefficients[2],
+                            theta_0 = coefficients[1],
+                            theta_1 = coefficients[2],
                             color = id
                         ),
                         mapping = aes(
-                            intercept = intercept, slope = slope, col = color
+                            intercept = theta_0, slope = theta_1, col = color
                         ),
                         ...
                     )
