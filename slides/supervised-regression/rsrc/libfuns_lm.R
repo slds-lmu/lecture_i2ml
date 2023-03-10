@@ -422,7 +422,7 @@ RegressionPlotter <- R6Class(
         #' @description Return the plot.
         #' @param legend_title (`character(1)`) Title of legend. If NULL, no
         #' legend will be used.
-        plot = function(legend_title = NULL) {
+        plot = function(legend_title = NULL, x = 1, y = 1, z = 1) {
             if (private$p_layers$initial == "twodim") {
                 p <- private$p_plot +
                     scale_color_manual(
@@ -435,7 +435,15 @@ RegressionPlotter <- R6Class(
             }
             # TODO implement legend for 3D plot
             else private$p_plot %>%
-                layout(showlegend = FALSE)
+                layout(
+                    scene = list(
+                        xaxis = list(title = "x1"), 
+                        yaxis = list(title = "x2"),
+                        zaxis = list(title = "y"),
+                        showlegend = FALSE,
+                        camera = list(eye = list(x = x, y = y, z = z))
+                    )
+                )
         }
     ),
     private = list(

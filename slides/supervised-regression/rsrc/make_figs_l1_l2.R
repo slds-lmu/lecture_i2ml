@@ -1,6 +1,19 @@
 # PREREQ -----------------------------------------------------------------------
 
 library(gridExtra)
+
+# To save plotly-based figures to static images, plotly uses the kaleido python
+# library, which is accessed via reticulate. You might need to run:
+if (FALSE) {
+    install.packages("reticulate")
+    reticulate::install_miniconda()
+    reticulate::conda_install("r-reticulate", "python-kaleido")
+    reticulate::conda_install("r-reticulate", "plotly", channel = "plotly")
+    reticulate::use_miniconda("r-reticulate")
+}
+# R might throw an error about not finding the `sys` library -- circumvent with
+if (FALSE) reticulate::py_run_string("import sys")
+
 source("libfuns_lm.R")
 
 # DATA -------------------------------------------------------------------------
@@ -45,7 +58,10 @@ plotter_3d <- RegressionPlotter$new(
 plotter_3d$initLayer3D(y ~ x_1 + x_2)
 plotter_3d$addScatter(col = "black")
 plotter_3d$addPredictionHyperplane("l2", computer_biv$coefficients[["l2_biv"]])
-plotter_3d$plot() # screenshot, saving doesn't work properly yet...
+p <- plotter_3d$plot(x = -1.9, y = 0, z = 0) %>% 
+    hide_colorbar() %>% 
+    hide_legend()
+save_image(p, "../figure/reg_lm_plot_biv.pdf")
 
 # UNIVARIATE PLOT WITH INTERPRETATION ------------------------------------------
 
