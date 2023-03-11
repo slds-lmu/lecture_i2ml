@@ -13,9 +13,13 @@ set.seed(456)
 y_univ <- 1 + 0.5 * x_1 + rnorm(n_points, sd = 0.5)
 y_biv <- 1 + 0.5 * x_1 + 0.5 * x_2 + rnorm(n_points, sd = 0.5)
 dt_univ <- data.table(x_1, y = y_univ)
+dt_univ_outlier <- rbind(
+    dt_univ[sample(seq_len(nrow(dt_univ)), 10)], 
+    list(-1, 5)
+)
 dt_biv <- data.table(x_1, x_2, y = y_biv)
 
-# REGRESSION -------------------------------------------------------------------
+# UNIVARIATE REGRESSION --------------------------------------------------------
 
 computer_univ <- RegressionComputer$new(dt_univ)
 computer_univ$computeRegression("l2_univ", y ~ x_1, loss = "quadratic")
@@ -34,6 +38,36 @@ saveRDS(
     ),
     "lm_univariate_absolute.Rds"
 )
+
+# UNIVARIATE REGRESSION WITH OUTLIER -------------------------------------------
+
+n_obs <- nrow(dt_univ_outlier)
+invisible(
+    lapply(
+        c(n_obs, n_obs - 1),
+        function(i) {
+            computer <- RegressionComputer$new(dt_univ_outlier[1:i])
+            computer$computeRegression("l2_univ", y ~ x_1, loss = "quadratic")
+            computer$computeRegression("l1_univ", y ~ x_1, loss = "absolute")
+            saveRDS(
+                list(
+                    data = computer$regression_data[[1]], 
+                    coeffs = computer$coefficients[[1]]
+                ),
+                sprintf("lm_univariate_quadratic_outlier_%i.Rds", i)
+            )
+            saveRDS(
+                list(
+                    data = computer$regression_data[[2]], 
+                    coeffs = computer$coefficients[[2]]
+                ),
+                sprintf("lm_univariate_absolute_outlier_%i.Rds", i)
+            )
+        }
+    )
+)
+
+# UNIVARIATE REGRESSION --------------------------------------------------------
 
 computer_biv <- RegressionComputer$new(dt_biv)
 computer_biv$computeRegression("l2_biv", y ~ x_1 + x_2, loss = "quadratic")

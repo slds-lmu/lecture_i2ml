@@ -83,3 +83,40 @@ ggsave(
     width = 3, 
     height = 2.6
 )
+
+# LOSS SURFACE PLOTS -----------------------------------------------------------
+
+# OUTLIER PLOTS ----------------------------------------------------------------
+
+plots_outlier <- lapply(
+    c(10, 11),
+    function(i) {
+        dt_q <- readRDS(sprintf("lm_univariate_quadratic_outlier_%i.Rds", i))
+        dt_a <- readRDS(sprintf("lm_univariate_absolute_outlier_%i.Rds", i))
+        plot_outlier <- RegressionPlotter$new(dt_q$data[1:i])
+        plot_outlier$initLayer2D(y ~ x_1)
+        plot_outlier$addScatter()
+        plot_outlier$addPredictionHyperplane(
+            "L2", dt_q$coeffs, col = "darkorange"
+        )
+        plot_outlier$addPredictionHyperplane("L1", dt_a$coeffs, col = "blue")
+        if (i == 11) {
+            p <- plot_outlier$plot() + 
+                geom_point(
+                    dt_q$data[i], 
+                    mapping = aes(x_1, y), 
+                    col = "red",
+                    shape = "circle",
+                    size = 3
+                )
+        }
+        else p <- plot_outlier$plot()
+        p + theme(legend.position = "bottom")
+    }
+)
+ggsave(
+    "../figure/reg_lm_l1_l2_outlier.pdf", 
+    grid.arrange(plots_outlier[[1]], plots_outlier[[2]], ncol = 2), 
+    width = 6, 
+    height = 2.4
+)
