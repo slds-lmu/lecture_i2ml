@@ -187,12 +187,8 @@ RegressionComputer <- R6Class(
             names(this_coefficients) <- names(this_loss_fun) <- id
             self$coefficients <- append(self$coefficients, this_coefficients)
             dt <- copy(self$data_table)[
-                , `:=`(id = id, loss = loss, y_hat = x_mat %*% coefficients)
-                ][, `:=`(
-                    residual = y - y_hat,
-                    formula = list(formula),
-                    coefficients = list(coefficients)
-                )]
+                , y_hat := x_mat %*% coefficients
+                ][, residual := y - y_hat]
             self$regression_data <- append(
                 self$regression_data, 
                 list(dt)
