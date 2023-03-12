@@ -77,7 +77,7 @@ viz$setLayout(
         xaxis = list(title = "intercept"), 
         yaxis = list(title = "slope"),
         zaxis = list(title = "loss"),
-        showlegend = FALSE,
+        showlegend = FALSE
     )
 )
 

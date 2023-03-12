@@ -1,6 +1,21 @@
 # PREREQ -----------------------------------------------------------------------
 
 library(gridExtra)
+if (FALSE) devtools::install_github("slds-lmu/vistool")
+library(vistool)
+
+# To save plotly-based figures to static images, plotly uses the kaleido python
+# library, which is accessed via reticulate. You might need to run:
+if (FALSE) {
+    install.packages("reticulate")
+    reticulate::install_miniconda()
+    reticulate::conda_install("r-reticulate", "python-kaleido")
+    reticulate::conda_install("r-reticulate", "plotly", channel = "plotly")
+    reticulate::use_miniconda("r-reticulate")
+}
+# R might throw an error about not finding the `sys` library -- circumvent with
+if (FALSE) reticulate::py_run_string("import sys")
+
 source("libfuns_lm.R")
 
 # RESIDUAL PLOTS ---------------------------------------------------------------
@@ -10,6 +25,7 @@ lm_univ <- list(
     readRDS("lm_univariate_absolute.Rds")
 )
 quadratic_residuals <- c(FALSE, TRUE)
+idx_highlight <- c(19, 49)
 
 plots_residual <- lapply(
     seq_along(lm_univ),
@@ -38,6 +54,7 @@ ggsave(
 
 loss_funs <- list(function(x) abs(x), function(x) x**2)
 loss_cols <- c("blue", "darkorange")
+residuals_highlight <- lm_univ[[2]]$data$residual[idx_highlight]
 
 plot_loss <- LossPlotter$new(seq(-1.5, 1.5, by = 1))
 plot_loss$initLayer()
@@ -86,6 +103,39 @@ ggsave(
 
 # LOSS SURFACE PLOTS -----------------------------------------------------------
 
+set.seed(pi)
+n_points <- 100
+x_1 <- 1:n_points
+y <- x_1 + rnorm(n_points, 0, 03)
+plot(y ~ x_1)
+dt <- data.table(x_1, y)
+Xmat <- model.matrix(~ x_1, data = dt)
+my_l2 <- function(x, Xmat, y) sum((Xmat %*% x - y)**2) / n_points
+my_l1 <- function(x, Xmat, y) sum(abs(Xmat %*% x - y))  / n_points
+
+plots_surface <- list()
+for (m in list(my_l2, my_l1)) {
+    obj <- Objective$new(
+        "l", fun = m, xdim = 2, Xmat = Xmat, y = y, minimize = TRUE
+    )
+    viz <- Visualizer$new(
+        obj, x1limits = c(-500, 500), x2limits = c(-10, 10)
+    )
+    viz$initLayerSurface(colorscale = list(c(0, 1), c("darkgray", "white")))
+    viz$setScene(1.5, -1.2, -0.3)
+    viz$setLayout(
+        scene = list(
+            xaxis = list(title = "intercept"), 
+            yaxis = list(title = "slope"),
+            zaxis = list(title = "loss"),
+            showlegend = FALSE
+        )
+    )
+    plots_surface <- append(plots_surface, list(viz$plot()))
+}
+save_image(plots_surface[[1]], "../figure/reg_lm_surface_l2.pdf")
+save_image(plots_surface[[2]], "../figure/reg_lm_surface_l1.pdf")
+
 # OUTLIER PLOTS ----------------------------------------------------------------
 
 plots_outlier <- lapply(
@@ -108,15 +158,18 @@ plots_outlier <- lapply(
                     col = "red",
                     shape = "circle",
                     size = 3
-                )
+                ) +
+                ylim(c(0, 6))
         }
         else p <- plot_outlier$plot()
-        p + theme(legend.position = "bottom")
+        p + 
+            ylim(c(0, 6)) +
+            theme(legend.position = "bottom")
     }
 )
 ggsave(
     "../figure/reg_lm_l1_l2_outlier.pdf", 
     grid.arrange(plots_outlier[[1]], plots_outlier[[2]], ncol = 2), 
     width = 6, 
-    height = 2.4
+    height = 3
 )
