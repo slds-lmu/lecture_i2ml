@@ -212,9 +212,7 @@ for (n in n_obs) {
             )
     }
     else p <- plots_outlier[[which(n_obs == n)]]$plot()
-    p <- p +
-        ylim(c(0, 6)) +
-        theme(legend.position = "bottom")
+    p <- p + theme(legend.position = "bottom")
     plots_outlier[[which(n_obs == n)]] <- p
     
 }
@@ -234,7 +232,11 @@ readRDS(sprintf("lm_univariate_quadratic_outlier_%i.Rds", min(n_obs)))$coeffs
 
 ggsave(
     "../figure/reg_l1_comparison_outlier.pdf", 
-    grid.arrange(plots_outlier[[1]], plots_outlier[[2]], ncol = 2), 
+    grid.arrange(
+        plots_outlier[[1]] + ylim(c(0, 6)), 
+        plots_outlier[[2]] + ylim(c(0, 6)), 
+        ncol = 2
+    ), 
     width = 6, 
     height = 3
 )

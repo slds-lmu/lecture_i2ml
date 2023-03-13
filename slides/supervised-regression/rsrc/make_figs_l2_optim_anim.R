@@ -44,7 +44,7 @@ lapply(
             fill = colors[i]
         )
         ggsave(
-            sprintf("../figure/reg_lm_sse_1%i.pdf", i), 
+            sprintf("../figure/reg_l2_sse_%i.pdf", i), 
             p$plot() + xlim(c(0, 7)) + ylim(-2, 6), 
             width = 3, 
             height = 3.2
@@ -111,19 +111,18 @@ invisible(
         seq_along(coeffs[-length(coeffs)]),
         function(i) {
             plot_manual_markers(
-                viz$plot(), i, sprintf("reg_lm_sse_optim_%i", i)
+                viz$plot(), i, sprintf("reg_l2_sse_optim_%i", i)
             )
         }
     )
 )
 
 # Add optim trace
-
 viz$addLayerOptimizationTrace(
     gd, line_color = "blue", add_marker_at = n_steps
 )
 plot_manual_markers(
     viz$plot() %>% layout(showlegend = FALSE), 
     length(coeffs) - 1,
-    sprintf("reg_lm_sse_optim_%i", length(coeffs))
+    sprintf("reg_l2_sse_optim_%i", length(coeffs))
 )

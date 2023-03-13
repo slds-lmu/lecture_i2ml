@@ -24,7 +24,7 @@ plot_univariate$initLayer2D(y ~ x_1)
 plot_univariate$addScatter()
 plot_univariate$addPredictionHyperplane("l2", lm_univ_quad$coeffs, col = "blue")
 ggsave(
-    "../figure/reg_lm_plot.pdf", 
+    "../figure/reg_l2_basic_lm.pdf", 
     plot_univariate$plot(), 
     width = 2.5, 
     height = 2
@@ -40,7 +40,7 @@ plotter_3d$addPredictionHyperplane("l2", lm_biv_quad$coeffs)
 p <- plotter_3d$plot(x = -1.9, y = 0, z = 0) %>% 
     hide_colorbar() %>% 
     hide_legend()
-save_image(p, "../figure/reg_lm_plot_biv.pdf")
+save_image(p, "../figure/reg_l2_basic_lm_biv.pdf")
 
 # UNIVARIATE PLOT WITH INTERPRETATION ------------------------------------------
 
@@ -77,7 +77,7 @@ plot_interpreted <- plot_interpreted$plot() +
         parse = TRUE
     )
 ggsave(
-    "../figure/reg_lm_plot_interpreted.pdf", 
+    "../figure/reg_l2_basic_lm_interpreted.pdf", 
     plot_interpreted, 
     width = 2.5, 
     height = 2
@@ -100,7 +100,7 @@ plot_residual <- plot_residual$plot() +
         size = 2,
         shape = "cross"
     )
-ggsave("../figure/reg_lm_sse.pdf", plot_residual, width = 3, height = 2.6)
+ggsave("../figure/reg_l2_residual.pdf", plot_residual, width = 3, height = 2.6)
 
 # LOSS PLOT --------------------------------------------------------------------
 
@@ -122,7 +122,7 @@ plot_loss$addAnnotation(
 )
 
 ggsave(
-    "../figure/l2.pdf", 
+    "../figure/reg_l2_lossplot_quad.pdf", 
     grid.arrange(plot_residual_quad$plot(), plot_loss$plot(), ncol = 2), 
     width = 6, 
     height = 2.4
