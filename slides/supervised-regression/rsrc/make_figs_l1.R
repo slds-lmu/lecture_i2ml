@@ -20,12 +20,13 @@ source("libfuns_lm.R")
 
 my_l2 <- function(x, Xmat, y) sum((Xmat %*% x - y)**2)
 my_l1 <- function(x, Xmat, y) sum(abs(Xmat %*% x - y))
+loss_cols <- c("blue", "darkorange")
 
 # RESIDUAL PLOTS ---------------------------------------------------------------
 
 lm_univ <- list(
-    readRDS("lm_univariate_quadratic.Rds"), 
-    readRDS("lm_univariate_absolute.Rds")
+    readRDS("lm_univariate_absolute.Rds"),
+    readRDS("lm_univariate_quadratic.Rds")
 )
 quadratic_residuals <- c(FALSE, TRUE)
 idx_highlight <- c(19, 49)
@@ -36,11 +37,15 @@ plots_residual <- lapply(
         plot_residual <- RegressionPlotter$new(lm_univ[[i]]$data)
         plot_residual$initLayer2D(y ~ x_1)
         plot_residual$addScatter()
-        plot_residual$addPredictionHyperplane("l", lm_univ[[i]]$coeffs)
+        plot_residual$addPredictionHyperplane(
+            "l", lm_univ[[i]]$coeffs, col = loss_cols[i]
+        )
         plot_residual$addResiduals(
             lm_univ[[i]]$data$y_hat, 
             idx_highlight, 
-            quadratic = quadratic_residuals[i]
+            quadratic = quadratic_residuals[i],
+            col = loss_cols[i],
+            fill = loss_cols[i]
         )
     }
 )
@@ -56,7 +61,6 @@ ggsave(
 # LOSS PLOTS -------------------------------------------------------------------
 
 loss_funs <- list(function(x) abs(x), function(x) x**2)
-loss_cols <- c("blue", "darkorange")
 residuals_highlight <- lm_univ[[2]]$data$residual[idx_highlight]
 
 plot_loss <- LossPlotter$new(seq(-1.5, 1.5, by = 1))
@@ -144,7 +148,6 @@ n_obs <- stringr::str_extract_all(
 n_obs <- as.numeric(unlist(n_obs))
 models <- list(my_l1, my_l2)
 loss_names <- c("absolute", "quadratic")
-colors <- c("blue", "darkorange")
 
 plots_optim <- list()
 plots_outlier <- list()
@@ -174,7 +177,7 @@ for (n in n_obs) {
                 colorscale = list(c(0, 1), c("darkgray", "white"))
             )
             viz$addLayerOptimizationTrace(
-                gd, line_color = colors[m], add_marker_at = n_steps
+                gd, line_color = loss_cols[m], add_marker_at = n_steps
             )
             viz$setScene(1.5, -1.2, 0.6)
             viz$setLayout(
@@ -196,7 +199,7 @@ for (n in n_obs) {
             plots_outlier[[which(n_obs == n)]] <- plot_outlier
         }
         plots_outlier[[which(n_obs == n)]]$addPredictionHyperplane(
-            loss_names[m], dt$coeffs, col = colors[m]
+            loss_names[m], dt$coeffs, col = loss_cols[m]
         )
         
     }
