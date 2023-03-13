@@ -18,6 +18,9 @@ if (FALSE) reticulate::py_run_string("import sys")
 
 source("libfuns_lm.R")
 
+my_l2 <- function(x, Xmat, y) sum((Xmat %*% x - y)**2)
+my_l1 <- function(x, Xmat, y) sum(abs(Xmat %*% x - y))
+
 # RESIDUAL PLOTS ---------------------------------------------------------------
 
 lm_univ <- list(
@@ -42,7 +45,7 @@ plots_residual <- lapply(
     }
 )
 ggsave(
-    "../figure/reg_lm_residual_l2_l1.pdf", 
+    "../figure/reg_l1_residual_abs_vs_quad.pdf", 
     grid.arrange(
         plots_residual[[1]]$plot(), plots_residual[[2]]$plot(), ncol = 2
     ), 
@@ -89,13 +92,13 @@ invisible(
 )
 
 ggsave(
-    "../figure/l1.pdf", 
+    "../figure/reg_l1_lossplot_abs.pdf", 
     grid.arrange(plots_residual[[1]]$plot(), plot_loss$plot(), ncol = 2), 
     width = 6, 
     height = 2.4
 )
 ggsave(
-    "../figure/reg_lm_l1_l2.pdf", 
+    "../figure/reg_l1_lossplot_abs_vs_quad.pdf", 
     plot_loss_both$plot(), 
     width = 3, 
     height = 2.6
@@ -107,11 +110,8 @@ set.seed(pi)
 n_points <- 100
 x_1 <- 1:n_points
 y <- x_1 + rnorm(n_points, 0, 03)
-plot(y ~ x_1)
 dt <- data.table(x_1, y)
 Xmat <- model.matrix(~ x_1, data = dt)
-my_l2 <- function(x, Xmat, y) sum((Xmat %*% x - y)**2) / n_points
-my_l1 <- function(x, Xmat, y) sum(abs(Xmat %*% x - y))  / n_points
 
 plots_surface <- list()
 for (m in list(my_l2, my_l1)) {
@@ -133,42 +133,107 @@ for (m in list(my_l2, my_l1)) {
     )
     plots_surface <- append(plots_surface, list(viz$plot()))
 }
-save_image(plots_surface[[1]], "../figure/reg_lm_surface_l2.pdf")
-save_image(plots_surface[[2]], "../figure/reg_lm_surface_l1.pdf")
+save_image(plots_surface[[1]], "../figure/reg_l1_surface_quad.pdf")
+save_image(plots_surface[[2]], "../figure/reg_l1_surface_abs.pdf")
 
-# OUTLIER PLOTS ----------------------------------------------------------------
+# L1 VS L2 PLOTS ---------------------------------------------------------------
 
-plots_outlier <- lapply(
-    c(10, 11),
-    function(i) {
-        dt_q <- readRDS(sprintf("lm_univariate_quadratic_outlier_%i.Rds", i))
-        dt_a <- readRDS(sprintf("lm_univariate_absolute_outlier_%i.Rds", i))
-        plot_outlier <- RegressionPlotter$new(dt_q$data[1:i])
-        plot_outlier$initLayer2D(y ~ x_1)
-        plot_outlier$addScatter()
-        plot_outlier$addPredictionHyperplane(
-            "L2", dt_q$coeffs, col = "darkorange"
-        )
-        plot_outlier$addPredictionHyperplane("L1", dt_a$coeffs, col = "blue")
-        if (i == 11) {
-            p <- plot_outlier$plot() + 
-                geom_point(
-                    dt_q$data[i], 
-                    mapping = aes(x_1, y), 
-                    col = "red",
-                    shape = "circle",
-                    size = 3
-                ) +
-                ylim(c(0, 6))
-        }
-        else p <- plot_outlier$plot()
-        p + 
-            ylim(c(0, 6)) +
-            theme(legend.position = "bottom")
-    }
+n_obs <- stringr::str_extract_all(
+    list.files(pattern = "lm_univariate_quadratic_outlier_(.)*.Rds"), "\\d+"
 )
+n_obs <- as.numeric(unlist(n_obs))
+models <- list(my_l1, my_l2)
+loss_names <- c("absolute", "quadratic")
+colors <- c("blue", "darkorange")
+
+plots_optim <- list()
+plots_outlier <- list()
+
+for (n in n_obs) {
+    
+    for (m in seq_along(models)) {
+        dt <- readRDS(
+            sprintf("lm_univariate_%s_outlier_%i.Rds", loss_names[m], n)
+        )
+        if (n == min(n_obs)) {
+            Xmat <- model.matrix(~ x_1, dt$data)
+            obj <- Objective$new(
+                "l", 
+                fun = models[[m]], 
+                xdim = 2, 
+                Xmat = Xmat, 
+                y = dt$data$y, 
+                minimize = TRUE
+            )
+            gd <- OptimizerGD$new(obj, x_start = c(5, 4), print_trace = FALSE)
+            n_steps <- 5000
+            set.seed(pi)
+            gd$optimize(steps = n_steps)
+            viz <- Visualizer$new(obj, x1limits = c(-5, 5), x2limits = c(-5, 5))
+            viz$initLayerSurface(
+                colorscale = list(c(0, 1), c("darkgray", "white"))
+            )
+            viz$addLayerOptimizationTrace(
+                gd, line_color = colors[m], add_marker_at = n_steps
+            )
+            viz$setScene(1.5, -1.2, 0.6)
+            viz$setLayout(
+                scene = list(
+                    xaxis = list(title = "intercept"), 
+                    yaxis = list(title = "slope"),
+                    zaxis = list(title = "loss"),
+                    showlegend = FALSE
+                )
+            )
+            plots_optim <- append(plots_optim, list(viz$plot()))
+            
+        }
+        
+        if (length(plots_outlier) < length(n_obs) & m == 1) {
+            plot_outlier <- RegressionPlotter$new(dt$data[1:n])
+            plot_outlier$initLayer2D(y ~ x_1)
+            plot_outlier$addScatter()
+            plots_outlier[[which(n_obs == n)]] <- plot_outlier
+        }
+        plots_outlier[[which(n_obs == n)]]$addPredictionHyperplane(
+            loss_names[m], dt$coeffs, col = colors[m]
+        )
+        
+    }
+    
+    if (n == max(n_obs)) {
+        p <- plots_outlier[[which(n_obs == n)]]$plot() + 
+            geom_point(
+                dt$data[n], 
+                mapping = aes(x_1, y), 
+                col = "red",
+                shape = "circle",
+                size = 3
+            )
+    }
+    else p <- plots_outlier[[which(n_obs == n)]]$plot()
+    p <- p +
+        ylim(c(0, 6)) +
+        theme(legend.position = "bottom")
+    plots_outlier[[which(n_obs == n)]] <- p
+    
+}
+
+save_image(plots_optim[[1]], "../figure/reg_l1_comparison_optim_abs.pdf")
+save_image(plots_optim[[2]], "../figure/reg_l1_comparison_optim_quad.pdf")
 ggsave(
-    "../figure/reg_lm_l1_l2_outlier.pdf", 
+    "../figure/reg_l1_comparison.pdf", 
+    plots_outlier[[1]], 
+    width = 3, 
+    height = 2.4
+)
+
+# Coefficients for table:
+readRDS(sprintf("lm_univariate_absolute_outlier_%i.Rds", min(n_obs)))$coeffs
+readRDS(sprintf("lm_univariate_quadratic_outlier_%i.Rds", min(n_obs)))$coeffs
+
+ggsave(
+    "../figure/reg_l1_comparison_outlier.pdf", 
     grid.arrange(plots_outlier[[1]], plots_outlier[[2]], ncol = 2), 
     width = 6, 
     height = 3
