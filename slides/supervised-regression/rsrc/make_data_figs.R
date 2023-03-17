@@ -13,9 +13,10 @@ set.seed(456)
 y_univ <- 1 + 0.5 * x_1 + rnorm(n_points, sd = 0.5)
 y_biv <- 1 + 0.5 * x_1 + 0.5 * x_2 + rnorm(n_points, sd = 0.5)
 dt_univ <- data.table(x_1, y = y_univ)
+x_1_outlier <- sample(x_1, 10)
+y_outlier <- 1 + 0.5 * x_1_outlier + rnorm(length(x_1_outlier), sd = 0.1)
 dt_univ_outlier <- rbind(
-    dt_univ[sample(seq_len(nrow(dt_univ)), 10)], 
-    list(-1, 5)
+    data.table(x_1 = x_1_outlier, y = y_outlier), list(-1, 5)
 )
 dt_biv <- data.table(x_1, x_2, y = y_biv)
 
