@@ -3,7 +3,7 @@
 \input{../../latex-math/basic-math.tex}
 \input{../../latex-math/basic-ml.tex}
 
-\newcommand{\titlefigure}{figure/reg_lm_sse}
+\newcommand{\titlefigure}{figure/reg_l2_residual.pdf}
 \newcommand{\learninggoals}{
 \item Grasp the overall concept of linear regression
 \item Understand how $L2$ loss optimization results in SSE-minimal model
@@ -20,10 +20,17 @@ analytically
 \lecturechapter{Linear Models with $L2$ Loss}
 \lecture{Introduction to Machine Learning}
 
-\begin{vbframe}{Linear regression}
+% ------------------------------------------------------------------------------
+
+\begin{frame}{Linear regression}
 
 \begin{itemize}
-    \item Idea: predict $y \in \R$ as \textbf{linear} combination of features
+    \item Idea: predict $y \in \R$ as \textbf{linear} combination of 
+    features\footnote[frame]{\tiny
+    Actually, special case of linear model, which is linear combo of 
+    \textit{basis functions} of features $\rightsquigarrow$
+    Polynomial Regression Models
+    }
     (plus intercept term):
     $$\yh = \fx = \thx = \theta_0 + \theta_1 x_1 + \dots + \theta_p x_p$$
     $~\rightsquigarrow$ find loss-optimal hyperplane to describe relation 
@@ -32,17 +39,16 @@ analytically
     
 \end{itemize}
 \vfill
-    \begin{minipage}{0.45\textwidth}
-        \includegraphics[width=\textwidth]{figure/reg_lm_plot} 
-    \end{minipage}
-    \hfill
-    \begin{minipage}{0.45\textwidth}
-        \includegraphics[width=0.8\textwidth]{figure/ss_regr_bivariate} 
-        
-        % \textcolor{red}{TODO: visualize properly}
-    \end{minipage}
+\begin{minipage}{0.4\textwidth}
+    \includegraphics[width=\textwidth]{figure/reg_l2_basic_lm.pdf} 
+\end{minipage}
+\hspace{1cm}
+\begin{minipage}{0.4\textwidth}
+    \includegraphics[width=1.2\textwidth, trim=100 0 0 20, clip]{
+    figure/reg_l2_basic_lm_biv.pdf} 
+\end{minipage}
 
-\end{vbframe}
+\end{frame} 
 
 % ------------------------------------------------------------------------------
 
@@ -58,16 +64,6 @@ analytically
     \end{itemize}
     \item Collect all observations in \textbf{design matrix} 
     $\Xmat \in \R^{n \times (p + 1)}$ \\
-    % $$
-    % \left(
-    %     \begin{smallmatrix}
-    %         1 & x^{(1)}_1 & \ldots & x^{(1)}_p \\
-    %         1 & x^{(2)}_1 & \ldots & x^{(2)}_p \\
-    %         \vdots & \vdots & & \vdots \\
-    %         1 & x^{(n)}_1 & \ldots & x^{(n)}_p \\
-    %     \end{smallmatrix}
-    %     \right)
-    % $$
     $\rightsquigarrow$ more compact: single param vector incl. intercept
     \item Resulting linear model:
     \begin{align*}
@@ -94,17 +90,8 @@ analytically
             \theta_0 + \theta_1 x_1^{(n)} + \dots + \theta_p x_p^{(n)} \\
         \end{smallmatrix}
         \right)
-        % &=
-        % \left(
-        % \begin{smallmatrix}
-        %     \thetab^\top \xv^{(1)} \\
-        %     \thetab^\top \xv^{(2)} \\
-        %     \vdots \\
-        %     \thetab^\top \xv^{(n)} \\
-        % \end{smallmatrix}
-        % \right)
     \end{align*}
-    \item We'll make use of this notation in other contexts
+    \item We will make use of this notation in other contexts
 \end{itemize}
 
 \end{vbframe}
@@ -122,7 +109,7 @@ analytically
 \end{itemize}
 
 \vfill
-\includegraphics[width=0.4\textwidth]{figure/reg_lm_plot_interpreted} 
+\includegraphics[width=0.4\textwidth]{figure/reg_l2_basic_lm_interpreted.pdf} 
 \hfill
 \includegraphics[width=0.55\textwidth]{figure_man/lm_summary} 
 
@@ -138,8 +125,8 @@ analytically
     \textbf{squared error}
     $$\Lxy = (y-\fx)^2 ~~ \text{or} ~~ \Lxy = 0.5 \cdot (y-\fx)^2$$
     
-    \includegraphics[width=0.4\textwidth]{figure/reg_lm_sse}
-    \item Why penalize \textbf{quadratic} residuals?
+    \includegraphics[width=0.35\textwidth]{figure/reg_l2_residual.pdf}
+    \item Why penalize \textbf{residuals} $y - \fx$ quadratically?
     \begin{itemize}
         \item Easy to optimize (convex, differentiable)
         \item Theoretically appealing (connection to classical stats LM)
@@ -150,9 +137,34 @@ analytically
 
 % ------------------------------------------------------------------------------
 
-\begin{frame}{Zoom: loss plot}
+\begin{frame}{loss plots}
 
-\includegraphics[width=\textwidth]{figure/l2.pdf}
+We will often visualize loss effects like this:
+
+\vfill
+
+\includegraphics[width=\textwidth]{figure/reg_l2_lossplot_quad.pdf}
+
+\hspace{0.5cm}
+\begin{minipage}[t]{0.45\textwidth}
+    \footnotesize
+    \begin{itemize}
+        \item Data as $y \sim x_1$
+        \item Prediction hypersurface \\$\rightsquigarrow$ here: line
+        \item Residuals $y - \fx$ 
+        \\$\rightsquigarrow$ here: squares to illustrate $L2$
+    \end{itemize}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.4\textwidth}
+    \footnotesize
+    \begin{itemize}
+        \item Loss as function of residuals
+        \\$\rightsquigarrow$ strength of penalty? 
+        \\$\rightsquigarrow$ symmetric?
+        \item Highlighted: loss for residuals shown on LHS
+    \end{itemize}
+\end{minipage}
 
 \end{frame}
 
@@ -171,19 +183,19 @@ analytically
 \vfill
 \only<1>{
     \phantom{\includegraphics[width=0.25\textwidth]{
-    figure/reg_lm_sse_11.pdf}}
+    figure/reg_l2_sse_1.pdf}}
 }
 \only<2>{
-    \includegraphics[width=0.3\textwidth]{figure/reg_lm_sse_11.pdf}
+    \includegraphics[width=0.3\textwidth]{figure/reg_l2_sse_1.pdf}
 }
 \only<3>{
-    \includegraphics[width=0.3\textwidth]{figure/reg_lm_sse_11.pdf}
-    \includegraphics[width=0.3\textwidth]{figure/reg_lm_sse_12.pdf}
+    \includegraphics[width=0.3\textwidth]{figure/reg_l2_sse_1.pdf}
+    \includegraphics[width=0.3\textwidth]{figure/reg_l2_sse_2.pdf}
 }
 \only<4>{
-    \includegraphics[width=0.3\textwidth]{figure/reg_lm_sse_11.pdf}
-    \includegraphics[width=0.3\textwidth]{figure/reg_lm_sse_12.pdf}
-    \includegraphics[width=0.3\textwidth]{figure/reg_lm_sse_13.pdf}
+    \includegraphics[width=0.3\textwidth]{figure/reg_l2_sse_1.pdf}
+    \includegraphics[width=0.3\textwidth]{figure/reg_l2_sse_2.pdf}
+    \includegraphics[width=0.3\textwidth]{figure/reg_l2_sse_3.pdf}
 }
 
 \end{frame}
@@ -192,56 +204,88 @@ analytically
 
 \begin{frame}{optimization}
 
-% Example revisited: optimization on $L2$ loss surface
-Instead of guessing, of course, use \textbf{optimization}
+% Only stuff below super tedious, but when leaving out the repetitions (defining
+% table globally and only adding lines in only statements), there's weird
+% indenting...
 
 \vspace{0.2cm}
-\begin{minipage}{0.45\textwidth}
+\begin{minipage}[c]{0.5\textwidth}
     \only<1>{
-    \includegraphics[width=0.4\textwidth]{figure/reg_lm_sse_11.pdf} \\
-    \phantom{\includegraphics[width=0.4\textwidth]{figure/reg_lm_sse_12.pdf} \\}
-    \phantom{\includegraphics[width=0.4\textwidth]{figure/reg_lm_sse_13.pdf}}
+    \includegraphics[width=0.4\textwidth]{figure/reg_l2_sse_1.pdf} \\
+    \phantom{
+        \includegraphics[width=0.4\textwidth]{figure/reg_l2_sse_2.pdf} \\
+    }
+    \phantom{\includegraphics[width=0.4\textwidth]{figure/reg_l2_sse_3.pdf}}
+    \vfill \vspace{0.5cm} \scriptsize
+    \begin{tabular}{r|r|r}
+        Intercept $\theta_0$ & Slope $\theta_1$ & SSE
+        \\ \hline 1.80 & 0.30 & 16.86\\ \hline && \\ \hline && \\ \hline &&
+    \end{tabular}
     }
     \only<2>{
-    \includegraphics[width=0.4\textwidth]{figure/reg_lm_sse_11.pdf}
-    \includegraphics[width=0.4\textwidth]{figure/reg_lm_sse_12.pdf} \\
-    \phantom{\includegraphics[width=0.4\textwidth]{figure/reg_lm_sse_13.pdf}}
+    \includegraphics[width=0.4\textwidth]{figure/reg_l2_sse_1.pdf}
+    \includegraphics[width=0.4\textwidth]{figure/reg_l2_sse_2.pdf} \\
+    \phantom{\includegraphics[width=0.4\textwidth]{figure/reg_l2_sse_3.pdf}}
+    \vfill \vspace{0.5cm} \scriptsize
+    \begin{tabular}{r|r|r}
+        Intercept $\theta_0$ & Slope $\theta_1$ & SSE
+        \\ \hline 1.80 & 0.30 & 16.86\\ \hline 1.00 & 0.10 & 24.29 \\ 
+        \hline && \\ \hline &&
+    \end{tabular}
     }
     \only<3>{
-    \includegraphics[width=0.4\textwidth]{figure/reg_lm_sse_11.pdf}
-    \includegraphics[width=0.4\textwidth]{figure/reg_lm_sse_12.pdf} \\
-    \includegraphics[width=0.4\textwidth]{figure/reg_lm_sse_13.pdf}
+    \includegraphics[width=0.4\textwidth]{figure/reg_l2_sse_1.pdf}
+    \includegraphics[width=0.4\textwidth]{figure/reg_l2_sse_2.pdf} \\
+    \includegraphics[width=0.4\textwidth]{figure/reg_l2_sse_3.pdf}
+    \vfill \vspace{0.5cm} \scriptsize
+    \begin{tabular}{r|r|r}
+        Intercept $\theta_0$ & Slope $\theta_1$ & SSE
+        \\ \hline 1.80 & 0.30 & 16.86\\ \hline 1.00 & 0.10 & 24.29 \\ 
+        \hline 0.50 & 0.80 & 10.61 \\ \hline &&
+    \end{tabular}
     }
-    \vfill
-    \scriptsize
-        \begin{tabular}{l|l|l}
-            Intercept $\theta_0$ & Slope $\theta_1$ & SSE
-            \\ \hline 1.8 & 0.3 & 16.86
-            \only<1>{\\ \hline & & \\ \hline &&}
-            \only<2>{\\ \hline 1.0 & 0.10 & 24.29 \\ \hline &&}
-            \only<3>{\\ \hline 1.0 & 0.10 & 24.29 \\ \hline
-            0.5 & 0.8 & 10.61
-            }
-        \end{tabular}
+    \only<4>{
+    \includegraphics[width=0.4\textwidth]{figure/reg_l2_sse_1.pdf}
+    \includegraphics[width=0.4\textwidth]{figure/reg_l2_sse_2.pdf} \\
+    \includegraphics[width=0.4\textwidth]{figure/reg_l2_sse_3.pdf}
+    \includegraphics[width=0.4\textwidth]{figure/reg_l2_sse_4.pdf}
+    \vfill \vspace{0.5cm} \scriptsize
+    \begin{tabular}{r|r|r}
+        Intercept $\theta_0$ & Slope $\theta_1$ & SSE
+        \\ \hline 1.80 & 0.30 & 16.86\\ \hline 1.00 & 0.10 & 24.29 
+        \\ \hline 0.50 & 0.80 & 10.61 \\ \hline
+        \textcolor{blue}{-1.65} & \textcolor{blue}{1.29} &
+        \textcolor{blue}{5.88}
+    \end{tabular}
+    }
 \end{minipage}
-\begin{minipage}{0.5\textwidth}
-    \includegraphics[width=\textwidth]{figure/ss_surf.png}
+\begin{minipage}[c]{0.45\textwidth}
+    \only<1>{\includegraphics[width=1.2\textwidth, trim=130 30 80 20, clip]{
+    figure/reg_l2_sse_optim_1.pdf}}
+    \only<2>{\includegraphics[width=1.2\textwidth, trim=130 30 80 20, clip]{
+    figure/reg_l2_sse_optim_2.pdf}}
+    \only<3>{\includegraphics[width=1.2\textwidth, trim=130 30 80 20, clip]{
+    figure/reg_l2_sse_optim_3.pdf}}
+    \only<4>{
+    \includegraphics[width=1.2\textwidth, trim=130 10 80 20, clip]{
+    figure/reg_l2_sse_optim_4.pdf}}
 \end{minipage}
 
+\only<4>{
 \vfill
-\textcolor{red}{TODO: make proper visualization corresponding to example; check 
-for redundancy w chap 1}
+
+Instead of guessing, of course, use \textbf{optimization}!
+}
 
 \end{frame}
 
 % ------------------------------------------------------------------------------
 
-\begin{vbframe}{optimization}
+\begin{vbframe}{analytical optimization}
 
 \begin{itemize}
     \item Special property of LM with $L2$ loss: \textbf{analytical solution}
     available
-    % \footnotesize
     \begin{align*}
         \thetabh \in 
         \argmin_{\thetab} \risket &=
@@ -259,39 +303,110 @@ for redundancy w chap 1}
 
 % ------------------------------------------------------------------------------
 
-\begin{vbframe}{OLS estimator -- proof}
+\begin{vbframe}{analytical optimization -- proof}
 
-\textcolor{red}{TODO: univariate and matrix version}
+\scriptsize
+$\risket = \textcolor{violet}{\sumin \big(\underbrace{\yi - \thetab^\top \xi}_{=:
+\epsilon_i} \big)^2}
+= \textcolor{teal}{\| \underbrace{\yv - \Xmat \thetab}_{=: \bm{\epsilon}} 
+\|^2_2}$; ~~ $\thetab \in \R^{\tilde p}$ with $\tilde p := p + 1$
+
+% \vfill
+
+\begin{minipage}[t]{0.52\textwidth}
+    \tiny 
+    \begin{eqnarray*}
+        0 &=& \textcolor{violet}{\frac{\partial \risket}{\partial \thetab}
+        ~~ \text{(sum notation)}} \\
+        0 &=& \frac{\partial}{\partial \thetab} \sumin \epsilon_i^2 
+        ~~ \Big \rvert
+        ~~ \text{sum \& chain rule} \\
+        0 &=& \sumin \frac{\partial \epsilon_i^2}{\partial \epsilon_i}
+        \frac{\partial \epsilon_i}{\partial \thetab} \\
+        0 &=& \sumin \textcolor{black!30}{2} \epsilon_i 
+        \textcolor{black!30}{(-1)} (\xi)^\top \\ 
+        0 &=& \sumin (\yi - \thetab^\top \xi)(\xi)^\top \\
+        \sumin \thetab^\top \xi (\xi)^\top &=&\sumin \yi (\xi)^\top 
+        ~~ \Big \rvert ~~ \text{transpose} \\
+        \thetab \sumin \underbrace{(\xi)^\top \xi}_{1 \times 1} &=& 
+        \sumin \xi \yi \\
+        \thetab &=& \sumin \underbrace{
+        \big( \underbrace{(\xi)^\top \xi}_{1 \times 1}  \big)^{-1}
+        \underbrace{\phantom{y}\xi}_{\tilde p \times 1} \underbrace{\yi}_
+        {1 \times 1}}_{\tilde p \times 1}
+        % \thetab &=& \sumin (\underbrace{\yi}_{1 \times 1} / \underbrace{
+        % (\xi)^\top}_{1 \times p} \underbrace{\xi}_{p \times 1}
+    \end{eqnarray*}
+\end{minipage}
+\hfill
+% \vline
+\begin{minipage}[t]{0.45\textwidth}
+    \tiny 
+    \begin{eqnarray*}
+        0 &=& \textcolor{teal}{\frac{\partial \risket}{\partial \thetab}
+        ~~ \text{(matrix notation)}} \\
+        0 &=& \frac{\partial \| \bm{\epsilon} \|_2^2 }{\partial \thetab} \\
+        0 &=& \frac{\partial \bm{\epsilon}^\top \bm{\epsilon} }{\partial 
+        \thetab} 
+        ~~ \Big \rvert ~~ \text{chain rule} \\
+        0 &=& \frac{\partial \bm{\epsilon}^\top \bm{\epsilon}}{\partial 
+        \bm{\epsilon}} \cdot \frac{\partial \bm{\epsilon}}{\partial \thetab} \\
+        0 &=& \textcolor{black!30}{2}  \bm{\epsilon}^\top \cdot (
+        \textcolor{black!30}{-1 \cdot} \Xmat) \\
+        0 &=& (\yv - \Xmat \thetab)^\top \Xmat \\
+        0 &=& \yv^\top \Xmat - \thetab^\top \Xmat^\top \Xmat \\
+        \thetab^\top \Xmat^\top \Xmat &=& \yv^\top \Xmat 
+        ~~ \Big \rvert ~~ \text{transpose} \\
+        \Xmat^\top \Xmat \thetab &=& \Xmat^\top \yv \\
+        \thetab &=& \underbrace{
+        \underbrace{(\Xmat^\top \Xmat)^{-1}}_{\tilde p \times \tilde p}
+        \underbrace{\phantom{(} \Xmat^\top}_{\tilde p \times n} 
+        \underbrace{\yv}_{n \times 1}}_{\tilde p \times 1}
+    \end{eqnarray*}
+\end{minipage}
 
 \end{vbframe}
 
 % ------------------------------------------------------------------------------
 
-\begin{vbframe}{Synopsis}
+\begin{vbframe}{Statistical properties}
 
+% \footnotesize
 \begin{itemize}
-    \item In a nutshell: minimize quadratic residuals to model of form 
-    $\Xmat \thetab$
+    % \small
+    % \item In a nutshell: minimize quadratic residuals of form 
+    % $\| \yv - \Xmat \thetab \|^2_2$
     \item LM with $L2$ loss intimately related to classical stats LM
-    % \begin{itemize}
-        \item Equivalent to assumption of Gaussian error terms: 
+    \item Assumptions
+    \begin{itemize}
+        % \small
+        \item $\xi$ \textbf{iid} for $i \in \nset$
+        \item \textbf{Homoskedastic} (equivariant) 
+         \textbf{Gaussian} errors
         $$\yv = \Xmat \thetab + \bm{\epsilon}, ~ \bm{\epsilon} \sim 
-        \normal(0, \id)$$
-        \item Statistical inference applicable
-        \begin{itemize}
-            \item Hypothesis tests on significance of effects, incl. p-values
-            \item Confidence \& prediction intervals via student distribution
-        \end{itemize}
-        \item Linked to goodness-of-fit measure $R^2$:
-        $$R^2 = 1 - \underbrace{\frac{\text{SSE}}{\text{SST}}}_{
-        \sumin (\yi - \bar y)^2}$$
+        \normal(0, \sigma^2 \id)  $$
+        $\rightsquigarrow$ $y_i$ conditionally independent \& normal:
+        $\yv | \Xmat \sim \normal(\Xmat \thetab, \sigma^2 \id)$
+        \item Uncorrelated features \\$\rightsquigarrow$ 
+        multicollinearity destabilizes effect estimation 
+    \end{itemize}
+    \item If assumptions hold: statistical \textbf{inference} applicable
+    \begin{itemize}
+        % \small
+            \item Hypothesis tests on significance of effects, incl. $p$-values
+            \item Confidence \& prediction intervals via student-$t$ 
+            distribution
+        \item Goodness-of-fit measure
+        $R^2 = 1 - \text{SSE} ~~ / \underbrace{\text{SST}}_{
+        \sumin (\yi - \bar y)^2}$
+        
         $\rightsquigarrow$ SSE = part of data variance \textit{not} explained 
         by model
-    % \end{itemize}
+    \end{itemize}
 \end{itemize}
 
 \end{vbframe}
 
 \endlecture
-\end{document}
 
+\end{document}

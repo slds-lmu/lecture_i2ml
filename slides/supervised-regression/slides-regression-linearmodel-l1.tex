@@ -3,10 +3,10 @@
 \input{../../latex-math/basic-math.tex}
 \input{../../latex-math/basic-ml.tex}
 
-\newcommand{\titlefigure}{figure/plot_loss}
+\newcommand{\titlefigure}{figure/reg_l1_lossplot_abs_vs_quad.pdf}
 \newcommand{\learninggoals}{
-\item Understand difference between $L1$- and $L2$-regression
-\item See how outliers affect LM
+\item Understand difference between $L1$ and $L2$ regression
+\item See how choice of loss affects optimization \& robustness
 }
 
 \title{Introduction to Machine Learning}
@@ -27,32 +27,27 @@
     \textbf{absolute} residuals seem more natural? 
     
     \vspace{0.2cm}
-    \includegraphics[width=0.25\textwidth]{figure/reg_lm_sse}
-    \includegraphics[width=0.25\textwidth]{figure/reg_lm_sse}
-    
-    \textcolor{red}{TODO: make right plot w abs res, both more highlighted 
-    points
-    }
+    \includegraphics[width=0.55\textwidth]{figure/reg_l1_residual_abs_vs_quad}
     \item \textbf{$L1$ loss / absolute error / least absolute deviation (LAD)}
-    $$
-    \Lxy = |y-\fx|
-    $$
-    \includegraphics[width=0.4\textwidth]{figure/plot_abs_loss} 
+    $$\Lxy = |y - \fx|$$
+    \includegraphics[width=0.55\textwidth]{figure/reg_l1_lossplot_abs} 
 \end{itemize}
 
 \end{vbframe}
 
 % ------------------------------------------------------------------------------
 
-\begin{vbframe}{$L1$ vs $L2$}
+\begin{vbframe}{$L1$ loss surface}
 
-\textcolor{red}{TODO: plot 3D loss surfaces of $L1$ vs $L2$}
-
+\includegraphics[width=0.49\textwidth, trim=100 30 100 0, clip]{
+figure/reg_l1_surface_abs.pdf}
+\includegraphics[width=0.49\textwidth, trim=100 30 100 0, clip]{
+figure/reg_l1_surface_quad.pdf}
 \vfill
 
-$L1$ loss harder to optimize
+$L1$ loss (left) harder to optimize
 \begin{itemize}
-    \item Convex but \textbf{not differentiable} in 
+    \item Convex but \textbf{not differentiable} in
     $y - \fx = 0$
     \item No analytical solution
 \end{itemize}
@@ -64,17 +59,88 @@ $L1$ loss harder to optimize
 \begin{vbframe}{$L1$ vs $L2$}
 
 \begin{itemize}
-    \item Quadratic relation to residuals means $L2$ gives lots of weight to 
-    outlying points: point with $3 \times$ the residual of another will have 
-    $9 \times$ loss contribution
-    \item $L1$ more \textbf{robust}
+    \item Results of $L1$ and $L2$ regression often not that different
+    \item Example: $y = 1 + 0.5 x_1 + \epsilon$, ~~ $\epsilon_i \sim 
+    \normal(0, 0.01) ~ \forall i$
+    % \item Coefficients:
+\end{itemize}
+    
+\vfill
+
+\begin{minipage}[b]{0.65\textwidth}
+    \hspace{0.7cm}
+    \footnotesize
+    \begin{tabular}{r|r|r}
+        & intercept & slope \\ \hline
+        \textcolor{blue}{$L1$} & 0.91 & 0.53 \\ \hline
+        \textcolor{orange}{$L2$} & 0.91 & 0.57 
+    \end{tabular}
+
+    \vspace{0.5cm}
+    \includegraphics[width=0.8\textwidth]{figure/reg_l1_comparison.pdf}
+\end{minipage}
+\begin{minipage}[b]{0.34\textwidth}
+    \includegraphics[width=\textwidth, trim=80 0 100 80, clip]{
+    figure/reg_l1_comparison_optim_abs.pdf}
+    
+    \vfill
+    
+    \includegraphics[width=\textwidth, trim=80 0 100 80, clip]{
+    figure/reg_l1_comparison_optim_quad.pdf}
+\end{minipage}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{$L1$ vs $L2$ -- robustness}
+
+\begin{itemize}
+    \item $L2$ quadratic in residuals $\rightsquigarrow$ outlying points 
+    carry lots of weight
+    \item E.g., $3 \times$ residual $\Rightarrow$ $9 \times$ loss contribution
+    \item $L1$ more \textbf{robust} in presence of outliers (example ctd.):
 \end{itemize}
 
 \vfill
-\includegraphics[width=0.45\textwidth]{figure_man/l2-vs-l1-1.pdf}
-\includegraphics[width=0.45\textwidth]{figure_man/l2-vs-l1-2.pdf}
+\includegraphics[width=\textwidth]{figure/reg_l1_comparison_outlier.pdf}
 
-\textcolor{red}{TODO: re-do figures}
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{$L1$ vs $L2$ -- optimization cost}
+
+\begin{itemize}
+    \item Real-world \texttt{weather} problem $\rightsquigarrow$ 
+    predict mean temperature
+    \item Compare fit $L1$ (\texttt{quantreg::rq()}) vs $L2$ (\texttt{lm::lm()})
+    for different dataset proportions (repeat $50\times$)
+\end{itemize}
+
+\vfill
+
+\begin{minipage}[c]{0.54\textwidth}
+    \centering
+    \includegraphics[width=0.8\textwidth]{figure/reg_l1_benchmark.pdf}
+\end{minipage}
+\scriptsize
+\begin{minipage}[c]{0.45\textwidth}
+    \begin{tabular}{l|r|r}
+        $x_j$ & \textcolor{blue}{$L1$: $\hat \theta_j$}  &
+        \textcolor{orange}{$L2$: $\hat \theta_j$} \\ \hline
+        \texttt{Max\_temperature} & 0.553 & 0.563 \\
+        \texttt{Min\_temperature} & 0.441 & 0.427 \\
+        \texttt{Visibility} & 0.026 & 0.041 \\
+        \texttt{Wind\_speed} & 0.002 & 0.010 \\
+        \texttt{Max\_wind\_speed} & $-$0.026 & $-$0.039 \\
+        \texttt{(Intercept)} & $-$0.380 & $-$0.102 \\
+    \end{tabular}
+    
+    \vspace{0.7cm}
+    \normalsize
+    $L1$ \textbf{slower} to optimize!
+\end{minipage}
 
 \end{vbframe}
 

@@ -5,9 +5,9 @@
 
 \newcommand{\titlefigure}{figure/reg_pol_4}
 \newcommand{\learninggoals}{
-\item Understand how to add flexibility to the linear model by using polynomials
-\item Understand that this only affects the hypothesis space, not risk or optimization
-\item Understand that more flexibility is not equivalent to a better model}
+\item Learn about general form of linear model
+\item See how to add flexibility by using polynomials
+\item Understand that more flexibility is not necessarily better}
 
 
 \title{Introduction to Machine Learning}
@@ -20,92 +20,128 @@
 \lecturechapter{Polynomial Regression Models}
 \lecture{Introduction to Machine Learning}
 
-\begin{vbframe}{Regression: Polynomials}
+% ------------------------------------------------------------------------------
 
-We can make linear regression models much more flexible by using \emph{polynomials} $\xj^d$ -- or any other \emph{derived features} like $\sin(\xj)$ or $(\xj \cdot \xv_k)$ -- as additional features.\\
+\begin{vbframe}{Increasing flexibility}
 
-\lz
+\begin{itemize}
+    \item Recall our definition of LM: model $y$ as linear combo of covariates
+    \item But: isn't that pretty \textbf{inflexible}?
+    \item E.g., here, $y$ does not seem to be linear function of $x$:
+    
+    % \begin{minipage}{0.5\textwidth}
+      \includegraphics[width=0.4\textwidth]{figure/reg_pol_1} 
+    % \end{minipage}
+    % \begin{minipage}{0.4\textwidth}
+    % \end{minipage}
+    \item However, relation sud looks pretty linear when using $x^3$ instead:
+    
+    \textcolor{red}{TODO: plot $y \sim x^3$ to show it's linear now}
+    \item Many other trafos conceivable, e.g., 
+    $\sin(x_1), ~ \max(0, x_2), ~ \sqrt{x_3}, \dots$
+    \item Turns out we can use the same \textbf{linear model} much more 
+    flexibly (and: it's still linear)!
+\end{itemize}
 
-The optimization and risk of the learner remain the same.\\
-\lz
+\end{vbframe}
 
-Only the hypothesis space of the learner changes:\\ 
-instead of linear functions 
-\begin{align*}
-\fxit &= \theta_0 + \theta_1 \xi_1 + \theta_2 \xi_2 + \dots\\
-\intertext{of only the original features,}
-\intertext{it now includes linear functions of the derived features as well, e.g.} 
-\fxit &= \theta_0 + \sum^d_{k=1} \theta_{1k} \left(\xi_1\right)^k + \sum^d_{k=1} \theta_{2k} \left(\xi_2\right)^k + \dots
-\end{align*}
-\framebreak
+% ------------------------------------------------------------------------------
 
-\textbf{Polynomial regression example}
+\begin{vbframe}{LM revisited}
 
- \lz
-
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-
-{\centering \includegraphics[width=0.9\textwidth]{figure/reg_pol_1} 
-
-}
-
-
-
-\end{knitrout}
-
-\framebreak
-
-\textbf{Polynomial regression example}
-
-Models of different \emph{complexity}, i.e., of different polynomial order $d$, are fitted to the data:
-
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-
-{\centering \includegraphics[width=0.9\textwidth]{figure/reg_pol_2} 
-
-}
-
-
-
-\end{knitrout}
+\begin{itemize}
+    \item LM as previously defined:
+    \begin{equation} \label{simple_lm}
+      \fx = \theta_0 + \sumjp \theta_j x_j =
+      \theta_0 + \theta_1 x_1 + \dots + \theta_p x_p
+    \end{equation}
+    \item Actually, just special case of 
+    \textbf{"true" LM} with \textbf{basis functions}
+    \textcolor{blue}{$\phi_j: \R \rightarrow \R$}
+    \begin{equation*} \label{true_lm}
+      \fx = \theta_0 + \sumjp \theta_j \textcolor{blue}{\phi_j} (x_j)
+      = \theta_0 + \theta_1  \textcolor{blue}{\phi_1} \left( x_1 \right)
+      + \dots + \textcolor{blue}{\phi_p} \left(x_p \right)
+    \end{equation*}
+    \item In Eq.~\ref{simple_lm}, we implicitly use identity trafo:
+    \textcolor{blue}{$\phi_j = \text{id}_x: x \mapsto x$}~~ $\forall j$ \\
+    $\rightsquigarrow$ we often say \textbf{LM} and imply
+    $\phi_j = \text{id}_x$
+\end{itemize}
 
 \framebreak
 
-\textbf{Polynomial regression example}
+\begin{itemize}
+  \item But are models like $f(x) = \theta x^2$ 
+  \textbf{really linear}?
+  \begin{itemize}
+    \item Certainly not in covariates: 
+    \footnotesize
+    \begin{align*}
+      a \cdot f(x) + b \cdot f(x^\prime) &=
+      a \cdot \theta x^2 + b \cdot \theta x^{\prime, 2} \\
+      &\neq \theta (a^2x^2 + 2abx x^\prime + b^2x^{\prime, 2}) 
+      = \theta (a \cdot x + b  \cdot x^\prime)^2  \\
+      &= f(a \cdot x + b  \cdot x^\prime)
+    \end{align*}
+    \normalsize
+    \item Crucially, however, \textbf{linear in params}
+    
+    \textcolor{red}{TODO: show linearity in params}
+  \end{itemize}
+  \item NB: we still call design matrix $\Xmat$ $\rightsquigarrow$ 
+    incorporating possible trafos:
+    \begin{align*}
+      \Xmat = 
+      \left(
+        \begin{smallmatrix}
+            1 & \textcolor{blue}{\phi_1} (x^{(1)}_1) & \ldots & 
+            \textcolor{blue}{\phi_1} (x^{(1)}_p) \\
+            % 1 & \textcolor{blue}{\phi_2} (x^{(2)}_1) & \ldots & 
+            % \textcolor{blue}{\phi_2} (x^{(2)}_p) \\
+            \vdots & \vdots & & \vdots \\
+            1 & \textcolor{blue}{\phi_p} (x^{(n)}_1) & \ldots & 
+            \textcolor{blue}{\phi_p} (x^{(n)}_p) \\
+        \end{smallmatrix}
+        \right)
+    \end{align*}
+    \item Same linear model $\Xmat \thetab$
+\end{itemize}
 
-Models of different \emph{complexity}, i.e., of different polynomial order $d$, are fitted to the data:
+\end{vbframe}
 
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+% ------------------------------------------------------------------------------
 
-{\centering \includegraphics[width=0.9\textwidth]{figure/reg_pol_3} 
+\begin{frame}{polynomial regression}
 
-}
+\begin{itemize}
+    \item Simple and flexible choice for $\phi$: \textbf{polynomials}
+    \item Fit models of different \textbf{complexity}, i.e., of different
+    polynomial order/degree $d$:
+\end{itemize}
 
+\only<1>{\includegraphics[width=0.8\textwidth]{figure/reg_pol_2}}
+\only<2>{\includegraphics[width=0.8\textwidth]{figure/reg_pol_3}}
+\only<3>{\includegraphics[width=0.8\textwidth]{figure/reg_pol_4}}
 
+\textcolor{red}{TODO: show design matrix etc next 
+to plot}
 
-\end{knitrout}
+\end{frame}
 
-\framebreak
+% ------------------------------------------------------------------------------
 
-\textbf{Polynomial regression example}
+\begin{frame}{polynomial regression}
 
-Models of different \emph{complexity}, i.e., of different polynomial order $d$, are fitted to the data:
+\textcolor{red}{TODO: show bivariate example}
 
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\end{frame}
 
-{\centering \includegraphics[width=0.9\textwidth]{figure/reg_pol_4} 
+% ------------------------------------------------------------------------------
 
-}
+\begin{vbframe}{polynomial regression}
 
-
-
-\end{knitrout}
-
-\framebreak
+\textcolor{red}{TODO: revise text}
 
 The higher $d$ is, the more \textbf{capacity} the learner has to learn complicated functions of $\xv$, but
 this also increases the danger of \textbf{overfitting}:\\
@@ -117,19 +153,21 @@ the training data arbitrarily well.
 
 However, predictions on new data are not as successful because our model has learnt spurious \enquote{wiggles} from the random noise in the training data (much, much more on this later).
 
-\framebreak
-
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-
-{\centering \includegraphics[width=0.95\textwidth]{figure/reg_pol_5} 
-
-}
-
-
-
-\end{knitrout}
-
 \end{vbframe}
+
+
+% ------------------------------------------------------------------------------
+
+\begin{frame}{polynomial regression}
+
+\textcolor{red}{TODO: zusatzfolie mit datenbeispiel, das zeigt, dass polynomials 
+besseren fit bringen können. zeigen: fit, test error via CV (auch wenn 
+foreshadowing, fußnote mit verweis auf eval). auch effektplots zeigen 
+(--> IML-folien, z. b, bike beispiel von dort)}
+
+\end{frame}
+
+% ------------------------------------------------------------------------------
+
 \endlecture
 \end{document}
