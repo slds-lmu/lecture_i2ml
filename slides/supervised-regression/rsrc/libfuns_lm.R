@@ -187,12 +187,8 @@ RegressionComputer <- R6Class(
             names(this_coefficients) <- names(this_loss_fun) <- id
             self$coefficients <- append(self$coefficients, this_coefficients)
             dt <- copy(self$data_table)[
-                , `:=`(id = id, loss = loss, y_hat = x_mat %*% coefficients)
-                ][, `:=`(
-                    residual = y - y_hat,
-                    formula = list(formula),
-                    coefficients = list(coefficients)
-                )]
+                , y_hat := x_mat %*% coefficients
+                ][, residual := y - y_hat]
             self$regression_data <- append(
                 self$regression_data, 
                 list(dt)
@@ -318,12 +314,12 @@ RegressionPlotter <- R6Class(
                 private$p_plot <- private$p_plot +
                     geom_abline(
                         data.frame(
-                            intercept = coefficients[1],
-                            slope = coefficients[2],
+                            theta_0 = coefficients[1],
+                            theta_1 = coefficients[2],
                             color = id
                         ),
                         mapping = aes(
-                            intercept = intercept, slope = slope, col = color
+                            intercept = theta_0, slope = theta_1, col = color
                         ),
                         ...
                     )
@@ -422,7 +418,7 @@ RegressionPlotter <- R6Class(
         #' @description Return the plot.
         #' @param legend_title (`character(1)`) Title of legend. If NULL, no
         #' legend will be used.
-        plot = function(legend_title = NULL) {
+        plot = function(legend_title = NULL, x = 1, y = 1, z = 1) {
             if (private$p_layers$initial == "twodim") {
                 p <- private$p_plot +
                     scale_color_manual(
@@ -435,7 +431,15 @@ RegressionPlotter <- R6Class(
             }
             # TODO implement legend for 3D plot
             else private$p_plot %>%
-                layout(showlegend = FALSE)
+                layout(
+                    scene = list(
+                        xaxis = list(title = "x1"), 
+                        yaxis = list(title = "x2"),
+                        zaxis = list(title = "y"),
+                        showlegend = FALSE,
+                        camera = list(eye = list(x = x, y = y, z = z))
+                    )
+                )
         }
     ),
     private = list(
