@@ -108,10 +108,23 @@ idx_highlight <- c(19, 49)
 residuals_highlight <- lm_univ_quad$data$residual[idx_highlight]
 loss_fun <- function(x) x**2
 
-plot_residual_quad <- plot_univariate$clone()
+plot_residual_quad <- RegressionPlotter$new(lm_univ_quad$data)
+plot_residual_quad$initLayer2D(y ~ x_1)
+plot_residual_quad$addScatter()
+plot_residual_quad$addPredictionHyperplane(
+    "l2", lm_univ_quad$coeffs, col = "black"
+)
 plot_residual_quad$addResiduals(
-    lm_univ_quad$data$y_hat, idx_highlight, quadratic = TRUE)
-
+    lm_univ_quad$data$y_hat, 
+    idx_highlight, 
+    quadratic = TRUE,
+    col = "grey",
+    fill = "grey"
+)
+plot_residual_quad$addResiduals(
+    lm_univ_quad$data$y_hat, idx_highlight, col = "blue"
+)
+plot_residual_quad$plot()
 plot_loss <- LossPlotter$new(seq(-1.5, 1.5, by = 1))
 plot_loss$initLayer()
 plot_loss$addLossCurve("l2", loss_fun, col = "black")
