@@ -1,5 +1,7 @@
 # PREREQ -----------------------------------------------------------------------
 
+# Create global datasets used across chunks
+
 library(data.table)
 source("libfuns_lm.R")
 
