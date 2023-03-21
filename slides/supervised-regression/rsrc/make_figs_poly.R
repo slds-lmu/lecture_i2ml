@@ -45,12 +45,44 @@ plot_linearity = ggplot(
 ) +
     theme_bw() +
     geom_point() +
-    geom_abline(intercept = 0.5, slope = 0.4, color = "darkorange") +
-    geom_abline(intercept = 1, slope = 0.8, color = "blue") +
+    geom_abline(intercept = 0.5, slope = 0.4, color = "blue") +
+    geom_abline(intercept = 1, slope = 0.8, color = "#feb078") +
     geom_abline(intercept = 1.5, slope = 1.2, color = "#b73779") +
     ylim(c(0, 5))
 ggsave(
     "../figure/reg_poly_linearity.pdf", plot_linearity, height = 2, width = 2
+)
+
+# BASIS FUNS -------------------------------------------------------------------
+
+degrees = 1:5 
+
+plot_basis = ggplot() +
+    theme_bw() 
+
+for (j in degrees) {
+    plot_basis = plot_basis +
+        stat_function(
+            data.frame(x = -5:5, col = as.character(j)),
+            mapping = aes(x = x, col = col),
+            fun = function(x, d) x**d, 
+            args = list(d = j),
+            linetype = j
+        )
+}
+plot_basis = plot_basis +
+    ylim(c(-100, 100)) +
+    scale_color_viridis_d(
+        "degree", 
+        end = 0.9, 
+        direction = -1,
+        option = "magma",
+        guide = guide_legend(
+            override.aes = list(linetype = 1:5)
+        )
+    )
+ggsave(
+    "../figure/reg_poly_basis.pdf", plot_basis, height = 1.5, width = 4
 )
 
 # UNIVARIATE POLYNOMIALS -------------------------------------------------------
@@ -59,58 +91,76 @@ n_points = 50L
 set.seed(pi)
 x = runif(n_points, min = 0, max = 10)
 y = 0.5 * sin(x) + rnorm(n_points, sd = 0.3)
-degrees = c(1, 5, 25, 200)
-polys = sprintf("d_%i", seq_along(degrees))
-dt = data.table(
-    x,
-    y,
-    predict(lm(y ~ poly(x, degrees[1], raw = TRUE)), data.frame(x)),
-    predict(lm(y ~ poly(x, degrees[2], raw = TRUE)), data.frame(x)),
-    predict(lm(y ~ poly(x, degrees[3], raw = TRUE)), data.frame(x)),
-    predict(lm(y ~ poly(x, degrees[4], raw = TRUE)), data.frame(x))
-)
-setnames(dt, c("x", "y", polys))
-dt = data.table::melt(dt, id.vars = c("x", "y"))
-
-for (i in seq_along(polys)) {
+degrees = c(1, 5, 25, 50)
+models = lapply(degrees, function(i) lm(y ~ poly(x, i, raw = TRUE)))
+plot_poly <- function(until = 1) {
     p = ggplot(dt, aes(x = x, y = y)) +
         theme_bw() +
-        geom_point() +
-        geom_line(
-            dt[variable %in% polys[1:i]],
-            mapping = aes(x = x, y = value, col = variable)
-        ) +
-        scale_color_manual(
-            "degree", 
-            labels = degrees, 
-            values = c("darkorange", "#b73779", "blue", "darkgray")[1:i]
-        )
-    ggsave(
-        sprintf("../figure/reg_poly_univ_%i.pdf", i), p, height = 2, width = 6
-    )
-    if (i == length(polys)) {
-        ggsave(
-            "../figure/reg_poly_title.pdf", p, height = 2, width = 4
+        geom_point()
+    for (i in 1:until) {
+        df =  data.frame(x = seq(0, 10, by = 0.01))
+        p = p + geom_line(
+            data.frame(
+                x = df, 
+                y = predict(models[[i]], newdata = df),
+                col = as.character(i)
+            ),
+            mapping = aes(x = x, y = y, col = col)
         )
     }
+    p + 
+        ylim(c(-1, 1)) +
+        scale_color_viridis_d(
+            "degree", 
+            option = "magma",
+            end = 0.9, 
+            direction = -1,
+            labels = degrees[1:until]
+        )
 }
+
+ggsave(
+    "../figure/reg_poly_univ_2.pdf", plot_poly(2), height = 2, width = 4
+)
+ggsave(
+    "../figure/reg_poly_univ_4.pdf", plot_poly(4), height = 2, width = 6
+)
+ggsave("../figure/reg_poly_title.pdf", plot_poly(4), height = 2, width = 4)
 
 # BIVARIATE EXAMPLE ------------------------------------------------------------
 
-n_points = 500L
+n_points = 50L
 set.seed(pi)
 dt_biv = data.table(x_1 = rnorm(n_points), x_2 = rnorm(n_points))
 dt_biv[, y := 1 + 2 * x_1 + x_2^3 + rnorm(n_points, sd = 0.5)]
 plotter_3d <- RegressionPlotter$new(dt_biv)
 plotter_3d$initLayer3D(y ~ x_1 + x_2)
 plotter_3d$addScatter(col = "black")
-plotter_3d$addPredictionHyperplane(
-    "l2", coefficients(lm(y ~ x_1 + x_2, dt_biv))
+
+axis_x1 <- seq(-2, 2, by = 0.05)
+axis_x2 <- seq(-2, 2, by = 0.05)
+lm_surface <- expand.grid(
+    x_0 = 1, x_1 = axis_x1, x_2 = axis_x2, KEEP.OUT.ATTRS = F
 )
-plotter_3d$plot()
-
-
-p <- plotter_3d$plot(x = -1.9, y = 0, z = 0) %>% 
+lm_surface$y <- predict(
+    lm(y ~ x_1 + poly(x_2, 7, raw = TRUE), dt_biv),
+    data.frame(x_1 = axis_x1, x_2 = axis_x2)
+)
+lm_surface <- acast(lm_surface, x_2 ~ x_1, value.var = "y")
+plot_biv = plotter_3d$plot(x = -0.8, y = 1.6, z = 0) %>%
+    add_trace(
+        z = lm_surface,
+        x = axis_x1,
+        y = axis_x2,
+        type = "surface",
+        colorbar = list(
+            title = "", 
+            ticks = "", 
+            nticks = 1
+        ),
+        colorscale = list(c(0, 1), rep("blue", 2)),
+        opacity = 0.7
+    ) %>% 
     hide_colorbar() %>% 
     hide_legend()
-save_image(p, "../figure/reg_l2_basic_lm_biv.pdf")
+save_image(plot_biv, "../figure/reg_poly_biv.pdf")
