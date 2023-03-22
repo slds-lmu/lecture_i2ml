@@ -30,6 +30,12 @@ fin_mod_l1 <- rq(formula_df, tau=0.5, method="br", data = df_100)
 fin_mod_l2 <- lm(formula_df, data = df_100)
 # stargazer::stargazer(fin_mod_l1, fin_mod_l2)
 
+xmat <- model.matrix(formula_df, df_100)
+loss_l1_mod_l1 = sum(abs(xmat %*% coefficients(fin_mod_l1)))
+loss_l1_mod_l2 = sum(abs(xmat %*% coefficients(fin_mod_l2)))
+loss_l2_mod_l1 = sum((xmat %*% coefficients(fin_mod_l1))**2)
+loss_l2_mod_l2 = sum((xmat %*% coefficients(fin_mod_l2))**2)
+
 # Create Dataset for custom boxplot
 df_mbm <- as.data.frame(cbind(mbm$expr, mbm$time))
 colnames(df_mbm) <- c("loss_dataset", "time")
@@ -45,5 +51,5 @@ plt_loss <- ggplot(df_mbm, aes(x=loss_dataset, y=log(time), fill=loss)) +
   theme(legend.position="bottom") +
   scale_fill_manual("Loss", values = c("blue", "darkorange"))
 # plt_loss
-ggsave("../figure/reg_l1_benchmark.pdf", plt_loss, width = 4, height = 5)
+ggsave("../figure/reg_l1_benchmark.pdf", plt_loss, width = 3.2, height = 4)
 # boxplot(mbm, unit = "t", log = TRUE, xlab = "Loss-Dataset-Combination", ylab = "Time in ms", horizontal = FALSE)

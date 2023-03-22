@@ -3,7 +3,7 @@
 \input{../../latex-math/basic-math.tex}
 \input{../../latex-math/basic-ml.tex}
 
-\newcommand{\titlefigure}{figure/reg_pol_4}
+\newcommand{\titlefigure}{figure/reg_poly_title}
 \newcommand{\learninggoals}{
 \item Learn about general form of linear model
 \item See how to add flexibility by using polynomials
@@ -27,37 +27,34 @@
 \begin{itemize}
     \item Recall our definition of LM: model $y$ as linear combo of covariates
     \item But: isn't that pretty \textbf{inflexible}?
-    \item E.g., here, $y$ does not seem to be linear function of $x$:
+    \item E.g., here, $y$ does not seem to be linear function of $x$... 
+
+    \vspace{0.5cm}
+    \includegraphics[width=0.6\textwidth]{figure/reg_poly_yx3.pdf} 
     
-    % \begin{minipage}{0.5\textwidth}
-      \includegraphics[width=0.4\textwidth]{figure/reg_pol_1} 
-    % \end{minipage}
-    % \begin{minipage}{0.4\textwidth}
-    % \end{minipage}
-    \item However, relation sud looks pretty linear when using $x^3$ instead:
+    ... but relation to $x^3$ looks pretty linear!
     
-    \textcolor{red}{TODO: plot $y \sim x^3$ to show it's linear now}
     \item Many other trafos conceivable, e.g., 
     $\sin(x_1), ~ \max(0, x_2), ~ \sqrt{x_3}, \dots$
-    \item Turns out we can use the same \textbf{linear model} much more 
-    flexibly (and: it's still linear)!
+    \item Turns out we can use LM much more 
+    \textbf{flexibly} (and: it's still linear)
 \end{itemize}
 
 \end{vbframe}
 
 % ------------------------------------------------------------------------------
 
-\begin{vbframe}{LM revisited}
+\begin{vbframe}{the linear model}
 
 \begin{itemize}
-    \item LM as previously defined:
+    \item Recall what we previously defined as LM:
     \begin{equation} \label{simple_lm}
-      \fx = \theta_0 + \sumjp \theta_j x_j =
+      f(x) = \theta_0 + \sumjp \theta_j x_j =
       \theta_0 + \theta_1 x_1 + \dots + \theta_p x_p
     \end{equation}
-    \item Actually, just special case of 
-    \textbf{"true" LM} with \textbf{basis functions}
-    \textcolor{blue}{$\phi_j: \R \rightarrow \R$}
+    \item Actually, just special case of "true" LM 
+    \item \textbf{The linear model} with \textbf{basis functions}
+    \textcolor{blue}{$\phi_j$}:
     \begin{equation*} \label{true_lm}
       \fx = \theta_0 + \sumjp \theta_j \textcolor{blue}{\phi_j} (x_j)
       = \theta_0 + \theta_1  \textcolor{blue}{\phi_1} \left( x_1 \right)
@@ -65,47 +62,68 @@
     \end{equation*}
     \item In Eq.~\ref{simple_lm}, we implicitly use identity trafo:
     \textcolor{blue}{$\phi_j = \text{id}_x: x \mapsto x$}~~ $\forall j$ \\
-    $\rightsquigarrow$ we often say \textbf{LM} and imply
+    $\rightsquigarrow$ we often say LM and imply
     $\phi_j = \text{id}_x$
 \end{itemize}
 
-\framebreak
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{the linear model}
 
 \begin{itemize}
-  \item But are models like $f(x) = \theta x^2$ 
+\item Are models like $\fx = \theta_0 + \theta_1 x^2$ 
   \textbf{really linear}?
+\begin{minipage}[b]{0.7\textwidth}
+  \vspace{0.3cm}
   \begin{itemize}
     \item Certainly not in covariates: 
-    \footnotesize
+    \scriptsize
     \begin{align*}
-      a \cdot f(x) + b \cdot f(x^\prime) &=
-      a \cdot \theta x^2 + b \cdot \theta x^{\prime, 2} \\
-      &\neq \theta (a^2x^2 + 2abx x^\prime + b^2x^{\prime, 2}) 
-      = \theta (a \cdot x + b  \cdot x^\prime)^2  \\
-      &= f(a \cdot x + b  \cdot x^\prime)
+      a \cdot f(x, \thetab) + b \cdot f(x_\ast, \thetab) 
+      &= \theta_0 (a + b) + \theta_1(a x^2 + b x_\ast^2) \\
+      &\textcolor{red}{\neq} \theta_0 + \theta_1 (a x + b  x_\ast)^2\\
+      &= f(a  x + b x_\ast)
     \end{align*}
     \normalsize
-    \item Crucially, however, \textbf{linear in params}
-    
-    \textcolor{red}{TODO: show linearity in params}
-  \end{itemize}
-  \item NB: we still call design matrix $\Xmat$ $\rightsquigarrow$ 
-    incorporating possible trafos:
+    \item Crucially, however, \textbf{linear in params}:
+    \scriptsize
     \begin{align*}
-      \Xmat = 
-      \left(
-        \begin{smallmatrix}
-            1 & \textcolor{blue}{\phi_1} (x^{(1)}_1) & \ldots & 
-            \textcolor{blue}{\phi_1} (x^{(1)}_p) \\
-            % 1 & \textcolor{blue}{\phi_2} (x^{(2)}_1) & \ldots & 
-            % \textcolor{blue}{\phi_2} (x^{(2)}_p) \\
-            \vdots & \vdots & & \vdots \\
-            1 & \textcolor{blue}{\phi_p} (x^{(n)}_1) & \ldots & 
-            \textcolor{blue}{\phi_p} (x^{(n)}_p) \\
-        \end{smallmatrix}
-        \right)
+      a \cdot f(x, \textcolor{blue}{\thetab}) + 
+      b \cdot f(x, \textcolor{orange}{\thetab^\ast}) 
+      &= a \theta_0 + b \theta_0^\ast + (a \theta_1 + b \theta_1^\ast) x^2 \\
+      &= f(x, \textcolor{magenta}{a \thetab + b \thetab^\ast})
     \end{align*}
-    \item Same linear model $\Xmat \thetab$
+  \end{itemize}
+\end{minipage}
+\begin{minipage}[b]{0.2\textwidth}
+  \includegraphics[width=\textwidth]{figure/reg_poly_linearity}
+  \tiny \raggedleft
+  \textcolor{blue}{$\thetab = (0.5, 0.4)^\top$} \\
+  \textcolor{orange}{$\thetab = (1.0, 0.8)^\top$} \\
+  \textcolor{magenta}{$\thetab = (1.5, 1.2)^\top$} \\
+  \vspace{0.1cm}
+\end{minipage}
+
+\vfill
+
+\item NB: we still call design matrix $\Xmat$ $\rightsquigarrow$ 
+incorporating possible trafos:
+\begin{align*}
+  \Xmat = 
+  \left(
+    \begin{smallmatrix}
+        1 & \textcolor{black}{\phi_1} (x^{(1)}_1) & \ldots & 
+        \textcolor{black}{\phi_1} (x^{(1)}_p) \\
+        % 1 & \textcolor{black}{\phi_2} (x^{(2)}_1) & \ldots & 
+        % \textcolor{black}{\phi_2} (x^{(2)}_p) \\
+        \vdots & \vdots & & \vdots \\
+        1 & \textcolor{black}{\phi_p} (x^{(n)}_1) & \ldots & 
+        \textcolor{black}{\phi_p} (x^{(n)}_p) \\
+    \end{smallmatrix}
+    \right)
+\end{align*}
 \end{itemize}
 
 \end{vbframe}
@@ -115,43 +133,99 @@
 \begin{frame}{polynomial regression}
 
 \begin{itemize}
-    \item Simple and flexible choice for $\phi$: \textbf{polynomials}
-    \item Fit models of different \textbf{complexity}, i.e., of different
-    polynomial order/degree $d$:
+    \item Simple \& flexible choice for basis funs: \textbf{$d$-polynomials}
+    \item Idea: map $x_j$ to (weighted) sum of its monomials up to order 
+    $d \in \N$
+    $$ \phi^{(d)}: \R^d \times \R \rightarrow \R, ~~
+    x_j \mapsto \sum_{k = 1}^d \beta_k x_j^k$$
+    \includegraphics[width=0.45\textwidth]{figure/reg_poly_basis}
+    \includegraphics[width=0.45\textwidth]{figure/reg_poly_basis_weighted}
+    \item How to estimate additional coefficients $\beta_k$? 
+    \begin{itemize}
+      \item Both LM \& polynomials \textbf{linear} in their params
+      $\rightsquigarrow$ merge
+      \item E.g.,
+      $\fx = \theta_0 + \theta_1 \phi^{(d)}(x_1)  =
+      \theta_0 + \sum_{k = 1}^d \theta_{1, k} x_1^k$
+      $$\rightsquigarrow \Xmat = \left(
+      \begin{smallmatrix}
+          1 & x_{(1)} & x_{(1)}^2 & \hdots & x_{(1)}^d \\
+          \vdots & \vdots & \vdots & & \vdots \\
+          1 & x_{(n)} & x_{(n)}^2 & \hdots & x_{(n)}^d \\
+      \end{smallmatrix}
+      \right),
+      ~~ \thetab \in \R^{d + 1}
+      $$
+    \end{itemize}
 \end{itemize}
 
-\only<1>{\includegraphics[width=0.8\textwidth]{figure/reg_pol_2}}
-\only<2>{\includegraphics[width=0.8\textwidth]{figure/reg_pol_3}}
-\only<3>{\includegraphics[width=0.8\textwidth]{figure/reg_pol_4}}
+\end{frame}
 
-\textcolor{red}{TODO: show design matrix etc next 
-to plot}
+% ------------------------------------------------------------------------------
+
+\begin{frame}{polynomial regression -- examples}
+
+Univariate regression, $d \in \{1, 5\}$
+
+\begin{minipage}[c]{0.5\textwidth}
+  \includegraphics[width=\textwidth]{figure/reg_poly_univ_2}
+\end{minipage}
+\begin{minipage}[c]{0.45\textwidth}
+  \begin{itemize}
+    \footnotesize
+    \item
+    Data-generating process: 
+    \begin{align*}
+      y &= 0.5 \sin(x) + \epsilon, \\
+      \epsilon &\sim \normal(0, 0.3^2)
+    \end{align*}
+    \item Model: $$f(x) = \theta_0 + \sum_{k = 1}^d \theta_{1, k} x^k$$
+  \end{itemize}
+\end{minipage}
+
+\vfill
+
+Bivariate regression, $d = 7$
+
+\begin{minipage}[b]{0.5\textwidth}
+  \includegraphics[width=\textwidth, trim=80 80 80 80, clip]{
+  figure/reg_poly_biv}
+\end{minipage}
+\begin{minipage}[b]{0.45\textwidth}
+  \begin{itemize}
+    \footnotesize
+    \item
+    Data-generating process: 
+    \begin{align*}
+      y &= 1 + 2 x_1 + x_2^3 + \epsilon, \\
+      \epsilon &\sim \normal(0, 0.5^2)
+    \end{align*}
+    \item Model: $$f(x) = \theta_0 + \theta_1 x_1 + 
+    \sum_{k = 1}^7 \theta_{2, k} x_2^k$$
+  \end{itemize}
+\end{minipage}
 
 \end{frame}
 
 % ------------------------------------------------------------------------------
 
-\begin{frame}{polynomial regression}
+\begin{vbframe}{complexity of polynomials}
 
-\textcolor{red}{TODO: show bivariate example}
-
-\end{frame}
-
-% ------------------------------------------------------------------------------
-
-\begin{vbframe}{polynomial regression}
-
-\textcolor{red}{TODO: revise text}
-
-The higher $d$ is, the more \textbf{capacity} the learner has to learn complicated functions of $\xv$, but
-this also increases the danger of \textbf{overfitting}:\\
-\lz
-
-The model space $\Hspace$ contains so many complex functions that we are able to find one that approximates
-the training data arbitrarily well.
-\lz
-
-However, predictions on new data are not as successful because our model has learnt spurious \enquote{wiggles} from the random noise in the training data (much, much more on this later).
+\begin{itemize}
+  \item Higher $d$ allows to learn more complex functions 
+  
+  $\rightsquigarrow$ richer hyp space / higher \textbf{capacity}
+  
+  \vfill
+  \includegraphics[width=0.9\textwidth]{figure/reg_poly_univ_4}
+  \item Should we then simply let $d \rightarrow \infty$?
+  \begin{itemize}
+    \item \textbf{No}: data contains random \textbf{noise} -- not part of true
+    data-generating process
+    \item Model with overly high capacity learns all those spurious patterns
+    $\rightsquigarrow$ poor generalization to new data
+  \end{itemize}
+\end{itemize}
 
 \end{vbframe}
 

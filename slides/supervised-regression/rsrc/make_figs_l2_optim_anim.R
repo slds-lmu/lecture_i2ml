@@ -32,6 +32,7 @@ colors <- c("darkgreen", "orange", "red", "blue")
 lapply(
     seq_along(coeffs),
     function(i) {
+        sse <- sum((dt$y - coeffs[[i]][1] - coeffs[[i]][2] * dt$x_1)**2)
         p <- RegressionPlotter$new(dt)
         p$initLayer2D(y ~ x_1)
         p$addScatter()
@@ -43,9 +44,13 @@ lapply(
             col = colors[i],
             fill = colors[i]
         )
+        p <- p$plot() + 
+            xlim(c(0, 7)) + 
+            ylim(-2, 6) +
+            labs(title = sprintf("SSE: %.2f", sse))
         ggsave(
             sprintf("../figure/reg_l2_sse_%i.pdf", i), 
-            p$plot() + xlim(c(0, 7)) + ylim(-2, 6), 
+            p, 
             width = 3, 
             height = 3.2
         )
