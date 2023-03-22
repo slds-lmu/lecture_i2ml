@@ -1,5 +1,6 @@
 # PREREQ -----------------------------------------------------------------------
 
+options(warn = -1) # too many "missing value" with ylim & high-d polynomials
 library(gridExtra)
 
 # To save plotly-based figures to static images, plotly uses the kaleido python
@@ -55,15 +56,14 @@ ggsave(
 
 # BASIS FUNS -------------------------------------------------------------------
 
-degrees = 1:5 
-
+degrees = 1:9 
 plot_basis = ggplot() +
-    theme_bw() 
+    theme_bw()
 
 for (j in degrees) {
-    plot_basis = plot_basis +
+    plot_basis = plot_basis  +
         stat_function(
-            data.frame(x = -5:5, col = as.character(j)),
+            data.frame(x = -2:2, col = as.character(j)),
             mapping = aes(x = x, col = col),
             fun = function(x, d) x**d, 
             args = list(d = j),
@@ -71,18 +71,46 @@ for (j in degrees) {
         )
 }
 plot_basis = plot_basis +
-    ylim(c(-100, 100)) +
+    ylim(c(-3, 3)) +
     scale_color_viridis_d(
         "degree", 
         end = 0.9, 
         direction = -1,
         option = "magma",
         guide = guide_legend(
-            override.aes = list(linetype = 1:5)
+            override.aes = list(linetype = degrees)
         )
+    ) +
+    theme(
+        legend.text = element_text(size = 5),
+        legend.key.height = unit(0.02, 'lines')
     )
+
+n_points = 100L
+set.seed(pi)
+x = runif(n_points, min = -2, max = 2)
+y = sin(x) + rnorm(n_points, sd = 0.5)
+x_seq = seq(-2, 2, by = 0.05)
+y_hat = predict(lm(y ~ poly(x, 10, raw = TRUE)), data.frame(x = x_seq))
+plot_weighted = plot_basis +
+    geom_line(
+        data.frame(x = x_seq, y = y_hat), mapping = aes(x, y), col = "blue"
+    ) +
+    geom_point(
+        data.frame(x = x, y = y), 
+        mapping = aes(x, y),
+        size = 0.5
+    ) +
+    theme(legend.position = "none")
+
 ggsave(
-    "../figure/reg_poly_basis.pdf", plot_basis, height = 1.5, width = 4
+    "../figure/reg_poly_basis.pdf", plot_basis, height = 1.7, width = 4
+)
+ggsave(
+    "../figure/reg_poly_basis_weighted.pdf", 
+    plot_weighted, 
+    height = 1.7, 
+    width = 4
 )
 
 # UNIVARIATE POLYNOMIALS -------------------------------------------------------
