@@ -4,12 +4,11 @@
 \input{../../latex-math/basic-ml.tex}
 \input{../../latex-math/ml-trees.tex}
 
-\newcommand{\titlefigure}{figure/cart_intro_2.pdf}
+\newcommand{\titlefigure}{figure/split_point.pdf}
 \newcommand{\learninggoals}{
 \item Know definition of a tree's node
 \item Understand how split points are derived via empirical risk minimization
-\item Know which losses can be applied for regression and classification
-\item Know the connections between empirical risk minimization and impurity minimization}
+\item Understand how a tree is grown}
 
 \title{Introduction to Machine Learning}
 % \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
@@ -21,43 +20,13 @@
 \lecture{Introduction to Machine Learning}
 \sloppy
 
-\begin{frame}[fragile]{Trees}
-
-\lz 
-
-\begin{columns}
-\begin{column}{0.5\textwidth}
-Classification Tree:
-\lz
-
-
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-
-{\centering \includegraphics[width=0.95\textwidth]{figure/cart_splitcriteria_1} 
-
-}
-
-
-
-\end{knitrout}
- 
-\end{column}
-\begin{column}{0.5\textwidth}
-Regression Tree:
-
-\includegraphics[height = 0.4\textheight]{figure_man/CART_reg_example.pdf}
-
-\end{column}
-\end{columns}
-\end{frame}
 
 \begin{frame}{Splitting criteria}
 
  \begin{figure}
     \centering
       % FIGURE SOURCE: No source
-      \includegraphics[height = 5.0cm]{figure_man/labelling_of_tree.png}
+      \includegraphics[height = 5.0cm, keepaspectratio]{figure/cart_intro_annotated-tree.pdf}
     \end{figure}
 
 How to find good splitting rules to define the tree?
@@ -66,6 +35,135 @@ How to find good splitting rules to define the tree?
 $\implies$ \textbf{empirical risk minimization}
 
 \end{frame}
+
+\begin{vbframe}{Splitting criteria: Motivation}
+Idea: A split is good if each leaf's point predictor is good itself.
+
+When minimizing risk this means we select the point predictor with lowest risk per leaf.
+This predictor depends on the risk function.
+\lz
+
+\begin{columns}
+\begin{column}{0.5\textwidth}
+For regression and L2 loss, the mean in each leaf is optimal:
+
+\end{column}
+\begin{column}{0.5\textwidth}
+For (hard-label) classification and Bernoulli / Multinomial loss, the majority label is optimal:
+\end{column}
+\end{columns}
+
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\begin{figure}
+\includegraphics[width=0.5\textwidth]{figure/splitcrit_optimal-constant.pdf} 
+\end{figure}
+
+\end{column}
+\begin{column}{0.5\textwidth}
+\begin{figure}
+\includegraphics[width=0.55\textwidth]{figure/splitcrit_optimal-constant-classif.pdf} 
+\end{figure}
+\end{column}
+\end{columns}\lz
+(For probabalistic classification we choose the rel. frequency of a label.)
+
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{Splitting criteria: Excurse}
+When splitting the data into leafs, we can use the idea of the "optimal constant model" in each leaf. E.g. consider these two splits:
+
+\begin{columns}
+\begin{column}{0.5\textwidth}
+
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+\begin{figure}
+\includegraphics[width=0.9\textwidth]{figure/splitcrit_optimal-constant-sub1.pdf} 
+\end{figure}
+
+ 
+\end{column}
+\begin{column}{0.5\textwidth}
+
+\begin{figure}
+\includegraphics[width=0.9\textwidth]{figure/splitcrit_optimal-constant-sub2.pdf} 
+\end{figure}
+
+\end{column}
+\end{columns}
+
+Each prediction is optimal with respect to its leaves. But which split is better?
+
+\end{vbframe}
+
+\begin{vbframe}{Splitting criteria: Heuristics}
+
+\begin{columns}
+\begin{column}{0.5\textwidth}
+
+%\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+\begin{figure}
+\includegraphics[width=0.7\textwidth]{figure/splitcrit_optimal-constant-sub1.pdf} 
+\end{figure}
+
+$\risk(\Np_1) = 23.4$, $\risk(\Np_2) = 72.4$ 
+ 
+\end{column}
+\begin{column}{0.5\textwidth}
+
+\begin{figure}
+\includegraphics[width=0.7\textwidth]{figure/splitcrit_optimal-constant-sub2.pdf} 
+\end{figure}
+
+$\risk(\Np_1) = 78.1$, $\risk(\Np_2) = 46.1$
+
+\end{column}
+\end{columns}
+\vspace{0.1in}
+
+The total sum of individual risks yields:
+\vspace{0.1in}
+
+\begin{columns}
+\begin{column}{0.5\textwidth}
+$23.4 + 72.4 = 95.8$
+\end{column}
+
+\begin{column}{0.5\textwidth}
+$78.0 + 46.1 = 124.1$ 
+\end{column}
+\end{columns}
+
+\end{vbframe}
+
+\begin{vbframe}{Splitting criteria: Heuristics}
+
+Based on the variance, we would prefer the first split.
+In fact, minimizing the variance in each leaf is equivalent to minimizing L2 loss.
+If we want to find the split with the lowest variance, we need to search the domain of $x_j$.
+
+\begin{figure}
+\includegraphics[width=0.75\textwidth]{figure/splitcrit_optimal-constant-grid.pdf} 
+\end{figure}
+
+
+\end{vbframe}
+
+\begin{vbframe}{Splitting criteria: Heuristics}
+
+If we extend this grid (quantile-wise or to every single possible split), we can choose the split with the lowest risk:
+
+\begin{figure}
+\includegraphics[width=0.75\textwidth]{figure/splitcrit_optimal-constant-grid2.pdf} 
+\end{figure}
+
+
+\end{vbframe}
 
 \begin{vbframe}{Splitting criteria: Formalization}
 
@@ -95,146 +193,6 @@ $\implies$ \textbf{empirical risk minimization}
   $$\argmin_{j, t} \risk(\Np, j, t)$$
 \end{itemize}
 \end{vbframe}
-
-\begin{vbframe}{Splitting criteria: Regression}
-\begin{itemize}
- \item For regression trees, we usually use $L_2$ loss:
-  $$\risk(\Np) = \frac{1}{|\Np|} \sum\limits_{(\xv,y) \in \Np} (y - c)^2$$
- \item The best constant prediction under $L_2$ is the mean:
-  $$c = \bar{y}_\Np = \frac{1}{|\Np|} \sum\limits_{(\xv,y) \in \Np} y$$
-\end{itemize}
-
-\framebreak
-
-\begin{itemize}
-\item This means the best split is the one that minimizes the (pooled) variance of the target distribution in the child nodes $\Nl$ and $\Nr$:
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-
-{\centering \includegraphics[width=0.95\textwidth]{figure/cart_splitcriteria_2.pdf} 
-
-}
-
-
-
-\end{knitrout}
-We can also interpret this as a way of measuring the impurity of the target distribution, i.e., how much it diverges from a constant in each of the child nodes.
-\item For $L_1$ loss, $c$ is the median of $y \in \Np$.
-\end{itemize}
-\end{vbframe}
-
-\begin{vbframe}{Splitting Criteria: Classification}
-
-\begin{itemize}
-\item Typically uses either Brier score (so: $L_2$ loss on probabilities) or  Bernoulli loss (as in logistic regression) as loss functions
-\item Predicted probabilities in node $\Np$ are simply the class proportions in the node:
-$$ \pikNh = \frac{1}{|\Np|} \sum\limits_{(\xv,y) \in \Np} \I(y = k) $$
-This is the optimal prediction under both the logistic / Bernoulli loss and the Brier loss.
-\end{itemize}
-
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-
-{\centering \includegraphics[width=0.95\textwidth]{figure/cart_splitcriteria_3} 
-
-}
-
-
-
-\end{knitrout}
-\end{vbframe}
-
-\begin{vbframe}{Splitting Criteria: Comments}
-
-\begin{itemize}
-\item Splitting criteria for trees are usually defined in terms of "impurity reduction". Instead of minimizing empirical risk in the child nodes over all possible splits, a measure of \enquote{impurity} of the distribution of the target $y$ in the child nodes is minimized. 
-\item For regression trees, the \enquote{impurity} of a node is usually defined as the variance of the $\yi$ in the node. Minimizing this \enquote{variance impurity} is equivalent to minimizing the squared error loss for a predicted constant in the nodes. 
-
-\framebreak 
-
-\item Minimizing the Brier score is equivalent to minimizing the Gini impurity
-$$I(\Np) = \sumkg \pikNh \left( 1-\pikNh \right)$$
-\item Minimizing the Bernoulli loss is equivalent to minimizing entropy impurity
-$$I(\Np) = -\sumkg \pikNh \log \pikNh$$
-\item The approach based on loss functions instead of impurity measures is simpler and more straightforward, mathematically equivalent and shows that growing a tree can be understood in terms of empirical risk minimization.
-\end{itemize}
-\end{vbframe}
-
-\begin{vbframe}{Splitting with misclassification loss}
-
-\begin{itemize}
-\item Why don't we use the misclassification loss for classification trees? I.e., always predict the majority class in each child node and count how many errors we make.
-\item In many other cases, we are interested in minimizing this kind of error but have to approximate it by some other criterion instead, since the misclassification loss does not have derivatives that we can use for optimization.\\
-We don't need derivatives when we optimize the tree, so we could go for it!
-\item This is possible, but Brier score and Bernoulli loss are more sensitive to changes in the node probabilities, and  therefore often preferred
-\end{itemize}
-
-\framebreak
-
-Example: two-class problem with 400 obs in each class and two possible splits:
-\begin{small}
-\begin{columns}[T,onlytextwidth]
-\column{0.5\textwidth}
-\begin{center}
-\textbf{Split 1:} \\
-\vspace{0.25cm}
-% latex table generated in R 4.0.1 by xtable 1.8-4 package
-% Mon Aug 10 01:13:29 2020
-\begin{table}[ht]
-\centering
-\begin{tabular}{rrr}
-  \hline
- & class 0 & class 1 \\ 
-  \hline
-$\Nl$ & 300 & 100 \\ 
-  $\Nr$ & 100 & 300 \\ 
-   \hline
-\end{tabular}
-\end{table}
-
-\end{center}
-\column{0.5\textwidth}
-\begin{center}
-\textbf{Split 2:} \\
-\vspace{0.25cm}
-% latex table generated in R 4.0.1 by xtable 1.8-4 package
-% Mon Aug 10 01:13:29 2020
-\begin{table}[ht]
-\centering
-\begin{tabular}{rrr}
-  \hline
- & class 0 & class 1 \\ 
-  \hline
-$\Nl$ & 400 & 200 \\ 
-  $\Nr$ &   0 & 200 \\ 
-   \hline
-\end{tabular}
-\end{table}
-
-\end{center}
-\end{columns}
-\end{small}
-
-\lz
-
-\begin{itemize}
-\item Both splits are equivalent in terms of misclassification error, they each misclassify 200 observations. 
-\item But: Split 2 produces one pure node and is probably preferable.
-\item Brier loss (Gini impurity) and Bernoulli loss (entropy impurity) prefer the second split
-\item Calculation for Gini:\\
-\begin{alignat*}{6}
-\text{Formula}&:& \frac{|\Nl|}{|\Np|}\cdot 2 \cdot\pikNlh[0]\pikNlh[1] &+& \frac{|\Nr|}{|\Np|}\cdot 2 \cdot \pikNrh[0]\pikNrh[1] &=& \\[5ex]
-\text{Split 1}&:& \,\, \frac{1}{2} \,\cdot \, 2 \,\cdot\, \frac{3}{4} \,\cdot\, \frac{1}{4} \,&+&\,  \, \frac{1}{2} \,\cdot\, 2 \, \cdot\, \frac{1}{4} \,\cdot\, \frac{3}{4} &=&\;\, \frac{3}{8}\\[5ex]
-\text{Split 2}&:& \frac{3}{4}\, \cdot\, 2 \,\cdot\,\frac{2}{3}\,\cdot\,\frac{1}{3}\, &+& \frac{1}{4} \,\cdot\, 2 \,\cdot\, 0 \,\cdot\, 1 &=&\; \,\frac{1}{3}
-% (Brier not introduced)
-%$Split1: 300(0-\frac{1}{4})^2 + 100(1-\frac{1}{4})^2 + 100(0-\frac{3}{4})^2+300(1-\frac{3}{4})^2 = 150$\\ 
-%$Split2: 400(0-\frac{1}{3})^2 + 200(1-\frac{1}{3})^2 = 133.3$
-\end{alignat*}
-\end{itemize}
-\end{vbframe}
-
- 
- 
 
 
 
