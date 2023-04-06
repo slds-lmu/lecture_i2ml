@@ -82,8 +82,8 @@ plot_basis = plot_basis +
         )
     ) +
     theme(
-        legend.text = element_text(size = 5),
-        legend.key.height = unit(0.02, 'lines')
+        legend.text = element_text(size = 9),
+        legend.key.height = unit(0.1, "lines")
     )
 
 n_points = 100L
@@ -119,14 +119,15 @@ n_points = 50L
 set.seed(pi)
 x = runif(n_points, min = 0, max = 10)
 y = 0.5 * sin(x) + rnorm(n_points, sd = 0.3)
+dt = data.table(x, y)
 degrees = c(1, 5, 25, 50)
 models = lapply(degrees, function(i) lm(y ~ poly(x, i, raw = TRUE)))
-plot_poly <- function(until = 1) {
+plot_poly <- function(until = 1, xlim_low = 0, xlim_hi = 10) {
     p = ggplot(dt, aes(x = x, y = y)) +
         theme_bw() +
         geom_point()
     for (i in 1:until) {
-        df =  data.frame(x = seq(0, 10, by = 0.01))
+        df =  data.frame(x = seq(xlim_low, xlim_hi, by = 0.01))
         p = p + geom_line(
             data.frame(
                 x = df, 
@@ -151,7 +152,10 @@ ggsave(
     "../figure/reg_poly_univ_2.pdf", plot_poly(2), height = 2, width = 4
 )
 ggsave(
-    "../figure/reg_poly_univ_4.pdf", plot_poly(4), height = 2, width = 6
+    "../figure/reg_poly_univ_4.pdf", 
+    plot_poly(4, -5, 15), 
+    height = 2, 
+    width = 6
 )
 ggsave("../figure/reg_poly_title.pdf", plot_poly(4), height = 2, width = 4)
 
@@ -163,7 +167,7 @@ dt_biv = data.table(x_1 = rnorm(n_points), x_2 = rnorm(n_points))
 dt_biv[, y := 1 + 2 * x_1 + x_2^3 + rnorm(n_points, sd = 0.5)]
 plotter_3d <- RegressionPlotter$new(dt_biv)
 plotter_3d$initLayer3D(y ~ x_1 + x_2)
-plotter_3d$addScatter(col = "black")
+plotter_3d$addScatter(col = "black", shape = "circle")
 
 axis_x1 <- seq(-2, 2, by = 0.05)
 axis_x2 <- seq(-2, 2, by = 0.05)
