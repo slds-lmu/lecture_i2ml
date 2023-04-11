@@ -84,7 +84,7 @@ do_cvs <- function(data, folds, degrees) {
 
 # run CV + plots + coefficient estimates
 # set highest degree for polynomials
-degrees0 <- seq_len(10)
+degrees0 <- seq_len(8)
 # set number of folds for CV
 n_folds <- 10
 # run CV
