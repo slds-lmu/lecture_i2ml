@@ -115,9 +115,12 @@ plot_list <- lapply(CV_results, function(i) i[["plots"]])
 # save plots
 for(i in degrees0){
   plot <- plot_list[[i]]
-  jpeg(file= paste0("figure/polynomial_regr_effect_plot_degree_", i, ".png"))
-  print(plot)
-  dev.off()
+  ggsave(
+    paste0("../figure/polynomial_regr_effect_plot_degree_", i, ".png"), 
+    plot,
+    height = 5,
+    width = 5
+  )
 }
 
 
