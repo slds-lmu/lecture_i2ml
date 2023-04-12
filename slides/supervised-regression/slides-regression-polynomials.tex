@@ -1,4 +1,7 @@
 \documentclass[11pt,compress,t,notes=noshow, xcolor=table]{beamer}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\usepackage{amsmath}
 \input{../../style/preamble}
 \input{../../latex-math/basic-math.tex}
 \input{../../latex-math/basic-ml.tex}
@@ -37,7 +40,8 @@
     \item Many other trafos conceivable, e.g., 
     $\sin(x_1), ~ \max(0, x_2), ~ \sqrt{x_3}, \dots$
     \item Turns out we can use LM much more 
-    \textbf{flexibly} (and: it's still linear)
+    \textbf{flexibly} (and: it's still linear) \\
+    $\rightsquigarrow$ interpretation might get less straightforward, though
 \end{itemize}
 
 \end{vbframe}
@@ -108,8 +112,7 @@
 
 \vfill
 
-\item NB: we still call design matrix $\Xmat$ $\rightsquigarrow$ 
-incorporating possible trafos:
+\item NB: we still call design matrix $\Xmat$, incorporating possible trafos:
 \begin{align*}
   \Xmat = 
   \left(
@@ -124,6 +127,7 @@ incorporating possible trafos:
     \end{smallmatrix}
     \right)
 \end{align*}
+$\rightsquigarrow$ solution via normal equations as usual
 \end{itemize}
 
 \end{vbframe}
@@ -188,7 +192,7 @@ Univariate regression, $d \in \{1, 5\}$
 Bivariate regression, $d = 7$
 
 \begin{minipage}[b]{0.5\textwidth}
-  \includegraphics[width=\textwidth, trim=80 80 80 80, clip]{
+  \includegraphics[width=0.9\textwidth, trim=80 80 80 80, clip]{
   figure/reg_poly_biv}
 \end{minipage}
 \begin{minipage}[b]{0.45\textwidth}
@@ -209,7 +213,7 @@ Bivariate regression, $d = 7$
 
 % ------------------------------------------------------------------------------
 
-\begin{vbframe}{complexity of polynomials}
+\begin{frame}{complexity of polynomials}
 
 \begin{itemize}
   \item Higher $d$ allows to learn more complex functions 
@@ -217,27 +221,66 @@ Bivariate regression, $d = 7$
   $\rightsquigarrow$ richer hyp space / higher \textbf{capacity}
   
   \vfill
-  \includegraphics[width=0.9\textwidth]{figure/reg_poly_univ_4}
+  \includegraphics[width=0.8\textwidth]{figure/reg_poly_univ_4}
   \item Should we then simply let $d \rightarrow \infty$?
   \begin{itemize}
     \item \textbf{No}: data contains random \textbf{noise} -- not part of true
-    data-generating process
+    DGP
     \item Model with overly high capacity learns all those spurious patterns
     $\rightsquigarrow$ poor generalization to new data
+    \item Also, higher $d$ can lead to oscillation esp. at bounds 
+    
+    (Runge's phenomenon\footnote[frame]{\scriptsize
+    Interpolation of $m$ equidistant points with $d$-polynomial only 
+    well-conditioned for $d < 2 \sqrt{m}$. Plot: 50 points, models with $d \geq
+    14$ instable (under equidistance assumption).
+    })
+    \vfill
   \end{itemize}
 \end{itemize}
 
-\end{vbframe}
+\end{frame}
 
 
 % ------------------------------------------------------------------------------
 
-\begin{frame}{polynomial regression}
+\begin{frame}{bike rental example}
 
-\textcolor{red}{TODO: zusatzfolie mit datenbeispiel, das zeigt, dass polynomials 
-besseren fit bringen können. zeigen: fit, test error via CV (auch wenn 
-foreshadowing, fußnote mit verweis auf eval). auch effektplots zeigen 
-(--> IML-folien, z. b, bike beispiel von dort)}
+\begin{itemize}
+    \footnotesize
+    \item OpenML task \href{https://www.openml.org/search?type=data&sort=runs&id=45103&status=active}{
+    \texttt{dailybike}}: predict \texttt{rentals} from weather conditions
+    \item Hunch: non-linear effect of \texttt{temperature} $\rightsquigarrow$
+    include with polynomial:
+    \[
+        \fx = \sum_{k=1}^d \theta_{\text{temperature}, k}
+        x_{\text{temperature}}^k + \theta_{\text{season}} x_{\text{season}} +
+        \theta_{\text{humidity}} x_{\text{humidity}}
+    \]
+    \item Test error\footnote[frame]{
+    \scriptsize
+    Reliable insights about model performance only via separate test
+    dataset not used during training (here computed via 10-fold
+    \textit{cross validation}). Much more on this in Evaluation chapter.
+    } confirms suspicion $\rightsquigarrow$ minimal
+    for $d = 3$
+    \vfill
+    \includegraphics[width=0.9\textwidth]{figure/reg_poly_bike}
+    \tiny
+    \begin{tabular}{rrrrrrrrrr}
+        $d$ & $\theta_0$ & $\theta_{\text{temp}, 1}$ & $\theta_{\text{temp}, 2}$
+        & $\theta_{\text{temp}, 3}$ & $\theta_{\text{sSPRING}}$ &
+        $\theta_{\text{sSUMMER}}$ & $\theta_{\text{sFALL}}$ &
+        $\theta_{\text{hum}}$ & \textbf{test error} \\ \hline
+        1 & 377.3 & 2778.2 & & & 101.0 & 57.0 & 80.1 & -230.0 & \textbf{121.9}\\
+        \rowcolor{black!10}
+        3 & 419.3 & 2645.8 & -963.1 & -430.9 & 71.9 & 75.8 & 56.6 & -283.8 &
+        \textbf{117.6}
+    \end{tabular}
+    \vfill
+    \footnotesize
+    \item Conclusion: flexible effects can improve fit/performance
+\end{itemize}
 
 \end{frame}
 

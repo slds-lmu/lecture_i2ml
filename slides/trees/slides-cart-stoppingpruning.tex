@@ -1,5 +1,8 @@
 \documentclass[11pt,compress,t,notes=noshow, xcolor=table]{beamer}
 \input{../../style/preamble}
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-trees.tex}
 \newcommand{\titlefigure}{figure/cart_stopprun_2.pdf}
 \newcommand{\learninggoals}{
 \item Understand which problems arise when growing the tree until the end
@@ -16,7 +19,51 @@
 \lecture{Introduction to Machine Learning}
 \sloppy
 
-\begin{frame}{Overfitting Trees}
+\begin{vbframe}{Overfitting Trees}
+
+The \textbf{recursive partitioning} procedure used to grow a CART would run until every leaf only contains a single observation. 
+\begin{itemize}
+\item Problem 1: This would take a very long time, as the amount of splits we have to try \emph{grows exponentially} with the number of leaves in the trees.
+\end{itemize}
+
+If we assume that we do not end up in leaves with a single observation only, the number of leaves grows exponentially. A tree with depth $k$, $T_k$'s number of leaves $|T_k|$ is described as $|T_k| = 2^k$. Even for moderate depths, this can result in a very large number of leaves.
+%While a depth of $9$ yields 512 potential leaves only, depths in the 20s result in millions, the 30s billions and the 40s trillion potential leaves.
+
+\begin{table}[ht]
+\centering
+\tiny
+\begin{tabular}{rrr}
+  \hline
+  $k$ & $|T|$ \\ 
+  \hline
+  1 & 2 \\ 
+  6 & 64 \\ 
+  9 & 512 \\ 
+  15 & 32,768 \\ 
+  22 & 4,194,304 \\ 
+  30 & 1,073,741,824 \\ 
+  40 & 1,099,511,627,776 \\ 
+   \hline
+\end{tabular}
+\end{table}
+
+While the latter are rather hypothetical, even a few houndred thousand leaves can be computionally problematic.
+
+\framebreak
+
+The \textbf{recursive partitioning} procedure used to grow a CART would run until every leaf only contains a single observation. 
+\begin{itemize}
+\item Problem 1: This would take a very long time, as the amount of splits we have to try \emph{grows exponentially} with the number of leaves in the trees.
+\item Problem 2: At some point before that we should stop splitting nodes into ever smaller child nodes: very complex trees with lots of branches and leaves will \emph{overfit the training data.}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.95\textwidth]{figure/tree-overfitting-prediction.pdf}
+\end{figure}
+
+\end{itemize}
+
+\framebreak
 
 The \textbf{recursive partitioning} procedure used to grow a CART would run until every leaf only contains a single observation. 
 \begin{itemize}
@@ -24,7 +71,7 @@ The \textbf{recursive partitioning} procedure used to grow a CART would run unti
 \item Problem 2: At some point before that we should stop splitting nodes into ever smaller child nodes: very complex trees with lots of branches and leaves will \emph{overfit the training data.}
 \item Problem 3: However, it is very hard to tell where we should stop while we're growing the tree: Before we have actually tried all possible additional splits further down a branch, we can't know whether any one of them will be able to reduce the risk by a lot (\emph{horizon effect}).
 \end{itemize}
-\end{frame}
+\end{vbframe}
 
 \begin{vbframe}{Stopping Criteria}
 Problems 1 and 2 can be \enquote{solved} by defining different \textbf{stopping criteria}:
@@ -44,13 +91,33 @@ We try to solve problem 3 by \textbf{pruning}:
 \begin{itemize}
 \item A method to select the optimal size of a tree
 \item Finding a combination of suitable strict stopping criteria (\enquote{pre-pruning}) is a hard problem: there are many different stopping criteria and it's hard to find the best combination (see chapter on \textbf{tuning})
-\item Better: Grow a large tree, then remove branches so that the resulting smaller tree has optimal cross-validation risk
-\item Feasible without cross-validation: Grow a large tree, then remove branches so that the resulting smaller tree has a good balance between training set performance (risk) and complexity (i.e., number of terminal nodes). The trade-off between complexity and accuracy is governed by a \textbf{complexity parameter}.
+\item Better: Grow a large tree, then remove branches so that the resulting smaller tree has optimal cross-validation risk (\enquote{post-pruning})
+\item Oftentimes, post-pruning is meant when refering to pruning
+
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Post-Pruning: CCP}
+\begin{itemize}
+\item A prominent example of post-pruning is cost-complexity pruning (CCP)
+\item When doing CCP, we grow a large tree and remove the least informative leaves later on
+\item CCP is steered with a regularization parameter $\alpha$ that penalizes the number of leaves in a subtree (complexity) and adds this penalization on to the risk of the subtree:
 \end{itemize}
 
-\framebreak
+$$\risk_{T \subset T_0}(y^{(i)}, \hat{y}^{(R_m)}) = \sum_{m=1}^{|T|} \sum_{x^{(i)} \in R_m} L(y^{(i)}, \hat{y}^{(R_m)}) + \alpha |T|,$$
 
+where $|T|$ refers to the number of leaves of subtree $T$ and $R_m$ to the subset of the predictor space of the $m$-th terminal node, with its prediction $\hat{y}^{(R_m)}$ and the complete tree $T_0$
 
+\end{vbframe}
+
+\begin{vbframe}{CCP}
+
+\begin{itemize}
+\item As the number of potential subtrees can be very large, CCP computes $\risk_{T \subset T_0}$ for a sequence of subtrees only
+\item We select the pruned tree that balances out the complexity and loss the best
+\item For $\alpha = 0$, we would obviously select $T_0$
+\item Other prominent post-pruning methods include e.g. reduced error pruning (REP) or pessimistic error pruning (PEP)
+\end{itemize}
 
 \framebreak
 

@@ -1,0 +1,186 @@
+\documentclass[11pt,compress,t,notes=noshow, xcolor=table]{beamer}
+\input{../../style/preamble}
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-trees.tex}
+
+\newcommand{\titlefigure}{figure/split_point.pdf}
+\newcommand{\learninggoals}{
+\item Get to know different splitting criteria
+\item Know which losses can be applied for regression and classification
+\item Know the connections between empirical risk minimization and impurity minimization}
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+\begin{document}
+\lecturechapter{CART: Splitting Criteria for Regression and Classification}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+\begin{vbframe}{Splitting criteria: Regression}
+\begin{itemize}
+ \item For regression trees, we usually use $L_2$ loss:
+  $$\risk(\Np) = \frac{1}{|\Np|} \sum\limits_{(\xv,y) \in \Np} (y - c)^2$$
+ \item The best constant prediction under $L_2$ is the mean:
+  $$c = \bar{y}_\Np = \frac{1}{|\Np|} \sum\limits_{(\xv,y) \in \Np} y$$
+\end{itemize}
+
+\begin{itemize}
+\item This means the best split is the one that minimizes the (pooled) variance of the target distribution in the child nodes $\Nl$ and $\Nr$:
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{\centering \includegraphics[width=0.95\textwidth]{figure/cart_splitcriteria_2.pdf} 
+
+}
+
+
+
+\end{knitrout}
+We can also interpret this as a way of measuring the impurity of the target distribution, i.e., how much it diverges from a constant in each of the child nodes.
+\item For $L_1$ loss, $c$ is the median of $y \in \Np$.
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Splitting Criteria: Classification}
+
+\begin{itemize}
+\item Typically uses either Brier score (so: $L_2$ loss on probabilities) or  Bernoulli loss (as in logistic regression) as loss functions
+\item Predicted probabilities in node $\Np$ are simply the class proportions in the node:
+$$ \pikNh = \frac{1}{|\Np|} \sum\limits_{(\xv,y) \in \Np} \I(y = k) $$
+This is the optimal prediction under both, Bernoulli and Brier loss.
+
+\end{itemize}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\begin{table}[ht] \centering 
+\begin{tabular}{@{\extracolsep{3pt}} cccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+Label & $1$ & $2$ & $3$ \\ 
+Probability & $0.10$ & $0.60$ & $0.30$ \\ 
+Truth & $0$ & $0$ & $1$ \\ 
+Brier Score & $0.01$ & $0.36$ & $0.49$ \\ 
+\hline \\[-1.8ex] 
+\end{tabular} 
+\end{table}
+\end{column}
+\begin{column}{0.5\textwidth}
+\begin{table}[ht] \centering 
+\begin{tabular}{@{\extracolsep{3pt}} cccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+Label & $1$ & $2$ & $3$ \\ 
+Probability & $0.80$ & $0.10$ & $0.10$ \\ 
+Truth & $1$ & $0$ & $0$ \\ 
+Brier Score & $0.04$ & $0.01$ & $0.01$ \\ 
+\hline \\[-1.8ex] 
+\end{tabular} 
+\end{table}
+\end{column}
+\end{columns}
+\end{vbframe}
+
+\begin{vbframe}{Splitting Criteria: Comments}
+
+\begin{itemize}
+\item Splitting criteria for trees are usually defined in terms of "impurity reduction". Instead of minimizing empirical risk in the child nodes over all possible splits, a measure of \enquote{impurity} of the distribution of the target $y$ in the child nodes is minimized. 
+\item For regression trees, the \enquote{impurity} of a node is usually defined as the variance of the $\yi$ in the node. Minimizing this \enquote{variance impurity} is equivalent to minimizing the squared error loss for a predicted constant in the nodes. 
+
+\framebreak 
+
+\item Minimizing the Brier score is equivalent to minimizing the Gini impurity
+$$I(\Np) = \sumkg \pikNh \left( 1-\pikNh \right)$$
+\item Minimizing the Bernoulli loss is equivalent to minimizing entropy impurity
+$$I(\Np) = -\sumkg \pikNh \log \pikNh$$
+\item The approach based on loss functions instead of impurity measures is simpler and more straightforward, mathematically equivalent and shows that growing a tree can be understood in terms of empirical risk minimization.
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Splitting with misclassification loss}
+
+\begin{itemize}
+\item Usually, we want to minimize the misclassification error (MCE) when doing classification
+\item As MCE has no derivates, we often use other criterions to approximate it (e.g. logistic regression)
+\item Trees don't need derivates being optimized with a greedy search
+\item Idea: Optimize trees based on the misclassification loss
+\item Problem: While this is a valid approach, we indirectly discard information when not considering the label probabilities in the loss
+\item Brier score and Bernoulli loss are more sensitive to changes in the node probabilities, and therefore often preferred
+
+
+\end{itemize}
+
+\framebreak
+
+Example: two-class problem with 400 obs in each class and two possible splits:
+\begin{small}
+\begin{columns}[T,onlytextwidth]
+\column{0.5\textwidth}
+\begin{center}
+\textbf{Split 1:} \\
+\vspace{0.25cm}
+% latex table generated in R 4.0.1 by xtable 1.8-4 package
+% Mon Aug 10 01:13:29 2020
+\begin{table}[ht]
+\centering
+\begin{tabular}{rrr}
+  \hline
+ & class 0 & class 1 \\ 
+  \hline
+$\Nl$ & 300 & 100 \\ 
+  $\Nr$ & 100 & 300 \\ 
+   \hline
+\end{tabular}
+\end{table}
+
+\end{center}
+\column{0.5\textwidth}
+\begin{center}
+\textbf{Split 2:} \\
+\vspace{0.25cm}
+% latex table generated in R 4.0.1 by xtable 1.8-4 package
+% Mon Aug 10 01:13:29 2020
+\begin{table}[ht]
+\centering
+\begin{tabular}{rrr}
+  \hline
+ & class 0 & class 1 \\ 
+  \hline
+$\Nl$ & 400 & 200 \\ 
+  $\Nr$ &   0 & 200 \\ 
+   \hline
+\end{tabular}
+\end{table}
+
+\end{center}
+\end{columns}
+\end{small}
+
+\lz
+
+\begin{itemize}
+\item Both splits are equivalent in terms of misclassification error, they each misclassify 200 observations. 
+\item But: Split 2 produces one pure node and is probably preferable.
+\item Brier loss (Gini impurity) and Bernoulli loss (entropy impurity) prefer the second split
+\item Calculation for Gini:\\
+\begin{alignat*}{6}
+\text{Formula}&:& \frac{|\Nl|}{|\Np|}\cdot 2 \cdot\pikNlh[0]\pikNlh[1] &+& \frac{|\Nr|}{|\Np|}\cdot 2 \cdot \pikNrh[0]\pikNrh[1] &=& \\[5ex]
+\text{Split 1}&:& \,\, \frac{1}{2} \,\cdot \, 2 \,\cdot\, \frac{3}{4} \,\cdot\, \frac{1}{4} \,&+&\,  \, \frac{1}{2} \,\cdot\, 2 \, \cdot\, \frac{1}{4} \,\cdot\, \frac{3}{4} &=&\;\, \frac{3}{8}\\[5ex]
+\text{Split 2}&:& \frac{3}{4}\, \cdot\, 2 \,\cdot\,\frac{2}{3}\,\cdot\,\frac{1}{3}\, &+& \frac{1}{4} \,\cdot\, 2 \,\cdot\, 0 \,\cdot\, 1 &=&\; \,\frac{1}{3}
+% (Brier not introduced)
+%$Split1: 300(0-\frac{1}{4})^2 + 100(1-\frac{1}{4})^2 + 100(0-\frac{3}{4})^2+300(1-\frac{3}{4})^2 = 150$\\ 
+%$Split2: 400(0-\frac{1}{3})^2 + 200(1-\frac{1}{3})^2 = 133.3$
+\end{alignat*}
+\end{itemize}
+\end{vbframe}
+
+ 
+
+
+
+
+\endlecture
+\end{document}
