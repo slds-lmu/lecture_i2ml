@@ -1,17 +1,6 @@
-# library(remotes)
-# library(ellipsis)
-# library(farff)
-# library(RWeka)
 library(OpenML)
-# library(vctrs)
-# library(tibble)
-# library(pillar)
 library(ggplot2)
 library(jtools)
-# library(effects)
-# library(gridExtra)
-# library(GGally)
-# library(cvTools)
 library(data.table)
 
 # load bike data set from OpenML
