@@ -92,25 +92,42 @@ x = runif(n_points, min = -2, max = 2)
 y = sin(x) + rnorm(n_points, sd = 0.5)
 x_seq = seq(-2, 2, by = 0.05)
 y_hat = predict(lm(y ~ poly(x, 10, raw = TRUE)), data.frame(x = x_seq))
+
 plot_weighted = plot_basis +
-    geom_line(
-        data.frame(x = x_seq, y = y_hat), mapping = aes(x, y), col = "blue"
+    geom_line( # awful hack via alpha aes to get two legends
+        data.frame(x = x_seq, y = y_hat, alpha = "weighted sum"), 
+        mapping = aes(x, y, alpha = alpha), col = "blue"
     ) +
     geom_point(
         data.frame(x = x, y = y), 
         mapping = aes(x, y),
         size = 0.5
     ) +
-    theme(legend.position = "none")
+    ylim(c(-3, 3)) +
+    scale_color_viridis_d(
+        "degree",
+        end = 0.9,
+        direction = -1,
+        option = "magma",
+        guide = guide_legend(
+            override.aes = list(linetype = degrees)
+        )
+    ) +
+    scale_alpha_manual(values = 1) +
+    guides(
+        alpha = guide_legend(title = "", override.aes = list(color = "blue")),
+        color = "none"
+    )
 
 ggsave(
-    "../figure/reg_poly_basis.pdf", plot_basis, height = 1.7, width = 4
-)
-ggsave(
-    "../figure/reg_poly_basis_weighted.pdf", 
-    plot_weighted, 
+    "../figure/reg_poly_basis.pdf", 
+    grid.arrange(
+        plot_basis, 
+        plot_weighted, 
+        layout_matrix = matrix(c(1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2), nrow = 1)
+    ),
     height = 1.7, 
-    width = 4
+    width = 8
 )
 
 # UNIVARIATE POLYNOMIALS -------------------------------------------------------
