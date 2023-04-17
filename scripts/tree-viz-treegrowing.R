@@ -36,4 +36,13 @@ px <- px + annotate("rect", ymin = -Inf, ymax = Inf, xmin = 4.35, xmax = 4.35, c
 ggsave("slides/trees/figure_man/tree-growing-x.png", px, units = "cm",
        width = 9.8, height = 9.8)
 
+p <- plot_boundaries(iris, Species ~ Sepal.Length + Sepal.Width, 
+                     "Sepal.Length", "Sepal.Width", 
+                     cols = c(virginica = "#0CB702", versicolor = "#00A9FF", 
+                              setosa = "#FF68A1"), 
+                     maxdepth = 4, alpha = 0.2, boundary_col = "black")
+
+
+ggsave("slides/trees/figure/tree-depth3-area-withblacklines.pdf", p$plot_area(3), units = "cm",
+       width = 13.8, height = 9.8)
 
