@@ -1,6 +1,11 @@
 source("scripts/tree-viz.R")
 # creates plots for splitcriteria and splitcriteria for classifiaction and regression
 
+set.seed(19)
+x <- runif(100, 0, 10)
+y <- 2 * (0.5 * sin(x * 2 - 0.1) + 0.75 * cos(0.5 * x)) + rnorm(100, 0, 0.2)
+df <- data.frame(x, y)
+
 split_point <- p$plot_area(2) + theme(legend.position = "top") + xlim(c(4.2, 5.4)) + 
   ylim(c(2.7,2.9)) + 
   annotate("rect", ymin = -Inf, ymax = 2.8, xmin = -Inf, xmax = Inf, fill = "#00A9FF", alpha = 0.25) +
@@ -10,7 +15,7 @@ ggsave("slides/trees/figure/split_point.pdf", split_point, units = "cm",
 
 mean_plot <- ggplot(df, aes(x, y)) + geom_point() + theme_bw() + 
   annotate("rect", xmin = -Inf, xmax = Inf, ymin = mean(y), ymax = mean(y), col = "red") +
-  xlab("expression(x_{j})", parse = TRUE)
+  xlab(expression("x[j]"))
 
 ggsave("slides/trees/figure/splitcrit_optimal-constant.pdf", mean_plot, units = "cm",
        width = 9.8, height = 9.8)
@@ -173,3 +178,134 @@ constant_classif <- ggplot(iris %>% filter(Sepal.Length < 6.5), aes(Sepal.Length
 ggsave("slides/trees/figure/splitcrit_optimal-constant-classif.pdf", constant_classif, 
        units = "cm",
        width = 9.8, height = 9.8)
+
+base <- ggplot(data = iris, aes(Sepal.Length, Sepal.Width)) + 
+  geom_point(aes(shape = Species, col = Species)) +
+  scale_color_manual(values = c(virginica = "#0CB702", versicolor = "#00A9FF", setosa = "#FF68A1")) +
+  theme_bw() + theme(legend.position = "none") +
+  xlim(4.05, 8.05)
+ 
+get_risk_brier <- function(y, x, split) {
+  y1 <- y[x <= split]
+  y2 <- y[x > split]
+  y1_expanded <- as.integer(y1)
+  y2_expanded <- as.integer(y2)
+  p1 <- table(y1) / length(y1)
+  p2 <- table(y2) / length(y2)
+  loss <- 0
+  for (i in 1:length(unique(y))) {
+    loss <- loss + sum(((y1_expanded == i) - p1[i]) ^ 2) + 
+      sum(((y2_expanded == i) - p2[i]) ^ 2) 
+  }
+  p1 <- t(t(p1))
+  p1 <- data.frame(Label = rownames(p1), proportion = p1[, 1])
+  p2 <- t(t(p2))
+  p2 <- data.frame(Label = rownames(p2), proportion = p2[, 1])
+  list(loss = round(loss, 1), predictions = list(left = p1, right = p2))
+}
+
+possible_splits <- seq(4.5, 7.5, 0.25)
+bs <- lapply(possible_splits, get_risk_brier, y = iris$Species, x = iris$Sepal.Length)
+
+riskds <- data.frame(loss = unlist(lapply(bs, "[[", "loss")),
+                     split = possible_splits)
+
+upper_mid <- base + annotate("rect", ymin = -Inf, ymax = Inf, 
+                             xmin = possible_splits[3], xmax = possible_splits[3], 
+                             col = "black") + xlab("")
+upper_left <- ggplot(data = bs[[3]]$predictions$left, 
+                     aes(x = Label, y = proportion, fill = Label)) + 
+  geom_bar(stat = "identity") + ylab("Proportion") +
+  scale_fill_manual(values = c(virginica = "#0CB702", versicolor = "#00A9FF", setosa = "#FF68A1")) +
+  theme_bw() + theme(axis.text.x = element_text(angle = 15)) +
+  xlab("") +
+  theme(legend.position = "none")
+
+upper_right <- ggplot(data = bs[[3]]$predictions$right, 
+                     aes(x = Label, y = proportion, fill = Label)) + 
+  geom_bar(stat = "identity") + ylab("Proportion") +
+  scale_fill_manual(values = c(virginica = "#0CB702", versicolor = "#00A9FF", setosa = "#FF68A1")) +
+  theme_bw() + theme(axis.text.x = element_text(angle = 15)) + xlab("") +
+  theme(legend.position = "none")
+
+lower <- ggplot(data = riskds[3, ], aes(split, loss)) + 
+  geom_point() + annotate("rect", col = "black", ymin = -Inf, ymax = Inf, 
+                          linetype = "dashed",
+                          xmin = possible_splits[3], xmax = possible_splits[3]) +
+  xlim(4.05, 8.05) + ylim(65, 100) + theme_bw() + xlab("Sepal.Length") +
+  ylab("Risk")
+
+plot1 <- (upper_left + upper_mid + upper_right +
+            plot_spacer() + lower + plot_spacer()) +
+  plot_layout(ncol = 3, nrow = 2)
+plot1
+
+upper_mid <- base + annotate("rect", ymin = -Inf, ymax = Inf, 
+                             xmin = possible_splits[9], xmax = possible_splits[9], 
+                             col = "black") + xlab("")
+upper_left <- ggplot(data = bs[[9]]$predictions$left, 
+                     aes(x = Label, y = proportion, fill = Label)) + 
+  geom_bar(stat = "identity") + ylab("Proportion") +
+  scale_fill_manual(values = c(virginica = "#0CB702", versicolor = "#00A9FF", setosa = "#FF68A1")) +
+  theme_bw() + theme(axis.text.x = element_text(angle = 15)) +
+  theme(legend.position = "none") + xlab("")
+
+upper_right <- ggplot(data = bs[[9]]$predictions$right, 
+                      aes(x = Label, y = proportion, fill = Label)) + 
+  geom_bar(stat = "identity") + ylab("Proportion") +
+  scale_fill_manual(values = c(virginica = "#0CB702", versicolor = "#00A9FF", setosa = "#FF68A1")) +
+  theme_bw() + theme(axis.text.x = element_text(angle = 15)) +
+  theme(legend.position = "none") + xlab("")
+
+lower <- ggplot(data = riskds[9, ], aes(split, loss)) + 
+  geom_point() + annotate("rect", col = "black", ymin = -Inf, ymax = Inf, 
+                          linetype = "dashed",
+                          xmin = possible_splits[9], xmax = possible_splits[9]) +
+  xlim(4.05, 8.05) + ylim(65, 100) + theme_bw() + xlab("Sepal.Length") +
+  ylab("Risk")
+
+plot2 <- (upper_left + upper_mid + upper_right +
+            plot_spacer() + lower + plot_spacer()) +
+  plot_layout(ncol = 3, nrow = 2)
+plot2
+
+upper_mid  <- base + annotate("rect", ymin = -Inf, ymax = Inf, 
+                          xmin = possible_splits[5], xmax = possible_splits[5], 
+                          col = "black") + xlab("")
+lower <- ggplot(data = riskds, aes(split, loss)) + 
+  geom_point() + annotate("rect", col = "black", ymin = -Inf, ymax = Inf, 
+                          linetype = "dashed",
+                          xmin = possible_splits[5], xmax = possible_splits[5]) +
+  xlim(4.05, 8.05) + ylim(65, 100) + theme_bw() + xlab("Sepal.Length") +
+  ylab("Risk")
+upper_left <- ggplot(data = bs[[5]]$predictions$left, 
+                     aes(x = Label, y = proportion, fill = Label)) + 
+  geom_bar(stat = "identity") + ylab("Proportion") +
+  scale_fill_manual(values = c(virginica = "#0CB702", versicolor = "#00A9FF", setosa = "#FF68A1")) +
+  theme_bw() + theme(axis.text.x = element_text(angle = 15)) +
+  theme(legend.position = "none") + xlab("")
+
+upper_right <- ggplot(data = bs[[5]]$predictions$right, 
+                      aes(x = Label, y = proportion, fill = Label)) + 
+  geom_bar(stat = "identity") + ylab("Proportion") +
+  scale_fill_manual(values = c(virginica = "#0CB702", versicolor = "#00A9FF", setosa = "#FF68A1")) +
+  theme_bw() + theme(axis.text.x = element_text(angle = 15)) +
+  theme(legend.position = "none") + xlab("")
+
+plot3 <- (upper_left + upper_mid + upper_right +
+            plot_spacer() + lower + plot_spacer()) +
+  plot_layout(ncol = 3, nrow = 2)
+plot3
+
+ggsave("slides/trees/figure/splitcrit-classif_optimal-constant-sub1.pdf", plot1, 
+       units = "cm",
+       width = 26, height = 16)
+
+ggsave("slides/trees/figure/splitcrit-classif_optimal-constant-sub2.pdf", plot2, 
+       units = "cm",
+       width = 26, height = 16)
+
+ggsave("slides/trees/figure/splitcrit-classif_optimal-constant-grid.pdf", plot3, 
+       units = "cm",
+       width = 26, height = 16)
+
