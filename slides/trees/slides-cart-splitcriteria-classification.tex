@@ -6,8 +6,7 @@
 
 \newcommand{\titlefigure}{figure/split_point.pdf}
 \newcommand{\learninggoals}{
-\item Get to know different splitting criteria
-\item Know which losses can be applied for regression and classification
+\item Get to know different splitting criteria for classification
 \item Know the connections between empirical risk minimization and impurity minimization}
 
 \title{Introduction to Machine Learning}
@@ -20,29 +19,33 @@
 \lecture{Introduction to Machine Learning}
 \sloppy
 
-\begin{vbframe}{Splitting criteria: Regression}
-\begin{itemize}
- \item For regression trees, we usually use $L_2$ loss:
-  $$\risk(\Np) = \frac{1}{|\Np|} \sum\limits_{(\xv,y) \in \Np} (y - c)^2$$
- \item The best constant prediction under $L_2$ is the mean:
-  $$c = \bar{y}_\Np = \frac{1}{|\Np|} \sum\limits_{(\xv,y) \in \Np} y$$
-\end{itemize}
+\begin{vbframe}{Optimal Constant Models}
 
-\begin{itemize}
-\item This means the best split is the one that minimizes the (pooled) variance of the target distribution in the child nodes $\Nl$ and $\Nr$:
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+For different loss functions, there are different optimal constant models.
+Let be $\risk(\Np) = \frac{1}{|\Np|} \sum\limits_{(\xv,y) \in \Np} L(y, c)$, with a constant $c$.
+There are different optimal $c$ for different loss functions:
 
-{\centering \includegraphics[width=0.95\textwidth]{figure/cart_splitcriteria_2.pdf} 
+\begin{table}[]
+\tiny
+\begin{tabular}{lll}
+Loss          & Optimal Constant & Formula \\
+\hline
+L1 (MAE)      & Median            &    $y^{(\frac{1}{2}|\Np|)} \I(y \in \Np) $  \\
+Quantile Loss & Quantile         &    $y^{(q |\Np|)} \I(y \in \Np) $ \\
+L2 (MSE)      & Mean          &    $\frac{1}{|\Np|} \sum\limits_{(\xv,y) \in \Np} y$  \\
+Bernoulli & Proportion    &  $\frac{1}{|\Np|} \sum\limits_{(\xv,y) \in \Np} y$    \\
+Multinomial & Proportion & $\frac{1}{|\Np|} \sum\limits_{(\xv,y) \in \Np} y  \I(y = k) $ \\
+Brier Score & Proportion       & $\frac{1}{|\Np|} \sum\limits_{(\xv,y) \in \Np} y$   \\
+Multi Class Brier Score & Proportion & $\frac{1}{|\Np|} \sum\limits_{(\xv,y) \in \Np} y  \I(y = k)   $ \\
+  MCE & Mode & $\argmax_{I \in \Yspace, y \in \Np} \P(y=I)$ \\
+0-1 Loss & Mode  & $\argmax_{I \in \Yspace, y \in \Np} \P(y=I)$
+\end{tabular}
+\end{table}
 
-}
 
+If using a hard-label classifier proportions translate to the mode.
+For binary losses we assume $y \in \{0, 1\}$
 
-
-\end{knitrout}
-We can also interpret this as a way of measuring the impurity of the target distribution, i.e., how much it diverges from a constant in each of the child nodes.
-\item For $L_1$ loss, $c$ is the median of $y \in \Np$.
-\end{itemize}
 \end{vbframe}
 
 \begin{vbframe}{Splitting Criteria: Classification}
@@ -54,6 +57,9 @@ $$ \pikNh = \frac{1}{|\Np|} \sum\limits_{(\xv,y) \in \Np} \I(y = k) $$
 This is the optimal prediction under both, Bernoulli and Brier loss.
 
 \end{itemize}
+
+For $y \in \{1, 2, 3\}$ the Brier Score is computed as follows for two different observations:
+
 \begin{columns}
 \begin{column}{0.5\textwidth}
 \begin{table}[ht] \centering 
@@ -84,20 +90,33 @@ Brier Score & $0.04$ & $0.01$ & $0.01$ \\
 \end{columns}
 \end{vbframe}
 
-\begin{vbframe}{Splitting Criteria: Comments}
+\begin{vbframe}{Splitting Criteria: Classification}
 
-\begin{itemize}
-\item Splitting criteria for trees are usually defined in terms of "impurity reduction". Instead of minimizing empirical risk in the child nodes over all possible splits, a measure of \enquote{impurity} of the distribution of the target $y$ in the child nodes is minimized. 
-\item For regression trees, the \enquote{impurity} of a node is usually defined as the variance of the $\yi$ in the node. Minimizing this \enquote{variance impurity} is equivalent to minimizing the squared error loss for a predicted constant in the nodes. 
+To search for the optimal split, we compute the Brier Score for many potential splits.
+In each split we predict the optimal constant.
+Assume, that we only consider splits w.r.t. \texttt{Sepal.Length}.
 
-\framebreak 
+\includegraphics[width = 0.85\textwidth]{figure/splitcrit-classif_optimal-constant-sub1.pdf}
 
-\item Minimizing the Brier score is equivalent to minimizing the Gini impurity
-$$I(\Np) = \sumkg \pikNh \left( 1-\pikNh \right)$$
-\item Minimizing the Bernoulli loss is equivalent to minimizing entropy impurity
-$$I(\Np) = -\sumkg \pikNh \log \pikNh$$
-\item The approach based on loss functions instead of impurity measures is simpler and more straightforward, mathematically equivalent and shows that growing a tree can be understood in terms of empirical risk minimization.
-\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Splitting Criteria: Classification}
+
+To search for the optimal split, we compute the Brier Score for many potential splits.
+In each split we predict the optimal constant.
+Assume, that we only consider splits w.r.t. \texttt{Sepal.Length}.
+
+\includegraphics[width = 0.85\textwidth]{figure/splitcrit-classif_optimal-constant-sub2.pdf}
+
+\end{vbframe}
+
+\begin{vbframe}{Splitting Criteria: Classification}
+
+The optimal split point typically creates the greatest imbalance or purity of the label distributions.
+\lz
+
+\includegraphics[width = 0.85\textwidth]{figure/splitcrit-classif_optimal-constant-grid.pdf}
+
 \end{vbframe}
 
 \begin{vbframe}{Splitting with misclassification loss}
@@ -177,7 +196,21 @@ $\Nl$ & 400 & 200 \\
 \end{itemize}
 \end{vbframe}
 
- 
+ \begin{vbframe}{Splitting Criteria: Comments}
+
+\begin{itemize}
+\item Splitting criteria for trees are usually defined in terms of "impurity reduction". Instead of minimizing empirical risk in the child nodes over all possible splits, a measure of \enquote{impurity} of the distribution of the target $y$ in the child nodes is minimized. 
+\item For regression trees, the \enquote{impurity} of a node is usually defined as the variance of the $\yi$ in the node. Minimizing this \enquote{variance impurity} is equivalent to minimizing the squared error loss for a predicted constant in the nodes. 
+
+\framebreak 
+
+\item Minimizing the Brier score is equivalent to minimizing the Gini impurity
+$$I(\Np) = \sumkg \pikNh \left( 1-\pikNh \right)$$
+\item Minimizing the Bernoulli loss is equivalent to minimizing entropy impurity
+$$I(\Np) = -\sumkg \pikNh \log \pikNh$$
+\item The approach based on loss functions instead of impurity measures is simpler and more straightforward, mathematically equivalent and shows that growing a tree can be understood in terms of empirical risk minimization.
+\end{itemize}
+\end{vbframe}
 
 
 
