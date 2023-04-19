@@ -41,7 +41,7 @@ library(parttree)
 #' with an index. The index corresponds to the current depth of the tree.
 #' That means $plot_area(2) produces the area plot for the tree at depth = 2.
 plot_boundaries <- function(data, formula, x_axis, y_axis, cols, 
-                            alpha = 0.25, maxdepth = 5L) {
+                            alpha = 0.25, maxdepth = 5L, boundary_col = NULL, ...) {
   res <- vector("list", 0L)
   cols2 <- res
   res$trees <- vector("list", maxdepth)
@@ -49,7 +49,7 @@ plot_boundaries <- function(data, formula, x_axis, y_axis, cols,
   splits_list <- res
   counter <- 0
   for (i in 1:maxdepth) { 
-    tree <- rpart(formula, data = data, maxdepth = i)
+    tree <- rpart(formula, data = data, maxdepth = i, ...)
     plot_splits <- parttree(tree)
     if (identical(plot_splits, splits_old[, 1:ncol(plot_splits)])) {
       break
@@ -77,7 +77,7 @@ plot_boundaries <- function(data, formula, x_axis, y_axis, cols,
     pfs_i[[i]] <- pfs[pfs$depth %in% 1:i, ]
     pfs_i[[i]] <- correct_rectangles(pfs_i[[i]])
   }
-  res$plot_area <- function(i) base_plot %>% annotate_all(pfs_i[[i]], cols = cols, alpha = alpha)
+  res$plot_area <- function(i) base_plot %>% annotate_all(pfs_i[[i]], cols = cols, alpha = alpha, boundary_col = boundary_col)
   res$plot_tree <- function(i) rpart.plot(res$trees[[i]], box.palette = as.list(cols2[[i]]))
   res
 }
@@ -151,9 +151,10 @@ correct_rectangles <- function(rect) {
 
 #' Function using the annotate function of ggplot2 to plot rectangles for the
 #' area plot. 
-annotate_all <- function(base_plot, plot_splits, cols, alpha = .25) {
+annotate_all <- function(base_plot, plot_splits, cols, alpha = .25, boundary_col = NULL) {
   target <- colnames(plot_splits)[2]
   for (i in 1:nrow(plot_splits)) {
+    if (is.null(boundary_col)) {
     base_plot <- base_plot + 
       annotate("rect", xmin = plot_splits$xmin[i], 
                xmax = plot_splits$xmax[i], 
@@ -161,11 +162,21 @@ annotate_all <- function(base_plot, plot_splits, cols, alpha = .25) {
                ymax = plot_splits$ymax[i], 
                alpha = alpha, 
                fill = cols[plot_splits[[target]][i]]) 
+    } else {
+      base_plot <- base_plot + 
+        annotate("rect", xmin = plot_splits$xmin[i], 
+                 xmax = plot_splits$xmax[i], 
+                 ymin = plot_splits$ymin[i], 
+                 ymax = plot_splits$ymax[i], 
+                 alpha = alpha, 
+                 fill = cols[plot_splits[[target]][i]], 
+                 col = boundary_col) 
+    }
   }
   base_plot
 }
 
-plot_contin <- function(data, formula, maxdepth = 5L) {
+plot_contin <- function(data, formula, maxdepth = 5L, vertical = TRUE, ...) {
   vars <- all.vars(formula)
   y <- vars[1]
   x <- vars[2]
@@ -175,7 +186,7 @@ plot_contin <- function(data, formula, maxdepth = 5L) {
   splits_list <- res
   counter <- 0
   for (i in 1:maxdepth) { 
-    tree <- rpart(formula, data = data, maxdepth = i)
+    tree <- rpart(formula, data = data, maxdepth = i, ...)
     plot_splits <- parttree(tree)
     if (identical(plot_splits, splits_old[, 1:ncol(plot_splits)])) {
       break
@@ -190,23 +201,25 @@ plot_contin <- function(data, formula, maxdepth = 5L) {
   res$trees <- res$trees[1:counter]
   base_plot <- ggplot(data, aes(.data[[x]], .data[[y]])) +
     geom_point()
-  res$plot_area <- function(i) base_plot %>% annotate_contin(splits_list[[i]])
+  res$plot_area <- function(i) base_plot %>% annotate_contin(splits_list[[i]], vertical = vertical)
   res$plot_tree <- function(i) rpart.plot(res$trees[[i]])
   res
 }
 
 
-annotate_contin <- function(base_plot, plot_splits) {
+annotate_contin <- function(base_plot, plot_splits, vertical = TRUE) {
   target <- colnames(plot_splits)[2]
   for (i in 1:nrow(plot_splits)) {
+    if (vertical) {
     base_plot <- base_plot + 
       annotate("rect", xmin = plot_splits$xmin[i], 
                xmax = plot_splits$xmax[i], 
                ymin = plot_splits$ymin[i], 
                ymax = plot_splits$ymax[i], 
                alpha = 0,
-               col = "black") +
-      annotate("rect", xmin = plot_splits$xmin[i], 
+               col = "black") 
+    }
+    base_plot <- base_plot + annotate("rect", xmin = plot_splits$xmin[i], 
                xmax = plot_splits$xmax[i],
                ymin = plot_splits[i, target], 
                ymax = plot_splits[i, target], 
