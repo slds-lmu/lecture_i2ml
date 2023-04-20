@@ -1,12 +1,13 @@
 TSLIDES = $(shell find . -maxdepth 1 -iname "slides-*.tex")
 TPDFS = $(TSLIDES:%.tex=%.pdf)
 FLSFILES = $(TSLIDES:%.tex=%.fls)
+TDIR = $(shell pwd)
 
 .PHONY: all most copy texclean clean
 
-all: texclean $(TPDFS) copy texclean
+all: clean texclean handlemargin $(TPDFS) rmmargin copy texclean
 
-most: $(FLSFILES)
+most: handlemargin $(FLSFILES) rmmargin
 
 $(TPDFS): %.pdf: %.tex
 	latexmk -pdf $<
@@ -40,3 +41,13 @@ texclean:
 	
 clean: texclean
 	-rm $(TPDFS) 2>/dev/null || true
+	
+handlemargin: 
+  ifeq (nomargin, $(filter nomargin,$(MAKECMDGOALS)))
+		touch $(TDIR)/nospeakermargin.tex
+  endif
+  
+rmmargin:
+  ifeq (nomargin, $(filter nomargin,$(MAKECMDGOALS)))
+		rm $(TDIR)/nospeakermargin.tex
+  endif 

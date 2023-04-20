@@ -1,27 +1,25 @@
-% Process package options ------------------------------------------------------
+\RequirePackage{graphicx}
+\RequirePackage{amsmath,amssymb}
+\RequirePackage{array}
+\DeclareSymbolFont{mysymbols}{OMS}{cmsy}{m}{n}
+\SetSymbolFont{mysymbols}{bold}{OMS}{cmsy}{b}{n}
+\DeclareMathSymbol{\myRightarrow}{\mathrel}{symbols}{"29}
+\let\Rightarrow\myRightarrow
 
-\RequirePackage{ifthen}
-\newboolean{Sweave@gin}
-\setboolean{Sweave@gin}{true}
-\DeclareOption{nogin}{\setboolean{Sweave@gin}{false}}
-
-\newif\if@nospeakermargin\@nospeakermarginfalse
-\DeclareOption{nospeakermargin}{\@nospeakermargintrue}
-\DeclareOption*{\OptionNotUsed} % discard any undeclared option
-
-\ProcessOptions\relax
-
-% Set up speaker margin --------------------------------------------------------
+\newif\if@nospeakermargin 
+\IfFileExists{nospeakermargin.tex}{\@nospeakermargintrue}{\@nospeakermarginfalse}
 
 \RequirePackage{calc}
 % original: paperwidth: 128mm x 96mm
 % --> set 'speakerwidth' to 42.6666666667mm to get identical slides
-\geometry{paperwidth=170.6666666667mm,paperheight=96mm}
+\newlength{\slidewidth}
 
 \if@nospeakermargin
+  \geometry{paperwidth=128mm,paperheight=96mm}
+  \setlength{\slidewidth}{\paperwidth}
   \setbeamersize{text margin left=0.8cm,text margin right=0.8cm}
 \else
-  \newlength{\slidewidth}
+  \geometry{paperwidth=170.6666666667mm,paperheight=96mm}
   \newlength{\speakerwidth}
   \newlength{\logooffset}
   \setlength{\logooffset}{2mm}
@@ -50,16 +48,16 @@
   \setbeamersize{text margin left=0.8cm,text margin right=0.8cm,sidebar width right=\speakerwidth}
 \fi
 
-\RequirePackage{graphicx}
-\RequirePackage{amsmath,amssymb}
-\RequirePackage{array}
-\DeclareSymbolFont{mysymbols}{OMS}{cmsy}{m}{n}
-\SetSymbolFont{mysymbols}{bold}{OMS}{cmsy}{b}{n}
-\DeclareMathSymbol{\myRightarrow}{\mathrel}{symbols}{"29}
-\let\Rightarrow\myRightarrow
-
 % ------------------------------------------------------------------------
 % R (sweave) related stuff
+
+
+\RequirePackage{ifthen}
+\newboolean{Sweave@gin}
+\setboolean{Sweave@gin}{true}
+
+\DeclareOption{nogin}{\setboolean{Sweave@gin}{false}}
+\ProcessOptions
 
 \ifthenelse{\boolean{Sweave@gin}}{\setkeys{Gin}{width=0.8\textwidth}}{}%
 
@@ -237,21 +235,13 @@
 
 
 %\useoutertheme{lmu-lecture}
-% ------------------------------------------------------------------------
-% Geometry
-%\setbeamersize{text margin left=0.8cm,text margin right=0.8cm}
-%\setbeamersize{text margin left=0.8cm,text margin right=\dimexpr0.8cm+\speakerwidth\relax}
-%\setbeamersize{text margin left=0.8cm,text margin right=0.8cm,sidebar width right=\speakerwidth}
 
 % ------------------------------------------------------------------------
 % foot line
 
-\if@nospeakermargin
-\else
-  \pgfdeclarehorizontalshading{footlineshade}{4mm}{%
-    color(0pt)=(black);%
-    color(1.0\slidewidth)=(structure!50!black)}
-\fi
+\pgfdeclarehorizontalshading{footlineshade}{4mm}{%
+  color(0pt)=(black);%
+  color(1.0\slidewidth)=(structure!50!black)}
 
 % redefine \ref (it has been redefined somewhere by the beamerclass)
 \def\lectureref#1{\expandafter\@setref\csname r@#1\endcsname\@firstoftwo{#1}}
