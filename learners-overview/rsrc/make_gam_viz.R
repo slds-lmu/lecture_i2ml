@@ -99,30 +99,53 @@ lm_surface$y = predict(
   learner$model, data.frame(temp = lm_surface$x_1, hum = lm_surface$x_2)
 )
 lm_surface = reshape2::acast(lm_surface, x_2 ~ x_1, value.var = "y")
-p_pred = p_pred %>%
-  add_trace(
-    z = lm_surface,
-    x = axis_x1,
-    y = axis_x2,
-    type = "surface",
-    colorbar = list(
-      title = "", 
-      ticks = "", 
-      nticks = 1
-    ),
-    colorscale = list(c(0, 1), rep("black", 2)),
-    opacity = 0.7
-  ) %>% 
-  hide_colorbar() %>% 
-  hide_legend() %>%
-  layout(
-    scene = list(
-      xaxis = list(title = "temperature"), 
-      yaxis = list(title = "humidity"),
-      zaxis = list(title = "rentals"),
-      showlegend = FALSE,
-      camera = list(eye = list(x = -1.5, y = -1.5, z = 0.3))
-    )
-  )
 
-save_image(p_pred, "../figure/gam_bike_pred.pdf")
+lm_surface_wiggly = expand.grid(
+  x_1 = axis_x1, x_2 = axis_x2, KEEP.OUT.ATTRS = F
+)
+learner$param_set$values$formula = rentals ~ s(hum, bs = "bs", k = 501) + temp
+learner$train(task)
+lm_surface_wiggly$y = predict(
+  learner$model, 
+  data.frame(temp = lm_surface_wiggly$x_1, hum = lm_surface_wiggly$x_2)
+)
+lm_surface_wiggly = reshape2::acast(
+  lm_surface_wiggly, x_2 ~ x_1, value.var = "y"
+)
+
+add_hyperplane <- function(p, pred, eye) {
+  p %>%
+    add_trace(
+      z = pred,
+      x = axis_x1,
+      y = axis_x2,
+      type = "surface",
+      colorbar = list(
+        title = "", 
+        ticks = "", 
+        nticks = 1
+      ),
+      colorscale = list(c(0, 1), rep("black", 2)),
+      opacity = 0.7
+    ) %>% 
+    hide_colorbar() %>% 
+    hide_legend() %>%
+    layout(
+      scene = list(
+        xaxis = list(title = "temperature"), 
+        yaxis = list(title = "humidity"),
+        zaxis = list(title = "rentals"),
+        showlegend = FALSE,
+        camera = list(eye = eye)
+      )
+    )
+}
+
+p_pred_smooth = add_hyperplane(
+  p_pred, lm_surface, list(x = -1.5, y = -1.5, z = 0.3)
+)
+p_pred_wiggly = add_hyperplane(
+  p_pred, lm_surface_wiggly, list(x = -2, y = -1, z = 0.4)
+)
+save_image(p_pred_smooth, "../figure/gam_bike_pred.pdf")
+save_image(p_pred_wiggly, "../figure/gam_bike_pred_wiggly.pdf")
