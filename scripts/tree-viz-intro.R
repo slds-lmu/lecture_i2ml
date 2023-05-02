@@ -52,9 +52,10 @@ ggsave("slides/trees/figure_man/tree_depth2_area.png",
        p$plot_area(2) + theme(legend.position="top") , units = "cm",
        width = 9.8, height = 9.8)
 
-pnp <- p$plot_area(2) + theme(legend.position="none")
+pnp <- p$plot_area(3) + theme(legend.position="none")
 pnp$layers[[1]] <- NULL
-pnp <- pnp + xlim(c(4.3, 7.9)) + ylim(c(2, 4.4)) + geom_point(aes(x = 5, y = 3), col = "black", shape = 8)
+pnp <- pnp + xlim(c(4.3, 7.9)) + ylim(c(2, 4.4)) + geom_point() + 
+  geom_point(aes(x = 5, y = 3), col = "black", shape = 8)
 pnp
 ggsave("slides/trees/figure_man/tree_depth3_area_nopoints.png",
        pnp, units = "cm",
@@ -97,6 +98,21 @@ fig <- plot_ly(meshgrid, x = ~x1, y = ~x2, z = ~y, type = "mesh3d",
                                  c(1, 'green')))
 fig
 
+#### probabilstic
+# Predict values for meshgrid
+meshgrid$y <- exp(meshgrid$y) / (1 + exp(meshgrid$y))
+
+# Plot 3D surface with plotly
+fig <- plot_ly(meshgrid, x = ~x1, y = ~x2, z = ~y, type = "mesh3d",
+               intensity = ~ y,
+               colorscale = list(c(0,'red'),
+                                 c(0.33,'orange'),
+                                 c(0.66, 'yellow'),
+                                 c(1, 'green')))
+fig
+
+
+
 p <- plot_boundaries(iris, Species ~ Sepal.Length + Sepal.Width, 
                      "Sepal.Length", "Sepal.Width", 
                      cols = c(virginica = "#0CB702", versicolor = "#00A9FF", 
@@ -107,5 +123,9 @@ p <- plot_boundaries(iris, Species ~ Sepal.Length + Sepal.Width,
 ggsave("slides/trees/figure/tree-depth3-area-withblacklines.pdf",
        p$plot_area(3) + theme_bw() + theme(legend.position="top"), units = "cm",
        width = 15.8, height = 8)
+
+
+
+
 
 
