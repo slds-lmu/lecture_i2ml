@@ -10,16 +10,43 @@
 
 \title{Introduction to Machine Learning}
 % \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
-\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+% \institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-% lmu.github.io/lecture\_i2ml}}
 \date{}
 \begin{document}
 
 \lecturechapter{In a Nutshell: ML-Basics}
 \lecture{Introduction to Machine Learning}
-
 \sloppy
 
-% ------------------------------------------------------------------------------
+
+\begin{vbframe}{What is ML?}
+\begin{columns}
+\begin{column}{0.65\textwidth}
+\begin{center}
+  % FIGURE SOURCE: https://www.oreilly.com/library/view/java-deep-learning/9781788997454/assets/899ceaf3-c710-4675-ae99-33c76cd6ac2f.png
+  % \includegraphics[width=0.7\textwidth]{figure_man/l}
+  \includegraphics[trim=0 0 0 0,clip,width=\textwidth]{figure_man/whatisml.png}\\[3ex]
+  \tiny{Image via \url{https://www.oreilly.com/library/view/java-deep-learning/9781788997454/assets/899ceaf3-c710-4675-ae99-33c76cd6ac2f.png}}
+\end{center}
+\end{column}
+\begin{column}{0.45\textwidth}
+\begin{footnotesize}
+\begin{itemize}
+    % \item Mainly includes supervised, unsup. and reinforcement learning.
+	\item Mathematically well-defined and solves reasonably narrow tasks.
+	\item ML algorithms usually construct predictive/decision models from data, instead of explicitly programming them.
+    \item A computer program is said to learn from experience E with respect to
+  some task T and some performance measure P, if its performance on T, as 
+  measured by P, improves with experience E. \\
+  \begin{footnotesize}
+  \emph{Tom Mitchell, Carnegie Mellon University, 1998}
+  \end{footnotesize}
+\end{itemize}
+\end{footnotesize}
+\end{column}
+\end{columns}
+ 
+\end{vbframe}
 
 \begin{vbframe}{Data}
 \begin{itemize}
@@ -137,42 +164,30 @@
 
 \begin{vbframe}{Losses and Risk Minimization}
 
-This means, we are looking for a function, where the 
-    predicted output per training point is as close as possible to
-    the observed label.
+\small
+\begin{itemize}
+\small
+\item By computing the empirical risk of a model (parameter set) one evaluates how well a given function f matches the training data. The goal is to minimize the empirical risk.
 
-To make this precise, we need to define now how we measure the difference between a prediction and a ground truth label pointwise.
+\item The \textbf{empirical risk} computes the average error of a model, applied on a \textbf{specific} data set. To this end the difference between the value of the prediction and the value of the true target is measured by a loss function for each observation of the data set (labeled data). All pointwise losses are summed up to the \textbf{empirical risk score}.
 
-The \textbf{loss function} $\Lxy$ quantifies the "quality" of the prediction $\fx$ of a single observation $\xv$:
+\ 
+\begin{center}
+\textbf{Empirical Risk = Sum over all pointwise losses}
+\end{center}
 
- \item The (theoretical) \textbf{risk} associated with a certain hypothesis $\fx$ measured by a loss function $\Lxy$ is the \textbf{expected loss}
-  $$ \riskf := \E_{xy} [\Lxy] = \int \Lxy \text{d}\Pxy. $$
-  \item This is the average error we incur when we use $f$ on data from $\Pxy$.
-  \item Goal in ML: Find a hypothesis $\fx \in \Hspace$ that \textbf{minimizes} risk.
+\pagebreak   
+\begin{column}{1\textwidth} 
+\item \small \textbf{Regression example}: The green line represents the model. It differs from the observations (marked as $X$). In this case the difference is quantified by the quadratic loss function (green boxes). All green boxes (losses) are summed up to the empirical risk score ($R_{emp} = 5.88$). 
+\begin{center}
+\minipage{0.49\textwidth}
+\includegraphics[trim=1.5cm 1.5cm 1.5cm 1.5cm, width=\linewidth]{figure/lm_reg2}  
+\endminipage\hfill
+\end{center}
+\end{column} 
 
-But as we have $n$ i.i.d. data points from $\Pxy$ available we can simply
-approximate the expected risk by computing it on $\D$.
-
-To evaluate, how well a given function $f$ matches our training data,
-we now simply sum-up all $f$'s pointwise losses.
-
-This gives rise to the \textbf{empirical risk function} which allows us
-to associate one quality score with each of our models,
-which encodes how well our model fits our training data.
-
-The risk can also be defined as an average loss
-  $$
-    \riskeb(f) = \frac{1}{n}\sumin \Lxyi. 
-  $$
-  The factor $\frac{1}{n}$ does not make a difference in optimization, so we will consider $\riske(f)$ most of the time.  
-\item Since $f$ is usually defined by \textbf{parameters} $\thetab$, this becomes:
-$$\risk : \R^d \to \R$$
-\begin{eqnarray*}
-\risket & = & \sumin \Lxyit \cr
-% \thetabh & = & \argmin_{\thetab \in \Theta} \risket
-\end{eqnarray*}
-
-
+\item In empirical risk minimization (ERM) one wants to find the best parameter set which minimizes the empirical risk. This is usually done by numerical optimization because analytical solutions might not exist.  
+\end{itemize}
 
 
 \end{vbframe}
@@ -180,17 +195,39 @@ $$\risk : \R^d \to \R$$
 
 \begin{vbframe}{Optimization}
 
+\small
+\begin{itemize}
+\item It depends on the model and parameter structure which numerical technique should be applied for emprical risk minimization. 
+\small
+\item One can imagine the empirical risk as an error surface similar to a mountain landscape, where one starts nearby the top and wants to find a way to the valley (minimum of risk).
+\small
+\item One of the simplest algorithms for reaching the valley is \textbf{Gradient Descent (GD)}:
+    \begin{itemize}
+    \small
+    \item In the case of GD one starts at a point on the surface (can be randomly selected or e.g. by domain knowledge). The algorithm then finds the direction of the surface with the steepest descent and moves towards this direction with a certain step size (learning rate). 
+    \small
+    \item Moving with the \textbf{right} step size is crucial for the success of GD. If it`s too big the valley might not be reached because of overstepping, if it`s too small the algorithm might be too slow.
+    \end{itemize}
 
+\end{itemize}
 
 \end{vbframe}
 
 \begin{vbframe}{Components of a Learner}
 
+\begin{itemize}
+\item A learner is basically designed by three components:  
+\begin{center}
+  \textbf{Learning = Hypothesis Space + Risk + Optimization}
+\end{center}
+\item It can be extended by a \textbf{regularization} term which controls the complexity of a model.
+\item Note that exceptions exist, where the ML method is not defined via \textbf{risk minimization} and defining the \textbf{hypothesis space} can be very hard or impossible.
+\end{itemize}
 
 
 \end{vbframe}
 
 
 % ------------------------------------------------------------------------------
-
+\endlecture
 \end{document}
