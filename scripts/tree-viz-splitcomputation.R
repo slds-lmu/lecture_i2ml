@@ -1,7 +1,7 @@
 source("scripts/tree-viz.R")
 
 #categorical
-catfeat <- data.frame(Cat = as.factor(c("A", "B", "C", "D")), freq = c(6, 8, 12, 4))
+catfeat <- data.frame(Cat = as.factor(c("a", "b", "c", "d")), freq = c(6, 8, 12, 4))
 catfeat$freq  <- catfeat$freq / sum(catfeat$freq)
 catplot1 <- ggplot(catfeat, aes(Cat, freq)) + 
   geom_bar(stat = "identity", fill = 2:5) +
@@ -30,7 +30,7 @@ ggsave("slides/trees/figure/categoryplot-binary3.pdf", catplot3,
 
 
 # numeric
-catfeat <- data.frame(Cat = as.factor(c("A", "B", "C", "D")), freq = c(6.0, 8.0, 12.0, 4.0))
+catfeat <- data.frame(Cat = as.factor(c("a", "b", "c", "d")), freq = c(6.0, 8.0, 12.0, 4.0))
 catplot1 <- ggplot(catfeat, aes(Cat, freq)) + 
   geom_bar(stat = "identity", fill = 2:5) +
   xlab("Category of Feature") + ylab("Mean of outcome") + theme_bw()
