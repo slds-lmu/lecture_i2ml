@@ -124,6 +124,13 @@ ggsave("slides/trees/figure/tree-depth3-area-withblacklines.pdf",
        p$plot_area(3) + theme_bw() + theme(legend.position="top"), units = "cm",
        width = 15.8, height = 8)
 
+p1 <- p$plot_area(3) + theme_bw() + theme(legend.position = "none")
+p2 <- pp$plot_area(3) + theme_bw()
+library(patchwork)
+ggsave("slides/trees/figure/combined-area-plot.pdf", p1 + p2, units = "cm",
+       width = 17, height = 5.5)
+
+
 
 
 
