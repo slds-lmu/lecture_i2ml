@@ -2,24 +2,37 @@ We consider the \texttt{BostonHousing} data for which we would like to predict
 the nitric oxides concentration (\texttt{nox}) from the distance to a number of 
 firms (\texttt{dis}).
 
-<<echo=TRUE, message=FALSE, fig.height=4, fig.width=8>>=
+<<echo=TRUE, message=FALSE, fig.height=4, fig.width=8, warning=FALSE>>=
 
 library(mlbench)
 data(BostonHousing)
 data_pollution <- data.frame(dis = BostonHousing$dis, nox = BostonHousing$nox)
 data_pollution <- data_pollution[order(data_pollution$dis), ]
 head(data_pollution)
+@
 
+<<echo=FALSE, message=FALSE, fig.height=4, fig.width=8, warning=FALSE>>=
 ggplot2::ggplot(data_pollution, ggplot2::aes(x = dis, y = nox)) +
   ggplot2::geom_point() +
   ggplot2::theme_classic()
+@
 
+<<echo=TRUE, message=FALSE, eval=FALSE>>=
+import numpy as np
+import pandas as pd
+
+data_url = "http://lib.stat.cmu.edu/datasets/boston"
+raw_df = pd.read_csv(data_url, sep="\s+", skiprows=22, header=None)
+data = np.hstack([raw_df.values[::2, :], raw_df.values[1::2, :2]])
+boston = pd.DataFrame(data[:,np.r_[4,7]], columns= ["NOX", "DIS"])
+boston = boston.sort_values("DIS")
+boston.reset_index(drop = True, inplace = True)
 @
 
 \begin{enumerate}[a)]
 
   \item Use the first ten observations as training data to compute a linear 
-  model with \texttt{mlr3} and evaluate the performance of your learner on the 
+  model and evaluate the performance of your learner on the 
   remaining data using MSE.
   
   \item What might be disadvantageous about the train-test split in a)?
@@ -29,9 +42,10 @@ ggplot2::ggplot(data_pollution, ggplot2::aes(x = dis, y = nox)) +
   and repeat this procedure ten times.
   Afterwards, plot the resulting test errors (in terms of MSE) in a suitable 
   manner. \\
-  (Hint: \texttt{rsmp} is a convenient function for splitting data -- 
+  (\texttt{R} Hint: \texttt{rsmp} is a convenient function for splitting data -- 
   you will want to choose the "holdout" strategy. Afterwards, \texttt{resample}
-  can be used to repeatedly fit the learner.)
+  can be used to repeatedly fit the learner.)\\
+  (\texttt{Python} Hint: \texttt{from sklearn.model\_selection import train\_test\_split} is a convenient function for splitting data. It has an optional parameter \texttt{random\_state}, which can be used to split the data randomly in each iteration.)
   
   \item Interpret the findings from c).
   
