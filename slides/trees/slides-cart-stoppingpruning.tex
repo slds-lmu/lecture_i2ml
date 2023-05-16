@@ -3,7 +3,7 @@
 \input{../../latex-math/basic-math.tex}
 \input{../../latex-math/basic-ml.tex}
 \input{../../latex-math/ml-trees.tex}
-\newcommand{\titlefigure}{figure/cart_stopprun_2.pdf}
+\newcommand{\titlefigure}{figure/horizon.pdf}
 \newcommand{\learninggoals}{
 \item Understand which problems arise when growing the tree until the end
 \item Know different stopping criteria
@@ -19,36 +19,65 @@
 \lecture{Introduction to Machine Learning}
 \sloppy
 
+\begin{vbframe}{Computational Complexity}
+
+The \textbf{recursive partitioning} procedure used to grow a CART would run until every leaf only contains a single observation. 
+\begin{itemize}
+\item Problem 1: This can become computationally expensive as the amount of splits may \emph{grows exponentially} with the number of leaves in the trees.
+\end{itemize}
+
+While growing trees fully is computationally not efficient, in typical applications on modern computers, this does usually not imply infeasibly large computational costs.
+Single trees are almost always very fast to compute.
+However, high computational costs can be undesirable if many trees need to be fit (e.g. ensembles).
+
+\end{vbframe}
+
 \begin{vbframe}{Overfitting Trees}
 
 The \textbf{recursive partitioning} procedure used to grow a CART would run until every leaf only contains a single observation. 
 \begin{itemize}
-\item Problem 1: This can take a long time, as the amount of splits we have to try \emph{grows exponentially} with the number of leaves in the trees.
-\end{itemize}
-
-For a depth of 10 and a sufficient (i.e. $n > |T|$) amount of data, we have $|T| = 2^{10} = 1024$ leaves, and for a depth of 15, we have $32,768$ potential leaves.
-
-
-
-\framebreak
-
-The \textbf{recursive partitioning} procedure used to grow a CART would run until every leaf only contains a single observation. 
-\begin{itemize}
-\item Problem 1: This may take a long time, as the amount of splits we have to try \emph{grows exponentially} with the number of leaves in the trees.
 \item Problem 2: At some point before that we should stop splitting nodes into ever smaller child nodes: very complex trees with lots of branches and leaves will \emph{overfit the training data.}
 
 \begin{figure}
 \centering
-\includegraphics[width=0.95\textwidth]{figure/tree-overfitting-prediction.pdf}
+\includegraphics[width=0.7\textwidth]{figure/tree-overfitting-prediction.pdf}
 \end{figure}
 
 \end{itemize}
 
-\framebreak
+\end{vbframe}
+
+\begin{vbframe}{Overfitting Trees}
+
+We can reduce overfitting to some extent with \emph{stopping criteria}:
+\vspace{0.25cm}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.7\textwidth]{figure/tree-less-overfitting-prediction.pdf}
+\end{figure}
+
+\end{vbframe}
+
+\begin{vbframe}{Horizon Effect}
 
 The \textbf{recursive partitioning} procedure used to grow a CART would run until every leaf only contains a single observation. 
 \begin{itemize}
-\item Problem 1: This may take a long time, as the amount of splits we have to try \emph{grows exponentially} with the number of leaves in the trees.
+\item Problem 3: However, it is very hard to tell where we should stop while we're growing the tree: Before we have actually tried all possible additional splits further down a branch, we can't know whether any one of them will be able to reduce the risk by a lot (\emph{horizon effect}).
+\end{itemize}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.5\textwidth]{figure/horizon.pdf}
+\end{figure}
+
+
+\end{vbframe}
+
+\begin{vbframe}{Problems with growing large trees}
+The \textbf{recursive partitioning} procedure used to grow a CART would run until every leaf only contains a single observation. 
+\begin{itemize}
+\item Problem 1: This can become computationally expensive as the amount of splits may \emph{grows exponentially} with the number of leaves in the trees.
 \item Problem 2: At some point before that we should stop splitting nodes into ever smaller child nodes: very complex trees with lots of branches and leaves will \emph{overfit the training data.}
 \item Problem 3: However, it is very hard to tell where we should stop while we're growing the tree: Before we have actually tried all possible additional splits further down a branch, we can't know whether any one of them will be able to reduce the risk by a lot (\emph{horizon effect}).
 \end{itemize}
@@ -62,6 +91,7 @@ Problems 1 and 2 can be \enquote{solved} by defining different \textbf{stopping 
     \item Don't perform a split that results in child nodes with too few observations.
     \item Don't perform a split unless it achieves a certain minimal improvement of the empirical risk in the child nodes, compared to the empirical risk in the parent node.
     \item Obviously: Stop once all observations in a node have the same target value (\textbf{pure node}) or identical values for all features. 
+    \item There exist heuristics on how to select these criteria and software packages usually have considerate defaults that work well out-of-the-box.
   \end{itemize}
 \end{vbframe}
 
@@ -70,10 +100,10 @@ Problems 1 and 2 can be \enquote{solved} by defining different \textbf{stopping 
 We try to solve problem 3 by \textbf{pruning}:
 
 \begin{itemize}
-\item A method to select the optimal size of a tree
-\item Finding a combination of suitable strict stopping criteria (\enquote{pre-pruning}) is a hard problem: there are many different stopping criteria and it's hard to find the best combination (see chapter on \textbf{tuning})
-\item Better: Grow a large tree, then remove branches so that the resulting smaller tree has lower risk (\enquote{post-pruning})
-\item Oftentimes, post-pruning is meant when referring to pruning
+\item A method to select the optimal size of a tree.
+\item Finding a combination of suitable strict stopping criteria (\enquote{pre-pruning}) is a hard problem: there are many different stopping criteria and it's hard to find the best combination (see chapter on \textbf{tuning}).
+\item Alternative: Grow a large tree, then remove branches so that the resulting smaller tree has lower risk (\enquote{post-pruning}).
+\item Oftentimes, only post-pruning is meant when referring to pruning in general.
 
 \end{itemize}
 \end{vbframe}
@@ -85,55 +115,100 @@ We try to solve problem 3 by \textbf{pruning}:
 \item CCP is steered with a regularization parameter $\alpha$ that penalizes the number of leaves in a subtree (complexity) and adds this penalization onto the risk of the subtree:
 \end{itemize}
 
-$$\risk_{T \subset T_0}(y^{(i)}, \hat{y}^{(R_m)}) = \sum_{m=1}^{|T|} \sum_{x^{(i)} \in R_m} L(y^{(i)}, \hat{y}^{(R_m)}) + \alpha |T|,$$
+$$\risk_{T \subset T_0}(y^{(i)}, c_m) = \sum_{m=1}^{|T|} \sum_{x^{(i)} \in Q_m} L(y^{(i)}, c_m) + \alpha |T|,$$
 
-where $|T|$ refers to the number of leaves of subtree $T$ and $R_m$ to the subset of the predictor space of the $m$-th terminal node, with its prediction $\hat{y}^{(R_m)}$ and the complete tree $T_0$
+where $|T|$ refers to the number of leaves of subtree $T$ and $Q_m$ to the subset of the predictor space of the $m$-th terminal node, with its prediction $c_m$ and the complete tree $T_0$.
 
 \end{vbframe}
 
 \begin{vbframe}{CCP}
-
 \begin{itemize}
-\item As the number of potential subtrees can be very large, CCP computes $\risk_{T \subset T_0}$ for a sequence of subtrees only
-\item We select the pruned tree that balances out the complexity and loss the best
-\item For $\alpha = 0$, we would obviously select $T_0$
-\item Other prominent post-pruning methods include e.g. reduced error pruning (REP) or pessimistic error pruning (PEP)
+\item CCP performs a greedy backwards search:
+\item It computes $\risk_{T \subset T_0}(y^{(i)}, c_m)$ with a fixed $\alpha$ for all possible sub trees that can be created by removing exactly one node.
+\item This does not need to be a terminal node.
+\item We select the sub tree with lowest risk and repeat the procedure.
+\item We stop if pruning does not further reduce the risk.
+\item This is proven to result in pruned tree with lowest risk.
+\item For $\alpha = 0$, we would obviously select $T_0$.
+\item The $\alpha$ parameter is typically selected via cross-validation.
+\item Other prominent post-pruning methods next to CCP include e.g. reduced error pruning (REP) or pessimistic error pruning (PEP).
 \end{itemize}
+\end{vbframe}
 
-\framebreak
 
-\begin{knitrout}\scriptsize
+\begin{frame}{CCP}
+
+We run the CCP algorithm step-by-step with $\alpha = 1.2$:
+\vspace{0.25cm}
+
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
 
-{\centering \includegraphics[width=0.95\textwidth]{figure/cart_stopprun_1} 
+{\centering \includegraphics[width=0.95\textwidth]{figure/ccp_1.pdf} 
+
+}
+
+\end{frame}
+
+\begin{frame}[noframenumbering]{CCP}
+
+There are three possible nodes that we can eliminate to prune the tree.
+We take the one the elimination that results in lowest risk.
+
+\vspace{0.25cm}
+
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{\centering \includegraphics[width=0.95\textwidth]{figure/ccp_1_notes.pdf} 
+
+}
+
+\end{frame}
+
+\begin{frame}[noframenumbering]{CCP}
+
+The first sub tree has lower risk than the full tree.
+\vspace{0.25cm}
+
+{\centering \includegraphics[width=0.95\textwidth]{figure/ccp_2.pdf} 
+
+}
+
+\end{frame}
+
+\begin{frame}[noframenumbering]{CCP}
+
+From here on, the risk increases.
+\vspace{0.25cm}
+
+
+{\centering \includegraphics[width=0.95\textwidth]{figure/ccp_3.pdf} 
+
+}
+
+\end{frame}
+
+\begin{frame}[noframenumbering]{CCP}
+
+
+{\centering \includegraphics[width=0.95\textwidth]{figure/ccp_4.pdf} 
 
 }
 
 
+\end{frame}
+
+\begin{frame}[noframenumbering]{CCP}
+
+We select the first sub tree as it results in the lowest risk.
+\vspace{0.25cm}
 
 
-{\centering \includegraphics[width=0.95\textwidth]{figure/cart_stopprun_2} 
-
-}
-
-
-
-
-{\centering \includegraphics[width=0.95\textwidth]{figure/cart_stopprun_3} 
-
-}
-
-
-
-
-{\centering \includegraphics[width=0.95\textwidth]{figure/cart_stopprun_4} 
+{\centering \includegraphics[width=0.99\textwidth]{figure/ccp_5.pdf} 
 
 }
 
 
-
-\end{knitrout}
-\end{vbframe}
+\end{frame}
 
 
 
