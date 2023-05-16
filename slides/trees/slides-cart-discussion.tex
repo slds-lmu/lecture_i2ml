@@ -5,7 +5,7 @@
 \newcommand{\titlefigure}{figure/cart_dis_1}
 \newcommand{\learninggoals}{
 \item Understand advantages and disadvantages of CART
-\item Know how CART can be expressed in terms of hypothesis space, risk and optimization}
+\item Know when and where CART are applied}
 
 \title{Introduction to Machine Learning}
 % \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
@@ -24,61 +24,65 @@
     \item Fairly easy to understand, interpret and visualize.
     \item Not much preprocessing required:
     \begin{itemize}
-      \item automatic handling of non-numerical features
-      \item automatic handling of missing values via surrogate splits
-      \item no problems with outliers in features
-      \item monotone transformations of features change nothing so scaling of features is irrelevant
+      \item Automatic handling of non-numerical features
+      \item Automatic handling of missing values via surrogate splits
+      \item No problems with outliers in features
+      \item Monotone transformations do not affect the model fit: scaling becomes irrelevant
     \end{itemize}
-    \item Interaction effects between features are easily possible, even of higher orders
-    \item Can model discontinuities and non-linearities (but see "disadvantages")
-    
-    \framebreak
-    
+    \item Interaction effects between features are easily possible
+    \item Can model discontinuities and non-linearities
     \item Performs automatic feature selection
-    \item Quite fast, scales well with larger data
+    \item Relatively fast, scales well with larger data
     \item Flexibility through definition of custom split criteria or leaf-node prediction rules: clustering trees, semi-supervised trees, density estimation, etc.
-  \end{itemize}
+    \end{itemize}
 \end{vbframe}
 
 \begin{vbframe}{Disadvantage: Linear Dependencies}
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
 
 {\centering \includegraphics[width=0.95\textwidth]{figure/cart_dis_1} 
 
 }
 
 
-
-\end{knitrout}
-Linear dependencies must be modeled over several splits. Logistic regression would model this easily.
+Linear dependencies must be modeled over several splits. 
+Logistic regression would model this easily with fewer parameters.
 \end{vbframe}
 
-\begin{vbframe}{Disadvantage: Smooth functions}
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\begin{vbframe}{Disadvantages: Smooth functions and extrapolation}
 
-{\centering \includegraphics[width=0.95\textwidth]{figure/cart_dis_2} 
+
+{\centering \includegraphics[width=0.85\textwidth]{figure/not-smooth-extrapolation.pdf} 
 
 }
 
+Prediction functions of trees are never smooth as they are always step functions and do not extrapolate well beyond the training observations as the model a piecewise-constant function.
 
-
-\end{knitrout}
-Prediction functions of trees are never smooth as they are always step functions.
+In this case, the tree does not recover the smoothness of $y$ and does not extrapolate well beyond the training domain ($[0, 10]$).
 \end{vbframe}
 
-% \begin{vbframe}{Disadvantage: Instability}
-% \begin{itemize}
-% \item High instability (variance) of the trees:
-% \item Small changes in the data could lead to completely different splits / trees
-% \item This leads to a) less trust in interpretability b) is a reason why prediction error of trees is usually not best, compared with other models
-% \end{itemize}
+ \begin{vbframe}{Disadvantage: Instability}
+ \begin{itemize}
+ \item High instability (variance) of the trees:
+ \item Small changes in the data may lead to very different splits / trees
+ \item This leads to a) less trust in interpretability b) is a reason why prediction error of trees is usually comparably high
+ \end{itemize}
 
-% \framebreak
+High instability of trees will be demonstrated using the Wisconsin Breast Cancer data set.
+It has 699 observations on 9 features and one target class with values \enquote{benign} and \enquote{malignant}. We fit two trees: One with the full data set and one where we eliminated a single observation. The table shows that this resulted in a label flip for 17 (!) observations of the training data:
 
-% High instability of trees will be demonstrated using the Wisconsin Breast Cancer data set.
-% It has 699 observations on 9 features and one target class with values \enquote{benign} and \enquote{malignant}.
+\begin{table}[ht]
+\centering
+\begin{tabular}{rrr}
+  \hline
+ & benign & malignant \\ 
+  \hline
+benign & 445 &   6 \\ 
+  malignant &  11 & 236 \\ 
+   \hline
+\end{tabular}
+\end{table}
+
+The rows indicate the predictions of the learner with the full data set, the columns the reduced one.
 
 % \begin{table}
 % \begin{tabular}{ll}
@@ -123,15 +127,38 @@ Prediction functions of trees are never smooth as they are always step functions
 % <<results='hide', fig.height=5>>=
 % fancyRpartPlot(mod2$learner.model, sub = "")
 % @
-% \end{vbframe}
+\end{vbframe}
 
-\begin{vbframe}{Disadvantages}
+\begin{vbframe}{Disadvantage: Instability}
+
+However, even more strikingly, the resulting decision trees look very different from one another:
+
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\begin{figure}
+\includegraphics[width=0.9\textwidth]{figure/instability_full.pdf} 
+\end{figure}
+\end{column}
+\begin{column}{0.5\textwidth}
+\begin{figure}
+\includegraphics[width=0.9\textwidth]{figure/instability_reduced.pdf} 
+\end{figure}
+\end{column}
+\end{columns}
+
+\end{vbframe}
+
+\begin{vbframe}{CART in practice}
+
 \begin{itemize}
-\item Empirically not the best predictor: Combine with bagging (forest) or boosting!
-\item High instability (variance) of the trees.
-  Small changes in the training data can lead to completely different trees. This leads to reduced trust in interpretation and is a reason why prediction errors of trees are usually not the best.
-\item In regression: Trees define piecewise constant functions, so trees often do not extrapolate well.
+\item Compared to other learners CART has suboptimal predictive performance, particularly because of the disadvantages previously illustrated.
+\item Thus, it is rarely used in predictive tasks.
+\item However, most disadvantages can be overcome when trained in ensembles: bagging or random forests.
+\item Furthermore, trees are attractive tools if an interpretable model is demanded.
 \end{itemize}
+
+
+
 \end{vbframe}
 
 \begin{vbframe}{Further tree methodologies}
