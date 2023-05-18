@@ -15,7 +15,7 @@ ggsave("slides/trees/figure/split_point.pdf", split_point, units = "cm",
 
 mean_plot <- ggplot(df, aes(x, y)) + geom_point() + theme_bw() + 
   annotate("rect", xmin = -Inf, xmax = Inf, ymin = mean(y), ymax = mean(y), col = "red") +
-  xlab(expression("x[j]"))
+  ylab(expression(italic(y))) + xlab(expression(italic(x[j])))
 
 ggsave("slides/trees/figure/splitcrit_optimal-constant.pdf", mean_plot, units = "cm",
        width = 9.8, height = 9.8)
@@ -25,13 +25,15 @@ mean_subplot1 <- ggplot(df, aes(x, y)) + geom_point() + theme_bw() +
            ymax = mean(y[x <= 2.5]), col = "red") +
   annotate("rect", xmin = 2.5, xmax = Inf, ymin = mean(y[x > 2.5]), 
            ymax = mean(y[x > 2.5]), col = "red") +
-  annotate("rect", xmin = 2.5, xmax = 2.5, ymin = -Inf, ymax = Inf, col = "black")
+  annotate("rect", xmin = 2.5, xmax = 2.5, ymin = -Inf, ymax = Inf, col = "black") +
+  ylab(expression(italic(y))) + xlab(expression(italic(x[j])))
 mean_subplot2 <- ggplot(df, aes(x, y)) + geom_point() + theme_bw() + 
   annotate("rect", xmin = -Inf, xmax = 5.25, ymin = mean(y[x <= 5.25]), 
            ymax = mean(y[x <= 5.25]), col = "red") +
   annotate("rect", xmin = 5.25, xmax = Inf, ymin = mean(y[x > 5.25]), 
            ymax = mean(y[x > 5.25]), col = "red") +
-  annotate("rect", xmin = 5.25, xmax = 5.25, ymin = -Inf, ymax = Inf, col = "black")
+  annotate("rect", xmin = 5.25, xmax = 5.25, ymin = -Inf, ymax = Inf, col = "black") +
+  ylab(expression(italic(y))) + xlab(expression(italic(x[j])))
 
 ggsave("slides/trees/figure/splitcrit_optimal-constant-sub1.pdf", mean_subplot1, 
        units = "cm",
