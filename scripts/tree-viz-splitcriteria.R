@@ -6,8 +6,13 @@ x <- runif(100, 0, 10)
 y <- 2 * (0.5 * sin(x * 2 - 0.1) + 0.75 * cos(0.5 * x)) + rnorm(100, 0, 0.2)
 df <- data.frame(x, y)
 
+p <- plot_boundaries(iris, Species ~ Sepal.Length + Sepal.Width, 
+                          "Sepal.Length", "Sepal.Width", 
+                          cols = c(virginica = "#0CB702", versicolor = "#00A9FF", setosa = "#FF68A1"), 
+                          maxdepth = 4, alpha = 0.2)
+
 split_point <- p$plot_area(2) + theme(legend.position = "top") + xlim(c(4.2, 5.4)) + 
-  ylim(c(2.7,2.9)) + 
+  ylim(c(2.6,2.95)) + theme(legend.position = "none") +
   annotate("rect", ymin = -Inf, ymax = 2.8, xmin = -Inf, xmax = Inf, fill = "#00A9FF", alpha = 0.25) +
   annotate("rect", ymin = 2.8, ymax = Inf, xmin = -Inf, xmax = Inf, fill = "#FF68A1", alpha = 0.25)
 ggsave("slides/trees/figure/split_point.pdf", split_point, units = "cm",
