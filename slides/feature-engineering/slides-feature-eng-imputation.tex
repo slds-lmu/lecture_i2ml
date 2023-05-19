@@ -1,0 +1,141 @@
+
+
+\input{../../2021/style/preamble4tex}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\begin{document}
+
+\lecturechapter{16}{Imputation}
+\lecture{Fortgeschrittene Computerintensive Methoden}
+
+\begin{vbframe}{Motivating Example}
+\begin{itemize}
+\item Assume each feature in your dataset has 2 \% missing values.
+\item The missing values are randomly distributed over the observations.
+\item How many rows can be used if all observations that contain at least a missing value is dropped?
+\end{itemize}
+\vspace{-0.3cm}
+
+\begin{figure}
+\includegraphics[width = 0.8\textwidth]{figure_man/motivating-example.png}
+\end{figure}
+
+%\vspace{+.4cm}
+With 100 features and 2 \% missing values, only 13 \% of our data can be used.
+\end{vbframe}
+
+\begin{vbframe}{Visualizing Missing Values}
+
+\begin{figure}
+\includegraphics[width = 0.8\textwidth]{figure_man/missing-values.png}
+\end{figure}
+
+\end{vbframe}
+
+\begin{vbframe}{Visualizing Missing Values}
+\begin{itemize}
+\item  Remove observations that contain missing values. \\
+    \textbf{But:} Could lead to a very small dataset.
+
+\item Remove features that contain mostly missing values. \\
+    \textbf{But:} Can lose (important) information.
+
+\item Use models that can handle missing values, e.g., (most) tree-based methods \\
+    \textbf{But:} Restriction in model choice.
+
+\item \textbf{Imputation} \\
+    $\rightarrow$ Replace missing values with \textbf{plausible} values.
+\end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Simple Imputation Methods}
+A very simple imputation strategy is to replace missing values with univariate statistics of the feature, e.g. mean or median:
+\begin{center}
+\includegraphics[width = 10cm]{figure_man/fe_imputation_simple.pdf}
+\end{center}
+\framebreak
+
+The statistic used to impute the missing values has to match the type of the feature:
+\begin{itemize}
+\item Numeric features: mean, median, quantiles, mode, ...
+\item Categorical features: mode, ...
+\end{itemize}
+\vspace{+.4cm}
+Alternatively, missing values can be encoded with new values
+\begin{itemize}
+\item Numeric features: \text{2*max}, ...
+\item Categorical features: \text{MISS}, ...
+\end{itemize}
+\vspace{+.4cm}
+\textbf{Note:} This is especially useful for tree-based methods, as it allows to separate observations with missing values in a feature.
+
+\vspace*{0.2cm}
+
+\textbf{Note:} Encoding numeric values \textbf{out-of-range} for models estimation global feature effects is usually a very bad idea.
+\end{vbframe}
+
+\begin{vbframe}{Disadvantage of constant Imputation}
+By imputing a feature with one value we shift the distribution of that feature towards a single value.
+
+
+\begin{figure}
+\includegraphics[width = 0.8\textwidth]{figure_man/constant-imputation.png}
+\end{figure}
+
+\end{vbframe}
+
+\begin{vbframe}{Imputation by Sampling}
+A way out of this problem is to sample values to replace each missing observation from
+\vspace{+.4cm}
+
+\begin{itemize}
+\item the empirical distribution or histogram for a numeric feature.
+\item the relative frequencies of levels for a categorical feature.
+\end{itemize}
+\vspace{+.4cm}
+
+This ensures that the distribution of the features does not change much.
+\vspace{+.4cm}
+
+To ensure that the information about which values are missing is not lost, it is important to add binary indicator features.
+\end{vbframe}
+
+\begin{vbframe}{Benchmark of Simple Imputation}
+To illustrate the effect of imputation on the performance we evaluate a linear model on the Ames housing dataset.
+Evaluation is done with a 10-fold cross-validation:
+\vspace{+.2cm}
+
+\begin{figure}
+\includegraphics[width = 0.8\textwidth]{figure_man/simple-imputation.png}
+\end{figure}
+
+\end{vbframe}
+
+\begin{vbframe}{Model-Based Imputation}
+Instead of imputing a single value or sampling values it is desirable to take advantage of structure and correlation between features.
+\begin{center}
+\includegraphics[width = 10cm]{figure_man/fe_imputation_models.pdf}
+\end{center}
+\end{vbframe}
+
+\begin{vbframe}{Model-Based Imputation: Drawbacks}
+\begin{itemize}
+\item Choice of surrogate model has high influence on imputed values:
+\end{itemize}
+\vspace{+.3cm}
+
+
+\begin{figure}
+\includegraphics[width = 0.7\textwidth]{figure_man/drawbacks.png}
+\end{figure}
+
+\begin{itemize}
+\item Surrogate model should be able to handle missing values itself, otherwise imputation \textbf{loop} may be necessary.
+\item Surrogate model hyperparameter can be tuned and may be different for each feature to impute.
+\end{itemize}
+\end{vbframe}
+
+\endlecture
+\end{document}
+

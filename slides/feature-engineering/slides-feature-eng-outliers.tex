@@ -1,0 +1,296 @@
+\input{../../style/preamble}
+\input{../../latex-math/basic-math}
+\input{../../latex-math/basic-ml}
+
+\newcommand{\titlefigure}{figure_man/automl2.png}
+\newcommand{\learninggoals}{
+  \item ...
+  \item ...
+}
+
+\title{Introduction to Machine Learning}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Outlier Detection}
+\lecture{Introduction to Machine Learning}
+
+
+\begin{vbframe}{Example Linear Model}
+    The following data has a clear linear dependency:
+    \vspace{+.4cm}
+    
+    \begin{figure}
+        \includegraphics[width = 0.4\textwidth]{figure_man/linear-model01.png}
+    \end{figure}
+    
+    \framebreak
+    
+    Adding a single outlier does not change the linear dependency, there is just one wrong value:
+    \vspace{+.4cm}
+    
+    \begin{figure}
+        \includegraphics[width = 0.8\textwidth]{figure_man/linear-model02.png}
+    \end{figure}
+    
+    \vspace{+.2cm}
+    
+    \textbf{But} how does this single value affect a model trained on that data?
+\end{vbframe}
+
+\begin{vbframe}{Example Linear Model: Outlier in Target}
+    \vspace{+.4cm}
+    
+    \begin{figure}
+        \includegraphics[width = 0.9\textwidth]{figure_man/linear-model03.png}
+    \end{figure}
+    
+\end{vbframe}
+
+\begin{vbframe}{Example Linear Model: Outlier in Feature}
+    One observations with a feature value of -999 (could be a wrongly coded missing value).
+    \vspace{+.4cm}
+    
+    \begin{figure}
+        \includegraphics[width = 0.9\textwidth]{figure_man/linear-model04.png}
+    \end{figure}
+    
+\end{vbframe}
+
+\begin{vbframe}{Solutions}
+    \vspace{+.4cm}
+    
+    \begin{itemize}
+        \item Make the model less \textbf{sensitive} regarding outliers \\
+              \textbf{But:} Errors still need to be measured properly.
+              \vspace{+.4cm}
+              
+        \item Remove observations containing outliers \\
+              \textbf{But:} How to detect these outliers?
+    \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Teach a Model to Handle Outliers}
+    \vspace{+.4cm}
+    
+    Most machine learning models are trained by minimizing a loss function $L(y, \fx)$.
+    \vspace{+.4cm}
+    
+    For example, a linear model is trained by minimizing quadratic errors, i.e., L2-loss:
+    \vspace{+.4cm}
+    
+    $$
+        \hat{\theta} = \argmin_{\theta \in \Theta}\frac{1}{n}\sum\limits_{i = 1}^n L\left(\yi, \fxi\right) = \argmin_{\theta \in \Theta}\frac{1}{n} \sum\limits_{i = 1}^n \left(\yi - \thetab^\top \xi\right)^2
+    $$
+\end{vbframe}
+
+\begin{vbframe}{Quadratic Loss}
+    The \textbf{Mean Squared Error} (L2-Loss) averages the squared distances between the target variable $y$ and the predicted target $\fx$.
+    \vspace{+.4cm}
+    
+    $$
+        MSE = \frac{1}{n} \sumin \left(\yi - \fxi \right)^2
+    $$
+    \vspace{+.4cm}
+    
+    Observations with large residuals heavily influence the MSE:
+    \medskip
+    
+    \begin{figure}
+        \includegraphics[width = 0.6\textwidth]{figure_man/quadratic-loss.png}
+    \end{figure}
+    
+\end{vbframe}
+
+\begin{vbframe}{Absolute Loss}
+    An alternative is to optimize the \textbf{Mean Absolute Error (L1-Loss):}
+    \vspace{+.4cm}
+    
+    $$
+        MAE = \frac{1}{n} \sum\limits_{i = 1}^n \left|\yi - \fxi\right|
+    $$
+    \vspace{+.4cm}
+    
+    Observations with large errors do not heavily influence the MAE that much:
+    \medskip
+    
+    \begin{figure}
+        \includegraphics[width = 0.6\textwidth]{figure_man/absolute-loss.png}
+    \end{figure}
+    
+\end{vbframe}
+
+\begin{vbframe}{Example Linear Model: Target Outlier}
+    
+    \begin{figure}
+        \includegraphics[width = 0.9\textwidth]{figure_man/linear-model05.png}
+    \end{figure}
+    
+    \medskip
+    
+    The model becomes more \textbf{robust} in regards to the outlier.
+\end{vbframe}
+
+\begin{vbframe}{Example Linear Model: Feature Outlier}
+    
+    \begin{figure}
+        \includegraphics[width = 0.9\textwidth]{figure_man/linear-model06.png}
+    \end{figure}
+    
+    \medskip
+    
+    \textbf{But:} Using a robust loss function is not always sufficient!
+\end{vbframe}
+
+\begin{vbframe}{Tree-Based-Models}
+    Trees are able to isolate outliers in separate terminal nodes:
+    \vspace{+.4cm}
+    
+    \begin{figure}
+        \includegraphics[width = 0.5\textwidth]{figure_man/tree-based01.png}
+    \end{figure}
+    
+    \framebreak
+    
+    Trees are able to isolate outliers in separate terminal nodes:
+    
+    \vspace{-0.3cm}
+    \begin{figure}
+        \includegraphics[width = 0.7\textwidth]{figure_man/tree-based02.png}
+    \end{figure}
+    
+    \framebreak
+    
+    Trees are able to isolate outliers in separate terminal nodes:
+    
+    \vspace{-0.4cm}
+    \begin{figure}
+        \includegraphics[width = 0.7\textwidth]{figure_man/tree-based03.png}
+    \end{figure}
+    
+\end{vbframe}
+
+\begin{vbframe}{Outlier Detection}
+    A different way to handle outliers is to remove them completely. But they must be detected first.
+    \vspace{+.4cm}
+    
+    \begin{itemize}
+        \item Different values than most observations, but when is it \textbf{different enough} to conclude it is an outlier. \textbf{Outlier or extreme value?}
+        \item Even when all single feature values are \textbf{normal}, an observation still can be an outlier over multiple features.
+        \item Difference between wrong value, e.g., missing encoding error, or really occurring outlier.
+    \end{itemize}
+    \framebreak 
+    
+    \textbf{First very simple approach:} Remove observations if they are too big or too small.
+    \vspace{+.4cm}
+    
+    \begin{itemize}
+        \item Construct a lower bound $l$ and upper bound $u$ to indicate which values are outliers.
+        \item Remove values that are outside the interval $[l, u]$.
+        \item $[l, u]$ can be defined by domain knowledge or by looking at empirical distributions of features.
+    \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Z-Score}
+    Assume a feature is normally distributed. The transformation
+    
+    $$
+        z_j^{(i)} = \frac{x_j^{(i)} - \bar{x}_j}{\operatorname{sd}(x_j)}
+    $$
+    \medskip
+    
+    is standard normal distributed. It is therefore very easy to calculate how likely it is to observe a value within a given interval.
+    \medskip
+    
+    Remove observation $i$ if:
+    
+    $$
+        z_j^{(i)} \notin [-3, 3] \ \ \text{or} \ \ x_j^{(i)} \notin [-3\operatorname{sd}(x_j) + \bar{x_j}, 3\operatorname{sd}(x_j) + \bar{x_j}]
+    $$
+    \medskip
+    
+    The probability of such an observation is 99.7 \%, and it is therefore very unlikely to observe a value outside of $[-3, 3]$.
+    \medskip
+    
+    \textbf{Problem:} Features are often not normally distributed.
+    \framebreak
+    
+    
+    \vspace*{1cm}
+    
+    
+    \begin{figure}
+        \includegraphics[width = 0.9\textwidth]{figure_man/z-score.png}
+    \end{figure}
+    
+    
+\end{vbframe}
+
+\begin{vbframe}{Remarks}
+    \vspace{+.4cm}
+    
+    \textbf{Advantages}
+    \vspace{+.4cm}
+    
+    \begin{itemize}
+        \item Very intuitive and easy to use.
+        \item Implementation is very fast.
+    \end{itemize}
+    \vspace{+.4cm}
+    
+    \textbf{Disadvantages}
+    \vspace{+.4cm}
+    
+    \begin{itemize}
+        \item Only takes single features into account.
+        \item Unclear how to choose ranges ($[l, u], ...$).
+    \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{Isolation Forest}
+    \begin{itemize}
+        \item The isolation forest randomly creates splits by sampling from the range of a random feature until we have nodes with just one observation.
+        \item Outliers are more likely to be separated since it is more likely to choose a split point between the outlier and its closest neighbor.
+        \item For example, the probability of splitting the red point is 80 \%:
+              \begin{center}
+                  \includegraphics[width=\textwidth, page=3, trim=0cm 12cm 0cm 0cm]{figure_man/isolation_forest.pdf}
+              \end{center}
+        \item Therefore, the more distant a point is, the sooner it is separated in a terminal node.
+    \end{itemize}
+    \framebreak
+    
+    \begin{center}
+        \includegraphics[width=\textwidth, page=1]{figure_man/isolation_forest.pdf}
+    \end{center}
+    \framebreak
+    
+    \begin{center}
+        \includegraphics[width=\textwidth, page=2, trim=0cm 2cm 0cm 1.5cm]{figure_man/isolation_forest.pdf}
+    \end{center}
+    \vspace{-0.5cm}
+    \begin{itemize}
+        \item Score close to $1$ indicates outliers
+        \item Score smaller than $0.5$ corresponds to a typical observation
+        \item The whole dataset seems to have just normal observations if all scores are around $0.5$
+    \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{DBSCAN}
+    DBSCAN (Density-Based Spatial Clustering of Applications with Noise) is a clustering algorithm that allows \textbf{undecided} observations that do not fit to any cluster.
+    \medskip
+    
+    These \textbf{undecided} noise observations can be understood as outliers.
+    
+    \vspace*{0.5cm}
+    
+    
+    \begin{figure}
+        \includegraphics[width = 0.8\textwidth]{figure_man/dbscan.png}
+    \end{figure}
+    
+\end{vbframe}
+
+\endlecture
+\end{document}
+
