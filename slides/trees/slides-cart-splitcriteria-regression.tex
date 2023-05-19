@@ -4,11 +4,10 @@
 \input{../../latex-math/basic-ml.tex}
 \input{../../latex-math/ml-trees.tex}
 
-\newcommand{\titlefigure}{figure/split_point.pdf}
+\newcommand{\titlefigure}{figure/splitcrit_optimal-constant-sub1.pdf}
 \newcommand{\learninggoals}{
-\item Know definition of a tree's node
-\item Understand how split points are derived via empirical risk minimization
-\item Learn how we perform ERM for regression tasks}
+\item Split criteria via ERM
+\item Splits in regression with L_2 loss}
 
 \title{Introduction to Machine Learning}
 % \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
@@ -16,7 +15,7 @@
 \date{}
 
 \begin{document}
-\lecturechapter{CART: Splitting Criteria}
+\lecturechapter{CART: Splitting Criteria for Regression}
 \lecture{Introduction to Machine Learning}
 \sloppy
 
@@ -25,21 +24,21 @@
 
  \begin{figure}
     \centering
-      % FIGURE SOURCE: No source
-      \includegraphics[height = 5.0cm, keepaspectratio]{figure/cart_intro_annotated-tree.pdf}
+      \includegraphics[height = 5.0cm, keepaspectratio]{figure/tree-regr-depth3.pdf}
     \end{figure}
 
-How to find good splitting rules to define the tree?
+How to find good splitting rules to when training the tree?
 \lz
 
-$\implies$ \textbf{empirical risk minimization}
+$\implies$ \textbf{Empirical Risk Minimization}
 
 \end{frame}
 
-\begin{vbframe}{Splitting criteria: Motivation}
-Idea: A split is good if each leaf's point predictor is good itself. \\
+\begin{vbframe}{Optimal constants in leafs}
+Idea: A split is good if each leaf's point predictor reflects its data well. 
+\vspace{0.2cm}
 
-Fo each leaf we pick the optimal constant for a given loss function, e.g. the mean for L2.
+For each leaf $\Np$ we pick the optimal constant for a given loss, e.g. the mean $c_{\Np} = \frac{1}{|\Np|}\sum\limits_{(\xv, y) \in \Np} y$ for the L2 loss $\risk(\Np) = \sum\limits_{(\xv, y) \in \Np} (y - c_{\Np})^2$
 
 \begin{figure}
 \includegraphics[width=0.45\textwidth]{figure/splitcrit_optimal-constant.pdf} 
@@ -51,8 +50,8 @@ Fo each leaf we pick the optimal constant for a given loss function, e.g. the me
 
 
 
-\begin{vbframe}{Splitting criteria: Excurse}
-When splitting the data into leaves, we can use the idea of the "optimal constant model" in each leaf. E.g. consider these two splits:
+\begin{vbframe}{Optimal constants in leafs}
+When splitting the data into leaves, we can use the idea of the \emph{optimal constant model} in each leaf. E.g., consider these two splits:
 
 \begin{columns}
 \begin{column}{0.5\textwidth}
@@ -74,11 +73,11 @@ When splitting the data into leaves, we can use the idea of the "optimal constan
 \end{column}
 \end{columns}
 
-Each prediction is optimal with respect to its leaves. But which split is better?
+Each prediction is optimal w.r.t. its leaf data. But which split is better?
 
 \end{vbframe}
 
-\begin{vbframe}{Splitting criteria: Heuristics}
+\begin{vbframe}{Risk of a split}
 
 \begin{columns}
 \begin{column}{0.5\textwidth}
@@ -117,12 +116,16 @@ $78.0 + 46.1 = 124.1$
 \end{column}
 \end{columns}
 
+\vspace{0.1in}
+Based on the SSE, we would prefer the first split.
+
 \end{vbframe}
 
-\begin{vbframe}{Splitting criteria: Heuristics}
+\begin{vbframe}{Searching the best split}
 
-Based on the SSE, we would prefer the first split.
-If we want to find the split with the lowest SSE, we need to search the domain of $x_j$.
+Now, we want to find the split with the lowest SSE out of all possible ones.
+As the second-best solution, we search the domain of $x_j$ to do so.
+We start with the instances below:
 
 \begin{figure}
 \includegraphics[width=0.75\textwidth]{figure/splitcrit_optimal-constant-grid.pdf} 
@@ -131,25 +134,27 @@ If we want to find the split with the lowest SSE, we need to search the domain o
 
 \end{vbframe}
 
-\begin{vbframe}{Splitting criteria: Heuristics}
+\begin{vbframe}{Searching the best split}
 
-If we extend this grid (quantile-wise or to every single possible split), we can choose the split with the lowest risk:
+If we extend this grid (quantile-wise or to every single possible split), we can choose the split with the lowest risk. 
+Here we investigated 40 distinct splits:
 
 \begin{figure}
-\includegraphics[width=0.75\textwidth]{figure/splitcrit_optimal-constant-grid2.pdf} 
+\includegraphics[width=0.68\textwidth]{figure/splitcrit_optimal-constant-grid2.pdf} 
 \end{figure}
 
 
 \end{vbframe}
 
-\begin{vbframe}{Splitting criteria: Formalization}
+\begin{vbframe}{Formalization}
 
 \begin{itemize}
 \item $\Np \subseteq \D$ is the data that is assigned to a terminal node $\Np$ of a tree.
-\item Let $c$ be the predicted constant value for the data assigned to $\Np$: $\yh \equiv c$ for all $\left(\xv, y\right) \in \Np$.
+\item Let $c_{\Np}$ be the predicted constant value for the data assigned to $\Np$: $\yh \equiv c_{\Np}$ for all $\left(\xv, y\right) \in \Np$.
 \item Then, the risk $\risk(\Np)$ for a leaf is the sum of the individual losses for the data assigned to that leaf under a given loss function $L$:
-  $$\risk(\Np) = \sum\limits_{(\xv, y) \in \Np} L(y, c)$$
-\item The prediction is given by the optimal constant $c = \argmin_c \risk(\Np)$
+  $$\risk(\Np) = \sum\limits_{(\xv, y) \in \Np} L(y, c_{\Np})$$
+\item The prediction is given by the optimal constant $c_{\Np} = \argmin_c \risk(\Np)$
+\item A binary split results in the two regions $\Nl$ and $\Nr$
 \end{itemize}
 
 \framebreak
@@ -157,21 +162,32 @@ If we extend this grid (quantile-wise or to every single possible split), we can
 \begin{itemize}
 \item A split w.r.t. \textbf{feature $x_j$ at split point $t$} divides a parent node $\Np$ into 
   \begin{align*}
-    \Nl &= \{ (\xv, y) \in \Np: x_j \leq t \} \text{ and } \Nr = \{ (\xv, y) \in \Np: x_j > t \}.
+    \Nl &= \{ (\xv, y) \in \Np: x_j < t \} \text{ and } \Nr = \{ (\xv, y) \in \Np: x_j \geq t \}.
   \end{align*}
 \item   
   In order to evaluate how good a split is, we compute the empirical risks
   in both child nodes and sum them up.
-  Here, we reweight the losses w.r.t. the number of observations in each node:
      \begin{align*}
-      \risk(\Np, j, t) &= \frac{|\Nl|}{|\Np|} \risk(\Nl) + \frac{|\Nr|}{|\Np|} \risk(\Nr) \\
-                  &= \frac{1}{|\Np|}\left(\sum\limits_{(\xv,y) \in \Nl} L(y, c_1) + \sum\limits_{(\xv,y) \in \Nr} L(y, c_2)\right)
+      \risk(\Np, j, t) &=  \risk(\Nl) +  \risk(\Nr) \\
+                  &= \left(\sum\limits_{(\xv,y) \in \Nl} L(y, c_{\Nl}) + \sum\limits_{(\xv,y) \in \Nr} L(y, c_{\Nr})\right)
       \end{align*}
   \item Finding the best way to split $\Np$ into $\Nl, \Nr$ means solving
   $$\argmin_{j, t} \risk(\Np, j, t)$$
 \end{itemize}
-\end{vbframe}
 
+\framebreak
+\begin{itemize}
+
+\item In many cases, you will see that ERM is carried out with respect to the mean empirical risk $\bar{\risk}$.
+\item While optimizing the mean vs. the sum ERM is equivalent, when computing means, we need to account for the number of each observation in each leaf.
+\item Then, we reweight the losses w.r.t. the number of observations in each node:
+     \begin{align*}
+      \bar{\risk}(\Np, j, t) &= \frac{|\Nl|}{|\Np|} \risk(\Nl) + \frac{|\Nr|}{|\Np|} \risk(\Nr) \\
+                  &= \frac{1}{|\Np|}\left(\sum\limits_{(\xv,y) \in \Nl} L(y, c_{\Nl}) + \sum\limits_{(\xv,y) \in \Nr} L(y, c_{\Nr})\right)
+      \end{align*}
+
+\end{itemize}
+\end{vbframe}
 
 
 

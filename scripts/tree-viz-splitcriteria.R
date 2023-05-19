@@ -15,7 +15,7 @@ ggsave("slides/trees/figure/split_point.pdf", split_point, units = "cm",
 
 mean_plot <- ggplot(df, aes(x, y)) + geom_point() + theme_bw() + 
   annotate("rect", xmin = -Inf, xmax = Inf, ymin = mean(y), ymax = mean(y), col = "red") +
-  xlab(expression("x[j]"))
+  ylab(expression(italic(y))) + xlab(expression(italic(x[j])))
 
 ggsave("slides/trees/figure/splitcrit_optimal-constant.pdf", mean_plot, units = "cm",
        width = 9.8, height = 9.8)
@@ -25,13 +25,15 @@ mean_subplot1 <- ggplot(df, aes(x, y)) + geom_point() + theme_bw() +
            ymax = mean(y[x <= 2.5]), col = "red") +
   annotate("rect", xmin = 2.5, xmax = Inf, ymin = mean(y[x > 2.5]), 
            ymax = mean(y[x > 2.5]), col = "red") +
-  annotate("rect", xmin = 2.5, xmax = 2.5, ymin = -Inf, ymax = Inf, col = "black")
+  annotate("rect", xmin = 2.5, xmax = 2.5, ymin = -Inf, ymax = Inf, col = "black") +
+  ylab(expression(italic(y))) + xlab(expression(italic(x[j])))
 mean_subplot2 <- ggplot(df, aes(x, y)) + geom_point() + theme_bw() + 
   annotate("rect", xmin = -Inf, xmax = 5.25, ymin = mean(y[x <= 5.25]), 
            ymax = mean(y[x <= 5.25]), col = "red") +
   annotate("rect", xmin = 5.25, xmax = Inf, ymin = mean(y[x > 5.25]), 
            ymax = mean(y[x > 5.25]), col = "red") +
-  annotate("rect", xmin = 5.25, xmax = 5.25, ymin = -Inf, ymax = Inf, col = "black")
+  annotate("rect", xmin = 5.25, xmax = 5.25, ymin = -Inf, ymax = Inf, col = "black") +
+  ylab(expression(italic(y))) + xlab(expression(italic(x[j])))
 
 ggsave("slides/trees/figure/splitcrit_optimal-constant-sub1.pdf", mean_subplot1, 
        units = "cm",
@@ -90,6 +92,8 @@ upper <- search_plot +
 variance
 split_variance <- data.frame(x = possible_splits, variance)
 split_risk <- data.frame(x = possible_splits, risk)
+split_risk$id <- 1:40
+split_risk$mark <- as.factor(as.integer(1:40 %in% c(4, 8)))
 lower <- ggplot(split_variance, aes(x, variance)) + geom_path() + geom_point() +
   theme_bw() + ylab("Variance") + xlim(c(0, 10)) +
   xlab(expression(italic(x[j]))) + ylim(c(0.6, 2)) + 
@@ -124,13 +128,15 @@ upper2 <- ggplot(df, aes(x, y)) + geom_point() + theme_bw() +
            ymin = mean(y[x >= possible_splits[8]]), ymax = mean(y[x >= possible_splits[8]]),
            col = "red") 
 
-lower1 <- ggplot(split_risk %>% filter(x == possible_splits[4]), aes(x, risk)) + geom_point() +
+lower1 <- ggplot(split_risk %>% filter(x == possible_splits[4]), aes(x, risk)) +
+  geom_point(col = "orange") +
   theme_bw() + ylab("Risk") + xlim(c(0, 10)) + ylim(c(80, 175)) +
   xlab(expression(italic(x[j]))) +
   annotate("rect", ymin = -Inf, ymax = Inf, xmin = possible_splits[4],
            xmax = possible_splits[4], col = "black", linetype = "dashed") 
 
-lower2 <- ggplot(split_risk %>% filter(x == possible_splits[8]), aes(x, risk)) + geom_point() +
+lower2 <- ggplot(split_risk %>% filter(x == possible_splits[8]), aes(x, risk)) + 
+  geom_point(col = "orange") +
   theme_bw() + ylab("") + xlim(c(0, 10)) + ylim(c(80, 175)) +
   xlab(expression(italic(x[j]))) +
   annotate("rect", ymin = -Inf, ymax = Inf, xmin = possible_splits[8],
@@ -156,9 +162,13 @@ upper_final <- ggplot(df, aes(x, y)) + geom_point() + theme_bw() +
            ymin = mean(y[x >= possible_splits[which.min(risk)]]), 
            ymax = mean(y[x >= possible_splits[which.min(risk)]]),
            col = "red") 
-lower_final <- ggplot(split_risk, aes(x, risk)) + geom_point() +
+lower_final <- ggplot(split_risk, aes(x, risk)) + 
+  geom_point(aes(col = mark)) +
   geom_path() +
-  theme_bw() + ylab("Risk") + xlim(c(0, 10)) + ylim(c(80, 175)) +
+  theme_bw() + 
+  theme(legend.position = "none") +
+  scale_color_manual(values = c("black", "orange")) +
+  ylab("Risk") + xlim(c(0, 10)) + ylim(c(80, 175)) +
   xlab(expression(italic(x[j]))) +
   annotate("rect", ymin = -Inf, ymax = Inf, xmin = possible_splits[which.min(risk)],
            xmax = possible_splits[which.min(risk)], col = "green", linetype = "dashed") 

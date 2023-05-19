@@ -15,18 +15,19 @@
 \medskip
 
 \highlight{Hypothesis space} ~~
-$\Hspace = \left\{f: \Xspace \to \R ~|~\fx = \phi \left(\theta_0 + \sumjp
+$\Hspace = \left\{f: \Xspace \to \R ~|~\fx = \phi \left(\theta_0 + \textstyle \sumjp
 f_j(x_j) \right) \right\}$,
 with suitable transformation $\phi(\cdot)$, intercept term $\theta_0$, and smooth
 functions $f_j(\cdot)$
 
-\vfill
+\includegraphics[width=0.28\textwidth]{figure/gam_bike_partial_effect}
+\includegraphics[width=0.35\textwidth, trim=0 0 0 80, clip]{figure/gam_bike_pred}
 
-\includegraphics[width=0.2\textwidth]{figure/smooth_effects}
-\includegraphics[width=0.2\textwidth]{figure/reg_poly_biv}
-\includegraphics[width=0.4\textwidth]{figure/bspline-basis}
-
-\textcolor{blue}{Figures still placeholders}
+\tiny
+Prediction of \texttt{bike rentals} from smooth term of \texttt{humidity}
+(left: partial effect) and linear term of \texttt{temperature} (right: bivariate
+prediction).
+\normalsize
 
 \framebreak
 
@@ -39,7 +40,7 @@ functions $f_j(\cdot)$
   \begin{itemize}
       \item Use fixed basis of functions $b_1, \dots, b_K$ and estimate
       associated coefficients $\gamma_1, \dots, \gamma_K$ \\ $\rightsquigarrow$
-      $f_j(x_j) = \sum_{k=1}^{K_j} \gamma_{j, k} b_k(x_j)$
+      $f_j(x_j) = \textstyle \sum_{k=1}^{K_j} \gamma_{j, k} b_k(x_j)$
       \item Popular types of basis functions
       \begin{itemize}
         \footnotesize
@@ -52,7 +53,19 @@ functions $f_j(\cdot)$
     kernel-smoothing approaches, \dots
 \end{itemize}
 
-\medskip
+\includegraphics[width=0.7\textwidth]{figure/gam_bike_spline_basis}
+
+\tiny
+Left: B-spline basis with 9 basis functions.
+Middle: BFs weighted with coefficients estimated for
+\texttt{humidity}.
+Right: sum of weighted BFs in black (= partial effect).
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{frame}{Generalized Additive Models -- method summary}
 
 \highlight{Regularization}
 \begin{itemize}
@@ -60,7 +73,8 @@ functions $f_j(\cdot)$
     regularization vital to prevent overfitting
     \item Control \textbf{smoothness}
     \begin{itemize}
-      \item \textbf{Basis-function approaches}: impose penalty on coefficients
+      \item \textbf{Basis-function approaches}: control number; impose penalty
+      on coefficients
       (e.g., magnitude or differences between coefficients of neighboring
       components) \& control associated hyperparameter
       \item \textbf{Local smoothers}: control width of smoothing window
@@ -68,11 +82,21 @@ functions $f_j(\cdot)$
     \end{itemize}
 \end{itemize}
 
-\end{vbframe}
+\begin{minipage}{0.65\textwidth}
+\includegraphics[width=0.45\textwidth, trim=0 0 80 80, clip]{
+figure/gam_bike_pred}
+\includegraphics[width=0.45\textwidth, trim=80 0 0 80, clip]{
+figure/gam_bike_pred_wiggly}
+\hfill
+\end{minipage}
+\begin{minipage}{0.3\textwidth}
+\tiny \raggedright
+Prediction surfaces for \texttt{bike rentals} with 9 (left) and 500 (right)
+basis functions in smooth \texttt{humidity} term.
+Higher number of basis functions yields more local, less smooth model.
+\end{minipage}
 
-% ------------------------------------------------------------------------------
-
-\begin{frame}{Generalized Additive Models -- implementation}
+\medskip
 
 \highlight{Loss functions} ~~ Same as in GLM $\rightsquigarrow$ essentially:
 use \textbf{negative log-likelihood}
@@ -87,7 +111,11 @@ use \textbf{negative log-likelihood}
   cross-validation
 \end{itemize}
 
-\medskip
+\end{frame}
+
+% ------------------------------------------------------------------------------
+
+\begin{frame}{Generalized Additive Models -- implementation}
 
 \highlight{Implementation}
 
@@ -108,21 +136,31 @@ use \textbf{negative log-likelihood}
   \begin{column}{0.5\textwidth}
     \highlight{Advantages}
 
-    Strengths of GLMs, plus \dots
+%    Strengths of GLMs, plus \dots
     \begin{itemize}
-      \positem Much \textbf{higher flexibility} via smooth effects
+      \positem \textbf{Simple and fast} implementation
+%      \positem \textbf{Analytical} solution for L2 loss
+      %\positem \textbf{Cheap} computation
+      \positem Applicable for any \textbf{dataset size}, as long as number of
+      observations $\gg$ number of features
+      \positem High \textbf{flexibility} via smooth effects
       \positem Easy to \textbf{combine} linear \& nonlinear effects
+      \positem Intuitive \textbf{interpretability} via feature effects (though
+      not quite as straightforward as in GLM)
+      % \item fits \textbf{linearly} separable data sets very well
+      \positem Statistical hypothesis \textbf{tests} for effects available
     \end{itemize}
   \end{column}
 
   \begin{column}{0.5\textwidth}
     \highlight{Disadvantages}
 
-    Shortcomings of GLMs, plus \dots
+%    Shortcomings of GLMs, plus \dots
     \begin{itemize}
-      \negitem Harder to \textbf{optimize}
-      \negitem Not quite as easy to \textbf{interpret}
-      \negitem Prone to \textbf{overfitting}
+      \negitem \textbf{Sensitivity} w.r.t. outliers and noisy data
+      \negitem Feature \textbf{interactions} must be handcrafted\\
+      $\rightarrow$ practically infeasible for higher orders
+      \negitem Harder to \textbf{optimize} than GLM
       \negitem Additional \textbf{hyperparameters} (type of smooth functions,
       smoothness degree, \dots)
     \end{itemize}
