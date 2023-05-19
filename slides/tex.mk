@@ -5,18 +5,25 @@ FLSFILES = $(TSLIDES:%.tex=%.fls)
 
 .PHONY: all most copy texclean clean
 
-all: clean texclean handlemargin $(TPDFS) rmmargin copy texclean
+all: clean texclean $(TPDFS) copy texclean
 
-most: handlemargin $(FLSFILES) rmmargin
+most: $(FLSFILES) 
 
-$(MARGINPDFS): %_withmargin.pdf: %.tex
-	latexmk -pdf $<
-	
+all-margin: clean texclean $(MARGINPDFS) copy texclean
+
+most-margin: $(MARGINFLSFILES) 
+
 $(TPDFS): %.pdf: %.tex
 	latexmk -pdf $<
 
+$(MARGINPDFS): %_withmargin.pdf: %.tex | setmargin
+	latexmk -pdf -jobname=%A_withmargin $<
+
 $(FLSFILES): %.fls: %.tex
 	latexmk -pdf -g $<
+	
+$(MARGINFLSFILES): %.fls: %.tex | setmargin
+	latexmk -pdf -g -jobname=%A_withmargin $<
 
 copy: 
 	cp *.pdf ../../slides-pdf
@@ -41,18 +48,10 @@ texclean:
 	-rm -rf *.fdb_latexmk
 	-rm -rf *.synctex.gz
 	-rm -rf *-concordance.tex
+	-rm -rf speakermargin.tex
 	
 clean: texclean
 	-rm $(TPDFS) 2>/dev/null || true
-	
-handlemargin: 
-  ifeq (nomargin, $(filter nomargin,$(MAKECMDGOALS)))
-		touch nospeakermargin.tex
-	else
-	  rm -f nospeakermargin.tex
-  endif
   
-rmmargin:
-  ifeq (nomargin, $(filter nomargin,$(MAKECMDGOALS)))
-		rm -f nospeakermargin.tex
-  endif 
+setmargin:
+	touch speakermargin.tex
