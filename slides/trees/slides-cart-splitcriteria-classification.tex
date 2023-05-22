@@ -22,19 +22,22 @@
 
 \begin{vbframe}{Optimal Constant Models}
 
-Typically we use: 
+As losses in classification, we typically use: 
 
 \begin{itemize}
-\item Brier score $L\left(y, \pix\right) = (\pix - y)^2$,\\ a.k.a. $L_2$ loss on probabilities
-\item  Bernoulli / log loss $\Lpixy = -y\log(\pix)-(1-y)\log(1-\pix)$, \\
+\item (Multi-class) Brier score $\Lpiv =  \sumkg (\pik - o_k(y))^2$,\\ a.k.a. $L_2$ loss on probabilities
+\item (Multi-class) Log loss $\Lpiv =  - \sumkg o_k(y) \log(\pik)$, \\
 as in logistic regression
 \end{itemize}
 
+%\vspace{1cm}
 
-Optimal probability predictions are:
+Optimal constant predictions (in a node) for both losses are simply the proportions of the contained classes:
 
-$$c_{\Np} = \pikNh = \frac{1}{|\Np|} \sum\limits_{(\xv,y) \in \Np} \I(y = k)$$ 
-
+\begin{align*}
+c_{\Np} &= (\pikNh[1], \dots, \pikNh[g]) \quad \text{with}\\
+\pikNh &= \frac{1}{|\Np|} \sum\limits_{(\xv,y) \in \Np} \I(y = k) \quad \forall k \in \gset
+\end{align*}
 
 
 \end{vbframe}
@@ -42,79 +45,55 @@ $$c_{\Np} = \pikNh = \frac{1}{|\Np|} \sum\limits_{(\xv,y) \in \Np} \I(y = k)$$
 
 \begin{frame}[b]{Finding the best split}
 
-To search for the optimal split, we compute the Brier score for all potential splits, based on optimal constants in both child nodes.
-%Assume, that we only consider splits w.r.t. \texttt{Sepal.Length}.
+Let's compute the Brier score for all splits, with optimal constant probability vectors in both children
 
 \vspace{0.5cm}
 
-\begin{figure}[b]
-    \centering
+\only<1>{
   \includegraphics[width = 0.9\textwidth]{figure/splitcrit-classif_optimal-constant-sub1.pdf}
-\end{figure}
-
-
-\end{frame}
-
-\begin{frame}[noframenumbering]{Finding the best split}
-
-We continue for many more potential splits.
-
-\vspace{0.8cm}
-
-\begin{figure}[b]
-    \centering
+}
+\only<2>{
   \includegraphics[width = 0.9\textwidth]{figure/splitcrit-classif_optimal-constant-sub2.pdf}
-\end{figure}
-
-
+}
 \end{frame}
 
-\begin{frame}[noframenumbering]{Finding the best split}
+\begin{frame}[b,noframenumbering]{Finding the best split}
 
-The optimal split point typically creates the greatest imbalance or purity of the label distributions.
+The optimal split point typically creates greatest imbalance or purity of label distribution
+
+%Let's compute the Brier score for all splits, with optimal constant probability vectors in both children
+
 
 \vspace{0.5cm}
 
-\begin{figure}[b]
-    \centering
   \includegraphics[width = 0.9\textwidth]{figure/splitcrit-classif_optimal-constant-grid.pdf}
-\end{figure}
 \end{frame}
 
 \begin{vbframe}{Risk minimization vs. Impurity}
 
 \begin{itemize}
-\item Splitting criteria are usually defined in terms of impurity reduction. 
-\item Instead of minimizing empirical risk in the child nodes over all possible splits, a measure of \enquote{impurity} of the distribution of the target $y$ in the child nodes is minimized. 
-\item For regression trees, \enquote{impurity} of a node is usually defined as the variance of $y$. 
-\item Minimizing this \enquote{variance impurity} is equivalent to minimizing the squared error loss for a predicted constant in the nodes. 
+\item Split crits are sometimes defined in terms of impurity reduction instead of ERM, where a measure of ``impurity'' is defined per node
+\item For regression trees, \enquote{impurity} is simply defined as variance of $y$, which is quite obviously $L_2$ loss
 
-\framebreak 
-
-\item Minimizing Brier score is equivalent to minimizing  Gini impurity
+\item Brier score is equivalent to Gini impurity
 $$I(\Np) = \sumkg \pikNh \left( 1-\pikNh \right)$$
-\item Minimizing Bernoulli loss is equivalent to minimizing entropy
+\item Bernoulli loss is equivalent to entropy
 $$I(\Np) = -\sumkg \pikNh \log \pikNh$$
-\item Trees can be understood completely through the lens of ERM, we do not require any new concepts.
+\item Trees can be understood completely through the lens of ERM, so this new terminology is basically unnecessary and confusing
 \end{itemize}
 \end{vbframe}
 
 \begin{vbframe}{Splitting with misclassification loss}
 
 \begin{itemize}
-\item Usually, we want to minimize the misclassification error (MCE) when doing classification
-\item As MCE has no derivates, we often use other criteria to approximate it (e.g., inlogistic regression)
-\item Trees don't need derivates being optimized with a greedy search
-\item Idea: Optimize trees based on the misclassification loss
-\item Problem: While this is a valid approach, we indirectly discard information when not considering the label probabilities in the loss
-\item Brier score and Bernoulli loss are more sensitive to changes in the node probabilities, and therefore often preferred
+\item Usually, we want to minimize the MCE in classification
+\item Zero-One-Loss is not differentiable, but that is a non-issue in the tree-optimization based on loops
+\item Brier score and Bernoulli loss more sensitive to changes in the node probs, often produce purer nodes, and are still preferred
 
 
 \end{itemize}
 
-\framebreak
 
-Example: two-class problem with 400 obs in each class and two possible splits:
 \begin{small}
 \begin{columns}[T,onlytextwidth]
 \column{0.5\textwidth}
@@ -161,20 +140,20 @@ $\Nl$ & 400 & 200 \\
 \lz
 
 \begin{itemize}
-\item Both splits are equivalent in terms of misclassification error, they each misclassify 200 observations. 
-\item But: Split 2 produces one pure node and is probably preferable.
+\item Both splits are equivalent in MCE
+\item But: Split 2 results in purer nodes
 \end{itemize}
 
 \framebreak
 
 
-Brier (Gini) and Bernoulli (entropy) prefer 2nd split, \\
+Brier (Gini) and Bernoulli (Entropy) prefer 2nd split, \\
 \vspace{0.1cm}
 
-We take Gini $I(\Np) = \sum_{k = 0}^1 \pikNh \left( 1-\pikNh \right)$, with $\hat{\pi}_{0}^{(\Np)} = 1 - \hat{\pi}_{1}^{(\Np)}$.\\
+Gini $I(\Np) = \sum \limits_{k = 0}^1 \pikNh \left( 1-\pikNh \right)$
 
 \vspace{0.1cm}
-As Gini Impurity per leaf is defined based on the probability, we need to \\
+As Gini is defined based on the probability, we need to \\
 \vspace{0.05cm}
 apply reweighting with $\frac{|\Nl|}{|\Np|}$, or $\frac{|\Nr|}{|\Np|}$, respectively.
 

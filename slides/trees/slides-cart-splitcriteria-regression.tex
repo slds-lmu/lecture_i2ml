@@ -6,11 +6,10 @@
 
 \newcommand{\titlefigure}{figure/splitcrit_optimal-constant-sub1.pdf}
 \newcommand{\learninggoals}{
-\item Split criteria via ERM
-\item Splits in regression with L_2 loss}
+\item Understand how to define split criteria via ERM
+\item Understand how to find splits in regression with $L_2$ loss}
 
 \title{Introduction to Machine Learning}
-% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
 \institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
 \date{}
 
@@ -27,21 +26,21 @@
       \includegraphics[height = 5.0cm, keepaspectratio]{figure/tree-regr-depth3.pdf}
     \end{figure}
 
-How to find good splitting rules to when training the tree?
+How to find good splitting rules when growing a tree?
 \lz
 
 $\implies$ \textbf{Empirical Risk Minimization}
 
 \end{frame}
 
-\begin{vbframe}{Optimal constants in leafs}
-Idea: A split is good if each leaf's point predictor reflects its data well. 
+\begin{vbframe}{Optimal constants in leaves}
+Idea: A split is good if each child's point predictor reflects its data well. We pretend the children are leaves.
 \vspace{0.2cm}
 
-For each leaf $\Np$ we pick the optimal constant for a given loss, e.g. the mean $c_{\Np} = \frac{1}{|\Np|}\sum\limits_{(\xv, y) \in \Np} y$ for the L2 loss $\risk(\Np) = \sum\limits_{(\xv, y) \in \Np} (y - c_{\Np})^2$
+For each child $\Np$ we pick the optimal constant for a given loss, e.g., the mean $c_{\Np} = \frac{1}{|\Np|}\sum\limits_{(\xv, y) \in \Np} y$ for the L2 loss $\risk(\Np) = \sum\limits_{(\xv, y) \in \Np} (y - c_{\Np})^2$
 
 \begin{figure}
-\includegraphics[width=0.45\textwidth]{figure/splitcrit_optimal-constant.pdf} 
+\includegraphics[width=0.4\textwidth]{figure/splitcrit_optimal-constant.pdf} 
 \end{figure}
 
 
@@ -50,8 +49,9 @@ For each leaf $\Np$ we pick the optimal constant for a given loss, e.g. the mean
 
 
 
-\begin{vbframe}{Optimal constants in leafs}
-When splitting the data into leaves, we can use the idea of the \emph{optimal constant model} in each leaf. E.g., consider these two splits:
+\begin{vbframe}{Optimal constants in leaves}
+
+Which of these two splits is better?
 
 \begin{columns}
 \begin{column}{0.5\textwidth}
@@ -72,8 +72,6 @@ When splitting the data into leaves, we can use the idea of the \emph{optimal co
 
 \end{column}
 \end{columns}
-
-Each prediction is optimal w.r.t. its leaf data. But which split is better?
 
 \end{vbframe}
 
@@ -117,15 +115,13 @@ $78.0 + 46.1 = 124.1$
 \end{columns}
 
 \vspace{0.1in}
-Based on the SSE, we would prefer the first split.
+Based on the SSE, we prefer the first split.
 
 \end{vbframe}
 
 \begin{vbframe}{Searching the best split}
 
-Now, we want to find the split with the lowest SSE out of all possible ones.
-As the second-best solution, we search the domain of $x_j$ to do so.
-We start with the instances below:
+Let's find the best split for this feature by tabulating results.
 
 \begin{figure}
 \includegraphics[width=0.75\textwidth]{figure/splitcrit_optimal-constant-grid.pdf} 
@@ -136,25 +132,24 @@ We start with the instances below:
 
 \begin{vbframe}{Searching the best split}
 
-If we extend this grid (quantile-wise or to every single possible split), we can choose the split with the lowest risk. 
-Here we investigated 40 distinct splits:
-
+Let's iterate -- quantile-wise or over all points.
 \begin{figure}
 \includegraphics[width=0.68\textwidth]{figure/splitcrit_optimal-constant-grid2.pdf} 
 \end{figure}
 
+We have reduced the problem to a simple loop.
 
 \end{vbframe}
 
 \begin{vbframe}{Formalization}
 
 \begin{itemize}
-\item $\Np \subseteq \D$ is the data that is assigned to a terminal node $\Np$ of a tree.
-\item Let $c_{\Np}$ be the predicted constant value for the data assigned to $\Np$: $\yh \equiv c_{\Np}$ for all $\left(\xv, y\right) \in \Np$.
-\item Then, the risk $\risk(\Np)$ for a leaf is the sum of the individual losses for the data assigned to that leaf under a given loss function $L$:
+\item $\Np \subseteq \D$ is the data contained in this node
+\item Let $c_{\Np}$ be the predicted constant for $\Np$ (pretend it is a leaf)
+\item The risk $\risk(\Np)$ for a node is:
   $$\risk(\Np) = \sum\limits_{(\xv, y) \in \Np} L(y, c_{\Np})$$
-\item The prediction is given by the optimal constant $c_{\Np} = \argmin_c \risk(\Np)$
-\item A binary split results in the two regions $\Nl$ and $\Nr$
+\item The optimal constant is $c_{\Np} = \argminlim_c \sum\limits_{(\xv, y) \in \Np} L(y, c)$ 
+\item We often know what that is from theoretical considerations -- or we can perform a simple univariate optimization
 \end{itemize}
 
 \framebreak
@@ -165,8 +160,8 @@ Here we investigated 40 distinct splits:
     \Nl &= \{ (\xv, y) \in \Np: x_j < t \} \text{ and } \Nr = \{ (\xv, y) \in \Np: x_j \geq t \}.
   \end{align*}
 \item   
-  In order to evaluate how good a split is, we compute the empirical risks
-  in both child nodes and sum them up.
+  To evaluate its quality, we compute the risk of our new, finer model
+  
      \begin{align*}
       \risk(\Np, j, t) &=  \risk(\Nl) +  \risk(\Nr) \\
                   &= \left(\sum\limits_{(\xv,y) \in \Nl} L(y, c_{\Nl}) + \sum\limits_{(\xv,y) \in \Nr} L(y, c_{\Nr})\right)
@@ -178,13 +173,13 @@ Here we investigated 40 distinct splits:
 \framebreak
 \begin{itemize}
 
-\item In many cases, you will see that ERM is carried out with respect to the mean empirical risk $\bar{\risk}$.
-\item While optimizing the mean vs. the sum ERM is equivalent, when computing means, we need to account for the number of each observation in each leaf.
-\item Then, we reweight the losses w.r.t. the number of observations in each node:
+\item $\risk(\Np, j, t) &=  \risk(\Nl) +  \risk(\Nr)$, makes sense if $\risk$ is a simple sum
+\item If we use averages, we have to reweight the terms to obtain a global average w.r.t. $\Np$ as the children have different sizes
      \begin{align*}
-      \bar{\risk}(\Np, j, t) &= \frac{|\Nl|}{|\Np|} \risk(\Nl) + \frac{|\Nr|}{|\Np|} \risk(\Nr) \\
-                  &= \frac{1}{|\Np|}\left(\sum\limits_{(\xv,y) \in \Nl} L(y, c_{\Nl}) + \sum\limits_{(\xv,y) \in \Nr} L(y, c_{\Nr})\right)
+      \bar{\risk}(\Np, j, t) &= \frac{|\Nl|}{|\Np|} \bar{\risk}(\Nl) + \frac{|\Nr|}{|\Np|} \bar{\risk}(\Nr) \\
+                  % &= \frac{1}{|\Np|}\left(\sum\limits_{(\xv,y) \in \Nl} L(y, c_{\Nl}) + \sum\limits_{(\xv,y) \in \Nr} L(y, c_{\Nr})\right)
       \end{align*}
+\item We mention this for clarity, as quite a few texts contain only the (more complicated) weighted formula without clear explanation
 
 \end{itemize}
 \end{vbframe}
