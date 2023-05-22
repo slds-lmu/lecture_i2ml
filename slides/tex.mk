@@ -7,7 +7,7 @@ FLSFILES = $(TSLIDES:%.tex=%.fls)
 
 all: $(TPDFS) copy
 
-all-margin: $(MARGINPDFS) copy
+all-margin: $(MARGINPDFS) copy-margin
 
 most: $(FLSFILES) 
 
@@ -23,8 +23,11 @@ $(FLSFILES): %.fls: %.tex
 	-rm speakermargin.tex
 	latexmk -pdf -g $<
 
-copy: | $(TPDFS) $(MARGINPDFS)
+copy: | $(TPDFS)
 	cp *.pdf ../../slides-pdf
+	
+copy-margin: | $(MARGINPDFS)
+	cp *with_margin.pdf ../../slides-pdf
 	
 texclean: 
 	-rm -rf *.out
