@@ -20,7 +20,7 @@ $(MARGINPDFS): %_withmargin.pdf: %.tex
 $(FLSFILES): %.fls: %.tex
 	-rm speakermargin.tex | latexmk -pdf -g $<
 
-copy: 
+copy: | $(TPDFS) $(MARGINPDFS)
 	cp *.pdf ../../slides-pdf
 	
 texclean: 
