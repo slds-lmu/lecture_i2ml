@@ -3,27 +3,22 @@ TPDFS = $(TSLIDES:%.tex=%.pdf)
 MARGINPDFS = $(TSLIDES:%.tex=%_withmargin.pdf)
 FLSFILES = $(TSLIDES:%.tex=%.fls)
 
-.PHONY: all most copy texclean clean
+.PHONY: all most all-margin copy texclean clean
 
-all: clean texclean $(TPDFS) copy texclean
+all: $(TPDFS) copy
+
+all-margin: $(MARGINPDFS) copy
 
 most: $(FLSFILES) 
 
-all-margin: clean texclean $(MARGINPDFS) copy texclean
-
-most-margin: $(MARGINFLSFILES) 
-
 $(TPDFS): %.pdf: %.tex
-	latexmk -pdf $<
+	-rm speakermargin.tex | latexmk -pdf $<
 
-$(MARGINPDFS): %_withmargin.pdf: %.tex | setmargin
-	latexmk -pdf -jobname=%A_withmargin $<
+$(MARGINPDFS): %_withmargin.pdf: %.tex
+	touch speakermargin.tex | latexmk -pdf -jobname=%A_withmargin $<
 
 $(FLSFILES): %.fls: %.tex
-	latexmk -pdf -g $<
-	
-$(MARGINFLSFILES): %.fls: %.tex | setmargin
-	latexmk -pdf -g -jobname=%A_withmargin $<
+	-rm speakermargin.tex latexmk -pdf -g $<
 
 copy: 
 	cp *.pdf ../../slides-pdf
@@ -51,7 +46,4 @@ texclean:
 	-rm -rf speakermargin.tex
 	
 clean: texclean
-	-rm $(TPDFS) 2>/dev/null || true
-  
-setmargin:
-	touch speakermargin.tex
+	-rm $(TPDFS) $(MARGINPDFS) 2>/dev/null
