@@ -12,13 +12,16 @@ all-margin: $(MARGINPDFS) copy
 most: $(FLSFILES) 
 
 $(TPDFS): %.pdf: %.tex
-	-rm speakermargin.tex | latexmk -pdf $<
+	-rm speakermargin.tex
+	latexmk -pdf $<
 
 $(MARGINPDFS): %_withmargin.pdf: %.tex
-	touch speakermargin.tex | latexmk -pdf -jobname=%A_withmargin $<
+	touch speakermargin.tex
+	latexmk -pdf -jobname=%A_withmargin $<
 
 $(FLSFILES): %.fls: %.tex
-	-rm speakermargin.tex | latexmk -pdf -g $<
+	-rm speakermargin.tex
+	latexmk -pdf -g $<
 
 copy: | $(TPDFS) $(MARGINPDFS)
 	cp *.pdf ../../slides-pdf
