@@ -12,7 +12,6 @@ all-margin: $(MARGINPDFS)
 	$(MAKE) copy
 
 most: $(FLSFILES) 
-	$(MAKE) copy
 
 $(TPDFS): %.pdf: %.tex
 	-rm speakermargin.tex
