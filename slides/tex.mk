@@ -18,7 +18,7 @@ $(MARGINPDFS): %_withmargin.pdf: %.tex
 	touch speakermargin.tex | latexmk -pdf -jobname=%A_withmargin $<
 
 $(FLSFILES): %.fls: %.tex
-	-rm speakermargin.tex latexmk -pdf -g $<
+	-rm speakermargin.tex | latexmk -pdf -g $<
 
 copy: 
 	cp *.pdf ../../slides-pdf
