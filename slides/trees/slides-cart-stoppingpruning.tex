@@ -19,31 +19,28 @@
 \lecture{Introduction to Machine Learning}
 \sloppy
 
-\begin{vbframe}{Computational Complexity}
+%\begin{vbframe}{Computational Complexity}
 
-The \textbf{recursive partitioning} procedure used to grow a CART would run until every leaf only contains a single observation. 
-\begin{itemize}
-\item Problem 1: This can become computationally expensive as the number of splits may \emph{grow exponentially} with the number of leaves in the trees.
-\end{itemize}
+%The \textbf{recursive partitioning} procedure used to grow a CART would run until every leaf only contains a single observation. 
+%\begin{itemize}
+%\item Problem 1: This can become computationally expensive as the number of splits may \emph{grow exponentially} with the number of leaves in the trees.
+%\end{itemize}
 
-While growing trees fully is computationally not efficient, in typical applications on modern computers, this does usually not imply infeasibly large computational costs.
-Single trees are almost always very fast to compute.
-However, high computational costs can be undesirable if many trees need to be fit (e.g. ensembles).
+%While growing trees fully is computationally not efficient, in typical applications on modern computers, this does usually not imply infeasibly large computational costs.
+%Single trees are almost always very fast to compute.
+%However, high computational costs can be undesirable if many trees need to be fit (e.g. ensembles).
 
-\end{vbframe}
+%\end{vbframe}
 
 \begin{vbframe}{Overfitting Trees}
 
-The \textbf{recursive partitioning} procedure used to grow a CART would run until every leaf only contains a single observation. 
-\begin{itemize}
-\item Problem 2: At some point before that we should stop splitting nodes into ever smaller child nodes: very complex trees with lots of branches and leaves will \emph{overfit the training data.}
+The recursive partitioning procedure used to grow a CART could run until every leaf only contains a single observation. Problem: Very complex trees will \emph{overfit the training data.} At some point we should stop splitting nodes into ever smaller child nodes: 
 
 \begin{figure}
 \centering
 \includegraphics[width=0.7\textwidth]{figure/tree-overfitting-prediction.pdf}
 \end{figure}
 
-\end{itemize}
 
 \end{vbframe}
 
@@ -59,12 +56,21 @@ We can reduce overfitting to some extent with a less deep tree:
 
 \end{vbframe}
 
-\begin{vbframe}{Horizon Effect}
+\begin{vbframe}{Stopping Criteria}
+We can define different \textbf{stopping criteria}, e.g.: Don't split a node if
+  \begin{itemize}
+    \item a certain number of leaves if reached,
+    \item it contains too few observations,
+    \item splitting results in children with too few observations,
+    \item splitting does not achieve a certain minimal improvement of the risk in the children, compared to the risk in the parent node,
+    \item it already has the same target value (\textbf{pure node}) or identical feature values for all observations. 
+  \end{itemize}
+Selection of a stopping criterion and its concrete values are hyperparameters of CART.
+%There are heuristics for selecting these criteria and software packages usually have considerate defaults that work well out-of-the-box.
+\end{vbframe}
 
-The \textbf{recursive partitioning} procedure used to grow a CART would run until every leaf only contains a single observation. 
-\begin{itemize}
-\item Problem 3: However, it is very hard to tell where we should stop while we're growing the tree: Before we have actually tried all possible additional splits further down a branch, we can't know whether any one of them will be able to reduce the risk by a lot (\emph{horizon effect}).
-\end{itemize}
+\begin{vbframe}{Horizon Effect}
+It is hard to tell where we should stop while we're growing the tree: Before we have actually tried all possible additional splits further down a branch, we can't know whether any one of them will be able to reduce the risk by a lot (\emph{horizon effect}).
 
 \begin{figure}
 \centering
@@ -74,64 +80,56 @@ The \textbf{recursive partitioning} procedure used to grow a CART would run unti
 
 \end{vbframe}
 
-\begin{vbframe}{Problems with growing large trees}
-The \textbf{recursive partitioning} procedure used to grow a CART would run until every leaf only contains a single observation. 
-\begin{itemize}
-\item Problem 1: This can become computationally expensive as the number of splits may \emph{grow exponentially} with the number of leaves in the trees.
-\item Problem 2: At some point before that we should stop splitting nodes into ever smaller child nodes: very complex trees with lots of branches and leaves will \emph{overfit the training data.}
-\item Problem 3: However, it is very hard to tell where we should stop while we're growing the tree: Before we have actually tried all possible additional splits further down a branch, we can't know whether any one of them will be able to reduce the risk by a lot (\emph{horizon effect}).
-\end{itemize}
-\end{vbframe}
+%\begin{vbframe}{Problems with growing large trees}
+%The \textbf{recursive partitioning} procedure used to grow a CART would run until every leaf only contains a single observation. 
+%\begin{itemize}
+%\item Problem 1: This can become computationally expensive as the number of splits may \emph{grow exponentially} with the number of leaves in the trees.
+%\item Problem 2: At some point before that we should stop splitting nodes into ever smaller child nodes: very complex trees with lots of branches and leaves will \emph{overfit the training data.}
+%\item Problem 3: However, it is very hard to tell where we should stop while we're growing the tree: Before we have actually tried all possible additional splits further down a branch, we can't know whether any one of them will be able to reduce the risk by a lot (\emph{horizon effect}).
+%\end{itemize}
+%\end{vbframe}
 
-\begin{vbframe}{Stopping Criteria}
-Problems 1 and 2 can be \enquote{solved} by defining different \textbf{stopping criteria}:
-  \begin{itemize}
-    \item Stop once the tree has reached a certain number of leaves.
-    \item Don't try to split a node further if it contains too few observations.
-    \item Don't perform a split that results in child nodes with too few observations.
-    \item Don't perform a split unless it achieves a certain minimal improvement of the empirical risk in the child nodes, compared to the empirical risk in the parent node.
-    \item Obviously: Stop once all observations in a node have the same target value (\textbf{pure node}) or identical values for all features. 
-    \item There are heuristics for selecting these criteria and software packages usually have considerate defaults that work well out-of-the-box.
-  \end{itemize}
-\end{vbframe}
+
 
 \begin{vbframe}{Pruning}
 
-We try to solve problem 3 by \textbf{pruning}:
+We try to tackle the horizon effect by \textbf{pruning}, a method to select the optimal size of a tree:
 
 \begin{itemize}
-\item A method to select the optimal size of a tree.
-\item Finding a combination of suitable strict stopping criteria (\enquote{pre-pruning}) is a hard problem: there are many different stopping criteria and it's hard to find the best combination (see chapter on \textbf{tuning}).
+%\item A method to select the optimal size of a tree.
+\item Finding a combination of suitable strict stopping criteria (\enquote{pre-pruning}) is a hard problem (see chapter on \textbf{tuning}).
 \item Alternative: Grow a large tree, then remove branches so that the resulting smaller tree has lower risk (\enquote{post-pruning}).
-\item Oftentimes, only post-pruning is meant when referring to pruning in general.
+\item Often, post-pruning is meant when referring to pruning.
 
 \end{itemize}
 \end{vbframe}
 
 \begin{vbframe}{Post-Pruning: CCP}
 \begin{itemize}
-\item Most prominent example of post-pruning: cost-complexity \\ pruning (CCP)
-\item When doing CCP, we grow a large tree and remove the least informative leaves later on
-\item CCP is steered with a regularization parameter $\alpha$ that penalizes the number of leaves in a sub tree (complexity) and adds this penalization onto the risk of the sub tree:
+\item Prominent pruning method: Cost-complexity pruning (CCP)
+\item Idea: Grow a large tree and remove the least informative leaves
+\item CCP is steered with a regularization parameter $\alpha$ that penalizes the number of leaves in a sub tree  % and adds this penalization onto the risk of the sub tree:
 \end{itemize}
 
-$$\risk_{T \subset T_0}(y^{(i)}, c_m) = \sum_{m=1}^{|T|} \sum_{x^{(i)} \in Q_m} L(y^{(i)}, c_m) + \alpha |T|,$$
+$$\riskr(T) = \sum_{m=1}^{|T|} \sum_{i: x^{(i)} \in Q_m} L(y^{(i)}, c_m) + \alpha |T|,$$
 
-where $|T|$ refers to the number of leaves of sub tree $T$ and $Q_m$ to the subset of the predictor space of the $m$-th terminal node, with its prediction $c_m$ and the complete tree $T_0$.
+where $|T|$ is the number of leaves of sub tree $T$, $Q_m$ is the subset of the feature space related to the $m$-th terminal node, with its prediction $c_m$, and $T_0$ is the complete tree.
 
 \end{vbframe}
 
 \begin{vbframe}{CCP}
+CCP performs a greedy backward search:
 \begin{itemize}
-\item CCP performs a greedy backward search:
-\item It computes $\risk_{T \subset T_0}(y^{(i)}, c_m)$ with a fixed $\alpha$ for all possible sub trees that can be created by replacing one inner node with a terminal node.
-\item By replacing a node we also eliminate all consequent nodes.
+\item Computes $\riskr(T)$ with a fixed $\alpha$ for all possible sub trees that can be created by replacing one internal node with a leaf.
+\item By replacing a node we also eliminate all subsequent nodes.
 \item We select the sub tree with lowest risk and repeat the procedure.
 \item We stop if pruning does not further reduce the risk.
+\end{itemize}
+\begin{itemize}
 \item This is proven to result in the pruned tree with the lowest risk.
 \item For $\alpha = 0$, we would obviously select $T_0$.
-\item The $\alpha$ parameter is typically selected via cross-validation.
-\item Other prominent post-pruning methods next to CCP include e.g. reduced error pruning (REP) or pessimistic error pruning (PEP).
+\item Hyperparameter $\alpha$ is typically selected via cross-validation.
+\item Other prominent post-pruning methods include, e.g., reduced error pruning (REP) or pessimistic error pruning (PEP).
 \end{itemize}
 \end{vbframe}
 
