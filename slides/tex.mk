@@ -1,6 +1,6 @@
 TSLIDES = $(shell find . -maxdepth 1 -iname "slides-*.tex")
 TPDFS = $(TSLIDES:%.tex=%.pdf)
-MARGINPDFS = $(TSLIDES:%.tex=%_withmargin.pdf)
+MARGINPDFS = $(TSLIDES:%.tex=%-margin.pdf)
 FLSFILES = $(TSLIDES:%.tex=%.fls)
 
 .PHONY: all most all-margin copy texclean clean
@@ -17,9 +17,9 @@ $(TPDFS): %.pdf: %.tex
 	-rm speakermargin.tex
 	latexmk -pdf $<
 
-$(MARGINPDFS): %_withmargin.pdf: %.tex
+$(MARGINPDFS): %-margin.pdf: %.tex
 	touch speakermargin.tex
-	latexmk -pdf -jobname=%A_withmargin $<
+	latexmk -pdf -jobname=%A-margin $<
 
 $(FLSFILES): %.fls: %.tex
 	-rm speakermargin.tex
