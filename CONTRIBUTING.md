@@ -25,14 +25,19 @@ or similar, where applicable.
 
 - Notation on the slides uses [`latex-math`](https://github.com/compstat-lmu/latex-math). Please do read the accompanying ReadMe and clone [`latex-math`](https://github.com/compstat-lmu/latex-math) into this repo (otherwise you will not be able to render the slides).
 - Use the commands defined there, don't define your own. 
-- If you have to introduce new notation/symbols you should add it to `latex-math`, after doublechecking that  
+- If you have to introduce new notation/symbols you should add it to `latex-math`, after double-checking that  
    - it is consistent with what we already have 
    - you do not overwrite symbols we have already defined differently
 - We write slides for beginners: keep it simple, keep it short
 - We try to keep slides modular: slidesets should represent about 15-20 minutes of material and be moderately self-contained.
 - Don't put code on the slides, the theory is orthogonal to issues of implementation (... in theory..). Code is strictly for exercises/ practice sessions. 
-- Compiling the slides should be done via the Makefile: just type `make all` in the specific folder and it will render all slidesets in the folder, or `make <SLIDES>.pdf` to render a specific file `<SLIDES>.tex`.
-- `make` will automatically move a copy of the compiled PDFs to the `slides-pdf` directory. From there, files can be copied into the [course website repository](https://github.com/teaching-data-science/intro2ml) in case of a new release. If you use Windows we recommend that you access make via the [Ubuntu bash](https://apps.microsoft.com/store/detail/ubuntu/9PDXGNCFSCZV?hl=en-us&gl=US) (take a look at the installation tips)
+- Compiling the slides should be done via the **Makefile**.
+  - Before compiling anything, remove auxiliary files by running `make texclean` from within the corresponding folder.
+  - There are basically two use cases, for both of which you have the option to compile with or without a right-side **margin**. The margin is added when the slides are to be used in recording a video (the speaker's head will appear there). 
+  - Use case 1: you want to compile a **single** PDF `<SLIDES>.tex`. Run `make <SLIDES>.pdf` (`make <SLIDES>-margin.pdf`) to compile without (with) margin. Note that compiling with margin is handled by creating a temporary file signaling to add a margin, so make sure to run `make texclean` afterwards. 
+  - Use case 2: you want to compile **all** PDFs in a folder. Run `make all` (`make all-margin`) to compile without (with) margin. This will automatically move a copy of the compiled PDFs to the `slides-pdf` directory. The [course website repository](https://github.com/teaching-data-science/intro2ml) links to `slides-pdf`, so make sure you only update the files in there if you want to release them on the website.
+  - You can remove all PDFs in a folder with `make clean`.
+  - If you use Windows we recommend that you access make via the [Ubuntu bash](https://apps.microsoft.com/store/detail/ubuntu/9PDXGNCFSCZV?hl=en-us&gl=US) (take a look at the installation tips).
 - We try to keep a "dependency graph" between slide sets up to date so that it's easier to keep track of
 what material needs to be understood before what else. Please do add appropriate `%! includes:`-comments in your slides to keep this up-to-date, see also `attic/slide-dependencies.R` and `slides/slide-dependencies.pdf`.
 - We recommend usage of `{tinytex}` (install via `tinytex::install_tinytex()`)
