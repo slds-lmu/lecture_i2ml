@@ -6,8 +6,13 @@ x <- runif(100, 0, 10)
 y <- 2 * (0.5 * sin(x * 2 - 0.1) + 0.75 * cos(0.5 * x)) + rnorm(100, 0, 0.2)
 df <- data.frame(x, y)
 
+p <- plot_boundaries(iris, Species ~ Sepal.Length + Sepal.Width, 
+                          "Sepal.Length", "Sepal.Width", 
+                          cols = c(virginica = "#0CB702", versicolor = "#00A9FF", setosa = "#FF68A1"), 
+                          maxdepth = 4, alpha = 0.2)
+
 split_point <- p$plot_area(2) + theme(legend.position = "top") + xlim(c(4.2, 5.4)) + 
-  ylim(c(2.7,2.9)) + 
+  ylim(c(2.6,2.95)) + theme(legend.position = "none") +
   annotate("rect", ymin = -Inf, ymax = 2.8, xmin = -Inf, xmax = Inf, fill = "#00A9FF", alpha = 0.25) +
   annotate("rect", ymin = 2.8, ymax = Inf, xmin = -Inf, xmax = Inf, fill = "#FF68A1", alpha = 0.25)
 ggsave("slides/trees/figure/split_point.pdf", split_point, units = "cm",
@@ -226,6 +231,7 @@ upper_mid <- base + annotate("rect", ymin = -Inf, ymax = Inf,
 upper_left <- ggplot(data = bs[[3]]$predictions$left, 
                      aes(x = Label, y = proportion, fill = Label)) + 
   geom_bar(stat = "identity") + ylab("Proportion") +
+  ylim(c(0, 1)) +
   scale_fill_manual(values = c(virginica = "#0CB702", versicolor = "#00A9FF", setosa = "#FF68A1")) +
   theme_bw() + theme(axis.text.x = element_text(angle = 15)) +
   xlab("") +
@@ -234,6 +240,7 @@ upper_left <- ggplot(data = bs[[3]]$predictions$left,
 upper_right <- ggplot(data = bs[[3]]$predictions$right, 
                      aes(x = Label, y = proportion, fill = Label)) + 
   geom_bar(stat = "identity") + ylab("Proportion") +
+  ylim(c(0, 1)) +
   scale_fill_manual(values = c(virginica = "#0CB702", versicolor = "#00A9FF", setosa = "#FF68A1")) +
   theme_bw() + theme(axis.text.x = element_text(angle = 15)) + xlab("") +
   theme(legend.position = "none")
@@ -252,10 +259,11 @@ plot1
 
 upper_mid <- base + annotate("rect", ymin = -Inf, ymax = Inf, 
                              xmin = possible_splits[9], xmax = possible_splits[9], 
-                             col = "black") + xlab("")
+                             col = "black") + xlab("") 
 upper_left <- ggplot(data = bs[[9]]$predictions$left, 
                      aes(x = Label, y = proportion, fill = Label)) + 
   geom_bar(stat = "identity") + ylab("Proportion") +
+  ylim(c(0, 1)) +
   scale_fill_manual(values = c(virginica = "#0CB702", versicolor = "#00A9FF", setosa = "#FF68A1")) +
   theme_bw() + theme(axis.text.x = element_text(angle = 15)) +
   theme(legend.position = "none") + xlab("")
@@ -263,6 +271,7 @@ upper_left <- ggplot(data = bs[[9]]$predictions$left,
 upper_right <- ggplot(data = bs[[9]]$predictions$right, 
                       aes(x = Label, y = proportion, fill = Label)) + 
   geom_bar(stat = "identity") + ylab("Proportion") +
+  ylim(c(0, 1)) +
   scale_fill_manual(values = c(virginica = "#0CB702", versicolor = "#00A9FF", setosa = "#FF68A1")) +
   theme_bw() + theme(axis.text.x = element_text(angle = 15)) +
   theme(legend.position = "none") + xlab("")
@@ -293,6 +302,7 @@ upper_left <- ggplot(data = bs[[5]]$predictions$left,
   geom_bar(stat = "identity") + ylab("Proportion") +
   scale_fill_manual(values = c(virginica = "#0CB702", versicolor = "#00A9FF", setosa = "#FF68A1")) +
   theme_bw() + theme(axis.text.x = element_text(angle = 15)) +
+  ylim(c(0, 1)) +
   theme(legend.position = "none") + xlab("")
 
 upper_right <- ggplot(data = bs[[5]]$predictions$right, 
@@ -300,6 +310,7 @@ upper_right <- ggplot(data = bs[[5]]$predictions$right,
   geom_bar(stat = "identity") + ylab("Proportion") +
   scale_fill_manual(values = c(virginica = "#0CB702", versicolor = "#00A9FF", setosa = "#FF68A1")) +
   theme_bw() + theme(axis.text.x = element_text(angle = 15)) +
+  ylim(c(0, 1)) +
   theme(legend.position = "none") + xlab("")
 
 plot3 <- (upper_left + upper_mid + upper_right +
