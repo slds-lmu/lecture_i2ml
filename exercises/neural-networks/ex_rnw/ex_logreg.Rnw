@@ -1,27 +1,102 @@
 Suppose you have the following set of five training points:
 
-\begin{tabular}{|r|r|r|r|}
-  $i$ & $x_1^{(i)}$ & $x_2^{(i)}$ & $\yi$ \\ \hline
-  1 & 0 & 0 & 0 \\ \hline
-  2 & 1 & 0 & 1 \\ \hline
-  3 & 0 & -1 & 1 \\ \hline
-  4 & -1 & 0 & 1 \\ \hline
-  5 & 0 & 1 & 1 \\ \hline
-\end{tabular}
-
-<<echo=FALSE, fig.height=4, fig.width=4>>=
+<<echo=FALSE>>=
 library(ggplot2)
-data = data.frame(
-  x = c(0, 1, 0, -1, 0),
-  y = c(0, 0, -1, 0, 1),
+make_plot = function(dt) {
+  ggplot(dt, aes(x, y, col = class)) +
+  geom_point() +
+  geom_text(aes(label = label), nudge_y = 0.25, show.legend = FALSE) +
+  labs(x = expression(x[1]), y = expression(x[2])) +
+  theme_bw()
+}
+@
+
+<<echo=FALSE, fig.height=2, fig.width=3>>=
+x = c(0, 1, 0, -1, 0)
+y = c(0, 0, -1, 0, 1)
+data_1 = data.frame(
+  x = x,
+  y = y,
   class = as.factor(c(rep(0, 3), rep(1, 2))),
   label = sprintf("x%i", 1:5)
 )
-ggplot(data, aes(x, y, col = class)) +
-  geom_point() +
-  geom_text(aes(label = label), nudge_x = 0.25) +
-  labs(x = expression(x[1]), y = expression(x[2])) +
-  theme_classic()
+make_plot(data_1)
 @
 
-Consider a logistic regression model $\hat{y}_i=\sigma\left(\alpha_0+\alpha_1x_{i1}+\alpha_2x_{i2}\right)$, with $\sigma(\cdot)$ the sigmoid function, $\sigma(x)=\left(1+e^{-x}\right)^{-1}$. What values for $\alpha_0$, $\alpha_1$ and $\alpha_2$ would result in the correct classification for this dataset? A positive label is predicted when the output of the sigmoid is larger or equal than 0.5.
+Consider a logistic regression model 
+$\yh = \sigma(\alpha_0 + \alpha_1 x_1 + \alpha_2 x_2)$,
+with $\sigma(\cdot)$ the sigmoid function, $\sigma(a) = \frac{1}{1 + \exp(-a)}$.
+
+\begin{enumerate}[a)]
+  \item Which values for $\bm{\alpha} = (\alpha_0, \alpha_1, \alpha_2)^\top$ 
+  would result in correct classification (assuming a threshold of 0.5 for the
+  positive class)? 
+  Don't use any statistical estimation to answer this question -- think in 
+  geometrical terms: you need a linear hyperplane that represents a suitable 
+  decision boundary.
+\end{enumerate}
+
+\begin{enumerate}
+  \item [b)] Apply the same principle to find the parameters
+  $\bm{\beta} = (\beta_0, \beta_1, \beta_2)^\top$ for the modified problem 
+  below.
+  
+  <<echo=FALSE, fig.height=2, fig.width=3>>=
+data_2 = data_1
+data_2$class = as.factor(c(0, rep(1, 2), rep(0, 2)))
+make_plot(data_2)
+@
+
+\end{enumerate}
+
+\begin{enumerate}
+  \item[c)] Now consider the problem in the third figure, which is not 
+  linearly separable anymore, so logistic regression will not help us any 
+  longer.
+  
+    <<echo=FALSE, fig.height=2, fig.width=3>>=
+  data_3 = data_1
+  data_3$class = as.factor(c(1, rep(0, 4)))
+  make_plot(data_3)
+  @
+  
+  Suppose we had alternative coordinates 
+  $\left(z_1, z_2\right)^\top$ for our data points.
+  
+  \begin{tabular}{|r|r|r|r|}
+    \hline
+    $i$ & $z_1^{(i)}$ & $z_2^{(i)}$ & $\yi$ \\ \hline
+    1 & 0 & 0 & 1 \\ \hline
+    2 & 0 & 1 & 0 \\ \hline
+    3 & 0 & 1 & 0 \\ \hline
+    4 & 1 & 0 & 0 \\ \hline
+    5 & 1 & 0 & 0 \\ \hline
+  \end{tabular}
+  
+  \begin{enumerate}[i)]
+    \item Explain how we can use $z_1$ and $z_2$ to classify the 
+    dataset in Figure 3.
+    \item Now, use logistic regression to predict $z_1$ and $z_2$ (separately), 
+    treating them as target labels to the original observations with coordinates 
+    $\left(x_1, x_2\right)^\top$.
+    Find the respective parameter vectors $\bm{\gamma}, \bm{\phi} \in \R^3$.
+    
+    \begin{tabular}{|r|r|r|r|r|r|}
+      \hline
+      $i$ & $x_1^{(i)}$ & $x_2^{(i)}$ & $z_1^{(i)}$ & $z_2^{(i)}$ & $\yi$ 
+      \\ \hline
+      1 & 0 & 0 & 0 & 0 & 1 \\ \hline
+      2 & 1 & 0 & 0 & 1 & 0 \\ \hline
+      3 & 0 & -1 & 0 & 1 & 0 \\ \hline
+      4 & -1 & 0 & 1 & 0 & 0 \\ \hline
+      5 & 0 & 1 & 1 & 0 & 0 \\ \hline
+    \end{tabular}
+    
+    \item Lastly, put together your previous results to formulate 
+    a model that predicts the original target $y$ from the original features
+    $\left(x_1, x_2\right)^\top$.
+  \end{enumerate}
+  
+  \item [d)] Sketch the neural network you just created (perhaps without 
+  realizing it).
+\end{enumerate}
