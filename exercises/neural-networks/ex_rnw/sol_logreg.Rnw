@@ -27,8 +27,8 @@ make_plot = function(dt, nudge_x = 0) {
   via 
   \begin{equation} \label{eqhypplane}
     \alpha_0 + \alpha_1 x_1 + \alpha_2 x_2 = - \log(\tfrac{1}{c} - 1) ~
-    \Leftrightarrow  ~
-    \alpha_0 + \alpha_1 x_1 + \alpha_2 x_2 = 0,
+    \Longleftrightarrow  ~
+    \alpha_0 + \alpha_1 x_1 + \alpha_2 x_2 = 0 ~~ \text{ for } c = 0.5,
   \end{equation}
   where $c \in [0, 1]$ is the classification threshold. 
   
@@ -57,13 +57,14 @@ make_plot = function(dt, nudge_x = 0) {
     quantities -- using a system of linear equations, derived from points we 
     know our line must cross, 3 equations should suffice if there is a unique 
     solution.
-    It turns out that the coefficients of the linear hyperplane in logistic 
-    regression are \textit{not} unique: multiplying (\ref{eqhypplane}) with a 
-    constant leaves the equality unchanged.
-    In ERM, we can usually still find an optimal parameter vector by striking 
-    the balance between misclassified observations (larger $\bm{\alpha}$ drives 
-    the loss up more strongly) and correctly classified ones (larger 
-    $\bm{\alpha}$ drives the loss down more strongly).
+    It turns out that the solution for the linear hyperplane in logistic 
+    regression is \textit{not} necessarily unique: multiplying the coefficients 
+    in (\ref{eqhypplane}) with a constant leaves the equality unchanged.
+    
+    In ERM, we have additional constraints that usually allow us to find an 
+    optimal parameter vector: larger $\bm{\alpha}$ driving the loss down for 
+    correctly classified observations is offset by driving it up for 
+    misclassified ones.
     
     However, in this special case of linear separability, where a linear 
     classifier produces no 
@@ -71,7 +72,7 @@ make_plot = function(dt, nudge_x = 0) {
     to push the parameter vector to infinity).
     We will therefore, in this highly unrealistic and simplistic example, use 
     two points the line crosses (which is enough to define any line) and just 
-    choose any values for $\bm{\alpha}$ that fulfill (\ref{eqhypplane}).
+    choose some value for $\bm{\alpha}$ that fulfills (\ref{eqhypplane}).
     
     Let's pick the points 
     $(0, 0.5)^\top$ and $(-0.5, 0)^\top$ (0's are always convenient):
@@ -81,7 +82,7 @@ make_plot = function(dt, nudge_x = 0) {
      \begin{equation} \label{eqtwo}
       \alpha_0 - \alpha_1 \cdot 0.5 + \alpha_2 \cdot 0 = 0
     \end{equation}
-    Computing (\ref{eqone})-(\ref{eqtwo}) yields
+    (\ref{eqone})-(\ref{eqtwo}) yields
     \begin{equation} \label{eqthree}
       \alpha_1 \cdot 0.5 + \alpha_2 \cdot 0.5 = 0 ~ \Leftrightarrow ~ 
       \alpha_1 = - \alpha_2,
@@ -89,9 +90,10 @@ make_plot = function(dt, nudge_x = 0) {
     so set, e.g., $\alpha_1^\prime = -1$ and $\alpha_2^\prime = 1$.
     Plugging this back into either \ref{eqone} or \ref{eqtwo} 
     yields $\alpha_0^\prime = -0.5$, such that 
-    $\bm{\alpha}^\prime = (-0.5, -1, 1)^\top$ 
-    (note that $\bm{\alpha}^{\prime\prime} = (-5, -10, 10)^\top$, and 
-    any other multiple, would work just as well.)
+    $\bm{\alpha}^\prime = (-0.5, -1, 1)^\top$, and we get the following 
+    probabilistic scores:
+    % ($\bm{\alpha}^{\prime\prime} = (-5, -10, 10)^\top$, and 
+    % any other multiple, would work just as well.)
   \end{itemize}
   
     \begin{tabular}{|r|r|r|}
@@ -105,9 +107,12 @@ make_plot = function(dt, nudge_x = 0) {
     5 & 1 & 0.62 \\ \hline
   \end{tabular}
   
+  (You can easily verify that a multiple $a \cdot \bm{\alpha}^\prime$ of 
+  $\bm{\alpha}^\prime$ leads to the same class assignments, with probabilities 
+  closer to 0/1 if $a > 1$.)
+  
   \item By the same principle as above, we can derive a possible solution
-  $\bm{\beta} = (-0.5, 1, -1)^\top$ (you can easily verify this with two 
-  points).
+  $\bm{\beta}^\prime = (-0.5, 1, -1)^\top$.
   
     <<echo=FALSE, fig.height=2, fig.width=3>>=
   data_2 = data_1
@@ -132,21 +137,11 @@ make_plot = function(dt, nudge_x = 0) {
   \item \phantom{foo}
   \begin{enumerate}[i)]
     \item Intuitively, we can see that a condition like $z_1 + z_2 > 0$ suffices 
-  to separate $\xi[1]$ from the other observations, which looks very much like 
-  a linear hyperplane.
-  
-    \begin{tabular}{|r|r|r|r|}
-    \hline
-    $i$ & $z_1^{(i)}$ & $z_2^{(i)}$ & $\yi$ \\ \hline
-    1 & 0 & 0 & 1 \\ \hline
-    2 & 0 & 1 & 0 \\ \hline
-    3 & 0 & 1 & 0 \\ \hline
-    4 & 1 & 0 & 0 \\ \hline
-    5 & 1 & 0 & 0 \\ \hline
-  \end{tabular}
-  
+  to separate $\xi[1]$ from the other observations, which should remind you of 
+  the equation for a linear hyperplane.
+
   Graphically, we can visualize our points in the new $z_1, z_2$ coordinates and
-  see that this transformed dataset is, again, linearly separable:
+  see that this transformed dataset is indeed linearly separable:
   
   <<echo=FALSE, fig.height=2, fig.width=3>>=
   data_3 = data.frame(
@@ -166,27 +161,42 @@ make_plot = function(dt, nudge_x = 0) {
   observations $\{1, 2, 3\}$ from $\{4, 5\}$.
   Likewise, $z_2$ separates $\{1, 4, 5\}$ from
   $\{2, 3\}$.
-  Predicting $z_1$ thus corresponds to the first,
-  and $z_2$ to the second exercise, so we can use 
+  Predicting $z_1$ thus corresponds to classification problem I,
+  and $z_2$ to classification problem II, so we can use our previous solutions
   $\bm{\gamma} = \bm{\alpha}^\prime = (-0.5, -1, 1)^\top$ and
   $\bm{\phi} = \bm{\beta}^\prime = (-0.5, 1, -1)^\top$.
   
   \item We can simply stack the logistic regression components as follows:
   \begin{align*}
-    z_1 &= \sigma\left(\alpha_0 + \alpha_1 x_1 + \alpha_2 x_2\right), \\
-    z_2 &= \sigma\left(\beta_0 + \beta_1 x_1 + \beta_1 x_2\right), \\
-    \yh &= \sigma\left( \theta_0 + \theta_1 z_1 + \theta_2 z_2\right).
+    \yh &= \sigma\left( \theta_0 + \theta_1 z_1 + \theta_2 z_2\right) \\
+    &= \sigma\left( \theta_0 + \theta_1 \cdot \sigma\left(\alpha_0 + \alpha_1 
+    x_1 + \alpha_2 x_2\right) + \theta_2 \cdot \sigma\left(\beta_0 + \beta_1 x_1 
+    + \beta_2 x_2\right)
+    \right)
   \end{align*}
   Choosing parameters as before yields, e.g., 
   $\thetab^\prime = (0.5, -1, -1)^\top$.
+  In practice, we will of course use ERM to estimate rather than hand-pick
+  $\bm{\alpha}, \bm{\beta}, \bm{\theta}$.
   \end{enumerate}
   
   \item We created a feedforward neural network with two input neurons, two 
   hidden neurons (each performing one intermediate logistic regression), and 
   one output neuron.
-  The bias neurons are depicted as 1-nodes (there are different ways of 
-  visualizing those):
+  The biases are depicted as 1-neurons:
   
   \includegraphics[width=0.4\textwidth]{nn.png}
+  
+  \item The chain rule enables us to compute (first) derivatives of 
+  the empirical risk w.r.t. arbitrary parts of the computational graph 
+  by chaining known derivatives of elementary functions, thus providing a simple 
+  and scalable solution to the problem of differentiating complicated 
+  functions.
+  
+  For example, we can easily derive $\frac{\partial}{\partial \alpha_1} 
+  \riske$, which should remind you of the update term in gradient descent.
+  Indeed, (variants of) gradient descent is exactly what we use to train 
+  neural networks, updating all parameters according to their contribution to
+  $\riske$ during the so-called \emph{backpropagation}.
   
 \end{enumerate}
