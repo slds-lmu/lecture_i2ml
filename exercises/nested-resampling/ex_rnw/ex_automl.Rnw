@@ -2,6 +2,7 @@ In this exercise, we build a simple automated machine learning (AutoML) system
 that will make data-driven choices on which learner to use and also conduct the 
 necessary tuning.
 
+\texttt{R} Exercise:\\
 \texttt{mlr3pipelines} make this endeavor easy, modular and guarded against 
 many common modeling errors.
 
@@ -77,5 +78,69 @@ treated as any other learner.
   \texttt{extract\_inner\_tuning\_archives()}.
 \end{enumerate}
 
+\newpage
+\texttt{Python} Exercise:\\
+\texttt{sklearn.pipeline.Pipeline} makes this endeavor easy, modular and guarded against 
+many common modeling errors.
+
+We work on the \href{https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/data/pima.csv}{\texttt{pima}} data to classify patients as diabetic and design a 
+system that is able to choose between $k$-NN and a random forest, both with tuned hyperparameters.
+
+The purpose of the pipeline is to assemble several steps of transformation and a final estimator that can be cross-validated together while setting different parameters. So to speak, the pipeline estimator can be treated as any other estimator.
+
+\begin{enumerate}[a)]
+  \item Load the data set \href{https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/data/pima.csv}{\texttt{pima}}, 
+  encode the target \texttt{"diabetes"} and perform a stratified \texttt{train\_test\_split}.
+    \item As part of our modeling process, we want to perform certain preprocessing steps. While this step is highly customizable, we want to include at least One-Hot-Encoding of categorical features, and imputing of missing values.\\ 
+  Instance a \texttt{ColumnTransformer} object and include these two steps for a dynamic choice of columns.\\
+  (Hint: Strings are considered as \texttt{dtype = object})
+  \item Next, both pipelines for the $k$-NN and random forest are created. Like this you can create estimators with highly individual preprocessing steps. Include the previously created \texttt{ColumnTransformer}, a \texttt{VarianceThreshold} to remove constant columns and the corresponding estimator as a final step. Additionally, scale the columns for the $k$-NN estimator.
+  \item A very common ensembling technique is to predict according to the decisions of numerous estimators. This is refered to as \texttt{VotingClassifier} and enables you to predict the class label based on the argmax of the sums of the predicted probabilities.\\
+  (Hint: set the parameters \texttt{voting = "soft"} and \texttt{n\_jobs = -1} for parallel computation.)
+  \item Now you have a learner object just like any other.
+  Take a look at its tunable hyperparameters.
+  You will optimize the number of neighbors in $k$-NN 
+  (between 3 and 10), 
+  and the number of split candidates to try in the random forest (between 1 and 
+  5).
+  Define the search range for each like so: 
+  <<echo=TRUE, eval=FALSE>>=
+  param_grid_voting = [{"<voting_estimator1>__<pipelie1_estimator>__<hyperparameter>": 
+                            list(<parameter_range>)},
+                       {"<voting_estimator2>__<pipelie2_estimator>__<hyperparameter>": 
+                            list(<parameter_range>)}]
+  @
+Please note, that the estimator names should be on par with the labels given in the \texttt{VotingClassifier}, the \texttt{Pipeline} and, of course, the hyperparameter of the used estimator in the pipeline. Each level of hyperparameters of our created ensemble estimator is accessable through the seperation "\_\_" (double underscore). 
+  \item Nested Resampling is a method to avoid the so called \textit{optimization bias} by tuning parameters and evaluation performance on different subsets of your training data.
+  Use
+  \begin{itemize}
+    \item Stratified 3-CV in both inner and outer loop.
+    \item accuracy as inner performance measure,
+    \item grid search as tuning algorithm.
+  \end{itemize}
+  You may use the following, incomplete code to compute the nested resampling:
+  <<echo=TRUE, eval=FALSE>>=
+NUM_OUTER_FOLDS = <...>
+nested_scores_voting = np.zeros(NUM_OUTER_FOLDS) # initalize scores with 0
+# Choose cross-validation techniques for the inner and outer loops, 
+# independently of the dataset.
+# E.g "GroupKFold", "LeaveOneOut", "LeaveOneGroupOut", etc.
+inner_cv = <...>(n_splits=<...>, shuffle=True, random_state=42)
+outer_cv = <...>(n_splits=<...>, shuffle=True, random_state=42)
+
+for i, (train_index, val_index) in enumerate(outer_cv.split(X_train, y_train)):
+    # Nested CV with parameter optimization for ensemble pipeline
+    clf_gs_voting = <...>(
+        estimator=<...>, 
+        param_grid=<...>, 
+        cv=<...>, 
+        n_jobs=-1
+    )
+    clf_gs_voting.fit(X_train.iloc[<...>], y_train[<...>])
+    nested_scores_voting[i] = clf_gs_voting.score(X_train.iloc[<...>], y_train[<...>])
+  @
+  \item Lastly, extract performance estimates per outer fold 
+  and overall (as mean).
+\end{enumerate}
 Congrats, you just designed a turn-key AutoML system that does (nearly) all the 
 work with a few lines of code!
