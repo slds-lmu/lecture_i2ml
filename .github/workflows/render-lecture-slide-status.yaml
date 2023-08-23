@@ -1,0 +1,96 @@
+# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
+# Source version of this workflow lives in https://github.com/slds-lmu/lecture_service
+# Please only update by copying from there to avoid divergences
+on:
+  push:
+    branches: [main, master]
+    # Probably makes most sense to only run this workflow when slides change
+    # Also added the workflow itself to trigger a run if it changes
+    # Comment out to run on every commit
+    paths: ['slides/**', 'slides-pdf/*.pdf', '.github/workflows/render-lecture-slide-status.yaml']
+
+name: render-lecture-slide-status
+
+jobs:
+  render-lecture-slide-status:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    permissions:
+      contents: write # Required to be able to write to GitHub Pages branch
+    steps:
+      # Clone lecture checker repo in the current directory
+      # We need lecture repo to be a sub directory of this for reasons
+      - name: Checkout lecture checker repo
+        uses: actions/checkout@v3
+        with:
+          repository: jemus42/slds-lectures
+
+      # Most reliable way I've found to get the repo name and use it as a parameter for the checkout action
+      # see https://stackoverflow.com/a/75513916/409362
+      # If the repo is named slds-lmu/lecture_i2ml, we only need the "lecture_i2ml" part.
+      - name: Save repository name to env var (without org)
+        id: repo-basename
+        run: |
+          echo "value=$(basename ${{ github.repository }})" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Checkout this lecture repo
+        uses: actions/checkout@v3
+        with:
+          # Clone lecture repo in subdirectory of the same name
+          path: ${{ steps.repo-basename.outputs.value }}
+          # translates to e.g.: path: "lecture_i2ml"
+          # No need for git history
+          # 0 indicates all history for all branches and tags, 1 is shallow (and default)
+          fetch-depth: 1
+
+      # Uncomment / move to get a tmux ssh session for interactive debugging
+      # - name: Setup tmate session
+      #   uses: mxschmitt/action-tmate@v3
+
+      # Standard R/pandoc/latex setup steps
+      - uses: r-lib/actions/setup-pandoc@v2
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-tinytex@v2
+      - run: tlmgr --version
+      # Caching the R library requires to save its path beforehand, could hard-code but meh
+      - name: Get R library dir for caching
+        id: r-cache
+        run: |
+          echo "dir=$(Rscript --quiet -e 'cat(.libPaths()[[1]])')" >> $GITHUB_OUTPUT
+      - name: Restore R package cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.r-cache.outputs.dir }}
+          key: ${{ runner.os }}-r-${{inputs.cache-version }}-${{ hashFiles('scripts/install_r_deps.R') }}
+          restore-keys: ${{ runner.os }}-r-${{inputs.cache-version }}-
+
+      # Setting up the lecture checking requirements:
+      # 1) R packages
+      - name: Install R packages
+        run: scripts/install_r_deps.R
+      # 2) latex dependencies, incl output list of installed pkgs (optional)
+      - name: Install additional LaTeX packages
+        run: |
+          scripts/install_tex_deps.R
+          tlmgr list --only-installed
+      # 3) Installing diff-pdf and diff-pdf-visually (only automated for ubuntu so far)
+      - name: Install diff-pdf and diff-pdf-visually
+        run: scripts/install_tools_ubuntu.sh
+
+      # Run the main thing: compiles slides, checks against slides-pdf/*, renderes Rmd -> html site with results
+      # Resulting output is in ./_site
+      - name: Check slides and build HTML overview
+        run: make
+
+      # Deploy using this rather than JamesIves/github-pages-deploy-action, as this supports pushing
+      # orphan branches. Since we're adding a bunch of PDFs, we really want to avoid a bloated branch history
+      - name: Deploy to GitHub pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
+          force_orphan: true
