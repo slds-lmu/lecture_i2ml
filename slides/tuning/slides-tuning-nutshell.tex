@@ -1,0 +1,91 @@
+\documentclass[11pt,compress,t,notes=noshow, xcolor=table]{beamer}
+\input{../../style/preamble}
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-eval.tex}
+\input{../../latex-math/ml-hpo.tex}
+
+\newcommand{\titlefigure}{figure_man/riskmin_bilevel3.png}
+\newcommand{\learninggoals}{
+\item Understand the difference between model parameters and hyperparameters
+\item Be able to explain the objective and the challenges of hyperparameter tuning
+\item Understand the difference between the search space and the hyperparameter space}
+
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Hyperparameter Tuning - Problem Definition: In a Nutshell}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+\begin{vbframe}{Model Parameters vs. Hyperparameters} 
+
+\textbf{Model parameters} $\thetab \in \bm\Theta$ are optimized during training. %, typically via loss minimization. 
+They are an \textbf{output} of the training, i.e. the output of a learner/inducer $\ind$. 
+
+\lz
+
+Examples of model parameters:
+\begin{itemize}
+\item The splits and terminal node constants of a tree learner 
+\item Coefficients $\thetab$ of a linear model $\fx = \thx$
+\end{itemize}
+
+\lz
+
+\textbf{Hyperparameters} (HPs) $\bm\lambda \in \bm\Lambda$ are not optimized during training. 
+They are an \textbf{input} to the learner $\ind$ and must be specified prior to the training. 
+
+\lz
+
+Examples of hyperparameters:
+
+\begin{itemize}
+\item Maximum depth of a tree 
+\item $k$ and which distance measure to use for $k$-NN
+\item Number of optimization steps if the empirical risk minimization
+is done via gradient descent
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Hyperparameter Tuning}
+
+Many ML algorithms are sensitive w.r.t. the setting of their HPs,
+and generalization performance might be bad if we have chosen a suboptimal hyperparameter configuration, e.g.,
+\begin{itemize}
+\item Increasing the depth of a tree increases runtime and memory consumption, but can improve generalization performance.
+\item Higher $k$ in $k$-NN might improve generalization performance up to a certain point, but worsen it again if $k$ is too large.
+\end{itemize}
+
+\vskip 2em
+
+\textbf{Hyperparameter optimization (HPO) / Tuning} is the process of finding a well-performing hyperparameter $\lamv \in \LamS$ for a learner $\ind$,
+i.e. finding $\argmin_{\lamv \in \LamS} \GEhresa$ for given $\ind$, $\JJ$ and $\rho$.
+\lz
+
+The \textbf{Search space} $\LamS \subset \Lam$ is a subset of the hyperparameter space. 
+It is the \textbf{space of hyperparameters we optimize over} and can be continuous, discrete, or categorical and is often multidimensional.
+
+\end{vbframe}
+
+\begin{vbframe}{How HPO works and why it is difficult}
+We often \textbf{cannot use derivative-based optimization methods}, to solve the HPO problem.
+Instead, we propose a Hyperparameter $\bm\lambda^+$ from the search space $\LamS$ and evaluate its performance, denoted as $\clamp$.
+We repeat this process for different HP configurations and choose the best performing HP configurations $\bm\lambda^*$.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width = 0.65\textwidth]{figure/hpo_loop_1.eps}
+\end{figure}
+Every evaluation of a HP can require multiple train and predict steps, hence it's \textbf{expensive} and the answer we get from that evaluation is \textbf{not exact, but stochastic} in most settings, as we use resampling.
+
+\end{vbframe}
+\endlecture
+
+\end{document}
+
