@@ -112,7 +112,6 @@ ggsave(filename = "figure/nutshell-regression-L2-regr-line.pdf",
        plot = regr_plot_L2 , width = 8, height = 8, units = "in")
 
 
-                                                                                    
 
 # LOSS PLOT L1 ---------------------------------------------------------------------
 
@@ -183,6 +182,39 @@ ggsave(filename = "figure/nutshell-regression-L1-regr-line.pdf",
        plot = L1_regr_plot , width = 8, height = 8, units = "in")
 
 
+# Polynomial plots
+polynomial_plots <- function(degree0){
+  poly_data = lm(
+    Balance ~ poly(Limit, degree = degree0), data = data
+  )
+  
+  poly_plot <- effect_plot(
+    poly_data, 
+    pred = Limit, 
+    data = data, 
+    plot.points = TRUE,
+    interval = FALSE, 
+    line.color = "blue", 
+    y.label = "Balance",
+    x.lab  = sprintf("Limit^%i", degree0), 
+    point_size = 1
+  )
+  
+  poly_plot <- poly_plot +  theme(axis.text=element_text(size=20),axis.title=element_text(size=30,face="bold"))
+  
+  return(poly_plot)
+  
+}
 
+plot_list <- lapply(list(1,2,3), polynomial_plots)
+
+ggsave(filename = "figure/nutshell-regression-poly-plot-1.pdf", 
+       plot = plot_list[[1]] , width = 8, height = 8, units = "in")
+
+ggsave(filename = "figure/nutshell-regression-poly-plot-2.pdf", 
+       plot = plot_list[[2]] , width = 8, height = 8, units = "in")
+
+ggsave(filename = "figure/nutshell-regression-poly-plot-3.pdf", 
+       plot = plot_list[[3]] , width = 8, height = 8, units = "in")
 
 
