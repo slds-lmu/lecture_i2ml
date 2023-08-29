@@ -130,7 +130,7 @@ plot1 <- ggplot(grid, aes(
   labs(fill = "Class") + 
   guides(alpha = FALSE, color = guide_legend(
     override.aes=list(shape = 19))) +
-  ggtitle(paste0(num_trees[1], " Tree(s) for Classification Task")) +
+  ggtitle(paste0(num_trees[1], " Random Tree for Classification Task")) +
   theme(axis.text=element_text(size=14),title=element_text(size = 16), axis.title=element_text(size=14), 
         legend.key.size = unit(2.5, 'cm'), legend.title = element_text(size=14),
         legend.text = element_text(size=14), legend.title.align=0.3, legend.position = "right")
@@ -160,7 +160,7 @@ plot1_2 <- ggplot(grid, aes(
   labs(fill = "Class") + 
   guides(alpha = FALSE, color = guide_legend(
     override.aes=list(shape = 19))) +
-  ggtitle(paste0(num_trees[1], " Tree(s) for Classification Task")) +
+  ggtitle(paste0(num_trees[1], "  Random Tree for Classification Task")) +
   theme(axis.text=element_text(size=14),title=element_text(size = 16), axis.title=element_text(size=14), 
         legend.key.size = unit(2.5, 'cm'), legend.title = element_text(size=14),
         legend.text = element_text(size=14), legend.title.align=0.3, legend.position = "right")
@@ -191,7 +191,7 @@ plot2 <- ggplot(grid, aes(
   labs(fill = "Class") + 
   guides(alpha = FALSE, color = guide_legend(
     override.aes=list(shape = 19))) +
-  ggtitle(paste0(num_trees[2], " Tree(s) for Classification Task")) +
+  ggtitle(paste0(num_trees[2], " Random Trees for Classification Task")) +
   theme(axis.text=element_text(size=14),title=element_text(size = 16), axis.title=element_text(size=14), 
         legend.key.size = unit(1.5, 'cm'), legend.title = element_text(size=14),
         legend.text = element_text(size=14), legend.title.align=0.3, legend.position = "right")
@@ -224,7 +224,7 @@ plot3 <- ggplot(grid, aes(
   labs(fill = "Class") + 
   guides(alpha = FALSE, color = guide_legend(
     override.aes=list(shape = 19))) +
-  ggtitle(paste0(num_trees[3], " Tree(s) for Classification Task")) +
+  ggtitle(paste0(num_trees[3], " Random Trees for Classification Task")) +
   theme(axis.text=element_text(size=14),title=element_text(size = 16), axis.title=element_text(size=14), 
         legend.key.size = unit(2.5, 'cm'), legend.title = element_text(size=14),
         legend.text = element_text(size=14), legend.title.align=0.3, legend.position = "right")
@@ -258,7 +258,7 @@ plot3_2 <- ggplot(grid, aes(
   labs(fill = "Class") + 
   guides(alpha = FALSE, color = guide_legend(
     override.aes=list(shape = 19))) +
-  ggtitle(paste0(num_trees[1], " Tree(s) for Classification Task")) +
+  ggtitle(paste0(num_trees[3], " Random Trees for Classification Task")) +
   theme(axis.text=element_text(size=14),title=element_text(size = 16), axis.title=element_text(size=14), 
         legend.key.size = unit(2.5, 'cm'), legend.title = element_text(size=14),
         legend.text = element_text(size=14), legend.title.align=0.3, legend.position = "right")
