@@ -196,7 +196,7 @@ polynomial_plots <- function(degree0){
     interval = FALSE, 
     line.color = "blue", 
     y.label = "Balance",
-    x.lab  = sprintf("Limit^%i", degree0), 
+    x.lab  = "Limit", 
     point_size = 1
   )
   
