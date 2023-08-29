@@ -206,6 +206,7 @@ polynomial_plots <- function(degree0){
   
 }
 
+
 plot_list <- lapply(list(1,2,3), polynomial_plots)
 
 ggsave(filename = "figure/nutshell-regression-poly-plot-1.pdf", 
