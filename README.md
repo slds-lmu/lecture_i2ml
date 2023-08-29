@@ -1,9 +1,9 @@
 # Introduction to Machine Learning (I2ML)
 
-This Project offers a free, open source introductory and applied overview of supervised machine learning. 
+[![Course Website](https://img.shields.io/badge/Main_Course_Site-517FF7)](https://slds-lmu.github.io/i2ml/)
+[![Slide Check](https://img.shields.io/badge/Slide_Check-E0911F)](https://slds-lmu.github.io/lecture_i2ml/)
 
-Main course site: https://slds-lmu.github.io/i2ml/
-
+This Project offers a free, open source introductory and applied overview of supervised machine learning.
 
 ## Contents, License, Team and Further Info
 Please see the main course site.
@@ -15,21 +15,21 @@ For suggestions regarding the existing material, please open an issue.
 
 ## Help is appreciated and welcome!
 
-We hope to continuously improve and expand this course over the coming years. 
-We strongly believe in open source and collaborative work. Please contact us if 
-you think likewise and would like to contribute. 
+We hope to continuously improve and expand this course over the coming years.
+We strongly believe in open source and collaborative work. Please contact us if
+you think likewise and would like to contribute.
 See also our [contributing guidelines](CONTRIBUTING.md)
 
-- Are you an ML expert and like the course, but have some feedback or consider 
-  extending it? 
+- Are you an ML expert and like the course, but have some feedback or consider
+  extending it?
   Write an email to Bernd and Fabian (see [Team page](vignettes/team.Rmd)) or
   Open an [issue](https://github.com/compstat-lmu/lecture_i2ml/issues).
-- Are you a student taking the lecture - either at the LMU or online - and you 
-  spotted a typo, think we should rephrase something be or even would like to 
-  provide a new quiz question or coding example? Please consider providing a 
-  pull request. To do so, please check out the *devel* branch of the repo and 
-  add your fixes there. Writing an e-mail or opening an 
-  [issue](https://github.com/compstat-lmu/lecture_i2ml/issues) with suggested 
+- Are you a student taking the lecture - either at the LMU or online - and you
+  spotted a typo, think we should rephrase something be or even would like to
+  provide a new quiz question or coding example? Please consider providing a
+  pull request. To do so, please check out the *devel* branch of the repo and
+  add your fixes there. Writing an e-mail or opening an
+  [issue](https://github.com/compstat-lmu/lecture_i2ml/issues) with suggested
   improvements is obviously very welcome as well!
 - You are none of the above but would like to contribute, get in touch / open
   [issues](https://github.com/compstat-lmu/lecture_i2ml/issues) / create pull
