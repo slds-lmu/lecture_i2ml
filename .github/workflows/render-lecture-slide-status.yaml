@@ -1,6 +1,10 @@
 # Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
 # Source version of this workflow lives in https://github.com/slds-lmu/lecture_service
 # Please only update by copying from there to avoid divergences
+# - attempts slide compilation
+# - compares compiled slides against slides-pdf/
+# - render HTML site and published to GitHub pages
+# .. for only this particular lecture repo.
 on:
   workflow_dispatch:
   push:
@@ -72,18 +76,18 @@ jobs:
       # Setting up the lecture checking requirements:
       # 1) R packages
       - name: Install R packages
-        run: scripts/install_r_deps.R
+        run: make install-r
       # 2) latex dependencies, incl output list of installed pkgs (optional)
       - name: Install additional LaTeX packages
         run: |
-          scripts/install_tex_deps.R
+          make install-tex
           tlmgr list --only-installed
       # 3) Installing diff-pdf and diff-pdf-visually (only automated for ubuntu so far)
       - name: Install diff-pdf and diff-pdf-visually
-        run: scripts/install_tools_ubuntu.sh
+        run: make install-tools-ubuntu
 
       - name: Install the service package
-        run: make install
+        run: make install-service
 
       # Run the main thing: compiles slides, checks against slides-pdf/*, renderes Rmd -> html site with results
       # Resulting output is in ./_site
