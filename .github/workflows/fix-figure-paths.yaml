@@ -1,0 +1,57 @@
+# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
+# Source version of this workflow lives in https://github.com/slds-lmu/lecture_service
+# Please only update by copying from there to avoid divergences
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+name: fix-figure-paths
+
+jobs:
+  fix-figure-paths:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          # 0 indicates all history for all branches and tags, 1 is shallow (and default)
+          fetch-depth: 1
+
+      # Uncomment / move to get a tmux ssh session for interactive debugging
+      # - name: Setup tmate session
+      #  uses: mxschmitt/action-tmate@v3
+
+      - name: Fix figure paths in-place
+        run: |
+          sed -i -E "s\slides/[a-z-]+/figure\figure\g" $(find slides -iname "*.tex")
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          title: "[Automated] Fix relative figure paths in slides/"
+          commit-message: "Fix figure paths"
+          body: |
+              Automated changes by `fix-figure-paths.yaml` workflow.
+              Compare and merge to keep figure paths compatible with compilation outside of overleaf.
+
+              ## Explanation:
+
+              From what I understand, overleaf automatically tab-completes image paths relative to the project root, e.g.
+              `slides/supervised-regression/figure/nutshell-regression-poly-plot-1.pdf` - which is apparently fine on overleaf
+              but causes errors when trying to compile slides locally, where paths relative to the folder containing the
+              `.tex` file are required (i.e. `figure/nutshell-regression-poly-plot-1.pdf`).
+
+              As far as I understand it the latter path should also work on overleaf.
+              To locally auto-fix this, the following command can be used on Linux:
+
+              ```sh
+              sed -i -E "s\slides/[a-z-]+/figure\figure\g" $(find slides -iname "*.tex")
+              ```
+
+              Which is exactly what this workflow does.
+              Note that macOS requires `gnu-sed` as the default BSD `sed` behaves differently.
+          branch: fix-figure-paths
+          add-paths: slides
