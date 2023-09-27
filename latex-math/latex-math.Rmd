@@ -2,7 +2,7 @@
 title: "`latex-math` Macros"
 subtitle: "compiled: `r Sys.Date()`"
 geometry: "left=1cm, right=1cm"
-output: 
+output:
   pdf_document:
     keep_tex: TRUE
 header-includes:
@@ -12,6 +12,7 @@ header-includes:
    - \usepackage{dsfont}
    - \usepackage{xspace}
    - \usepackage{longtable}
+   - \usepackage{xifthen}
    - \input{basic-ml.tex}
    - \input{basic-math.tex}
    - \input{ml-ensembles.tex}
@@ -24,14 +25,12 @@ header-includes:
    - \input{ml-survival.tex}
    - \input{ml-svm.tex}
    - \input{ml-trees.tex}
-editor_options: 
+editor_options:
   chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(tidyverse)
-library(purrr)
 library(xtable)
 library(stringr)
 ```
@@ -46,67 +45,81 @@ Note that macro declarations may only span a single line to be displayed correct
 ```{r get-macros, echo = FALSE, warning = FALSE}
 # escape the "#"-sign for latex macros with arguments
 sanitize_command <- function(command) {
-  paste0("$", 
-         stringr::str_replace_all(
-           command, 
-           pattern = "#([1-9])",
-           replacement =  "{\\\\#\\1}"), 
-         "$")
+  paste0(
+    "$",
+    stringr::str_replace_all(
+      command,
+      pattern = "#([1-9])",
+      replacement = "{\\\\#\\1}"
+    ),
+    "$"
+  )
 }
+
 get_command <- function(line) {
-  
-  #see https://www.regular-expressions.info/recurse.html#balanced
-  
+  # see https://www.regular-expressions.info/recurse.html#balanced
+
   # avoid double appearance for ifdefined-renewcommand-else-newcommand
-  if (grepl("\\\\else", line)) return(NULL)
-  
+  if (grepl("\\\\else", line)) {
+    return(NULL)
+  }
+
   command <- regmatches(
     line,
-    gregexpr("\\{(?>[^{}]|(?R))*\\}", line, perl = TRUE))[[1]]
-  
-  if (length(command) < 2) return(NULL)
+    gregexpr("\\{(?>[^{}]|(?R))*\\}", line, perl = TRUE)
+  )[[1]]
+
+  if (length(command) < 2) {
+    return(NULL)
+  }
   if (length(command) > 2) command <- command[1:2]
-  
+
   command[3] <- stringr::str_match(
     line,
-    pattern = "\\}\\s*%\\s*(.*)$")[-1]
-  
+    pattern = "\\}\\s*%\\s*(.*)$"
+  )[-1]
+
   names(command) <- c("Macro", "Notation", "Comment")
-  
+
   command[1] <- substr(command[1], 2, nchar(command[1]) - 1)
-  
+
   if (grepl("IGNORE_NOTATION", command[3])) {
     command[2] <- ""
-    command[3] <- stringr::str_remove(command[3], "IGNORE_NOTATION")}
-  
+    command[3] <- stringr::str_remove(command[3], "IGNORE_NOTATION")
+  }
+
   command[1] <- paste0("\\verb!", command[1], "!")
   command[2] <- sanitize_command(command[2])
   command[3] <- xtable::sanitize(command[3])
-  
+
   command
 }
 
 texfiles <- list.files(pattern = "\\.tex$")
 texfiles <- setdiff(texfiles, "latex-math.tex") # avoid itself
-macros <- texfiles %>% 
-  map(~ readLines(.)) %>% 
-  map_depth(.depth = 2, ~ get_command(.)) %>% 
-  map(~ discard(., .p = is.null) %>% 
-        do.call(rbind, .)) 
-names(macros) <- texfiles
+
+macros <- texfiles |>
+  lapply(readLines) |>
+  setNames(texfiles) |> # named list (names = filenames)
+  lapply(\(x) {
+    res <- lapply(x, get_command) # parse individual line, extract macros
+    res[!sapply(res, is.null)] # drop NULL elements from list
+    do.call(rbind, res) # bind to df for later disply
+  })
 ```
 
 ```{r print-macros, results='asis', echo = FALSE}
 cat("\\tableofcontents \\label{toc} \\newpage")
 
 for (i in seq_along(macros)) {
-  cat("\\section{",  stringr::str_remove(names(macros)[i], ".tex"), "} ")
+  cat("\\section{", stringr::str_remove(names(macros)[i], ".tex"), "} ")
   null <- print(xtable(macros[[i]]),
-                sanitize.text.function = I,
-                include.rownames = FALSE,
-                floating = FALSE,
-                tabular.environment = "longtable",
-                comment = FALSE)
+    sanitize.text.function = I,
+    include.rownames = FALSE,
+    floating = FALSE,
+    tabular.environment = "longtable",
+    comment = FALSE
+  )
   cat("\\hyperlink{toc}{Back to contents}")
   cat("\\newpage")
 }
