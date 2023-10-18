@@ -1,0 +1,258 @@
+\documentclass[11pt,compress,t,notes=noshow, xcolor=table]{beamer}
+\input{../../style/preamble}
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-eval.tex}
+\input{../../latex-math/ml-hpo.tex}
+
+%%
+
+\newcommand{\titlefigure}{figure_man/evaluation-intro-ge.pdf}
+\newcommand{\learninggoals}{
+\item Understand what the Generalization Error is
+\item Get an overview on how we evaluate performance of learners
+\item Learn about some evaluation metrics
+\item Understand why we do resampling}
+
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Evaluation: In a nutshell}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+% ------------------------------------------------------------------------------
+
+% \begin{vbframe}{Imbalanced Binary Labels}
+% 
+% \begin{center}
+% % FIGURE SOURCE: https://docs.google.com/drawings/d/1WERS9WXwS4zla86fk6ESQkskNN1WZMI1YCPprnp0Ew0/edit?usp=sharing
+% \includegraphics[width=.9\textwidth]{figure_man/imbalanced.pdf}\\
+% Classify all as \enquote{no disease} (green) $\rightarrow$ high accuracy.
+% 
+% \lz
+% 
+% \textbf{Accuracy Paradox}
+% \end{center}
+% 
+% \end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+% \begin{vbframe}{Imbalanced Costs}
+% 
+% \begin{center}
+% % FIGURE SOURCE: https://docs.google.com/drawings/d/1GlmMqzpeNHU_rtPFIrJMlY9Iz6XexvHEwTl3dNYKyQU/edit?usp=sharing
+% \includegraphics[width=.3\textwidth]{figure_man/imbalanced-costs.pdf}\\
+% Classify incorrectly as \enquote{no disease} $\rightarrow$ very high cost
+% 
+% \end{center}
+% 
+% \end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Estimating the generalization error}
+
+\begin{itemize}
+\item For a fixed model, we are interested in the Generalization Error (GE): $\GEfL := \E \left[ \Lyfhx) \right]$, i.e. the expected error the model makes for data $(\xv, y) \sim \Pxy$.
+\item We need an estimator for the GE with $m$ test observations: $$\GEh(\fh, L) := \frac{1}{m}\sum_{(\xv, y)} \left[ \Lyfhx \right]$$
+\item However, if $(\xv, y) \in \Dtrain$, $\GEh(\fh, L)$ will be biased via overfitting the training data.
+\item Thus, we estimate the GE using unseen data $(\xv, y) \in \Dtest$:
+
+ $$\GEh(\fh, L) := \frac{1}{m}\sum_{(\xv, y) \in \Dtest} \left[ \Lyfhx \right]$$
+
+\end{itemize}
+
+\framebreak
+
+\begin{itemize}
+\item Usually, we have no access to new \textbf{unseen} data.
+\item Thus, we divide our data set manually into $\Dtrain$ and $\Dtest$.
+\item This process is depicted below.
+\end{itemize}
+
+\begin{center}
+% FIGURE SOURCE: https://docs.google.com/drawings/d/13AH298rMnDL5p0SrBd6VCukC9vg1qyRXGqgMcvuPRc0/edit?usp=sharing
+\includegraphics[trim = 0 0 0 30, clip, width=0.75\textwidth]
+{figure_man/evaluation-intro-ge.pdf}
+\end{center}
+
+\end{vbframe}
+
+\begin{vbframe}{Metrics}
+
+But what is $\Lyfhx$?
+\vspace{0.2cm}
+
+$\Lyfhx$ will always indicate how good the target matches our prediction.
+While we can always use the (inner) loss function that we trained the model on as outer loss, this may not always be ideal:
+
+\begin{itemize}
+\item Explicit values of loss functions may not have a \textbf{meaningful interpretation} beyond ordinality.
+\item The loss function may not be applicable to all models that we are interested in comparing (\textbf{model agnostic}ism), e.g. when comparing generative and discriminative approaches.
+\end{itemize}
+
+Thus, there also exist evaluation metrics that are not based on inner losses.
+Yet, they can (still) be faced with these problems:
+
+\begin{itemize}
+\item They might be not \textbf{useful} (for a specific use case, e.g. when we have imbalanced data).
+\item They might be im\textbf{proper}, i.e. they might draw false conclusions.
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Deep Dive: Properness}
+
+
+
+\begin{itemize}
+
+
+\item A scoring rule $\mathbf{S}$  is proper relative to $\mathcal {F}$ if (where a low value of the scoring rule is better):
+\end{itemize} 
+
+$$\mathbf {S} (Q,Q) \leq \mathbf {S} (F,Q) \forall F,Q \in \mathcal {F}$$
+
+with $\mathcal{F}$ being a convex class of probability measures.
+
+\begin{itemize}
+\item This means that a scoring rule should be optimal for the actual data target distribution, i.e. we are rewarded for properly modeling the target.
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Metrics for Classification}
+
+Commonly used evaluation metrics include:
+\begin{itemize}
+\item Accuracy: \\
+$ \rho_{ACC} = \frac{1}{m} \sum_{i = 1}^m [\yi = \yih] \in [0, 1]. $
+\item Misclassification error (MCE): \\
+$ \rho_{MCE} = \frac{1}{m} \sum_{i = 1}^m [\yi \neq \yih] \in [0, 1]. $
+\item Brier Score: \\
+$\rho_{BS} = \frac{1}{m} \sum_{i = 1}^m 
+\left( \hat \pi^{(i)} - \yi \right)^2$
+\item Log-loss: \\
+$\rho_{LL} = \frac{1}{m} \sum_{i = 1}^m \left( - \yi \log \left( 
+\hat \pi^{(i)} \right) - \left( 1-\yi \right) \log \left( 1 - \hat \pi^{(i)} 
+\right) \right).$
+\end{itemize}
+
+The probabalistic metrics, Brier Score and Log-Loss penalize false confidence, i.e. predicting the wrong label with high probability, heavily.
+
+\framebreak
+
+For hard-label classification, the confusion matrix is a useful representation:
+
+\begin{center}
+\small
+\begin{tabular}{cc|>{\centering\arraybackslash}p{7em}>{\centering\arraybackslash}p{8em}}
+    & & \multicolumn{2}{c}{\bfseries True Class $y$} \\
+    & & $+$ & $-$ \\
+    \hline
+    \bfseries Pred.     & $+$ & True Positive (TP)  & False Positive (FP) \\
+              $\yh$ & $-$ & False Negative (FN) & True Negative (TN) \\
+\end{tabular}
+\end{center}
+
+From this matrix a variety of evaluation metrics, including precision and recall, can be computed.
+
+$$ Precision = \frac{TP}{TP + FP}$$
+$$Recall = \frac{TP}{TP + FN} $$
+
+
+\end{vbframe}
+
+\begin{vbframe}{Receiver operating characteristics}
+
+\begin{itemize}
+\item Receiver operating characteristics (ROC) performs evaluation for binary classifiers beyond single metrics.
+\item We can assess classifiers by their TPR (y-axis) and FPR (x-axis).
+\item We aim to identify good classifiers who (weakly) dominate others. 
+\item For example, the "Best" classifier in the image strictly dominates "Pos-25\%" and "Pos-75\%" and weakly dominates the others.
+\end{itemize}
+\begin{center}
+    {\centering \includegraphics[width=0.4\textwidth]{figure/eval_mclass_roc_sp_2}}
+    \end{center}
+
+
+\end{vbframe}
+
+
+\begin{vbframe}{Metrics for Regression}
+
+Commonly used evaluation metrics include:
+\begin{itemize}
+\item Sum of Squared Errors (SSE): $\rho_{SSE}(\yv, \F)=\sumim (\resi)^2$
+\item Mean Squared Error (MSE): $\rho_{MSE}(\yv, \F)=\meanim SSE$
+\item Root Mean Squared Error (RMSE): $\rho_{RMSE}(\yv, \F)= \sqrt{MSE}$
+\item R-Squared: $\rho_{R^2}(\yv, \F) = 1 - \frac{\sumim (\resi)^2}{\sumim (\yi - \bar{y})^2}$
+\item Mean Absolute Error (MAE): $\rho_{MAE}(\yv, \F) = \meanim \rvert \resi \rvert \in [0;\infty) \qquad$
+\end{itemize}
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{Estimating the generalization error (better)}
+
+While  $$\GEh(\fh, L) := \frac{1}{m}\sum_{(\xv, y) \in \Dtest} \left[ \Lyfhx \right]$$ will be unbiased, with a small $m$ it will suffer from high variance.
+We have two options to decrease the variance:
+
+\begin{itemize}
+\item Increase $m$.
+\item Compute $\GEh(\fh, L)$ for multiple test sets and aggregate them.
+\end{itemize}
+
+With a finite amount of data, increasing $m$ would mean to decrease the size of the training data.
+Thus, we focus on using multiple ($B$) test sets: 
+
+$$\JJ = \JJset.$$
+
+where we compute $\GEh(\fh, L)$ for each set and aggregate the estimates.
+
+These $B$ sets are generated through \textbf{resampling}.
+
+
+\end{vbframe}
+
+\begin{vbframe}{Resampling}
+
+There exist a few well established resampling strategies:
+
+\begin{itemize}
+\item (Repeated) Hold-out / Subsampling
+\item Cross validation
+\item Bootstrap
+\end{itemize}
+
+All methods aim to generate $\JJ$ by splitting the full data set (repeatedly) into a train and test set.
+The model is trained on the respective train set and evaluated on the test set.
+
+\textbf{Example:} 3-fold cross validation
+
+\begin{center}
+% FIGURE SOURCE: practical tuning paper
+\includegraphics[width=0.4\textwidth]{figure_man/crossvalidation.png}
+\end{center}
+
+
+In order to robustify performance estimates we can repeat these resamplings, e.g. we could perform 10 times 8 fold cross validation.
+
+\end{vbframe}
+
+
+
+
+% ------------------------------------------------------------------------------
+
+\endlecture
+
+\end{document}
