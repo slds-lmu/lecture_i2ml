@@ -33,10 +33,7 @@ texclean:
 	rm -rf *.tex
 
 install-r:
-	_quarto_scripts/install_r_deps.R
+	_quarto/install_r_deps.R
 	
 install-python:
-	pip install -r _quarto_scripts/requirements.txt
-
-install-tex:
-	_quarto_scripts/install_tex_deps.R
+	pip install -r _quarto/requirements.txt
