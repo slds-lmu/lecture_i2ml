@@ -3,26 +3,22 @@
 # Please only update by copying from there to avoid divergences
 # - attempts slide compilation
 # - compares compiled slides against slides-pdf/
-# - render HTML site and published to GitHub pages
+# - compiles a markdown tables and appends it to the pull request that triggered it.
 # .. for only this particular lecture repo.
 on:
   workflow_dispatch:
-  push:
-    branches: [main, master]
-    # Probably makes most sense to only run this workflow when slides change
-    # Also added the workflow itself to trigger a run if it changes
-    # Comment out to run on every commit
-    paths: ['style/**', 'slides/**', 'slides-pdf/*.pdf', '.github/workflows/render-lecture-slide-status.yaml']
+  pull_request:
+    paths: ['style/**', 'slides/**', 'latex-math/**']
 
-name: render-lecture-slide-status
+name: pr-slide-check
 
 jobs:
-  render-lecture-slide-status:
+  pr-slide-check:
     runs-on: ubuntu-latest
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     permissions:
-      contents: write # Required to be able to write to GitHub Pages branch
+      pull-requests: write # Write to PRs
     steps:
       # Clone lecture checker repo in the current directory
       # We need lecture repo to be a sub directory of this for reasons (can optimize this once stable + working)
@@ -49,10 +45,6 @@ jobs:
           # No need for git history
           # 0 indicates all history for all branches and tags, 1 is shallow (and default)
           fetch-depth: 1
-
-      # Uncomment / move to get a tmux ssh session for interactive debugging
-      # - name: Setup tmate session
-      #   uses: mxschmitt/action-tmate@v3
 
       # Standard R/pandoc/latex setup steps
       - uses: r-lib/actions/setup-pandoc@v2
@@ -89,16 +81,21 @@ jobs:
       - name: Install the service package
         run: make install-service
 
-      # Run the main thing: compiles slides, checks against slides-pdf/*, renderes Rmd -> html site with results
-      # Resulting output is in ./_site
-      - name: Check slides and build HTML overview
-        run: make
+      # Uncomment / move to get a tmux ssh session for interactive debugging
+      # - name: Setup tmate session
+      #   uses: mxschmitt/action-tmate@v3
 
-      # Deploy using this rather than JamesIves/github-pages-deploy-action, as this supports pushing
-      # orphan branches. Since we're adding a bunch of PDFs, we really want to avoid a bloated branch history
-      - name: Deploy to GitHub pages
-        uses: peaceiris/actions-gh-pages@v3
+      # Run the main thing: compiles slides, checks against slides-pdf/*
+      - name: Check slides and build markdown table
+        run: make table
+
+      # Take the markdown document with the tables rendered in the previous step
+      # and add it as a comment to the PR that triggered this action.
+      # The comment_tag is there such that the comment can be updated after
+      # a potential re-run of the action.
+      # https://github.com/thollander/actions-comment-pull-request
+      - name: PR comment with file
+        uses: thollander/actions-comment-pull-request@v2
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./_site
-          force_orphan: true
+          filePath: slide_status_pr.md
+          comment_tag: slide_check
