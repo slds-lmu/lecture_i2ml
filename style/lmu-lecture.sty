@@ -6,40 +6,59 @@
 \DeclareMathSymbol{\myRightarrow}{\mathrel}{symbols}{"29}
 \let\Rightarrow\myRightarrow
 
+% Define a toggle to compile slides with or without margin
+% - if nospeakermargin.tex exists in directory where slides are compiled,
+%   the "old" 4:3 slide layout is used. Makefiles can and do
+%   create and remove an empty file of that name to control this.
+% - if the file does not exist slides are compiled with margin in 16:9 by default
+\newif\if@speakermargin
+\IfFileExists{nospeakermargin.tex}{\@speakermarginfalse}{\@speakermargintrue}
+
 \RequirePackage{calc}
 % original: paperwidth: 128mm x 96mm
 % --> set 'speakerwidth' to 42.6666666667mm to get identical slides
-\geometry{paperwidth=170.6666666667mm,paperheight=96mm}
+
+% Define lengths. slidewidth is used in both if-arms
 \newlength{\speakerwidth}
-\newlength{\slidewidth}
 \newlength{\logooffset}
-\setlength{\logooffset}{2mm}
-\setlength{\speakerwidth}{42.6666666667mm}  % slide is 4:3
-%\setlength{\speakerwidth}{34mm}  % 20% speaker
-\setlength{\slidewidth}{\paperwidth-\speakerwidth}
+\newlength{\slidewidth}
 
-% "i2ml" text color (taken from dark logo color)
-\definecolor{logoblue}{HTML}{4D88FF}
-%\definecolor{marginbg}{HTML}{FFFAF8}  % slightly tinted margin
-%\definecolor{marginbg}{HTML}{F8F8F8}  % grey margin
-\definecolor{marginbg}{HTML}{FFFFFF}  % white margin
+\if@speakermargin
+  % If the file exists -> no margin
+    \geometry{paperwidth=170.6666666667mm,paperheight=96mm}
 
-\setbeamertemplate{background}{%
-\begin{tikzpicture}[overlay,remember picture]
-\path [fill=marginbg] (\slidewidth,0) rectangle (\paperwidth,-\paperheight);
+    \setlength{\logooffset}{2mm}
+    \setlength{\speakerwidth}{42.6666666667mm}  % slide is 4:3
+    %\setlength{\speakerwidth}{34mm}  % 20% speaker
+    \setlength{\slidewidth}{\paperwidth-\speakerwidth}
 
-\node[anchor=north,text width=0.8\speakerwidth,align=center,text=logoblue,font=\Huge] at ([shift={(-\speakerwidth/2,-\logooffset)}]current page.north east) {
+    % "i2ml" text color (taken from dark logo color)
+    \definecolor{logoblue}{HTML}{4D88FF}
+    %\definecolor{marginbg}{HTML}{FFFAF8}  % slightly tinted margin
+    %\definecolor{marginbg}{HTML}{F8F8F8}  % grey margin
+    \definecolor{marginbg}{HTML}{FFFFFF}  % white margin
 
-    %\vspace{3mm}
-  \includegraphics[width=0.6\speakerwidth]{../../style/logo.pdf}\\
-%  \phantom{x}I2ML\\
-};
-\end{tikzpicture}%
-}
+    \setbeamertemplate{background}{%
+      \begin{tikzpicture}[overlay,remember picture]
+      \path [fill=marginbg] (\slidewidth,0) rectangle (\paperwidth,-\paperheight);
 
+      \node[anchor=north,text width=0.8\speakerwidth,align=center,text=logoblue,font=\Huge] at ([shift={(-\speakerwidth/2,-\logooffset)}]current page.north east) {
+
+      %\vspace{3mm}
+        \includegraphics[width=0.6\speakerwidth]{../../style/logo.pdf}\\
+      %  \phantom{x}I2ML\\
+      };
+      \end{tikzpicture}%
+    }
+\else
+  % If the file does exist -> old 4:3 layout, no margin
+  \geometry{paperwidth=128mm,paperheight=96mm}
+  \setlength{\slidewidth}{\paperwidth}
+  \setbeamersize{text margin left=0.8cm,text margin right=0.8cm}
+\fi
 
 % ------------------------------------------------------------------------
-% R (sweave) related stuff
+% R (sweave) related stuff, should be removed (FIXME: lukas)
 
 \RequirePackage{ifthen}
 \newboolean{Sweave@gin}
@@ -108,18 +127,6 @@
   \end{itemize}
   \end{minipage}}
 \fi
-
-    % \vspace*{\stretch{1}}
-    % \normalsize
-    % \insertshortauthor
-    % \vspace*{\stretch{0.3}}
-    % \insertshortsubtitle
-    % \vspace*{\stretch{1}} \\
-    % \normalfont
-    % \insertshortinstitute
-    % \vspace*{\stretch{0.3}}
-    % \insertshortdate
-    % \vspace*{\stretch{1}}
   \end{frame}
   \immediate\write\@auxout {\string \newlabel{lect:@@\thelecture}{{\insertframenumber}}}%
   \typeout{[LECTURE]=[\thelecture][\insertlecture][\thepage][\theframenumber]}%
