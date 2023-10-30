@@ -9,11 +9,12 @@ assignees: ''
 
 :put_litter_in_its_place: :put_litter_in_its_place: :put_litter_in_its_place:
 
-:warning: *please provide specific & actionable issue titles!*
+:warning: *Please provide specific & actionable issue titles!*
 
-## chapter name
+## Chapter name
+*Please also flag with corresponding label*
 
-## location 
-*please provide as much context as possible, slide numbers change easily*
+## Location 
+*Please provide as much context as possible, slide numbers change easily*
 
-## description
+## Description

@@ -9,12 +9,12 @@ assignees: ''
 
 :heavy_plus_sign: :heavy_plus_sign: :heavy_plus_sign:
 
-:warning: *please provide specific & actionable issue titles!*
+:warning: *Please provide specific & actionable issue titles!*
 
-## chapter name / context
-*if the requested content is to enrich an existing chapter, please state it here*
+## Chapter name / context
+*If the requested content is to enrich an existing chapter, please state it here, and flag with corresponding label*
 
-## description
+## Description
 
-## additional sources
-*examples, external URLs etc.*
+## Additional sources
+*Examples, external URLs etc.*
