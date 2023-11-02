@@ -1,0 +1,41 @@
+# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
+# Source version of this workflow lives in https://github.com/slds-lmu/lecture_service
+# Please only update by copying from there to avoid divergences
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+name: update-latex-math
+
+jobs:
+  update-latex-math:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          # 0 indicates all history for all branches and tags, 1 is shallow (and default)
+          fetch-depth: 1
+          
+      # Uncomment / move to get a tmux ssh session for interactive debugging
+      # - name: Setup tmate session
+      #  uses: mxschmitt/action-tmate@v3
+
+      - name: Get latex-math
+        run: |
+          curl -sL https://api.github.com/repos/slds-lmu/latex-math/tarball/master | tar -xz --directory=latex-math/ --strip-components=1
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          title: "[Automated] Update latex-math"
+          commit-message: "Update latex-math"
+          body: |
+              Automated changes by `update-latex-math.yaml` workflow.
+              Compare and merge to keep latex-math up to date with [latex-math](slds-lmu/latex-math).
+              This branch will automatically be updated on subsequent commits.
+          branch: update-latex-math
+          add-paths: latex-math
