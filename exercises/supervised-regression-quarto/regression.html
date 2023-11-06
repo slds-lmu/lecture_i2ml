@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.450">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Exercise 1 – ML Basics</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="regression_files/libs/clipboard/clipboard.min.js"></script>
+<script src="regression_files/libs/quarto-html/quarto.js"></script>
+<script src="regression_files/libs/quarto-html/popper.min.js"></script>
+<script src="regression_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="regression_files/libs/quarto-html/anchor.min.js"></script>
+<link href="regression_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="regression_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="regression_files/libs/quarto-html/quarto-syntax-highlighting-dark.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<script src="regression_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="regression_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="regression_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="regression_files/libs/bootstrap/bootstrap-dark.min.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#exercise-1-hro-in-coding-frameworks" id="toc-exercise-1-hro-in-coding-frameworks" class="nav-link active" data-scroll-target="#exercise-1-hro-in-coding-frameworks">Exercise 1: HRO in coding frameworks</a></li>
+  <li><a href="#exercise-2-polynomial-regression" id="toc-exercise-2-polynomial-regression" class="nav-link" data-scroll-target="#exercise-2-polynomial-regression">Exercise 2: Polynomial regression</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+\(\require{bm}\)
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Exercise 1 – ML Basics</h1>
+<p class="subtitle lead"><a href="https://slds-lmu.github.io/i2ml/">Introduction to Machine Learning</a></p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<div class="hidden">
+$$ % math spaces % N, naturals % Z, integers % Q, rationals % R, reals % C, complex % C, space of continuous functions % machine numbers % maximum error % counting / finite sets % set 0, 1 % set -1, 1 % unit interval % basic math stuff % x tilde % argmax % argmin % argmax with limits % argmin with limits<br>
+% sign, signum % I, indicator % O, order
+% partial derivative
+% floor
+% ceiling % sums and products % summation from i=1 to n % summation from i=1 to m % summation from j=1 to p % summation from j=1 to p % summation from i=1 to k % summation from k=1 to g % summation from j=1 to g % mean from i=1 to n % mean from i=1 to n % mean from k=1 to g % product from i=1 to n % product from k=1 to g % product from j=1 to p % linear algebra % 1, unitvector % 0-vector % I, identity % diag, diagonal % tr, trace % span
+% &lt;.,.&gt;, scalarproduct
+% short pmatrix command % matrix A % error term for vectors % basic probability + stats % P, probability % E, expectation % Var, variance % Cov, covariance % Corr, correlation % N of the normal distribution % dist with i.i.d superscript
+<p>% … is distributed as …</p>
+% X, input space % Y, output space % set from 1 to n % set from 1 to p % set from 1 to g % P_xy % E_xy: Expectation over random variables xy % vector x (bold) % vector x-tilde (bold) % vector y (bold) % observation (x, y) % (x1, …, xp) % Design matrix % The set of all datasets % The set of all datasets of size n % D, data % D_n, data of size n % D_train, training set % D_test, test set
+% (x^i, y^i), i-th observation % {(x1,y1)), …, (xn,yn)}, data % Def. of the set of all datasets of size n % Def. of the set of all datasets % {x1, …, xn}, input data % {y1, …, yn}, input data % (y1, …, yn), vector of outcomes
+% x^i, i-th observed value of x
+<p>% y^i, i-th observed value of y % (x1^i, …, xp^i), i-th observation vector % x_j, j-th feature % (x^1_j, …, x^n_j), j-th feature vector % Basis transformation function phi % Basis transformation of xi: phi^i := phi(xi)</p>
+<p>%%%%%% ml - models general % lambda vector, hyperconfiguration vector % Lambda, space of all hpos % Inducer / Inducing algorithm % Set of all datasets times the hyperparameter space % Set of all datasets times the hyperparameter space % Inducer / Inducing algorithm % Inducer, inducing algorithm, learning algorithm</p>
+% continuous prediction function f % True underlying function (if a statistical model is assumed) % True underlying function (if a statistical model is assumed) % f(x), continuous prediction function % f with domain and co-domain % hypothesis space where f is from % Bayes-optimal model % Bayes-optimal model
+<p>% f_j(x), discriminant component function % f hat, estimated prediction function % fhat(x) % f(x | theta) % f(x^(i)) % f(x^(i)) % f(x^(i) | theta) % fhat_D, estimate of f based on D % fhat_Dtrain, estimate of f based on D %model learned on Dn with hp lambda %model learned on D with hp lambda %model learned on Dn with optimal hp lambda %model learned on D with optimal hp lambda</p>
+<p>% discrete prediction function h % h(x), discrete prediction function % h hat % hhat(x) % h(x | theta) % h(x^(i)) % h(x^(i) | theta) % Bayes-optimal classification model % Bayes-optimal classification model</p>
+<p>% yhat % yhat for prediction of target % yhat^(i) for prediction of ith targiet </p>
+% theta % theta hat % theta vector % theta vector hat
+% theta<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> in optimization
+<p>% theta<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> in optimization %theta learned on Dn with hp lambda %theta learned on D with hp lambda % min problem theta % argmin theta</p>
+<p>% densities + probabilities % pdf of x % p % p(x) % pi(x|theta), pdf of x given theta % pi(x^i|theta), pdf of x given theta % pi(x^i), pdf of i-th x</p>
+<p>% pdf of (x, y) % p(x, y) % p(x, y | theta) % p(x^(i), y^(i) | theta)</p>
+% pdf of x given y
+% p(x | y = k)
+% log p(x | y = k)
+<p>% p(x^i | y = k)</p>
+% prior probabilities
+% pi_k, prior
+<p>% log pi_k, log of the prior % Prior probability of parameter theta</p>
+% posterior probabilities % P(y = 1 | x), post. prob for y=1
+% P(y = k | y), post. prob for y=k % pi with domain and co-domain % Bayes-optimal classification model % Bayes-optimal classification model % pi(x), P(y = 1 | x) % pi, bold, as vector
+% pi_k(x), P(y = k | x)
+% pi_k(x | theta), P(y = k | x, theta) % pi(x) hat, P(y = 1 | x) hat
+% pi_k(x) hat, P(y = k | x) hat % pi(x^(i)) with hat
+<p>% pi_k(x^(i)) with hat % p(y | x, theta) % p(y^i |x^i, theta) % log p(y | x, theta) % log p(y^i |x^i, theta)</p>
+% probababilistic
+<p>% Bayes rule % mean vector of class-k Gaussian (discr analysis)</p>
+<p>% residual and margin % residual, stochastic % epsilon^i, residual, stochastic % residual, estimated % y f(x), margin % y^i f(x^i), margin % estimated covariance matrix % estimated covariance matrix for the j-th class</p>
+<p>% ml - loss, risk, likelihood % L(y, f), loss function % L(y, pi), loss function % L(y, f(x)), loss function % loss of observation % loss with f parameterized % loss of observation with f parameterized % loss of observation with f parameterized % loss in classification % loss in classification % loss of observation in classification % loss with pi parameterized % loss of observation with pi parameterized % L(y, h(x)), loss function on discrete classes % L(r), loss defined on residual (reg) / margin (classif) % L1 loss % L2 loss % Bernoulli loss for -1, +1 encoding % Bernoulli loss for 0, 1 encoding % cross-entropy loss % Brier score % R, risk % R(f), risk % risk def (expected loss) % R(theta), risk % R_emp, empirical risk w/o factor 1 / n % R_emp, empirical risk w/ factor 1 / n % R_emp(f) % R_emp(theta) % R_reg, regularized risk % R_reg(theta) % R_reg(f) % hat R_reg(theta) % hat R_emp(theta) % L, likelihood % L(theta), likelihood % L(theta|x), likelihood % l, log-likelihood % l(theta), log-likelihood % l(theta|x), log-likelihood % training error % test error % avg training error</p>
+<p>% lm % linear model % OLS estimator in LM $$</p>
+</div>
+<section id="exercise-1-hro-in-coding-frameworks" class="level1">
+<h1>Exercise 1: HRO in coding frameworks</h1>
+<p>Throughout the lecture, we will frequently use the <code>R</code> package <code>mlr3</code>, resp. the <code>Python</code> package <code>sklearn</code>, and its descendants, providing an integrated ecosystem for all common machine learning tasks. Let’s recap the HRO principle and see how it is reflected in either <code>mlr3</code> or <code>sklearn</code>. An overview of the most important objects and their usage, illustrated with numerous examples, can be found at <a href="https://mlr3book.mlr-org.com/basics.html">the <code>mlr3</code> book</a> and <a href="https://scikit-learn.org/stable/index.html">the <code>scikit</code> documentation</a>.</p>
+<ol class="example" type="1">
+<li><p>How are the key concepts (i.e., hypothesis space, risk and optimization) you learned about in the lecture videos implemented?</p></li>
+<li><p>Have a look at<code>mlr3::tsk("iris")</code> / <code>from sklearn.datasets import load_iris</code>. What attributes does this object store?</p></li>
+<li><p>Pick a module for classification or regression of your choice. What are the different settings for this learner?</p></li>
+</ol>
+<ul>
+<li><code>R</code> Hint: use <code>mlr3::mlr_learners\$keys()</code> to see all available learners.</li>
+<li><code>Python</code> Hint: Import the specific module and use <code>get_params()</code> to see all available settings.</li>
+</ul>
+</section>
+<section id="exercise-2-polynomial-regression" class="level1">
+<h1>Exercise 2: Polynomial regression</h1>
+<p>Assume the following (noisy) data-generating process from which we have observed 50 realizations: <span class="math display">\[y = -3 + 5 \cdot
+\sin(0.4 \pi x) + \epsilon\]</span> with <span class="math inline">\(\epsilon \, \sim \mathcal{N}(0, 1)\)</span>.</p>
+<ol start="4" class="example" type="1">
+<li><p>We decide to model the data with a cubic polynomial (including intercept term). State the corresponding hypothesis space.</p></li>
+<li><p>Demonstrate that this hypothesis space is simply a parameterized family of curves by plotting curves for 3 different models belonging to the considered model class.</p></li>
+<li><p>State the empirical risk w.r.t. <span class="math inline">\(\boldsymbol{\theta}\)</span> for a member of the hypothesis space. Use <span class="math inline">\(L2\)</span> loss and be as explicit as possible.</p></li>
+<li><p>We can minimize this risk using gradient descent. In order to make this somewhat easier, we will denote the transformed feature matrix, containing <span class="math inline">\(x\)</span> to the power from 0 to 3, by <span class="math inline">\(\tilde{\mathbf{X}}\)</span>, such that we can express our model by <span class="math inline">\(\tilde{\mathbf{X}} \bm{\theta}\)</span> (note that the model is still linear in its parameters, even if <span class="math inline">\(\mathbf{X}\)</span> has been transformed in a non-linear manner!). Derive the gradient of the empirical risk w.r.t <span class="math inline">\(\bm{\theta}\)</span>.</p></li>
+<li><p>Using the result for the gradient, state the calculation to update the current parameter <span class="math inline">\(\bm{\theta}^{[t]}\)</span>.</p></li>
+<li><p>You will not be able to fit the data perfectly with a cubic polynomial. Describe the advantages and disadvantages that a more flexible model class would have. Would you opt for a more flexible learner?</p></li>
+</ol>
+<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" href="">R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false" href="">Python</a></li></ul>
+<div class="tab-content">
+<div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
+
+</div>
+<div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
+<p>foo # bug: needs text between embeddings (<a href="https://github.com/quarto-dev/quarto-cli/issues/5255">issue</a>)</p>
+</div>
+</div>
+</div>
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>t<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>t+1<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const disableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'prefetch';
+    }
+  }
+  const enableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'stylesheet';
+    }
+  }
+  const manageTransitions = (selector, allowTransitions) => {
+    const els = window.document.querySelectorAll(selector);
+    for (let i=0; i < els.length; i++) {
+      const el = els[i];
+      if (allowTransitions) {
+        el.classList.remove('notransition');
+      } else {
+        el.classList.add('notransition');
+      }
+    }
+  }
+  const toggleColorMode = (alternate) => {
+    // Switch the stylesheets
+    const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+    manageTransitions('#quarto-margin-sidebar .nav-link', false);
+    if (alternate) {
+      enableStylesheet(alternateStylesheets);
+      for (const sheetNode of alternateStylesheets) {
+        if (sheetNode.id === "quarto-bootstrap") {
+          toggleBodyColorMode(sheetNode);
+        }
+      }
+    } else {
+      disableStylesheet(alternateStylesheets);
+      toggleBodyColorPrimary();
+    }
+    manageTransitions('#quarto-margin-sidebar .nav-link', true);
+    // Switch the toggles
+    const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+    for (let i=0; i < toggles.length; i++) {
+      const toggle = toggles[i];
+      if (toggle) {
+        if (alternate) {
+          toggle.classList.add("alternate");     
+        } else {
+          toggle.classList.remove("alternate");
+        }
+      }
+    }
+    // Hack to workaround the fact that safari doesn't
+    // properly recolor the scrollbar when toggling (#1455)
+    if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+      manageTransitions("body", false);
+      window.scrollTo(0, 1);
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        manageTransitions("body", true);
+      }, 40);  
+    }
+  }
+  const isFileUrl = () => { 
+    return window.location.protocol === 'file:';
+  }
+  const hasAlternateSentinel = () => {  
+    let styleSentinel = getColorSchemeSentinel();
+    if (styleSentinel !== null) {
+      return styleSentinel === "alternate";
+    } else {
+      return false;
+    }
+  }
+  const setStyleSentinel = (alternate) => {
+    const value = alternate ? "alternate" : "default";
+    if (!isFileUrl()) {
+      window.localStorage.setItem("quarto-color-scheme", value);
+    } else {
+      localAlternateSentinel = value;
+    }
+  }
+  const getColorSchemeSentinel = () => {
+    if (!isFileUrl()) {
+      const storageValue = window.localStorage.getItem("quarto-color-scheme");
+      return storageValue != null ? storageValue : localAlternateSentinel;
+    } else {
+      return localAlternateSentinel;
+    }
+  }
+  let localAlternateSentinel = 'default';
+  // Dark / light mode switch
+  window.quartoToggleColorScheme = () => {
+    // Read the current dark / light value 
+    let toAlternate = !hasAlternateSentinel();
+    toggleColorMode(toAlternate);
+    setStyleSentinel(toAlternate);
+  };
+  // Ensure there is a toggle, if there isn't float one in the top right
+  if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+    const a = window.document.createElement('a');
+    a.classList.add('top-right');
+    a.classList.add('quarto-color-scheme-toggle');
+    a.href = "";
+    a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+    const i = window.document.createElement("i");
+    i.classList.add('bi');
+    a.appendChild(i);
+    window.document.body.appendChild(a);
+  }
+  // Switch to dark mode if need be
+  if (hasAlternateSentinel()) {
+    toggleColorMode(true);
+  } else {
+    toggleColorMode(false);
+  }
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
