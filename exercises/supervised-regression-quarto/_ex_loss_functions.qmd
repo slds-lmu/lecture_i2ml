@@ -1,0 +1,46 @@
+In this exercise, we will examine loss functions for regression tasks 
+somewhat more in depth.
+
+```{r}
+set.seed(1L)
+x <- runif(20L, min = 0L, max = 10L)
+y <- 0.2 + 3 * x
+y <- y + rnorm(length(x), sd = 0.8)
+
+ggplot2::ggplot(data.frame(x = x, y = y), ggplot2::aes(x = x, y = y)) +
+  ggplot2::geom_point() + 
+  ggplot2::theme_bw() + 
+  # ggplot2::geom_smooth(formula = y ~ x, method = "lm", se = FALSE) +
+  ggplot2::annotate("point", x = 10L, y = 1L, color = "orange", size = 2)
+```
+
+(@) Consider the above linear regression task. How will the model 
+  parameters be affected by adding the new outlier point (orange) if you use
+  i. $L1$ loss
+  i. $L2$ loss
+  in the empirical risk? (You do not need to actually compute the 
+  parameter values.)
+
+```{r}
+huber_loss <- function(res, delta = 0.5) {
+  if (abs(res) <= delta) {
+    0.5 * (res^2)
+  } else {
+    delta * abs(res) - 0.5 * (delta^2)
+  }
+}
+
+x <- seq(-10L, 10L, length.out = 1000L)
+y <- sapply(x, huber_loss, delta = 5L)
+
+ggplot2::ggplot(data.frame(x = x, y = y), ggplot2::aes(x = x, y = y)) +
+  ggplot2::geom_line() + 
+  ggplot2::theme_bw()
+```
+
+(@) The second plot visualizes another loss function popular in 
+  regression tasks, the so-called \textit{Huber loss} (depending on 
+  $\epsilon > 0$; here: $\epsilon = 5$). 
+  Describe how the Huber loss deals with residuals as compared to $L1$ and $L2$ 
+  loss.
+  Can you guess its definition? 

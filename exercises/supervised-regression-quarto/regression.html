@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -50,12 +84,13 @@ ul.task-list li input[type="checkbox"] {
    
   <ul>
   <li><a href="#exercise-1-hro-in-coding-frameworks" id="toc-exercise-1-hro-in-coding-frameworks" class="nav-link active" data-scroll-target="#exercise-1-hro-in-coding-frameworks">Exercise 1: HRO in coding frameworks</a></li>
-  <li><a href="#exercise-2-polynomial-regression" id="toc-exercise-2-polynomial-regression" class="nav-link" data-scroll-target="#exercise-2-polynomial-regression">Exercise 2: Polynomial regression</a></li>
+  <li><a href="#exercise-2-loss-functions-for-regression-tasks" id="toc-exercise-2-loss-functions-for-regression-tasks" class="nav-link" data-scroll-target="#exercise-2-loss-functions-for-regression-tasks">Exercise 2: Loss functions for regression tasks</a></li>
+  <li><a href="#exercise-3-polynomial-regression" id="toc-exercise-3-polynomial-regression" class="nav-link" data-scroll-target="#exercise-3-polynomial-regression">Exercise 3: Polynomial regression</a></li>
+  <li><a href="#exercise-4-predicting-abalone" id="toc-exercise-4-predicting-abalone" class="nav-link" data-scroll-target="#exercise-4-predicting-abalone">Exercise 4: Predicting <code>abalone</code></a></li>
   </ul>
 </nav>
 </div>
 <main class="content" id="quarto-document-content">
-\(\require{bm}\)
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
@@ -94,8 +129,8 @@ $$ % math spaces % N, naturals % Z, integers % Q, rationals % R, reals % C, comp
 <p>% discrete prediction function h % h(x), discrete prediction function % h hat % hhat(x) % h(x | theta) % h(x^(i)) % h(x^(i) | theta) % Bayes-optimal classification model % Bayes-optimal classification model</p>
 <p>% yhat % yhat for prediction of target % yhat^(i) for prediction of ith targiet </p>
 % theta % theta hat % theta vector % theta vector hat
-% theta<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> in optimization
-<p>% theta<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> in optimization %theta learned on Dn with hp lambda %theta learned on D with hp lambda % min problem theta % argmin theta</p>
+%
+<p>% %theta learned on Dn with hp lambda %theta learned on D with hp lambda % min problem theta % argmin theta</p>
 <p>% densities + probabilities % pdf of x % p % p(x) % pi(x|theta), pdf of x given theta % pi(x^i|theta), pdf of x given theta % pi(x^i), pdf of i-th x</p>
 <p>% pdf of (x, y) % p(x, y) % p(x, y | theta) % p(x^(i), y^(i) | theta)</p>
 % pdf of x given y
@@ -117,53 +152,154 @@ $$ % math spaces % N, naturals % Z, integers % Q, rationals % R, reals % C, comp
 <p>% ml - loss, risk, likelihood % L(y, f), loss function % L(y, pi), loss function % L(y, f(x)), loss function % loss of observation % loss with f parameterized % loss of observation with f parameterized % loss of observation with f parameterized % loss in classification % loss in classification % loss of observation in classification % loss with pi parameterized % loss of observation with pi parameterized % L(y, h(x)), loss function on discrete classes % L(r), loss defined on residual (reg) / margin (classif) % L1 loss % L2 loss % Bernoulli loss for -1, +1 encoding % Bernoulli loss for 0, 1 encoding % cross-entropy loss % Brier score % R, risk % R(f), risk % risk def (expected loss) % R(theta), risk % R_emp, empirical risk w/o factor 1 / n % R_emp, empirical risk w/ factor 1 / n % R_emp(f) % R_emp(theta) % R_reg, regularized risk % R_reg(theta) % R_reg(f) % hat R_reg(theta) % hat R_emp(theta) % L, likelihood % L(theta), likelihood % L(theta|x), likelihood % l, log-likelihood % l(theta), log-likelihood % l(theta|x), log-likelihood % training error % test error % avg training error</p>
 <p>% lm % linear model % OLS estimator in LM $$</p>
 </div>
-<section id="exercise-1-hro-in-coding-frameworks" class="level1">
-<h1>Exercise 1: HRO in coding frameworks</h1>
-<p>Throughout the lecture, we will frequently use the <code>R</code> package <code>mlr3</code>, resp. the <code>Python</code> package <code>sklearn</code>, and its descendants, providing an integrated ecosystem for all common machine learning tasks. Let’s recap the HRO principle and see how it is reflected in either <code>mlr3</code> or <code>sklearn</code>. An overview of the most important objects and their usage, illustrated with numerous examples, can be found at <a href="https://mlr3book.mlr-org.com/basics.html">the <code>mlr3</code> book</a> and <a href="https://scikit-learn.org/stable/index.html">the <code>scikit</code> documentation</a>.</p>
+<section id="exercise-1-hro-in-coding-frameworks" class="level2">
+<h2 class="anchored" data-anchor-id="exercise-1-hro-in-coding-frameworks">Exercise 1: HRO in coding frameworks</h2>
+<p>Throughout the lecture, we will frequently use the <code>R</code> package <code>mlr3</code>, resp. the <code>Python</code> package <code>sklearn</code>, and its descendants, providing an integrated ecosystem for all common machine learning tasks. Let’s recap the HRO principle and see how it is reflected in either <code>mlr3</code> or <code>sklearn</code>. An overview of the most important objects and their usage, illustrated with numerous examples, can be found at <a href="https://mlr3book.mlr-org.com/">the <code>mlr3</code> book</a> and <a href="https://scikit-learn.org/stable/index.html">the <code>scikit</code> documentation</a>.</p>
 <ol class="example" type="1">
-<li><p>How are the key concepts (i.e., hypothesis space, risk and optimization) you learned about in the lecture videos implemented?</p></li>
-<li><p>Have a look at<code>mlr3::tsk("iris")</code> / <code>from sklearn.datasets import load_iris</code>. What attributes does this object store?</p></li>
-<li><p>Pick a module for classification or regression of your choice. What are the different settings for this learner?</p></li>
+<li>How are the key concepts (i.e., hypothesis space, risk and optimization) you learned about in the lecture videos implemented?</li>
 </ol>
-<ul>
-<li><code>R</code> Hint: use <code>mlr3::mlr_learners\$keys()</code> to see all available learners.</li>
-<li><code>Python</code> Hint: Import the specific module and use <code>get_params()</code> to see all available settings.</li>
-</ul>
-</section>
-<section id="exercise-2-polynomial-regression" class="level1">
-<h1>Exercise 2: Polynomial regression</h1>
-<p>Assume the following (noisy) data-generating process from which we have observed 50 realizations: <span class="math display">\[y = -3 + 5 \cdot
-\sin(0.4 \pi x) + \epsilon\]</span> with <span class="math inline">\(\epsilon \, \sim \mathcal{N}(0, 1)\)</span>.</p>
-<ol start="4" class="example" type="1">
-<li><p>We decide to model the data with a cubic polynomial (including intercept term). State the corresponding hypothesis space.</p></li>
-<li><p>Demonstrate that this hypothesis space is simply a parameterized family of curves by plotting curves for 3 different models belonging to the considered model class.</p></li>
-<li><p>State the empirical risk w.r.t. <span class="math inline">\(\boldsymbol{\theta}\)</span> for a member of the hypothesis space. Use <span class="math inline">\(L2\)</span> loss and be as explicit as possible.</p></li>
-<li><p>We can minimize this risk using gradient descent. In order to make this somewhat easier, we will denote the transformed feature matrix, containing <span class="math inline">\(x\)</span> to the power from 0 to 3, by <span class="math inline">\(\tilde{\mathbf{X}}\)</span>, such that we can express our model by <span class="math inline">\(\tilde{\mathbf{X}} \bm{\theta}\)</span> (note that the model is still linear in its parameters, even if <span class="math inline">\(\mathbf{X}\)</span> has been transformed in a non-linear manner!). Derive the gradient of the empirical risk w.r.t <span class="math inline">\(\bm{\theta}\)</span>.</p></li>
-<li><p>Using the result for the gradient, state the calculation to update the current parameter <span class="math inline">\(\bm{\theta}^{[t]}\)</span>.</p></li>
-<li><p>You will not be able to fit the data perfectly with a cubic polynomial. Describe the advantages and disadvantages that a more flexible model class would have. Would you opt for a more flexible learner?</p></li>
-</ol>
-<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+<details>
+<summary>
+<strong>Solution</strong>
+</summary>
 <div class="tabset-margin-container"></div><div class="panel-tabset">
 <ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" href="">R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false" href="">Python</a></li></ul>
 <div class="tab-content">
 <div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
-
+<p>Model classes representing a certain <strong>hypothesis</strong> are stored in <code>learner</code> objects. Before training them on actual data, they just contain information on the functional form of <span class="math inline">\(f\)</span>. Once a learner has been trained we can examine the parameters of the resulting model. The empirical <strong>risk</strong> can be assessed after training by several performance measures (e.g., based on <span class="math inline">\(L2\)</span> loss). <strong>Optimization</strong> happens rather implicitly as <code>mlr3</code> only acts as a wrapper for existing implementations and calls package-specific optimization procedures.</p>
 </div>
 <div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
+<p>tbd</p>
+</div>
+</div>
+</div>
+</details>
+<ol start="2" class="example" type="1">
+<li>Have a look at<code>mlr3::tsk("iris")</code> / <code>from sklearn.datasets import load_iris</code>. What attributes does this object store?</li>
+</ol>
+<details>
+<summary>
+<strong>Solution</strong>
+</summary>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-2-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-1" role="tab" aria-controls="tabset-2-1" aria-selected="true" href="">R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-2-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-2" role="tab" aria-controls="tabset-2-2" aria-selected="false" href="">Python</a></li></ul>
+<div class="tab-content">
+<div id="tabset-2-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-2-1-tab">
+
+</div>
+<div id="tabset-2-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-2-tab">
+<p>tbd</p>
+</div>
+</div>
+</div>
+</details>
+<ol start="3" class="example" type="1">
+<li>Pick a module for classification or regression of your choice. What are the different settings for this learner?</li>
+</ol>
+<ul>
+<li><code>R</code> Hint: use <code>mlr3::mlr_learners$keys()</code> to see all available learners.</li>
+<li><code>Python</code> Hint: Import the specific module and use <code>get_params()</code> to see all available settings.</li>
+</ul>
+<details>
+<summary>
+<strong>Solution</strong>
+</summary>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-3-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-3-1" role="tab" aria-controls="tabset-3-1" aria-selected="true" href="">R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-3-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-3-2" role="tab" aria-controls="tabset-3-2" aria-selected="false" href="">Python</a></li></ul>
+<div class="tab-content">
+<div id="tabset-3-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-3-1-tab">
+
+</div>
+<div id="tabset-3-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-3-2-tab">
+<p>tbd</p>
+</div>
+</div>
+</div>
+</details>
+</section>
+<section id="exercise-2-loss-functions-for-regression-tasks" class="level2">
+<h2 class="anchored" data-anchor-id="exercise-2-loss-functions-for-regression-tasks">Exercise 2: Loss functions for regression tasks</h2>
+<p>In this exercise, we will examine loss functions for regression tasks somewhat more in depth.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(1L)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">runif</span>(20L, <span class="at">min =</span> 0L, <span class="at">max =</span> 10L)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fl">0.2</span> <span class="sc">+</span> <span class="dv">3</span> <span class="sc">*</span> x</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> y <span class="sc">+</span> <span class="fu">rnorm</span>(<span class="fu">length</span>(x), <span class="at">sd =</span> <span class="fl">0.8</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>ggplot2<span class="sc">::</span><span class="fu">ggplot</span>(<span class="fu">data.frame</span>(<span class="at">x =</span> x, <span class="at">y =</span> y), ggplot2<span class="sc">::</span><span class="fu">aes</span>(<span class="at">x =</span> x, <span class="at">y =</span> y)) <span class="sc">+</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  ggplot2<span class="sc">::</span><span class="fu">geom_point</span>() <span class="sc">+</span> </span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  ggplot2<span class="sc">::</span><span class="fu">theme_bw</span>() <span class="sc">+</span> </span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ggplot2::geom_smooth(formula = y ~ x, method = "lm", se = FALSE) +</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  ggplot2<span class="sc">::</span><span class="fu">annotate</span>(<span class="st">"point"</span>, <span class="at">x =</span> 10L, <span class="at">y =</span> 1L, <span class="at">color =</span> <span class="st">"orange"</span>, <span class="at">size =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="regression_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<ol start="4" class="example" type="1">
+<li>Consider the above linear regression task. How will the model parameters be affected by adding the new outlier point (orange) if you use</li>
+</ol>
+<ol type="i">
+<li><span class="math inline">\(L1\)</span> loss</li>
+<li><span class="math inline">\(L2\)</span> loss in the empirical risk? (You do not need to actually compute the parameter values.)</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>huber_loss <span class="ot">&lt;-</span> <span class="cf">function</span>(res, <span class="at">delta =</span> <span class="fl">0.5</span>) {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">abs</span>(res) <span class="sc">&lt;=</span> delta) {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="fl">0.5</span> <span class="sc">*</span> (res<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    delta <span class="sc">*</span> <span class="fu">abs</span>(res) <span class="sc">-</span> <span class="fl">0.5</span> <span class="sc">*</span> (delta<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="sc">-</span>10L, 10L, <span class="at">length.out =</span> 1000L)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">sapply</span>(x, huber_loss, <span class="at">delta =</span> 5L)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>ggplot2<span class="sc">::</span><span class="fu">ggplot</span>(<span class="fu">data.frame</span>(<span class="at">x =</span> x, <span class="at">y =</span> y), ggplot2<span class="sc">::</span><span class="fu">aes</span>(<span class="at">x =</span> x, <span class="at">y =</span> y)) <span class="sc">+</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  ggplot2<span class="sc">::</span><span class="fu">geom_line</span>() <span class="sc">+</span> </span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  ggplot2<span class="sc">::</span><span class="fu">theme_bw</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="regression_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<ol start="5" class="example" type="1">
+<li>The second plot visualizes another loss function popular in regression tasks, the so-called (depending on <span class="math inline">\(\epsilon &gt; 0\)</span>; here: <span class="math inline">\(\epsilon = 5\)</span>). Describe how the Huber loss deals with residuals as compared to <span class="math inline">\(L1\)</span> and <span class="math inline">\(L2\)</span> loss. Can you guess its definition?</li>
+</ol>
+</section>
+<section id="exercise-3-polynomial-regression" class="level2">
+<h2 class="anchored" data-anchor-id="exercise-3-polynomial-regression">Exercise 3: Polynomial regression</h2>
+<p>Assume the following (noisy) data-generating process from which we have observed 50 realizations: <span class="math display">\[y = -3 + 5 \cdot
+\sin(0.4 \pi x) + \epsilon\]</span> with <span class="math inline">\(\epsilon \, \sim \mathcal{N}(0, 1)\)</span>.</p>
+<ol start="6" class="example" type="1">
+<li><p>We decide to model the data with a cubic polynomial (including intercept term). State the corresponding hypothesis space.</p></li>
+<li><p>State the empirical risk w.r.t. <span class="math inline">\(\boldsymbol{\theta}\)</span> for a member of the hypothesis space. Use <span class="math inline">\(L2\)</span> loss and be as explicit as possible.</p></li>
+<li><p>We can minimize this risk using gradient descent. Derive the gradient of the empirical risk w.r.t <span class="math inline">\(\boldsymbol{\theta}\)</span>.</p></li>
+<li><p>Using the result for the gradient, state the calculation to update the current parameter <span class="math inline">\(\boldsymbol{\theta}^{[t]}\)</span>.</p></li>
+<li><p>You will not be able to fit the data perfectly with a cubic polynomial. Describe the advantages and disadvantages that a more flexible model class would have. Would you opt for a more flexible learner?</p></li>
+</ol>
+</section>
+<section id="exercise-4-predicting-abalone" class="level2">
+<h2 class="anchored" data-anchor-id="exercise-4-predicting-abalone">Exercise 4: Predicting <code>abalone</code></h2>
+<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+<details>
+<summary>
+Solution
+</summary>
+Lorem ipsum dolor sit amet.
+</details>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-4-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-1" role="tab" aria-controls="tabset-4-1" aria-selected="true" href="">R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-4-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-2" role="tab" aria-controls="tabset-4-2" aria-selected="false" href="">Python</a></li></ul>
+<div class="tab-content">
+<div id="tabset-4-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-4-1-tab">
+
+</div>
+<div id="tabset-4-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-4-2-tab">
 <p>foo # bug: needs text between embeddings (<a href="https://github.com/quarto-dev/quarto-cli/issues/5255">issue</a>)</p>
 </div>
 </div>
 </div>
 </section>
 
-
-<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
-
-<ol>
-<li id="fn1"><p>t<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn2"><p>t+1<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-</ol>
-</section></div></main>
+</main>
 <!-- /main column -->
 <script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {
