@@ -22,7 +22,7 @@
 
 \begin{document}
 
-\lecturechapter{Evaluation: In a nutshell}
+\lecturechapter{Evaluation: In a Nutshell}
 \lecture{Introduction to Machine Learning}
 \sloppy
 
@@ -57,7 +57,7 @@
 
 % ------------------------------------------------------------------------------
 
-\begin{vbframe}{Estimating the generalization error}
+\begin{vbframe}{Evaluating a Model}
 
 \begin{itemize}
 %\item For a fixed model, we are interested in the Generalization Error (GE): $\GEfL := \E \left[ \Lyfhx) \right]$, i.e. the expected error the model makes for data $(\xv, y) \sim \Pxy$.
@@ -65,9 +65,8 @@
 %\item However, if $(\xv, y) \in \Dtrain$, $\GEh(\fh, L)$ will be biased via overfitting the training data.
 %\item Thus, we estimate the GE using unseen data $(\xv, y) \in \Dtest$:
 % $$\GEh(\fh, L) := \frac{1}{m}\sum_{(\xv, y) \in \Dtest} \left[ \Lyfhx \right]$$
-\item Previously we learnt how to find good models.
-\item However, how can we assess how good they actually are?
-\item Idea: Use value of loss function $\Lyfhx$ after training.
+\item We have seen how to train models that are optimal in some sense, relative to other possible models. However, how can we assess how good they actually are, in absolute numbers?
+\item Idea: Use risk $\sum_{(\xv, y) \in \Dtrain} \left[ \Lyfhx \right]$ after training.
 \item Problem: This value can be very optimistic.
 \item Example: Overfitting of a polynomial regression.
 \end{itemize}
@@ -81,15 +80,17 @@
 \item "Best" means that using new data, this model will probably produce the most meaningful predictions.
 \end{itemize}
 
-\framebreak
+\end{vbframe}
+
+\begin{vbframe}{Generalization Error}
 
 \begin{itemize}
 \item In other words, the "best" model will generalize well and have a low \textbf{G}eneralization \textbf{E}rror.¸
-\item Formally, for a fixed model, the GE can be expressed via: $\GEfL := \E \left[ \Lyfhx) \right]$.
-\item i.e., "what is the expected loss for an observation from the data?"
+\item Formally, for a fixed model, the GE can be expressed via: $\GEfL := \E \left[ \Lyfhx \right]$,
+\item i.e., "what is the expected loss for a new observation?"
 \item Ideally, the GE should be estimated with new, unseen data.
 \item Usually, we have no access to new \textbf{unseen} data, though.
-\item Thus, we divide our data set manually into $\Dtrain$ and $\Dtest$ and use the latter to estimate the GE.
+\item Thus, we divide our data set manually into $\Dtrain$ and $\Dtest$ and use the latter to estimate the GE via some metric $\rho()$.
 \end{itemize}
 
 \begin{center}
@@ -102,12 +103,12 @@
 
 \begin{vbframe}{Metrics}
 
-But what is $\Lyfhx$?
+But what is a good metric $\rho()$?
 
 
 \begin{itemize}
-\item $\Lyfhx$ will always indicate how good the target matches our prediction.
-While we can always use the (inner) loss function that we trained the model on as outer loss, this may not always be ideal.
+\item %Using $\Lyfhx$ will always indicate how good the target matches our prediction.
+While we can always use the (inner) loss function that we trained the model on as outer loss to construct a metric $\rho()$, this may not always be ideal.
 \item For both, classification and regression there is a large variety of evaluation metrics, of which we will just cover a fraction.
 \end{itemize}
 
@@ -177,11 +178,11 @@ Commonly used evaluation metrics include:
 \end{itemize}
 \end{itemize}
 
-The probabalistic metrics, Brier Score and Log-Loss penalize false confidence, i.e. predicting the wrong label with high probability, heavily.
+The probabilistic metrics, Brier Score and Log-Loss, penalize false confidence, i.e. predicting the wrong label with high probability, heavily.
 
 \framebreak
 
-For hard-label classification, the confusion matrix is a useful representation:
+For hard-label classification, the confusion matrix is a useful tool:
 
 \begin{center}
 \small
@@ -202,7 +203,7 @@ $$Recall = \frac{TP}{TP + FN} $$
 \framebreak
 
 \begin{itemize}
-\item Other frequently used metrics like the False / True Negative Rate (FPR / TPR) can also be derived from the confusion matrix.
+\item Other frequently used metrics like the False Negative Rate FPR can also be derived from the confusion matrix.
 \item The confusion matrix below covers many of these.
 \item Many of these metrics may also go with different names.
 \end{itemize}
@@ -218,17 +219,20 @@ $$Recall = \frac{TP}{TP + FN} $$
 
 \end{vbframe}
 
-\begin{vbframe}{Receiver operating characteristics}
+\begin{vbframe}{ROC-Curve}
 
 \begin{itemize}
-\item Receiver operating characteristics (ROC) perform evaluation for binary classifiers beyond single metrics.
-\item We can assess classifiers by their TPR (y-axis) and FPR (x-axis).
-\item We aim to identify good classifiers who (weakly) dominate others. 
-\item For example, the "Best" classifier in the image strictly dominates "Pos-25\%" and "Pos-75\%" and weakly dominates the others.
+\item The ROC-Curve allows to evaluate binary classifiers beyond single metrics.
+It compares classifiers using their TPR and FPR, for different thresholds.
+\item We aim to identify good thresholds that dominate others.
+\item The area under this curve (AUC) can also be used as metric.
 \end{itemize}
-\begin{center}
-    {\centering \includegraphics[width=0.4\textwidth]{figure/eval_mclass_roc_sp_2}}
-    \end{center}
+%\begin{center}
+%    {\centering \includegraphics[width=0.4\textwidth]{figure/eval_mclass_roc_sp_2}}
+%    \end{center}
+    \begin{center}
+  \includegraphics[width=0.4\textwidth,trim={1.5cm 0 0 1.5cm},clip]{figure/eval_mclass_roc_sp_4a.pdf}
+\end{center}
 
 
 \end{vbframe}
@@ -238,18 +242,18 @@ $$Recall = \frac{TP}{TP + FN} $$
 
 Commonly used evaluation metrics include:
 \begin{itemize}
-\item Sum of Squared Errors (SSE): $\rho_{SSE}(\yv, \F)=\sumim (\resi)^2$
-\item Mean Squared Error (MSE): $\rho_{MSE}(\yv, \F)=\meanim SSE$
-\item Root Mean Squared Error (RMSE): $\rho_{RMSE}(\yv, \F)= \sqrt{MSE}$
-\item R-Squared: $\rho_{R^2}(\yv, \F) = 1 - \frac{\sumim (\resi)^2}{\sumim (\yi - \bar{y})^2}$
-\item Mean Absolute Error (MAE): $\rho_{MAE}(\yv, \F) = \meanim \rvert \resi \rvert \in [0;\infty) \qquad$
+\item Sum of Squared Errors (SSE): $\rho_{SSE}=\sumim (\resi)^2$
+\item Mean Squared Error (MSE): $\rho_{MSE}=\meanim SSE$
+\item Root Mean Squared Error (RMSE): $\rho_{RMSE}= \sqrt{MSE}$
+\item R-Squared: $\rho_{R^2} = 1 - \frac{\sumim (\resi)^2}{\sumim (\yi - \bar{y})^2}$
+\item Mean Absolute Error (MAE): $\rho_{MAE} = \meanim \rvert \resi \rvert \in [0;\infty) \qquad$
 \end{itemize}
 
 \end{vbframe}
 
 
 
-\begin{vbframe}{Estimating the generalization error (better)}
+\begin{vbframe}{Improving estimation of ge}
 
 We can estimate the GE with one test data set via:  $$\GEh(\fh, L) := \frac{1}{m}\sum_{(\xv, y) \in \Dtest} \left[ \Lyfhx \right],$$ 
 i.e. we compute the selected metric $\Lyfhx$ for each observation in the test set and compute the mean.
@@ -268,17 +272,17 @@ We have two options to decrease it:
 
 \begin{vbframe}{Resampling}
 
-As we do not have access to infinite data and increasing $m$ will mean a redcution of the number of test observations, aggregation over $B$ sets is the preferred option:
+As we do not have access to infinite data and increasing $m$ will mean a reduction of the number of training observations, aggregation over $B$ sets is the preferred option:
 
 $$\JJ = \JJset.$$
 
-where we compute $\GEh(\fh, L)$ for each set and aggregate the estimates.
+We compute $\GEh(\fh, L)$ for each set and aggregate the estimates.
 
 These $B$ distinct sets are generated through \textbf{resampling}.
 
 \vspace{0.2cm}
 
-There exist a few well-established resampling strategies:
+There exist a number of well-established resampling strategies:
 
 \begin{itemize}
 \item (Repeated) Hold-out / Subsampling
@@ -292,7 +296,7 @@ There exist a few well-established resampling strategies:
 
 
 
-All methods aim to generate the train-test spilis $\JJ$ by splitting the full data set repeatedly.
+All methods aim to generate the train-test splits $\JJ$ by splitting the full data set repeatedly.
 The model is trained on the respective train set and evaluated on the test set.
 
 \textbf{Example:} 3-fold cross validation
@@ -303,7 +307,7 @@ The model is trained on the respective train set and evaluated on the test set.
 \end{center}
 
 
-In order to robustify performance estimates we can repeat these resamplings, e.g. we could perform 10 times 8 fold cross validation.
+In order to robustify performance estimates, we can repeat resampling.
 
 \end{vbframe}
 
