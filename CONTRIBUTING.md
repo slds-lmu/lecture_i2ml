@@ -34,8 +34,10 @@ or similar, where applicable.
 - Compiling the slides should be done via the **Makefile**.
   - Before compiling anything, remove auxiliary files by running `make texclean` from within the corresponding folder.
   - There are basically two use cases, for both of which you have the option to compile with or without a right-side **margin**. The margin is added when the slides are to be used in recording a video (the speaker's head will appear there). 
-  - Use case 1: you want to compile a **single** PDF `<SLIDES>.tex`. Run `make <SLIDES>.pdf` (`make <SLIDES>-margin.pdf`) to compile without (with) margin. Note that compiling with margin is handled by creating a temporary file signaling to add a margin, so make sure to run `make texclean` afterwards. 
-  - Use case 2: you want to compile **all** PDFs in a folder. Run `make all` (`make all-margin`) to compile without (with) margin. This will automatically move a copy of the compiled PDFs to the `slides-pdf` directory. The [course website repository](https://github.com/teaching-data-science/intro2ml) links to `slides-pdf`, so make sure you only update the files in there if you want to release them on the website.
+  - Use case 1: you want to compile a **single** PDF `<SLIDES>.tex`. Run `make <SLIDES>.pdf` (`make <SLIDES>-nomargin.pdf`) to compile with (without) margin.
+  - Use case 2: you want to compile **all** PDFs in a folder. Run `make most` (`make most-nomargin`) to compile with (without) margin. 
+  - Use case 3: you want to compile **all** PDFs in a folder and update the corresponding files in `slides-pdf`. Run `make all` (`make all-nomargin`) to compile with (without) margin. This will automatically move a copy of the compiled PDFs to the `slides-pdf` directory. The [course website repository](https://github.com/teaching-data-science/intro2ml) links to `slides-pdf`, so make sure you only update the files in there if you want to release them on the website.
+  - Note that compiling without margin is handled by creating a temporary file signaling to remove the margin, so make sure to run `make texclean` after compiling for a clean slate. 
   - You can remove all PDFs in a folder with `make clean`.
   - If you use Windows we recommend that you access make via the [Ubuntu bash](https://apps.microsoft.com/store/detail/ubuntu/9PDXGNCFSCZV?hl=en-us&gl=US) (take a look at the installation tips).
 - We try to keep a "dependency graph" between slide sets up to date so that it's easier to keep track of
