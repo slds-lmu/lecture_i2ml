@@ -36,7 +36,7 @@ $(FLSFILES): %.fls: %.tex
 	latexmk -pdf -g $<
 
 copy:
-	cp *.pdf ../../slides-pdf
+	cp $(TPDFS) $(NOMARGINPDFS) ../../slides-pdf
 
 texclean:
 	-rm -rf *.out
