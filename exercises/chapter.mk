@@ -8,15 +8,18 @@ FLSFILES = $(TSLIDES:%.Rnw=%.fls)
 .PHONY: all most copy texclean clean
 
 all: $(EXPDFS)
-	$(MAKE) copy
+	$(MAKE) copy-all
 	
 most: $(EXPDFS)
 
 $(EXPDFS): %.pdf: %.Rnw
 	Rscript -e 'setwd("$(dir $<)"); knitr::knit2pdf("$(notdir $<)")'
 
-copy: 
-	find . -maxdepth 1 -type f \( -iname "ex_*.pdf" -o -iname "sol_*.pdf" -o -iname "ic_*.pdf" \) -exec cp {}  ../../exercises-pdf/ \; 
+copy: $(F)
+	cp $(F) ../../exercises-pdf
+
+copy-all:
+	cp *.pdf ../../exercises-pdf
 	
 texclean: 
 	-rm -rf *.out
