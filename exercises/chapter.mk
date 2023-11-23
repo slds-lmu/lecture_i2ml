@@ -10,7 +10,7 @@ FLSFILES = $(TSLIDES:%.Rnw=%.fls)
 all: $(EXPDFS)
 	$(MAKE) copy
 	
-most: $(FLSFILES)
+most: $(EXPDFS)
 
 $(EXPDFS): %.pdf: %.Rnw
 	Rscript -e 'setwd("$(dir $<)"); knitr::knit2pdf("$(notdir $<)")'
