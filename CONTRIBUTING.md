@@ -129,3 +129,4 @@ The website uses `pkgdown` via `_pkgdown.yml`, its pages are in `\vignettes`.
 The automatic deployment uses a "secret" (see repository settings on Github),
 which is a PAT called `DEPLOY_PAT` (created by Fabian Scheipl, Jan 30 2020).
 
+
