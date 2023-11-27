@@ -41,6 +41,7 @@ texclean:
 	-rm -rf *.fdb_latexmk
 	-rm -rf *.synctex.gz
 	-rm -rf *-concordance.tex
+	-rm -rf *.tex
 	
 clean: texclean
 	-rm $(EXPDFS) 2>/dev/null
