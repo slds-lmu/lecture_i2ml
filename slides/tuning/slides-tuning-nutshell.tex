@@ -2,14 +2,16 @@
 \input{../../style/preamble}
 \input{../../latex-math/basic-math.tex}
 \input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-hpo.tex}
 
 \newcommand{\titlefigure}{figure_man/pexels-karolina-grabowska-4472108.jpg}
 % stock free image from pexels.com
 
 \newcommand{\learninggoals}{
 \item Understand the main idea behind tuning,
-\item why tuning matters,
-\item and why tuning is difficult
+\item the untouced-test set principle,
+\item nested resampling,
+\item and pipelines
 }
 
 \title{Introduction to Machine Learning}
@@ -21,6 +23,7 @@
 \lecturechapter{Tuning: In a Nutshell}
 \lecture{Introduction to Machine Learning}
 \sloppy
+
 
 
 \begin{vbframe}{What is Tuning?}
@@ -37,6 +40,7 @@
 \end{vbframe}
 
 
+
 \begin{vbframe}{Why Tuning Matters}
 \begin{itemize}
 \item \small Just like a guitar won't perform well when out-of-tune, properly tuning a learner can drastically improve the resulting model performance
@@ -49,6 +53,7 @@
 \end{center}
 
 \end{vbframe}
+
 
 
 \begin{vbframe}{How hard could it be?}
@@ -64,6 +69,7 @@
 
 \end{itemize}
 \end{vbframe}
+
 
 
 \begin{vbframe}{Naïve Approaches}
@@ -87,29 +93,47 @@ Let's start with two naïve approaches -
 \includegraphics[width=190pt]{figure/cart_tuning_balgos_2.pdf}
 \end{minipage}
 
-\vspace{2em}
-\small Beyond these basic methods, there are more sophisticated techniques which operate on certain assumptions about the objective function. These assumptions enable them to search for optimal solutions more efficiently.
+\vspace{5em}
+\small Sophisticated techniques, based on assumptions about the objective function, search for optimal solutions more efficiently.
+\end{vbframe}
+
+
+
+\begin{vbframe}{untouched-test-set principle}
+Great! We've found the best configuration $\lams \in \Lam$. How well does it perform?
+\begin{itemize}
+\item \textbf{Careful!} We cannot use the same data for both tuning and performance estimation, as this would lead to (optimistically) biased performance estimates!
+\item To obtain an unbiased $\widehat{\mathrm{GE}}$, we need an \textbf{untouched} test set:
+\end{itemize}
+\begin{center}
+% FIGURE SOURCE: https://docs.google.com/presentation/d/1kBxfxdUzyUP2-_Y5kWWJ1TnWsm-C4AjHQeTaYPeFo24/edit?usp=sharing
+\includegraphics[width=0.7\textwidth]{../nested-resampling/figure_man/train_valid_test.pdf}
+\end{center}
 
 \end{vbframe}
+
+
 
 \begin{vbframe}{Nested Resampling}
+To decrease variance of the $\widehat{\mathrm{GE}}$, \textbf{Nested Resampling} is used:
 
 \begin{itemize}
-\item \small Nested resampling is a method used for reliable performance estimation of tuned machine learning models.
 \item \small It involves two layers of resampling: the outer layer for performance estimation and the inner layer for hyperparameter tuning.
-\item \small The key idea is to separate model selection and model evaluation to avoid biased performance estimates.
+\item \small The key idea is to repeatedly perform a three-way split with an additional layer:
 \end{itemize}
 
-\textbf{Why Nested Resampling Matters:}
-\begin{itemize}
-\item \small It provides an unbiased estimate of the Generalization Error (GE).
-\item \small Prevents overfitting to the validation set during hyperparameter tuning.
-\end{itemize}
+\begin{center}
+% FIGURE SOURCE: No source
+\includegraphics[width = 0.6\textwidth]{../nested-resampling/figure_man/Nested_Resampling.png}
+\end{center}
 
 \end{vbframe}
 
+
+
 \begin{vbframe}{Pipelines in Machine Learning}
-Pipelines are like the assembly lines in machine learning. They automate the sequence of data processing and model building tasks, ensuring efficiency and consistency.
+Pipelines are like the assembly lines in machine learning. They automate the sequence of data processing and model building tasks.
+\vspace{1em}
 
 \textbf{Why Pipelines Matter:}
 \begin{itemize}
@@ -118,34 +142,14 @@ Pipelines are like the assembly lines in machine learning. They automate the seq
 \item \small \textbf{Error Reduction:} Minimizes the chance of human errors in the model building process.
 \end{itemize}
 
-\textbf{Simple Pipeline Example:}
-\begin{itemize}
-\item A basic pipeline might include data normalization, feature selection, and a learning algorithm.
-\end{itemize}
-\end{vbframe}
-
-\begin{vbframe}{Pipelines with Nested Resampling and AutoML}
-
-\begin{itemize}
-\item \small Incorporating nested resampling into pipelines allows for a more accurate estimate of the Generalization Error (GE).
-\item \small The pipeline includes data preprocessing, nested resampling for hyperparameter tuning, and final model training.
-\item \small AutoML can be seen as an extension of this process, where not only hyperparameters are optimized, but also model selection and preprocessing steps are automated.
-\end{itemize}
-
-\textbf{Example Pipeline with Nested Resampling and AutoML:}
-\begin{enumerate}
-\item Data Preprocessing (e.g., normalization, feature selection)
-\item Nested Resampling for Hyperparameter Tuning
-    \begin{itemize}
-    \item \small Inner Loop: Hyperparameter tuning on training subset
-    \item \small Outer Loop: Performance estimation on validation subset
-    \end{itemize}
-\item AutoML for Model and Preprocessing Optimization
-\item Training the Final Model with Optimal Settings
-\item Estimating the GE using the outer loop of nested resampling
-\end{enumerate}
+\begin{center}
+% FIGURE SOURCE: No source
+\includegraphics[width = 0.8\textwidth]{figure_man/linear_pipeline.png}
+\end{center}
 
 \end{vbframe}
+
+
 
 \endlecture
 \end{document}
