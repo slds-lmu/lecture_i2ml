@@ -1,12 +1,20 @@
-# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
-# Source version of this workflow lives in https://github.com/slds-lmu/lecture_service
+# Source version of this workflow lives in https://github.com/slds-lmu/lecture_service/service/.github/workflows
 # Please only update by copying from there to avoid divergences
 # - attempts slide compilation
 # - compares compiled slides against slides-pdf/
 # - compiles a markdown tables and appends it to the pull request that triggered it.
-# .. for only this particular lecture repo.
+# ... for only this particular lecture repo
 on:
+  # Allow manually trigegring the workflow via GitHub website, gh CLI tool etc.
+  # Also adds parameter to enable tmate (inetractive tmux session for debugging)
   workflow_dispatch:
+    inputs:
+      debug_enabled:
+        type: boolean
+        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
+        required: false
+        default: false
+  # Only on pull requests where files in these folders change
   pull_request:
     paths: ['style/**', 'slides/**', 'latex-math/**']
 
@@ -18,7 +26,8 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     permissions:
-      pull-requests: write # Write to PRs
+      # Permission required to write to PRs
+      pull-requests: write
     steps:
       # Clone lecture checker repo in the current directory
       # We need lecture repo to be a sub directory of this for reasons (can optimize this once stable + working)
@@ -83,9 +92,12 @@ jobs:
       - name: Install the service package
         run: make install-service
 
-      # Uncomment / move to get a tmux ssh session for interactive debugging
-      # - name: Setup tmate session
-      #   uses: mxschmitt/action-tmate@v3
+      # Get a tmux ssh session for interactive debugging
+      # Controlled via inputs from GitHub webinterface
+      # See https://github.com/mxschmitt/action-tmate
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
 
       # Run the main thing: compiles slides, checks against slides-pdf/*
       - name: Check slides and build markdown table

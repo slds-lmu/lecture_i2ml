@@ -1,10 +1,19 @@
-# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
-# Source version of this workflow lives in https://github.com/slds-lmu/lecture_service
+# Source version of this workflow lives in https://github.com/slds-lmu/lecture_service/service/.github/workflows
 # Please only update by copying from there to avoid divergences
 on:
+  # Allow manually trigegring the workflow via GitHub website, gh CLI tool etc.
+  # Also adds parameter to enable tmate (inetractive tmux session for debugging)
   workflow_dispatch:
+    inputs:
+      debug_enabled:
+        type: boolean
+        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
+        required: false
+        default: false
   push:
+    # Activate on pushes to both the main or master branches (inconsistently used across lecture repos)
     branches: [main, master]
+    # ...but only if files in the slides folder change
     paths: ['slides/**']
 
 name: fix-figure-paths
@@ -23,9 +32,12 @@ jobs:
           # Don't show progress bar, very verbose for large repos
           show-progress: false
 
-      # Uncomment / move to get a tmux ssh session for interactive debugging
-      # - name: Setup tmate session
-      #  uses: mxschmitt/action-tmate@v3
+      # Get a tmux ssh session for interactive debugging
+      # Controlled via inputs from GitHub webinterface
+      # See https://github.com/mxschmitt/action-tmate
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
 
       - name: Fix figure paths in-place
         run: |
