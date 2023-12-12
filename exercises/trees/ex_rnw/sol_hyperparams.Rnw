@@ -1,0 +1,33 @@
+\begin{enumerate}[a)]
+  \item Allowing for more splits will make the model more complex, thus -- all 
+  else being equal -- achieving a better data fit but also increasing the risk 
+  of overfitting. 
+  \item Code:
+    <<message=FALSE, warning=FALSE, fig.height=4, fig.width=8>>=
+library(mlr3verse)
+library(rattle)
+task <- tsk("bike_sharing")
+task$select(task$feature_names[task$feature_names != "date"])
+
+for (i in c(2, 4, 8)) {
+  learner <- lrn("regr.rpart", minsplit = 2, maxdepth = i, minbucket = 1)
+  learner$train(task)
+  fancyRpartPlot(learner$model)
+}
+
+for (i in c(2, 1000, 15000)) {
+  learner <- lrn("regr.rpart", minsplit = i, maxdepth = 20, minbucket = 1)
+  learner$train(task)
+  fancyRpartPlot(learner$model)
+}
+  @
+  
+  \item Both hyperparameters can be used to control tree depth, and their effect 
+  depends on the properties of the data-generating process (e.g., at least 100 
+  observations to split further can mean very pure or very impure nodes). 
+  Sometimes requirements like interpretability might steer our decision (e.g., 
+  a tree of depth 15 is probably hard to interpret).
+  Usually, however, we will employ \emph{hyperparameter tuning} to determine the 
+  values for both (and other) hyperparameters, deferring the responsibility 
+  from the practitioner to the data.
+\end{enumerate}
