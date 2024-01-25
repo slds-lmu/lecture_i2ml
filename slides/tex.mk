@@ -11,20 +11,20 @@ FLSFILES = $(TSLIDES:%.tex=%.fls)
 
 # Default action compiles without margin and copies to slides-pdf!
 all: $(TPDFS)
-	$(MAKE) copy-all
+	$(MAKE) copy
 
 # derivative action does the same for slides without margin (different filenames!)
 all-nomargin: $(NOMARGINPDFS)
-	$(MAKE) copy-all
+	$(MAKE) copy
 
 # Analogously the same but without copying (arguably should be the default actions)
-most: $(TPDFS)
+most: $(FLSFILES)
 most-nomargin: $(NOMARGINPDFS)
 
 # Conditionally remove or create empty nospeakermargin.tex file to decide which layout to use
 # See /style/lmu-lecture.sty -- it's a whole thing but does the job.
 $(TPDFS): %.pdf: %.tex
-	-rm -f nospeakermargin.tex
+	-rm nospeakermargin.tex
 	latexmk -pdf $<
 
 $(NOMARGINPDFS): %-nomargin.pdf: %.tex
@@ -32,13 +32,10 @@ $(NOMARGINPDFS): %-nomargin.pdf: %.tex
 	latexmk -pdf -jobname=%A-nomargin $<
 
 $(FLSFILES): %.fls: %.tex
-	-rm -f nospeakermargin.tex
+	-rm nospeakermargin.tex
 	latexmk -pdf -g $<
-	
-copy: $(F)
-	cp $(F) ../../slides-pdf
 
-copy-all:
+copy:
 	cp *.pdf ../../slides-pdf
 
 texclean:
