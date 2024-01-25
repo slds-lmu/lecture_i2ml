@@ -11,7 +11,7 @@
 \newcommand{\learninggoals}{
 \item Understand what the Generalization Error is
 \item Get an overview on how we evaluate performance of learners
-\item Learn about some evaluation metrics
+\item Know some evaluation metrics for classification and regression
 \item Understand why we do resampling}
 
 
@@ -22,7 +22,7 @@
 
 \begin{document}
 
-\lecturechapter{Evaluation: In a nutshell}
+\lecturechapter{Evaluation: In a Nutshell}
 \lecture{Introduction to Machine Learning}
 \sloppy
 
@@ -57,29 +57,45 @@
 
 % ------------------------------------------------------------------------------
 
-\begin{vbframe}{Estimating the generalization error}
+\begin{vbframe}{Evaluating a Model}
 
 \begin{itemize}
-\item For a fixed model, we are interested in the Generalization Error (GE): $\GEfL := \E \left[ \Lyfhx) \right]$, i.e. the expected error the model makes for data $(\xv, y) \sim \Pxy$.
-\item We need an estimator for the GE with $m$ test observations: $$\GEh(\fh, L) := \frac{1}{m}\sum_{(\xv, y)} \left[ \Lyfhx \right]$$
-\item However, if $(\xv, y) \in \Dtrain$, $\GEh(\fh, L)$ will be biased via overfitting the training data.
-\item Thus, we estimate the GE using unseen data $(\xv, y) \in \Dtest$:
-
- $$\GEh(\fh, L) := \frac{1}{m}\sum_{(\xv, y) \in \Dtest} \left[ \Lyfhx \right]$$
-
+%\item For a fixed model, we are interested in the Generalization Error (GE): $\GEfL := \E \left[ \Lyfhx) \right]$, i.e. the expected error the model makes for data $(\xv, y) \sim \Pxy$.
+%\item We need an estimator for the GE with $m$ test observations: $$\GEh(\fh, L) := \frac{1}{m}\sum_{(\xv, y)} \left[ \Lyfhx \right]$$
+%\item However, if $(\xv, y) \in \Dtrain$, $\GEh(\fh, L)$ will be biased via overfitting the training data.
+%\item Thus, we estimate the GE using unseen data $(\xv, y) \in \Dtest$:
+% $$\GEh(\fh, L) := \frac{1}{m}\sum_{(\xv, y) \in \Dtest} \left[ \Lyfhx \right]$$
+\item We have seen how to train models that are optimal in some sense, relative to other possible models. However, how can we assess how good they actually are, in absolute numbers?
+\item Idea: Use risk $\sum_{(\xv, y) \in \Dtrain} \left[ \Lyfhx \right]$ after training.
+\item Problem: This value can be very optimistic.
+\item Example: Overfitting of a polynomial regression.
 \end{itemize}
 
-\framebreak
+\begin{figure}
+\includegraphics[width=0.53\textwidth]{figure/nutshell-overfit}
+\end{figure}
 
 \begin{itemize}
-\item Usually, we have no access to new \textbf{unseen} data.
-\item Thus, we divide our data set manually into $\Dtrain$ and $\Dtest$.
-\item This process is depicted below.
+\item Degree 50 will result in lowest training loss, however, degree 5 seems to be the "best" model.
+\item "Best" means that using new data, this model will probably produce the most meaningful predictions.
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Generalization Error}
+
+\begin{itemize}
+\item In other words, the "best" model will generalize well and have a low \textbf{G}eneralization \textbf{E}rror.¸
+\item Formally, for a fixed model, the GE can be expressed via: $\GEfL := \E \left[ \Lyfhx \right]$,
+\item i.e., "what is the expected loss for a new observation?"
+\item Ideally, the GE should be estimated with new, unseen data.
+\item Usually, we have no access to new \textbf{unseen} data, though.
+\item Thus, we divide our data set manually into $\Dtrain$ and $\Dtest$ and use the latter to estimate the GE via some metric $\rho()$.
 \end{itemize}
 
 \begin{center}
 % FIGURE SOURCE: https://docs.google.com/drawings/d/13AH298rMnDL5p0SrBd6VCukC9vg1qyRXGqgMcvuPRc0/edit?usp=sharing
-\includegraphics[trim = 0 0 0 30, clip, width=0.75\textwidth]
+\includegraphics[trim = 0 0 0 30, clip, width=0.575\textwidth]
 {figure_man/evaluation-intro-ge.pdf}
 \end{center}
 
@@ -87,69 +103,86 @@
 
 \begin{vbframe}{Metrics}
 
-But what is $\Lyfhx$?
-\vspace{0.2cm}
+But what is a good metric $\rho()$?
 
-$\Lyfhx$ will always indicate how good the target matches our prediction.
-While we can always use the (inner) loss function that we trained the model on as outer loss, this may not always be ideal:
 
 \begin{itemize}
-\item Explicit values of loss functions may not have a \textbf{meaningful interpretation} beyond ordinality.
-\item The loss function may not be applicable to all models that we are interested in comparing (\textbf{model agnostic}ism), e.g. when comparing generative and discriminative approaches.
+\item %Using $\Lyfhx$ will always indicate how good the target matches our prediction.
+While we can always use the (inner) loss function that we trained the model on as outer loss to construct a metric $\rho()$, this may not always be ideal.
+\item For both, classification and regression there is a large variety of evaluation metrics, of which we will just cover a fraction.
 \end{itemize}
 
-Thus, there also exist evaluation metrics that are not based on inner losses.
-Yet, they can (still) be faced with these problems:
 
-\begin{itemize}
-\item They might be not \textbf{useful} (for a specific use case, e.g. when we have imbalanced data).
-\item They might be im\textbf{proper}, i.e. they might draw false conclusions.
-\end{itemize}
+
+%\begin{itemize}
+%\item Explicit values of loss functions may not have a \textbf{meaningful interpretation} beyond ordinality.
+%\item The loss function may not be applicable to all models that we are interested in comparing (\textbf{model agnostic}ism), e.g. when comparing generative and discriminative approaches.
+%\end{itemize}
+
+%Thus, there also exist evaluation metrics that are not based on inner losses.
+%Yet, they can (still) be faced with these problems:
+
+%\begin{itemize}
+%\item They might be not \textbf{useful} (for a specific use case, e.g. when we have imbalanced data).
+%\item They might be im\textbf{proper}, i.e. they might draw false conclusions.
+%\end{itemize}
 
 \end{vbframe}
 
-\begin{vbframe}{Deep Dive: Properness}
+%\begin{vbframe}{Deep Dive: Properness}
 
 
 
-\begin{itemize}
+%\begin{itemize}
 
 
-\item A scoring rule $\mathbf{S}$  is proper relative to $\mathcal {F}$ if (where a low value of the scoring rule is better):
-\end{itemize} 
+%\item A scoring rule $\mathbf{S}$  is proper relative to $\mathcal {F}$ if (where a low value of the scoring rule is better):
+%\end{itemize} 
 
-$$\mathbf {S} (Q,Q) \leq \mathbf {S} (F,Q) \forall F,Q \in \mathcal {F}$$
+%$$\mathbf {S} (Q,Q) \leq \mathbf {S} (F,Q) \forall F,Q \in \mathcal {F}$$
 
-with $\mathcal{F}$ being a convex class of probability measures.
+%with $\mathcal{F}$ being a convex class of probability measures.
 
-\begin{itemize}
-\item This means that a scoring rule should be optimal for the actual data target distribution, i.e. we are rewarded for properly modeling the target.
-\end{itemize}
+%\begin{itemize}
+%\item This means that a scoring rule should be optimal for the actual data target distribution, i.e. we are rewarded for properly modeling the target.
+%\end{itemize}
 
-\end{vbframe}
+%\end{vbframe}
 
 \begin{vbframe}{Metrics for Classification}
 
 Commonly used evaluation metrics include:
 \begin{itemize}
 \item Accuracy: \\
-$ \rho_{ACC} = \frac{1}{m} \sum_{i = 1}^m [\yi = \yih] \in [0, 1]. $
+\begin{itemize}
+\item $ \rho_{ACC} = \frac{1}{m} \sum_{i = 1}^m [\yi = \yih] \in [0, 1]. $
+\item "Proportion of correctly classified observations."
+\end{itemize}
 \item Misclassification error (MCE): \\
-$ \rho_{MCE} = \frac{1}{m} \sum_{i = 1}^m [\yi \neq \yih] \in [0, 1]. $
+\begin{itemize}
+\item $ \rho_{MCE} = \frac{1}{m} \sum_{i = 1}^m [\yi \neq \yih] \in [0, 1]. $
+\item "Proportion of incorrectly classified observations."
+\end{itemize}
 \item Brier Score: \\
-$\rho_{BS} = \frac{1}{m} \sum_{i = 1}^m 
+\begin{itemize}
+\item $\rho_{BS} = \frac{1}{m} \sum_{i = 1}^m 
 \left( \hat \pi^{(i)} - \yi \right)^2$
+\item "Squared error btw. predicted probability and actual label."
+\end{itemize}
 \item Log-loss: \\
-$\rho_{LL} = \frac{1}{m} \sum_{i = 1}^m \left( - \yi \log \left( 
+\begin{itemize}
+\item $\rho_{LL} = \frac{1}{m} \sum_{i = 1}^m \left( - \yi \log \left( 
 \hat \pi^{(i)} \right) - \left( 1-\yi \right) \log \left( 1 - \hat \pi^{(i)} 
 \right) \right).$
+\item "Distance of predicted and actual label distribution."
+\end{itemize}
 \end{itemize}
 
-The probabalistic metrics, Brier Score and Log-Loss penalize false confidence, i.e. predicting the wrong label with high probability, heavily.
+The probabilistic metrics, Brier Score and Log-Loss, penalize false confidence, i.e. predicting the wrong label with high probability, heavily.
 
 \framebreak
 
-For hard-label classification, the confusion matrix is a useful representation:
+For hard-label classification, the confusion matrix is a useful tool:
 
 \begin{center}
 \small
@@ -167,20 +200,38 @@ From this matrix a variety of evaluation metrics, including precision and recall
 $$ Precision = \frac{TP}{TP + FP}$$
 $$Recall = \frac{TP}{TP + FN} $$
 
+\framebreak
+
+\begin{itemize}
+\item Other frequently used metrics like the False Negative Rate can also be derived from the confusion matrix.
+\item Many of these metrics can go with different names.
+\end{itemize}
+
+\begin{center}
+% FIGURE SOURCE: https://en.wikipedia.org/wiki/F1_score#Diagnostic_testing
+\includegraphics[width=0.85\textwidth]{figure_man/roc-confmatrix-allterms.png}
+\end{center}
+
+\href{https://en.wikipedia.org/wiki/F1_score#Diagnostic_testing}{\beamergotobutton{Clickable version/picture source}} $\phantom{blablabla}$
+\href{https://upload.wikimedia.org/wikipedia/commons/0/0e/DiagnosticTesting_Diagram.svg}{\beamergotobutton{Interactive diagram}}
+
 
 \end{vbframe}
 
-\begin{vbframe}{Receiver operating characteristics}
+\begin{vbframe}{ROC-Curve}
 
 \begin{itemize}
-\item Receiver operating characteristics (ROC) performs evaluation for binary classifiers beyond single metrics.
-\item We can assess classifiers by their TPR (y-axis) and FPR (x-axis).
-\item We aim to identify good classifiers who (weakly) dominate others. 
-\item For example, the "Best" classifier in the image strictly dominates "Pos-25\%" and "Pos-75\%" and weakly dominates the others.
+\item The ROC-Curve allows to evaluate binary classifiers beyond single metrics.
+It compares classifiers using their TPR and FPR, for different thresholds.
+\item We aim to identify good thresholds that dominate others.
+\item The area under this curve (AUC) can also be used as metric.
 \end{itemize}
-\begin{center}
-    {\centering \includegraphics[width=0.4\textwidth]{figure/eval_mclass_roc_sp_2}}
-    \end{center}
+%\begin{center}
+%    {\centering \includegraphics[width=0.4\textwidth]{figure/eval_mclass_roc_sp_2}}
+%    \end{center}
+    \begin{center}
+  \includegraphics[width=0.4\textwidth,trim={1.5cm 0 0 1.5cm},clip]{figure/eval_mclass_roc_sp_4a.pdf}
+\end{center}
 
 
 \end{vbframe}
@@ -190,42 +241,47 @@ $$Recall = \frac{TP}{TP + FN} $$
 
 Commonly used evaluation metrics include:
 \begin{itemize}
-\item Sum of Squared Errors (SSE): $\rho_{SSE}(\yv, \F)=\sumim (\resi)^2$
-\item Mean Squared Error (MSE): $\rho_{MSE}(\yv, \F)=\meanim SSE$
-\item Root Mean Squared Error (RMSE): $\rho_{RMSE}(\yv, \F)= \sqrt{MSE}$
-\item R-Squared: $\rho_{R^2}(\yv, \F) = 1 - \frac{\sumim (\resi)^2}{\sumim (\yi - \bar{y})^2}$
-\item Mean Absolute Error (MAE): $\rho_{MAE}(\yv, \F) = \meanim \rvert \resi \rvert \in [0;\infty) \qquad$
+\item Sum of Squared Errors (SSE): $\rho_{SSE}=\sumim (\resi)^2$
+\item Mean Squared Error (MSE): $\rho_{MSE}=\meanim (\resi)^2$
+\item Root Mean Squared Error (RMSE): $\rho_{RMSE}= \sqrt{MSE}$
+\item R-Squared: $\rho_{R^2} = 1 - \frac{\sumim (\resi)^2}{\sumim (\yi - \bar{y})^2}$
+\item Mean Absolute Error (MAE): $\rho_{MAE} = \meanim \rvert \resi \rvert$
 \end{itemize}
 
 \end{vbframe}
 
 
 
-\begin{vbframe}{Estimating the generalization error (better)}
+\begin{vbframe}{Improving estimation of ge}
 
-While  $$\GEh(\fh, L) := \frac{1}{m}\sum_{(\xv, y) \in \Dtest} \left[ \Lyfhx \right]$$ will be unbiased, with a small $m$ it will suffer from high variance.
-We have two options to decrease the variance:
+We can estimate the GE with a test data set via:  $$\GEh(\fh, L) := \frac{1}{m}\sum_{(\xv, y) \in \Dtest} \left[ \Lyfhx \right],$$ 
+i.e. we compute the selected metric $\Lyfhx$ for each observation in the test set and compute the mean.
+
+\vspace{0.2cm}
+This will give an appropriate estimate for the GE.
+However, with only a few test observations (small $m$), this estimate will be unstable or, in other words, have high variance.
+We have two options to decrease it:
 
 \begin{itemize}
 \item Increase $m$.
 \item Compute $\GEh(\fh, L)$ for multiple test sets and aggregate them.
 \end{itemize}
 
-With a finite amount of data, increasing $m$ would mean to decrease the size of the training data.
-Thus, we focus on using multiple ($B$) test sets: 
-
-$$\JJ = \JJset.$$
-
-where we compute $\GEh(\fh, L)$ for each set and aggregate the estimates.
-
-These $B$ sets are generated through \textbf{resampling}.
-
-
 \end{vbframe}
 
 \begin{vbframe}{Resampling}
 
-There exist a few well established resampling strategies:
+As we do not have access to infinite data and increasing $m$ will mean a reduction of the number of training observations, aggregation over $B$ sets is the preferred option:
+
+$$\JJ = \JJset.$$
+
+We compute $\GEh(\fh, L)$ for each set and aggregate the estimates.
+
+These $B$ distinct sets are generated through \textbf{resampling}.
+
+\vspace{0.2cm}
+
+There exist a number of well-established resampling strategies:
 
 \begin{itemize}
 \item (Repeated) Hold-out / Subsampling
@@ -233,18 +289,24 @@ There exist a few well established resampling strategies:
 \item Bootstrap
 \end{itemize}
 
-All methods aim to generate $\JJ$ by splitting the full data set (repeatedly) into a train and test set.
+\end{vbframe}
+
+\begin{vbframe}{Resampling}
+
+
+
+All methods aim to generate the train-test splits $\JJ$ by splitting the full data set repeatedly.
 The model is trained on the respective train set and evaluated on the test set.
 
 \textbf{Example:} 3-fold cross validation
 
 \begin{center}
 % FIGURE SOURCE: practical tuning paper
-\includegraphics[width=0.4\textwidth]{figure_man/crossvalidation.png}
+\includegraphics[width=0.6\textwidth]{figure_man/crossvalidation.png}
 \end{center}
 
 
-In order to robustify performance estimates we can repeat these resamplings, e.g. we could perform 10 times 8 fold cross validation.
+In order to robustify performance estimates, we can repeat resampling.
 
 \end{vbframe}
 
