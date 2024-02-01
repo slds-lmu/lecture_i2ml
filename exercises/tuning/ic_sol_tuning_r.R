@@ -95,7 +95,7 @@ for (i in tuning_archive$iteration) {
     
     # Estimate GE via 5-CV
     ge_est <- 0
-    for (j in folds) {
+    for (j in 1:folds) {
         lrn_knn$train(task, resampling_idx[[j]]$train)
         predictions <- lrn_knn$predict(task, resampling_idx[[j]]$test)
         ge_est <- ge_est + (1 / folds) * predictions$score()
