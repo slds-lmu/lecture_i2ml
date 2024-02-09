@@ -12,7 +12,7 @@ library(ggplot2)
 # Data adapted from 
 # https://www.openml.org/search?type=data&sort=runs&status=active&qualities.NumberOfClasses=lte_1&id=41021
 
-data_baseball <- fread("exercises/nested-resampling/ex_rnw/baseball.csv")
+data_baseball <- fread("exercises/tuning/ex_rnw/baseball.csv")
 data_baseball$team <- as.factor(data_baseball$team)
 data_baseball$league <- as.factor(data_baseball$league)
 
@@ -95,7 +95,7 @@ for (i in tuning_archive$iteration) {
     
     # Estimate GE via 5-CV
     ge_est <- 0
-    for (j in folds) {
+    for (j in 1:folds) {
         lrn_knn$train(task, resampling_idx[[j]]$train)
         predictions <- lrn_knn$predict(task, resampling_idx[[j]]$test)
         ge_est <- ge_est + (1 / folds) * predictions$score()
