@@ -33,9 +33,13 @@ or similar, where applicable.
 - Don't put code on the slides, the theory is orthogonal to issues of implementation (... in theory..). Code is strictly for exercises/ practice sessions. 
 - Compiling the slides should be done via the **Makefile**.
   - Before compiling anything, remove auxiliary files by running `make texclean` from within the corresponding folder.
-  - There are basically two use cases, for both of which you have the option to compile with or without a right-side **margin**. The margin is added when the slides are to be used in recording a video (the speaker's head will appear there). 
-  - Use case 1: you want to compile a **single** PDF `<SLIDES>.tex`. Run `make <SLIDES>.pdf` (`make <SLIDES>-margin.pdf`) to compile without (with) margin. Note that compiling with margin is handled by creating a temporary file signaling to add a margin, so make sure to run `make texclean` afterwards. 
-  - Use case 2: you want to compile **all** PDFs in a folder. Run `make all` (`make all-margin`) to compile without (with) margin. This will automatically move a copy of the compiled PDFs to the `slides-pdf` directory. The [course website repository](https://github.com/teaching-data-science/intro2ml) links to `slides-pdf`, so make sure you only update the files in there if you want to release them on the website.
+  - There are basically 3 use cases, for all of which you have the option to compile with or without a right-side **margin**. The margin is added when the slides are to be used in recording a video (the speaker's head will appear there). 
+  - Use case 1a: you want to **compile a single** PDF `<SLIDES>.tex`. Run `make <SLIDES>.pdf` (`make <SLIDES>-nomargin.pdf`) to compile with (without) margin.
+  - Use case 1b: you want to **copy a single** PDF to `slides-pdf`. Run `make copy F=<SLIDES>.pdf`.
+  - Use case 2a: you want to **compile all** PDFs in a folder. Run `make most` (`make most-nomargin`) to compile with (without) margin. 
+  - Use case 2b: you want to **copy all** PDFs to `slides-pdf`. Run `make copy-all`.
+  - Use case 3: you want to **compile and copy all** PDFs in a folder and update the corresponding files in `slides-pdf`. Run `make all` (`make all-nomargin`) to compile with (without) margin. This will automatically move a copy of the compiled PDFs to the `slides-pdf` directory. The [course website repository](https://github.com/teaching-data-science/intro2ml) links to `slides-pdf`, so make sure you only update the files in there if you want to release them on the website.
+  - Note that compiling without margin is handled by creating a temporary file signaling to remove the margin, so make sure to run `make texclean` after compiling for a clean slate. 
   - You can remove all PDFs in a folder with `make clean`.
   - If you use Windows we recommend that you access make via the [Ubuntu bash](https://apps.microsoft.com/store/detail/ubuntu/9PDXGNCFSCZV?hl=en-us&gl=US) (take a look at the installation tips).
 - We try to keep a "dependency graph" between slide sets up to date so that it's easier to keep track of
@@ -67,8 +71,17 @@ what material needs to be understood before what else. Please do add appropriate
   - a subdirectory `ex_rnw` that contains .Rnw files with single exercises (prefixed with `ex_`) and associated solutions (prefixed with sol `sol_`),
   - one or multiple exercise sheets (prefixed with `ex_`) and associated solutions (prefixed with `sol_`), sourcing the single snippets from `ex_rnw`,
   - a collection file (prefixed with `collection_`) that assembles all exercises for the given topic (those currently used in the exercise sheets, further existing material, ideas, URLs, ...)
-- Compiling the slides should be done via the Makefile: just type `make all` and it will render all exercises, solutions and collection files, or `make <FILE>.pdf` to render a specific file `<FILE>.Rnw`.
-- `make` will automatically move a copy of the compiled `ex_` and `sol_` PDFs (i.e., those that will appear on the Website) to the `exercises-pdf` directory. From there, files can be copied into the [course website repository](https://github.com/teaching-data-science/intro2ml) in case of a new release.
+  
+- Compiling the exercises should be done via the **Makefile**.
+  - Before compiling anything, remove auxiliary files by running `make texclean` from within the corresponding folder.
+  - There are basically 3 use cases.
+  - Use case 1a: you want to **compile a single** exercise `EXERCISE.Rnw` in a folder. Run `make <EXERCISE>.pdf`. 
+  - Use case 1b: you want to **copy a single** exercise to `exercises-pdf`. Run `make copy F=<EXERCISE>.pdf`.
+  - Use case 2a: you want to **compile all** exercises in a folder. Run `make most`. 
+  - Use case 2b: you want to **copy all** PDFs to `exercises-pdf`. Run `make copy-all`.
+  - Use case 3: you want to **compile and copy all** exercises in a folder and update the corresponding files in `exercises-pdf`. Run `make all`. This will automatically move a copy of the compiled PDFs to the `exercises-pdf` directory. The [course website repository](https://github.com/teaching-data-science/intro2ml) links to `exercises-pdf`, so make sure you only update the files in there if you want to release them on the website.
+  - Note that compiling without margin is handled by creating a temporary file signaling to remove the margin, so make sure to run `make texclean` after compiling for a clean slate. 
+  - You can remove all PDFs in a folder with `make clean`.
 - When creating new exercise sheets or collection files, please use the setup provided in `style/preamble_ueb.Rnw` and `style/preamble_ueb_coll.Rnw`.
 
 ### Install Necessary R packages
@@ -115,4 +128,5 @@ The website is updated whenever the master branch is pushed, via the [Github act
 The website uses `pkgdown` via `_pkgdown.yml`, its pages are in `\vignettes`.
 The automatic deployment uses a "secret" (see repository settings on Github),
 which is a PAT called `DEPLOY_PAT` (created by Fabian Scheipl, Jan 30 2020).
+
 

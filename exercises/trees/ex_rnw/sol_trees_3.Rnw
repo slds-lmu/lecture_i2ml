@@ -1,57 +1,51 @@
-The target class proportion $\pikN$ of class $k \in \Yspace$ in a node can 
-be computed as
-$$ \pikN = \frac{1}{|\Np|} \sum_{(x^{(i)},y^{(i)}) \in \Np} [y^{(i)} = k].$$
+\begin{enumerate}[a)]
+  \item The deterministic rule tells us to pick the class with the highest empirical frequency. With the randomizing rule, we draw from a categorical distribution that is parameterized with these same empirical frequencies, meaning we draw the most frequent class with probability $\gamma = \max_k \pikN$. If we repeat this process many times, we will predict this class $\gamma$ \% of the time. Therefore, in expectation, we will also predict the most frequent class in most cases, but the rule is more nuanced as the magnitude of $\gamma$ makes a difference (the closer to 1, the more similar both rules).
 
-We can define $n \in \N$ i.i.d. RV $Y^{(1)}, \dots, Y^{(n)}$ that are
-distributed like the training data
-via the categorical distribution induced by the above class frequencies:
+\item In order to compute the expected MCE, we need some random variables (RV) because we want to make a statement that holds for arbitrary training data drawn from the data-generating process.
+More precisely, we define $n \in \N$ i.i.d. RV $Y^{(1)}, \dots, Y^{(n)}$ that are
+distributed according to the categorical distribution induced by the observed class frequencies:
 
 $$\mathbb{P}(Y^{(i)} = k| \mathcal{N}) = \pikN \quad \forall i \in
 \nset, \quad k \in \Yspace.$$
 
-By design, the corresponding estimators $\hat{Y}^{(1)},
-\dots, \hat{Y}^{(n)}$ from the randomizing rule follow the same
+The label $\yi$ of the $i$-th training observation is thus a realization of the corresponding RV $Y^{(i)}$.
+
+Since our new randomization rule is stochastic, the predictions for the training observations will also be realizations of RV that we denote by  $\hat{Y}^{(1)},
+\dots, \hat{Y}^{(n)}$.
+By design, they follow the same categorical
 distribution:
 
 $$\mathbb{P}(\hat Y^{(i)} = k| \mathcal{N}) = \pikN \quad \forall i \in
 \nset, \quad k \in \Yspace.$$
 
-Then, we can define the MCE for predicting in a node with $n = |\Np|$
-observations distributed like the 
-training data:
+Then, we can define the MCE for a node with $n = |\Np|$ when the randomizing rule is used:
 $$\rho_{\text{MCE}}(\Np) = \meanin \left[ Y^{(i)} \neq \hat Y^{(i)}\right].$$
 
-Taking the expectation of this MCE leads to:
+Taking the expectation of this MCE leads to a statement about a node with arbitrary training data:
 \begin{align*}
   \E_{Y^{(1)}, \dots, Y^{(n)}, \hat{Y}^{(1)}, \dots, \hat{Y}^{(n)}}
   \left(\rho_{\text{MCE}}(\Np) \right)
   &=  \E_{Y^{(1)}, \dots,Y^{(n)}, \hat{Y}^{(1)}, \dots, \hat{Y}^{(n)}}
   \left(\meanin \left[Y^{(i)} \neq \hat{Y}^{(i)} \right] \right) \\
   & = \meanin \E_{Y^{(i)}, \hat{Y}^{(i)}} \left( \left[Y^{(i)}
-  \neq \hat{Y}^{(i)} \right]\right) ~~ \text{i.i.d. assumption} \\
+  \neq \hat{Y}^{(i)} \right]\right) ~~ \text{i.i.d. assumption + linearity} \\
   & = \meanin\E_{Y^{(i)}}\left(
   \E_{\hat{Y}^{(i)}} \left( \left[Y^{(i)} \neq \hat{Y}^{(i)} \right] \right)
   \right) ~~ \text{Fubini's theorem} \\
   & = \meanin\E_{Y^{(i)}} \left( \sum_{k \in \Yspace} \pikN \cdot
   \left[ Y^{(i)} \neq k \right]  \right) \\
-  & = \meanin \E_{Y^{(i)}} \left( \sum_{k \in \Yspace
-  \setminus \{Y^{(i)}\}} \pikN \right) \\
+  % & = \meanin \E_{Y^{(i)}} \left( \sum_{k \in \Yspace
+  % \setminus \{Y^{(i)}\}} \pikN \right) \\
   & = \meanin \E_{Y^{(i)}} \left( 1 - \pi^{(\Np)}_{k = Y^{(i)}}
   \right) \\
   & = \meanin \sumkg \pikN \cdot \left(1 - \pikN \right) \\
   & = n \cdot \frac{1}{n} \sumkg \pikN \cdot \left(1 - \pikN \right) \\
-  &= \sumkg \pikN - \sumkg \left (\pikN \right)^2 \\
-  & = 1 -  \sumkg\left(\pikN \right)^2.
+  &= \sumkg \pikN \cdot \left(1 - \pikN \right).
 \end{align*}
 
 This is precisely the Gini index CART use for splitting with Brier score.
+Gini impurity can thus be viewed as the expected frequency with which the training samples will be misclassified in a given node $\Np$.
 
-Gini impurity can thus be viewed as the frequency with which 
-a randomly chosen sample would be misclassified if we used randomized 
-predictions according to the categorical distribution induced by the training 
-class 
-frequencies.
+In other words, in constructing CART with minimal Gini impurity, we minimize the expected rate of misclassification across the training data.
 
-In other words, we minimize the expected rate of misclassification among random 
-samples from data distributed like the training data if we predict according to
-the observed class probabilities.
+\end{enumerate}
