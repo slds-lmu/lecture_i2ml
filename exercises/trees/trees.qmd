@@ -1,0 +1,357 @@
+---
+title: "Exercise 8 -- CART"
+subtitle: "[Introduction to Machine Learning](https://slds-lmu.github.io/i2ml/)"
+notebook-view:
+  - notebook: ex_trees_R.ipynb
+    title: "Exercise sheet for R"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/trees/ex_forests_R.ipynb"
+  - notebook: ex_trees_py.ipynb
+    title: "Exercise sheet for Python"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/trees/ex_forests_py.ipynb"
+  - notebook: sol_trees_R.ipynb
+    title: "Solutions for R"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/trees/sol_forests_R.ipynb"
+  - notebook: sol_trees_py.ipynb
+    title: "Solutions for Python"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/trees/sol_forests_py.ipynb"
+---
+
+::: {.content-hidden when-format="pdf"}
+::: {.hidden}
+{{< include ../_quarto/latex-math.qmd >}}
+:::
+:::
+
+<details> 
+<summary>*Hint: Useful libraries for exercise 1*</summary>
+
+::: {.panel-tabset}
+
+### R
+{{< embed ex_trees_R.ipynb#import echo=true >}}
+### Python
+{{< embed ex_trees_py.ipynb#import echo=true >}}
+:::
+</details>
+
+## Exercise 1: Splitting criteria
+
+::: {.callout-note title="Learning goals" icon=false}
+TBD
+:::
+
+Given are the data set
+
+```{r, echo=FALSE, eval=TRUE, results=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=5, fig.width=5}
+x = c(1, 2, 7, 10, 20)
+y = c(1, 1, 0.5, 10, 11)
+data = t(data.frame(x = x, y = y))
+knitr::kable(data, "latex", digits = 3L)
+log_x = log(x)
+data = t(data.frame(log_x, y))
+knitr::kable(data, "latex", digits = 2L)
+```
+
+| $x$ | 1.0 | 2.0 | 7.0 | 10.0 | 20.0 |
+| --- | --- | --- | --- | ---- | ---- |
+| $y$ | 1.0 | 1.0 | 0.5 | 10.0 | 11.0 |
+
+and the same with log-transformed feature $x$:
+
+| $\log x$ | 0.0 | 0.7 | 1.9 | 2.3 | 3.0 |
+| -------- | --- | --- | --- | --- | --- |
+| $y$      | 1.0 | 1.0 | 0.5 | 10.0| 11.0|
+
+***
+Compute the first split point the CART algorithm would find for each data set (with pen and paper or in `R`, resp. `Python`).
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+::: {.panel-tabset}
+
+### Pen-and-paper solution
+
+
+1. Here, we have only one split variable $x$. We probe all splits of $x$ in two groups, where thresholds are placed equidistant between the observed feature values (think about why this might help generalization):
+
+- $ (1)$ | $(2,7,10,20)$ (split point 1.5)
+- $ (1,2)$ | $(7,10,20)$ (split point 4.5)
+- $ (1,2,7)$ | $(10,20)$ (split point 8.5)
+-  $ (1,2,7,10)$ | $(20)$ (split point 15)
+
+2. For each split point, compute the sum of squares ($L2$ loss) in both groups.
+
+3. Choose the point that splits both groups best w.r.t. empirical risk reduction.
+
+A split point $t$ leads to the following half-spaces:
+
+  \begin{align*}
+    \Nl(t) &= \{ (x,y) \in \Np: x \leq t \} ~~ \text{and} ~~ 
+    \Nr(t) = \{ (x,y) \in \Np: x > t \}.
+  \end{align*}
+
+Calculate the risk $\risk(\Np, t)$ for each split point:
+
+- $x \leq 1.5$
+  \begin{align*}
+    c_1 = y_1 = 1, c_2 = \tfrac{1}{4} \sum_{i = 2}^5 y_i = 5.625
+   \end{align*}
+
+  \begin{align*}
+    \risk(\Np, 1.5) &= \tfrac{|\Nl|}{|\Np|} \rho_{\text{MSE}}(\Nl) + 
+    \tfrac{|\Nr|}{|\Np|} \rho_{\text{MSE}}(\Nr) =  \\
+    &= \tfrac{1}{5} \cdot \left( \tfrac{1}{1}(1 - 1)^2 \right) + \tfrac{4}{5} \cdot \left( \tfrac{1}{4}((1 - 5.625)^2 + (0.5 - 5.625)^2 + (10 - 5.625)^2 + (11 - 5.625)^2) \right) \\
+    &= 19.14
+  \end{align*}
+
+- $x \leq 4.5$ ~~ $\Longrightarrow$ $\risk(\Np, 4.5) = 13.43$
+
+- $x \leq 8.5$ ~~ $\Longrightarrow$ $\risk(\Np, 8.5) = 0.13$ **optimal**
+
+- $x \leq 15$ ~~~ $\Longrightarrow$ $\risk(\Np, 15) = 12.64$
+
+
+Proceeding accordingly for the monotonic, rank-preserving log transformation yields the same result:
+
+- $\log x \leq 0.3$ ~~ $\Longrightarrow$ $\risk(\Np, 0.3) = 19.14$
+
+- $\log x \leq 1.3$ ~~ $\Longrightarrow$ $\risk(\Np, 1.3) = 13.43$
+
+- $\log x \leq 2.1$ ~~ $\Longrightarrow$ $\risk(\Np, 2.1) = 0.13$ **optimal**
+
+- $\log x \leq 2.6$ ~~ $\Longrightarrow$ $\risk(\Np, 2.6) = 12.64$
+
+
+### R
+{{< embed sol_trees_R.ipynb#1-a-1 echo=true >}}
+{{< embed sol_trees_R.ipynb#1-a-2 echo=true >}}
+{{< embed sol_trees_R.ipynb#1-a-3 echo=true >}}
+
+### Python
+{{< embed sol_trees_py.ipynb#1-a-1 echo=true >}}
+{{< embed sol_trees_py.ipynb#1-a-2 echo=true >}}
+{{< embed sol_trees_py.ipynb#1-a-3 echo=true >}}
+{{< embed sol_trees_py.ipynb#1-a-4 echo=true >}}
+{{< embed sol_trees_py.ipynb#1-a-5 echo=true >}}
+:::
+
+</details> 
+:::
+
+***
+State the optimal constant predictor for a node $\Np$ when minimizing the empirical risk under $L2$ loss and explain why this is equivalent to minimizing \enquote{variance impurity}.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+For regression trees, we usually identify *impurity* with *variance*. Here is why:
+
+- It is reasonable to define impurity via the deviation between actual target values and the predicted constant -- either using absolute or square distances to enforce symmetry of positive and negative residuals.
+
+- Recall the constant $L2$ risk minimizer for a node $\Np$:
+  $$
+  \bar y = \argmin_c \frac{1}{|\Np|}  \sum_{i = 1}^{|\Np|} (\yi - c)^2, 
+  $$
+
+  because
+
+  \begin{align*}
+  \min_c \frac{1}{|\Np|} \sum_{i = 1}^{|\Np|} (\yi - c)^2 &\Longleftrightarrow
+  \pd{}{c} \left( \frac{1}{|\Np|} \sum_{i = 1}^{|\Np|} (\yi - c)^2 \right) = 0 \\
+  &\Longleftrightarrow \frac{1}{|\Np|} \pd{}{c} \left( \sum_{i = 1}^{|\Np|} 
+  \left({\yi}^2 - 2 \yi c + c^2\right) \right) = 0 \\
+  &\Longleftrightarrow \left( \sum_{i = 1}^{|\Np|} \left(
+  -2 \yi + 2c\right) \right) = 0 \\
+  &\Longleftrightarrow |\Np| \cdot c =  \sum_{i = 1}^{|\Np|} \yi \\
+  &\Longrightarrow \hat c = \frac{1}{|\Np|}  \sum_{i = 1}^{|\Np|} \yi
+  = \bar y.
+  \end{align*}
+
+- Consequently, we have 
+  $$
+  \bar y = \argmin_c \frac{1}{|\Np|}  \sum_{i = 1}^{|\Np|} (\yi - c)^2, 
+  $$
+
+  where the right hand side is the (biased) sample variance for sample mean $c$.
+
+- Therefore, predicting the sample mean both minimizes risk under $L2$ loss and variance impurity.
+
+- Since constant mean prediction is equivalent to an intercept LM (minimizing the sum of squared residuals!), regression trees with $L2$ loss perform piecewise constant linear regression.
+
+- The same correspondence holds between impurity via absolute distances and $L1$ regression.
+
+</details> 
+:::
+
+
+## Exercise 2: Splitting criteria
+
+::: {.callout-note title="Learning goals" icon=false}
+TBD
+:::
+
+In this exercise, we will have a look at two of the most important CART hyperparameters, i.e., design choices exogenous to training. Both `minsplit` and `maxdepth` influence the number of input space partitions the CART will perform.
+
+***
+How do you expect the number of splits to affect the model fit and generalization performance?
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+Allowing for more splits will make the model more complex, thus - all else being equal - achieving a better data fit but also increasing the risk of overfitting. 
+
+</details> 
+:::
+
+***
+Using `mlr3`, fit a regression tree learner (`regr.rpart`) to the `bike_sharing` task (omitting the `date` feature) for
+
+- `maxdepth` $\in \{2, 4, 8\}$ with `minsplit` $= 2$
+
+- `minsplit` $\in \{5, 1000, 10000\}$ with `maxdepth` $= 20$
+
+What do you observe?
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+Code:
+```{r, echo=TRUE, eval=TRUE, message=FALSE, warning=FALSE, fig.align="center", fig.height=4, fig.width=9}
+library(mlr3verse)
+library(rattle)
+task <- tsk("bike_sharing")
+task$select(task$feature_names[task$feature_names != "date"])
+
+for (i in c(2, 4, 8)) {
+  learner <- lrn("regr.rpart", minsplit = 2, maxdepth = i, minbucket = 1)
+  learner$train(task)
+  fancyRpartPlot(learner$model, caption = sprintf("maxdepth: %i", i))
+}
+
+for (i in c(5, 1000, 10000)) {
+  learner <- lrn("regr.rpart", minsplit = i, maxdepth = 20, minbucket = 1)
+  learner$train(task)
+  fancyRpartPlot(learner$model, caption = sprintf("minsplit: %i", i))
+}
+```
+
+Higher values of `maxdepth` and lower values of `minsplit`, respectively, produce more complex trees.
+
+</details> 
+:::
+
+***
+Which of the two options should we use to control the tree appearance?
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+Both hyperparameters can be used to control tree depth, and their effect depends on the properties of the data-generating process (e.g., at least 100 observations to split further can mean very pure or very impure nodes). Sometimes requirements like interpretability might steer our decision (e.g., a tree of depth 15 is probably hard to interpret). Usually, however, we will employ **hyperparameter tuning** to determine the values for both (and other) hyperparameters, deferring the responsibility from the practitioner to the data.
+
+</details> 
+:::
+
+## Exercise 3: Impurity reduction
+
+::: {.callout-tip icon=false title="Only for lecture group A"}
+:::
+
+::: {.callout-note title="Learning goals" icon=false}
+TBD
+:::
+
+We will now build some intuition for the Brier score / Gini impurity as a splitting criterion by showing that it is equal to the expected MCE of the resulting node.
+
+The fractions of the classes $k=1,\ldots, g$ in node $\Np$ of a decision tree are $\pi^{(\Np)}_1,\ldots,\pi^{(\Np)}_g$, where 
+$$
+\pikN = \frac{1}{|\Np|} \sum_{(x^{(i)},y^{(i)}) \in \Np} [y^{(i)} = k].
+$$
+
+For an expression that holds in expectation over arbitrary data, we need to introduce stochasticity. Assume we replace the (deterministic) classification rule in node $\Np$
+$$
+\hat{k}~|~\Np=\arg\max_k \pikN
+$$
+
+by a randomizing rule
+$$
+\hat k \sim \text{Cat} \left(\pi^{(\Np)}_1,\ldots,\pi^{(\Np)}_g \right),
+$$ 
+
+in which we draw the classes from the categorical distribution of their estimated probabilities (i.e., class $k$ is predicted with probability $\pi^{(\Np)}_k$).
+
+***
+Explain the difference between the deterministic and the randomized classification rule.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+The deterministic rule tells us to pick the class with the highest empirical frequency. With the randomizing rule, we draw from a categorical distribution that is parameterized with these same empirical frequencies, meaning we draw the most frequent class with probability $\gamma = \max_k \pikN$. If we repeat this process many times, we will predict this class $\gamma$ \% of the time. Therefore, in expectation, we will also predict the most frequent class in most cases, but the rule is more nuanced as the magnitude of $\gamma$ makes a difference (the closer to 1, the more similar both rules).
+
+</details> 
+:::
+
+***
+Using the randomized rule, compute the expected MCE in node $\Np$ that contains $n$ random training samples. What do you notice?
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+In order to compute the expected MCE, we need some random variables (RV) because we want to make a statement that holds for arbitrary training data drawn from the data-generating process. More precisely, we define $n \in \N$ i.i.d. RV $Y^{(1)}, \dots, Y^{(n)}$ that are distributed according to the categorical distribution induced by the observed class frequencies:
+
+$$
+\mathbb{P}(Y^{(i)} = k| \mathcal{N}) = \pikN \quad \forall i \in
+\nset, \quad k \in \Yspace.
+$$
+
+The label $\yi$ of the $i$-th training observation is thus a realization of the corresponding RV $Y^{(i)}$.
+
+Since our new randomization rule is stochastic, the predictions for the training observations will also be realizations of RV that we denote by  $\hat{Y}^{(1)}, ..., \hat{Y}^{(n)}$. By design, they follow the same categorical distribution:
+
+$$
+\mathbb{P}(\hat Y^{(i)} = k| \mathcal{N}) = \pikN \quad \forall i \in
+\nset, \quad k \in \Yspace.
+$$
+
+Then, we can define the MCE for a node with $n = |\Np|$ when the randomizing rule is used:
+
+$$
+\rho_{\text{MCE}}(\Np) = \meanin \left[ Y^{(i)} \neq \hat Y^{(i)}\right].
+$$
+
+Taking the expectation of this MCE leads to a statement about a node with arbitrary training data:
+
+\begin{align*}
+  \E_{Y^{(1)}, \dots, Y^{(n)}, \hat{Y}^{(1)}, \dots, \hat{Y}^{(n)}}
+  \left(\rho_{\text{MCE}}(\Np) \right)
+  &=  \E_{Y^{(1)}, \dots,Y^{(n)}, \hat{Y}^{(1)}, \dots, \hat{Y}^{(n)}}
+  \left(\meanin \left[Y^{(i)} \neq \hat{Y}^{(i)} \right] \right) \\
+  & = \meanin \E_{Y^{(i)}, \hat{Y}^{(i)}} \left( \left[Y^{(i)}
+  \neq \hat{Y}^{(i)} \right]\right) ~~ \text{i.i.d. assumption + linearity} \\
+  & = \meanin\E_{Y^{(i)}}\left(
+  \E_{\hat{Y}^{(i)}} \left( \left[Y^{(i)} \neq \hat{Y}^{(i)} \right] \right)
+  \right) ~~ \text{Fubini's theorem} \\
+  & = \meanin\E_{Y^{(i)}} \left( \sum_{k \in \Yspace} \pikN \cdot
+  \left[ Y^{(i)} \neq k \right]  \right) \\
+  % & = \meanin \E_{Y^{(i)}} \left( \sum_{k \in \Yspace
+  % \setminus \{Y^{(i)}\}} \pikN \right) \\
+  & = \meanin \E_{Y^{(i)}} \left( 1 - \pi^{(\Np)}_{k = Y^{(i)}}
+  \right) \\
+  & = \meanin \sumkg \pikN \cdot \left(1 - \pikN \right) \\
+  & = n \cdot \frac{1}{n} \sumkg \pikN \cdot \left(1 - \pikN \right) \\
+  &= \sumkg \pikN \cdot \left(1 - \pikN \right).
+\end{align*}
+
+This is precisely the Gini index CART use for splitting with Brier score. Gini impurity can thus be viewed as the expected frequency with which the training samples will be misclassified in a given node $\Np$.
+
+In other words, in constructing CART with minimal Gini impurity, we minimize the expected rate of misclassification across the training data.
+
+</details> 
+:::
