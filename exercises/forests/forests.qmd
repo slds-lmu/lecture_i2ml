@@ -1,0 +1,398 @@
+---
+title: "Exercise 9 -- Random Forests"
+subtitle: "[Introduction to Machine Learning](https://slds-lmu.github.io/i2ml/)"
+notebook-view:
+  - notebook: ex_forests_R.ipynb
+    title: "Exercise sheet for R"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/forests/ex_forests_R.ipynb"
+  - notebook: ex_forests_py.ipynb
+    title: "Exercise sheet for Python"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/forests/ex_forests_py.ipynb"
+  - notebook: sol_forests_R.ipynb
+    title: "Solutions for R"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/forests/sol_forests_R.ipynb"
+  - notebook: sol_forests_py.ipynb
+    title: "Solutions for Python"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/forests/sol_forests_py.ipynb"
+---
+
+::: {.content-hidden when-format="pdf"}
+::: {.hidden}
+{{< include ../_quarto/latex-math.qmd >}}
+:::
+:::
+
+<details> 
+<summary>*Hint: Useful libraries*</summary>
+
+::: {.panel-tabset}
+### R
+{{< embed ex_forests_R.ipynb#import echo=true >}}
+### Python
+{{< embed ex_forests_py.ipynb#import echo=true >}}
+:::
+</details>
+
+## Exercise 1: Bagging
+::: {.callout-tip icon=false title="Only for lecture group A"}
+:::
+
+::: {.callout-note title="Learning goals" icon=false}
+TBD
+:::
+
+In this exercise, we briefly revisit why bagging is a useful technique to stabilize predictions.
+
+For a fixed observation $(\xv, y)$, show that the expected quadratic loss over individual base learner predictions $\blx$ is larger than or equal to the expected quadratic loss of the prediction $\fM$ of a size-$M$ ensemble ($M \in \N$).
+
+You can consider all hyperparameters of the base learners and the ensemble fixed.
+
+<details> 
+<summary>*Hint*</summary>
+
+Use the law of total expectation ("Verschiebungssatz der Varianz": $\var(Z) = \E(Z^2) - (\E(Z))^2 ~ \Longleftrightarrow ~ \E(Z^2) = \var(Z) + (\E(Z))^2$, where $\var(Z) \geq 0$ by definition.) stating $\E(Z^2) \geq (\E(Z))^2$ for a random variable $Z$.
+
+</details>
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+Let's first think about the expectation -- what is the stochastic part we integrate over? Since the base learner and ensemble structure is fixed for given data, the only thing random is the bootstrap sample we use as training data for the $m$-th tree, given that the total available training data originate from the data-generating process $\Pxy$, so we could write $\E_{\Dtrain^{[m]} ~|~ \Dtrain \sim \Pxy}$ (for ease of notation, we'll omit the subscripts of the expectation from now on).
+
+Next, consider the quantity we are supposed to compare to another quantity: $\E \left( \left(y - \blx \right)^2 \right)$. This looks already a lot like the $\E(Z^2)$ part of the LOTV.
+
+Since the expectation is linear, it is often worthwhile to decompose expressions of expectation and isolate the stochastic parts. Here, the only thing that changes w.r.t. $\Dtrain^{[m]}$ is the base learner models $\blx$:
+
+$$
+\E \left( \left(y - \blx \right)^2\right) 
+= \E \left(y^2 - 2y \blx + \left(\blx\right)^2 \right)
+= y^2 - 2y \E \left(\blx \right) + \E \left( \left( 
+\blx \right)^2 \right),
+$$
+
+Now it's time to realize two things. First: we want to arrive at $\left( y - \E \left(\blx \right) \right)^2 $ in order to be able to use the $(\E(Z))^2$ part of the LOTV. Second: the RHS of the above expression looks almost like a binomial formula -- we just need to move the square in the last term:
+
+$$
+y^2 - 2y \E \left(\blx \right) + \left( \E 
+\left(\blx \right) \right)^2  = \left( y - \E \left(\blx \right) \right)^2 
+$$
+
+Combine the two parts using the LOTV:
+
+$$
+\E \left( \left(y - \blx \right)^2\right) \geq \left( y - \E \left(\blx \right) \right)^2 .
+$$
+
+The last missing step is to show that $ \E \left(\blx \right) = \fM$. To compute the expectation for this discrete random variable (we have a finite ensemble), we sum over all possible realizations, weighted by their probability of occurence.
+This can be further simplified given that all of the $M$ bootstrap samples were drawn with equal probability:
+
+$$
+\E \left(\blx \right) = \sum_{m = 1}^M \blx p \left(\Dtrain^{[m]} \right)
+= \sum_{m = 1}^M \blx \cdot \frac{1}{M}
+= \frac{1}{M} \sum_{m = 1}^M \blx,
+$$
+
+which is precisely the ensemble prediction $\fM$.
+
+Putting everything together, we get 
+
+$$
+\E \left( \left(y - \blx \right)^2\right) \geq \left( y - \left(\fM \right) \right)^2,
+$$
+
+showing that the expected quadratic loss over individual base learner predictions is at least as large as the expected loss of the ensemble prediction.
+
+</details> 
+:::
+
+
+## Exercise 2: Classifying spam
+
+::: {.callout-note title="Learning goals" icon=false}
+TBD
+:::
+
+::: {.callout-tip icon=false title="Only for lecture group B"}
+:::
+Take a look at the `spam` dataset and shortly describe what kind of classification problem this is. \textcolor{teal}{[only for lecture group B]}
+
+<details> 
+<summary>*Hint*</summary>
+::: {.panel-tabset}
+
+### R
+Access the corresponding task `?mlr3::mlr_tasks_spam`.
+
+### Python
+Read [spam.csv](https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/data/spam.csv).
+
+:::
+</details>
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+The `spam` data is a binary classification task where the aim is to classify an e-mail as spam or non-spam:
+
+::: {.panel-tabset}
+### R
+{{< embed sol_forests_R.ipynb#2-a echo=true >}}
+### Python
+{{< embed sol_forests_py.ipynb#2-a-1 echo=true >}}
+{{< embed sol_forests_py.ipynb#2-a-2 echo=true >}}
+:::
+</details> 
+:::
+
+***
+::: {.callout-tip icon=false title="Only for lecture group B"}
+:::
+Use a decision tree to predict `spam`. Re-fit the tree using two random subsets of the data (each comprising 60% of observations). How stable are the trees?
+
+<details> 
+<summary>*Hint*</summary>
+::: {.panel-tabset}
+
+### R
+Use `rpart.plot()` from the package `rpart.plot` to visualize the trees.
+
+### Python
+Use `from sklearn.tree import plot_tree` to visualize the trees.
+:::
+</details>
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+::: {.panel-tabset}
+### R
+{{< embed sol_forests_R.ipynb#2-b echo=true >}}
+### Python
+{{< embed sol_forests_py.ipynb#2-b-1 echo=true >}}
+{{< embed sol_forests_py.ipynb#2-b-2 echo=true >}}
+{{< embed sol_forests_py.ipynb#2-b-3 echo=true >}}
+:::
+
+Observation: trees trained on different samples differ considerably in their structure, regarding split variables as well as thresholds (recall, though, that the split candidates are a further source of randomness).
+
+</details> 
+:::
+
+***
+Forests come with a built-in estimate of their generalization ability via the out-of-bag (OOB) error.
+
+> i. Show that the probability for an observation to be OOB in an arbitrary bootstrap sample converges to $\tfrac{1}{e}$.
+> ii. Use the random forest learner (R: `classif.ranger`, Python: `RandomForestClassifier()` to fit the model and state the out-of-bag (OOB) error.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+i. This is actually quite easy when we recall that the exponential function at an arbitrary input $x$ can be characterized via $e^x = \lim_{n \to \infty} \left( 1 + \tfrac{x}{n} \right)^n$, which already resembles the limit expression we are looking for. Setting $x$ to -1 yields:
+
+$$
+\lim_{n \to \infty} \left( 1 - \tfrac{1}{n} \right)^n = e^{-1} = 
+\tfrac{1}{e}.
+$$
+
+ii. OOB-error can be computed by:
+
+::: {.panel-tabset}
+### R
+{{< embed sol_forests_R.ipynb#2-c echo=true >}}
+### Python
+{{< embed sol_forests_py.ipynb#2-c echo=true >}}
+:::
+
+</details> 
+:::
+
+***
+You are interested in which variables have the greatest influence on the prediction quality. Explain how to determine this in a permutation-based approach and compute the importance scorses for the \texttt{spam} data.
+
+<details> 
+<summary>*Hint*</summary>
+::: {.panel-tabset}
+
+### R
+Use an adequate variable importance filter as described [here](https://mlr3filters.mlr-org.com/#variable-importance-filters).
+
+### Python
+Choose an adequate importance measure as described [here](https://scikit-learn.org/stable/auto_examples/ensemble/plot_forest_importances.html).
+:::
+</details>
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+Variable importance in general measures the contributions of features to a model. One way of computing the variable importance of the $j$-th variable is based on permuting it for the OOB observations and calculating the mean increase in OOB error this permutation entails.
+
+In order to determine the with the biggest influence on prediction quality, we can choose the $k$ variables with the highest importance score, e.g., for $k = 5$:
+
+::: {.panel-tabset}
+### R
+{{< embed sol_forests_R.ipynb#2-d echo=true >}}
+### Python
+{{< embed sol_forests_py.ipynb#2-d-1 echo=true >}}
+{{< embed sol_forests_py.ipynb#2-d-2 echo=true >}}
+:::
+
+</details> 
+:::
+
+
+## Exercise 3: Proximities
+
+::: {.callout-note title="Learning goals" icon=false}
+TBD
+:::
+
+You solve the \texttt{wine} task, predicting the \texttt{type} of a wine -- with 3 classes -- from a number of covariates. After training, you wish to determine how similar your observations are in terms of proximities.
+
+\textit{R Hint:} The model information was created with 
+\texttt{ranger::treeInfo()}, which assigns observations with values 
+larger than \texttt{splitval} to the right child node in each split.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=5, fig.width=5}
+# this is just the source code for the tables, the correct format is shown below (this will not be shown!)
+
+library(data.table)
+library(mlr3verse)
+
+set.seed(123L)
+task <- tsk("wine")
+task$select(
+  c("alcalinity", "alcohol", "flavanoids", "hue", "malic", "phenols")
+)
+n_trees <- 3L
+learner <- lrn("classif.ranger", num.trees = n_trees, max.depth = 2L)
+learner$train(task)
+
+x_sample <- task$data()[sample(seq_len(task$nrow), 3L)]
+x_sample[, type := NULL][, id := .I]
+setcolorder(x_sample, "id")
+library(knitr)
+  kable(
+    x_sample, 
+    format = "latex", 
+    escape = FALSE,
+    col.names = c(
+      "observation", "alcalinity", "alcohol", "flavanoids", "hue", "malic",
+      "phenols"
+    ),
+    align = c("|r", "r", "r", "r", "r", "r", "r|"),
+    digits = 2
+    )
+
+library(rpart.plot)
+
+rf <- invisible(
+  lapply(
+    seq_len(n_trees),
+    function(i) ranger::treeInfo(learner$model, tree = i)
+  )
+)
+
+for (i in seq_len(n_trees)) {
+  knitr::kable(
+    rf[[i]], 
+    "latex", 
+    digits = 2L, 
+    align = c("|r", rep("r", 6L), "r|"))
+}
+```
+
+| observation | alcalinity | alcohol | flavanoids | hue  | malic | phenols |
+|-------------|------------|---------|------------|------|-------|---------|
+| 1           | 11.4       | 14.75   | 3.69       | 1.25 | 1.73  | 3.10    |
+| 2           | 25.0       | 13.40   | 0.96       | 0.67 | 4.60  | 1.98    |
+| 3           | 17.4       | 13.94   | 3.54       | 1.12 | 1.73  | 2.88    |
+
+Tree 1:
+
+| nodeID | leftChild | rightChild | splitvarID | splitvarName | splitval | terminal | prediction |
+|--------|-----------|------------|------------|--------------|----------|----------|------------|
+| 0      | 1         | 2          | 5          | phenols      | 1.97     | FALSE    | NA         |
+| 1      | 3         | 4          | 1          | alcohol      | 12.43    | FALSE    | NA         |
+| 2      | 5         | 6          | 1          | alcohol      | 13.03    | FALSE    | NA         |
+| 3      | NA        | NA         | NA         | NA           | NA       | TRUE     | 2          |
+| 4      | NA        | NA         | NA         | NA           | NA       | TRUE     | 3          |
+| 5      | NA        | NA         | NA         | NA           | NA       | TRUE     | 2          |
+| 6      | NA        | NA         | NA         | NA           | NA       | TRUE     | 1          |
+
+Tree 2:
+
+| nodeID | leftChild | rightChild | splitvarID | splitvarName | splitval | terminal | prediction |
+|--------|-----------|------------|------------|--------------|----------|----------|------------|
+| 0      | 1         | 2          | 1          | alcohol      | 12.78    | FALSE    | NA         |
+| 1      | 3         | 4          | 3          | hue          | 0.68     | FALSE    | NA         |
+| 2      | 5         | 6          | 2          | flavanoids   | 2.18     | FALSE    | NA         |
+| 3      | NA        | NA         | NA         | NA           | NA       | TRUE     | 3          |
+| 4      | NA        | NA         | NA         | NA           | NA       | TRUE     | 2          |
+| 5      | NA        | NA         | NA         | NA           | NA       | TRUE     | 3          |
+| 6      | NA        | NA         | NA         | NA           | NA       | TRUE     | 1          |
+
+Tree 3:
+
+| nodeID | leftChild | rightChild | splitvarID | splitvarName | splitval | terminal | prediction |
+|--------|-----------|------------|------------|--------------|----------|----------|------------|
+| 0      | 1         | 2          | 1          | alcohol      | 12.79    | FALSE    | NA         |
+| 1      | 3         | 4          | 5          | phenols      | 2.01     | FALSE    | NA         |
+| 2      | 5         | 6          | 5          | phenols      | 2.28     | FALSE    | NA         |
+| 3      | NA        | NA         | NA         | NA           | NA       | TRUE     | 2          |
+| 4      | NA        | NA         | NA         | NA           | NA       | TRUE     | 2          |
+| 5      | NA        | NA         | NA         | NA           | NA       | TRUE     | 3          |
+| 6      | NA        | NA         | NA         | NA           | NA       | TRUE     | 1          |
+
+For the following subset of the training data and the random forest model given above,
+
+***
+find the terminal node of each tree the observations are placed in,
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+Using the `treeInfo()` output, we can follow the path of each sample through each tree.
+The following table prints for each observation (rows) their terminal nodes as assigned by trees 1-3. For example, consider observation 1 in tree 1 (first cell): the observation has `phenols` $> 1.94$, putting it in node 2 (`rightChild` of node 0), from there in node 6 (because it has `alcohol` $> 13.04$).
+
+{{< embed sol_forests_py.ipynb#3-a echo=false >}}
+
+</details> 
+:::
+
+***
+compute the observations' pairwise proximities, and
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+For the proximities, we consider each pair of observations and compute the relative frequency of trees assigning them to the same terminal node. 
+
+- Observations 1 and 2: only tree 1 assigns them to the same node, so the proximity is $\tfrac{1}{3}$.
+
+- Observations 1 and 3: all trees assign them to the same node, so the proximity is 1.
+
+- Observations 2 and 3: only tree 1 assigns them to the same node, so 
+the proximity is $\tfrac{1}{3}$.
+
+</details> 
+:::
+
+***
+construct a similarity matrix from these proximities in `R` resp. `Python`.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+We can put this information into a similarity matrix (as such matrices become large quite quickly for more data, it is common to store only the lower diagonal -- the rest is non-informative/redundant):
+
+::: {.panel-tabset}
+### R
+{{< embed sol_forests_R.ipynb#3-c-1 echo=true >}}
+### Python
+{{< embed sol_forests_py.ipynb#3-c-1 echo=true >}}
+:::
+
+</details> 
+:::
