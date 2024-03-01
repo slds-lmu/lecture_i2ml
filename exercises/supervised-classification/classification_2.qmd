@@ -1,0 +1,312 @@
+---
+title: "Exercise 4 -- Classification II"
+subtitle: "[Introduction to Machine Learning](https://slds-lmu.github.io/i2ml/)"
+notebook-view:
+  - notebook: ex_classification_2_R.ipynb
+    title: "Exercise sheet for R"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/classification_2/ex_forests_R.ipynb"
+  - notebook: ex_classification_2_py.ipynb
+    title: "Exercise sheet for Python"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/classification_2/ex_forests_py.ipynb"
+  - notebook: sol_classification_2_R.ipynb
+    title: "Solutions for R"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/classification_2/sol_forests_R.ipynb"
+  - notebook: sol_classification_2_py.ipynb
+    title: "Solutions for Python"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/classification_2/sol_forests_py.ipynb"
+---
+
+::: {.content-hidden when-format="pdf"}
+::: {.hidden}
+{{< include ../_quarto/latex-math.qmd >}}
+:::
+:::
+
+<details> 
+<summary>*Hint: Useful libraries*</summary>
+
+::: {.panel-tabset}
+
+### R
+{{< embed ex_classification_2_R.ipynb#import echo=true >}}
+### Python
+{{< embed ex_classification_2_py.ipynb#import echo=true >}}
+:::
+</details>
+
+
+## Exercise 1: Naive Bayes
+
+::: {.callout-note title="Learning goals" icon=false}
+TBD
+:::
+
+You are given the following table with the target variable `Banana`:
+
+| ID  |  Color   |  Form    |  Origin    |  Banana   |
+| --- | -------- | -------- | ---------- | --------- |
+| 1   |  yellow  |  oblong  |  imported  |  yes      |
+| 2   |  yellow  |  round   |  domestic  |  no       |
+| 3   |  yellow  |  oblong  |  imported  |  no       |
+| 4   |  brown   |  oblong  |  imported  |  yes      |
+| 5   |  brown   |  round   |  domestic  |  no       |
+| 6   |  green   |  round   |  imported  |  yes      |
+| 7   |  green   |  oblong  |  domestic  |  no       |
+| 8   |  red     |  round   |  imported  |  no       |
+
+We want to use a Naive Bayes classifier to predict whether a new fruit is a `Banana` or not. Estimate the posterior probability $\hat\pi(\xv_{\ast})$ for a new observation $\xv_{\ast} = (\text{yellow}, \text{round}, \text{imported})$. How would you classify the object?
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+When using the naive Bayes classifier, the features $\xv := (x_\text{Color},x_\text{Form},x_\text{Origin})$ are assumed to be conditionally independent of each other, given the category $y = k \in \{\text{yes}, \text{no}\}$, s.t.
+
+$$
+\P(\xv ~|~ y = k) =
+\P((x_\text{Color}, x_\text{Form}, x_\text{Origin}) ~|~ y = k) = 
+\P(x_\text{Color} ~|~ y = k) \cdot \P(x_\text{Form} ~|~ y = k) \cdot 
+\P(x_\text{Origin} ~|~ y = k).
+$$
+
+Recall Bayes' theorem:
+
+$$
+\pikx = \postk = \bayesrulek
+$$
+
+As the denominator is constant across all classes, the following holds for the posterior probabilities:
+
+$$
+\pi_{k}(\mathbf{x})\propto \underbrace{\pi_{k}\cdot \mathbb{P}(x_\text{Color} ~|~ y = k) \cdot \mathbb{P}(x_\text{Form} ~|~ y = k) \cdot \mathbb{P}(x_\text{Origin} ~|~ y = k)}_{=: \alpha_k(x)} \\
+\iff \exists c \in \mathbb{R}: \pi_{k}(\mathbf{x})= c \cdot \alpha_k(\mathbf{x})
+$$
+
+where $\pik = \P(y = k)$ is the prior probability of class $k$ and $c$ is the normalizing constant.
+
+From this and since the posterior probabilities need to sum up to 1, we know that 
+
+$$
+1 = ~ c \cdot \alpha_\text{yes}(\xv) +  c \cdot \alpha_\text{no}(\xv)
+~\iff c = \frac{1}{\alpha_\text{yes}(\xv) + \alpha_\text{no}(\xv)}.
+$$
+
+This means that, in order to compute $\pi_\text{yes}(\xv)$, the scores $\alpha_\text{yes}(\xv)$ and $\alpha_\text{no}(\xv)$ are needed.
+
+Now we want to estimate for a new fruit the posterior probability $\hat{\pi}_{yes}((\text{yellow}, \text{round}, \text{imported}))$.
+
+Obviously, we do not know the *true* prior probability and the *true* conditional densities. Here -- since the target and the features are categorical -- we use a categorical distribution, i.e., the simplest distribution over a $g$-way event that is fully specified by the individual probabilities for each class (which must of course sum to 1). This is a generalization of the Bernoulli distribution to the multi-class case. We can estimate the distribution parameters via the relative frequencies encountered in the data:
+$$
+\hat{\alpha}_\text{yes}(\mathbf{x}_{\ast}) = 
+\hat{\pi}_{\text{yes}} \cdot 
+\hat{\mathbb{P}}(x_\text{Color} = \text{yellow} ~|~ y = \text{yes}) \cdot 
+\hat{\mathbb{P}}(x_\text{Form} = \text{round} ~|~ y = \text{yes}) \cdot 
+\hat{\mathbb{P}}(x_\text{Origin} = \text{imported} ~|~ y = \text{yes}) \\
+= \frac{3}{8} \cdot \frac{1}{3} \cdot \frac{1}{3} \cdot 1 = \frac{1}{24} 
+\approx 0.042
+$$
+
+$$
+\hat{\alpha}_\text{no}(\mathbf{x}_{\ast}) = \hat{\pi}_{\text{no}} \cdot 
+\hat{\mathbb{P}}(x_\text{Color} = \text{yellow} ~|~ y = \text{no})\cdot 
+\hat{\mathbb{P}}(x_\text{Form} = \text{round} ~|~ y = \text{no}) \cdot 
+\hat{\mathbb{P}}(x_\text{Origin} = \text{imported} ~|~ y = \text{no}) \\
+= \frac{5}{8} \cdot \frac{2}{5} \cdot \frac{3}{5} \cdot \frac{2}{5} = 
+\frac{3}{50} = 0.060
+$$
+
+At this stage we can already see that the predicted label is "no", since $\hat{\alpha}_\text{no}(\xv_{\ast}) = 0.060 > \frac{1}{24} = \hat{\alpha}_\text{yes}(\xv_{\ast})$ -- that is, if we threshold at 0.5 for predicting "yes".
+
+With the above we can compute the posterior probability
+$$
+\hat{\pi}_\text{yes}(\xv_{\ast}) = \frac{\hat{\alpha}_\text{yes}(
+\xv_{\ast})}{\hat{\alpha}_\text{yes}(\xv_{\ast}) + 
+\hat{\alpha}_\text{no}(\xv_{\ast})} \approx 0.410 < 0.5
+$$
+
+and check our calculations against the corresponding results:
+
+::: {.panel-tabset}
+### R
+{{< embed sol_classification_2_R.ipynb#naivebayes echo=true >}}
+### Python
+{{< embed sol_classification_2_py.ipynb#naivebayes echo=true >}}
+:::
+
+</details> 
+:::
+
+***
+Assume you have an additional feature `Length` that measures the length in cm. Describe in 1-2 sentences how you would handle this numeric feature with Naive Bayes.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+Before, we only had categorical features and could use the empirical frequencies as our parameters in a categorical distribution. For the distribution of a numerical feature, given the the category, we need to define a probability distribution with continuous support. A popular choice is to use Gaussian distributions. For example, for the information $x_\text{Length}$ we could assume that 
+
+$$
+\P(x_\text{Length} ~|~ y = \text{yes}) \sim \normal(\mu_\text{yes}, 
+\sigma^2_\text{yes})$$ and $$\P(x_\text{Length} ~|~ y = \text{no}) \sim 
+\normal(\mu_\text{no}, \sigma^2_\text{no})
+$$ 
+
+In order to fully specify these normal distributions we need to estimate their parameters $\mu_\text{yes}, \mu_\text{no}, \sigma^2_\text{yes}, \sigma^2_\text{no}$ from the data via the usual estimators (empirical mean and empirical variance with bias correction).
+
+</details> 
+:::
+
+## Exercise 2: Discriminant Analysis
+
+::: {.callout-note title="Learning goals" icon=false}
+TBD
+:::
+
+```{r, echo=FALSE, fig.height=3, fig.width=3}
+suppressWarnings(library(ggplot2))
+library(ggplot2)
+set.seed(31415)
+
+x1 <- runif(49, 0.1, 1.9)
+x2 <- runif(98, 2.1, 5.9)
+x3 <- runif(49, 6.1, 7.9)
+x4 <- c(1,3,5,7)
+x <- c(x1, x2, x3, x4)
+
+y1 <- 2 + rnorm(49, 0, 0.02)
+y2 <- 4 + rnorm(98, 0, 0.02)
+y3 <- 3 + rnorm(49, 0, 0.02)
+y4 <- c(4, 2, 3, 4)
+y <- c(y1, y2, y3, y4)
+
+d = data.frame(x, y)
+
+ggplot(data = d, aes(x = x, y = y)) +
+  geom_point(alpha = 0.25)
+```
+
+The above plot shows $\D = \Dset$, a data set with $n = 200$ observations of a continuous target variable $y$ and a continuous, 1-dimensional feature variable $\xv$. In the following, we aim at predicting $y$ with a machine learning model that takes $\xv$ as input.
+
+***
+To prepare the data for classification, we categorize the target variable $y$ in 3 classes and call the transformed target variable $z$, as follows:
+$$
+z^{(i)} = 
+\begin{cases}
+ 1, &  y^{(i)} \in (-\infty, 2.5] \\
+ 2, &  y^{(i)} \in (2.5, 3.5] \\
+ 3, &  y^{(i)} \in (3.5, \infty)
+\end{cases}
+$$
+
+Now we can apply quadratic discriminant analysis (QDA):
+
+***
+i. Estimate the class means $\mu_k = \mathbb{E}(\mathbf{x}|z = k)$ for each of the three classes $k \in \{1, 2, 3\}$ visually from the plot. Do not overcomplicate this, a rough estimate is sufficient here.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+As the data seem to be pretty symmetric conditional on the respective class, we estimate the class means to lie roughly in the middle of the data clusters: $\hat \mu_1 = 1$, $\hat \mu_2 = 7$, $\hat \mu_3 = 4$.
+</details> 
+:::
+
+***
+ii. Make a plot that visualizes the different estimated densities per class.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+We see that the variances in classes 1 and 2 are similar and also much smaller than in class 3. Therefore, the densities could look roughly like this:
+
+::: {.panel-tabset}
+### R
+{{< embed sol_classification_2_R.ipynb#discriminantanalysis echo=true >}}
+### Python
+{{< embed sol_classification_2_py.ipynb#discriminantanalysis echo=true >}}
+:::
+
+</details> 
+:::
+
+***
+iii. How would your plot from ii) change if we used linear discriminant analysis (LDA) instead of QDA? Explain your answer.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+Since LDA assumes constant variances across all classes (also if this does not reflect the data situation), all densities would have the same shape and only differ in location. 
+</details> 
+:::
+
+iv. Why is QDA preferable over LDA for this data?
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+As we have already noted, the assumption of equal class variances is not justified here, but LDA is confined to equivariant distributions. Therefore, the more flexible QDA is preferable in this case. Note, however, that the Gaussian distributions both variants of discriminant analysis use might not be perfectly appropriate, as the data seems to be more uniformly distributed (conditional on the classes).
+</details> 
+:::
+
+***
+Given are two new observations $\xv_{*1} = -10$ and $\xv_{*2} = 7$. State the prediction for QDA and explain how you arrive there.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+The prediction for $\xv_{\ast 1}$ will probably be $\hat z_{\ast 1} = 3$ because the density of class 3 has much larger variance and will therefore overshoot the density of class 1. For $\xv_{\ast 2}$ the case is clear and we have $\hat z_{\ast 2} = 2$.
+</details> 
+:::
+
+## Exercise 3: Decision Boundaries for Classification Learners
+
+::: {.callout-note title="Learning goals" icon=false}
+TBD
+:::
+
+We will now visualize how well different learners classify the three-class `mlbench::mlbench.cassini` data set.
+
+1. Generate 1000 points from `cassini` using R or import [`cassini_data.csv`](https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/data/cassini_data.csv) in Python.
+2. Then, perturb the `x.2` dimension with Gaussian noise (mean 0, standard deviation 0.5), and consider the classifiers already introduced in the lecture:
+   - LDA (Linear Discriminant Analysis),
+   - QDA (Quadratic Discriminant Analysis), and
+   - Naive Bayes.
+
+Plot the learners' decision boundaries. Can you spot differences in separation ability?
+
+(Note that logistic regression cannot handle more than two classes and is therefore not listed here.)
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+First, visualize the simulated `cassini` data:
+
+::: {.panel-tabset}
+### R
+{{< embed sol_classification_2_R.ipynb#decb-vis echo=true >}}
+### Python
+{{< embed sol_classification_2_py.ipynb#decb-vis echo=true >}}
+:::
+
+Then, define the learners (and the `task` for `R` ) and train the models:
+
+::: {.panel-tabset}
+### R
+{{< embed sol_classification_2_R.ipynb#decb-learn echo=true >}}
+### Python
+{{< embed sol_classification_2_py.ipynb#decb-learn echo=true >}}
+:::
+
+Lastly, plot their decision boundaries:
+
+::: {.panel-tabset}
+### R
+{{< embed sol_classification_2_R.ipynb#decb-plot echo=true >}}
+### Python
+{{< embed sol_classification_2_py.ipynb#decb-plot echo=true >}}
+:::
+
+We see how LDA, with its confinement to linear decision boundaries, is not able to classify the data very well. QDA and NB, on the other hand, get the shape of the boundaries right. It also becomes obvious that NB is a quadratic classifier just like QDA - their decision surfaces look pretty much alike.
+
+</details> 
+:::
