@@ -1,0 +1,78 @@
+\begin{enumerate}[a)]
+
+  \item The two main advantages of resampling are:
+  
+  \begin{itemize}
+    \item We are able to use larger training sets (at the expense of test set 
+    size) because the high variance this incurs for the resulting estimator is 
+    smoothed out by averaging across repetitions.
+    \item Repeated sampling reduces the risk of getting lucky (or not so lucky) 
+    with a particular data split, which is especially relevant with few 
+    observations.
+  \end{itemize}
+  
+  \item 
+<<echo=TRUE, message=FALSE>>=
+library(mlbench)
+library(mlr3)
+library(mlr3learners)
+
+# create task and learner
+(task <- tsk("german_credit"))
+learner <- lrn("classif.log_reg")
+
+# train, predict and compute train error
+learner$train(task)
+preds <- learner$predict(task)
+preds$score()
+@
+  
+  \item 
+<<echo=TRUE, message=FALSE, results=FALSE>>=
+
+# create different resampling strategies
+set.seed(123)
+resampling_3x10_cv <- rsmp("repeated_cv", folds = 10, repeats = 3)
+resampling_10x3_cv <- rsmp("repeated_cv", folds = 3, repeats = 10)
+resampling_ho <- rsmp("holdout", ratio = 0.9)
+
+# evaluate without stratification
+result_3x10_cv <- resample(task, learner, resampling_3x10_cv, store_models = TRUE)
+result_10x3_cv <- resample(task, learner, resampling_10x3_cv, store_models = TRUE)
+result_ho <- resample(task, learner, resampling_ho, store_models = TRUE)
+
+# evaluate with stratification
+task_stratified <- task$clone()
+task_stratified$set_col_roles("foreign_worker", roles = "stratum")
+result_stratified <- resample(
+  task_stratified, learner, resampling_3x10_cv, store_models = TRUE)
+@
+
+<<echo=TRUE, message=FALSE>>=
+# aggregate results over splits (mce is default)
+print(sapply(
+  list(result_3x10_cv, result_10x3_cv, result_stratified, result_ho), 
+  function(i) i$aggregate()))
+@
+
+  \item Generalization error estimates are pretty stable across the
+  different resampling strategies because we have a fairly large number (1000)
+  of observations.
+  Still, the pessimistic bias of small training sets is visible: 10x3-CV, 
+  using roughly 67\% of data for training in each split, estimates a 
+  higher generalization error than 3x10-CV with roughly 90\% training data.
+  Stratification by \texttt{foreign\_worker} does not seem to have much effect 
+  on the estimate.
+  However, we see a glaring difference when we use a single 90\%-10\% 
+  split, where the estimated GE is roughly 7 percentage points lower than 
+  with 3x10-CV, meaning we got a low error just because of a lucky split.
+  
+  Comparing the results (except for the unreliable one produced by a single 
+  split) with the training error from b) indicates no serious overfitting. 
+  
+  \item LOO is not a very good idea here -- with 1000 observations this would 
+  take a very long time.
+  Also, LOO has high variance by nature.
+  Repeated CV with a sufficient number of folds should give us a pretty good 
+  idea about the expected GE of our learner.
+\end{enumerate}

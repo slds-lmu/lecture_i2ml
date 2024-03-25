@@ -1,0 +1,202 @@
+<<echo=FALSE>>=
+library(ggplot2)
+make_plot = function(dt, nudge_x = 0) {
+  ggplot(dt, aes(x, y, col = class, shape = class)) +
+  geom_point() +
+  geom_text(
+    aes(label = label), nudge_y = 0.25, nudge_x = nudge_x, show.legend = FALSE
+  ) +
+  labs(x = expression(x[1]), y = expression(x[2])) +
+  theme_bw()
+}
+@
+
+\begin{enumerate}[a)]
+  \item We need to find a linear hyperplane -- i.e.,  a line in 2D -- that 
+  separates our classes.
+  There are infinitely many such lines, but the sketch suggests
+  that the line with intercept 0.5 and slope 1 has maximal "safety margin": it 
+  has the broadest corridor in which we could move the line without incurring a
+  misclassification error (indicated by dotted lines).
+  Intuitively, this leads to better generalization than any line with a smaller 
+  such margin (the mathematical reasoning is treated in support vector machines 
+  $\rightsquigarrow$ supervised learning lecture).
+  
+  Now, we need to translate this into logistic regression coefficients.
+  Recall that the linear hyperplane for binary logistic regression is defined 
+  via 
+  \begin{equation} \label{eqhypplane}
+    \alpha_0 + \alpha_1 x_1 + \alpha_2 x_2 = - \log(\tfrac{1}{c} - 1) ~
+    \Longleftrightarrow  ~
+    \alpha_0 + \alpha_1 x_1 + \alpha_2 x_2 = 0 ~~ \text{ for } c = 0.5,
+  \end{equation}
+  where $c \in [0, 1]$ is the classification threshold. 
+  
+  <<echo=FALSE, fig.height=2, fig.width=3>>=
+  x = c(0, 1, 0, -1, 0)
+  y = c(0, 0, -1, 0, 1)
+  data_1 = data.frame(
+    x = x,
+    y = y,
+    class = as.factor(c(rep(0, 3), rep(1, 2))),
+    label = sprintf("x%i", 1:5)
+  )
+  make_plot(data_1) +
+    geom_abline(intercept = 0.5, slope = 1) +
+    geom_abline(intercept = 0, slope = 1, linetype = 3) +
+    geom_abline(intercept = 1, slope = 1, linetype = 3)
+  @
+  
+  \begin{itemize}
+    \item \textbf{Quick solution.} Logistic regression is not the focus of this 
+    exercise, so TL;DR: pick values (not unique) for which points on the line 
+    fulfill (\ref{eqhypplane}).
+    For example: $\bm{\alpha}^\prime = (-0.5, -1, 1)^\top$.
+    
+    \item \textbf{Detailed solution.} (\ref{eqhypplane}) has 3 unknown 
+    quantities -- using a system of linear equations, derived from points we 
+    know our line must cross, 3 equations should suffice if there is a unique 
+    solution.
+    It turns out that the solution for the linear hyperplane in logistic 
+    regression is \textit{not} necessarily unique: multiplying the coefficients 
+    in (\ref{eqhypplane}) with a constant leaves the equality unchanged.
+    
+    In ERM, we have additional constraints that usually allow us to find an 
+    optimal parameter vector: larger $\bm{\alpha}$ driving the loss down for 
+    correctly classified observations is offset by driving it up for 
+    misclassified ones.
+    
+    However, in this special case of linear separability, where a linear 
+    classifier produces no 
+    misclassification, there is no such optimum (or rather, it is loss-optimal 
+    to push the parameter vector to infinity).
+    We will therefore, in this highly unrealistic and simplistic example, use 
+    two points the line crosses (which is enough to define any line) and just 
+    choose some value for $\bm{\alpha}$ that fulfills (\ref{eqhypplane}).
+    
+    Let's pick the points 
+    $(0, 0.5)^\top$ and $(-0.5, 0)^\top$ (0's are always convenient):
+    \begin{equation} \label{eqone}
+      \alpha_0 + \alpha_1 \cdot 0 + \alpha_2 \cdot 0.5 = 0
+    \end{equation}
+     \begin{equation} \label{eqtwo}
+      \alpha_0 - \alpha_1 \cdot 0.5 + \alpha_2 \cdot 0 = 0
+    \end{equation}
+    (\ref{eqone})-(\ref{eqtwo}) yields
+    \begin{equation} \label{eqthree}
+      \alpha_1 \cdot 0.5 + \alpha_2 \cdot 0.5 = 0 ~ \Leftrightarrow ~ 
+      \alpha_1 = - \alpha_2,
+    \end{equation}
+    so set, e.g., $\alpha_1^\prime = -1$ and $\alpha_2^\prime = 1$.
+    Plugging this back into either \ref{eqone} or \ref{eqtwo} 
+    yields $\alpha_0^\prime = -0.5$, such that 
+    $\bm{\alpha}^\prime = (-0.5, -1, 1)^\top$, and we get the following 
+    probabilistic scores:
+    % ($\bm{\alpha}^{\prime\prime} = (-5, -10, 10)^\top$, and 
+    % any other multiple, would work just as well.)
+  \end{itemize}
+  
+    \begin{tabular}{|r|r|r|}
+    \hline
+    $i$ & $\yi$ & $\sigma\left(\alpha_0^\prime + \alpha_1^\prime x_1^{(i)} + 
+    \alpha_2^\prime x_2^{(i)}\right)$\\ \hline
+    1 & 0 & 0.38 \\ \hline
+    2 & 0 & 0.18 \\ \hline
+    3 & 0 & 0.18 \\ \hline
+    4 & 1 & 0.62 \\ \hline
+    5 & 1 & 0.62 \\ \hline
+  \end{tabular}
+  
+  (You can easily verify that a multiple $a \cdot \bm{\alpha}^\prime$ of 
+  $\bm{\alpha}^\prime$ leads to the same class assignments, with probabilities 
+  closer to 0/1 if $a > 1$.)
+  
+  \item By the same principle as above, we can derive a possible solution
+  $\bm{\beta}^\prime = (-0.5, 1, -1)^\top$.
+  
+    <<echo=FALSE, fig.height=2, fig.width=3>>=
+  data_2 = data_1
+  data_2$class = as.factor(c(0, rep(1, 2), rep(0, 2)))
+  make_plot(data_2) +
+    geom_abline(intercept = -0.5, slope = 1) +
+    geom_abline(intercept = 0, slope = 1, linetype = 3) +
+    geom_abline(intercept = -1, slope = 1, linetype = 3)
+  @
+  
+      \begin{tabular}{|r|r|r|}
+    \hline
+    $i$ & $\yi$ & $\sigma\left(\beta_0^\prime + \beta_1^\prime x_1^{(i)} + 
+    \beta_2^\prime x_2^{(i)}\right)$\\ \hline
+    1 & 0 & 0.38 \\ \hline
+    2 & 1 & 0.62 \\ \hline
+    3 & 1 & 0.62 \\ \hline
+    4 & 0 & 0.18 \\ \hline
+    5 & 0 & 0.18 \\ \hline
+  \end{tabular}
+
+  \item \phantom{foo}
+  \begin{enumerate}[i)]
+    \item Intuitively, we can see that a condition like $z_1 + z_2 > 0$ suffices 
+  to separate $\xi[1]$ from the other observations, which should remind you of 
+  the equation for a linear hyperplane.
+
+  Graphically, we can visualize our points in the new $z_1, z_2$ coordinates and
+  see that this transformed dataset is indeed linearly separable:
+  
+  <<echo=FALSE, fig.height=2, fig.width=3>>=
+  data_3 = data.frame(
+    x = c(0, 0, 1),
+    y = c(0, 1, 0),
+    class = as.factor(c(1, 0, 0)),
+    label = c("x1", "x2 = x3", "x4 = x5")
+  )
+  make_plot(data_3) +
+    xlim(c(-0.5, 1.5)) +
+    ylim(c(-0.5, 1.5)) +
+    geom_abline(intercept = 0.5, slope = -1) +
+    labs(x = expression(z[1]), y = expression(z[2]))
+  @
+  
+  \item Looking at $z_1$, we find that it serves to separate 
+  observations $\{1, 2, 3\}$ from $\{4, 5\}$.
+  Likewise, $z_2$ separates $\{1, 4, 5\}$ from
+  $\{2, 3\}$.
+  Predicting $z_1$ thus corresponds to classification problem I,
+  and $z_2$ to classification problem II, so we can use our previous solutions
+  $\bm{\gamma} = \bm{\alpha}^\prime = (-0.5, -1, 1)^\top$ and
+  $\bm{\phi} = \bm{\beta}^\prime = (-0.5, 1, -1)^\top$.
+  
+  \item We can simply stack the logistic regression components as follows:
+  \begin{align*}
+    \yh &= \sigma\left( \theta_0 + \theta_1 z_1 + \theta_2 z_2\right) \\
+    &= \sigma\left( \theta_0 + \theta_1 \cdot \sigma\left(\alpha_0 + \alpha_1 
+    x_1 + \alpha_2 x_2\right) + \theta_2 \cdot \sigma\left(\beta_0 + \beta_1 x_1 
+    + \beta_2 x_2\right)
+    \right)
+  \end{align*}
+  Choosing parameters as before yields, e.g., 
+  $\thetab^\prime = (0.5, -1, -1)^\top$.
+  In practice, we will of course use ERM to estimate, rather than hand-pick,
+  $\bm{\alpha}, \bm{\beta}, \bm{\theta}$.
+  \end{enumerate}
+  
+  \item We created a feedforward neural network with two input neurons, two 
+  hidden neurons (each performing one intermediate logistic regression), and 
+  one output neuron.
+  The biases are depicted as 1-neurons:
+  
+  \includegraphics[width=0.4\textwidth]{nn.png}
+  
+  \item The chain rule enables us to compute (first) derivatives of 
+  the empirical risk w.r.t. arbitrary parts of the computational graph 
+  by chaining known derivatives of elementary functions, thus providing a simple 
+  and scalable solution to the problem of differentiating complicated 
+  functions.
+  
+  For example, we can easily derive $\frac{\partial}{\partial \alpha_1} 
+  \riske$, which should remind you of the update term in gradient descent.
+  Indeed, (variants of) gradient descent is exactly what we use to train 
+  neural networks, updating all parameters according to their contribution to
+  $\riske$ during the so-called \emph{backpropagation}.
+  
+\end{enumerate}

@@ -1,0 +1,726 @@
+% !Rnw weave = knitr
+
+<<setup-child, include = FALSE, echo=FALSE>>=
+library('knitr')
+knitr::set_parent("../../style/preamble_ueb_coll.Rnw")
+@
+
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-ensembles.tex}
+\input{../../latex-math/ml-trees.tex}
+
+\kopf{Random Forests}
+
+\tableofcontents
+
+% ------------------------------------------------------------------------------
+% LECTURE EXERCISES
+% ------------------------------------------------------------------------------
+
+\dlz
+\exlect
+\lz
+
+\aufgabe{random forests vs CART}{
+<<child="ex_rnw/ex_rf_vs_cart.Rnw">>=
+@
+}
+
+\dlz
+\loesung{}{
+<<child="ex_rnw/sol_rf_vs_cart.Rnw">>=
+@
+}
+
+\aufgabe{bagging principle}{
+<<child="ex_rnw/ex_bagging.Rnw">>=
+@
+}
+
+\dlz
+\loesung{}{
+<<child="ex_rnw/sol_bagging.Rnw">>=
+@
+}
+
+\aufgabe{bagging principle 2}{
+<<child="ex_rnw/ex_bagging_breiman.Rnw">>=
+@
+}
+
+\dlz
+\loesung{}{
+<<child="ex_rnw/sol_bagging_breiman.Rnw">>=
+@
+}
+
+\dlz
+\aufgabe{decision boundaries}{
+<<child="ex_rnw/ex_dec_boundaries.Rnw">>=
+@
+}
+
+\dlz
+\loesung{}{
+
+See
+\href{https://github.com/compstat-lmu/lecture_i2ml/blob/master/exercises/forests/ex_rnw/sol_dec_boundaries.R}{R code}
+}
+
+\dlz
+\aufgabe{random forest implementations}{
+<<child="ex_rnw/ex_rf_implementations.Rnw">>=
+@
+}
+
+\dlz
+\loesung{}{
+
+See
+\href{https://github.com/compstat-lmu/lecture_i2ml/blob/master/exercises/forests/ex_rnw/sol_rf_implementations.R}{R code}
+}
+
+\newpage
+\aufgabe{spam classification}{
+<<child="ex_rnw/ex_spam.Rnw">>=
+@
+}
+
+\dlz
+\loesung{}{
+<<child="ex_rnw/sol_spam.Rnw">>=
+@
+}
+
+% ------------------------------------------------------------------------------
+% PAST EXAMS
+% ------------------------------------------------------------------------------
+
+\dlz
+\exexams
+\lz
+
+\aufgabeexam{WS2020/21}{first}{2}{
+
+The table below shows $\D = \Dset $, a data set with 
+$n$ = 5 observations of a continuous target variable $y$ and a continuous, 
+1-dimensional feature variable $\xv$. In the following, we aim at predicting 
+$y$ with a machine learning model that takes $\xv$ as input.
+
+\begin{tabular}{ | c | c | c |}
+\hline
+ID  &  $\xv$  &  $y$  \\  \hline
+1   &  1.0    &  3.1  \\
+2   &  5.2    &  0.5  \\
+3   &  2.7    &  1.7  \\
+4   &  1.1    &  4.5  \\
+5   &  1.5    &  2.7  \\
+\hline
+\end{tabular}
+
+\begin{enumerate}
+
+  \item We train a random forest with L2 loss $\Lxy = 0.5(y-\fx)^2$ and 
+  $\texttt{num.trees} = 3$ trees. The results of the training and all estimated 
+  split points and predicted labels can be found in the R script \texttt{rf.R}. 
+  To prevent differing numbers due to technical reasons, you see the output of 
+  \texttt{ranger::treeInfo()} in the following table. Predict the label $y$ for 
+  a new observation $\xv_* = 2$ with the random forest as given in the table 
+  below. State the entire manual calculation, i.e., the entire path of the 
+  observation through the trees in detail. (You are allowed to use R to 
+  cross-check your solution, but we will only grade your manual computations -- 
+  for full points, you have to describe your calculations thoroughly.) 
+  
+  \item Compute the proximities of the 5 training observations, using the random 
+  forest. In \texttt{rf.R} you see the skeleton of a function 
+  \texttt{get\_prox\_matrix()}. Complete this function and apply it to the 
+  predictions of the individual trees of the random forest, which are 
+  precomputed in the R script for you and stored in the matrix 
+  \texttt{pred\_mat}. Print the results. This is an R question. As a solution, 
+  hand in a completed version of \texttt{rf.R}. No hand-written solution is 
+  allowed here.
+  
+  \item Use the proximities matrix given below for outlier detection: Which 
+  observations are the most likely candidates for being an outlier and why? 
+  State the IDs of the respective observations.
+  
+\end{enumerate}
+
+}
+
+\dlz
+
+\loesung{}{
+
+\begin{enumerate}
+
+  \item
+  <<include=TRUE, results="asis", echo=FALSE, message=FALSE>>=
+  library(mlr3)
+  library(mlr3learners)
+  library(rpart.plot)
+  library(ranger)  
+  x <- c(1, 5.2, 2.7, 1.1, 1.5)
+  y <- c(3.1, 0.5, 1.7, 4.5, 2.7)
+  df <- data.frame(x, y)
+  df <- df[order(df$x, decreasing = FALSE),]  
+  set.seed(135)
+  task <- TaskRegr$new(id = "exam",
+                       backend = df,
+                       target = "y")
+  rf <- lrn("regr.ranger", num.trees=3, min.node.size=1)
+  rf$train(task)
+  knitr::kable(treeInfo(rf$model, tree=1))
+  knitr::kable(treeInfo(rf$model, tree=2))
+  knitr::kable(treeInfo(rf$model, tree=3))
+  @
+  \begin{itemize}
+    \item Tree 1:
+    \begin{itemize}
+      \item Split 1: left child since $2<3.15 $
+      \item End node: Prediction 4.5
+    \end{itemize}
+    \item Tree 2:
+    \begin{itemize}
+      \item Split 1: left child since $2<2.1$
+      \item Split 2: right child since $2>1.3$
+      \item End node: Prediction 2.7
+    \end{itemize}
+    \item Tree 3:
+    \begin{itemize}
+      \item Split 1: right child since $2>1.9$
+      \item Split 2: left child since $2<3.95$
+      \item End node: Prediction 1.7
+    \end{itemize}
+    Final prediction is the mean of the 3 values: 2.97
+  \end{itemize}
+
+  \item Model solution somewhere in exam folder?
+
+  \item
+  <<include=TRUE, results="asis", echo=FALSE>>=
+  pred <- predict(rf$model, data = data.frame(x=x), predict.all=TRUE)
+  pred_mat <- pred$predictions
+  get_prox_matrix <- function(pred_mat){
+    prox <- matrix(NA, nrow=5, ncol=5)
+    for(i in 1:4){
+      for(j in (i+1):5){
+        prox[i,j] <- prox[j,i] <- sum(pred_mat[i,] == pred_mat[j,])
+      }
+    }
+    prox <- prox / 3
+    return(prox)
+  }
+  prox_mat <- get_prox_matrix(pred_mat)
+  prox_df <- as.data.frame(prox_mat)
+  colnames(prox_df) <- 1:5
+  knitr::kable(round(prox_df,2), row.names = TRUE)
+  @
+
+\end{enumerate}
+}
+
+% ------------------------------------------------------------------------------
+
+\aufgabeexam{WS2020/21}{second}{2}{
+
+The table below shows $\D = \Dset $, a data set with 
+$n$ = 10 observations of a binary target variable \texttt{PlayTennis} and two 
+binary feature variables \texttt{Temperature} and \texttt{Weather}. 
+In the following, we aim at predicting \texttt{PlayTennis} with a machine 
+learning model that takes \texttt{Temperature} and \texttt{Weather} as input.
+
+\resizebox{0.88\textwidth}{!}{%
+\begin{tabular}{|r|cccccccccc|}
+  \hline
+ID & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 \\
+  \hline
+Temperature & cool & cool & cool & hot & hot & cool & hot & cool & cool & hot \\
+  Weather & rain & rain & sunny & sunny & sunny & rain & rain & sunny & sunny & sunny \\
+  \hline
+  PlayTennis & no & no & yes & no & yes & no & yes & yes & yes & yes \\
+   \hline
+\end{tabular}
+}
+}
+
+\begin{enumerate}
+  \item We train a random forest with $\texttt{num.trees} = 3$ trees. 
+  The results of the training and all estimated split points and predicted 
+  labels can be found in the R script \texttt{snd\_rf.R}. 
+  To prevent differing numbers due to technical reasons, you see the output of 
+  \texttt{ranger::treeInfo()} in the following table. 
+  Predict the label \texttt{PlayTennis} for a new observation 
+  $\xv_* = (cool, rain)^\top$ with the random forest as given in the table 
+  below. State the entire manual calculation, i.e., the entire path of the 
+  observation through the trees in detail. (You are allowed to use R to 
+  cross-check your solution, but we will only grade your manual computations -- 
+  for full points, you have to describe your calculations thoroughly.) 
+\end{enumerate}
+
+\newpage
+\loesung{
+
+\begin{enumerate}
+  \item   
+  <<include=FALSE, results="asis", echo=FALSE>>=
+  temperature <- as.factor(
+    c("cool", "cool", "cool", "hot", "hot", 
+      "cool", "hot", "cool", "cool", "hot"))
+  weather <- as.factor(
+    c("rain", "rain", "sunny", "sunny", "sunny", 
+      "rain", "rain", "sunny", "sunny", "sunny"))
+  playtennis <- as.factor(
+    c("no", "no", "yes",  "no", "yes", 
+      "no", "yes", "yes", "yes", "yes"))
+  df <- data.frame(temperature, weather, playtennis)
+  library(mlr3)
+  library(mlr3learners)
+  task <- TaskClassif$new(
+    id = "secondexam",
+    backend = df,
+    target = "playtennis")
+  t <- lrn("classif.rpart", minbucket=1)
+  t$train(task)
+  t$model
+  @
+  <<include=TRUE, results="asis", echo=FALSE, message=FALSE>>=
+  library(ranger)  
+  set.seed(13511)
+  rf <- lrn("classif.ranger", num.trees=3, min.node.size=1)
+  rf$train(task)
+  knitr::kable(treeInfo(rf$model, tree=1))
+  knitr::kable(treeInfo(rf$model, tree=2))
+  knitr::kable(treeInfo(rf$model, tree=3))
+  @
+  In the R code you can see that cool is class 1, hot is class 2, for 
+  temperature and that rain is class 1, sun is class 2 for weather.
+  \begin{itemize}
+    \item Tree 1: 
+    \begin{itemize}
+      \item nodeID 0: left child since cool $=1<1.5 \Rightarrow$ nodeID = 1
+      \item nodeID 1: left child since rain $=1<1.5 \Rightarrow$ nodeID = 3
+      \item nodeID 3 = End node: Prediction 'no'
+    \end{itemize}
+    \item Tree 2: 
+    \begin{itemize}
+      \item nodeID 0: left child since rain $=1<1.5 \Rightarrow$ nodeID = 1
+      \item nodeID 1: left child since cool $=1<1.5 \Rightarrow$ nodeID = 3
+      \item nodeID 3 = End node: Prediction 'no'
+    \end{itemize}
+    \item Tree 3: 
+    \begin{itemize}
+      \item nodeID 0: left child since cool $=1<1.5 \Rightarrow$ nodeID = 1
+      \item nodeID 1 = End node: Prediction 'no'
+    \end{itemize}
+    Final prediction is the majority vote of the 3 values: 'no'
+  \end{itemize}
+\end{enumerate} 
+}
+
+% ------------------------------------------------------------------------------
+
+\aufgabeexam{WS2021/22}{first}{3}{
+
+Consider a regression problem, where the data are assumed to have been 
+generated by $y = \thetab^\top \xv + \epsilon$,
+with $\thetab \in \R^2$, $\xv \in \R^2$, and random noise 
+$\epsilon \in \R$.
+
+\begin{enumerate}[a)]
+
+  \item 
+  <<echo=FALSE>>=
+  x_1_pred <- 0.55
+  x_2_pred <- 1.03
+  obs_pred <- data.frame(x_1 = x_1_pred, x_2 = x_2_pred)
+  n_trees <- 5L
+  @
+  You train a random forest with \Sexpr{n_trees} tree learners and obtain the 
+  following result (generated with \texttt{ranger::treeInfo()}).
+  Compute the prediction for a new observation \\$\xv_\ast = \mat{x_{1, \ast}, & 
+  x_{2, \ast}}^\top = \mat{\Sexpr{x_1_pred}, & \Sexpr{x_2_pred}}^\top$.
+  Document the \texttt{nodeID}s that $\xv_\ast$ passes through along its way.
+
+  \footnotesize
+  <<echo=FALSE, results='asis'>>=
+  library(mlr3)
+  library(mlr3learners)
+  library(knitr)
+  
+  n_obs <- 10L
+  set.seed(123L)
+  x_1 <- runif(n_obs)
+  x_2 <- rnorm(n_obs, mean = 1, sd = 0.1)
+  y <- 2 * x_1 + 3 * x_2 + rnorm(n_obs)
+  dt_3 <- data.frame(x_1, x_2, y)
+  
+  task <- TaskRegr$new("foo", backend = dt_3, target = "y")
+  learner <- lrn("regr.ranger", num.trees = n_trees)
+  learner$train(task)
+  
+  rf <- invisible(lapply(
+    seq_len(n_trees), 
+    function(i) ranger::treeInfo(learner$model, tree = i)))
+  
+  for (i in seq_len(n_trees)) {
+    cat("\\vspace{0.3cm}")
+    cat(sprintf("\n\n Tree %i: \n\n", i))
+    cat(knitr::kable(
+      rf[[i]], 
+      "latex", 
+      digits = 2L, 
+      align = c("|r", rep("r", 6L), "r|")))
+  }
+
+@
+  \normalsize
+
+  \item In the table below, you see the out-of-bag (OOB) predictions 
+  $\hat y_{\text{OOB}}$ and 
+  ground-truth target 
+  values $y$, as well as their respective differences, for the training data 
+  used to fit the random forest in the previous question. 
+  Derive the OOB error 
+  estimate for the ensemble using $L2$ loss.
+  Document your entire calculation. 
+  Non-integer values may be rounded to 2 decimal places. 
+  \vspace{0.5cm}
+  
+   <<echo=FALSE>>=
+  
+  # get oob predictions and impute mean for obs that are not oob anywhere
+  oob_preds <- learner$model$predictions
+  oob_preds[is.na(oob_preds)] <- mean(oob_preds[!is.na(oob_preds)])
+  
+  # create df to be printed
+  dt_oob <- data.frame(
+    id = seq_len(length(oob_preds)),
+    oob_preds = round(oob_preds, 2L),
+    ground_truth = dt_3$y, 
+    diff = oob_preds - dt_3$y)
+  
+  knitr::kable(
+    dt_oob, 
+    "latex", 
+    digits = 2, 
+    col.names = c(
+      "$i$", 
+      "$\\hat y_{\\text{OOB}}^{(i)}$", 
+      "$y^{(i)}$", 
+      "$\\hat y_{\\text{OOB}}^{(i)} - y^{(i)}$"),
+    align = c("|r", "r", "r", "r|"),
+    escape = FALSE)
+
+@
+  \normalsize
+
+\end{enumerate}
+
+}
+
+\loesung{
+
+\begin{enumerate}[a)] 
+
+  \item Nodes
+    \begin{itemize}
+      \item Tree 1: node 2 $\longrightarrow$ node 4 $\longrightarrow$ node 6
+      \item Tree 2: node 2 $\longrightarrow$ node 3 $\longrightarrow$ node 5 
+      $\longrightarrow$ node 7 
+      \item Tree 3: node 2 $\longrightarrow$ node 4 
+      \item Tree 4: node 2 $\longrightarrow$ node 3 $\longrightarrow$ node 6
+      \item Tree 5: node 2 $\longrightarrow$ node 4 $\longrightarrow$ node 5
+    \end{itemize}
+
+<<>>=
+  (end_nodes <- predict(
+    learner$model, obs_pred, type = "terminalNodes")$predictions)
+  (member_preds <- sapply(
+    seq_len(n_trees), 
+    function(i) {
+      round(subset(rf[[i]], nodeID == end_nodes[i])$prediction, 2L)}))
+  round(mean(member_preds), 2L)
+@
+
+  \item $\widehat{\text{err}}_{\text{OOB}} = \meanin \left(\yi - \yih_{\text{OOB}}
+    \right)^2$
+
+<<>>=
+  (sq_diffs <- round((dt_oob$diff)^2, 2L))
+  round(mean(sq_diffs), 2L)
+@
+
+\end{enumerate}
+
+}
+
+% ------------------------------------------------------------------------------
+
+\aufgabeexam{SS2022}{first}{4}{
+
+Consider a univariate regression problem, to be solved with a regression tree.
+
+\begin{enumerate}[a)]
+
+  \item For the following data, compute the empirical risk arising from each 
+  option for the first split point when using $L2$ loss.
+  Which split would the CART algorithm select? 
+ 
+  <<echo=FALSE>>=
+  library(data.table)
+  
+  n_obs = 3
+  id <- seq_len(n_obs)
+  set.seed(321)
+  x <- sort(round(runif(n_obs, min = 1, max = 10), 1))
+  y <- round(runif(n_obs, min = 1, max = 5), 2)
+  dt <- data.table(id, x, y)
+  split_point_1 <- mean(x[1:2])
+  split_point_2 <- mean(x[2:3])
+  mean_1 <- mean(y[2:3])
+  mean_2 <- mean(y[1:2])
+  var_1 <- round(0.5 * sum((y[2:3] - mean_1)^2), 2L)
+  var_2 <- round(0.5 * sum((y[1:2] - mean_2)^2), 2L)
+  risk_1 <- round(2/3 * (0.5 * sum((y[2:3] - mean_1)^2)), 2L)
+  risk_2 <- round(2/3 * (0.5 * sum((y[1:2] - mean_2)^2)), 2L)
+  eq_sign <- ifelse(risk_1 > risk_2, ">", "<")
+  winning_split <- ifelse(risk_1 > risk_2, 2L, 1L)
+  @
+  
+  <<echo=FALSE, results="asis">>=
+  library(knitr)
+  kable(
+    dt, 
+    format = "latex", 
+    escape = FALSE,
+    col.names = c("$i$", "$x_i$", "$y_i$"),
+    align = c("|r", "r", "r|"),
+    digits = 2)
+  @
+
+  \item CART with high complexity in relation to the training data run a risk
+  of overfitting.
+  
+  \begin{enumerate}[i)]
+
+    \item In the following figure, sketch how you would expect the train error, 
+    measured with mean squared error (MSE),
+    to evolve with increasing size of the training dataset. 
+    You can assume the tree complexity and all hyperparameters to remain fixed.
+
+    <<echo=FALSE, fig.height=3, fig.width=6>>==
+    library(ggplot2)
+    dt <- data.frame(x = 1:100000, y = 1:100)
+    ggplot(dt, aes(log(x), y)) + 
+      geom_blank() +
+      theme_classic() +
+      labs(
+        x = "number of training observations (log-scale, k = 1000)", 
+        y = "MSE"
+      ) +
+      theme(axis.text.y = element_blank()) +
+      scale_x_continuous(
+        breaks = log(c(1, 1000, 100000)), 
+        labels = c("1", "1k", "100k")
+      )
+    @
+    
+    
+    \item Name and briefly describe a technique specific
+    to CART that can be used to counter overfitting.
+
+  \end{enumerate}
+  
+  \item Decide whether the following statement, referring to trees 
+  with a fixed hyperparameter configuration,
+  is right or false. Provide a 
+  rough proof sketch if you deem it right and a counterexample otherwise.
+
+  \textit{Since CART perform an exhaustive search over possible splits and pick 
+  the risk-optimal one at each 
+  step, there can be no other element of the hypothesis space with lower 
+  empirical risk on the training data than the chosen model.}
+  
+  \item Now consider a random forest.
+  You solve the \texttt{wine} task, predicting the \texttt{type} of a 
+  wine -- with 3 classes -- from a number of covariates.
+  After training, you wish to determine how similar your observations are in 
+  terms of proximities.
+  
+  For the following subset of the training data and the random forest model 
+  given below,  
+  \begin{itemize}
+    \item find the terminal node of each tree the observations are placed in,
+    \item compute the observations' pairwise proximities, and
+    \item construct a similarity matrix from these proximities.
+  \end{itemize}
+
+  \textit{Hint:} The model information was created with 
+  \texttt{ranger::treeInfo()}, which assigns observations with values 
+  larger than \texttt{splitval} to the right child node in each split.
+  
+  % Document your entire calculation. Non-integer values may be rounded to 2 
+  % decimal places.
+
+  <<echo=FALSE, message=FALSE>>=
+  library(data.table)
+  library(mlr3verse)
+
+  set.seed(123L)
+  task <- tsk("wine")
+  task$select(
+    c("alcalinity", "alcohol", "flavanoids", "hue", "malic", "phenols")
+  )
+  n_trees <- 3L
+  learner <- lrn("classif.ranger", num.trees = n_trees, max.depth = 2L)
+  learner$train(task)
+
+  # set.seed(321L)
+  x_sample <- task$data()[sample(seq_len(task$nrow), 3L)]
+  x_sample[, type := NULL][, id := .I]
+  setcolorder(x_sample, "id")
+  @
+
+  <<echo=FALSE, results="asis">>=
+  library(knitr)
+  kable(
+    x_sample, 
+    format = "latex", 
+    escape = FALSE,
+    col.names = c(
+      "observation", "alcalinity", "alcohol", "flavanoids", "hue", "malic",
+      "phenols"
+    ),
+    align = c("|r", "r", "r", "r", "r", "r", "r|"),
+    digits = 2
+    )
+  @
+
+  % \newpage
+  \footnotesize
+  <<echo=FALSE, results='asis', message=FALSE>>=
+  library(rpart.plot)
+  
+  rf <- invisible(
+    lapply(
+      seq_len(n_trees),
+      function(i) ranger::treeInfo(learner$model, tree = i)
+    )
+  )
+  
+  for (i in seq_len(n_trees)) {
+    cat("\\vspace{0.3cm}")
+    cat(sprintf("\n\n Tree %i: \n\n", i))
+    cat(knitr::kable(
+      rf[[i]], 
+      "latex", 
+      digits = 2L, 
+      align = c("|r", rep("r", 6L), "r|")))
+  }
+
+  @
+
+  \normalsize 
+
+\end{enumerate}
+}
+
+\loesung{
+
+\begin{enumerate}[a)]
+
+  \item Splits
+  
+  \begin{itemize}
+      \item Option 1
+      \begin{itemize}
+        \item Split point at $\Sexpr{split_point_1}$
+        \item One pure node with 0 risk ($i = 1$)
+        \item Risk in the other node ($i \in \{2, 3\}$):
+        \begin{itemize}
+          \item $\hat c = 0.5 \cdot (\Sexpr{y[2]} + \Sexpr{y[3]}) = 
+          \Sexpr{mean_1}$
+          \item $\risk(\Np) = \frac{1}{3} \cdot 0 + \frac{2}{3} \cdot (0.5 \cdot 
+          ((\Sexpr{y[2]} - \hat c)^2 + (\Sexpr{y[3]} - \hat c)^2)) = 
+          \frac{2}{3} \cdot \Sexpr{var_1} = \Sexpr{risk_1}$
+        \end{itemize}
+      \end{itemize}
+      \item Option 2
+      \begin{itemize}
+        \item Split point at $\Sexpr{split_point_2}$
+        \item One pure node with 0 risk ($i = 3$)
+        \item Risk in the other node ($i \in \{1, 2\}$):
+        \begin{itemize}
+          \item $\hat c = 0.5 \cdot (\Sexpr{y[1]} + \Sexpr{y[2]}) = 
+          \Sexpr{mean_2}$
+          \item $\risk(\Np) = \frac{1}{3} \cdot 0 + \frac{2}{3} \cdot (0.5 * 
+          ((\Sexpr{y[1]} - \hat c)^2 + (\Sexpr{y[2]} - \hat c)^2))
+           = \frac{2}{3} \cdot \Sexpr{var_2} = \Sexpr{risk_2}$
+        \end{itemize}
+      \end{itemize}
+      \item Risk in split 1 $\Sexpr{eq_sign}$ risk in split 2 $\Longrightarrow$ 
+      split $\Sexpr{winning_split}$ to be preferred
+    \end{itemize}
+
+  \item Complexity
+  
+  \begin{enumerate}[i)]
+
+    \item Monotonically increasing function with steeper slope in 
+      the beginning, plateauing out towards the end
+    
+    \item E.g., 
+      \begin{itemize}
+        \item Early stopping: abort algorithm prematurely based on some 
+        criterion (e.g., once certain number of child nodes is reached)
+        \item Pruning: let grow to full size and cut back until desired 
+        trade-off between risk and complexity is reached
+      \end{itemize}
+
+  \end{enumerate}
+  
+  \item FALSE: greedy search is myopic -- sometimes a slightly worse solution 
+        in one step will allow for an overall better solution after the next 
+        step. 
+    
+    Counterexample:
+    
+    \includegraphics[width=0.7\textwidth]{figure/cart_counterexample}
+    
+    A horizontal split to isolate the class-0 points, followed by a second one, 
+    would have been globally optimal but is not considered because it yields a 
+    temporarily worse risk than the split realized here.
+  
+  \item Proximities:
+      
+  <<echo=FALSE>>=
+  end_nodes <- predict(
+    learner$model, x_sample, type = "terminalNodes"
+  )$predictions
+  end_nodes <- data.table(end_nodes)
+  setnames(end_nodes, sprintf("tree_%i", seq_along(end_nodes)))
+  @
+  
+  <<>>=
+  # end node each observation is placed in across trees
+  end_nodes
+  @
+  
+  <<message=FALSE>>=
+  library(proxy)
+  compute_prox <- function(i, j) sum(i == j) / length(i)
+  round(proxy::dist(end_nodes, method = compute_prox), 2L)
+  @
+
+\end{enumerate}
+
+}
+
+% ------------------------------------------------------------------------------
+% INSPO
+% ------------------------------------------------------------------------------
+
+\dlz
+\exinspo

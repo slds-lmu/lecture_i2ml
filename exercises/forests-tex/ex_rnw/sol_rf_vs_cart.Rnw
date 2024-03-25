@@ -1,0 +1,47 @@
+Try to find or simulate (at least) one 2 dimensional classification dataset as an example in which random forests can separate both classes well but CART is problematic. Hint: Have a look at the \texttt{mlbench} package.
+
+<<fig.height=3, fig.width=8, eval=TRUE>>=
+library(mlr3)
+library(mlr3learners)
+library(mlr3viz)
+library(mlbench)
+library(ggplot2)
+library(gridExtra)
+
+set.seed(123)
+
+# create learners
+
+rp = mlr3::lrn("classif.rpart")
+rf = mlr3::lrn("classif.ranger")
+
+# create two example data and corresponding tasks for mlr3
+
+data.spirals = data.table::as.data.table(
+  mlbench.spirals(n = 1000, cycles = 3, sd = 0.05))
+task.spirals = mlr3::TaskClassif$new(
+  "spirals", 
+  backend = data.spirals, 
+  target = "classes")
+data.circle = data.table::as.data.table(mlbench.circle(1000, d = 2))
+task.circle = mlr3::TaskClassif$new(
+  "circle", 
+  backend = data.circle, 
+  target = "classes")
+
+# show how learners perform
+
+spirals1 = mlr3viz::plot_learner_prediction(rp, task.spirals) +
+  guides(shape = FALSE)
+spirals2 = mlr3viz::plot_learner_prediction(rf, task.spirals) +
+  guides(shape = FALSE)
+grid.arrange(spirals1, spirals2, ncol = 2)
+
+circle1 = mlr3viz::plot_learner_prediction(rp, task.circle) +
+  guides(shape = FALSE)
+circle2 = mlr3viz::plot_learner_prediction(rf, task.circle) +
+  guides(shape = FALSE)
+grid.arrange(circle1, circle2, ncol = 2)
+
+@
+

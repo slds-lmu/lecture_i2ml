@@ -1,0 +1,220 @@
+---
+title: "Exercise 1 -- ML Basics"
+subtitle: "[Introduction to Machine Learning](https://slds-lmu.github.io/i2ml/)"
+---
+
+::: {.content-hidden when-format="pdf"}
+::: {.hidden}
+{{< include ../_quarto/latex-math.qmd >}}
+:::
+:::
+
+
+
+## Exercise 1: Car price prediction
+
+::: {.callout-note title="Learning goals" icon=false}
+1) Translate real-world problem into ML concepts
+2) Use proper mathematical notation for those concepts
+:::
+
+Imagine you work at a second-hand car dealer and are tasked with finding for-sale vehicles your company can acquire at a reasonable price. You decide to address this challenge in a data-driven manner and develop a model that predicts adequate market prices (in EUR) from vehicles’ properties.
+
+***
+::: {.callout-tip icon=false title="Only for lecture group B"}
+Characterize the task at hand: supervised or unsupervised? Regression or classification? Learning to explain or learning to predict? Justify your answers.
+:::
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+We face a **supervised regression** task: we definitely need labeled training data to infer a relationship between cars' attributes and their prices, and price in EUR is a continuous target (or quasi-continuous, to be exact -- as with all other quantities, we can only measure it with finite precision, but the scale is sufficiently fine-grained to assume continuity). **Prediction** is definitely the goal here, however, it might also be interesting to examine the explanatory contribution of each feature.
+</details> 
+:::
+
+***
+How would you set up your data? Name potential features along with their respective data type and state the target variable.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+Target variable and potential features: 
+
+| **Variable**        | **Role**   | **Data type** |
+|---------------------|------------|---------------|
+| Price in EUR        | Target     | Numeric       |
+| Age in days         | Feature    | Numeric       |
+| Mileage in km       | Feature    | Numeric       |
+| Brand               | Feature    | Categorical   |
+| Accident-free y/n   | Feature    | Binary        |
+| ...                 | ...        | ...           |
+
+</details> 
+:::
+
+***
+Assume now that you have data on vehicles’ age (days), mileage (km), and price (EUR). Explicitly define the feature space $\mathcal{X}$ and target space $\mathcal{Y}$.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+Let $x_1$ and $x_2$ measure age and mileage, respectively. Both features and target are numeric and (quasi-) continuous. It is also reasonable to assume non-negativity for the features, such that we obtain $\Xspace = (\R_{0}^{+})^2$, with $\xi = (x_1^{(i)}, x_2^{(i)})^\top \in \Xspace$ for $i = 1, 2, \dots, n$ observations. As the standard LM does not impose any restrictions on the target, we have $\Yspace = \R$, though we would probably discard negative predictions in practice.
+
+</details> 
+:::
+
+***
+You choose to use a linear model (LM) for this task. The LM models the target as a linear function of the features with Gaussian error term.
+
+State the hypothesis space for the corresponding model class. For this, assume the parameter vector $\theta$ to include the intercept coefficient.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+We can write the hypothesis space as:   
+
+\begin{flalign*}
+\Hspace = \{\fxt = \thetab^\top \xv ~|~ \thetab \in \R^3 \}
+=  \{\fxt = \theta_0 + \theta_1 x_1 + \theta_2 x_2 ~|~ 
+(\theta_0, \theta_1, \theta_2) \in \R^3 \}.
+\end{flalign*}
+
+Note the **slight abuse of notation** here: in the lecture, we first define $\thetab$ to only consist of the feature coefficients, with $\xv$ likewise being the plain feature vector. For the sake of simplicity, however, it is more convenient to append the intercept coefficient to the vector of feature coefficients. This does not change our model formulation, but we have to keep in mind that it implicitly entails adding an element 1 at the first position of each vector.
+</details> 
+:::
+
+***
+Which parameters need to be learned? Define the corresponding parameter space $\Theta$.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+The parameter space is included in the definition of the hypothesis space and in this case given by $\Theta = \R^3$.
+
+</details> 
+:::
+
+***
+State the loss function for the $i$-th observation using $L2$ loss. 
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+Loss function for the $i$-th observation: $\Lxyit = \left( \yi - \thetab^\top \xi \right)^2$.
+
+</details> 
+:::
+
+***
+Now you need to optimize this risk to find the best parameters, and hence the best model, via empirical risk minimization. State the optimization problem formally and list the necessary steps to solve it. 
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+In order to find the optimal $\thetabh$, we need to solve the following minimization problem: 
+
+$$
+ \thetabh = \argmin_{\thetab \in \Theta} \risket = \argmin_{\thetab \in \Theta} 
+ \left( \sumin \left(\yi - \thetab^\top \xi \right)^2 \right) 
+$$
+
+This is achieved in the usual manner of setting the derivative w.r.t. $\thetab$ to 0 and solving for $\thetab$, yielding the familiar least-squares estimator.
+
+</details> 
+:::
+
+***
+Congratulations, you just designed your first machine learning project!
+
+
+
+## Exercise 2: Vector calculus
+::: {.callout-tip icon=false title="The whole exercise is only for lecture group A!"}
+:::
+
+::: {.callout-note title="Learning goals" icon=false}
+1. Understand how vector-valued functions work
+2. Perform calculus on vectors and matrices
+:::
+
+Consider the following function performing matrix-vector multiplication: $\fx = \Amat \xv$, where $\Amat \in \R^{m \times n}$, $\xv \in \R^{n \times 1}$.
+
+***
+What is the dimension of $\fx$? Explicitly state the calculation for the $i$-th component of $\fx$.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+In computing $\Amat \xv$ we multiply each of the $m$ rows in $\Amat$ with the sole length-$n$ column in $\xv$, leaving us with a column vector $\fx \in \R^{m \times 1}$. Thus, we have $f: \R^{n (\times 1)} \rightarrow \R^{m (\times 1)}$.
+
+The $i$-th function component $f_i(\xv)$ corresponds to multiplying the $i$-th row of $\Amat$ with $\xv$, amounting to $$f_i(\xv) = \sum_{j = 1}^n a_{ij} x_j,$$ with $a_{ij}$ the element in the $i$-row, $j$-th column of $\Amat$.
+
+</details> 
+:::
+
+***
+Now, consider the gradient (derivative generalized to multivariate functions) $\frac{\mathop{}\!\mathrm{d} \fx}{\mathop{}\!\mathrm{d} \xv}$ (a.k.a. $\nabla_\xv \fx$).
+
+***
+What is the dimension of $\frac{\mathop{}\!\mathrm{d} \fx}{\mathop{}\!\mathrm{d} \xv}$?
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+The gradient is the row vector[^1] of partial derivatives, i.e., the derivatives of $f$ w.r.t. each dimension of $\xv$:
+$$
+\frac{\mathop{}\!\mathrm{d} \fx}{\mathop{}\!\mathrm{d} \xv} 
+= \mat{\pd{\fx}{x_1} & \dots & \pd{\fx}{x_n}}.
+$$
+
+Now, since $f$ is a vector-valued function, each component is itself a vector of length $m$. Therefore, we have $\frac{\mathop{}\!\mathrm{d} \fx}{\mathop{}\!\mathrm{d} \xv} \in \R^{m \times n}$, given by the collection of all partial derivatives of each function component:
+
+$$
+\frac{\mathop{}\!\mathrm{d} \fx}{\mathop{}\!\mathrm{d} \xv} = \mat{
+\pd{f_1(\xv)}{x_1} & \cdots & \pd{f_1(\xv)}{x_n} \\
+\vdots & & \vdots \\
+\pd{f_m(\xv)}{x_1} & \cdots & \pd{f_m(\xv)}{x_n}
+}
+$$
+
+This matrix is also called the *Jacobian* of $f$.
+
+</details> 
+:::
+
+***
+Compute $\frac{\mathop{}\!\mathrm{d} \fx}{\mathop{}\!\mathrm{d} \xv}$.
+  
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+We have 
+
+$$
+\pd{f_i(\xv)}{x_j} = \pd{\left(\sum_{j = 1}^n a_{ij} x_j \right)}{x_j} = a_{ij}.
+$$
+
+Doing this for every element yields
+$$
+\mat{a_{11} & \cdots & a_{1n}  \\ \vdots & & \vdots \\ a_{m1} & \cdots & a_{mn}},
+$$
+
+and we have $\frac{\mathop{}\!\mathrm{d} \fx}{\mathop{}\!\mathrm{d} \xv} = \frac{\mathop{}\!\mathrm{d} \Amat \xv}{\mathop{}\!\mathrm{d} \xv} = \Amat$.
+
+[^1]: Pertaining to one of two conventions; we use the *numerator layout* here (transposed version = *denominator layout*).
+
+</details> 
+:::
+
+::: {.callout-warning icon=false title="Had trouble with this exercise?"}
+* For the upcoming contents, you need to be able to handle **matrix-valued computations** (multiplication, transposition etc.) and also matrix-valued **calculus**.
+* For more explanations and exercises, including a useful collection of rules for calculus, we recommend the book "Mathematics for Machine Learning" ([https://mml-book.github.io/book/mml-book.pdf](https://mml-book.github.io/book/mml-book.pdf)).
+:::

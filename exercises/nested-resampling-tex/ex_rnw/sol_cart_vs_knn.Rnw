@@ -1,0 +1,52 @@
+\begin{enumerate}[a)]
+  \item Benchmark result:
+  \begin{enumerate}
+    \item Total number of models trained:
+    \begin{itemize}
+      \item Let's first consider the 2 learners for which we conduct no further 
+      tuning. 
+      We train each of them 10 times within the outer resampling (10-CV) loop 
+      (on 90\% of the data, respectively.)
+      This gives us the desired performance estimate.
+      \item For the 2 learners with additional hyperparameter tuning, the 
+      picture is a little more involved: We also train each of them 10 times 
+      for the outer loop (on 90\% of the data), where we endow them with the 
+      optimal hyperparameter configuration, to get the performance estimate. 
+      In order to get this optimal configuration, though, we first need 
+      to run the inner tuning loop, where we determine the (estimated) 
+      performance of each of the 200 candidate configurations via 5-CV, meaning
+      we train with each configuration 5 times on 80\% $\cdot$ 90\% = 72\% of 
+      the data.
+      \item So, in total:
+      $$\underbrace{2 \cdot 10}_{\text{log reg \& LDA}} + 
+      ~~ \underbrace{2 \cdot 10}_{\text{$k$-NN 
+      \& CART}} \cdot \overbrace{(5 \cdot 200}^{
+      \text{find optimal $\lamv$}} ~~ \overbrace{+ 1)}^{
+      \text{train with optimal $\lamv$}
+      } = 20,040.$$
+      \item We see: Without the inner loop for 2 learners, it would just be 
+      $2 \cdot 10 + 2 \cdot 10 \cdot 1 = 40$.
+      The inner tuning adds $5 \cdot 200$ model fits
+      for each learner (2) and outer fold (10).
+      \item Alternatively, we can thus look at this from an inner-to-outer 
+      perspective:
+      $$\underbrace{2 \cdot 10 \cdot 5 \cdot 200}_{\text{tuning for $k$-NN \& 
+      CART in each fold (1)}} +
+      \underbrace{4 \cdot 10}_{\text{outer loop (2) with fold-specific $\lamv$ 
+      from (1)}}$$ 
+    \end{itemize}
+    \item Since we evaluate on AUC, we select $k$-NN with the best average 
+    result in that respect.
+  \end{enumerate}
+  \item Less data for training leads to higher bias, less data for evaluation 
+  leads to higher variance.
+  \item Statements:
+  \begin{enumerate}[i)]
+    \item True -- 3-CV leads to smaller train sets, therefore we are not able to 
+    learn as well as in, e.g., 10-CV.
+    \item False -- we are relatively flexible in choosing the outer loss, but 
+    the inner loss needs to be suitable for empirical risk minimization, 
+    which encompasses differentiability in most cases (i.e., whenever 
+    optimization employs derivatives).
+  \end{enumerate}
+\end{enumerate}

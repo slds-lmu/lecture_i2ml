@@ -1,0 +1,84 @@
+\begin{enumerate}[a)]
+
+  \item Since the polynomial learner clearly achieves a better fit for the 
+  training data and some observations lie rather far from the regression line, 
+  which is strongly penalized by $L2$ loss, it will have lower empirical risk 
+  than the linear learner.
+  
+  \item First and foremost, evaluation on the training data is almost never a 
+  good idea.
+  Under certain conditions the training error does tell us something about 
+  generalization ability, but for flexible learners and/or small training data 
+  it is deceptive due to optimistic bias.
+  In this particular situation, we have few training observations and quite 
+  some points that look a little extreme.
+  A low training error might be achieved by a learner that fits every 
+  quirk in the training data but generalizes poorly to unseen points with only 
+  slightly different distribution.
+  Evaluation on separate test data is therefore non-negotiable.
+  
+  \item We fit the polynomial and linear learner and then compute the squared 
+  and absolute differences between their respective predictions and the 
+  true target values:
+  
+      <<echo=TRUE, message=FALSE>>=
+
+# define train data including outlier
+set.seed(123)
+x_train <- seq(10, 15, length.out = 50)
+y_train <- 10 + 3 * sin(0.15 * pi * x_train) + rnorm(length(x_train), sd = 0.5)
+data_train <- data.frame(x = x_train, y = y_train)
+
+# define test data
+set.seed(321)
+x_test <- seq(10, 15, length.out = 10)
+y_test <- 10 + 3 * sin(0.15 * pi * x_test) + rnorm(length(x_test), sd = 0.5)
+data_test <- data.frame(x = x_test, y = y_test)
+
+# train learners
+polynomial_learner <- lm(y ~ poly(x, 21), data_train)
+linear_learner <- lm(y ~ x, data_train)
+
+# predict with both learners
+y_polynomial <- predict(polynomial_learner, data_test)
+y_lm <- predict(linear_learner, data_test)
+
+# compute errors
+abs_differences <- lapply(
+  list(y_polynomial, y_lm), 
+  function(i) abs(data_test$y - i))
+errors_mse <- sapply(abs_differences, function(i) mean(i^2))
+errors_mae <- sapply(abs_differences, mean)
+
+print(c(errors_mse, errors_mae))
+@
+  \newpage
+  The picture is inconclusive: based on MSE, we should prefer the complex 
+  polynomial model, while MAE tells us to pick the linear one.
+  It is important to understand that the choices of inner and outer loss 
+  functions encode our requirements and may have substantial impact on the 
+  result.
+  Our learners differ strongly in their complexity: we have an extremely 
+  flexible polynomial and a very robust (though perhaps underfitting) linear 
+  one.
+  If, for example, our test data contains an extreme point far from the 
+  remaining observations, the polynomial model might be able to fit it fairly 
+  well, while the LM incurs a large MSE because the distance to this point 
+  enters quadratically.
+  The MAE, on the other hand, is more concerned with small residuals, and there, 
+  our LM fares better.
+  Here, following the MAE assessment would signify preference for a 
+  robust model.
+  
+  However, we must keep in mind that our performance evaluation is based on a 
+  single holdout split, which is not advisable in general and particularly 
+  deceptive with so little data.
+  For different test data we quickly get in situations where the polynomial has 
+  both worse MSE and MAE -- after all, slapping a learner with 21 + 1 learnable 
+  parameters on a 50-points data set should strike you as a rather bad idea.
+  
+  Take-home message: the choice of our performance metric matters, 
+  and making decisions based on a single train-test split is risky in many 
+  data settings.
+  
+\end{enumerate}

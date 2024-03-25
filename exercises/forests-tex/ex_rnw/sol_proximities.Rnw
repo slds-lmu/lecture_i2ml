@@ -1,0 +1,66 @@
+<<echo=FALSE, message=FALSE>>=
+  library(data.table)
+  library(mlr3verse)
+
+  set.seed(123L)
+  task <- tsk("wine")
+  task$select(
+    c("alcalinity", "alcohol", "flavanoids", "hue", "malic", "phenols")
+  )
+  n_trees <- 3L
+  learner <- lrn("classif.ranger", num.trees = n_trees, max.depth = 2L)
+  learner$train(task)
+
+  # set.seed(321L)
+  x_sample <- task$data()[sample(seq_len(task$nrow), 3L)]
+  x_sample[, type := NULL][, id := .I]
+  setcolorder(x_sample, "id")
+  @
+
+\begin{enumerate}[a)]
+
+  \item Using the \texttt{treeInfo()} output, we can follow the path of each 
+  sample through each tree.
+      
+  <<echo=FALSE>>=
+  end_nodes <- predict(
+    learner$model, x_sample, type = "terminalNodes"
+  )$predictions
+  end_nodes <- data.table(end_nodes)
+  setnames(end_nodes, sprintf("tree_%i", seq_along(end_nodes)))
+  @
+  
+  The following table prints for each observation (rows) their terminal nodes as 
+  assigned by trees 1-3.
+  For example, consider observation 1 in tree 1 (first cell): the observation 
+  has \texttt{phenols} $> 1.94$, putting it in node 2 (\texttt{rightChild} of 
+  node 0), from there in node 6 (because it has \texttt{alcohol} $> 13.04$).
+  
+  <<>>=
+  # end node each observation is placed in across trees
+  end_nodes
+  @
+  
+  \item For the proximities, we consider each pair of observations and compute 
+  the relative frequency of trees assigning them to the same terminal node. 
+  
+  \begin{itemize}
+    \item Observations 1 and 2: only tree 1 assigns them to the same node, so 
+    the proximity is $\tfrac{1}{3}$.
+    \item Observations 1 and 3: all trees assign them to the same node, so 
+    the proximity is 1.
+    \item Observations 2 and 3: only tree 1 assigns them to the same node, so 
+    the proximity is $\tfrac{1}{3}$.
+  \end{itemize}
+  
+  \item We can put this information into a similarity matrix (as such matrices 
+  become large quite quickly for more data, it is common to store only the 
+  lower diagonal -- the rest is non-informative/redundant):
+  
+  <<message=FALSE>>=
+  library(proxy)
+  compute_prox <- function(i, j) sum(i == j) / length(i)
+  round(proxy::dist(end_nodes, method = compute_prox), 2L)
+  @
+
+\end{enumerate}
