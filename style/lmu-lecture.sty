@@ -72,66 +72,69 @@
 {\enditemize}
 
 %-------------------------------------------------------------------%
-%   BeginLecture // Automatic title slide                           %
+%   BeginLecture // Title slide                           %
 %-------------------------------------------------------------------%
-% Includes aorkarounds for slide numbering
 
+% Wrapper to insert title figure withina column env
+\newcommand{\includeGraphicsColumn}[1]{%
+  \begin{column}{.45\textwidth}
+    \includegraphics[width=\textwidth, keepaspectratio]{#1}
+  \end{column}%
+}
+
+% Main title slide wrapper, includes
+% Automatically uses \title{} element to insert lecture title
+% - Argument 1: Chapter title, e.g. CART: Advantages \& Disadvantages
+% - Argument 2: Relative path to title figure, can be empty, e.g.: figure/cart_dis_1
+% - Argument 3: \item elements for learning goals.
+\newcommand{\titlemeta}[3]{%
+  \lecturechapter{#1}
+  \lecture{\inserttitle}
+
+  \begin{frame}[noframenumbering,plain]
+    \vspace*{1cm}
+    {\LARGE\bfseries\inserttitle}
+    \vspace*{0.5cm}
+
+    \if\lecturesection\@empty\relax\else%
+      {\LARGE\bfseries\lecturesection}%
+    \fi%
+
+    \vfill
+
+    % Using columns env to put things side-by-side rather than minipage
+    % see https://latex-beamer.com/tutorials/columns/
+    \begin{columns}[c] % align columns (c)enter or (T)op
+      % if checks if argument (detokenized?) is empty, i.e. equal to \relax
+      \if\relax\detokenize{#2}\relax\else%
+        % column env is wrapped in separate command because
+        % envs aren't allowed directly within if-else arms apparently
+        \includeGraphicsColumn{#2}
+      \fi
+
+      \begin{column}{.55\textwidth}
+        %\color{blue}\rule{\linewidth}{4pt}
+        \vfill
+        {\normalsize\bfseries Learning goals}
+        \normalfont
+        \begin{itemize}
+          #3
+        \end{itemize}
+      \end{column}%
+    \end{columns}%
+  \end{frame}
+}
+
+% Workarounds for slide numbering
 % \AtBeginLecture is provided by the beamer class
 % Contents placed at beginning of document
 \AtBeginLecture{%
-% Previous version apparently used a slide background, leaving it here just in case we switch back
-% \usebackgroundtemplate{\includegraphics[width=\paperwidth,height=\paperheight]{../../style/LMU-hintergrund1.png}}
-  % Decrement lecture counter for slide number to start at 0
   \global\advance\c@lecture by -1
-  \begin{frame}[plain]
-    % Inserts bold title defined via \title{} with vertical spacing
-    \vspace*{1 cm}
-    \LARGE\bfseries\inserttitle
-    \vspace*{0.5 cm}
-    
-    % Inserts section title if defined 
-    % Defined via \lecturechapter, wrapped around lecturesection?
-    \ifx\lecturesection\@empty\relax\else%
-      {\lecturesection}%
-    \fi%
-% TODO: Insert \vfill maybe?
-% if command \learninggoals exists (defined with each slide .tex)
-\ifcsname learninggoals\endcsname
-  {\vspace*{0.75 cm}
-  \begin{minipage}{0.45\textwidth}
-  % Inserts titlefigure, note that this errors if \titlefigure is defined but empty
-  \ifcsname titlefigure\endcsname
-    {\begin{center}
-      \begin{figure}[!b]
-        \includegraphics[width=0.9\textwidth, keepaspectratio]{\titlefigure}
-        \ifcsname titlecaption\endcsname
-        \caption*{\titlecaption}
-        \fi
-      \end{figure}
-    \end{center}}
-  \else
-    $\;$
-  \fi
-  \end{minipage}
-  % --- Insert list of learning goals
-  \begin{minipage}{0.45\textwidth}
-  \normalsize
-  Learning goals
-  \normalfont
-  \footnotesize
-  \begin{itemize}
-  \learninggoals
-  \end{itemize}
-  \end{minipage}}
-\fi
-  \end{frame}
-  % Write current lecture- and frame number to aux file?
   \immediate\write\@auxout {\string \newlabel{lect:@@\thelecture}{{\insertframenumber}}}%
-  % ...and also to the console?
   \typeout{[LECTURE]=[\thelecture][\insertlecture][\thepage][\theframenumber]}%
-  % Clear background template again?
   \usebackgroundtemplate{}
 }
+
 % Define \endlecture command to be placed just before \end{document}
 % Sets counter to current frame number
 % Can't find out what \addjustlectureframenumber is (aside the obvious?)
@@ -143,7 +146,7 @@
   \immediate\write\@auxout {\string \newlabel{endlect:@@\thelecture}{{\thelectureframenumber}}}%
 }
 
-% Why is this wrapper arround \lecturesection defined globally?
+% Not sure why this is needed?
 \newcommand{\lecturechapter}[1]{%
   \gdef\lecturesection{#1}
 }
@@ -156,28 +159,25 @@
 % we start with section 0 (instead of default 1)
 \setcounter{section}{0}
 
+% Not sure if sections are used?
 \AtBeginSection[]{%
   \begin{frame}
     \begin{center}
       \usebeamercolor[fg]{structure}
-
       \vspace*{\stretch{1}}
-
       {\fontsize{16}{20}\bfseries\selectfont\insertsection}\\[0.1cm]
-
       \vspace*{\stretch{2}}
-
     \end{center}
   \end{frame}
 }
 
 % hyperref settings
 \hypersetup{%
-  colorlinks = {false},
-  % FIXME: hyperref complains in logs about this macro? 
+  colorlinks = {false}
+  % FIXME: hyperref complains in logs about these macro not being allowed here?
   % Likely because \author{} is usually commented out
   % pdfauthor = {\insertshortauthor}, 
-  pdfsubject = {\insertshorttitle},
+  % pdfsubject = {\insertshorttitle},
 }
 
 % ------------------------------------------------------------------------
@@ -263,7 +263,6 @@
 % adjust framenumbers for lecture (check whether reference is already defined)
 \def\addjustlectureframenumber#1{\ifx#1\relax\else%
   \addtocounter{lectureframenumber}{-\lectureref{lect:@@\thelecture}}\fi}
-
 \defbeamertemplate*{footline}{lecture theme}
 {
   \usebeamerfont{footline} %author in head/foot}
@@ -275,7 +274,8 @@
       \hskip 1em%
       {\usebeamercolor[fg]{author in head/foot}%
       % FIXME: If date and author are kept empty anyway, why not remove this?
-      \insertshortauthor~~\copyright~~\insertshortdate}\hfill%
+      % \insertshortauthor~~\copyright~~\insertshortdate}\hfill%
+      ~~\copyright~~}\hfill%
       {\usebeamercolor[fg]{title in head/foot}%
       \inserttitle~~--~~}%
       \ifnum\c@lecture>0%
