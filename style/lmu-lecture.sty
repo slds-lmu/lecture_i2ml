@@ -28,7 +28,7 @@
 \newlength{\slidewidth}
 
 \if@speakermargin
-  % If the file exists -> no margin
+  % If the file exists -> add margin (16:9)
     \geometry{paperwidth=170.6666666667mm,paperheight=96mm}
 
     \setlength{\logooffset}{2mm}
@@ -80,7 +80,28 @@
 % which is not allowed otherwise (I might be wrong)
 \newcommand{\includeGraphicsColumn}[1]{%
   \begin{column}{.45\textwidth}
+    \begin{figure}[!b]
     \includegraphics[width=\textwidth, keepaspectratio]{#1}
+    % Define caption if \newcommand{\titlecaption}{TEXT}
+    % Inelegant but sufficient for rarely used optional arg
+    % Avoids more complex shenanigans with {xparse} maybe
+    \ifcsname titlecaption\endcsname % If command is defined)
+      \caption*{\titlecaption}
+    \fi
+    \end{figure}
+  \end{column}%
+}
+
+\newcommand{\includeLearningGoalsColumn}[1]{%
+  \begin{column}{.55\textwidth}
+    % Uncomment for visual debugging of columns with red line
+    % \color{blue}\rule{\linewidth}{4pt}
+    % \vfill % No vfill needed if columns are vertically centered
+    {\normalsize\bfseries Learning goals}
+    \normalfont
+    \begin{itemize}
+      #1
+    \end{itemize}
   \end{column}%
 }
 
@@ -117,16 +138,10 @@
         \includeGraphicsColumn{#2}
       \fi
 
-      \begin{column}{.55\textwidth}
-        % Uncomment for visual debugging of columns with red line
-        % \color{blue}\rule{\linewidth}{4pt}
-        \vfill
-        {\normalsize\bfseries Learning goals}
-        \normalfont
-        \begin{itemize}
-          #3
-        \end{itemize}
-      \end{column}%
+      \if\relax\detokenize{#3}\relax\else%
+        % Same idea with learning goals column
+        \includeLearningGoalsColumn{#3}
+      \fi
     \end{columns}%
   \end{frame}
 }
