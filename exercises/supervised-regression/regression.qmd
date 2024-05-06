@@ -177,7 +177,8 @@ y <- sapply(x, huber_loss, delta = 5L)
 
 ggplot2::ggplot(data.frame(x = x, y = y), ggplot2::aes(x = x, y = y)) +
   ggplot2::geom_line() + 
-  ggplot2::theme_bw()
+  ggplot2::theme_bw() +
+  ggplot2::labs(x = "y - f(x)", y = "L(y, f(x)")
 ```
 
 The second plot visualizes another loss function popular in regression tasks, the so-called *Huber loss* (depending on $\epsilon > 0$; here: $\epsilon = 5$). Describe how the Huber loss deals with residuals as compared to $L1$ and $L2$ loss. Can you guess its definition? 
@@ -203,10 +204,21 @@ In the plot we can see how the parabolic shape of the loss around 0 evolves into
 
 ::: {.callout-note title="Learning goals" icon=false}
 1. Express HRO components for polynomial regression
-2. Analyze and discuss learner flexibility
+2. Derive gradient update for optimization
+3. Analyze and discuss learner flexibility
 :::
 
 Assume the following (noisy) data-generating process from which we have observed 50 realizations: $$y = -3 + 5 \cdot \sin(0.4 \pi x) + \epsilon$$ with $\epsilon \, \sim \mathcal{N}(0, 1)$.
+
+```{r, echo=FALSE, fig.height=3, fig.width=5}
+set.seed(123L)
+x <- seq(-3, 3, length.out = 50)
+y <- -3 + 5 * sin(0.4 * pi * x) + rnorm(50, sd = 1)
+
+ggplot2::ggplot(data.frame(x = x, y = y), ggplot2::aes(x = x, y = y)) +
+  ggplot2::geom_point() +
+  ggplot2::theme_bw()
+```
 
 ***
 We decide to model the data with a cubic polynomial (including intercept term). State the corresponding hypothesis space.
@@ -257,9 +269,8 @@ We can find the gradient just as we did for an intermediate result when we deriv
   \pd{}{\thetab} \left \| \yv - \Xmat \thetab \right \|_2^2 \\
   &= \pd{}{\thetab} \left( \left(\yv - \Xmat \thetab\right)^\top 
   \left(\yv - \Xmat \thetab \right) \right) \\ 
-  &= - 2 \Xmat^\top \yv + 2 \Xmat^\top \Xmat \thetab\\
-  &= 2 \cdot \left( - \Xmat^\top \yv + \Xmat^\top 
-  \Xmat \thetab \right)
+  &= - 2 \yv^\top \Xmat + 2 \thetab^\top \Xmat^\top \Xmat\\
+  &= 2 \cdot \left(-\yv^\top \Xmat + \thetab^\top \Xmat^\top \Xmat \right)
 \end{align*}
 
 </details>
@@ -271,7 +282,9 @@ We can find the gradient just as we did for an intermediate result when we deriv
 ***
 ::: {.callout-tip icon=false title="Only for lecture group A"}
 ::: 
-Using the result for the gradient, state the calculation to update the current parameter $\thetat$.
+Using the result for the gradient, explain how to update the current parameter 
+$\thetat$ in a step of gradient descent.
+<!-- state the calculation to update the current parameter $\thetat$. -->
   
 ::: {.content-visible when-profile="solution"}
 <details> 
@@ -285,18 +298,14 @@ $$
 
 <!-- Note that the $L2$-induced multiplicative constant of 2 in the gradient can simply be absorbed by $\tilde \alpha := \tfrac{1}{2} \alpha$: -->
   
-\begin{align*}
-  \underbrace{\thetatn}_{p \times 1} &= \underbrace{\thetat}_{p \times 1} - 
-  \alpha \cdot 2 \cdot \left( - \underbrace{\Xmat^\top \phantom{y}}_{
-  p \times n} \underbrace{\yv}_{n \times 1} + \underbrace{
-  \Xmat^\top \Xmat \phantom{y}}_{p \times p} 
-  \underbrace{\thetat \phantom{y}}_{p \times 1} 
-  \right) \\
-  \mat{\theta_1 \\ \theta_2 \\ \vdots \\ \theta_p}^{[t + 1]} &= 
-  \mat{\theta_1 \\ \theta_2 \\ \vdots \\ \theta_p}^{[t]} - \alpha 
-  \cdot 2 \cdot \left( - \Xmat^\top \yv + \Xmat^\top \Xmat 
-  \mat{\theta_1 \\ \theta_2 \\ \vdots \\ \theta_p}^{[t]} \right)
-\end{align*}
+<!-- $$ -->
+<!--   \underbrace{\thetatn}_{p \times 1} = \underbrace{\thetat}_{p \times 1} -  -->
+<!--   \alpha \cdot 2 \cdot \left( -  \underbrace{\yv^\top}_{1 \times n} -->
+<!--   \underbrace{\Xmat \phantom{y}}_{n \times p} + -->
+<!--   \underbrace{(\thetat)^\top \phantom{y}}_{1 \times p} -->
+<!--   \underbrace{\Xmat^\top \Xmat \phantom{y}}_{p \times p} -->
+<!--   \right) -->
+<!-- $$ -->
 
 What actually happens here: we update each component of our current parameter vector $\thetat$ in the \textit{direction} of the negative gradient, i.e., following the steepest downward slope, and also by an \textit{amount} that depends on the value of the gradient.
 
