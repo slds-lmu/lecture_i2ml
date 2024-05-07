@@ -24,16 +24,37 @@
 \sloppy
 
 
+\begin{vbframe}{Motivation}
+
+CARTs offer several appealing features:
+
+\begin{itemize}
+  \item \textbf{Interpretability}: They are easy to understand and explain.
+  \item \textbf{Invariance to linear transformations}: Their performance is unaffected by scaling or shifting of data.
+  \item \textbf{Versatility}: They effectively hanlde both categorial and numerical data.
+  \item \textbf{Robustness to missing values}: They can be designed to manage data with missing entries.
+\end{itemize}
+
+Despite these benefits, CARTs are not without their drawbacks:
+
+\begin{quotation}
+"Trees have one aspect that prevents them from being the ideal tool for predictive learning, namely inaccuracy."
+\end{quotation}
+
+\citebutton{Hastie et al., 1984, p. 352}{https://hastie.su.domains/Papers/ESLII.pdf}
+
+We explore how to enhance the accuracy of decision trees while preserving their inherent advantages.
+
+\end{vbframe}
 
 \begin{vbframe}{Bagging}
 
 \begin{itemize}
   \item Bagging is short for \textbf{B}ootstrap \textbf{Agg}regation.
-  \item It's an \textbf{ensemble method}, i.e., it combines many models into one 
-        big \enquote{meta-model}
+  \item It's an \textbf{ensemble method}, i.e., \textit{it combines many models into one 
+        big \enquote{meta-model}}
   \item Such model ensembles often work much better than their members alone would.
   \item The constituent models of an ensemble are called \textbf{base learners} 
-      % that improves instable / high variance learners by variance smoothing
 \end{itemize}
 
 \framebreak 
@@ -64,80 +85,79 @@ Specifically, we train base learners $\bl, m = 1, \dots, M$ on $M$ \textbf{boots
 \end{center}
 \end{vbframe}
 
-% \begin{algorithm}[H]
-%   \small
-%   \setstretch{1.15}
-%   \caption*{Bagging algorithm}
-%   \begin{algorithmic}[1]
-%     \State {\bf Input: } Dataset $\D$, base learner, number of bootstraps $M$
-%     \For {$m = 1 \to M$}
-%       \State Draw a bootstrap sample $\D^{[m]}$ from $\D$.
-%       \State Train base learner on $\D^{[m]}$ to obtain model $\bl$
-%     \EndFor
-%     \State Aggregate the predictions of the $M$ estimators (via averaging or majority voting), to determine the bagging estimator:
-%     \begin{align*}
-%     \fM &= \frac{1}{M} \sum_{m=1}^M \bl \\
-%     \text{or}\quad \fM &= \argmax_{k \in \Yspace} \sum_{m=1}^M \I\left(\bl = k\right)
-%     \end{align*}
-%   \end{algorithmic}
-% \end{algorithm}
+
+\begin{vbframe}{Bagging in practice}
+
+Bagging can be used for any model:
+
+\vspace{2em}
+
+\begin{minipage}{0.4\textwidth}
+\begin{center}
+\textbf{Logistic Regression}
+\end{center}
+
+\includegraphics[width=120pt]{figure/bagging-bench_log.jpg}
+\end{minipage}
+\begin{minipage}{0.4\textwidth}
+\begin{center}
+\textbf{CART}
+\end{center}
+
+\includegraphics[width=120pt]{figure/bagging-bench_tree.jpg}
+\end{minipage}
+
+\end{vbframe}
+
 
 \begin{vbframe}{Why/when does Bagging help?}
 
-In one sentence:\\
-\lz
+\begin{itemize}
+  \item Bagging reduces the variability of predictions by averaging the outcomes from multiple base learner models.
 
-Because the variability of the average of the predictions of many base learner models is smaller than the variability of the predictions from one such base learner model.\\
+  \item It is particularly effective when the errors of a base learner are mainly due to (random) variability rather than systematic issues.
+\end{itemize}
 
-If the error of a base learner model is mostly due to (random) variability and not due to structural reasons, combining many such base learners by bagging helps reducing this variability.
+For an in-depth explanation of the theory behind bagging, refer to the Deep Dive!
 
 
-\framebreak
-\begin{scriptsize}
- Assume we use quadratic loss and measure instability of the ensemble with $\ambifM = \tfrac{1}{M}\sum^M_{m} \left(\bl- \fM \right)^2$:
- \vskip -2em
- \begin{align*}
- \ambifM &= \tfrac{1}{M}\sum^M_{m} \left(\bl- \fM\right)^2 \\
-         &= \tfrac{1}{M}\sum^M_{m} \left(\left(\bl - y\right)  + \left(y - \fM\right)\right)^2\\
-         &= \tfrac{1}{M}\sum^M_{m} L(y, \bl) + L(y, \fM) \underbrace{- 2 \left(y - \tfrac{1}{M}\sum^M_{m=1}\bl\right)\left(y - \fM\right)}_{- 2 L\left(y, \fM\right)} \\[-.5em] \intertext{So, if we take the expected value over the data's distribution:}
-         \Exy\left[L\left(y, \fM\right)\right] &= \tfrac{1}{M}\sum^M_{m} \Exy\left[L\left(y, \bl \right)\right] - \Exy\left[\ambifM\right] \end{align*}
-\end{scriptsize}
-\small
-$\Rightarrow$ The expected loss of the ensemble is lower than the average loss of the single base learner by the amount of instability in the ensemble's base learners.\\ The more accurate and diverse the base learners, the better.
-\normalsize
-\framebreak
+
+% In one sentence:\\
+% \lz
+
+% Because the variability of the average of the predictions of many base learner models is smaller than the variability of the predictions from one such base learner model.\\
+
+% \vspace{2em}
+
+% If the error of a base learner model is mostly due to (random) variability and not due to structural reasons, combining many such base learners by bagging helps reducing this variability.
+
 \end{vbframe}
 
 \begin{vbframe}{Improving Bagging}
-\begin{scriptsize}
-\begin{align*}
-\shortintertext{How to make $\Exy\left[\ambifM\right]$ as large as possible?}
-\Exy\left[L\left(y, \fM \right)\right] &= \tfrac{1}{M}\sum^M_{m} \Exy\left[L\left(y, \bl \right)\right] - \Exy\left[\ambifM\right] \\
-\shortintertext{Assume $\Exy\left[\bl\right] = 0$ for simplicity, $\var_{xy}\left[\bl\right] = \Exy\left[(\bl)^2\right] = \sigma^2$, $\corr_{xy}\left[\bl, \bl{m'}\right] = \rho$ for all $m, m'$.}
-\implies 
-\var_{xy}\left[\fM\right] &= \tfrac{1}{M} \sigma^2 +  \tfrac{M-1}{M} \rho \sigma^2 \qquad\left(... = \Exy\left[(\fM)^2\right]\right)\\
- \Exy\left[\ambifM\right] &= \tfrac{1}{M}\sum^M_{m} \Exy\left[\left(\bl- \fM\right)^2\right]\\
- & = \tfrac{1}{M}\left(M \Exy\left[(\bl)^2\right] + M \Exy\left[(\fM)^2\right] - 
-     2 M \Exy\left[\bl\fM\right]\right) \\
-  & = \sigma^2  + \Exy\left[(\fM)^2\right] - 2 \tfrac{1}{M}\sum^M_{m'} \underbrace{\Exy\left[\bl \bl{m'} \right]}_{\mathclap{\qquad\qquad\qquad\qquad= \cov_{xy}\left[\bl, \bl{m'} \right] + \Exy\left[\bl\right]\Exy\left[\bl{m'}\right]}} \\
-  &=  \sigma^2  + \left(\tfrac{1}{M} \sigma^2 +   \tfrac{M-1}{M} \rho \sigma^2\right) - 2\left(\tfrac{M-1}{M} \rho\sigma^2 + \tfrac{1}{M}\sigma^2 + 0 \cdot 0 \right)\\
-  &= \tfrac{M-1}{M} \sigma^2 (1-\rho)
-\end{align*}
-\end{scriptsize}
 
-\begin{small}
-\begin{align*}
-\Exy\left[L\left(y, \fM\right)\right] &= \textcolor{blue}{\tfrac{1}{M}\sum^M_{m} \Exy\left[L\left(y, \bl \right)\right]} - \Exy\left[\ambifM\right]\\
-\Exy\left[\ambifM\right] &\cong 
-\textcolor{purple}{\frac{M-1}{M}} \textcolor{cyan}{\var_{xy}\left[\bl\right]} \textcolor{violet}{\left(1 - \corr_{xy}\left[\bl, \bl{m'}\right]\right)}
-\end{align*}
-\end{small}
+Naturally, better-performing base learners lead to stronger aggregated outcomes. \\
+
+\vspace{2em}
+
+There are also bagging-specific knobs to tune:
 \begin{itemize}
-\item[$\Rightarrow$] \textcolor{blue}{\textbf{better base learners}} are better {\small (... duh)}
-\item[$\Rightarrow$] \textcolor{purple}{\textbf{more base learners}} are better {\small (theoretically, at least...)}\\
-\item[$\Rightarrow$] \textcolor{cyan}{\textbf{more variable base learners}} are better {\small(as long as their risk stays the same, of course!)}
-\item[$\Rightarrow$] \textcolor{violet}{\textbf{less correlation between base learners}} is better:\\ bagging helps more if base learners are wrong in different ways so that their errors \enquote{cancel} each other out.\\
+  \item \textbf{Benefits of larger ensembles}: Increasing the \textbf{number of base learners} improves performance (at least theoretically).
+  \item \textbf{Advantages of diversity}: Diverse base learners contribute different perspectives, reducing the impact of any single model's bias or variance as long as they maintain overall accuracy.
+  \item \textbf{Less correlation, more gain}: Bagging yiels better results when there is less correlation among the models. Independent errors help in cancelling out individual errors!
 \end{itemize}
+% \begin{small}
+% \begin{align*}
+% \Exy\left[L\left(y, \fM\right)\right] &= \textcolor{blue}{\tfrac{1}{M}\sum^M_{m} \Exy\left[L\left(y, \bl \right)\right]} - \Exy\left[\ambifM\right]\\
+% \Exy\left[\ambifM\right] &\cong 
+% \textcolor{purple}{\frac{M-1}{M}} \textcolor{cyan}{\var_{xy}\left[\bl\right]} \textcolor{violet}{\left(1 - \corr_{xy}\left[\bl, \bl{m'}\right]\right)}
+% \end{align*}
+% \end{small}
+% \begin{itemize}
+% \item[$\Rightarrow$] \textcolor{blue}{\textbf{better base learners}} are better {\small (... duh)}
+% \item[$\Rightarrow$] \textcolor{purple}{\textbf{more base learners}} are better {\small (theoretically, at least...)}\\
+% \item[$\Rightarrow$] \textcolor{cyan}{\textbf{more variable base learners}} are better {\small(as long as their risk stays the same, of course!)}
+% \item[$\Rightarrow$] \textcolor{violet}{\textbf{less correlation between base learners}} is better:\\ bagging helps more if base learners are wrong in different ways so that their errors \enquote{cancel} each other out.\\
+% \end{itemize}
 
 
 \end{vbframe}
