@@ -1,7 +1,7 @@
 # Source version of this workflow lives in https://github.com/slds-lmu/lecture_service/service/.github/workflows
 # Please only update by copying from there to avoid divergences
 on:
-  # Allow manually trigegring the workflow via GitHub website, gh CLI tool etc.
+  # Allow manually triggering the workflow via GitHub website, gh CLI tool etc.
   # Also adds parameter to enable tmate (inetractive tmux session for debugging)
   workflow_dispatch:
     inputs:
@@ -13,6 +13,7 @@ on:
   push:
     # Activate on pushes to both the main or master branches (inconsistently used across lecture repos)
     branches: [main, master]
+    # ...but only if files in the slides folder change
     paths: ['slides/**']
 
 name: fix-figure-paths
@@ -40,10 +41,10 @@ jobs:
 
       - name: Fix figure paths in-place
         run: |
-          sed -i -E "s\slides/[a-z-]+/figure\figure\g" $(find slides -iname "*.tex")
+          sed -i -E "s\slides/[0-9a-z-]+/figure\figure\g" $(find slides -iname "*.tex")
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v6
         with:
           title: "[Automated] Fix relative figure paths in slides/"
           commit-message: "Fix figure paths"
@@ -62,7 +63,7 @@ jobs:
               To locally auto-fix this, the following command can be used on Linux:
 
               ```sh
-              sed -i -E "s\slides/[a-z-]+/figure\figure\g" $(find slides -iname "*.tex")
+              sed -i -E "s\slides/[0-9a-z-]+/figure\figure\g" $(find slides -iname "*.tex")
               ```
 
               Which is exactly what this workflow does.

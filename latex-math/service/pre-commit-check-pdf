@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Define input file to render all macros.
+# Assumes there's an Rmd file and a PDF generated from that Rmd with same name otherwise.
+IN_FILE="latex-math.Rmd"
+OUT_PDF="${IN_FILE%.Rmd}.pdf"
+
+# Boiler plate hint at the end
+MSG="use 'git commit --no-verify' to override this check"
+
+# If outpud PDF does not exists at all we have bigger problems - nag immediately
+if [ ! -f "${OUT_PDF}" ]
+then
+  echo -e "${OUT_PDF} does not exist; please re-run ${IN_FILE}\n${MSG}"
+  exit 1
+fi
+
+# Go through each .tex file and check if it was modified after output PDF, if so we nag to re-render Rmd
+# Note that intermediate file latex-math.tex will never be newer than latex-math.pdf so we don't have to special-case
+# (And if that assumption fails it doesn't matter since it's gitignore'd)
+for tex in ./*tex; do
+  if [[ "${tex}" -nt "${OUT_PDF}" ]]; then
+  echo -e "${OUT_PDF} is out of date due to changes in \"${tex#./}\" -- Please re-run ${IN_FILE}"
+
+  # We don't fail immediately just in case it helps to list all the recently changed .tex files
+  ERR=1
+  fi
+done
+
+# Finally, we only print the hint once at the end and throw exit 1 such that git commit fails
+test ! -z ${ERR} && echo -e "\n${MSG}\n" && exit 1
+
+# Otherwise exit 0 -- all ok
+exit 0
