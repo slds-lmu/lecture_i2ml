@@ -1,0 +1,351 @@
+---
+title: "Exercise 3 -- Classification I"
+subtitle: "[Introduction to Machine Learning](https://slds-lmu.github.io/i2ml/)"
+---
+
+::: {.content-hidden when-format="pdf"}
+::: {.hidden}
+{{< include ../_quarto/latex-math.qmd >}}
+:::
+:::
+
+## Exercise 1: Logistic vs softmax regression
+
+::: {.callout-tip icon=false title="This exercise is only for lecture group A"}
+:::
+
+::: {.callout-note title="Learning goals" icon=false}
+Solve "show equivalence"-type questions 
+:::
+
+Binary logistic regression is a special case of multiclass logistic, or softmax, regression. The softmax function is the multiclass analogue to the logistic function, transforming scores $\thetab^\top \xv$ to values in the range [0, 1] that sum to one. The softmax function is defined as:
+
+$$
+\pi_k(\xv | \thetab) = \frac{\exp(\thetab_k^\top \xv)}{\sum_{j=1}^{g} \exp(\thetab_j^\top \xv)}, k \in \{1,...,g\}
+$$
+
+Show that logistic and softmax regression are equivalent for $g = 2$.
+
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+As we would expect, the two formulations are equivalent (up to reparameterization). In order to see this, consider the softmax function components for both classes:
+
+$$
+\pi_1(\xv | \thetab) = \frac{\exp(\thetab_1^\top \xv)}{\exp(\thetab_1^\top \xv) + \exp(\thetab_2^\top \xv)}
+$$
+
+$$
+\pi_2(\xv | \thetab) = \frac{\exp(\thetab_2^\top \xv)}{\exp(\thetab_1^\top \xv) + \exp(\thetab_2^\top \xv)}
+$$
+
+Since we know that $\pi_1(\xv | \thetab) + \pi_2(\xv | \thetab) = 1$, it is sufficient to compute one of the two scoring functions. Let’s pick $\pi_1(\xv | \thetab)$ and relate it to the logistic function:
+
+$$
+\pi_1(\xv | \thetab) = \frac{1}{1 + \exp(\thetab_2^\top \xv - \thetab_1^\top \xv)} = \frac{1}{1 + \exp(-\thetab^\top \xv)}
+$$
+
+where $\thetab := \thetab_1 - \thetab_2$. Thus, we obtain the binary-case logistic function, reflecting that we only need one scoring function (and thus one set of parameters $\thetab$ rather than two $\thetab_1, \thetab_2$).
+</details> 
+:::
+
+## Exercise 2: Hyperplanes
+
+::: {.callout-note title="Learning goals" icon=false}
+1. Understand that hyperplanes bisect the space with a linear boundary
+2. Get a feeling for coefficients in hyperplane equations
+:::
+
+Linear classifiers like logistic regression learn a decision boundary that takes the form of a (linear) hyperplane. Hyperplanes are defined by equations $\thetab^\top \xv = b$ with coefficients $\thetab$ and a scalar $b \in \mathbb{R}$.
+
+In order to see that such expressions actually describe hyperplanes, consider $\thetab^\top \xv = \theta_0 + \theta_1 x_1 + \theta_2 x_2 = 0$. Sketch the hyperplanes given by the following coefficients and explain the difference between the parameterizations:
+
+- $\theta_0 = 0, \theta_1 = \theta_2 = 1$
+- $\theta_0 = 1, \theta_1 = \theta_2 = 1$
+- $\theta_0 = 0, \theta_1 = 1, \theta_2 = 2$
+  
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+A hyperplane in 2D is just a line. We know that two points are sufficient to describe a line, 
+so all we need to do is pick two points fulfilling the hyperplane equation.
+
+- $\theta_0 = 0, \theta_1 = \theta_2 = 1$ $\rightsquigarrow$ e.g., (0, 0) and (1, -1). Sketch it:
+```{r, echo=FALSE, fig.height=3, fig.width=3}
+library(ggplot2)
+p = ggplot(data.frame(x = c(0, 1), y = c(0, -1)), aes(x, y)) +
+  geom_point(shape = "cross") +
+  geom_abline(intercept = 0, slope = -1, linetype = 2) +
+  xlim(c(-2, 2)) +
+  ylim(c(-2, 2)) +
+  labs(x = "x1", y = "x2") +
+  theme_bw()
+p
+```
+
+- $\theta_0 = 1, \theta_1 = \theta_2 = 1$ $\rightsquigarrow$ e.g., (0, -1) and (1, -2). The change in $\theta_0$ promotes a horizontal shift:
+```{r, echo=FALSE, fig.height=3, fig.width=3}
+library(ggplot2)
+p = ggplot(data.frame(x = c(0, 1), y = c(0, -1)), aes(x, y)) +
+  geom_point(shape = "cross") +
+  geom_abline(intercept = 0, slope = -1, linetype = 2) +
+  xlim(c(-2, 2)) +
+  ylim(c(-2, 2)) +
+  labs(x = "x1", y = "x2") +
+  theme_bw()
+q = p + geom_point(
+  data.frame(x = c(0, 1), y = c(-1, -2)), 
+  mapping = aes(x, y), 
+  shape = "cross", 
+  col = "red"
+  ) +
+  geom_abline(intercept = -1, slope = -1, col = "red", linetype = 2) 
+q
+```
+
+- $\theta_0 = 0, \theta_1 = 1, \theta_2 = 2$ $\rightsquigarrow$ e.g., (0, 0) and (1, -0.5). The change in $\theta_2$ pivots the line around the intercept:
+```{r, echo=FALSE, fig.height=3, fig.width=3}
+library(ggplot2)
+p = ggplot(data.frame(x = c(0, 1), y = c(0, -1)), aes(x, y)) +
+  geom_point(shape = "cross") +
+  geom_abline(intercept = 0, slope = -1, linetype = 2) +
+  xlim(c(-2, 2)) +
+  ylim(c(-2, 2)) +
+  labs(x = "x1", y = "x2") +
+  theme_bw()
+q = p + geom_point(
+  data.frame(x = c(0, 1), y = c(-1, -2)), 
+  mapping = aes(x, y), 
+  shape = "cross", 
+  col = "red"
+  ) +
+  geom_abline(intercept = -1, slope = -1, col = "red", linetype = 2) 
+r = q + geom_point(
+  data.frame(x = c(0, 1), y = c(0, -0.5)), 
+  mapping = aes(x, y), 
+  shape = "cross", 
+  col = "blue"
+  ) +
+  geom_abline(intercept = 0, slope = -0.5, col = "blue", linetype = 2) 
+r
+```
+
+We see that a hyperplane is defined by the points that lie directly on it and thus fulfill the hyperplane equation.
+
+</details> 
+:::
+
+## Exercise 3: Decision Boundaries & Thresholds in Logisitc Regression
+
+::: {.callout-note title="Learning goals" icon=false}
+1) Understand that logistic regression finds a linear decision boundary
+2) Get a feeling for how parameterization changes predicted probabilities
+:::
+
+In logistic regression (binary case), we estimate the probability $p(y = 1 | \xv, \thetab) = \pi(\xv | \thetab)$. In order to decide about
+the class of an observation, we set $\hat{y} = 1$ iff $\pi(\xv | \thetab) \geq \alpha\) for some \(\alpha \in (0, 1)$.
+
+***
+Show that the decision boundary of the logistic classifier is a (linear) hyperplane. 
+
+<details> 
+<summary>*Hint*</summary>
+
+Derive the value of $\thx$ (depending on $\alpha$) starting from which you predict $\hat{y} = 1$ rather than $\hat{y} = 0$.
+
+</details>
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+We evaluate
+
+\begin{aligned}
+\hat{y} = 1 &\Leftrightarrow \pix = \frac{1}{1 + \exp(-\thx)} \geq \alpha \\
+&\Leftrightarrow\  1 + \exp(-\thx) \leq \frac{1}{\alpha} \\
+&\Leftrightarrow\ \exp(-\thx) \leq \frac{1}{\alpha}  - 1 \\
+&\Leftrightarrow\ -\thx \leq \log \left(\frac{1}{\alpha} - 1 \right) \\
+&\Leftrightarrow\ \thx \geq -\log \left(\frac{1}{\alpha} - 1 \right).
+\end{aligned}
+
+$\thx = -\log \left(\frac{1}{\alpha} - 1 \right)$ is the equation of the linear hyperplane comprised of all linear combinations $\thx$ that are equal to $-\log \left(\frac{1}{\alpha} - 1\right)$. The inequality therefore describes the decision rule for setting $\hat y$ equal to 1 by taking all points that lie on or above this hyperplane.
+
+</details> 
+:::
+
+***
+Below you see the logistic function for a binary classification problem with two input features for different values $\thetab^\top = (\theta_1, \theta_2)^\top$ (plots 1-3) as well as $\alpha$ (plot 4). What can you deduce for the values of $\theta_1$, $\theta_2$, and $\alpha$? What are the implications for classification in the different scenarios?
+
+```{r, echo=FALSE, fig.height=2, fig.width=3, message=FALSE, warning=FALSE}
+#| layout-nrow: 2
+suppressPackageStartupMessages(library(plotly))
+suppressPackageStartupMessages(library(tidyr))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(akima))
+
+options(warn=-1)
+
+# define x and different theta configurations
+seq_x <- seq(-10L, 10L, length.out = 100L)
+theta <- list(
+  theta_1 = c(0.3, 0),
+  theta_2 = c(0.3, 0.3),
+  theta_3 = c(0.8, 0.8))
+
+plot_3d <- function(x, theta, eye = list(x = -1.5, y = 3L, z = 1L), plot_title) {
+  
+  # specify softmax operation
+  
+  compute_softmax <- function(X, theta) 1 / (1 + exp(-(X %*% theta)))
+  
+  # use akima interpolation to create surface from 3d points
+  
+  dens <- expand.grid(x_1 = x, x_2 = x)
+  dens$z <- apply(as.matrix(dens), 1L, compute_softmax, theta = theta)
+  d <- akima::interp(x = dens$x_2, y = dens$x_1, z = dens$z)
+  
+  # define perspective plot is viewed from
+  
+  scene = list(
+    camera = list(eye = eye),
+    xaxis = list(title = "x1"),
+    yaxis = list(title = "x2"),
+    zaxis = list(title = "s(f(x1,x2))"))
+  
+  # define color
+  
+  my_palette = c("cornflowerblue", "blue4")
+  
+  # plot
+  
+  plotly::plot_ly(x = d$x, y = d$y, z = d$z) %>%
+    add_surface(
+      showscale = FALSE,
+      colors = my_palette
+      ) %>%
+    layout(scene = scene,
+           title = plot_title)
+  
+}
+
+# saving plotly objects requires orca installation, which might not work on 
+# every device
+# here: open the respective plot in your browser (clicking on "show in new 
+# window" in the viewer pane) and save snapshot via the camera symbol without 
+# zooming
+
+p_1 <- plot_3d(seq_x, theta$theta_1, plot_title = "Plot (1)")
+p_2 <- plot_3d(seq_x, theta$theta_2, plot_title = "Plot (2)")
+p_3 <- plot_3d(seq_x, theta$theta_3, plot_title = "Plot (3)")
+
+# add hyperplanes marking decision boundaries for different thresholds
+# use dirty trick with points, cannot get it to work with actual surface :]
+
+add_vertical_hyperplane <- function(plot, 
+                                    n_points = 100L, 
+                                    theta_1 = 0.3, 
+                                    threshold = 0.5, plot_title) {
+  
+  y_vert <- seq(-10L, 10L, length.out = n_points)
+  z_vert <- seq(0L, threshold, length.out = n_points)
+  yz_vert <- expand.grid(y_vert, z_vert)
+  
+  plot %>%
+  add_trace(
+    inherit = FALSE,
+    x = rep((- 1 / theta_1 * log(1 / threshold - 1)), n_points^2),
+    y = yz_vert[, 1],
+    z = yz_vert[, 2],
+    marker = list(
+      type = "marker",
+      mode = "scatter3d",
+      color = "gray",
+      size = 0.8),
+    showlegend = FALSE) %>%
+    add_trace(
+      inherit = FALSE,
+      x = rep((- 1 / theta_1 * log(1 / threshold - 1)), n_points^2),
+      y = yz_vert[, 1],
+      z = 0L,
+      marker = list(
+        type = "marker",
+        mode = "scatter3d",
+        color = "black",
+        size = 2L),
+      showlegend = FALSE) %>% 
+      layout(title = plot_title)
+  
+}
+
+p_4 <- add_vertical_hyperplane(
+  p_1 %>%
+  layout(
+    scene = list(camera = list(eye = list(x = -0.3, y = 3, z = 1)))), plot_title = "Plot (4)")
+
+p_4 <- add_vertical_hyperplane(p_4, threshold = 0.25, plot_title = "Plot (4)")
+p_4 <- add_vertical_hyperplane(p_4, threshold = 0.75, plot_title = "Plot (4)")
+
+# Create a list of plots and name them
+plots <- list(p_1, p_2, p_3, p_4)
+names(plots) <- c("Plot (1)", "Plot (2)", "Plot (3)", "Plot (4)")
+
+# Display the plots
+plots$`Plot (1)`
+plots$`Plot (2)`
+plots$`Plot (3)`
+plots$`Plot (4)`
+```
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+We observe
+
+  - in plot (1): the logistic function runs parallel to the $x_2$ axis, so it is the same for every value of $x_2$. In other words, $x_2$ does not contribute anything to the class discrimination and its associated parameter $\theta_2$ is equal to 0.
+
+  - in plot (2): both dimensions affect the logistic function -- to equal degree in this case, meaning $x_1$ and $x_2$ are equally important. If $\theta_1$ were larger than $\theta_2$ or vice versa the hypersurface would be more tilted towards the respective axis. Furthermore, due to $\theta_1$ and $\theta_2$ being positive, $\pix$ increases with higher values for $x_1$ and $x_2$.
+
+  - in plot (3): this is the same situation as in plot (2) but the logistic function is steeper, which is due to $\theta_1, \theta_2$ having larger absolute values. We therefore get a sharper separation between classes (fewer predicted probability values close to 0.5, so we are overall more confident in our decision). As in plot (2), the increasing probability of $\hat{y}=1$ for higher values of $x_1$ and $x_2$ indicates positive values for $\theta_1$ and $\theta_2$.
+
+  - in plot (4): this is the same situation as in plot (1). The different values for $\alpha$ represent different thresholds: a high value (leftmost line) means we only assign class 1 if the estimated class-1 probability is large. Conversely, a low value (rightmost line) signifies we are ready to predict class 1 at a low threshold -- in effect, this is the same as the previous scenario, only the class labels are flipped. The mid line corresponds to the common case $\alpha = 0.5$ where we assign class 1 as soon as the predicted probability is more than 50%.
+
+</details> 
+:::
+
+***
+Derive the equation for the decision boundary hyperplane if we choose $\alpha = 0.5$.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+We make use of our results from a):
+
+$$
+\begin{aligned}
+\hat{y} = 1 &\Leftrightarrow \thx \geq -\log \left(\frac{1}{\alpha} - 1 \right) \\
+&\Leftrightarrow \thx \geq -\log \left(\frac{1}{0.5} - 1 \right) \\
+&\Leftrightarrow \thx \geq -\log 1 \\
+&\Leftrightarrow \thx \geq 0.
+\end{aligned}
+$$
+
+The 0.5 threshold therefore leads to the coordinate hyperplane and divides the input space into the positive "1" halfspace where $\thx \geq 0$ and the "0" halfspace where $\thx < 0$.
+
+</details> 
+:::
+
+***
+Explain when it might be sensible to set $\alpha$ to 0.5.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+When the threshold $\alpha = 0.5$ is chosen, the losses of misclassified observations, i.e., $L(\hat{y} = 0 ~|~ y = 1)$ and $L(\hat{y} = 1 ~|~ y = 0)$, are treated equally, which is often the intuitive thing to do. It means $\alpha = 0.5$ is a sensible threshold if we do not wish to avoid one type of misclassification more than the other. If, however, we need to be cautious to only predict class 1 if we are very confident (for example, when the decision triggers a costly therapy), it would make sense to set the threshold considerably higher.
+
+</details> 
+:::

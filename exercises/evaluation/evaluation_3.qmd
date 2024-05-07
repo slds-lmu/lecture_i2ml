@@ -1,0 +1,383 @@
+---
+title: "Exercise 7 -- Evaluation III"
+subtitle: "[Introduction to Machine Learning](https://slds-lmu.github.io/i2ml/)"
+notebook-view:
+  - notebook: ex_eval_3_R.ipynb
+    title: "Exercise sheet for R"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/evaluation/ex_eval_3_R.ipynb"
+  - notebook: ex_eval_3_py.ipynb
+    title: "Exercise sheet for Python"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/evaluation/ex_eval_3_py.ipynb"
+  - notebook: sol_eval_3_R.ipynb
+    title: "Solutions for R"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/evaluation/sol_eval_3_R.ipynb"
+  - notebook: sol_eval_3_py.ipynb
+    title: "Solutions for Python"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/evaluation/sol_eval_3_py.ipynb"
+---
+
+::: {.content-hidden when-format="pdf"}
+::: {.hidden}
+{{< include ../_quarto/latex-math.qmd >}}
+:::
+:::
+
+<details> 
+<summary>*Hint: Useful libraries*</summary>
+
+::: {.panel-tabset}
+### R
+{{< embed ex_eval_3_R.ipynb#import echo=true >}}
+### Python
+{{< embed ex_eval_3_py.ipynb#import echo=true >}}
+:::
+</details>
+
+## Exercise 1: ROC metrics
+
+::: {.callout-note title="Learning goals" icon=false}
+Be able to compute ROC metrics & draw ROC curve
+:::
+
+Consider a binary classification algorithm that yielded the following results on 10 observations. The table shows  true classes and  predicted probabilities for class 1:
+
+| ID | True class | Prediction |
+|----|------------|------------|
+| 1  | 0          | 0.33       |
+| 2  | 0          | 0.27       |
+| 3  | 0          | 0.11       |
+| 4  | 1          | 0.38       |
+| 5  | 1          | 0.17       |
+| 6  | 1          | 0.63       |
+| 7  | 1          | 0.62       |
+| 8  | 1          | 0.33       |
+| 9  | 0          | 0.15       |
+| 10 | 0          | 0.57       |
+
+***
+a. Create a confusion matrix assuming a threshold of 0.5. Point out which values correspond to true positives (`TP`), true negatives (`TN`), false positives (`FP`), and false negatives (`FN`).
+
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+First, sort the table:
+
+| ID | True class | Score | Predicted class |
+|----|------------|-------|-----------------|
+| 6  | 1          | 0.63  | 1               |
+| 7  | 1          | 0.62  | 1               |
+| 10 | 0          | 0.57  | 1               |
+|----|------------|-------|-----------------|
+| 4  | 1          | 0.38  | 0               |
+| 1  | 0          | 0.33  | 0               |
+| 8  | 1          | 0.33  | 0               |
+| 2  | 0          | 0.27  | 0               |
+| 5  | 1          | 0.17  | 0               |
+| 9  | 0          | 0.15  | 0               |
+| 3  | 0          | 0.11  | 0               |
+
+This translates to:
+
+|             | True 1 | True 0 |
+|-------------|--------|--------|
+| Predicted 1 | 2      | 1      |
+| Predicted 0 | 3      | 4      |
+
+So we get:
+
+|     | #FN | #FP | #TN | #TP |
+|-----|-----|-----|-----|-----|
+|     | 3   | 1   | 4   | 2   |
+
+</details> 
+:::
+
+***
+b. Calculate: PPV, NPV, TPR, FPR, ACC, MCE and $F1$ measure.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+  $$
+  \rho_{\text{PPV}} = \frac{\tp}{\tp + \fap} =\frac{2}{3}
+  $$
+
+  $$
+  \rho_{\text{NPV}} = \frac{\tn}{\tn + \fan} =\frac{4}{7}
+  $$
+  
+  $$
+  \rho_{\text{TPR}} = \frac{\tp}{\tp + \fan} =\frac{2}{5}
+  $$
+  
+  $$
+  \rho_{\text{FPR}}  = \frac{\fap}{\tn + \fap} =\frac{1}{5}
+  $$
+
+  $$
+  \rho_{\text{ACC}} = \frac{\tp + \tn}{\tp + \tn + 
+  \fap + \fan} =\frac{6}{10}
+  $$
+
+  $$
+  \rho_{\text{MCE}}  = \frac{\fap + \fan}{\tp + \tn + 
+  \fap + \fan} =\frac{4}{10}
+  $$
+
+  $$
+  \rho_{F1} = \frac{2\cdot \rho_{\text{PPV}} \cdot \rho_{\text{TPR}}}{
+  \rho_{\text{PPV}} + \rho_{\text{TPR}}} = 0.5
+  $$
+
+</details> 
+:::
+
+***
+c. Draw the ROC curve and interpret it. Feel free to use `R` or `Python` for the drawing.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+::: {.panel-tabset}
+
+### R
+{{< embed sol_eval_3_R.ipynb#1-c-1 echo=true >}}
+### Python
+{{< embed sol_eval_3_py.ipynb#1-c-1 echo=true >}}
+:::
+
+We see that the resulting ROC curve is distinct from the diagonal marking a purely random classifier, but also not too great. The step function character is clearly visible for so few observations (the non-axis-parallel part in the middle is due to the fact that we have two observations with the same score but different true class, so both TPR and FPR go up when we move from $c = 0.35$ to $c= 0.3$).
+
+</details> 
+:::
+
+***
+d. Calculate the AUC.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+We can compute the AUC by adding rectangular and triangular areas, s.t.
+$$
+\rho_{\text{AUC}} = 0.2 \cdot 0.4 + 0.2 \cdot 0.6 + \tfrac{1}{2} \cdot 
+0.2 \cdot 0.2 + 0.2 \cdot 0.8 + 0.4 \cdot 1 = 0.78.
+$$
+
+</details> 
+:::
+
+***
+e. How would the ROC curve change if you had chosen a different threshold in a)?
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+Not at all, because the ROC curve is drawn by iterating through *all* thresholds, and the corresponding AUC does not depend on a particular choice of $c$.
+</details> 
+:::
+
+
+## Exercise 2: $k$-NN
+
+::: {.callout-note title="Learning goals" icon=false}
+Carry out k-NN classification / regression with possibly weighted distances
+:::
+
+Let the two-dimensional feature vectors in the following figure be instances of two different classes (triangles and circles). Classify the point (7, 6) -- represented by a square in the picture -- with a $k$-NN classifier using $L1$ norm (Manhattan distance):
+
+$$
+d_\text{Manhattan}(\xv, \xtil) = \sumjp |x_j - \tilde{x}_j|.
+$$
+
+As a decision rule, use the unweighted number of the individual classes in the $k$-neighborhood, i.e., assign the point to the class that represents most neighbors.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=5, fig.width=5}
+x <- c(4, 7, 9, 4, 6, 7, 9, 7, 8)
+y <- c(6, 3, 8, 9, 5, 8, 7, 6, 5)
+z <- as.factor(c(1, 1, 1, 0, 0, 0, 0, 2, 1))
+
+d3 = c(5, 7, 9, 7)
+v3 = c(6 , 8, 6, 4)
+
+d5 = c(4, 7, 10, 7)
+v5 = c(6, 9, 6, 3)
+
+d7 = c(3, 7, 10, 10, 7)
+v7 = c(6, 10, 7, 5, 2)
+
+library(ggplot2)
+qplot(x, y, shape = z, col = z) + 
+theme_bw() +
+theme(legend.position="none") +
+scale_x_continuous(
+  minor_breaks = seq(0, 10, by = 1),
+  breaks = seq(0, 10, by = 1), 
+  limits = c(0, 10)) +
+scale_y_continuous(
+  minor_breaks = seq(0, 10, by = 1), 
+  breaks = seq(0, 10, by = 1),
+  limits = c(0, 10))
+```
+
+***
+i. $k = 3$
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=5, fig.width=5}
+x <- c(4, 7, 9, 4, 6, 7, 9, 7, 8)
+y <- c(6, 3, 8, 9, 5, 8, 7, 6, 5)
+z <- as.factor(c(1, 1, 1, 0, 0, 0, 0, 2, 1))
+
+d3 = c(5, 7, 9, 7)
+v3 = c(6 , 8, 6, 4)
+
+d5 = c(4, 7, 10, 7)
+v5 = c(6, 9, 6, 3)
+
+d7 = c(3, 7, 10, 10, 7)
+v7 = c(6, 10, 7, 5, 2)
+
+library(ggplot2)
+qplot(x, y, shape = z, col = z) + 
+  theme_bw() +
+  theme(legend.position="none") +
+  scale_x_continuous(
+    minor_breaks = seq(0, 10, by = 1),
+    breaks = seq(0, 10, by = 1), 
+    limits = c(0, 10)) +
+  scale_y_continuous(
+    minor_breaks = seq(0, 10, by = 1), 
+    breaks = seq(0, 10, by = 1),
+    limits = c(0, 10)) +
+  annotate("polygon", x = d3, y = v3, alpha = 0.2, fill = "black")
+```
+
+$\Longrightarrow$ 2 circles and 1 triangle, so we predict "circle":
+
+</details> 
+:::
+
+***
+ii. $k = 5$
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=5, fig.width=5}
+qplot(x, y, shape = z, col = z) + 
+  theme_bw() +
+  theme(legend.position="none") +
+  scale_x_continuous(
+    minor_breaks = seq(0, 10, by = 1),
+    breaks = seq(0, 10, by = 1), 
+    limits = c(0, 10)) +
+  scale_y_continuous(
+    minor_breaks = seq(0, 10, by = 1), 
+    breaks = seq(0, 10, by = 1),
+    limits = c(0, 10)) +
+  annotate("polygon", x = d5, y = v5, alpha = 0.2, fill = "black")
+```
+
+$\Longrightarrow$ 3 circles and 3 triangles, we have to specify beforehand what to do in case of a tie.
+
+</details> 
+:::
+
+***
+iii. $k = 7$
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=5, fig.width=5}
+qplot(x, y, shape = z, col = z) + 
+  theme_bw() +
+  theme(legend.position="none") +
+  scale_x_continuous(
+    minor_breaks = seq(0, 10, by = 1),
+    breaks = seq(0, 10, by = 1), 
+    limits = c(0, 10)) +
+  scale_y_continuous(
+    minor_breaks = seq(0, 10, by = 1), 
+    breaks = seq(0, 10, by = 1),
+    limits = c(0, 10)) +
+  annotate("polygon", x = d7, y = v7, alpha = 0.2, fill = "black")
+```
+
+$\Longrightarrow$ 3 circles and 4 triangles, so we predict "triangle".
+
+</details> 
+:::
+
+***
+Now consider the same constellation but assume a regression problem this time, where the circle-shaped points have a target value of 2 and the triangles have a value of 4.
+
+Again, predict for the square point (7, 9), using both the *unweighted* and the *weighted* mean in the neighborhood (still with Manhattan distance).
+
+<details> 
+<summary>*Hint*</summary>
+We now consider both *unweighted* and *weighted* predictions. Recall that weights are computed based on the distance between the point of interest and its respective neighbors. With the Manhattan, or "city block" metric, the distance can be read from the plot by walking along the grid lines (shortest way). For example, in the 3-neighborhood, all points have a distance of 2 from our square, so all get weights $\tfrac{1}{2}$.
+</details>
+
+***
+i. $k = 3$
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+$$
+\hat{y} = \frac{2 + 2 + 4}{3} = \frac{8}{3} \approx 2.67
+$$
+
+$$
+\hat{y}_\mathrm{weighted} = \frac{\frac{1}{2}\cdot 2 + \frac{1}{2}\cdot 2 + \frac{1}{2}\cdot 4}{\frac{3}{2}} = \frac{8}{3} \approx 2.67
+$$
+
+</details> 
+:::
+
+***
+ii. $k = 5$
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+$$
+\hat{y} = \frac{3 \cdot 2 + 3 \cdot 4}{6} = 3
+$$
+
+$$
+\hat{y}_\mathrm{weighted} = \frac{\frac{1}{2}\cdot 2 + \frac{1}{2}\cdot2 + \frac{1}{3} \cdot 2 +  \frac{1}{2}\cdot 4 + \frac{1}{3}\cdot 4 + \frac{1}{3}\cdot 4}{\frac{5}{2}} = \frac{44}{15} \approx 2.93
+$$
+
+</details> 
+:::
+
+***
+iii. $k = 7$
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+$$
+\hat{y} = \frac{3 \cdot 2 + 4 \cdot 4}{7} = \frac{22}{7} \approx 
+3.14
+$$
+
+$$
+\hat{y}_\mathrm{weighted} = \frac{\frac{1}{2}\cdot 2 + \frac{1}{2} \cdot2 + \frac{1}{3} \cdot 2 +  \frac{1}{2}\cdot 4 + \frac{1}{3}\cdot 4 + \frac{1}{3} \cdot 4 + \frac{1}{4} \cdot 4}{\frac{11}{4}} = \frac{100}{33} \approx 3.03
+$$
+
+</details> 
+:::
