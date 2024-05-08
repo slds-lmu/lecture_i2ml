@@ -31,19 +31,21 @@ CARTs offer several appealing features:
 \begin{itemize}
   \item \textbf{Interpretability}: They are easy to understand and explain.
   \item \textbf{Invariance to linear transformations}: Their performance is unaffected by scaling or shifting of data.
-  \item \textbf{Versatility}: They effectively hanlde both categorial and numerical data.
+  \item \textbf{Versatility}: CARTs work on categorial and numerical data.
   \item \textbf{Robustness to missing values}: They can be designed to manage data with missing entries.
 \end{itemize}
 
+\vspace{1em}
 Despite these benefits, CARTs are not without their drawbacks:
+\vspace{1em}
 
 \begin{quotation}
 "Trees have one aspect that prevents them from being the ideal tool for predictive learning, namely inaccuracy."
 \end{quotation}
-
 \citebutton{Hastie et al., 2001, p. 352}{https://hastie.su.domains/Papers/ESLII.pdf}
 
-We explore how to enhance the accuracy of decision trees while preserving their inherent advantages.
+\vspace{1em}
+How can we improve accuracy while preserving their advantages?
 
 \end{vbframe}
 
@@ -51,14 +53,13 @@ We explore how to enhance the accuracy of decision trees while preserving their 
 
 \begin{itemize}
   \item Bagging is short for \textbf{B}ootstrap \textbf{Agg}regation.
-  \item It's an \textbf{ensemble method}, i.e., \textit{it combines many models into one 
-        big \enquote{meta-model}}
-  \item Such model ensembles often work much better than their members alone would.
-  \item The constituent models of an ensemble are called \textbf{base learners} 
+  \item It's an \textbf{ensemble method}, i.e., \textit{it combines many models into one big \enquote{meta-model}}
+  \item Such model ensembles often work much better than their members alone would!
+  \item The constituent models in an ensemble are called \textbf{base learners} and are all of the same type (e.g. CART)
+  \item Each base learner is trained on a different \textbf{bootstrap} sample drawn with replacement from the original dataset $\D$
 \end{itemize}
 
 \framebreak 
-In a \textbf{bagging} ensemble, all base learners are of the same type. The only difference between the models is the data they are trained on.\\
 Specifically, we train base learners $\bl, m = 1, \dots, M$ on $M$ \textbf{bootstrap} samples of training data $\D$:
 \begin{itemize}
   \item Draw $n$ observations from $\D$ with replacement
@@ -86,6 +87,37 @@ Specifically, we train base learners $\bl, m = 1, \dots, M$ on $M$ \textbf{boots
 \end{vbframe}
 
 
+\begin{vbframe}{Bagging formalised}
+
+\begin{algorithm}[H]
+  \footnotesize
+  \caption*{Bagging algorithm: Training}
+  \begin{algorithmic}[1]
+    \State {\bf Input: } Dataset $\D$, base learner, number of bootstraps $M$
+    \For {$m = 1 \to M$}
+      \State Draw a bootstrap sample $\D^{[m]}$ from $\D$.
+      \State Train base learner on $\D^{[m]}$ to obtain model $\blh$
+    \EndFor
+    \State Save all base learners $\blh$
+  \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+  \footnotesize
+  \caption*{Bagging algorithm: Inference}
+  \begin{algorithmic}[1]
+    \State {\bf Input: } Observation $o$, trained base learners $\blh$
+    \State Aggregate the predictions of the $M$ estimators (via averaging or majority voting), to determine the bagging estimator:
+    \begin{center}
+    $\fMh = \frac{1}{M} \sum_{m=1}^M \blh \text{(soft labeling)}$
+    $\quad \fMh = \argmax_{k \in \Yspace} \sum_{m=1}^M \I\left(\blh = k\right) \text{(hard labeling)}$
+    \end{center}
+  \end{algorithmic}
+\end{algorithm}
+
+\end{vbframe}
+
+
 \begin{vbframe}{Bagging in practice}
 
 Bagging can be used for any model:
@@ -107,6 +139,8 @@ Bagging can be used for any model:
 \includegraphics[width=120pt]{figure/bagging-bench_tree.jpg}
 \end{minipage}
 
+It seems that bagging is especially helpful for less stable learners.
+
 \end{vbframe}
 
 
@@ -118,18 +152,11 @@ Bagging can be used for any model:
   \item It is particularly effective when the errors of a base learner are mainly due to (random) variability rather than systematic issues.
 \end{itemize}
 
-For an in-depth explanation of the theory behind bagging, refer to the Deep Dive!
+\begin{center}
+\includegraphics[width=250pt]{figure/bagging-mean.png}
+\end{center}
 
-
-
-% In one sentence:\\
-% \lz
-
-% Because the variability of the average of the predictions of many base learner models is smaller than the variability of the predictions from one such base learner model.\\
-
-% \vspace{2em}
-
-% If the error of a base learner model is mostly due to (random) variability and not due to structural reasons, combining many such base learners by bagging helps reducing this variability.
+\footnotesize{For an in-depth explanation of the theory behind bagging, refer to the Deep Dive!}
 
 \end{vbframe}
 
@@ -137,42 +164,20 @@ For an in-depth explanation of the theory behind bagging, refer to the Deep Dive
 
 Naturally, better-performing base learners lead to stronger aggregated outcomes. \\
 
-\vspace{2em}
+\vspace{1em}
 
 There are also bagging-specific knobs to tune:
 \begin{itemize}
-  \item \textbf{Benefits of larger ensembles}: Increasing the \textbf{number of base learners} improves performance (at least theoretically). % hierfür Grafik: Ensemble Size, Fehler; mit Benchmark oder Tuner (design search mlr3)
-  \item \textbf{Advantages of diversity}: Diverse base learners contribute different perspectives, reducing the impact of any single model's bias or variance as long as they maintain overall accuracy.
+  \item \textbf{Benefits of larger ensembles}: Increasing the \textbf{number of base learners} improves performance (at least theoretically): % hierfür Grafik: Ensemble Size, Fehler; mit Benchmark oder Tuner (design search mlr3)
+\begin{center}
+\includegraphics[width=0.55\textwidth]{figure/bagging-ntree_MSE.png}
+\end{center}
+  \item \textbf{Advantages of diversity}: Diverse base learners contribute different perspectives, reducing the impact of any single model's bias or variance. % das als motivation für RF-intro
   % \item \textbf{Less correlation, more gain}: Bagging yiels better results when there is less correlation among the models. Independent errors help in cancelling out individual errors! Dieser Teil im RF Teil!!
 \end{itemize}
-% \begin{small}
-% \begin{align*}
-% \Exy\left[L\left(y, \fM\right)\right] &= \textcolor{blue}{\tfrac{1}{M}\sum^M_{m} \Exy\left[L\left(y, \bl \right)\right]} - \Exy\left[\ambifM\right]\\
-% \Exy\left[\ambifM\right] &\cong 
-% \textcolor{purple}{\frac{M-1}{M}} \textcolor{cyan}{\var_{xy}\left[\bl\right]} \textcolor{violet}{\left(1 - \corr_{xy}\left[\bl, \bl{m'}\right]\right)}
-% \end{align*}
-% \end{small}
-% \begin{itemize}
-% \item[$\Rightarrow$] \textcolor{blue}{\textbf{better base learners}} are better {\small (... duh)}
-% \item[$\Rightarrow$] \textcolor{purple}{\textbf{more base learners}} are better {\small (theoretically, at least...)}\\
-% \item[$\Rightarrow$] \textcolor{cyan}{\textbf{more variable base learners}} are better {\small(as long as their risk stays the same, of course!)}
-% \item[$\Rightarrow$] \textcolor{violet}{\textbf{less correlation between base learners}} is better:\\ bagging helps more if base learners are wrong in different ways so that their errors \enquote{cancel} each other out.\\
-% \end{itemize}
 
 
 \end{vbframe}
-
-% \begin{vbframe}{Bagging: Synopsis}
-
-%   \begin{itemize}
-%     \item Basic idea: fit the same model repeatedly on many \textbf{bootstrap} replications of the training data set and \textbf{aggregate} the results
-%     \item Gains performance by reducing the variance of predictions, but (slightly) increases the bias: it reuses training data many times, so small mistakes can get amplified. 
-%     \item Works best for unstable/high-variance base learners, where small changes in the training set can cause large changes in predictions:\\
-%     e.g., CART, neural networks, step-wise/forward/backward variable selection for regression\\
-%      \item Works best if base learners' predictions are only weakly correlated: they don't all make the same mistakes.
-%          \item Can degrade performance for stable methods like $k$-NN, LDA, Naive Bayes, linear regression
-%   \end{itemize}
-% \end{vbframe}
 
 \endlecture
 \end{document}
