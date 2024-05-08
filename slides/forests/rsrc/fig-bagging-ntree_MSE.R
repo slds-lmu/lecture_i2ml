@@ -35,8 +35,10 @@ for (trees in tree_counts) {
   results <- rbind(results, data.frame(Number_of_Trees = trees, MSE = mse))
 }
 
-ggplot(results, aes(x = Number_of_Trees, y = MSE)) +
+p <- ggplot(results, aes(x = Number_of_Trees, y = MSE)) +
   geom_line(color = "blue", size = 1.5) +
   labs(x = "Number of decision trees",
        y = "Mean Squared Error") +
   theme_minimal()
+
+ggsave("bagging-ntree_MSE.png", plot = p, width = 16, height = 8, dpi = 300)
