@@ -1,6 +1,7 @@
 library(mlr3)
 library(mlr3learners)
 library(mlr3pipelines)
+library(mlr3viz)
 library(ggplot2)
 library(data.table)
 
@@ -19,36 +20,44 @@ glrn_bagging_log$id = "bagging_logistic"
 glrn_bagging_rpart = create_bagging_pipeline("classif.rpart")
 glrn_bagging_rpart$id = "bagging_tree"
 
+glrn_bagging_kknn = create_bagging_pipeline("classif.kknn")
+glrn_bagging_kknn$id = "bagging_kknn"
+
 lrn_log_reg = lrn("classif.log_reg")
 lrn_rpart = lrn("classif.rpart")
 lrn_ranger = lrn("classif.ranger")
 lrn_kknn = lrn("classif.kknn") # default is already k=7
 
-learners = list(glrn_bagging_log, lrn_log_reg, glrn_bagging_rpart, lrn_rpart, lrn_ranger, lrn_kknn)
+learners = list(glrn_bagging_log, lrn_log_reg, glrn_bagging_rpart, lrn_rpart, glrn_bagging_kknn, lrn_kknn)
 
 tasks = lapply(c("sonar", "spam"), tsk)
 
 bmr = benchmark(benchmark_grid(tasks, learners, rsmp("cv", folds = 10)))
 results = bmr$aggregate()
 
+# visualization
 data <- as.data.table(results)
+data[, learner_id := factor(learner_id,
+                            levels = c("classif.log_reg", "bagging_logistic", "bagging_tree", "classif.rpart", "classif.kknn", "bagging_kknn"),
+                            labels = c("Logistic Regression", "Logistic Regression bagged", "CART bagged", "CART", "kknn", "kknn bagged"))]
 
-g <- ggplot(data, aes(x = learner_id, y = classif.ce, fill = learner_id)) +
-  geom_bar(stat = "identity", position = position_dodge(), width = 0.7) +
-  facet_wrap(~ task_id, scales = "free_x") +
-  geom_text(aes(label = sprintf("%.3f", classif.ce)), position = position_dodge(width = 0.7), vjust = -0.5) +
-  labs(title = "comparison of classification error across methods and tasks",
-       x = "method",
-       y = "classification error",
-       fill = "learner") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "bottom")
 
-print(g)
+data_sonar <- data[task_id == "sonar"]
+data_spam <- data[task_id == "spam"]
+
+p1 <- ggplot(data_sonar, aes(x = learner_id, y = classif.ce, fill = learner_id)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  labs(title = "Classification Error for Sonar Task", x = "Method", y = "Classification Error") +
+  theme_minimal()
+
+p2 <- ggplot(data_spam, aes(x = learner_id, y = classif.ce, fill = learner_id)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  labs(title = "Classification Error for Spam Task", x = "Method", y = "Classification Error") +
+  theme_minimal()
+
+print(p1)
+print(p2)
 
 a <- autoplot(bmr)
 
 print(a)
-
-# TODO: ggplot für versch. slides
