@@ -47,5 +47,8 @@ g <- ggplot(data, aes(x = learner_id, y = classif.ce, fill = learner_id)) +
 
 print(g)
 
+a <- autoplot(bmr)
+
+print(a)
+
 # TODO: ggplot für versch. slides
-ggsave("~/all_learners_comparison.jpg", plot = g, device = "jpeg", width = 10, height = 8, units = "in", dpi = 300)
