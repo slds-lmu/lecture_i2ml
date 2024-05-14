@@ -30,7 +30,7 @@ lrn_kknn = lrn("classif.kknn") # default is already k=7
 
 learners = list(glrn_bagging_log, lrn_log_reg, glrn_bagging_rpart, lrn_rpart, glrn_bagging_kknn, lrn_kknn)
 
-tasks = lapply(c("sonar", "spam"), tsk)
+tasks = lapply(c("spam"), tsk)
 
 bmr = benchmark(benchmark_grid(tasks, learners, rsmp("cv", folds = 10)))
 results = bmr$aggregate()
