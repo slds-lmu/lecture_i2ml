@@ -1,10 +1,12 @@
+set.seed(700)
+
 library(ggplot2)
 library(rpart)
+library(gridExtra)
 
-set.seed(6)
-n <- 70
+n <- 700
 x <- runif(n, 0, 10)
-y <- sin(x) + rnorm(n, sd=0.5)
+y <- sin(x) + rnorm(n, sd=0.6)
 
 data <- data.frame(x=x, y=y)
 
@@ -28,9 +30,10 @@ p1 <- ggplot(data, aes(x=x, y=y)) +
 
 p2 <- ggplot(plot_df, aes(x=x, y=y, color=Model)) +
   geom_line(alpha=0.3) +
-  geom_line(data = subset(plot_df, Model == "Bagged Mean"), size=1.2) +
+  geom_line(data = subset(plot_df, Model == "Bagged Mean"), size=1.0) +
   theme_minimal()
 
-combined_plot <- grid.arrange(p1, p2, ncol=2)
+# Adjust the width of the plots to be equal
+combined_plot <- grid.arrange(p1, p2, ncol=2, widths=c(1, 1))
 
 ggsave("bagging-mean.png", plot = combined_plot, width = 16, height = 8, dpi = 300)
