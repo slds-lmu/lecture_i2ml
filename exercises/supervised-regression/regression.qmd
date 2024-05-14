@@ -1,0 +1,441 @@
+---
+title: "Exercise 2 -- Regression"
+subtitle: "[Introduction to Machine Learning](https://slds-lmu.github.io/i2ml/)"
+notebook-view:
+  - notebook: ex_regression_R.ipynb
+    title: "Exercise sheet for R"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/supervised-regression/ex_regression_R.ipynb"
+  - notebook: ex_regression_py.ipynb
+    title: "Exercise sheet for Python"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/supervised-regression/ex_regression_py.ipynb"
+  - notebook: sol_regression_R.ipynb
+    title: "Solutions for R"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/supervised-regression/sol_regression_R.ipynb"
+  - notebook: sol_regression_py.ipynb
+    title: "Solutions for Python"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/supervised-regression/sol_regression_py.ipynb"
+---
+
+::: {.content-hidden when-format="pdf"}
+::: {.hidden}
+{{< include ../_quarto/latex-math.qmd >}}
+:::
+:::
+
+<details> 
+<summary>*Hint: Useful libraries*</summary>
+
+::: {.panel-tabset}
+
+### R
+{{< embed ex_regression_R.ipynb#import echo=true >}}
+### Python
+{{< embed ex_regression_py.ipynb#import echo=true >}}
+:::
+</details>
+
+## Exercise 1: HRO in coding frameworks
+
+::: {.callout-note title="Learning goals" icon=false}
+Translate lecture concepts to code
+:::
+
+Throughout the lecture, we will frequently use the `R` package `mlr3`, resp. the `Python` package `sklearn`, and its descendants, providing an integrated ecosystem for all common machine learning tasks. Let's recap the HRO principle and see how it is reflected in either `mlr3` or `sklearn`. An overview of the most important objects and their usage, illustrated with numerous examples, can be found at [the `mlr3` book](https://mlr3book.mlr-org.com/) and [the `scikit` documentation](https://scikit-learn.org/stable/index.html).
+
+***
+How are the key concepts (i.e., hypothesis space, risk and optimization) you learned about in the lecture videos implemented?
+  
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+::: {.panel-tabset}
+### R
+{{< embed sol_regression_R.ipynb#hro-objects echo=true >}}
+### Python
+{{< embed sol_regression_py.ipynb#hro-objects echo=true >}}
+:::
+</details> 
+:::
+
+***
+Have a look at`mlr3::tsk("iris")` / `sklearn.datasets.load_iris`. What attributes does this object store?
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+::: {.panel-tabset}
+### R
+{{< embed sol_regression_R.ipynb#hro-task echo=true >}}
+### Python
+{{< embed sol_regression_py.ipynb#hro-task echo=true >}}
+:::
+</details> 
+:::
+
+***
+Instantiate a regression tree learner (`lrn("regr.rpart")` / `DecisionTreeRegressor`). What are the different settings for this learner?
+
+<details> 
+<summary>*Hint*</summary>
+::: {.panel-tabset}
+
+### R
+`mlr3::mlr_learners$keys()` shows all available learners.
+
+### Python
+Use `get_params()` to see all available settings.
+:::
+</details> 
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+::: {.panel-tabset}
+### R
+{{< embed sol_regression_R.ipynb#hro-learner echo=true >}}
+### Python
+{{< embed sol_regression_py.ipynb#hro-learner echo=true >}}
+:::
+</details> 
+:::
+
+## Exercise 2: Loss functions for regression tasks
+
+::: {.callout-note title="Learning goals" icon=false}
+1. Assess how outliers affect models for different loss functions
+2. Derive impact of a loss function from visual representation
+:::
+
+In this exercise, we will examine loss functions for regression tasks 
+somewhat more in depth.
+
+```{r, echo=FALSE, fig.height=3, fig.width=5}
+set.seed(1L)
+x <- runif(20L, min = 0L, max = 10L)
+y <- 0.2 + 3 * x
+y <- y + rnorm(length(x), sd = 0.8)
+
+ggplot2::ggplot(data.frame(x = x, y = y), ggplot2::aes(x = x, y = y)) +
+  ggplot2::geom_point() + 
+  ggplot2::theme_bw() + 
+  ggplot2::annotate("point", x = 10L, y = 1L, color = "orange", size = 2)
+```
+
+Consider the above linear regression task. How will the model parameters be affected by adding the new outlier point (orange) if you use $L1$ loss and $L2$ loss, respectively, in the empirical risk? (You do not need to actually compute the parameter values.)
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+$L2$ loss penalizes vertical distances to the regression line *quadratically*, while $L1$ only considers the *absolute* distance. As the outlier point lies pretty far from the remaining training data, it will have a large loss with $L2$, and the regression line will pivot to the bottom right to minimize the resulting empirical risk. A model trained with $L1$ loss is less susceptible to the outlier and will adjust only slightly to the new data.
+
+```{r, echo=FALSE, fig.height=3, fig.width=5, message=FALSE}
+set.seed(1L)
+x <- runif(20L, min = 0L, max = 10L)
+y <- 0.2 + 3 * x
+y <- y + rnorm(length(x), sd = 0.8)
+x <- c(x, 10L)
+y <- c(y, 1L)
+dt <- data.frame(x = x, y = y)
+
+ggplot2::ggplot(dt, ggplot2::aes(x = x, y = y)) +
+  ggplot2::geom_point() + 
+  ggplot2::theme_bw() + 
+  ggplot2::geom_smooth(
+    formula = y ~ x, 
+    method = "lm", 
+    se = FALSE, 
+    ggplot2::aes(col = "L2 loss"), 
+    linewidth = 0.7
+  ) +
+  ggplot2::geom_quantile(quantiles = 0.5, ggplot2::aes(col = "L1 loss")) +
+  ggplot2::scale_color_manual(
+    "", values = c("L2 loss" = "blue", "L1 loss" = "red")
+  ) +
+  ggplot2::annotate("point", x = 10L, y = 1L, color = "orange", size = 2)
+```
+
+</details> 
+:::
+
+***
+
+```{r, echo=FALSE, fig.height=3, fig.width=5}
+huber_loss <- function(res, delta = 0.5) {
+  if (abs(res) <= delta) {
+    0.5 * (res^2)
+  } else {
+    delta * abs(res) - 0.5 * (delta^2)
+  }
+}
+
+x <- seq(-10L, 10L, length.out = 1000L)
+y <- sapply(x, huber_loss, delta = 5L)
+
+ggplot2::ggplot(data.frame(x = x, y = y), ggplot2::aes(x = x, y = y)) +
+  ggplot2::geom_line() + 
+  ggplot2::theme_bw() +
+  ggplot2::labs(x = "y - f(x)", y = "L(y, f(x)")
+```
+
+The second plot visualizes another loss function popular in regression tasks, the so-called *Huber loss* (depending on $\epsilon > 0$; here: $\epsilon = 5$). Describe how the Huber loss deals with residuals as compared to $L1$ and $L2$ loss. Can you guess its definition? 
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+The Huber loss combines the respective advantages of $L1$ and $L2$ loss: it is smooth and (once) differentiable like $L2$ but does not punish larger residuals as severely, leading to more robustness. It is simply a (weighted) piecewise combination of both losses, where $\epsilon$ marks where $L2$ transits to $L1$ loss. The exact definition is:
+
+$$
+\Lxy = \begin{cases}
+\frac{1}{2}(y - \fx)^2  & \text{ if } \lone \le \epsilon \\
+\epsilon \lone-\frac{1}{2}\epsilon^2 \quad & \text{ otherwise }
+\end{cases}, \quad \epsilon > 0
+$$
+
+In the plot we can see how the parabolic shape of the loss around 0 evolves into an absolute-value function at $\lone > \epsilon = 5$.
+</details> 
+:::
+
+
+## Exercise 3: Polynomial regression
+
+::: {.callout-note title="Learning goals" icon=false}
+1. Express HRO components for polynomial regression
+2. Derive gradient update for optimization
+3. Analyze and discuss learner flexibility
+:::
+
+Assume the following (noisy) data-generating process from which we have observed 50 realizations: $$y = -3 + 5 \cdot \sin(0.4 \pi x) + \epsilon$$ with $\epsilon \, \sim \mathcal{N}(0, 1)$.
+
+```{r, echo=FALSE, fig.height=3, fig.width=5}
+set.seed(123L)
+x <- seq(-3, 3, length.out = 50)
+y <- -3 + 5 * sin(0.4 * pi * x) + rnorm(50, sd = 1)
+
+ggplot2::ggplot(data.frame(x = x, y = y), ggplot2::aes(x = x, y = y)) +
+  ggplot2::geom_point() +
+  ggplot2::theme_bw()
+```
+
+***
+We decide to model the data with a cubic polynomial (including intercept term). State the corresponding hypothesis space.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+Cubic means degree 3, so our hypothesis space will look as follows:
+
+$$
+\Hspace = \{ \fxt = \theta_0 + \theta_1 x + \theta_2 x^2 + \theta_3 x^3 
+~|~ (\theta_0, \theta_1, \theta_2, \theta_3)^\top \in \R^4 \}
+$$
+
+</details>
+:::
+
+***
+State the empirical risk w.r.t. $\thetab$ for a member of the hypothesis space. Use $L2$ loss and be as explicit as possible.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+The empirical risk is:
+
+$$
+\risket = \sum_{i = 1}^{50} \left(\yi - \left[ \theta_0 + \theta_1 x^{(i)} + 
+\theta_2 \left( x^{(i)} \right)^2 + \theta_3 \left( x^{(i)} \right)^3 \right] 
+\right)^2
+$$
+
+</details>
+:::
+
+::: {.content-hidden when-profile="b"}
+***
+::: {.callout-tip icon=false title="Only for lecture group A"}
+:::
+We can minimize this risk using gradient descent. Derive the gradient of the empirical risk w.r.t $\thetab$.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+We can find the gradient just as we did for an intermediate result when we derived the least-squares estimator:
+
+\begin{align*}
+  \nabla_{\thetab} \risket &=
+  \pd{}{\thetab} \left \| \yv - \Xmat \thetab \right \|_2^2 \\
+  &= \pd{}{\thetab} \left( \left(\yv - \Xmat \thetab\right)^\top 
+  \left(\yv - \Xmat \thetab \right) \right) \\ 
+  &= - 2 \yv^\top \Xmat + 2 \thetab^\top \Xmat^\top \Xmat\\
+  &= 2 \cdot \left(-\yv^\top \Xmat + \thetab^\top \Xmat^\top \Xmat \right)
+\end{align*}
+
+</details>
+:::
+:::
+
+::: {.content-hidden when-profile="b"}
+
+***
+::: {.callout-tip icon=false title="Only for lecture group A"}
+::: 
+Using the result for the gradient, explain how to update the current parameter 
+$\thetat$ in a step of gradient descent.
+<!-- state the calculation to update the current parameter $\thetat$. -->
+  
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+Recall that the idea of gradient descent (\textit{descent}!) is to traverse the risk surface in the direction of the \textit{negative} gradient as we are in search for the minimum. Therefore, we will update our current parameter set $\thetat$ with the negative gradient of the current empirical risk w.r.t. $\thetab$, scaled by learning rate (or step size) $\alpha$:
+
+$$
+\thetatn = \thetat - \alpha \cdot \nabla_{\thetab} \riske(\thetat).
+$$
+
+
+<!-- Note that the $L2$-induced multiplicative constant of 2 in the gradient can simply be absorbed by $\tilde \alpha := \tfrac{1}{2} \alpha$: -->
+  
+<!-- $$ -->
+<!--   \underbrace{\thetatn}_{p \times 1} = \underbrace{\thetat}_{p \times 1} -  -->
+<!--   \alpha \cdot 2 \cdot \left( -  \underbrace{\yv^\top}_{1 \times n} -->
+<!--   \underbrace{\Xmat \phantom{y}}_{n \times p} + -->
+<!--   \underbrace{(\thetat)^\top \phantom{y}}_{1 \times p} -->
+<!--   \underbrace{\Xmat^\top \Xmat \phantom{y}}_{p \times p} -->
+<!--   \right) -->
+<!-- $$ -->
+
+What actually happens here: we update each component of our current parameter vector $\thetat$ in the \textit{direction} of the negative gradient, i.e., following the steepest downward slope, and also by an \textit{amount} that depends on the value of the gradient.
+
+In order to see what that means it is helpful to recall that the gradient $\nabla_{\thetab} \risket$ tells us about the effect (infinitesimally small) changes in $\thetab$ have on $\risket$. Therefore, gradient updates focus on  influential components, and we proceed more quickly along the important dimensions.
+</details>
+:::  
+:::
+
+***
+You will not be able to fit the data perfectly with a cubic polynomial. Describe the advantages and disadvantages that a more flexible model class would have. Would you opt for a more flexible learner?
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+We see that, for example, the first model in exercise b) fits the data fairly well but not perfectly. Choosing a more flexible function (a polynomial of higher degree or a function from an entirely different, more complex, model class) might be advantageous:
+
+* We would be able to trace the observations more closely if our function were less smooth, and thus reduce empirical risk. On the other hand, flexibility also has drawbacks:
+
+* Flexible model classes often have more parameters, making training harder.
+
+* We might run into a phenomenon called *overfitting*. Recall that our ultimate goal is to make predictions on *new* observations. However, fitting every quirk of the training observations -- possibly caused by imprecise measurement or other factors of randomness/error -- will not generalize so well to new data.
+
+In the end, we need to balance model fit and generalization. We will discuss the choice of hypotheses quite a lot since it is one of the most crucial design decisions in machine learning. 
+
+</details>
+
+:::
+
+## Exercise 4: Predicting `abalone`
+
+::: {.callout-note title="Learning goals" icon=false}
+1. Implement regression model
+2. Analyze basic regression fit
+:::
+
+We want to predict the age of an abalone using its longest shell measurement and 
+its weight. The `abalone` data can be found here: [https://archive.ics.uci.edu/ml/machine-learning-databases/abalone/abalone.data](https://archive.ics.uci.edu/ml/machine-learning-databases/abalone/abalone.data).
+
+Prepare the data as follows:
+
+::: {.panel-tabset}
+### R
+{{< embed sol_regression_R.ipynb#abalone-data echo=true eval=false >}}
+
+### Python
+{{< embed sol_regression_py.ipynb#abalone-data echo=true eval=false >}}
+:::
+
+***
+Plot `LongestShell` and `WholeWeight` on the $x$- and $y$-axis, respectively, and color points according to `Rings`.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+::: {.panel-tabset}
+### R
+{{< embed sol_regression_R.ipynb#abalone-plotr echo=true >}}
+### Python
+{{< embed sol_regression_py.ipynb#abalone-plot echo=true >}}
+:::
+
+We see that weight scales exponentially with shell length and that larger/heavier animals tend to have more rings.
+</details> 
+:::
+
+***
+Using `mlr3`/`sklearn`, fit a linear regression model to the data.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+::: {.panel-tabset}
+### R
+<!-- {{< embed sol_regression_R.ipynb#abalone-task echo=true >}} -->
+{{< embed sol_regression_R.ipynb#abalone-predict echo=true >}}
+### Python
+{{< embed sol_regression_py.ipynb#abalone-predict echo=true >}}
+:::
+</details> 
+:::
+
+***
+Compare the fitted and observed targets visually.
+
+<details> 
+<summary>*R Hint*</summary>
+::: {.panel-tabset}
+### R
+Use `$autoplot()` from `mlr3viz`.
+:::
+</details> 
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+::: {.panel-tabset}
+### R
+{{< embed sol_regression_R.ipynb#abalone-vizr echo=true >}}
+### Python
+{{< embed sol_regression_py.ipynb#abalone-viz echo=true >}}
+:::
+
+We see a scatterplot of prediction vs true values, where the small bars along the axes (a so-called rugplot) indicate the number of observations that fall into this area. As we might have suspected from the first plot, the underlying relationship is not exactly linear (ideally, all points and the resulting line should lie on the diagonal). With a linear model we tend to underestimate the response.
+
+</details> 
+:::
+
+***
+Assess the model's training loss in terms of MAE.
+
+<details> 
+<summary>*Hint*</summary>
+::: {.panel-tabset}
+### R
+Call `$score()`, which accepts 
+different `mlr_measures`, on the prediction object.
+
+### Python
+Call `from sklearn.metrics import mean_absolute_error`.
+:::
+</details> 
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+::: {.panel-tabset}
+### R
+{{< embed sol_regression_R.ipynb#abalone-eval echo=true >}}
+### Python
+{{< embed sol_regression_py.ipynb#abalone-eval echo=true >}}
+:::
+</details> 
+:::
