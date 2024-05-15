@@ -25,7 +25,7 @@ fi
 
 if [[ ! -d $TEMPDIR ]]
 then
-  echo "! Could not create temporary download dir exists, aborting!"
+  echo "! Could not create temporary download dir, aborting!"
   exit 1
 fi
 
@@ -34,9 +34,10 @@ echo "- Running: "
 echo "  $CMD"
 eval "$CMD"
 
-# Note that using e.g. .../service/* would not include .-files as they are not expanded by *
-echo "- Moving contents of service dir to ${PWD}"
-cp -r "$TEMPDIR/service/" .
+# Note that using e.g. cp -r .../service/* would not include .-files as they are not expanded by *
+# using cp -r .../service/ on linux copied the service dir itself, jence using rsync for correct behavior
+echo "- Moving contents of $TEMPDIR/service to ${PWD}"
+rsync -a "$TEMPDIR/service/" .
 echo "- Deleting temporary download directory"
 rm -r "$TEMPDIR"
 
