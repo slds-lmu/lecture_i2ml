@@ -86,21 +86,80 @@
       \caption*{\titlecaption}
     \fi
     \end{figure}
-  \end{center}}
-  \else
-    $\;$
+  \end{column}%
+}
+
+\newcommand{\includeLearningGoalsColumn}[1]{%
+  \begin{column}{.55\textwidth}
+    % Uncomment for visual debugging of columns with red line
+    % \color{blue}\rule{\linewidth}{4pt}
+    % \vfill % No vfill needed if columns are vertically centered
+    {\normalsize\bfseries Learning goals}
+    \normalfont
+    \begin{itemize}
+      #1
+    \end{itemize}
+  \end{column}%
+}
+
+% Needed for trimming whitespace around \titlemeta arguments
+% Seemingly least bad option. See also 
+% https://tex.stackexchange.com/questions/484288/command-for-nulifying-spaces-string-trim-in-latex
+\RequirePackage{trimspaces}
+\newcommand{\trim}[1] {\trim@spaces@noexp{#1}}
+
+% Main title slide wrapper, includes
+% Automatically uses \title{} element to insert lecture title
+% Example title on slide: "CART: Advantages \& Disadvantages"
+% - Argument 1: Chunk title, e.g. CART
+% - Argument 2: Chapter title, e.g. Advantages \& Disadvantages
+% - Argument 3: Relative path to title figure, can be empty, e.g.: figure/cart_dis_1
+% - Argument 4: \item elements for learning goals.
+\newcommand{\titlemeta}[4]{%
+
+  % If chunk title (arg 1) is empty, we just use the lecture title
+  \if\relax\detokenize{#1}\relax
+    % Use lecture title only
+    \lecturechapter{#2}
+  \else%
+    % Otherwise append chunk title and lecture title separated by :
+    % Trim whitespaces from chunk name to avoid space before :
+    \lecturechapter{\trim{#1}: #2}
   \fi
-  \end{minipage}
-  \begin{minipage}{0.45\textwidth}
-  \normalsize
-  Learning goals
-        \normalfont
-\footnotesize
-        \begin{itemize}
-          \learninggoals
-        \end{itemize}
-      \end{minipage}}
-\fi
+
+  % Setting title requires use of \title{} command before \begin{document},
+  % sets the title of the lecture as in "Introduction to Machine Learning"  
+  \lecture{\inserttitle}
+
+  \begin{frame}[noframenumbering,plain]
+    \vspace*{1cm}
+    {\LARGE\bfseries\inserttitle}
+    \vspace*{0.5cm}
+
+    % Insert section title defined via \lecturechapter (??)
+    % \par ensures that spacing is ok when linebreak happens
+    \if\lecturesection\@empty\relax\else%
+      {\LARGE\bfseries\lecturesection\par}%
+    \fi%
+
+    \vfill
+
+    % Using columns env to put things side-by-side rather than minipage
+    % see https://latex-beamer.com/tutorials/columns/
+    \begin{columns}[c] % align columns (c)enter or (T)op
+      % if checks if argument (detokenized?) is empty, i.e. equal to \relax
+      \if\relax\detokenize{#3}\relax\else%
+        % column env is wrapped in separate command because
+        % envs aren't allowed directly within if-else arms apparently
+        % Idea is to have learning goals horizontally centered if no figure is used
+        \includeGraphicsColumn{#3}
+      \fi
+
+      \if\relax\detokenize{#3}\relax\else%
+        % Same idea with learning goals column
+        \includeLearningGoalsColumn{#4}
+      \fi
+    \end{columns}%
   \end{frame}
 }
 
