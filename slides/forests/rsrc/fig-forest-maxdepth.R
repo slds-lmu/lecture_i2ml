@@ -107,4 +107,4 @@ combined_plot <- grid.arrange(
     gp = gpar(fontsize = base_size)
   )
 )
-ggsave("forest-maxdepth.png", plot = combined_plot, width = 32, height = 8, dpi = 300)
+ggsave("../figure/forest-maxdepth.png", plot = combined_plot, width = 32, height = 8, dpi = 300)

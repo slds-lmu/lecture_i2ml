@@ -121,4 +121,4 @@ combined_plot <- grid.arrange(
     gp = gpar(fontsize = base_size)
   )
 )
-ggsave("forest-mtry.png", plot = combined_plot, width = 16, height = 8, dpi = 300)
+ggsave("../figure/forest-mtry.png", plot = combined_plot, width = 16, height = 8, dpi = 300)

@@ -1,3 +1,5 @@
+# we want to visualize the benefits of larger ensembles, e.g. a lower mean error, here
+
 library(ggplot2)
 library(rpart)
 
@@ -41,4 +43,4 @@ p <- ggplot(results, aes(x = Number_of_Trees, y = MSE)) +
        y = "Mean Squared Error") +
   theme_minimal()
 
-ggsave("bagging-ntree_MSE.png", plot = p, width = 16, height = 8, dpi = 300)
+ggsave("../figure/bagging-ntree_MSE.png", plot = p, width = 16, height = 8, dpi = 300)

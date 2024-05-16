@@ -1,3 +1,6 @@
+# goal here is to visualize the need for unstable learners in bagging
+# by using a benchmark_grid from mlr3
+
 library(mlr3)
 library(mlr3learners)
 library(mlr3pipelines)
@@ -7,6 +10,7 @@ library(data.table)
 
 set.seed(123)
 
+# bagging via a pipeline (taken from mlr3 book)
 create_bagging_pipeline <- function(base_learner) {
   gr_single_pred = po("subsample", frac = 0.7) %>>% lrn(base_learner)
   gr_pred_set = ppl("greplicate", graph = gr_single_pred, n = 100)
@@ -14,6 +18,7 @@ create_bagging_pipeline <- function(base_learner) {
   as_learner(gr_bagging)
 }
 
+# setup learners
 glrn_bagging_log = create_bagging_pipeline("classif.log_reg")
 glrn_bagging_log$id = "bagging_logistic"
 
@@ -26,12 +31,16 @@ glrn_bagging_kknn$id = "bagging_kknn"
 lrn_log_reg = lrn("classif.log_reg")
 lrn_rpart = lrn("classif.rpart")
 lrn_ranger = lrn("classif.ranger")
-lrn_kknn = lrn("classif.kknn") # default is already k=7
+lrn_kknn = lrn("classif.kknn")
+lrn_kknn$param_set$values$k = 7
 
+# benchmark_grid expects a list:
 learners = list(glrn_bagging_log, lrn_log_reg, glrn_bagging_rpart, lrn_rpart, glrn_bagging_kknn, lrn_kknn)
 
+# tasks to be included in the benchmark
 tasks = lapply(c("spam"), tsk)
 
+# run the benchmark!
 bmr = benchmark(benchmark_grid(tasks, learners, rsmp("cv", folds = 10)))
 results = bmr$aggregate()
 
@@ -45,19 +54,5 @@ data[, learner_id := factor(learner_id,
 data_sonar <- data[task_id == "sonar"]
 data_spam <- data[task_id == "spam"]
 
-p1 <- ggplot(data_sonar, aes(x = learner_id, y = classif.ce, fill = learner_id)) +
-  geom_bar(stat = "identity", position = position_dodge()) +
-  labs(title = "Classification Error for Sonar Task", x = "Method", y = "Classification Error") +
-  theme_minimal()
-
-p2 <- ggplot(data_spam, aes(x = learner_id, y = classif.ce, fill = learner_id)) +
-  geom_bar(stat = "identity", position = position_dodge()) +
-  labs(title = "Classification Error for Spam Task", x = "Method", y = "Classification Error") +
-  theme_minimal()
-
-print(p1)
-print(p2)
-
 a <- autoplot(bmr)
-
-print(a)
+ggsave("../figure/bagging-bench.png", plot = a, width = 32, height = 8, dpi = 300)

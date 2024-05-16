@@ -1,3 +1,6 @@
+# we want to visualize the 'advantage of diversity' in bagging
+# e.g. that the bias of base learners get's averaged out (if not systematic)
+
 library(rpart)
 library(ipred)
 library(ggplot2)
@@ -44,7 +47,7 @@ preds_long <- preds %>%
 colors <- viridis(5, alpha = 0.5)
 colors <- c(colors, "black")
 
-ggplot(data, aes(x = x, y = y)) +
+p <- ggplot(data, aes(x = x, y = y)) +
   geom_point(alpha = 0.5, size = 3) +
   geom_line(data = preds_long, aes(x = x, y = y_pred, color = model), size = 1.5) + 
   scale_color_manual(values = colors) +
@@ -59,3 +62,5 @@ ggplot(data, aes(x = x, y = y)) +
     legend.title = element_text(size = 15),
     legend.text = element_text(size = 12)
   )
+
+ggsave("../figure/bagging-fit.png", plot = p, width = 16, height = 8, dpi = 300)
