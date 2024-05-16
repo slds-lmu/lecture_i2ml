@@ -3,23 +3,27 @@
 # Intended for use in CI, where there is no need for a git history or $ git pull
 # Downloading a tarball from the API is assumed to be faster than running `git clone`, even considering --depth 1 etc.
 
+# Exit on error immediately
+set -euo pipefail
 
-SERVICEURL="https://api.github.com/repos/slds-lmu/lecture_service/tarball/main"
+# Use the main branch as default target or first argument $1 if specified
+SERVICEBRANCH="${1:-main}" 
+SERVICEURL="https://api.github.com/repos/slds-lmu/lecture_service/tarball/${SERVICEBRANCH}"
 CURRENTDIR="$(basename $PWD)"
 TEMPDIR=$(mktemp --directory)
 CMD="curl -sL $SERVICEURL | tar -xz --directory=$TEMPDIR --strip-components=1"
 
-if [[ $CURRENTDIR == lecture_service ]]
+if [[ "$CURRENTDIR" == lecture_service ]]
 then
-  echo "! This script should be run in the lecture repo (e.g. lecture_i2ml), \033[1mnot\033[22m the service repo!"
+  echo -e "! This script should be run in the lecture repo (e.g. lecture_i2ml), \033[1mnot\033[22m the service repo!"
   exit 1
 fi
 
 
-if [[ $CURRENTDIR != lecture_* ]]
+if [[ "$CURRENTDIR" != lecture_* ]]
 then
   echo "! This does not look like a lecture repo!"
-  echo "! Make sure your current working directory is e.g. \033[1mlecture_i2ml\033[22m, rather than a subdirectory."
+  echo -e "! Make sure your current working directory is e.g. \033[1mlecture_i2ml\033[22m, rather than a subdirectory."
   exit 1
 fi
 
@@ -29,10 +33,13 @@ then
   exit 1
 fi
 
-echo "- Updating service components from https://github.com/slds-lmu/lecture_service/tree/main/service"
+echo -e "- Updating service components from  \033[1m\"$SERVICEBRANCH\"\033[22m branch using"
+echo "    URL: $SERVICEURL"
+echo "    Temporary download directory: $TEMPDIR"
 echo "- Running: "
-echo "  $CMD"
+echo -e "    $CMD"
 eval "$CMD"
+
 
 # Note that using e.g. cp -r .../service/* would not include .-files as they are not expanded by *
 # using cp -r .../service/ on linux copied the service dir itself, jence using rsync for correct behavior
