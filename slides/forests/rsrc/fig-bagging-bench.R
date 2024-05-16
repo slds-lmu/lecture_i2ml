@@ -1,5 +1,6 @@
 # goal here is to visualize the need for unstable learners in bagging
 # by using a benchmark_grid from mlr3
+# and later show how RF further improve accuracy!
 
 library(mlr3)
 library(mlr3learners)
@@ -12,7 +13,7 @@ set.seed(123)
 
 # bagging via a pipeline (taken from mlr3 book)
 create_bagging_pipeline <- function(base_learner) {
-  gr_single_pred = po("subsample", frac = 0.7) %>>% lrn(base_learner)
+  gr_single_pred = po("subsample", frac = 1, replace=TRUE) %>>% lrn(base_learner) # equals bootstrapping (with replacement, frac = 1)
   gr_pred_set = ppl("greplicate", graph = gr_single_pred, n = 100)
   gr_bagging = gr_pred_set %>>% po("classifavg", innum = 100)
   as_learner(gr_bagging)
@@ -35,7 +36,7 @@ lrn_kknn = lrn("classif.kknn")
 lrn_kknn$param_set$values$k = 7
 
 # benchmark_grid expects a list:
-learners = list(glrn_bagging_log, lrn_log_reg, glrn_bagging_rpart, lrn_rpart, glrn_bagging_kknn, lrn_kknn)
+learners = list(glrn_bagging_log, lrn_log_reg, glrn_bagging_rpart, lrn_rpart, glrn_bagging_kknn, lrn_kknn, lrn_ranger)
 
 # tasks to be included in the benchmark
 tasks = lapply(c("spam"), tsk)
@@ -47,12 +48,20 @@ results = bmr$aggregate()
 # visualization
 data <- as.data.table(results)
 data[, learner_id := factor(learner_id,
-                            levels = c("classif.log_reg", "bagging_logistic", "bagging_tree", "classif.rpart", "classif.kknn", "bagging_kknn"),
-                            labels = c("Logistic Regression", "Logistic Regression bagged", "CART bagged", "CART", "kknn", "kknn bagged"))]
-
-
-data_sonar <- data[task_id == "sonar"]
+                            levels = c("classif.log_reg", "bagging_logistic", "bagging_tree", "classif.rpart", "classif.kknn", "bagging_kknn", "classif.ranger"),
+                            labels = c("LR", "LR bagged", "CART bagged", "CART", "7-nn", "7-nn bagged", "RF"))]
 data_spam <- data[task_id == "spam"]
 
-a <- autoplot(bmr)
-ggsave("../figure/bagging-bench.png", plot = a, width = 32, height = 8, dpi = 300)
+a <- autoplot(bmr, type = "boxplot") +
+       ggtitle("spam")
+       ylab("CE for 10-fold CV") +
+       xlab("Learners") +
+       scale_x_discrete(labels = c("LR", "LR bagged", "CART bagged", "CART", "7-nn", "7-nn bagged", "RF")) +
+       theme_minimal() +
+       theme(
+             axis.title = element_text(size = 14),
+             axis.text = element_text(size = 12),
+             legend.title = element_text(size = 14),
+             legend.text = element_text(size = 12)
+         )
+ggsave("../figure/bagging-bench_RF.png", plot = a, width = 16, height = 8, dpi = 300)
