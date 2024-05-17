@@ -46,22 +46,15 @@ bmr = benchmark(benchmark_grid(tasks, learners, rsmp("cv", folds = 10)))
 results = bmr$aggregate()
 
 # visualization
-data <- as.data.table(results)
-data[, learner_id := factor(learner_id,
-                            levels = c("classif.log_reg", "bagging_logistic", "bagging_tree", "classif.rpart", "classif.kknn", "bagging_kknn", "classif.ranger"),
-                            labels = c("LR", "LR bagged", "CART bagged", "CART", "7-nn", "7-nn bagged", "RF"))]
-data_spam <- data[task_id == "spam"]
-
 a <- autoplot(bmr, type = "boxplot") +
-       ggtitle("spam")
        ylab("CE for 10-fold CV") +
        xlab("Learners") +
        scale_x_discrete(labels = c("LR", "LR bagged", "CART bagged", "CART", "7-nn", "7-nn bagged", "RF")) +
        theme_minimal() +
        theme(
-             axis.title = element_text(size = 14),
-             axis.text = element_text(size = 12),
-             legend.title = element_text(size = 14),
-             legend.text = element_text(size = 12)
+             axis.title = element_text(size = 22),
+             axis.text = element_text(size = 20),
+             legend.title = element_text(size = 22),
+             legend.text = element_text(size = 20)
          )
-ggsave("../figure/bagging-bench_RF.png", plot = a, width = 16, height = 8, dpi = 300)
+ggsave("../figure/bagging-bench_RF.png", plot = a, width = 20, height = 8, dpi = 300)
