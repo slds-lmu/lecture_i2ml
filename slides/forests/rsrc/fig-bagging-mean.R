@@ -16,7 +16,7 @@ y <- sin(x) + rnorm(n, sd=0.6)
 data <- data.frame(x=x, y=y)
 
 # fit data on bootstrapped toy data
-trees <- lapply(1:100, function(i) {
+trees <- lapply(1:200, function(i) {
   samp <- sample(n, replace=TRUE)
   rpart(y ~ x, data=data[samp,], method="anova")
 })

@@ -22,55 +22,68 @@
 \sloppy
 
 
-\begin{vbframe}{Out-of-bag vs. in-bag observations}
+\begin{vbframe}{Out-of-bag vs in-bag observations}
   
 \begin{center}
-  % https://docs.google.com/drawings/d/1rxWgtVJEnurCPQ3njgDZ_JWPuQmiMfUttVU7q3Dr3Zs/edit
-  \includegraphics[width=0.7\textwidth]{figure_man/forests-oob-error-2}
+  % SOURCE: https://docs.google.com/presentation/d/1lDW9HEeNEGwJR1tmhAiOhySibzl6tXLxqePsKtpbb_M/edit#slide=id.g2ddcfb537bb_0_33
+  \includegraphics[width=0.9\textwidth]{figure_man/forest-oob.png}
 \end{center}
 
 \footnotesize
 
 \begin{itemize}
-  \item For an estimation of the generalization error, we exploit the 
-  fact that the $i$-th observation acts as unseen test point for all trees in 
-  which it is OOB. 
   \item Let $\text{OOB}^{[m]}$ denote the index set 
   $\left \{i \in \nset | (\xv^{(i)}, \yi) \text{ is OOB for } \bl \right \}$.
   \item The number of trees for which the $i$-th observation is OOB is then 
   given by $S_{\text{OOB}}^{(i)} = 
   \sum_{m = 1}^M \I(i \in \text{OOB}^{[m]})$.
-  \item We can compute the average over predictions $\hat{y}^{(i)[m]}$ from 
-  trees $\bl$ that have observation $i$ in their OOB data to obtain an 
-  ensemble prediction.
-  \item The average loss of these ensemble OOB predictions over all $n$ 
-  observations yields an estimate for the generalization error.
-  \item Compute the ensemble OOB prediction for each observation:
-  $$\yih_{\text{OOB}} = \begin{cases}
-  \frac{1}{S_{\text{OOB}}^{(i)}} \sum_{m = 1}^{M} 
-  \I(i \in \text{OOB}^{[m]}) \cdot \hat{y}^{(i)[m]} & \text{in regression,} 
-  \\ \phantom{x} \\
-  \argmax_{k \in \gset} 
-  \frac{\sum_{m = 1}^{M} \I(i \in \text{OOB}^{[m]}) \cdot 
-  \I(\hat{h}^{(i)[m]} = k)} {S_{\text{OOB}}^{(i)}} &
-  \text{in classification.}
-  \end{cases}$$
-  \item Then, take the average of the resulting point-wise losses to estimate 
-  the OOB error of the forest:
-  $$\widehat{\text{err}}_{\text{OOB}} = \meanin L(\yi, \yih_{\text{OOB}})$$
-  \item Note that the use of class labels commands the use of 0-1 loss in 
-  classification (alternative formulations for other losses are possible).
   \item OOB size: $\P(i \in \text{OOB}^{[m]}) = \left(1 - \frac{1}{n}\right)^n 
   \ \stackrel{n \to \infty}{\longrightarrow} \ \frac{1}{e} \approx 0.37$ for 
   $i \in \nset$.
-  \item Similar to 3-CV, can be used for a quick model selection.
 \end{itemize}
 
 \end{vbframe}
 
-\begin{vbframe}{Out-of-Bag Error Estimate}
-With the RF it is possible to obtain unbiased estimates of the generalization error directly
-during training, based on the out-of-bag observations for each tree:
+\begin{vbframe}{the Out-of-Bag Error Estimate}
+  
+\begin{center}
+  % SOURCE: https://docs.google.com/presentation/d/1lDW9HEeNEGwJR1tmhAiOhySibzl6tXLxqePsKtpbb_M/edit#slide=id.g2ddcfb537bb_0_33
+  \includegraphics[width=0.75\textwidth]{figure_man/forest-oob-error.png}
+\end{center}
+
+\begin{itemize}
+  \item We can estimatate the generalization error $\widehat{\mathrm{GE}}$ by using the $i$-th observation as test data for all trees in which it is OOB. 
+  \item The proportion of OOB samples that were incorrectly classified by our RF is our $\widehat{\mathrm{GE}}$!
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Out-Of-Bag error Pseudo Code}
+\begin{algorithm}[H]
+  \footnotesize
+  \caption*{Out-Of-Bag error calculation}
+  \begin{algorithmic}[1]
+    \State {\bf Input: } $\text{OOB}^{[m]}$, ensemble
+    \For {$i = 1 \to n$}
+      \State Compute the ensemble OOB prediction for observation $i$:
+      $$\yih_{\text{OOB}} = \begin{cases}
+      \frac{1}{S_{\text{OOB}}^{(i)}} \sum_{m = 1}^{M} 
+      \I(i \in \text{OOB}^{[m]}) \cdot \hat{y}^{(i)[m]} & \text{in regression,} 
+      \\ \phantom{x} \\
+      \argmax_{k \in \gset} 
+      \frac{\sum_{m = 1}^{M} \I(i \in \text{OOB}^{[m]}) \cdot 
+      \I(\hat{h}^{(i)[m]} = k)} {S_{\text{OOB}}^{(i)}} &
+      \text{in classification.}
+      \end{cases}$$
+    \EndFor
+    \State Take the average of the resulting point-wise losses to estimate the generalization error of the forest: $$\widehat{\mathrm{GE}}_{\text{OOB}} = \meanin L(\yi, \yih_{\text{OOB}})$$
+  
+  \end{algorithmic}
+\end{algorithm}
+\end{vbframe}
+
+\begin{vbframe}{Using the Out-of-Bag Error Estimate}
+This unbiased generalization error estimate can be accessed directly during training, making it possible to optimize hyperparameters like $\texttt{maxDepth, minNode, ntrees}$:
 
 \begin{knitrout}\scriptsize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
