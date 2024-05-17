@@ -104,6 +104,9 @@ texclean:
 	-rm -rf *.vrb
 	-rm -rf *.fls
 	-rm -rf *.pax
+	-rm -rf *.bbl
+	-rm -rf *.bcf
+	-rm -rf *.run.xml
 	-rm -rf *.fdb_latexmk
 	-rm -rf *.synctex.gz
 	-rm -rf *-concordance.tex

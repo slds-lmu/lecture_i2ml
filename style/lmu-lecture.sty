@@ -71,45 +71,111 @@
   ]\item[]\relax}
 {\enditemize}
 
-\AtBeginLecture{%
-  %\usebackgroundtemplate{\includegraphics[width=\paperwidth,height=\paperheight]{../../style/LMU-hintergrund1.png}}
-  \global\advance\c@lecture by -1
-  \begin{frame}[plain]
-    \vspace*{1 cm}
-    \LARGE\bfseries\inserttitle
-    \vspace*{0.5 cm}
+%-------------------------------------------------------------------%
+%   BeginLecture // Title slide                           %
+%-------------------------------------------------------------------%
 
-    \ifx\lecturesection\@empty\relax\else%
-      {\lecturesection}%
-    \fi%
-
-\ifcsname learninggoals\endcsname
-  {\vspace*{0.75 cm}
-  \begin{minipage}{0.45\textwidth}
-  \ifcsname titlefigure\endcsname
-    {\begin{center}
+% Wrapper to insert title figure within a column env
+% Only needed because column is placed in an if/else arm
+% which is not allowed otherwise (I might be wrong)
+\newcommand{\includeGraphicsColumn}[1]{%
+  \begin{column}{.45\textwidth}
     \begin{figure}[!b]
-    \includegraphics[width=0.9\textwidth, keepaspectratio]{\titlefigure}
+    \includegraphics[width=0.9\textwidth, keepaspectratio]{#1}
     \ifcsname titlecaption\endcsname
       \caption*{\titlecaption}
     \fi
     \end{figure}
-  \end{center}}
-  \else
-    $\;$
+  \end{column}%
+}
+
+% Similar wrapper to insert learning goals
+\newcommand{\includeLearningGoalsColumn}[1]{%
+  \begin{column}{.55\textwidth}
+    % Uncomment for visual debugging of columns with red line
+    % \color{blue}\rule{\linewidth}{4pt}
+    % \vfill % No vfill needed if columns are vertically centered
+    {\normalsize\bfseries Learning goals}
+    \normalfont
+    \begin{itemize}
+      \small
+      #1
+    \end{itemize}
+  \end{column}%
+}
+
+% Needed for trimming whitespace around \titlemeta arguments
+% Seemingly least bad option. See also 
+% https://tex.stackexchange.com/questions/484288/command-for-nulifying-spaces-string-trim-in-latex
+\RequirePackage{trimspaces}
+\newcommand{\trim}[1] {\trim@spaces@noexp{#1}}
+
+% Main title slide wrapper, includes
+% Automatically uses \title{} element to insert lecture title
+% Example title on slide: 
+%   CART
+%   Advantages \& Disadvantages
+% -------------------------------
+% - Argument 1: Chunk title, e.g. CART
+% - Argument 2: Chapter title, e.g. Advantages \& Disadvantages
+% - Argument 3: Relative path to title figure, can be empty, e.g.: figure/cart_dis_1
+% - Argument 4: \item elements for learning goals.
+\newcommand{\titlemeta}[4]{%
+
+  % If chunk title (arg 1) is empty, we just use the lecture title
+  \if\relax\detokenize{#1}\relax
+    % Use lecture title only
+    \lecturechapter{#2}
+  \else%
+    % Otherwise append chunk title and lecture title separated by newline
+    % Trim whitespaces from chunk name to avoid superflusous spaces
+    \lecturechapter{\trim{#1}\\#2}
   \fi
-  \end{minipage}
-  \begin{minipage}{0.45\textwidth}
-  \normalsize
-  Learning goals
-        \normalfont
-\footnotesize
-        \begin{itemize}
-          \learninggoals
-        \end{itemize}
-      \end{minipage}}
-\fi
+
+  % Setting title requires use of \title{} command before \begin{document},
+  % sets the title of the lecture as in "Introduction to Machine Learning"  
+  \lecture{\inserttitle}
+
+  \begin{frame}[noframenumbering,plain]
+    \vspace*{1cm}
+    {\LARGE\bfseries\inserttitle}
+    \vspace*{0.5cm}
+
+    % Insert section title defined via \lecturechapter (??)
+    % \par ensures that spacing is ok when linebreak happens
+    \if\lecturesection\@empty\relax\else%
+      {\LARGE\bfseries\lecturesection\par}%
+    \fi%
+
+    \vfill
+
+    % Using columns env to put things side-by-side rather than minipage
+    % see https://latex-beamer.com/tutorials/columns/
+    \begin{columns}[c] % align columns (c)enter or (T)op
+      % if checks if argument (detokenized?) is empty, i.e. equal to \relax
+      \if\relax\detokenize{#3}\relax\else%
+        % column env is wrapped in separate command because
+        % envs aren't allowed directly within if-else arms apparently
+        % Idea is to have learning goals horizontally centered if no figure is used
+        \includeGraphicsColumn{#3}
+      \fi
+
+      \if\relax\detokenize{#4}\relax\else%
+        % Same idea with learning goals column
+        \includeLearningGoalsColumn{#4}
+      \fi
+    \end{columns}%
   \end{frame}
+}
+
+% Workarounds for slide numbering
+% \AtBeginLecture is provided by the beamer class
+% Contents placed at beginning of document
+\AtBeginLecture{%
+  % Decrement counter, so slide 1 is after the title slide 
+  \global\advance\c@lecture by -1
+  % Writing counter to aux file and console
+  % Presumably useful when combining multiple slides to one large tex file to ensure numbering is correct
   \immediate\write\@auxout {\string \newlabel{lect:@@\thelecture}{{\insertframenumber}}}%
   \typeout{[LECTURE]=[\thelecture][\insertlecture][\thepage][\theframenumber]}%
   \usebackgroundtemplate{}
@@ -285,14 +351,16 @@
 \defbeamertemplate*{headline}{lecture theme}{}
 
 %-------------------------------------------------------------------%
-%   Citebutton                                                      %
+%   Citebutton (superseded by \citelink defined in preamble.tex)    %
 %-------------------------------------------------------------------%
 
+% This version is superseded and \citelink will likely be defined here once widely adopted
 % Example usage (from slides-cart-discussion.tex)
 % \citebutton{Breiman, 1984}{https://www.taylorfrancis.com/books/mono/10.1201/9781315139470/classification-regression-trees-leo-breiman}
 \newcommand{\citebutton}[2]{%
-\NoCaseChange{\resizebox{!}{9pt}{\protect\beamergotobutton{\href{#2}{#1}}}}%
+  \NoCaseChange{\resizebox{!}{9pt}{\protect\beamergotobutton{\href{#2}{#1}}}}%
 }
+
 
 %-------------------------------------------------------------------%
 %   Environments                                                    %
