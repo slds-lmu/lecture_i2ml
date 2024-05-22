@@ -43,17 +43,18 @@ Despite these benefits, CARTs are not without their drawbacks:
 \citebutton{Hastie et al., 2001, p. 352}{https://hastie.su.domains/Papers/ESLII.pdf}
 
 \vspace{1em}
-The use of bagging and some clever tricks results in the random forest, giving up interpretability for massive performance gains.
-
+Bagging and some clever tricks create the random forest (RF), which \textbf{sacrifices interpretability} for significant performance gains.
 \end{vbframe}
 
-\begin{vbframe}{Random Forests}
+\begin{vbframe}{random forests \citebutton{Breiman, 2001}{https://link.springer.com/article/10.1023/A:1010933404324}}
 
-A bagged ensemble benefits from diverse base learners: \textit{Independent errors help cancel out individual errors.} Random Forests add an extra layer of randomness to increase diversity.
+A bagged ensemble benefits from diverse base learners $\bl$
+: \textit{Independent errors help cancel out individual errors.}
 
 \begin{itemize}
-\item Proposed by \citebutton{Breiman, 2001}{https://link.springer.com/article/10.1023/A:1010933404324}, Random Forests use CARTs as base learners applied to bootstrap samples of the data.
-\item They decorrelate trees by randomizing the selection of features at each split. This reduces the correlation between individual trees, leading to improved model performance.
+\item RFs use CARTs as $\bl$ applied to bootstrap samples of the data.
+\item Since bootstrap samples are largely similar, the trained base learners $\blh$ tend to be correlated. RFs reduce the correlation between individual trees, leading to improved model performance.
+
 \end{itemize}
 
 \begin{center}
@@ -77,7 +78,7 @@ RFs decorrelate their trees with a simple randomized approach:
 \includegraphics[width=0.75\textwidth]{figure_man/forest-feature-sampling.png}
 \end{center}
 
-$\texttt{mtry}$ is simply a value we set before training the RF.
+$\texttt{mtry}$ is simply a hyperparameter we set before training the RF.
 
 \end{vbframe}
 
@@ -87,29 +88,41 @@ $\texttt{mtry}$ is simply a value we set before training the RF.
 \includegraphics[width=1\textwidth]{figure/forest-mtry.png}
 \end{center}
 
-$\Rightarrow$ Recommended values for $\texttt{mtry}$ are
+$\Rightarrow$ $\texttt{mtry}$ is typically larger for regression than for classification. While default values are generally effective, $\texttt{mtry}$ is the most relevant tuning parameter for random forests. Rule of thumb:
 
 \begin{itemize}
-  \item Classification: $\texttt{mtry}$ $ = \lfloor \sqrt{p} \rfloor$,
-  \item Regression: $\texttt{mtry}$ $ = \lfloor p/3 \rfloor$.
+\item Classification: $\texttt{mtry}$ $ = \lfloor \sqrt{p} \rfloor$,
+\item Regression: $\texttt{mtry}$ $ = \lfloor p/3 \rfloor$.
 \end{itemize}
 
 \end{vbframe}
 
-\begin{vbframe}{Important Settings}
+\begin{vbframe}{Tree depth}
 
-In addition to random feature sampling ($\texttt{mtry}$), RFs have two other knobs to tune:
+% \begin{footnotesize}
+In addition to $\texttt{mtry}$, RFs have two other important hyperparameters:
 
 \begin{itemize}
-  \item $\texttt{maxnodes}$: Denotes the depth of each base learner $\bl$ (akin to $\texttt{maxDepth}$ for CARTs). RF usually use fully expanded trees, without aggressive early stopping or pruning, to further \textbf{increase variance of the ensemble} \citebutton{Louppe, 2015}{http://arxiv.org/abs/1407.7502}
+  \item The minimum number of observations in each decision tree node:
 \begin{center}
-\includegraphics[width=1\textwidth]{figure/forest-maxdepth.png}
+\includegraphics[width=0.8\textwidth]{figure/forest-minnode.png}
 \end{center}
-  \item $\texttt{ntrees}$: The number of trees in the forest. As always in bagging, RFs \textbf{benefit from large ensembles} \citebutton{Breiman, 2001}{http://link.springer.com/10.1023/A:1010933404324}
+  \item The depth of each base learner $\bl$. Default: $\texttt{maxDepth} = \infty$
+\begin{center}
+\includegraphics[width=0.8\textwidth]{figure/forest-maxdepth.png}
+\end{center}
 \end{itemize}
 
-Sensible defaults are: $\texttt{ntrees} = 100$ and $\texttt{maxnodes} = \infty$.
+RF usually use expanded trees, without aggressive early stopping or pruning, to further \textbf{increase variance of the ensemble} \citebutton{Louppe, 2015}{http://arxiv.org/abs/1407.7502}
+% \end{footnotesize}
+\end{vbframe}
 
+\begin{vbframe}{$\texttt{ntrees}$}
+\begin{itemize}
+\item $\texttt{ntrees}$ is the number of trees in the forest. RFs benefit especially well from \textbf{large ensembles} \citebutton{Breiman, 2001}{http://link.springer.com/10.1023/A:1010933404324}
+\item However, more trees also increase computational costs, and the performance gains diminish beyond a certain number.
+\item A sensible default is $\texttt{ntrees} = 500$ as there exist greatly optimized implementations.
+\end{itemize}
 \end{vbframe}
 
 \begin{vbframe}{Effect of $\texttt{ntrees}$}
@@ -137,10 +150,23 @@ Sensible defaults are: $\texttt{ntrees} = 100$ and $\texttt{maxnodes} = \infty$.
 \end{knitrout}
 \end{vbframe}
 
+\begin{vbframe}{Can a RF overfit?}
+Just like any other learner, RFs \textbf{can} overfit! However, RFs are generally \textbf{less} prone to overfitting than individual CARTs:
+\begin{itemize}
+  \item Overly complex trees can \textit{still} lead to overfitting! If most $\blh$ capture noise, so does the RF.
+  \item But because of the added randomness, their averaged predicitions tend to cancel out errors, meaning less noise is captured.
+  \item Thus, increasing $\texttt{ntrees}$ generally reduces variance without increasing the chance of overfitting!
+\end{itemize}
+\end{vbframe}
+
 \begin{vbframe}{RF in practice}
+
+Benchmarking bagged ensembles with 100 base learners each on the $\texttt{spam}$ dataset versus a similar sized RF ($\texttt{ntrees} = 100$, $\texttt{mtry} = \sqrt{p}$, $\texttt{minnode} = 1$, $\texttt{maxnode} = \infty$), we see just how well a RF performs!
+
 \begin{center}
-\includegraphics[width=1\textwidth]{figure/bagging-bench_RF.png}
+\includegraphics[width=300pt]{figure/bagging-bench_RF.png}
 \end{center}
+
 \end{vbframe}
 
 \endlecture

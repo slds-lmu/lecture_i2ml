@@ -1,5 +1,3 @@
-# this visualises maxdepth vs error to justify given default (infinity for maxdepth) in the slide
-
 library(mlr3)
 library(mlr3learners)
 library(mlr3pipelines)
@@ -20,17 +18,17 @@ learner_rf_regr = lrn("regr.ranger")
 task_classif = tsk("spam")
 task_regr = tsk("mtcars")
 
-# number of features
-num_features_classif = length(task_classif$feature_names)
-num_features_regr = length(task_regr$feature_names)
+# number of instances
+num_instances_classif = task_classif$nrow
+num_instances_regr = task_regr$nrow
 
-# define the parameter sets for tuning maxdepth
-param_set_maxdepth_classif = ParamSet$new(list(
-  ParamInt$new("max.depth", lower = 1, upper = num_features_classif)
+# define the parameter sets for tuning min.node.size
+param_set_minnode_classif = ParamSet$new(list(
+  ParamInt$new("min.node.size", lower = 1, upper = round(num_instances_classif * 0.1))
 ))
 
-param_set_maxdepth_regr = ParamSet$new(list(
-  ParamInt$new("max.depth", lower = 1, upper = num_features_regr)
+param_set_minnode_regr = ParamSet$new(list(
+  ParamInt$new("min.node.size", lower = 1, upper = round(num_instances_regr * 0.1))
 ))
 
 # we use a grid_search to benchmark
@@ -44,7 +42,7 @@ at_classif = AutoTuner$new(
   learner = learner_rf_classif,
   resampling = resampling,
   measure = msr("classif.ce"),
-  search_space = param_set_maxdepth_classif,
+  search_space = param_set_minnode_classif,
   terminator = trm("evals", n_evals = 30),
   tuner = tuner
 )
@@ -55,7 +53,7 @@ at_regr = AutoTuner$new(
   learner = learner_rf_regr,
   resampling = resampling,
   measure = msr("regr.mse"),
-  search_space = param_set_maxdepth_regr,
+  search_space = param_set_minnode_regr,
   terminator = trm("evals", n_evals = 17),
   tuner = tuner
 )
@@ -64,11 +62,11 @@ at_regr$train(task_regr)
 # combine results into a single data.table for plotting
 results_classif = as.data.table(at_classif$archive)
 results_classif$task_id = task_classif$id
-results_classif$max.depth.percent = (results_classif$max.depth / num_features_classif) * 100
+results_classif$min.node.size.percent = (results_classif$min.node.size / num_instances_classif) * 100
 
 results_regr = as.data.table(at_regr$archive)
 results_regr$task_id = task_regr$id
-results_regr$max.depth.percent = (results_regr$max.depth / num_features_regr) * 100
+results_regr$min.node.size.percent = (results_regr$min.node.size / num_instances_regr) * 100
 
 # defines size and line size for plotting
 base_size <- 45
@@ -76,11 +74,11 @@ line_size <- 8
 point_size <- 9
 
 # classification results
-p1 <- ggplot(results_classif, aes(x = max.depth.percent, y = classif.ce, color = task_id)) +
+p1 <- ggplot(results_classif, aes(x = min.node.size.percent, y = classif.ce, color = task_id)) +
   geom_line(size = line_size) +
   geom_point(size = point_size) +
   labs(
-    x = "max.depth (%)",
+    x = "min.node.size (%)",
     y = "MCE for 10-fold CV",
     color = "Task",
   ) +
@@ -90,11 +88,11 @@ p1 <- ggplot(results_classif, aes(x = max.depth.percent, y = classif.ce, color =
   )
 
 # regression results
-p2 <- ggplot(results_regr, aes(x = max.depth.percent, y = regr.mse, color = task_id)) +
+p2 <- ggplot(results_regr, aes(x = min.node.size.percent, y = regr.mse, color = task_id)) +
   geom_line(size = line_size) +
   geom_point(size = point_size) +
   labs(
-    x = "max.depth (%)",
+    x = "min.node.size (%)",
     y = "MSE for 10-fold CV",
     color = "Task",
   ) +
@@ -109,4 +107,4 @@ combined_plot <- grid.arrange(
   ncol = 2,
   widths = c(1, 1)
 )
-ggsave("../figure/forest-maxdepth.png", plot = combined_plot, width = 32, height = 8, dpi = 300)
+ggsave("../figure/forest-minnode.png", plot = combined_plot, width = 32, height = 8, dpi = 300)

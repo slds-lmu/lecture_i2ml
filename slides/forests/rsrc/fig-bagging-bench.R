@@ -31,7 +31,9 @@ glrn_bagging_kknn$id = "bagging_kknn"
 
 lrn_log_reg = lrn("classif.log_reg")
 lrn_rpart = lrn("classif.rpart")
-lrn_ranger = lrn("classif.ranger")
+
+lrn_ranger = lrn("classif.ranger", num.trees = 100)
+
 lrn_kknn = lrn("classif.kknn")
 lrn_kknn$param_set$values$k = 7
 
@@ -47,14 +49,15 @@ results = bmr$aggregate()
 
 # visualization
 a <- autoplot(bmr, type = "boxplot") +
-       ylab("CE for 10-fold CV") +
-       xlab("Learners") +
-       scale_x_discrete(labels = c("LR", "LR bagged", "CART bagged", "CART", "7-nn", "7-nn bagged", "RF")) +
-       theme_minimal() +
-       theme(
-             axis.title = element_text(size = 22),
-             axis.text = element_text(size = 20),
-             legend.title = element_text(size = 22),
-             legend.text = element_text(size = 20)
-         )
+  ylab("CE for 10-fold CV") +
+  xlab("Learners") +
+  scale_x_discrete(labels = c("LR", "LR bagged", "CART bagged", "CART", "7-nn", "7-nn bagged", "RF")) +
+  theme_minimal() +
+  theme(
+    axis.title = element_text(size = 22, face = "bold"),
+    axis.text = element_text(size = 20, face = "bold"),
+    legend.title = element_text(size = 22, face = "bold"),
+    legend.text = element_text(size = 20, face = "bold"),
+  )
+
 ggsave("../figure/bagging-bench_RF.png", plot = a, width = 20, height = 8, dpi = 300)
