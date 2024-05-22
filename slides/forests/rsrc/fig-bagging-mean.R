@@ -8,11 +8,6 @@ library(gridExtra)
 
 set.seed(700)
 
-# defines size and line size for plotting
-base_size <- 30
-line_size <- 6
-point_size <- 5
-
 # Generate toy data
 n <- 700
 x <- runif(n, 0, 10)
@@ -38,14 +33,14 @@ plot_df <- data.frame(x = rep(x_seq, each = num_trees + 1),
 
 # Visualization of toy data
 p1 <- ggplot(data, aes(x=x, y=y)) +
-  geom_point(alpha=0.5, size = point_size) +
+  geom_point(alpha=0.5) +
   stat_function(fun = sin, color = "red")
 
 # Visualization of tree's predictions and mean (bagged)
 p2 <- ggplot(plot_df, aes(x=x, y=y, color=Model)) +
-  geom_line(alpha=0.3, size = line_size) +
-  geom_line(data = subset(plot_df, Model == "Bagged Mean"), size=line_size) +
-  theme_minimal(base_size = base_size)
+  geom_line(alpha=0.3) +
+  geom_line(data = subset(plot_df, Model == "Bagged Mean"), size=1.0) +
+  theme_minimal()
 
 # Function to calculate MSE for different numbers of trees
 bagging_rpart <- function(data, num_trees, sample_size) {
@@ -80,7 +75,7 @@ p3 <- ggplot(results, aes(x = Number_of_Trees, y = MSE)) +
   geom_line(color = "blue", size = 1.5) +
   labs(x = "number of decision trees",
        y = "MSE on training data") +
-  theme_minimal(base_size = base_size)
+  theme_minimal()
 
 # Combine plots into a single visualization
 combined_plot <- grid.arrange(p1, p2, p3, ncol=3, nrow=1)
