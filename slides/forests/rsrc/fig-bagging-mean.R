@@ -29,20 +29,21 @@ mean_preds <- rowMeans(preds)
 # Combined into a dataframe for plotting
 plot_df <- data.frame(x = rep(x_seq, each = num_trees + 1), 
                       y = c(t(preds), mean_preds),
-                      Model = factor(c(rep("Individual Trees", num_trees), "Bagged Mean")))
+                      Model = factor(c(rep("individual trees", num_trees), "bagged mean")))
 
 # Visualization of toy data
 p1 <- ggplot(data, aes(x=x, y=y)) +
   geom_point(alpha=0.5) +
-  stat_function(fun = sin, color = "red")
+  stat_function(fun = sin, color = "red") +
+  theme_minimal(base_size = 33)
 
-# Visualization of tree's predictions and mean (bagged)
+# visualization of tree's predictions and mean (bagged)
 p2 <- ggplot(plot_df, aes(x=x, y=y, color=Model)) +
   geom_line(alpha=0.3) +
-  geom_line(data = subset(plot_df, Model == "Bagged Mean"), size=1.0) +
-  theme_minimal()
+  geom_line(data = subset(plot_df, Model == "bagged mean"), size=1.0) +
+  theme_minimal(base_size = 33)
 
-# Function to calculate MSE for different numbers of trees
+# function to calculate MSE for different numbers of trees
 bagging_rpart <- function(data, num_trees, sample_size) {
   predictions <- matrix(NA, nrow = nrow(data), ncol = num_trees)
   
@@ -61,7 +62,7 @@ bagging_rpart <- function(data, num_trees, sample_size) {
   return(error)
 }
 
-# Calculate MSE for different numbers of trees using the toy data
+# calculate MSE for different numbers of trees using the toy data
 results <- data.frame(Number_of_Trees = integer(), MSE = numeric())
 tree_counts <- seq(1, num_trees, by = 2)
 
@@ -70,15 +71,13 @@ for (trees in tree_counts) {
   results <- rbind(results, data.frame(Number_of_Trees = trees, MSE = mse))
 }
 
-# Plot MSE vs. Number of Trees
+# plot MSE vs. number of trees
 p3 <- ggplot(results, aes(x = Number_of_Trees, y = MSE)) +
   geom_line(color = "blue", size = 1.5) +
   labs(x = "number of decision trees",
        y = "MSE on training data") +
-  theme_minimal()
+  theme_minimal(base_size = 33)
 
-# Combine plots into a single visualization
-combined_plot <- grid.arrange(p1, p2, p3, ncol=3, nrow=1)
+combined_plot <- grid.arrange(p3, p1, p2, ncol=3, nrow=1, widths=c(1, 1, 1.35)) # so all plots are roughly the same width
 
-# Save the combined plot
-ggsave("../figure/bagging-mean.png", plot = combined_plot, width = 25, height = 8, dpi = 300)
+ggsave("../figure/bagging-mean.png", plot = combined_plot, width = 30, height = 8, dpi = 300)
