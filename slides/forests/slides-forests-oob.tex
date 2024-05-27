@@ -7,7 +7,7 @@
 \newcommand{\titlefigure}{figure_man/forest.png}
 \newcommand{\learninggoals}{
 \item Understand the concept of out-of-bag and in-bag observations
-\item Learn how out-of-bag error provides an unbiased estimate of the generalization error during training}
+\item Learn how out-of-bag error provides an estimate of the generalization error during training}
 \usepackage{../../style/lmu-lecture}
 
 \title{Introduction to Machine Learning}
@@ -25,35 +25,28 @@
 \begin{vbframe}{Out-of-bag vs in-bag observations}
   
 \begin{center}
-  % SOURCE: https://docs.google.com/presentation/d/1lDW9HEeNEGwJR1tmhAiOhySibzl6tXLxqePsKtpbb_M/edit#slide=id.g2ddcfb537bb_0_33
-  \includegraphics[width=0.9\textwidth]{figure_man/forest-oob.png}
+% SOURCE: https://docs.google.com/presentation/d/1lDW9HEeNEGwJR1tmhAiOhySibzl6tXLxqePsKtpbb_M/edit#slide=id.g2ddcfb537bb_0_33
+\includegraphics[width=0.9\textwidth]{figure_man/forest-oob.png}
 \end{center}
 
+We denote:
 \begin{itemize}
-  \item Let $\text{OOB}^{[m]}$ denote the set 
-  $\left \{i \in \nset | (\xv^{(i)}, \yi) \text{ is OOB for } \bl \right \}$.
-  \item The number of trees for which the $i$-th observation is OOB is then 
-  given by $S_{\text{OOB}}^{(i)} = 
-  \sum_{m = 1}^M \I(i \in \text{OOB}^{[m]})$.
-  \item OOB size: $\P(i \in \text{OOB}^{[m]}) = \left(1 - \frac{1}{n}\right)^n 
-  \ \stackrel{n \to \infty}{\longrightarrow} \ \frac{1}{e} \approx 0.37$ for 
-  $i \in \nset$.
+  \item $\text{OOB}^{[m]} = \left \{i \in \nset | (\xv^{(i)}, \yi) \text{ is OOB for } \bl \right \}$.
+  \item Number of trees for which the $i$-th observation is OOB: $S_{\text{OOB}}^{(i)} = \sum_{m = 1}^M \I(i \in \text{OOB}^{[m]})$.
 \end{itemize}
 
 \end{vbframe}
 
 \begin{vbframe}{the Out-of-Bag Error Estimate}
-  
+
+We can estimatate the generalization error $\widehat{\mathrm{GE}}$ by using the $i$-th observation as test data for all trees $\blh$ for which it is OOB:
+
 \begin{center}
-  % SOURCE: https://docs.google.com/presentation/d/1lDW9HEeNEGwJR1tmhAiOhySibzl6tXLxqePsKtpbb_M/edit#slide=id.g2ddcfb537bb_0_33
-  \includegraphics[width=0.75\textwidth]{figure_man/forest-oob-error.png}
+% SOURCE: https://docs.google.com/presentation/d/1lDW9HEeNEGwJR1tmhAiOhySibzl6tXLxqePsKtpbb_M/edit#slide=id.g2ddcfb537bb_0_33
+\includegraphics[width=0.69\textwidth]{figure_man/forest-oob-error.png}
 \end{center}
 
-\begin{itemize}
-  \item We can estimatate the generalization error $\widehat{\mathrm{GE}}$ by using the $i$-th observation as test data for all trees $\blh$ for which it is OOB. 
-  \item The proportion of OOB samples that were incorrectly classified by our RF is our $\widehat{\mathrm{GE}}$!
-\end{itemize}
-
+\footnotesize{The proportion of OOB samples that were incorrectly classified by our RF is our $\widehat{\mathrm{GE}}$! As we do not violate the \textbf{untouched test set principle}, $\widehat{\mathrm{GE}}$ is not \textit{optimistically} biased.}
 \end{vbframe}
 
 \begin{vbframe}{Out-Of-Bag error Pseudo Code}
@@ -63,16 +56,12 @@
   \begin{algorithmic}[1]
     \State {\bf Input: } $\text{OOB}^{[m]}$, ensemble
     \For {$i = 1 \to n$}
-      \State Compute the ensemble OOB prediction for observation $i$, e.g.:
-      $$\yih_{\text{OOB}} = \begin{cases}
+      \State Compute the ensemble OOB prediction for observation $i$, e.g. for regression:
+      $$\yih_{\text{OOB}} =
       \frac{1}{S_{\text{OOB}}^{(i)}} \sum_{m = 1}^{M} 
-      \I(i \in \text{OOB}^{[m]}) \cdot \hat{y}^{(i)[m]} & \text{in regression,} 
-      \\ \phantom{x} \\
-      \argmax_{k \in \gset} 
-      \frac{\sum_{m = 1}^{M} \I(i \in \text{OOB}^{[m]}) \cdot 
-      \I(\hat{h}^{(i)[m]} = k)} {S_{\text{OOB}}^{(i)}} &
-      \text{in classification.}
-      \end{cases}$$
+      \I(i \in \text{OOB}^{[m]}) \cdot \hat{y}^{(i)[m]} $$
+      \State Compute the loss for observation $i$, e.g. using MSE:
+      $$ L(\yi, \yih_{\text{OOB}}) = (\yi - \yih_{\text{OOB}})^2$$
     \EndFor
     \State Take the average of the resulting point-wise losses to estimate the generalization error of the forest: $$\widehat{\mathrm{GE}}_{\text{OOB}} = \meanin L(\yi, \yih_{\text{OOB}})$$
   
@@ -81,7 +70,9 @@
 \end{vbframe}
 
 \begin{vbframe}{Using the Out-of-Bag Error Estimate}
-This unbiased generalization error estimate can be accessed directly during training, making it possible to optimize hyperparameters like $\texttt{maxDepth, ntrees}$:
+Our estimate can be accessed directly during training, making it possible to optimize hyperparameters like $\texttt{maxDepth, ntrees}$:
+
+\vspace{1em}
 
 \begin{knitrout}\scriptsize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
@@ -93,21 +84,25 @@ This unbiased generalization error estimate can be accessed directly during trai
 
 \end{vbframe}
 
-\begin{vbframe}{Comparability Issues of OOB Error}
+\begin{vbframe}{OOB Error: Comparability and Best Uses}
 
-While the \textbf{OOB error} is an unbiased estimate of the generalization error for random forests, comparability issues arise when using OOB error to compare random forests with other models:
+\textbf{OOB Size:} The probability that an observation is out-of-bag (OOB) is:
+$$\P(i \in \text{OOB}^{[m]}) = \left(1 - \frac{1}{n}\right)^n \stackrel{n \to \infty}{\longrightarrow} \frac{1}{e} \approx 0.37.$$
+$\Rightarrow$ similar to 3-fold cross-validation (1/3 validation, 2/3 training).
 
+\textbf{Comparability Issues:}
 \begin{itemize}
-\item \textbf{OOB error} is unique to random forests and uses bootstrap sampling.
-\item Other models often use different validation methods (e.g., k-fold cross-validation), leading to different error estimates.
+\item \textbf{OOB error} is unique to random forests with bootstrap sampling.
+\item Other models use different validation methods (e.g. k-fold cross-validation), leading to different error estimates.
 \end{itemize}
 
-\textbf{OOB error} is best for:
+\textbf{Use the OOB Error for:}
 \begin{itemize}
 \item Comparing hyperparameters within random forests.
 \item Rapidly evaluating different random forest configurations.
 \end{itemize}
-For comparing random forests with other models, use a consistent validation technique, like \textbf{cross-validation}, for all models!
+
+\textbf{Important:} For comparing random forests with other models, use a consistent validation technique like \textbf{cross-validation} for all models!
 
 \end{vbframe}
 
