@@ -6,7 +6,7 @@
 
 \newcommand{\titlefigure}{figure_man/forest-bagging.png}
 \newcommand{\learninggoals}{
-\item Understand the basic idea of bagging
+\item Understand idea of bagging
 \item Be able to explain the connection of bagging and bootstrap
 \item Understand how a prediction is computed for bagging
 \item Understand when bagging improves the predictive power}
@@ -28,19 +28,19 @@
 
 \begin{itemize}
   \item Bagging is short for \textbf{B}ootstrap \textbf{Agg}regation.
-  \item It's an \textbf{ensemble method}, i.e., \textit{it combines many models into one big \enquote{meta-model}}
-  \item Such model ensembles often work much better than their members alone would!
-  \item The constituent models in an ensemble are called \textbf{base learners} and are all of the same type (e.g. CART)
-  \item Each base learner is trained on a different \textbf{bootstrap} sample drawn with replacement from the original dataset $\D$
+  \item It's an \textbf{ensemble method}, i.e., it combines many models into one big \enquote{meta-model}. Model ensembles can work much better than their members alone would.
+  \item The constituent models in an ensemble are called \textbf{base learners} and are all of the same type (e.g., CART).
+  \item Each base learner is trained on a different \textbf{bootstrap} sample from the original dataset $\D$.
+  
 \end{itemize}
 
 \end{vbframe}
 
 \begin{vbframe}{Training bagged ensembles}
-Specifically, we train base learners $\bl, m = 1, \dots, M$ on $M$ \textbf{bootstrap} samples of training data $\D$:
+Train base learners $\bl$ on $M$ \textbf{bootstrap} samples of training data $\D$:
 \begin{itemize}
   \item Draw $n$ observations from $\D$ with replacement
-  \item Fit the base learner on each of the $M$ bootstrap samples to get models $\fh(x) = \blh, m = 1, \dots, M$
+  \item Fit base learner on each of the $M$ bootstrap samples to get models $\fh^{[m]}(\xv) = \blh, m = 1, \dots, M$
 \end{itemize}
 
 \begin{center}
@@ -51,7 +51,7 @@ Specifically, we train base learners $\bl, m = 1, \dots, M$ on $M$ \textbf{boots
 \end{vbframe}
 
 \begin{vbframe}{Predicting with a bagged ensemble}
-\textbf{Aggregate} the predictions of the $M$ fitted base learners to get the \textbf{ensemble model} $\fMh$, e.g. for regression by averaging $\blh$ (\textit{for classification, see next slide}):
+\textbf{Aggregate} the predictions of the $M$ fitted base learners to get the \textbf{ensemble model} $\fMh$, e.g., for regression by averaging $\blh$:
 
 \begin{center}
 % FIGURE SOURCE: https://docs.google.com/presentation/d/1lDW9HEeNEGwJR1tmhAiOhySibzl6tXLxqePsKtpbb_M/edit#slide=id.g2de800cb874_0_60
@@ -66,9 +66,9 @@ Specifically, we train base learners $\bl, m = 1, \dots, M$ on $M$ \textbf{boots
   \footnotesize
   \caption*{Bagging algorithm: Training}
   \begin{algorithmic}[1]
-    \State {\bf Input: } Dataset $\D$, base learner, number of bootstraps $M$
+    \State {\bf Input: } Dataset $\D$, type of base learners, number of bootstraps $M$
     \For {$m = 1 \to M$}
-      \State Draw a bootstrap sample $\D^{[m]}$ from $\D$.
+      \State Draw a bootstrap sample $\D^{[m]}$ from $\D$
       \State Train base learner on $\D^{[m]}$ to obtain model $\blh$
     \EndFor
     \State Save all base learners $\blh$
@@ -79,13 +79,20 @@ Specifically, we train base learners $\bl, m = 1, \dots, M$ on $M$ \textbf{boots
   \footnotesize
   \caption*{Bagging algorithm: Prediction in case of classification}
   \begin{algorithmic}[1]
-    \State {\bf Input: } Observation $\xv$, trained base learners $\blh$
+    \State {\bf Input: } Observation $\xv$, trained base learners $\blh$ or hard label classifier $\hat{h}^{[m]}$
     \State Aggregate the predictions of the $M$ estimators to determine the bagging estimator:
     \begin{center}
-    $\quad \hxh^{[M]} = \argmax_{k \in \Yspace} \sum_{m=1}^M \I\left(\blh = k\right) \textit{(majority voting)}$
+    $\quad \hxh = \argmax_{k \in \Yspace} \sum_{m=1}^M \I\left(\hat{h}^{[m]} = k\right) \textit{(majority voting)}$
     $ \pikxh= \fMh = \frac{1}{M} \sum_{m=1}^M \blh \textit{(probabilities through averaging)}$
-    $\pikxh= \sum_{m=1}^M \I\left(\blh = k\right) \textit{(probabilities through class frequencies)}$
+    $\pikxh= \sum_{m=1}^M \I\left(\hat{h}^{[m]} = k\right) \textit{(probabilities through class frequencies)}$
     \end{center}
+	% \vspace{-3ex}
+	%     \begin{align*}
+	%     \quad \hxh^{[M]} &= \argmax_{k \in \Yspace} \sum_{m=1}^M \I\left(\blh = k\right) \textit{(majority voting)}\\[-2ex]
+	%      \pikxh &= \fMh = \frac{1}{M} \sum_{m=1}^M \blh \textit{(probabilities through averaging)}\\[-2ex]
+	%     \pikxh &= \sum_{m=1}^M \I\left(\blh = k\right) \textit{(probabilities through class frequencies)}
+	%     \end{align*}
+	% \vspace{-3ex}
   \end{algorithmic}
 \end{algorithm}
 
@@ -94,7 +101,7 @@ Specifically, we train base learners $\bl, m = 1, \dots, M$ on $M$ \textbf{boots
 \begin{vbframe}{Why/when does Bagging help?}
 
 \begin{itemize}
-  \item Bagging reduces the variability of predictions by averaging the outcomes from multiple base learner models: Better-performing base learners lead to stronger aggregated outcomes.
+  \item Bagging reduces the variability of predictions by averaging the outcomes from multiple base learner models. %: Better-performing base learners lead to stronger aggregated outcomes.
 
   \item It is particularly effective when the errors of a base learner are mainly due to (random) variability rather than systematic issues.
 \end{itemize}
@@ -111,7 +118,7 @@ Specifically, we train base learners $\bl, m = 1, \dots, M$ on $M$ \textbf{boots
 
 \begin{vbframe}{Benchmarking Bagging}
 
-Benchmarking bagged ensembles with 100 base learners each on the $\texttt{spam}$ dataset, we notice that bagging seems especially helpful for less stable learners.
+Bagged ensembles with 100 base learners each on the $\texttt{spam}$ dataset: Bagging seems especially helpful for less stable learners like CART.
 
 \begin{center}
 \includegraphics[width=280pt]{figure/bagging-bench.png}
