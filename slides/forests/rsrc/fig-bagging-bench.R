@@ -45,13 +45,12 @@ tasks = lapply(c("spam"), tsk)
 
 # run the benchmark!
 bmr = benchmark(benchmark_grid(tasks, learners, rsmp("cv", folds = 10)))
-results = bmr$aggregate()
 
 # visualization
 a <- autoplot(bmr, type = "boxplot") +
   ylab("CE for 10-fold CV") +
   xlab("Learners") +
-  scale_x_discrete(labels = c("LR", "LR bagged", "CART bagged", "CART", "7-nn", "7-nn bagged", "RF")) +
+  scale_x_discrete(labels = c("LR bagged", "LR", "CART bagged", "CART", "7-nn bagged", "7-nn", "RF")) +
   theme_minimal() +
   theme(
     axis.title = element_text(size = 22, face = "bold"),
