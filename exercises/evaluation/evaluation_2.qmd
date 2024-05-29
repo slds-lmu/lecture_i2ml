@@ -36,24 +36,23 @@ notebook-view:
 ## Exercise 1: Overfitting & underfitting
 
 ::: {.callout-note title="Learning goals" icon=false}
-Understand which situations lead to overfitting / underfitting
+Discuss for given situations if they might lead to overfitting / underfitting
 :::
 
-Assume a polynomial regression model with a continuous target variable $y$ and a continuous, $p$-dimensional feature vector $\xv$ and polynomials of degree $d$, i.e., 
+Assume a polynomial regression model with a continuous target variable $y$, a continuous, $p$-dimensional feature vector $\xv$ and polynomials of degree $d$, i.e., 
 
 $$
-\fxi = \sum_{j=1}^p \sum_{k=0}^d \theta_{j,k} (\xi_j)^k,
+\fxi = \sum_{j=1}^p \sum_{k=0}^d \theta_{j,k} (\xi_j)^k.
 $$
 
-and $\yi = \fxi + \epsi$ where the $\epsi$ are iid with $\var(\epsi)=\sigma^2 \ \forall i\in \{1, \dots, n\}$. 
+<!-- and $\yi = \fxi + \epsi$ where the $\epsi$ are iid with $\var(\epsi)=\sigma^2 \ \forall i\in \{1, \dots, n\}$.  -->
 
 ***
 For each of the following situations, indicate whether we would generally expect the performance of a flexible polynomial learner (high $d$) to be better or worse than an inflexible one (low $d$). Justify your answer.
 
-<details> 
-<summary>**NB**</summary>
-We can only state tendencies here -- performance strongly depends on the specific data situation.
-</details> 
+::: {.callout-warning icon=false title="NB"}
+We can only state tendencies here; performance strongly depends on the specific data situation.
+:::
 
 ***
 i. The sample size $n$ is extremely large, and the number of features $p$ is small.
@@ -71,7 +70,7 @@ ii. The number of features $p$ is extremely large, and the number of observation
 ::: {.content-visible when-profile="solution"}
 <details> 
 <summary>**Solution**</summary>
-With a flexible learner we might quickly run into overfitting here. The data situation, which we frequently encounter in biostatistics (e.g., genomics data), creates a high-dimensional and sparsely populated input space with a training distribution that is easy to overfit. Therefore, a low-degree polynomial should fare better (but note that it is not immune to overfitting either in this challenging setting). Some sort of feature selection could be advisable first.
+With a flexible learner we might quickly run into overfitting here. The data situation, which we frequently encounter in biostatistics (e.g., genomics data), creates a high-dimensional and sparsely populated input space with few training points (relatively speaking) that are easy to overfit. Therefore, a low-degree polynomial should fare better (but note that it is not immune to overfitting either in this challenging setting). Some sort of feature selection could be advisable first.
 </details> 
 :::
 
@@ -86,7 +85,7 @@ The inflexible learner will likely underfit here, so the flexible variant can be
 :::
 
 ***
-iv. The variance of the error terms, $\sigma^2$, is extremely high.
+iv. The data could only be observed with a high level of noise.
 
 ::: {.content-visible when-profile="solution"}
 <details> 
@@ -133,11 +132,12 @@ In practice we will always experience these phenomena to some degree and finding
 ## Exercise 2: Resampling strategies
 
 ::: {.callout-note title="Learning goals" icon=false}
-Understand how resampling strategy affects quality of GE estimator
+1. Implement resampling procedures in R/Python
+2. Understand how the choice of resampling strategy affects the quality of the GE estimator
 :::
 
 ***
-a. Why would we apply resampling rather than a single holdout split?
+Why would we apply resampling rather than a single holdout split?
 
 ::: {.content-visible when-profile="solution"}
 <details> 
@@ -151,7 +151,7 @@ The two main advantages of resampling are:
 :::
 
 ***
-b. Classify the *german_credit* data into solvent and insolvent debtors using logistic regression. Compute the training error w.r.t. MCE.
+Classify the `german_credit` data into solvent and insolvent debtors using logistic regression. Compute the training error w.r.t. MCE.
 
 <details> 
 <summary>*Python Hint*</summary>
@@ -167,19 +167,21 @@ Read the already preprocessed file [german_credit_for_py.csv](https://github.com
 ### R
 {{< embed sol_eval_2_R.ipynb#2-b-1 echo=true >}}
 ### Python
+Read data
 {{< embed sol_eval_2_py.ipynb#2-b-1 echo=true >}}
+Encode data and train classifier
 {{< embed sol_eval_2_py.ipynb#2-b-2 echo=true >}}
 :::
 </details> 
 :::
 
 ***
-c. In order to evaluate your learner, compare test MCE using
+In order to evaluate your learner, compare the test MCE using
 
-> i) three times ten-fold cross validation (3x10-CV)
-> ii) 10x3-CV
-> iii) 3x10-CV with stratification for the feature \texttt{foreign\_worker} to ensure equal representation in all folds
-> iv) a single holdout split with 90\% training data
+> 1. three times ten-fold cross validation (3x10-CV)
+> 2. 10x3-CV
+> 3. 3x10-CV with stratification for the feature \texttt{foreign\_worker} to ensure equal representation in all folds
+> 4. a single holdout split with 90\% training data
 
 <details> 
 <summary>*Hint*</summary>
@@ -200,25 +202,29 @@ You will need `RepeatedKFold`, `RepeatedStratifiedKFold` and `train_test_split`.
 ::: {.panel-tabset}
 ### R
 {{< embed sol_eval_2_R.ipynb#2-c-1 echo=true >}}
+foo
 {{< embed sol_eval_2_R.ipynb#2-c-2 echo=true >}}
 ### Python
 {{< embed sol_eval_2_py.ipynb#2-c-1 echo=true >}}
+foo
 {{< embed sol_eval_2_py.ipynb#2-c-2 echo=true >}}
+foo
 {{< embed sol_eval_2_py.ipynb#2-c-3 echo=true >}}
+foo
 {{< embed sol_eval_2_py.ipynb#2-c-4 echo=true >}}
 :::
 </details> 
 :::
 
 ***
-d. Discuss and compare your findings from c) and compare them to the training error from b).
+Discuss and compare your findings and compare them to the training error computed previously.
 
 ::: {.content-visible when-profile="solution"}
 <details> 
 <summary>**Solution**</summary>
-Generalization error estimates are pretty stable across the different resampling strategies because we have a fairly large number (1000) of observations. Still, the pessimistic bias of small training sets is visible: 10x3-CV, using roughly 67% of data for training in each split, estimates a higher generalization error than 3x10-CV with roughly 90% training data. Stratification by *foreign_worker* does not seem to have much effect on the estimate. However, we see a glaring difference when we use a single 90%-10% split, where the estimated GE is roughly 7 percentage points lower than with 3x10-CV, meaning we got a low error just because of a lucky split.
+Generalization error estimates are pretty stable across the different resampling strategies because we have a fairly large number (1000) of observations. Still, the pessimistic bias of small training sets is visible: 10x3-CV, using roughly 67% of data for training in each split, estimates a higher generalization error than 3x10-CV with roughly 90% training data. Stratification by `foreign_worker` does not seem to have much effect on the estimate. However, we see a glaring difference when we use a single 90%-10% split, where the estimated GE is quite different from 3x10-CV, meaning we got a different error just because of an (un)lucky split.
 
-Comparing the results (except for the unreliable one produced by a single split) with the training error from b) indicates no serious overfitting. 
+Comparing the results (except for the unreliable one produced by a single split) with the training error from before indicates no serious overfitting. 
 </details> 
 :::
 
@@ -228,6 +234,6 @@ e. Would you consider LOO-CV to be a good alternative?
 ::: {.content-visible when-profile="solution"}
 <details> 
 <summary>**Solution**</summary>
-$LOO$ is not a very good idea here -- with 1000 observations this would take a very long time. Also, $LOO$ has high variance by nature. Repeated CV with a sufficient number of folds should give us a pretty good idea about the expected GE of our learner.
+LOO is probably not a very good idea here -- with 1000 observations this would take a long time. Also, LOO has high variance by nature. Repeated CV with a sufficient number of folds should give us a pretty good idea about the expected GE of our learner.
 </details> 
 :::
