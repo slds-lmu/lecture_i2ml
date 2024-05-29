@@ -66,11 +66,35 @@ what material needs to be understood before what else. Please do add appropriate
   
 ### Exercises
 
+- Exercises are organized chapter-wise. Each folder usually contains
+  - a subdirectory `figure` for plots (that are not generated during compiling),
+  - one or multiple exercise sheets
+    1. `.qmd`: *editable* version based on [quarto](https://quarto.org/) (basically Markdown plus)
+    2. `.html`: *compiled* version (view in browser)
+    
+- Compiling the exercises should be done via the **Makefile**.
+  - You need to [install quarto](https://quarto.org/docs/get-started/) first.
+  - There are basically 3 use cases.
+  - Use case 1a: you want to **compile a single** exercise `EXERCISE.qmd` in a folder. Run `quarto render EXERCISE.qmd`, with optional ` --profile=solution` if the solution is to be included.
+  - Use case 1b: you want to **copy a single** exercise to `exercises-pdf`. Run `make copy F=<EXERCISE>.pdf`.
+  - Use case 2a: you want to **compile all** exercises in a folder. Run `make most`. 
+  - Use case 2b: you want to **copy all** PDFs to `exercises-pdf`. Run `make copy-all`.
+  - Use case 3: you want to **compile and copy all** exercises in a folder and update the corresponding files in `exercises-pdf`. Run `make all`. This will automatically move a copy of the compiled PDFs to the `exercises-pdf` directory. The [course website repository](https://github.com/teaching-data-science/intro2ml) links to `exercises-pdf`, so make sure you only update the files in there if you want to release them on the website.
+  - Note that compiling without margin is handled by creating a temporary file signaling to remove the margin, so make sure to run `make texclean` after compiling for a clean slate. 
+  - You can remove all PDFs in a folder with `make clean`.
+- When creating new exercise sheets or collection files, please use the setup provided in `style/preamble_ueb.Rnw` and `style/preamble_ueb_coll.Rnw`.
+
+***Old setup***
+
+As of 2024/05, we are still migrating the exercises from `.Rnw` to `.qmd` chapter by chapter.
+
+~~
 - Exercises are organized chapter-wise. Each folder will contain
   - a subdirectory `figure` for plots,
   - a subdirectory `ex_rnw` that contains .Rnw files with single exercises (prefixed with `ex_`) and associated solutions (prefixed with sol `sol_`),
   - one or multiple exercise sheets (prefixed with `ex_`) and associated solutions (prefixed with `sol_`), sourcing the single snippets from `ex_rnw`,
   - a collection file (prefixed with `collection_`) that assembles all exercises for the given topic (those currently used in the exercise sheets, further existing material, ideas, URLs, ...)
+
   
 - Compiling the exercises should be done via the **Makefile**.
   - Before compiling anything, remove auxiliary files by running `make texclean` from within the corresponding folder.
@@ -83,6 +107,7 @@ what material needs to be understood before what else. Please do add appropriate
   - Note that compiling without margin is handled by creating a temporary file signaling to remove the margin, so make sure to run `make texclean` after compiling for a clean slate. 
   - You can remove all PDFs in a folder with `make clean`.
 - When creating new exercise sheets or collection files, please use the setup provided in `style/preamble_ueb.Rnw` and `style/preamble_ueb_coll.Rnw`.
+~~
 
 ### Install Necessary R packages
 - Please refer to the file `scripts/libraries_installer.R` to install the R packages necessary for running successfully some folders.

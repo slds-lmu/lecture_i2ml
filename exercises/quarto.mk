@@ -1,8 +1,14 @@
 .PHONY: sol ex solhtml solpdf exhtml expdf clean
 
+EXERCISES = $(wildcard *.qmd)
+
 sol: solhtml solpdf clean
 
 ex: exhtml expdf clean
+
+$(EXPDFS): %.pdf: %.qmd 
+foo: $(EXPDFS)
+	quarto render $(EXPDFS) --profile=solution --to=pdf --output="$(EXPDFS)_all.pdf"
 
 solhtml:
 	for file in *.qmd; do \
@@ -10,8 +16,11 @@ solhtml:
 	done
 
 solpdf:
-	for file in *.qmd; do \
-		quarto render $$file --profile=solution --to pdf; \
+	for file in $(wildcard *.qmd); do \
+		bname=$$(basename $$file); \
+		echo ">>> $$bname"; \
+		filename="$$bname-all.pdf"; \
+		quarto render $$file --profile=solution --to pdf --output=$$filename; \
 	done
 
 exhtml:
