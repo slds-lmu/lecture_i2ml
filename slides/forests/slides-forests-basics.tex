@@ -65,21 +65,19 @@ An extension of bagging creates the random forest (RF), which sacrifices interpr
 
 
 \begin{vbframe}{Intuition behind random forests}
-% TODO: gleich mit ausgetauschten Werten
-This correlation affects the variance of an ensemble:
+Since bootstrap samples are largely similar, the trained base learners $\blh$ tend to be correlated. This correlation affects the variance of an ensemble:
 
 $$
 \var\left(\bar{X}\right) = \var\left(\frac{1}{n} \sum_{i=1}^{n} X_i \right) = \frac{1}{n^2} \left( \sum_{i=1}^{n} \var(X_i) + 2 \sum_{i < j} \cov(X_i, X_j) \right)
 $$
 
-For $\sigma = \var(X_i)$, $\rho = \cov(X_i, X_j)$ we get:
+Setting $\var(X_i) = \sigma^2$, $\cov(X_i, X_j) = \rho_{ij}$ we get:
 
-% TODO
 $$
-TODO
+\var\left(\bar{X}\right) = \frac{1}{n^2} \left( \sum_{i=1}^{n} \sigma^2 + 2 \sum_{i < j} \rho_{ij} \right)
 $$
 
-Random forests reduce the correlation between individual trees (\(\rho_{ij}\)), leading to improved model performance.
+Random forests reduce the correlation between individual trees ($\rho_{ij}$), leading to improved model performance.
 \end{vbframe}
 
 \begin{vbframe}{Random feature sampling}
@@ -124,7 +122,7 @@ In addition to $\texttt{mtry}$, RFs have two other important hyperparameters:
 \begin{center}
 \includegraphics[width=0.8\textwidth]{figure/forest-minnode.png}
 \end{center}
-  \item The depth of each base learner $\bl$. Default: $\texttt{maxDepth} = \infty$
+  \item The depth of each base learner $\bl$. Default (Ranger): $\texttt{maxDepth} = \infty$
 \end{itemize}
 
 RF usually use expanded trees, without aggressive early stopping or pruning, to further \textbf{increase variance of the ensemble} \citebutton{Louppe, 2015}{http://arxiv.org/abs/1407.7502}
@@ -168,13 +166,21 @@ RF usually use expanded trees, without aggressive early stopping or pruning, to 
 \end{knitrout}
 \end{vbframe}
 
-\begin{vbframe}{Can a RF overfit?}
+\begin{vbframe}{Can a RF overfit? \citebutton{P. Probst and A. -L. Boulesteix, 2018}{https://jmlr.org/papers/v18/17-269.html}}
+
+{\small
 Just like any other learner, RFs \textbf{can} overfit! However, RFs are generally \textbf{less} prone to overfitting than individual CARTs:
 \begin{itemize}
   \item Overly complex trees can \textit{still} lead to overfitting! If most $\blh$ capture noise, so does the RF.
   \item But because of the added randomness, their averaged predictions tend to cancel out errors, meaning less noise is captured.
 \end{itemize}
-Since each tree is trained \textit{individually and without knowledge of previously trained trees}, increasing $\texttt{ntrees}$ generally reduces variance \textbf{without increasing the chance of overfitting!} \citebutton{P. Probst and A. -L. Boulesteix, 2018}{https://jmlr.org/papers/v18/17-269.html}
+
+\begin{center}
+\includegraphics[width=0.56\textwidth]{figure/forest-overfit.png}
+\end{center}
+
+Since each tree is trained \textit{individually and without knowledge of previously trained trees}, increasing $\texttt{ntrees}$ generally reduces variance \textbf{without increasing the chance of overfitting!}
+}
 \end{vbframe}
 
 \begin{vbframe}{RF in practice}
