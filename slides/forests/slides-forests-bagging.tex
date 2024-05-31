@@ -55,7 +55,7 @@ Train base learners $\bl$ on $M$ \textbf{bootstrap} samples of training data $\D
 \end{vbframe}
 
 \begin{vbframe}{Predicting with a bagged ensemble}
-\textbf{Aggregate} the predictions of the $M$ fitted base learners to get the \textbf{ensemble model} $\fMh$, e.g., for regression by averaging $\blh$:
+\textbf{Aggregate} the predictions of the $M$ fitted base learners to get the \textbf{ensemble model}, e.g. $\fMh$ for regression by averaging $\blh$:
 
 \begin{center}
 % FIGURE SOURCE: https://docs.google.com/presentation/d/1lDW9HEeNEGwJR1tmhAiOhySibzl6tXLxqePsKtpbb_M/edit#slide=id.g2de800cb874_0_60
@@ -66,6 +66,7 @@ Train base learners $\bl$ on $M$ \textbf{bootstrap} samples of training data $\D
 
 \begin{vbframe}{Bagging Pseudo Code}
   % TODO x wegnehmen; dafür zwischen hard label classifier etc. unterscheiden
+\vspace{-3ex}
 \begin{algorithm}[H]
   \scriptsize
   \caption*{Bagging algorithm: Training}
@@ -83,13 +84,18 @@ Train base learners $\bl$ on $M$ \textbf{bootstrap} samples of training data $\D
   \scriptsize
   \caption*{Bagging algorithm: Prediction in case of classification}
   \begin{algorithmic}[1]
-    \State {\bf Input: } Observation $\xv$, trained base learners $\blh$ or hard label classifier $\hat{h}^{[m]}$
+    \State {\bf Input: } Observation $\xv$, trained base learners $\blh$ (either hard label classifier $\hat{h}^{[m]}$ or probability estimator $\hat \pi^{[m]}$)
     \State Aggregate the predictions of the $M$ estimators to determine the bagging estimator:
     \vspace{-2ex}
     \begin{align*}
-    \quad \hxh^{[M]} &= \argmax_{k \in \Yspace} \sum_{m=1}^M \I\left(\blh = k\right) \textit{(majority voting)}\\[-1ex]
-     \pikxh &= \fMh = \frac{1}{M} \sum_{m=1}^M \blh \textit{(probabilities through averaging)}\\[-1ex]
-    \pikxh &= \sum_{m=1}^M \I\left(\blh = k\right) \textit{(probabilities through class frequencies)}
+    \hh^{[M]}(\xv) &= \argmax_{k \in \Yspace} \sum_{m=1}^M \I\left(\hat{h}^{[m]}(\xv) = k\right) \quad \text{(majority voting)} \\[-1ex]
+    \hat \pi_{k}^{[M]}(\xv) &=
+    \left\{
+    \begin{aligned}
+    &\frac{1}{M} \sum_{m=1}^M \hat \pi_{k}^{[m]}(\xv) \quad && \text{(probabilities through averaging)} \\[-1ex]
+    &\frac{1}{M} \sum_{m=1}^M \I\left(\hat{h}^{[m]}(\xv) = k\right) \quad && \text{(probabilities through class frequencies)}
+    \end{aligned}
+    \right.
     \end{align*}
     \vspace{-3ex}
   \end{algorithmic}
