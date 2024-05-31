@@ -73,7 +73,42 @@
 
 % Maybe not great to use this https://tex.stackexchange.com/a/197/19093
 % Use align instead -- TODO: Global search & replace to check, eqnarray is used a lot
+% $ rg -f -u "\begin{eqnarray" -l | grep -v attic | awk -F '/' '{print $1}' | sort | uniq -c
+%   13 lecture_advml
+%   14 lecture_i2ml
+%    2 lecture_iml
+%   27 lecture_optimization
+%   45 lecture_sl
 \usepackage{eqnarray}
+
+% For shaded regions / boxes
+% Used sometimes in optim
+% https://www.ctan.org/pkg/framed
+\usepackage{framed}
+
+%--------------------------------------------------------%
+%       Cite button (version 2024-05)
+%--------------------------------------------------------%
+% Note this requires biber to be in $PATH when running,
+% telltale error in log would be e.g. Package biblatex Info: ... file 'authoryear.dbx' not found
+% aside from obvious "biber: command not found" or similar.
+
+\usepackage{textcase} % for \NoCaseChange
+\usepackage{hyperref}
+
+% Only try adding a references file if it exists, otherwise
+% this would compile error when references.bib is not found
+\IfFileExists{references.bib} {
+  \usepackage{usebib}
+  \usepackage[backend=biber, style=authoryear]{biblatex}
+
+  \addbibresource{references.bib}
+  \bibinput{references}
+}
+
+\newcommand{\citelink}[1]{%
+\NoCaseChange{\resizebox{!}{9pt}{\protect\beamergotobutton{\href{\usebibentry{\NoCaseChange{#1}}{url}}{\begin{NoHyper}\cite{#1}\end{NoHyper}}}}}%
+}
 
 %--------------------------------------------------------%
 %       Displaying code and algorithms
@@ -113,7 +148,6 @@
 % pretty table env: https://ctan.org/pkg/booktabs
 % Is used
 % Defines \toprule
-% Same as longtabs(?)
 \usepackage{booktabs}
 
 %--------------------------------------------------------%
@@ -121,9 +155,8 @@
 %--------------------------------------------------------%
 
 % wrapfig - Wrapping text around figures https://de.overleaf.com/learn/latex/Wrapping_text_around_figures
-% Provides wrapfigure environment - not used in slides
-% TODO: Check if really unused?
-%\usepackage{wrapfig}
+% Provides wrapfigure environment -used in lecture_optimization
+\usepackage{wrapfig}
 
 % Sub figures in figures and tables
 % https://ctan.org/pkg/subfig -- supersedes subfigure package
@@ -162,9 +195,6 @@
 
 % Not sure what/why this does
 \setkeys{Gin}{width=0.9\textwidth}
-
-% Not sure what/why this does
-\setbeamertemplate{frametitle}{\expandafter\uppercase\expandafter\insertframetitle}
 
 % -- knitr leftovers --
 % Used often in conjunction with \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}
@@ -255,4 +285,4 @@
 % \usepackage{placeins}
 
 % Can't find a reason why common.tex is not just part of this file?
-\input{../../style/common.tex}
+\input{../../style/common}
