@@ -14,12 +14,9 @@ library(grid)
 
 set.seed(123)
 
-# define tasks
 classif_task = tsk("spam")
-
 reg_task = tsk("mtcars")
 
-# define Random Forest learners
 learner_rf_classif = lrn("classif.ranger")
 learner_rf_regr = lrn("regr.ranger")
 
@@ -65,8 +62,6 @@ at_regr = AutoTuner$new(
 at_regr$train(reg_task)
 reg_results = as.data.table(at_regr$archive)
 reg_results$task_id = reg_task$id
-
-# defines size and line size for plotting
 
 # calculate sensible defaults
 p_classif = 57

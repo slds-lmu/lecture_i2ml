@@ -1,3 +1,6 @@
+# goal here is to visualize typical results of impurity and permutation importance
+# using mtcars, and show how similar the results are.
+
 # PREREQ -----------------------------------------------------------------------
 
 library(knitr)
@@ -40,7 +43,7 @@ ggplot(importance_perm_df, aes(x = reorder(Feature, Importance), y = Importance)
   theme(
     axis.title.x = element_text(size = 12),
     axis.title.y = element_text(size = 12),
-    axis.text.x = element_text(size = 12),
+    axis.text.x = element_text(size = 10),
     axis.text.y = element_text(size = 12)
   )
 
@@ -54,9 +57,8 @@ ggplot(importance_imp_df, aes(x = reorder(Feature, Importance), y = Importance))
   theme(
     axis.title.x = element_text(size = 12),
     axis.title.y = element_text(size = 12),
-    axis.text.x = element_text(size = 12),
+    axis.text.x = element_text(size = 10),
     axis.text.y = element_text(size = 12)
   )
 
-
-ggsave("../figure/forest-fimp_gini.png", width = 8, height = 2.8)
+ggsave("../figure/forest-fimp_gini.png", width = 4, height = 3)

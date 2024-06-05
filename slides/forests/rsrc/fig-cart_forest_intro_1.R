@@ -1,3 +1,4 @@
+# old, should be redone in vistool
 # PREREQ -----------------------------------------------------------------------
 
 library(knitr)

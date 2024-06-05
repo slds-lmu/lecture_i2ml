@@ -57,5 +57,4 @@ p <- ggplot(results, aes(x = num_trees)) +
      labs(x = "number of trees", y = "MSE for holdout splitting on mtcars", color = "error type") +
      theme_minimal(base_size = 30) +
      scale_color_manual(values = c("mse.train" = "green", "mse.test" = "orange"))
-
 ggsave("../figure/forest-overfit.png", plot = p, width = 16, height = 8, dpi = 300)

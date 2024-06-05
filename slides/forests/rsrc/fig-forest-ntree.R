@@ -1,3 +1,6 @@
+# goal here is to visualize how more trees are generally better, but
+# big performance jumps happen only in the beginning
+
 library(mlr3)
 library(mlr3learners)
 library(mlr3pipelines)

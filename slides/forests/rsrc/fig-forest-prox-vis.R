@@ -49,8 +49,6 @@ ranger_model <- learner$model
 proximity <- predict(ranger_model, data = penguins_sample, type = "terminalNodes")$predictions
 proximity <- as.matrix(proximity)
 
-proximity_matrix <- as.data.frame(proximity)
-
 ### VISUALIZATION
 # distance matrix for plotting
 distance_matrix <- 1 - proximity
@@ -61,13 +59,14 @@ mds_data <- data.table(mds, class = penguins_sample$species)
 setnames(mds_data, c("V1", "V2"), c("Dim1", "Dim2"))
 
 # column for points to highlight (potential outliers / flipped labels)
-mds_data[, highlight := ifelse((.I == 23 | .I == 32), TRUE, FALSE)]
+mds_data[, highlight := ifelse((.I == 29), TRUE, FALSE)]
 
 # plot without highlighting outliers
-p1 <- ggplot(mds_data, aes(x = Dim1, y = Dim2, color = class)) +
+p1 <- ggplot(mds_data, aes(x = Dim1, y = Dim2, color = class, shape = class)) +
   geom_point(aes(size = highlight), alpha = 0.7) +
   scale_color_manual(values = c("Adelie" = "#1f77b4", "Chinstrap" = "#ff7f0e", "Gentoo" = "#2ca02c")) +
-  scale_size_manual(values = c('FALSE' = 7, 'TRUE' = 7), guide = "none") + 
+  scale_size_manual(values = c('FALSE' = 7, 'TRUE' = 7), guide = "none") +
+  scale_shape_manual(values = c("Adelie" = 16, "Chinstrap" = 17, "Gentoo" = 18)) + # Use different shapes
   labs(x = "dimension 1",
        y = "dimension 2") +
   theme_minimal() +
@@ -80,18 +79,19 @@ p1 <- ggplot(mds_data, aes(x = Dim1, y = Dim2, color = class)) +
     legend.key.size = unit(1.5, 'lines')
   ) +
   guides(color = guide_legend(override.aes = list(size = 6)))
-
 ggsave("../figure/forest-prox-vis_1.png", plot = p1, width = 8, height = 8, dpi = 300)
 
-# plot with highlighting outliers
-p2 <- ggplot(mds_data, aes(x = Dim1, y = Dim2, color = class, shape = highlight)) +
-  geom_point(aes(size = highlight), alpha = 0.7) +
-  scale_color_manual(values = c("Adelie" = "#1f77b4", "Chinstrap" = "#ff7f0e", "Gentoo" = "#2ca02c")) +
-  scale_shape_manual(values = c('FALSE' = 16, 'TRUE' = 17), labels = c('FALSE' = "Normal", 'TRUE' = "Highlighted"), guide = "none") +  # 16 for circle, 17 for triangle
-  scale_size_manual(values = c('FALSE' = 7, 'TRUE' = 10), guide = "none") + 
+
+# Create a new column for color
+mds_data$color <- ifelse(mds_data$highlight, "Highlighted", as.character(mds_data$class))
+
+p2 <- ggplot(mds_data, aes(x = Dim1, y = Dim2)) +
+  geom_point(aes(size = highlight, color = color, shape = class), alpha = 0.7) +
+  scale_color_manual(values = c("Adelie" = "#1f77b4", "Chinstrap" = "#ff7f0e", "Gentoo" = "#2ca02c", "Highlighted" = "red"), guide = "none") +
+  scale_size_manual(values = c('FALSE' = 7, 'TRUE' = 7), guide = "none") +
+  scale_shape_manual(values = c("Adelie" = 16, "Chinstrap" = 17, "Gentoo" = 18)) + # Use different shapes
   labs(x = "dimension 1",
-       y = "dimension 2",
-       shape = "Highlighted") +
+       y = "dimension 2") +
   theme_minimal() +
   theme(
     axis.title = element_blank(),
@@ -101,5 +101,5 @@ p2 <- ggplot(mds_data, aes(x = Dim1, y = Dim2, color = class, shape = highlight)
     aspect.ratio = 1,
     legend.key.size = unit(1.5, 'lines')
   ) +
-  guides(color = guide_legend(override.aes = list(size = 6)))
+  guides(shape = guide_legend(override.aes = list(size = 6, color = c("#1f77b4", "#ff7f0e", "#2ca02c"))))
 ggsave("../figure/forest-prox-vis_2.png", plot = p2, width = 8, height = 8, dpi = 300)

@@ -1,6 +1,7 @@
 # we want to visualize how bagging works, e.g.
 # that the predicitions of the base learners are averaged
 # -> creates 100 trees on bootstrapped toy data; visualizes them with their respective average
+# additionally, plots ntrees vs MSE to show benefits of large examples
 
 library(ggplot2)
 library(rpart)

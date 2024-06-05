@@ -1,6 +1,6 @@
 # goal here is to visualize the need for unstable learners in bagging
 # by using a benchmark_grid from mlr3
-# and later show how RF further improve accuracy!
+# and later show how RFs further improve accuracy!
 
 library(mlr3)
 library(mlr3learners)
@@ -58,5 +58,5 @@ a <- autoplot(bmr, type = "boxplot") +
     legend.title = element_text(size = 22, face = "bold"),
     legend.text = element_text(size = 20, face = "bold"),
   )
-
 ggsave("../figure/bagging-bench_RF.png", plot = a, width = 20, height = 8, dpi = 300)
+# the bagging-bench figure is just a cropped version of this (sorry, had problems with autoplot)
