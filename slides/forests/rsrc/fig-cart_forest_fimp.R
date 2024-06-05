@@ -30,18 +30,33 @@ importance_imp_df = data.frame(Feature = names(importance_imp), Importance = imp
 
 # PLOT -------------------------------------------------------------------------
 
+library(ggplot2)
+
 ggplot(importance_perm_df, aes(x = reorder(Feature, Importance), y = Importance)) +
-  geom_col(fill = "#4682B4") +
-  coord_flip() +
-  labs(x = "features of task mtcars",
-       y = "permutation importance: increase of MSE")
-
-ggsave("../figure/forest-fimp_perm.png", width = 8, height = 2.8)
-
-ggplot(importance_imp_df, aes(x = reorder(Feature, Importance), y = Importance)) +
   geom_col(fill = "#66CDAA") +
   coord_flip() +
   labs(x = "features of task mtcars",
-       y = "impurity importance: decrease in Gini impurity")
+       y = "permutation importance: increase of MSE") +
+  theme(
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text.x = element_text(size = 12),
+    axis.text.y = element_text(size = 12)
+  )
+
+ggsave("../figure/forest-fimp_perm.png", width = 4, height = 3)
+
+ggplot(importance_imp_df, aes(x = reorder(Feature, Importance), y = Importance)) +
+  geom_col(fill = "#4682B4") +
+  coord_flip() +
+  labs(x = "features of task mtcars",
+       y = "impurity importance: decrease in Gini impurity") +
+  theme(
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text.x = element_text(size = 12),
+    axis.text.y = element_text(size = 12)
+  )
+
 
 ggsave("../figure/forest-fimp_gini.png", width = 8, height = 2.8)
