@@ -10,15 +10,12 @@ library(grid)
 
 set.seed(123)
 
-# Define the Random Forest learners, one for classification, one for regression
 learner_rf_classif = lrn("classif.ranger")
 learner_rf_regr = lrn("regr.ranger")
 
-# Our tasks
 task_classif = tsk("spam")
 task_regr = tsk("mtcars")
 
-# Define the parameter sets for tuning ntrees
 param_set_ntrees_classif = ParamSet$new(list(
   ParamInt$new("num.trees", lower = 1, upper = 500)
 ))
@@ -27,13 +24,10 @@ param_set_ntrees_regr = ParamSet$new(list(
   ParamInt$new("num.trees", lower = 1, upper = 500)
 ))
 
-# We use a grid_search to benchmark
 tuner = tnr("grid_search", resolution = 30)
 
-# Simple 3-fold CV
 resampling = rsmp("cv", folds = 3)
 
-# Perform tuning & benchmarking for classification
 at_classif = AutoTuner$new(
   learner = learner_rf_classif,
   resampling = resampling,
@@ -44,7 +38,6 @@ at_classif = AutoTuner$new(
 )
 at_classif$train(task_classif)
 
-# Perform tuning & benchmarking for regression
 at_regr = AutoTuner$new(
   learner = learner_rf_regr,
   resampling = resampling,
@@ -55,19 +48,16 @@ at_regr = AutoTuner$new(
 )
 at_regr$train(task_regr)
 
-# Combine results into a single data.table for plotting
 results_classif = as.data.table(at_classif$archive)
 results_classif$task_id = task_classif$id
 
 results_regr = as.data.table(at_regr$archive)
 results_regr$task_id = task_regr$id
 
-# Define size and line size for plotting
 base_size <- 45
 line_size <- 8
 point_size <- 9
 
-# Classification results
 p1 <- ggplot(results_classif, aes(x = num.trees, y = classif.ce, color = task_id)) +
   geom_line(size = line_size) +
   geom_point(size = point_size) +
@@ -81,7 +71,6 @@ p1 <- ggplot(results_classif, aes(x = num.trees, y = classif.ce, color = task_id
     plot.title = element_text(size = base_size + 4, face = "bold")
   )
 
-# Regression results
 p2 <- ggplot(results_regr, aes(x = num.trees, y = regr.mse, color = task_id)) +
   geom_line(size = line_size) +
   geom_point(size = point_size) +
@@ -95,7 +84,6 @@ p2 <- ggplot(results_regr, aes(x = num.trees, y = regr.mse, color = task_id)) +
     plot.title = element_text(size = base_size + 4, face = "bold")
   )
 
-# Combined plot for the slide
 combined_plot <- grid.arrange(
   p1, p2,
   ncol = 2,
