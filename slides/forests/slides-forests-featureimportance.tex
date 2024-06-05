@@ -17,16 +17,16 @@
   figure/forest-fimp_gini.png
 }{% Learning goals, wrapped inside itemize environment
   \item Understand that the goal of defining feature importance is to enhance interpretability of the random forest
-  \item Be able to define feature importance based on improvement in split criterion
-  \item Be able to define feature importance based on permutations of OOB observations
+  \item Understand feature importance based on improvement in split criterion
+  \item Understand feature importance based on permutations of OOB observations
 }
 
 \begin{vbframe}{Feature Importance}
 
-RFs improve accuracy by aggregating multiple decision trees but \textbf{lose interpretability} compared to a single tree. \textbf{Feature importance} helps rectify lost interpretability!
+RFs improve accuracy by aggregating multiple decision trees but \textbf{lose interpretability} compared to a single tree. \textbf{Feature importance} helps rectify lost interpretability.
 \\
 \begin{itemize}
-  \item We can obtain a $\widehat{\mathrm{GE}}$ of a RF by its performance on OOB samples.
+  \item We can obtain a $\widehat{\mathrm{GE}}$ of an RF by its performance on OOB samples.
   \item Measuring how much the performance \textit{decreases} if a specific feature were removed or rendered useless is called \textbf{permutation importance}.
 \end{itemize}
 
@@ -40,19 +40,20 @@ RFs improve accuracy by aggregating multiple decision trees but \textbf{lose int
 
 \begin{vbframe}{Permutation importance}
 
-\includegraphics[width = 1.1\textwidth]{figure_man/forest-permutation-imp.png}
-\vspace{-4ex}
+\includegraphics[width = 0.95\textwidth]{figure_man/forest-permutation-imp.png}
+\vspace{-2ex}
 \begin{algorithm}[H]
 \small
 \caption*{Measure based on permutations of OOB obs.}
 \begin{algorithmic}[1]
-  \State Calculate $\widehat{\mathrm{GE}}_{\text{OOB}}$ using set-based metric $\rho$.
-  \For{features $x_j$, $j = 1$ to $p$}
-    \State {Distort feature-target relation: permute $x_j$ with $\psi_j$.}
-    \State Compute {$\text{OOB}^{[m]}_{\psi_j}$.}
-    \State {Compute $\rho(\text{OOB}^{[m]}_{\psi_j})$.}
-  \State {Estimate importance of $j$-th feature:}
-  \State {$\widehat{\text{FI}_j} = \rho(\text{OOB}^{[m]}_{\psi_j}) - \widehat{\mathrm{GE}}_{\text{OOB}}  $}
+  \State Calculate $\widehat{\mathrm{GE}}_{\text{OOB}}$ using set-based metric $\rho$
+  \For{features $x_j$, $j = 1 \to p$}
+    \State {Distort feature-target relation: permute $x_j$ with $\psi_j$}
+	  \For{distorted observations $(\xi_{\psi_j}, \yi), i = 1 \to n$}
+		\State Compute {$\yih_{\text{OOB},\psi_j}$}
+	  \EndFor
+    \State {Compute $\widehat{\mathrm{GE}}_{\text{OOB},\psi_j} = \rho(\yv, \hat{\yv}_{\text{OOB},\psi_j})$}
+  \State {Estimate importance of $j$-th feature: $\widehat{\text{FI}_j} = \widehat{\mathrm{GE}}_{\text{OOB},\psi_j} - \widehat{\mathrm{GE}}_{\text{OOB}}  $}
   \EndFor
 \end{algorithmic}
 \end{algorithm}
@@ -65,8 +66,8 @@ RFs improve accuracy by aggregating multiple decision trees but \textbf{lose int
 \small
 \caption*{Measure based on improvement in split criterion}
 \begin{algorithmic}[1]
-  \For{features $x_j$, $j = 1$ to $p$}
-  \For{tree base learners $\blh$, $m = 1$ to $M$}
+  \For{features $x_j$, $j = 1 \to p$}
+  \For{tree base learners $\blh$, $m = 1 \to M$}
   \State {Find all nodes $\Np$ in $\blh$ that use $x_j$.} 
   \State {Compute improvement in splitting criterion achieved by them.}
   \State {Add up these improvements.}
@@ -76,7 +77,7 @@ RFs improve accuracy by aggregating multiple decision trees but \textbf{lose int
 \end{algorithmic}
 \end{algorithm}
 \small
-E.g. using the Gini index to measure the total decrease in node impurity:
+E.g., using the Gini index to measure the total decrease in node impurity:
 
 \vspace{-1ex}
 
@@ -91,7 +92,7 @@ E.g. using the Gini index to measure the total decrease in node impurity:
 \begin{vbframe}{In practice}
 
 {\small
-Using permutation importance, i.e. the average increase of MSE for predictions of OOB observations after permuting the $j$-th feature of mtcars, we see a similar result:
+Using permutation importance, i.e., average increase of MSE for predictions of OOB observations after permuting $j$-th feature of mtcars:
 }
 
 % \vspace{-1em}
@@ -101,7 +102,7 @@ Using permutation importance, i.e. the average increase of MSE for predictions o
 \end{center}
 
 {\small
-In practice, both methods are \textbf{biased toward features with more levels} (i.e. continuous or categorial with many categories) for tasks with predictor variables of varying types. \citebutton{C. Strobl, A.-L. Boulesteix, et. al., 2007}{https://pubmed.ncbi.nlm.nih.gov/17254353/}
+In practice, both methods are \textbf{biased toward features with more levels} (i.e., continuous or categorial with many categories) for tasks with predictor variables of varying types. \citebutton{C. Strobl, A.-L. Boulesteix, et. al., 2007}{https://pubmed.ncbi.nlm.nih.gov/17254353/}
 }
 
 \end{vbframe}
