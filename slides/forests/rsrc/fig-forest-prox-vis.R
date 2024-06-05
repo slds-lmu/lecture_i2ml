@@ -49,6 +49,8 @@ ranger_model <- learner$model
 proximity <- predict(ranger_model, data = penguins_sample, type = "terminalNodes")$predictions
 proximity <- as.matrix(proximity)
 
+proximity_matrix <- as.data.frame(proximity)
+
 ### VISUALIZATION
 # distance matrix for plotting
 distance_matrix <- 1 - proximity
