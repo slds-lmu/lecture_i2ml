@@ -9,25 +9,28 @@
 \begin{document}
 
 \titlemeta{% Chunk title (example: CART, Forests, Boosting, ...), can be empty
-Random Forest 
-}{% Lecture title  
+Random Forest
+}{% Lecture title
 Bagging Ensembles
 }{% Relative path to title page image: Can be empty but must not start with slides/
   figure_man/bagging.png
 }{% Learning goals, wrapped inside itemize environment
   \item Understand idea of bagging
-  \item Be able to explain the connection of bagging and bootstrap
-  \item Understand how a prediction is computed for bagging
-  \item Understand when bagging improves predictive performance
+  \item Be able to explain the connection between bagging and bootstrap
+  \item Understand why bagging improves predictive performance
 }
 
 \begin{vbframe}{Bagging}
 
 \begin{itemize}
-  \item Bagging is short for \textbf{B}ootstrap \textbf{Agg}regation.
-  \item It's an \textbf{ensemble method}, i.e., it combines many models into one big \enquote{meta-model}. Model ensembles can work much better than their members alone would.
-  \item The constituent models in an ensemble are called \textbf{base learners} and are all of the same type (e.g., CART).
-  
+  \item Bagging is short for \textbf{B}ootstrap \textbf{Agg}regation
+  \item \textbf{Ensemble method}, combines models into large \enquote{meta-model};
+    ensembles usually better than single \textbf{base learner}
+  % \item The constituent models in an ensemble are called \textbf{base learners} and are all of the same type (e.g., CART).
+  \item Homogeneous ensembles always use same BL class (e.g. CART),
+    heterogeneous ensembles can use different classes
+  \item Bagging is homogeneous
+
 \end{itemize}
 \begin{center}
 % FIGURE SOURCE: https://towardsdatascience.com/ensemble-learning-bagging-boosting-3098079e5422
@@ -37,22 +40,29 @@ Bagging Ensembles
 \end{vbframe}
 
 \begin{vbframe}{Training bagged ensembles}
-Train base learners $\bl$ on $M$ \textbf{bootstrap} samples of training data $\D$:
+Train BL on $M$ \textbf{bootstrap} samples of training data $\D$:
 \begin{itemize}
   \item Draw $n$ observations from $\D$ with replacement
-  \item Fit base learner on each of the $M$ bootstrap samples to get models $\fh^{[m]}(\xv) = \blh, m = 1, \dots, M$
+  \item Fit BL on each bootstrapped data $\D^{[m]}$ to obtain $\blh$
 \end{itemize}
 
 \begin{center}
 % FIGURE SOURCE: https://docs.google.com/presentation/d/1lDW9HEeNEGwJR1tmhAiOhySibzl6tXLxqePsKtpbb_M/edit#slide=id.g2de800cb874_0_60
 \includegraphics[width=0.7\textwidth]{figure_man/forest-bagging.png}
 % TODO kleine Kurve im Modell statt nur linear
+
+\begin{itemize}
+  \item Data sampled in one iter called ``in-bag'' (IB)
+  \item Data not sampled called ``out-of-bag'' (OOB)
+\end{itemize}
+
 \end{center}
 
 \end{vbframe}
 
 \begin{vbframe}{Predicting with a bagged ensemble}
-\textbf{Aggregate} the predictions of the $M$ fitted base learners to get the \textbf{ensemble model}, e.g. $\fMh$ for regression by averaging $\blh$:
+\textbf{Average} predictions of $M$ fitted models for ensemble:\\
+(here: regression)
 \vspace{1ex}
 \begin{center}
 % FIGURE SOURCE: https://docs.google.com/presentation/d/1lDW9HEeNEGwJR1tmhAiOhySibzl6tXLxqePsKtpbb_M/edit#slide=id.g2de800cb874_0_60
@@ -67,29 +77,30 @@ Train base learners $\bl$ on $M$ \textbf{bootstrap} samples of training data $\D
   \scriptsize
   \caption*{Bagging algorithm: Training}
   \begin{algorithmic}[1]
-    \State {\bf Input: } Dataset $\D$, type of base learners, number of bootstraps $M$
+    \State {\bf Input: } Dataset $\D$, type of BLs, number of bootstraps $M$
     \For {$m = 1 \to M$}
       \State Draw a bootstrap sample $\D^{[m]}$ from $\D$
-      \State Train base learner on $\D^{[m]}$ to obtain model $\blh$
+      \State Train BL on $\D^{[m]}$ to obtain model $\blh$
     \EndFor
-    \State Save all base learners $\blh$
+    % \State Save all BLs $\blh$
   \end{algorithmic}
 \end{algorithm}
-\vspace{-2ex}
+\vspace{-0.7cm}
 \begin{algorithm}[H]
   \scriptsize
-  \caption*{Bagging algorithm: Prediction in case of classification}
+  \caption*{Bagging algorithm: Prediction}
   \begin{algorithmic}[1]
-    \State {\bf Input: } Obs. $\xv$, trained base learners $\blh$ (hard label classifier $\hat{h}^{[m]}$ or probability est. $\hat \pi^{[m]}$)
-    \State Aggregate the predictions of the $M$ estimators to determine the bagging estimator:
+    \State {\bf Input: } Obs. $\xv$, trained BLs $\blh$ (as scores $\hat{f}^{[m]}$, hard labels $\hat{h}^{[m]}$ or probs $\hat \pi^{[m]}$)
+    \State Aggregate/Average predictions
     \vspace{-2ex}
     \begin{align*}
-    \hh^{[M]}(\xv) &= \argmax_{k \in \Yspace} \sum_{m=1}^M \I\left(\hat{h}^{[m]}(\xv) = k\right) \quad \text{(majority voting)} \\[-1ex]
-    \hat \pi_{k}^{[M]}(\xv) &=
+      \hat{f}(\xv) &=  \frac{1}{M} \sum_{m=1}^M \left(\hat{f}^{[m]}(\xv)\right) \qquad \qquad \qquad \text{(regression / decision score, use $\hat{f}_k$ in multi-class)} \\[-1ex]
+      \hxh &= \argmax_{k \in \Yspace} \sum_{m=1}^M \I\left(\hat{h}^{[m]}(\xv) = k\right) \quad \text{(majority voting)} \\[-1ex]
+    \pikxh &=
     \left\{
     \begin{aligned}
-    &\frac{1}{M} \sum_{m=1}^M \hat \pi_{k}^{[m]}(\xv) \quad && \text{(probabilities through averaging)} \\[-1ex]
-    &\frac{1}{M} \sum_{m=1}^M \I\left(\hat{h}^{[m]}(\xv) = k\right) \quad && \text{(probabilities through class frequencies)}
+    & \frac{1}{M} \sum_{m=1}^M \hat \pi_{k}^{[m]}(\xv) \quad && \text{(probabilities through averaging)} \\[-1ex]
+    & \frac{1}{M} \sum_{m=1}^M \I\left(\hat{h}^{[m]}(\xv) = k\right) \quad && \text{(probabilities through class frequencies)}
     \end{aligned}
     \right.
     \end{align*}
@@ -101,24 +112,29 @@ Train base learners $\bl$ on $M$ \textbf{bootstrap} samples of training data $\D
 \begin{vbframe}{Why/when does Bagging help?}
 
 \begin{itemize}
-  \item Bagging reduces the variability of predictions by averaging the outcomes from multiple base learner models. %: Better-performing base learners lead to stronger aggregated outcomes.
+  \item Bagging reduces the variability of predictions by averaging the outcomes from multiple BL models
+    %: Better-performing BLs lead to stronger aggregated outcomes.
 
-  \item It is particularly effective when the errors of a base learner are mainly due to (random) variability rather than systematic issues.
+  \item It is particularly effective when the errors of a BL are mainly due to (random) variability rather than systematic issues
 \end{itemize}
 
 \begin{center}
 \includegraphics[width=360pt]{figure/bagging-mean.png}
 \end{center}
 
-\begin{center}
-\footnotesize{Increasing the \textbf{number of base learners} improves performance (at least theoretically).}
-\end{center}
+% \begin{center}
+\begin{itemize}
+  \item Increasing \textbf{nr. of BLs} improves performance, up to a point, optimal ensemble size depends on inducer and data distribution
+\end{itemize}
+
+% \end{center}
 
 \end{vbframe}
 
-\begin{vbframe}{Benchmarking Bagging}
+\begin{vbframe}{Mini Benchmark}
 
-Bagged ensembles with 100 base learners each on the $\texttt{spam}$ dataset: Bagging seems especially helpful for less stable learners like CART.
+Bagged ensembles with 100 BLs each on $\texttt{spam}$: \\
+Bagging seems especially helpful for less stable learners like CART
 
 \begin{center}
 \includegraphics[width=260pt]{figure/bagging-bench.png}
