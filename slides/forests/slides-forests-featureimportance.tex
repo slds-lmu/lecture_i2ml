@@ -10,30 +10,37 @@
 \begin{document}
 
 \titlemeta{% Chunk title (example: CART, Forests, Boosting, ...), can be empty
-  Random Forest 
-  }{% Lecture title  
+  Random Forest
+  }{% Lecture title
   Feature Importance
 }{% Relative path to title page image: Can be empty but must not start with slides/
   figure/forest-fimp_perm.png
 }{% Learning goals, wrapped inside itemize environment
-  \item Understand that the goal of defining feature importance is to enhance interpretability of the random forest
-  \item Understand feature importance based on improvement in split criterion
-  \item Understand feature importance based on permutations of OOB observations
+  \item Understand that the goal of feature importance is to enhance interpretability of RF
+  \item Understand FI based on feature permutation
+  \item Understand FI based on improvement in splits
 }
 
-\begin{vbframe}{Feature Importance}
+\begin{vbframe}{PErmutation Feature Importance}
 
-RFs improve accuracy by aggregating multiple decision trees but \textbf{lose interpretability} compared to a single tree. \textbf{Feature importance} helps rectify lost interpretability.
-\\
+  \begin{footnotesize}
+
+RFs improve accuracy by aggregating multiple decision trees but \textbf{lose interpretability} compared to a single tree. \textbf{Feature importance} mitigates this problem.
 \begin{itemize}
-  \item We can obtain a $\widehat{\mathrm{GE}}$ of an RF by its performance on OOB samples.
-  \item Measuring how much the performance \textit{decreases} if a specific feature were removed or rendered useless is called \textbf{permutation importance}.
+  \item How much does performance \textit{decrease}, if feature is removed / rendered useless?
+  \item We permute values of considered feature
+  \item Removes association between feature and target, keeps marginal distribution
+  \item Can obtain $\widehat{\mathrm{GE}}$ of RF (without and with permuted features)
+    by predicting OOB data, to \textbf{efficiently compute FI during training}
+  \item Avoids not only new models (if feature would be removed) but can already use ``OOB test data''
+    during training
 \end{itemize}
+\end{footnotesize}
 
 \vspace{-1ex}
 \begin{center}
 % SOURCE: https://docs.google.com/presentation/d/1lDW9HEeNEGwJR1tmhAiOhySibzl6tXLxqePsKtpbb_M/edit#slide=id.g2ddcfb537bb_0_33
-\includegraphics[width=0.8\textwidth]{figure_man/forest-fimp_idea.png}
+\includegraphics[width=0.7\textwidth]{figure_man/forest-fimp_idea.png}
 \end{center}
 
 \end{vbframe}
@@ -43,17 +50,19 @@ RFs improve accuracy by aggregating multiple decision trees but \textbf{lose int
 \includegraphics[width = 0.95\textwidth]{figure_man/forest-permutation-imp.png}
 \vspace{-1.2ex}
 \begin{algorithm}[H]
-\small
-\caption*{Measure based on permutations of OOB obs.}
+\footnotesize
+% \caption*{Measure based on permutations of OOB obs.}
 \begin{algorithmic}[1]
   \State Calculate $\widehat{\mathrm{GE}}_{\text{OOB}}$ using set-based metric $\rho$
   \For{features $x_j$, $j = 1 \to p$}
+  \For{Some statistical repetitions}
     \State {Distort feature-target relation: permute $x_j$ with $\psi_j$}
-	  \For{distorted observations $(\xi_{\psi_j}, \yi), i = 1 \to n$}
-		\State Compute {$\yih_{\text{OOB},\psi_j}$}
-	  \EndFor
-    \State {Compute $\widehat{\mathrm{GE}}_{\text{OOB},\psi_j} = \rho(\yv, \hat{\yv}_{\text{OOB},\psi_j})$}
-  \State {Estimate importance of $j$-th feature: $\widehat{\text{FI}_j} = \widehat{\mathrm{GE}}_{\text{OOB},\psi_j} - \widehat{\mathrm{GE}}_{\text{OOB}}  $}
+	  \State Compute all $n$ OOB-predictions for permuted feature data, obtain all $\fh^{(i)}_{\text{OOB},\psi_j}$
+    \State Arrange predictions in $\bm{\hat{F}}_{\text{OOB},\psi_j}$;
+    Compute $\widehat{\mathrm{GE}}_{\text{OOB}, j} = \rho(\yv, \bm{\hat{F}}_{\text{OOB},\psi_j})$
+  \State {Estimate importance of $j$-th feature: $\widehat{\text{FI}_j} = \widehat{\mathrm{GE}}_{\text{OOB},j} - \widehat{\mathrm{GE}}_{\text{OOB}}  $}
+  \EndFor
+  \State Average obtained $\widehat{\text{FI}_j}$ values over reps
   \EndFor
 \end{algorithmic}
 \end{algorithm}
@@ -62,7 +71,7 @@ RFs improve accuracy by aggregating multiple decision trees but \textbf{lose int
 
 \begin{vbframe}{Impurity importance}
 
-{\small Another way to measure feature importance is to add up all \textit{improvements} in the splitting criteria (e.g., Gini index) for nodes where feature $x_j$ is used.}
+{\small Alternative: Add up all \textit{improvements} in splits where feature $x_j$ is used.}
 
 \vspace{-1ex}
 \begin{center}
@@ -70,28 +79,28 @@ RFs improve accuracy by aggregating multiple decision trees but \textbf{lose int
 \includegraphics[width=0.8\textwidth]{figure_man/forest-fimp_impurity.png}
 \end{center}
 
-\vspace{-3ex}
+% \vspace{-3ex}
 \begin{algorithm}[H]
 \small
-\caption*{Measure based on improvement in split criterion}
+% \caption*{Measure based on improvement in split criterion}
 \begin{algorithmic}[1]
   \For{features $x_j$, $j = 1 \to p$}
-  \For{tree base learners $\blh$, $m = 1 \to M$}
-  \State {Find all nodes $\Np$ in $\blh$ that use $x_j$.} 
-  \State {Compute improvement in splitting criterion achieved by them.}
-  \State {Add up these improvements.}
+  \For{all models $\blh$, $m = 1 \to M$}
+  \State {Find all splits in $\blh$ on $x_j$}
+  \State {Extract improvement / risk reduction for these splits}
+  \State {Sum them up}
   \EndFor
-  \State {Add up improvements over all trees to get feature importance of $x_j$.}
+  \State {Add up improvements over all trees for FI of $x_j$}
   \EndFor
 \end{algorithmic}
 \end{algorithm}
 
 \end{vbframe}
 
-\begin{vbframe}{In practice}
+\begin{vbframe}{In practice / Outlook}
 
 {\small
-Comparing permutation importance, i.e., the average increase of MSE for predictions of OOB observations after permuting the $j$-th feature of mtcars with the total decrease in node impurity:
+  Let's compare both FI variants on \texttt{mtcars}:
 }
 % \vspace{-1ex}
 \begin{figure}
@@ -107,10 +116,15 @@ Comparing permutation importance, i.e., the average increase of MSE for predicti
 \end{figure}
 % \vspace{-1ex}
 
-{\small
-In practice, both methods are \textbf{biased toward features with more levels} (i.e., continuous or categorial with many categories) for tasks with predictor variables of varying types. \citebutton{C. Strobl, A.-L. Boulesteix, et. al., 2007}{https://pubmed.ncbi.nlm.nih.gov/17254353/}
-}
 
+\lz
+\begin{itemize}
+
+  \item Both methods are \textbf{biased toward features with more levels} (i.e., continuous or categoricals with many categories) \citelink{STROBL2007}
+  \item More advanced versions exist
+  \item PFI and FI have been generalized, see our lecture on IML!
+
+\end{itemize}
 \end{vbframe}
 
 \endlecture
