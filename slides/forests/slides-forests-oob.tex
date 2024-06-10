@@ -1,0 +1,122 @@
+\documentclass[11pt,compress,t,notes=noshow,xcolor=table]{beamer}
+\input{../../style/preamble}
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-ensembles.tex}
+
+\title{Introduction to Machine Learning}
+
+\begin{document}
+
+\titlemeta{% Chunk title (example: CART, Forests, Boosting, ...), can be empty
+Random Forest
+}{% Lecture title
+Out-of-Bag Error Estimate
+}{% Relative path to title page image: Can be empty but must not start with slides/
+  figure_man/forest-oob-error.png
+}{% Learning goals, wrapped inside itemize environment
+  \item Understand the concept of out-of-bag and in-bag observations
+  \item Learn how out-of-bag error provides an estimate of the generalization error during training
+}
+
+\begin{vbframe}{Out-of-bag vs in-bag observations}
+
+\begin{center}
+% SOURCE: https://docs.google.com/presentation/d/1lDW9HEeNEGwJR1tmhAiOhySibzl6tXLxqePsKtpbb_M/edit#slide=id.g2ddcfb537bb_0_33
+\includegraphics[width=\textwidth]{figure_man/forest-oob.png}
+\end{center}
+
+%We denote:
+\begin{itemize}
+\item IB observations for $m$-th bootstrap: $\text{IB}^{[m]} = \{i \in \nset | \xyi \in \D^{[m]}  \} $
+\item OOB observations for $m$-th bootstrap: $\text{OOB}^{[m]} = \{i \in \nset | \xyi \notin \D^{[m]}  \} $
+  \item Nr. of trees where $i$-th observation is OOB: $S_{\text{OOB}}^{(i)} = \sum_{m = 1}^M \I(i \in \text{OOB}^{[m]})$.
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Out-of-Bag Error Estimate}
+
+%We can estimate the generalization error $\widehat{\mathrm{GE}}$ by using the
+Predict $i$-th observation with all trees $\blh$ for which it is OOB:
+
+\begin{center}
+% SOURCE: https://docs.google.com/presentation/d/1lDW9HEeNEGwJR1tmhAiOhySibzl6tXLxqePsKtpbb_M/edit#slide=id.g2ddcfb537bb_0_33
+\includegraphics[width=0.69\textwidth]{figure_man/forest-oob-error.png}
+\end{center}
+
+%\footnotesize{%The proportion of OOB samples that were incorrectly classified by our RF is our $\widehat{\mathrm{GE}}$!
+OOB prediction $\hat{\pi}^{(2)}_{\text{OOB}} = 2/3$. %, true label $y^{(2)}=1$.
+Evaluating all OOB predictions with some loss function $L$ or set-based metric $\rho$ estimates the $\mathrm{GE}$.\\
+As we do not violate the \textbf{untouched test set principle}, $\widehat{\mathrm{GE}}$ is not \textit{optimistically} biased.%}
+\end{vbframe}
+
+\begin{vbframe}{Out-Of-Bag error Pseudo Code}
+\begin{algorithm}[H]
+  \footnotesize
+  \caption*{Out-Of-Bag error estimation}
+  \begin{algorithmic}[1]
+    \State {\bf Input: } $\text{OOB}^{[m]}, \blh \ \forall m \in \{1, \dots, M\}$
+    \For {$i = 1 \to n$}
+      \State Compute the ensemble OOB prediction for observation $i$, e.g., for regression:
+      $$\fh^{(i)}_{\text{OOB}} =
+      \frac{1}{S_{\text{OOB}}^{(i)}} \sum_{m = 1}^{M}
+      \I(i \in \text{OOB}^{[m]}) \cdot \fh^{[m]}(\xi) $$
+      % \State Compute the loss for observation $i$, e.g., using L2-loss:
+      % $$ L(\yi, \fh^{(i)}_{\text{OOB}}) = (\yi - \yih_{\text{OOB}})^2$$
+    \EndFor
+    \State Average losses over all observations: $$\widehat{\mathrm{GE}}_{\text{OOB}} = \meanin L(\yi, \fh^{(i)}_{\text{OOB}})$$
+
+  \end{algorithmic}
+\end{algorithm}
+\end{vbframe}
+
+\begin{vbframe}{Using the Out-of-Bag Error Estimate}
+
+\begin{itemize}
+  \item Gives us a (proper) estimator of GE, computable during training
+  \item Can even compute this for all smaller ensemble sizes \\
+    (after we fitted $M$ models)
+\end{itemize}
+
+% $\widehat{\mathrm{GE}}_{\text{OOB}}$ can be accessed directly during training, making it possible to optimize hyperparameters such as $\texttt{ntrees}$:
+
+\vspace{1em}
+
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{\centering \includegraphics[width=0.85\textwidth]{figure/forest-oob.pdf}
+
+}
+\end{knitrout}
+
+\end{vbframe}
+
+\begin{vbframe}{OOB Error: Comparability, Best Practice}
+
+\textbf{OOB Size:} The probability that an observation is out-of-bag (OOB) is:
+$$\P(i \in \text{OOB}^{[m]}) = \left(1 - \frac{1}{n}\right)^n \stackrel{n \to \infty}{\longrightarrow} \frac{1}{e} \approx 0.37$$
+$\Rightarrow$ similar to holdout or 3-fold CV (1/3 validation, 2/3 training)
+
+\textbf{Comparability Issues:}
+\begin{itemize}
+\item \textbf{OOB error} rather unique to RFs / bagging
+% \item Other models use different validation methods (e.g. k-fold cross-validation), leading to different error estimates.
+\item To compare models, we often still use CV, etc., to be consistent
+\end{itemize}
+
+\textbf{Use the OOB Error for:}
+\begin{itemize}
+%\item Comparing hyperparameters within random forests.
+  \item Get first impression of RF performance
+  \item Select ensemble size
+\item Efficiently evaluate different RF hyperparameter configurations
+\end{itemize}
+
+%\textbf{Important:} For comparing random forests with other models, use a consistent validation technique like \textbf{cross-validation} for all models!
+
+\end{vbframe}
+
+\endlecture
+\end{document}
