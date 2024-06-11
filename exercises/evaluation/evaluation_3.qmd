@@ -8,12 +8,12 @@ notebook-view:
   - notebook: ex_eval_3_py.ipynb
     title: "Exercise sheet for Python"
     url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/evaluation/ex_eval_3_py.ipynb"
-  - notebook: sol_eval_3_R.ipynb
-    title: "Solutions for R"
-    url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/evaluation/sol_eval_3_R.ipynb"
-  - notebook: sol_eval_3_py.ipynb
-    title: "Solutions for Python"
-    url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/evaluation/sol_eval_3_py.ipynb"
+  # - notebook: sol_eval_3_R.ipynb
+  #   title: "Solutions for R"
+  #   url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/evaluation/sol_eval_3_R.ipynb"
+  # - notebook: sol_eval_3_py.ipynb
+  #   title: "Solutions for Python"
+  #   url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/evaluation/sol_eval_3_py.ipynb"
 ---
 
 ::: {.content-hidden when-format="pdf"}
@@ -36,10 +36,12 @@ notebook-view:
 ## Exercise 1: ROC metrics
 
 ::: {.callout-note title="Learning goals" icon=false}
-Be able to compute ROC metrics & draw ROC curve
+1. Create confusion matrices and compute associated evaluation metrics
+2. Compute ROC coordinates and AUC
+3. Understand relationship between ROC curve & classification threshold
 :::
 
-Consider a binary classification algorithm that yielded the following results on 10 observations. The table shows  true classes and  predicted probabilities for class 1:
+Consider a binary classification algorithm that yielded the following results:
 
 | ID | True class | Prediction |
 |----|------------|------------|
@@ -55,7 +57,7 @@ Consider a binary classification algorithm that yielded the following results on
 | 10 | 0          | 0.57       |
 
 ***
-a. Create a confusion matrix assuming a threshold of 0.5. Point out which values correspond to true positives (`TP`), true negatives (`TN`), false positives (`FP`), and false negatives (`FN`).
+Create a confusion matrix assuming a threshold of 0.5. Point out which values correspond to true positives (`TP`), true negatives (`TN`), false positives (`FP`), and false negatives (`FN`).
 
 
 ::: {.content-visible when-profile="solution"}
@@ -68,7 +70,7 @@ First, sort the table:
 | 6  | 1          | 0.63  | 1               |
 | 7  | 1          | 0.62  | 1               |
 | 10 | 0          | 0.57  | 1               |
-|----|------------|-------|-----------------|
+|||||
 | 4  | 1          | 0.38  | 0               |
 | 1  | 0          | 0.33  | 0               |
 | 8  | 1          | 0.33  | 0               |
@@ -79,10 +81,11 @@ First, sort the table:
 
 This translates to:
 
-|             | True 1 | True 0 |
-|-------------|--------|--------|
-| Predicted 1 | 2      | 1      |
-| Predicted 0 | 3      | 4      |
+| | | Truth |
+| :--- | :----: | :----: | :---: |
+| | | **1** | **0**
+|**Prediction** | **1** | 2 | 1 |
+| | **0** | 3 | 4 |
 
 So we get:
 
@@ -94,7 +97,7 @@ So we get:
 :::
 
 ***
-b. Calculate: PPV, NPV, TPR, FPR, ACC, MCE and $F1$ measure.
+Calculate: PPV, NPV, TPR, FPR, ACC, MCE and $F1$ measure.
 
 ::: {.content-visible when-profile="solution"}
 <details> 
@@ -135,19 +138,46 @@ b. Calculate: PPV, NPV, TPR, FPR, ACC, MCE and $F1$ measure.
 :::
 
 ***
-c. Draw the ROC curve and interpret it. Feel free to use `R` or `Python` for the drawing.
+Draw the ROC curve and interpret it.
 
 ::: {.content-visible when-profile="solution"}
 <details> 
 <summary>**Solution**</summary>
 
-::: {.panel-tabset}
+We need the table sorted by score (descending).
+Finding that $\frac{1}{\np} = \frac{1}{\np} = 0.2$, we follow the algorithm described in the lecture slides:
 
-### R
-{{< embed sol_eval_3_R.ipynb#1-c-1 echo=true >}}
-### Python
-{{< embed sol_eval_3_py.ipynb#1-c-1 echo=true >}}
-:::
+ 1. $c = 1$ $~ \Longrightarrow ~$ we start in $(0,0)$ and predict
+  everything as negative, so TPR 0 and FPR 0.
+  1. $c = 0.625$ $~ \Longrightarrow ~$ TPR $0 + \frac{1}{\np} = 0.2$ and
+  FPR 0 (obs 6 correctly classified).
+  1. $c = 0.6$ $~ \Longrightarrow ~$ TPR $0.2 + \frac{1}{\np} = 0.4$ and FPR
+  0 (obs 7 correctly classified).
+  1. $c = 0.5$ $~ \Longrightarrow ~$ TPR 0.4 and FPR
+  $0 + \frac{1}{\nn} = 0.2$ (obs 10 misclassified).
+  1. $c = 0.35$ $~ \Longrightarrow ~$ TPR $0.4 + \frac{1}{\np} = 0.6$ and
+  FPR 0.2 (obs 4 correctly classified).
+  1. $c = 0.3$ $~ \Longrightarrow ~$ TPR $0.6 + \frac{1}{\np} = 0.8$ and
+  FPR $0.2 + \frac{1}{\nn} = 0.4$ (obs 8 correct but obs 1
+  misclassified).
+  1. $c = 0.2$ $~ \Longrightarrow ~$ TPR $0.8$ and FPR
+  $0.4 + \frac{1}{\nn} = 0.6$ (obs 2 misclassified).
+  1. $c = 0.16$ $~ \Longrightarrow ~$ TPR $0.8 + \frac{1}{\np} = 1$ and FPR
+  $0.6$ (obs 5 correctly classified).
+  1. $c = 0.14$ $~ \Longrightarrow ~$ TPR 1 and FPR
+  $0.6 + \frac{1}{\nn} = 0.8$ (obs 9 misclassified)
+  1. $c = 0.09$ $~ \Longrightarrow ~$ TPR 1 and FPR 1 (obs 3 misclassified).
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=5, fig.width=5}
+library(ggplot2)
+roc_data <- data.frame(
+  TPR = c(0, 0.2, 0.4, 0.4, 0.6, 0.8, 0.8, 1, 1, 1),
+  FPR = c(0, 0, 0, 0.2, 0.2, 0.4, 0.6, 0.6, 0.8, 1)) 
+
+ggplot(roc_data, aes(x = FPR, y = TPR)) + geom_line() + 
+  geom_abline(slope = 1, intercept = 0, linetype = 'dashed') +
+  theme_bw()
+```
 
 We see that the resulting ROC curve is distinct from the diagonal marking a purely random classifier, but also not too great. The step function character is clearly visible for so few observations (the non-axis-parallel part in the middle is due to the fact that we have two observations with the same score but different true class, so both TPR and FPR go up when we move from $c = 0.35$ to $c= 0.3$).
 
@@ -155,7 +185,7 @@ We see that the resulting ROC curve is distinct from the diagonal marking a pure
 :::
 
 ***
-d. Calculate the AUC.
+Calculate the AUC.
 
 ::: {.content-visible when-profile="solution"}
 <details> 
@@ -170,7 +200,7 @@ $$
 :::
 
 ***
-e. How would the ROC curve change if you had chosen a different threshold in a)?
+How would the ROC curve change if you had chosen a different threshold in a)?
 
 ::: {.content-visible when-profile="solution"}
 <details> 
@@ -183,7 +213,8 @@ Not at all, because the ROC curve is drawn by iterating through *all* thresholds
 ## Exercise 2: $k$-NN
 
 ::: {.callout-note title="Learning goals" icon=false}
-Carry out k-NN classification / regression with possibly weighted distances
+1. Perform k-NN by visual means
+2. Perform k-NN with pen and paper, possibly using weighted distances
 :::
 
 Let the two-dimensional feature vectors in the following figure be instances of two different classes (triangles and circles). Classify the point (7, 6) -- represented by a square in the picture -- with a $k$-NN classifier using $L1$ norm (Manhattan distance):
