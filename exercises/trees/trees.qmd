@@ -37,11 +37,11 @@ notebook-view:
 ## Exercise 1: Splitting criteria
 
 ::: {.callout-note title="Learning goals" icon=false}
-1) Be able to compute split computation by hand
-2) See that constant mean prediction minimizes variance impurity in regression trees
+1) Perform split computation with pen and paper
+2) Derive optimal constant predictor for regression under L2 loss
 :::
 
-Given are the data set
+Consider the following dataset:
 
 ```{r, echo=FALSE, eval=TRUE, results=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=5, fig.width=5}
 x = c(1, 2, 7, 10, 20)
@@ -52,89 +52,94 @@ log_x = log(x)
 data = t(data.frame(log_x, y))
 knitr::kable(data, "latex", digits = 2L)
 ```
-
-| $x$ | 1.0 | 2.0 | 7.0 | 10.0 | 20.0 |
-| --- | --- | --- | --- | ---- | ---- |
-| $y$ | 1.0 | 1.0 | 0.5 | 10.0 | 11.0 |
-
-and the same with log-transformed feature $x$:
-
-| $\log x$ | 0.0 | 0.7 | 1.9 | 2.3 | 3.0 |
-| -------- | --- | --- | --- | --- | --- |
-| $y$      | 1.0 | 1.0 | 0.5 | 10.0| 11.0|
+| $i$  | $x^{(i)}$ | $y^{(i)}$ |
+| ---: | ---:      | ---:      | 
+| 1    | 1.0       | 1.0       | 
+| 2    | 2.0       | 1.0       | 
+| 3    | 7.0       | 0.5       | 
+| 4    | 10.0      | 10.0      | 
+| 5    | 20.0      | 11.0      | 
 
 ***
 Compute the first split point the CART algorithm would find for each data set (with pen and paper or in `R`, resp. `Python`).
+Use mean squared error (MSE) to assess the empirical risk.
 
 ::: {.content-visible when-profile="solution"}
 <details> 
 <summary>**Solution**</summary>
 
-::: {.panel-tabset}
-
 ### Pen-and-paper solution
 
+::: {.callout-tip}
+## Procedure
 
-1. Here, we have only one split variable $x$. We probe all splits of $x$ in two groups, where thresholds are placed equidistant between the observed feature values (think about why this might help generalization):
+1. We have only one split variable $x$. We probe all binary splits, where thresholds are placed equidistant between the observed feature values (think about why this might help generalization).
 
-- $(1)$ | $(2,7,10,20)$ (split point 1.5)
-- $(1,2)$ | $(7,10,20)$ (split point 4.5)
-- $(1,2,7)$ | $(10,20)$ (split point 8.5)
--  $(1,2,7,10)$ | $(20)$ (split point 15)
+2. For each threshold:
+  * Map observations to child nodes resulting from split at that threshold
+  * Compute optimal constant prediction and resulting loss in both child nodes
+  * Aggregate to obtain overall loss of split
 
-2. For each split point, compute the sum of squares ($L2$ loss) in both groups.
+3. Choose optimal split w.r.t. empirical risk reduction.
+:::
 
-3. Choose the point that splits both groups best w.r.t. empirical risk reduction.
+::: {.callout-warning}
+## Accounting for node size
 
-A split point $t$ leads to the following half-spaces:
+Two scenarios in aggregating the risk contributions from both candidate child nodes:
+
+- Child node risk is sum of pointwise losses without accounting for number of observations $\rightsquigarrow$ *simple* average
+- Child node risk is average of pointwise losses, thus accounting for number of observations  $\rightsquigarrow$ *weighted* average
+:::
+
+### Split points
+
+Split candidates $t \in \{1.5, 4.5, 8.5, 15\}$, leading to the following child nodes:
 
   \begin{align*}
-    \Nl(t) &= \{ (x,y) \in \Np: x \leq t \} ~~ \text{and} ~~ 
+    \Nl(t) &= \{ (x,y) \in \Np: x \leq t \}, ~~ 
     \Nr(t) = \{ (x,y) \in \Np: x > t \}.
   \end{align*}
+  
+### Risk per split point
 
-Calculate the risk $\risk(\Np, t)$ for each split point:
+Calculate $\risk(\Np, t)$ for each split point:
 
 - $x \leq 1.5$
-  \begin{align*}
-    c_1 = y_1 = 1, c_2 = \tfrac{1}{4} \sum_{i = 2}^5 y_i = 5.625
-   \end{align*}
+  - Predictions: $c_1 = \tfrac{1}{1} \sum_{i = 1}^1 y_i = 1, ~~ c_2 = \tfrac{1}{4} \sum_{i = 2}^5 y_i = 5.625$
+  - Risk left: $\rho_{\text{MSE}}(\Nl) = 0$
+  - Risk right: $\rho_{\text{MSE}}(\Nr) = \tfrac{1}{4}((1 - 5.625)^2 + (0.5 - 5.625)^2 + (10 - 5.625)^2 + (11 - 5.625)^2)$
+  - Aggregate risk: $\risk(\Np, 1.5) = \tfrac{|\Nl|}{|\Np|} \rho_{\text{MSE}}(\Nl) = \tfrac{1}{5} \cdot 0 + \tfrac{4}{5} \cdot 23.925 = 19.14$
 
-  \begin{align*}
-    \risk(\Np, 1.5) &= \tfrac{|\Nl|}{|\Np|} \rho_{\text{MSE}}(\Nl) + 
-    \tfrac{|\Nr|}{|\Np|} \rho_{\text{MSE}}(\Nr) =  \\
-    &= \tfrac{1}{5} \cdot \left( \tfrac{1}{1}(1 - 1)^2 \right) + \tfrac{4}{5} \cdot \left( \tfrac{1}{4}((1 - 5.625)^2 + (0.5 - 5.625)^2 + (10 - 5.625)^2 + (11 - 5.625)^2) \right) \\
-    &= 19.14
-  \end{align*}
+- $x \leq 4.5$ $\rightsquigarrow$ $\risk(\Np, 4.5) = 13.43$
 
-- $x \leq 4.5$ ~~ $\Longrightarrow$ $\risk(\Np, 4.5) = 13.43$
+- $x \leq 8.5$ $\rightsquigarrow$ $\risk(\Np, 8.5) = 0.13$ $\rightsquigarrow$ **optimal**
 
-- $x \leq 8.5$ ~~ $\Longrightarrow$ $\risk(\Np, 8.5) = 0.13$ **optimal**
-
-- $x \leq 15$ ~~~ $\Longrightarrow$ $\risk(\Np, 15) = 12.64$
+- $x \leq 15$ $\rightsquigarrow$ $\risk(\Np, 15) = 12.64$
 
 
-Proceeding accordingly for the monotonic, rank-preserving log transformation yields the same result:
-
-- $\log x \leq 0.3$ ~~ $\Longrightarrow$ $\risk(\Np, 0.3) = 19.14$
-
-- $\log x \leq 1.3$ ~~ $\Longrightarrow$ $\risk(\Np, 1.3) = 13.43$
-
-- $\log x \leq 2.1$ ~~ $\Longrightarrow$ $\risk(\Np, 2.1) = 0.13$ **optimal**
-
-- $\log x \leq 2.6$ ~~ $\Longrightarrow$ $\risk(\Np, 2.6) = 12.64$
-
+::: {.panel-tabset}
 
 ### R
+foo
 {{< embed sol_trees_R.ipynb#1-a-1 echo=true >}}
+foo
 {{< embed sol_trees_R.ipynb#1-a-2 echo=true >}}
+foo
 {{< embed sol_trees_R.ipynb#1-a-3 echo=true >}}
 
 ### Python
+Imports
+{{< embed ex_trees_py.ipynb#import echo=true >}}
+foo
 {{< embed sol_trees_py.ipynb#1-a-1 echo=true >}}
+foo
 {{< embed sol_trees_py.ipynb#1-a-2 echo=true >}}
+foo
 {{< embed sol_trees_py.ipynb#1-a-3 echo=true >}}
+foo
 {{< embed sol_trees_py.ipynb#1-a-4 echo=true >}}
+foo
 {{< embed sol_trees_py.ipynb#1-a-5 echo=true >}}
 :::
 
@@ -187,6 +192,9 @@ For regression trees, we usually identify *impurity* with *variance*. Here is wh
 </details> 
 :::
 
+
+***
+Explain why adding further splits can never result in a higher overall risk with $L2$ loss as a splitting criterion.
 
 ## Exercise 2: Splitting criteria
 
