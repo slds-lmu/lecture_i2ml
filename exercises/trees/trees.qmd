@@ -23,7 +23,7 @@ notebook-view:
 :::
 
 <details> 
-<summary>*Hint: Useful libraries for exercise 1*</summary>
+<summary>*Hint: Useful libraries*</summary>
 
 ::: {.panel-tabset}
 
@@ -121,43 +121,32 @@ Calculate $\risk(\Np, t)$ for each split point:
 ::: {.panel-tabset}
 
 ### R
-foo
-{{< embed sol_trees_R.ipynb#1-a-1 echo=true >}}
-foo
-{{< embed sol_trees_R.ipynb#1-a-2 echo=true >}}
-foo
-{{< embed sol_trees_R.ipynb#1-a-3 echo=true >}}
+Write function to perform MSE-based splits:
+{{< embed sol_trees_R.ipynb#split-fun echo=true >}}
+Apply to dataset:
+{{< embed sol_trees_R.ipynb#risk-comp echo=true >}}
 
 ### Python
 Imports
 {{< embed ex_trees_py.ipynb#import echo=true >}}
-foo
-{{< embed sol_trees_py.ipynb#1-a-1 echo=true >}}
-foo
-{{< embed sol_trees_py.ipynb#1-a-2 echo=true >}}
-foo
-{{< embed sol_trees_py.ipynb#1-a-3 echo=true >}}
-foo
-{{< embed sol_trees_py.ipynb#1-a-4 echo=true >}}
-foo
-{{< embed sol_trees_py.ipynb#1-a-5 echo=true >}}
+Write function to perform MSE-based splits:
+{{< embed sol_trees_py.ipynb#split-fun echo=true >}}
+Apply to dataset:
+{{< embed sol_trees_py.ipynb#risk-comp echo=true >}}
+
 :::
 
 </details> 
 :::
 
 ***
-State the optimal constant predictor for a node $\Np$ when minimizing the empirical risk under $L2$ loss and explain why this is equivalent to minimizing \enquote{variance impurity}.
+Derive the optimal constant predictor for a node $\Np$ when minimizing the empirical risk under $L2$ loss and explain why this is equivalent to minimizing \enquote{variance impurity}.
 
 ::: {.content-visible when-profile="solution"}
 <details> 
 <summary>**Solution**</summary>
 
-For regression trees, we usually identify *impurity* with *variance*. Here is why:
-
-- It is reasonable to define impurity via the deviation between actual target values and the predicted constant -- either using absolute or square distances to enforce symmetry of positive and negative residuals.
-
-- Recall the constant $L2$ risk minimizer for a node $\Np$:
+Constant $L2$ risk minimizer for a node $\Np$:
   $$
   \bar y = \argmin_c \frac{1}{|\Np|}  \sum_{i = 1}^{|\Np|} (\yi - c)^2, 
   $$
@@ -165,7 +154,7 @@ For regression trees, we usually identify *impurity* with *variance*. Here is wh
   because
 
   \begin{align*}
-  \min_c \frac{1}{|\Np|} \sum_{i = 1}^{|\Np|} (\yi - c)^2 &\Longleftrightarrow
+  \min_{c \in \R} \frac{1}{|\Np|} \sum_{i = 1}^{|\Np|} (\yi - c)^2 &\Longleftrightarrow
   \pd{}{c} \left( \frac{1}{|\Np|} \sum_{i = 1}^{|\Np|} (\yi - c)^2 \right) = 0 \\
   &\Longleftrightarrow \frac{1}{|\Np|} \pd{}{c} \left( \sum_{i = 1}^{|\Np|} 
   \left({\yi}^2 - 2 \yi c + c^2\right) \right) = 0 \\
@@ -176,25 +165,34 @@ For regression trees, we usually identify *impurity* with *variance*. Here is wh
   = \bar y.
   \end{align*}
 
-- Consequently, we have 
+It's easy to see that the mean prediction minimizes *variance impurity*. 
+
+- We just found that
+$$
+  \bar y = \argmin_{c \in \R} \frac{1}{|\Np|}  \sum_{i = 1}^{|\Np|} (\yi - c)^2.
   $$
-  \bar y = \argmin_c \frac{1}{|\Np|}  \sum_{i = 1}^{|\Np|} (\yi - c)^2, 
-  $$
+- Looking closely at this minimization objective reveals: it's simply the (biased) sample variance for sample mean $c$.
+- Therefore, predicting the sample mean minimizes both $L2$ risk and variance impurity.
 
-  where the right hand side is the (biased) sample variance for sample mean $c$.
+::: {.callout-tip}
+## Thinking a little further
 
-- Therefore, predicting the sample mean both minimizes risk under $L2$ loss and variance impurity.
-
-- Since constant mean prediction is equivalent to an intercept LM (minimizing the sum of squared residuals!), regression trees with $L2$ loss perform piecewise constant linear regression.
-
-- The same correspondence holds between impurity via absolute distances and $L1$ regression.
+- The mean of a sample is precisely the value for which the sum of squared distances to all points is minimal (the "center" of the data).
+- Constant mean prediction is equivalent to an intercept LM (trained with $L2$ loss) $\rightsquigarrow$ regression trees with $L2$ loss perform piecewise constant linear regression.
+:::
 
 </details> 
 :::
 
 
 ***
-Explain why adding further splits can never result in a higher overall risk with $L2$ loss as a splitting criterion.
+Explain why performing further splits can never result in a higher overall risk with $L2$ loss as a splitting criterion.
+<details> 
+<summary>**Solution**</summary>
+
+The variance of a subset of the observations in a node cannot be higher than the variance of the entire node, so it's not possible to make the tree worse (w.r.t. training error) by introducing a further split.
+
+</details> 
 
 ## Exercise 2: Splitting criteria
 
@@ -211,7 +209,7 @@ How do you expect the number of splits to affect the model fit and generalizatio
 <details> 
 <summary>**Solution**</summary>
 
-Allowing for more splits will make the model more complex, thus - all else being equal - achieving a better data fit but also increasing the risk of overfitting. 
+Allowing for more splits will make the model more complex, thus---all else being equal---achieving a better data fit but also increasing the risk of overfitting. 
 
 </details> 
 :::
@@ -229,7 +227,6 @@ What do you observe?
 <details> 
 <summary>**Solution**</summary>
 
-Code:
 ```{r, echo=TRUE, eval=TRUE, message=FALSE, warning=FALSE, fig.align="center", fig.height=4, fig.width=9}
 library(mlr3verse)
 library(rattle)
@@ -255,7 +252,7 @@ Higher values of `maxdepth` and lower values of `minsplit`, respectively, produc
 :::
 
 ***
-Which of the two options should we use to control the tree appearance?
+Which of the two options should we use to control tree appearance?
 
 ::: {.content-visible when-profile="solution"}
 <details> 
@@ -275,6 +272,12 @@ Both hyperparameters can be used to control tree depth, and their effect depends
 1. Develop intuition for use of Brier score in classification trees
 2. Reason about distribution and expectations of random variables
 3. Handle computations involving expectations
+:::
+
+::: {.callout-warning title="TLDR;"}
+This exercise is rather involved and requires some knowledge of probability theory.
+
+Main take-away (besides training proof-type questions): *In constructing CART with minimal Gini impurity, we minimize the expected rate of misclassification across the training data.*
 :::
 
 We will now build some intuition for the Brier score / Gini impurity as a splitting criterion by showing that it is equal to the expected MCE of the resulting node.
