@@ -1,19 +1,19 @@
 ---
 title: "Exercise 11 -- Tuning"
 subtitle: "[Introduction to Machine Learning](https://slds-lmu.github.io/i2ml/)"
-notebook-view:
-  - notebook: ex_tuning_R.ipynb
-    title: "Exercise sheet for R"
-    url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/tuning/ex_forests_R.ipynb"
-  - notebook: ex_tuning_py.ipynb
-    title: "Exercise sheet for Python"
-    url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/tuning/ex_forests_py.ipynb"
-  - notebook: sol_tuning_R.ipynb
-    title: "Solutions for R"
-    url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/tuning/sol_forests_R.ipynb"
-  - notebook: sol_tuning_py.ipynb
-    title: "Solutions for Python"
-    url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/tuning/sol_forests_py.ipynb"
+# notebook-view:
+#   - notebook: ex_tuning_R.ipynb
+#     title: "Exercise sheet for R"
+#     url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/tuning/ex_forests_R.ipynb"
+#   - notebook: ex_tuning_py.ipynb
+#     title: "Exercise sheet for Python"
+#     url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/tuning/ex_forests_py.ipynb"
+#   - notebook: sol_tuning_R.ipynb
+#     title: "Solutions for R"
+#     url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/tuning/sol_forests_R.ipynb"
+#   - notebook: sol_tuning_py.ipynb
+#     title: "Solutions for Python"
+#     url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/tuning/sol_forests_py.ipynb"
 ---
 
 ::: {.content-hidden when-format="pdf"}
@@ -34,306 +34,350 @@ notebook-view:
 :::
 </details>
 
-## Exercise 1: Tuning $k$-NN
+## Exercise 1: Basic tuning techniques
 
 ::: {.callout-note title="Learning goals" icon=false}
-Implement actual tuning procedure
+1. Implement basic tuning procedures
+2. Understand difference between grid and random search
+3. Interpret effect of hyperparameters
 :::
 
-In this exercise we will perform hyperparameter optimization (HPO) for the task of classifying the \texttt{credit risk} data with a $k$-NN classifier.
+Random search (RS) is a simple yet effective tuning procedure.
+We will implement RS from scratch to find the optimal degree $d \in \N$ of complexity a polynomial regression problem.
 
-::: {.panel-tabset}
+Consider the following skeleton of pseudo-code:
 
-### R Exercise
+```{r}
+# Algorithm: Random Search
+# ------------------------------------------------------------------------------
 
-The `kknn` implementation used by `mlr3` contains several hyperparameters, three of which are to be tuned for our prediction:
+# Requires: ...
 
-- $k$ (number of neighbors)
-- `kernel`
-- `scale`
+# < main body >
 
-***
-Describe briefly the role of each hyperparameter in the learning algorithm - which effects can be expected by altering them?
+# Returns: ...
+```
+
+What should this algorithm return as a result?
 
 ::: {.content-visible when-profile="solution"}
-<details> 
+<details>
 <summary>**Solution**</summary>
-Role of hyperparameters
 
-- $k$: determines the size of the neighborhood and thus influences the locality of the model. Smaller neighborhoods reflect the belief that only very similar (close) neighbors should be allowed to weigh into the prediction of a new observation, and predictions may change strongly for only small changes of the input variables. If $k$ is chosen too small, we may encounter overfitting. Conversely, larger neighborhoods produce a more global model with larger parts of the input space receiving the same prediction. Setting $k$ too large may result in underfitting.
-
-- `kernel`: corresponds to the choice of similarity metric. It determines the importance weights in the $k$-neighborhood. 
-
-  ![[https://en.wikipedia.org/wiki/Kernel_%28statistics%29#/media/File:Kernels.svg](https://en.wikipedia.org/wiki/Kernel_%28statistics%29#/media/File:Kernels.svg)](figure/kernels.png){width=50% fig-align="center"}
-
-  Some of the more widely applied kernels include:
-
-  - Rectangular/uniform: all observations within the support of the kernel receive the same degree of similarity, corresponding to unweighted $k$-NN.
-
-  - Triangle: weight is a linear function of distance within the kernel support.
-
-  - Epanechnikov: weight is a quadratic function of distance within the kernel support.
-
-  - Gaussian: weight is a quadratic function of distance. The Gaussian kernel has infinite support, meaning that each pair of observations, no matter how far apart, receives a positive degree of similarity.
-
-  Kernels have a number of canonical properties and  play an important role in statistics (most distance-based operations, such as smoothing, can be expressed using kernels).
-
-- `scale` (logical): defines whether variables should be normalized to equal standard deviation. This is often reasonable to avoid implicit importance weighting through different natural scales (for example, recall that neighborhoods in a bivariate feature space are circular for quadratic distance -- scaling either dimension will change which observations end up in the neighborhood).
-
-</details> 
+The minimum required output will be the optimal degree $d^\ast$.
+(Additional info might enhance user experience in a real-world implementation.)
 :::
 
-***
-In `mlr3` (using the `mlr3tuning` library), define an appropriate search space to tune over. We want to explore a range between 1 and 100 for $k$ and the kernel to be chosen from "rectangular", "epanechnikov", "gaussian", "optimal".
+*** 
+Now for what might arguably be the most important thing: what is the required user input?
 
 ::: {.content-visible when-profile="solution"}
-<details> 
+<details>
 <summary>**Solution**</summary>
 
-Each learner has a slot `param_set` containing all hyperparameters that can be set during tuning. The key function to define the search space is `ps` (short for parameter space). Furthermore, we need to instantiate every (hyper)parameter with an appropriate type - e.g., characterizing $k$ as integer ensures that only valid neighborhood sizes are queried. `scale` is logical (i.e., binary) and `kernel` is encoded as a factor with levels defining the choices to tune over:
-
-{{< embed sol_tuning_R.ipynb#1-b echo=true >}}
-
-</details> 
+- 
 :::
 
-***
-Perform the tuning procedure using `TuningInstanceSingleCrit`. Set aside 200 test observations first. Use 5-fold cross validation and random search, and terminate the process after either 30 seconds or 200 evaluations.
+<!-- ## Exercise 1: Tuning $k$-NN -->
 
-::: {.content-visible when-profile="solution"}
-<details> 
-<summary>**Solution**</summary>
+<!-- ::: {.callout-note title="Learning goals" icon=false} -->
+<!-- Implement actual tuning procedure -->
+<!-- ::: -->
 
-We implement the HPO as follows:
+<!-- In this exercise we will perform hyperparameter optimization (HPO) for the task of classifying the \texttt{credit risk} data with a $k$-NN classifier. -->
 
-{{< embed sol_tuning_R.ipynb#1-c-1 echo=true >}}
+<!-- ::: {.panel-tabset} -->
 
-Then, press play:
+<!-- ### R Exercise -->
 
-{{< embed sol_tuning_R.ipynb#1-c-2 echo=true >}}
+<!-- The `kknn` implementation used by `mlr3` contains several hyperparameters, three of which are to be tuned for our prediction: -->
 
-</details> 
-:::
+<!-- - $k$ (number of neighbors) -->
+<!-- - `kernel` -->
+<!-- - `scale` -->
 
-***
-You realize that a high AUC is the performance measure you are actually interested in. Modify the HPO procedure such that performance is optimized w.r.t. AUC.
+<!-- *** -->
+<!-- Describe briefly the role of each hyperparameter in the learning algorithm - which effects can be expected by altering them? -->
 
-::: {.content-visible when-profile="solution"}
-<details> 
-<summary>**Solution**</summary>
+<!-- ::: {.content-visible when-profile="solution"} -->
+<!-- <details>  -->
+<!-- <summary>**Solution**</summary> -->
+<!-- Role of hyperparameters -->
 
-Plug in custom performance metric (AUC needs the learner to output probabilities):
+<!-- - $k$: determines the size of the neighborhood and thus influences the locality of the model. Smaller neighborhoods reflect the belief that only very similar (close) neighbors should be allowed to weigh into the prediction of a new observation, and predictions may change strongly for only small changes of the input variables. If $k$ is chosen too small, we may encounter overfitting. Conversely, larger neighborhoods produce a more global model with larger parts of the input space receiving the same prediction. Setting $k$ too large may result in underfitting. -->
 
-{{< embed sol_tuning_R.ipynb#1-d echo=true >}}
+<!-- - `kernel`: corresponds to the choice of similarity metric. It determines the importance weights in the $k$-neighborhood.  -->
 
-</details> 
-:::
+<!--   ![[https://en.wikipedia.org/wiki/Kernel_%28statistics%29#/media/File:Kernels.svg](https://en.wikipedia.org/wiki/Kernel_%28statistics%29#/media/File:Kernels.svg)](figure/kernels.png){width=50% fig-align="center"} -->
 
-***
-Visualize the tuning result with a suitable command. What do you observe regarding the impact of different hyperparameters on predictive performance? What are limits of such a form of analysis?
+<!--   Some of the more widely applied kernels include: -->
 
-::: {.content-visible when-profile="solution"}
-<details> 
-<summary>**Solution**</summary>
+<!--   - Rectangular/uniform: all observations within the support of the kernel receive the same degree of similarity, corresponding to unweighted $k$-NN. -->
 
-We can make convenient use of the autoplot functions in `mlr3`:
+<!--   - Triangle: weight is a linear function of distance within the kernel support. -->
 
-{{< embed sol_tuning_R.ipynb#1-e echo=true >}}
+<!--   - Epanechnikov: weight is a quadratic function of distance within the kernel support. -->
 
-Increasing $k$ initially leads to an improvement that plateaus after around 50 neighbors. Scaling the variables also boosts performance. The choice of the kernel, on the other hand, does not seem to have much impact.
+<!--   - Gaussian: weight is a quadratic function of distance. The Gaussian kernel has infinite support, meaning that each pair of observations, no matter how far apart, receives a positive degree of similarity. -->
 
-Obviously, the interpretability of these plots is limited: we only see *marginal* effects of individual hyperparameters. The fact that they really interact with each other contributes substantially to the difficulty of the tuning problem. We can clearly see this in the plot for $k$, where we have two quite distinct patterns corresponding to different values of `scale`.
+<!--   Kernels have a number of canonical properties and  play an important role in statistics (most distance-based operations, such as smoothing, can be expressed using kernels). -->
 
-</details> 
-:::
+<!-- - `scale` (logical): defines whether variables should be normalized to equal standard deviation. This is often reasonable to avoid implicit importance weighting through different natural scales (for example, recall that neighborhoods in a bivariate feature space are circular for quadratic distance -- scaling either dimension will change which observations end up in the neighborhood). -->
 
-***
-After analyzing the tuning results, you notice that changes in $k$ are more influential for smaller neighborhoods. Re-run the HPO procedure with a log-transformation for $k$.
+<!-- </details>  -->
+<!-- ::: -->
 
-::: {.content-visible when-profile="solution"}
-<details> 
-<summary>**Solution**</summary>
+<!-- *** -->
+<!-- In `mlr3` (using the `mlr3tuning` library), define an appropriate search space to tune over. We want to explore a range between 1 and 100 for $k$ and the kernel to be chosen from "rectangular", "epanechnikov", "gaussian", "optimal". -->
 
-Tuning $k$ on log-scale requires a modification of the search space. For this, we need to transform the boundaries of the search interval and undo the transformation afterwards via `exp` (plus a rounding operation to ensure $k$ remains an integer number):
+<!-- ::: {.content-visible when-profile="solution"} -->
+<!-- <details>  -->
+<!-- <summary>**Solution**</summary> -->
 
-{{< embed sol_tuning_R.ipynb#1-f echo=true >}}
+<!-- Each learner has a slot `param_set` containing all hyperparameters that can be set during tuning. The key function to define the search space is `ps` (short for parameter space). Furthermore, we need to instantiate every (hyper)parameter with an appropriate type - e.g., characterizing $k$ as integer ensures that only valid neighborhood sizes are queried. `scale` is logical (i.e., binary) and `kernel` is encoded as a factor with levels defining the choices to tune over: -->
 
-</details> 
-:::
+<!-- {{< embed sol_tuning_R.ipynb#1-b echo=true >}} -->
 
-***
-With the hyperparameter configuration found via HPO, fit the model on all training observations and compute the AUC on your test data.
+<!-- </details>  -->
+<!-- ::: -->
 
-::: {.content-visible when-profile="solution"}
-<details> 
-<summary>**Solution**</summary>
+<!-- *** -->
+<!-- Perform the tuning procedure using `TuningInstanceSingleCrit`. Set aside 200 test observations first. Use 5-fold cross validation and random search, and terminate the process after either 30 seconds or 200 evaluations. -->
 
-Performance on test data:
+<!-- ::: {.content-visible when-profile="solution"} -->
+<!-- <details>  -->
+<!-- <summary>**Solution**</summary> -->
 
-{{< embed sol_tuning_R.ipynb#1-g echo=true >}}
+<!-- We implement the HPO as follows: -->
 
-</details> 
-:::
+<!-- {{< embed sol_tuning_R.ipynb#1-c-1 echo=true >}} -->
 
+<!-- Then, press play: -->
 
-### Python Exercise
+<!-- {{< embed sol_tuning_R.ipynb#1-c-2 echo=true >}} -->
 
-The `KNeighborsClassifier` implementation used by `sklearn` contains several hyperparameters, three of which are to be tuned for our prediction:
+<!-- </details>  -->
+<!-- ::: -->
 
-- `n_neighbors`
-- `weigths`
-- `metric`
+<!-- *** -->
+<!-- You realize that a high AUC is the performance measure you are actually interested in. Modify the HPO procedure such that performance is optimized w.r.t. AUC. -->
 
-***
-Describe briefly the role of each hyperparameter in the learning algorithm -- which effects can be expected by altering them?
+<!-- ::: {.content-visible when-profile="solution"} -->
+<!-- <details>  -->
+<!-- <summary>**Solution**</summary> -->
 
-Furthermore, read the [credit_for_py.csv](https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/data/german_credit_for_py.csv), separate 138 test observations and perform necessary preprocessing steps.
+<!-- Plug in custom performance metric (AUC needs the learner to output probabilities): -->
 
-<details> 
-<summary>*Hint*</summary>
+<!-- {{< embed sol_tuning_R.ipynb#1-d echo=true >}} -->
 
-Apply a `StandardScaler` on your feature space. What effect does scaling have on your $k$-NN-model?
+<!-- </details>  -->
+<!-- ::: -->
 
-</details>
+<!-- *** -->
+<!-- Visualize the tuning result with a suitable command. What do you observe regarding the impact of different hyperparameters on predictive performance? What are limits of such a form of analysis? -->
 
-::: {.content-visible when-profile="solution"}
-<details> 
-<summary>**Solution**</summary>
+<!-- ::: {.content-visible when-profile="solution"} -->
+<!-- <details>  -->
+<!-- <summary>**Solution**</summary> -->
 
-Role of hyperparameters:
+<!-- We can make convenient use of the autoplot functions in `mlr3`: -->
 
-- `n_neighbors`: determines the size of the neighborhood and thus influences the locality of the model. Smaller neighborhoods reflect the belief that only very similar (close) neighbors should be allowed to weigh into the prediction of a new observation, and predictions may change strongly for only small changes of the input variables. If `n_neighbors` is chosen too small, we may encounter overfitting. Conversely, larger neighborhoods produce a more global model with larger parts of the input space receiving the same prediction. Setting `n_neighbors` too large may result in underfitting.
+<!-- {{< embed sol_tuning_R.ipynb#1-e echo=true >}} -->
 
-- `weights`: It determines the importance weights in the k-neighborhood. Possible values are:
-    - ‘uniform’ : uniform weights. All points in each neighborhood are weighted equally.
-    - ‘distance’ : weight points by the inverse of their distance. in this case, closer neighbors of a query point will have a greater influence than neighbors which are further away. This setting is strongly dependent on the parameter `metric`
-    - [`callable`] : a user-defined function which accepts an array of distances, and returns an array of the same shape containing the weights.
+<!-- Increasing $k$ initially leads to an improvement that plateaus after around 50 neighbors. Scaling the variables also boosts performance. The choice of the kernel, on the other hand, does not seem to have much impact. -->
 
-- `metric`: Metric to use for distance computation. Some of the more widely applied metric include:
-     - `euclidean`: distance is computed by the L2-norm
-     - `manhattan`: distance is computed by the L1-norm
-     - `cosine`: distance is computed by $1-\frac{u \cdot v}{\|u\|_2 \|v\|_2}$
-     - `minkowski`: given the parameter p the distance is computed by $\|u - v\|_p$
+<!-- Obviously, the interpretability of these plots is limited: we only see *marginal* effects of individual hyperparameters. The fact that they really interact with each other contributes substantially to the difficulty of the tuning problem. We can clearly see this in the plot for $k$, where we have two quite distinct patterns corresponding to different values of `scale`. -->
 
-Load the data [credit_for_py.csv](https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/data/credit_for_py.csv) and seperate into train and test set:
+<!-- </details>  -->
+<!-- ::: -->
 
-{{< embed sol_tuning_py.ipynb#1-a echo=true >}}
+<!-- *** -->
+<!-- After analyzing the tuning results, you notice that changes in $k$ are more influential for smaller neighborhoods. Re-run the HPO procedure with a log-transformation for $k$. -->
 
-</details> 
-:::
+<!-- ::: {.content-visible when-profile="solution"} -->
+<!-- <details>  -->
+<!-- <summary>**Solution**</summary> -->
 
-***
-Define an appropriate search space to tune over. We want to explore a range between 1 and 100 for `n_neighbors` and the distance calculation to be chosen from `uniform`, `manhattan`, `euclidean`, `cosine`.
+<!-- Tuning $k$ on log-scale requires a modification of the search space. For this, we need to transform the boundaries of the search interval and undo the transformation afterwards via `exp` (plus a rounding operation to ensure $k$ remains an integer number): -->
 
-::: {.content-visible when-profile="solution"}
-<details> 
-<summary>**Solution**</summary>
+<!-- {{< embed sol_tuning_R.ipynb#1-f echo=true >}} -->
 
-Each instance of RandomizedSearchCV has a slot *param_distributions* containing all hyperparameters that can be set during tuning. It has to be passed as a dictionary or a list of dictionaries. Note that single values also have to be passed as a list to the dictionary.
+<!-- </details>  -->
+<!-- ::: -->
 
-Furthermore, we need to consider valid (hyper)parameter tuples in the design of the hyperparameter space.
+<!-- *** -->
+<!-- With the hyperparameter configuration found via HPO, fit the model on all training observations and compute the AUC on your test data. -->
 
-Due to the **duck typing** behaviour of Python, we do not need to specify the type of our hyperparameters (type or the class of an object is less important than the methods it defines):
+<!-- ::: {.content-visible when-profile="solution"} -->
+<!-- <details>  -->
+<!-- <summary>**Solution**</summary> -->
 
-{{< embed sol_tuning_py.ipynb#1-b echo=true >}}
+<!-- Performance on test data: -->
 
-</details> 
-:::
+<!-- {{< embed sol_tuning_R.ipynb#1-g echo=true >}} -->
 
-***
-Perform the tuning procedure using `RandomizedSearchCV`. Use 5-fold cross validation, and terminate the process after 200 iterations. Also, utilize parallelization to fasten the computation.
+<!-- </details>  -->
+<!-- ::: -->
 
-::: {.content-visible when-profile="solution"}
-<details> 
-<summary>**Solution**</summary>
 
-We implement the HPO as follows:
+<!-- ### Python Exercise -->
 
-{{< embed sol_tuning_py.ipynb#1-c echo=true >}}
+<!-- The `KNeighborsClassifier` implementation used by `sklearn` contains several hyperparameters, three of which are to be tuned for our prediction: -->
 
-</details> 
-:::
+<!-- - `n_neighbors` -->
+<!-- - `weigths` -->
+<!-- - `metric` -->
 
-***
-You realize that a high AUC is the performance measure you are actually interested in. Modify the HPO procedure such that performance is optimized w.r.t. AUC.
+<!-- *** -->
+<!-- Describe briefly the role of each hyperparameter in the learning algorithm -- which effects can be expected by altering them? -->
 
-::: {.content-visible when-profile="solution"}
-<details> 
-<summary>**Solution**</summary>
+<!-- Furthermore, read the [credit_for_py.csv](https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/data/german_credit_for_py.csv), separate 138 test observations and perform necessary preprocessing steps. -->
 
-{{< embed sol_tuning_py.ipynb#1-d echo=true >}}
+<!-- <details>  -->
+<!-- <summary>*Hint*</summary> -->
 
-</details> 
-:::
+<!-- Apply a `StandardScaler` on your feature space. What effect does scaling have on your $k$-NN-model? -->
 
-***
-You are interested in possible under- and overfitting of your hyperparameter setting. Use `validation_curve` from `sklearn.model_selection` to retrieve the training scores and cross-validation scores for a 5-fold-CV, depending on the AUC metric.
+<!-- </details> -->
 
-Visualize the tuning result with a suitable command. You may use the function provided below or a self-defined function.
+<!-- ::: {.content-visible when-profile="solution"} -->
+<!-- <details>  -->
+<!-- <summary>**Solution**</summary> -->
 
-Re-run the evaluation with unscaled features.
+<!-- Role of hyperparameters: -->
 
-What do you observe regarding the impact of different hyperparameters and scaling on 
-predictive performance?
+<!-- - `n_neighbors`: determines the size of the neighborhood and thus influences the locality of the model. Smaller neighborhoods reflect the belief that only very similar (close) neighbors should be allowed to weigh into the prediction of a new observation, and predictions may change strongly for only small changes of the input variables. If `n_neighbors` is chosen too small, we may encounter overfitting. Conversely, larger neighborhoods produce a more global model with larger parts of the input space receiving the same prediction. Setting `n_neighbors` too large may result in underfitting. -->
 
-What are limits of such a form of analysis? 
+<!-- - `weights`: It determines the importance weights in the k-neighborhood. Possible values are: -->
+<!--     - ‘uniform’ : uniform weights. All points in each neighborhood are weighted equally. -->
+<!--     - ‘distance’ : weight points by the inverse of their distance. in this case, closer neighbors of a query point will have a greater influence than neighbors which are further away. This setting is strongly dependent on the parameter `metric` -->
+<!--     - [`callable`] : a user-defined function which accepts an array of distances, and returns an array of the same shape containing the weights. -->
 
-<details> 
-<summary>*Function for plotting a validation curve*</summary>
+<!-- - `metric`: Metric to use for distance computation. Some of the more widely applied metric include: -->
+<!--      - `euclidean`: distance is computed by the L2-norm -->
+<!--      - `manhattan`: distance is computed by the L1-norm -->
+<!--      - `cosine`: distance is computed by $1-\frac{u \cdot v}{\|u\|_2 \|v\|_2}$ -->
+<!--      - `minkowski`: given the parameter p the distance is computed by $\|u - v\|_p$ -->
 
-{{< embed ex_tuning_py.ipynb#hint echo=true >}}
+<!-- Load the data [credit_for_py.csv](https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/data/credit_for_py.csv) and seperate into train and test set: -->
 
-</details>
+<!-- {{< embed sol_tuning_py.ipynb#1-a echo=true >}} -->
 
-::: {.content-visible when-profile="solution"}
-<details> 
-<summary>**Solution**</summary>
+<!-- </details>  -->
+<!-- ::: -->
 
-Plot for scaled training data:
+<!-- *** -->
+<!-- Define an appropriate search space to tune over. We want to explore a range between 1 and 100 for `n_neighbors` and the distance calculation to be chosen from `uniform`, `manhattan`, `euclidean`, `cosine`. -->
 
-{{< embed sol_tuning_py.ipynb#1-e-1 echo=true >}}
+<!-- ::: {.content-visible when-profile="solution"} -->
+<!-- <details>  -->
+<!-- <summary>**Solution**</summary> -->
 
-Plot for unscaled training data:
+<!-- Each instance of RandomizedSearchCV has a slot *param_distributions* containing all hyperparameters that can be set during tuning. It has to be passed as a dictionary or a list of dictionaries. Note that single values also have to be passed as a list to the dictionary. -->
 
-{{< embed sol_tuning_py.ipynb#1-e-2 echo=true >}}
+<!-- Furthermore, we need to consider valid (hyper)parameter tuples in the design of the hyperparameter space. -->
 
-Increasing `n_neighbors` initially leads to an improvement that plateaus after around 50 neighbors. Scaling the variables also boosts performance. The choice of the metric, on the other hand, does not seem to have much impact. Note that the default metric compared with the uniform distribution is the euclidian one.
+<!-- Due to the **duck typing** behaviour of Python, we do not need to specify the type of our hyperparameters (type or the class of an object is less important than the methods it defines): -->
 
-Obviously, the interpretability of these plots is limited: we only see marginal effects of individual hyperparameters. The fact that they really interact with each other contributes substantially to the difficulty of the tuning problem. We can clearly see this in the plots for k, where we have two quite distinct patterns corresponding to different values of scale.
+<!-- {{< embed sol_tuning_py.ipynb#1-b echo=true >}} -->
 
-</details> 
-:::
+<!-- </details>  -->
+<!-- ::: -->
 
-***
-After analyzing the tuning results, you notice that changes in `n_neighbors` are more influential for smaller neighborhoods. Re-run the HPO procedure with a log-transformation for `n_neighbors` parameter list.
+<!-- *** -->
+<!-- Perform the tuning procedure using `RandomizedSearchCV`. Use 5-fold cross validation, and terminate the process after 200 iterations. Also, utilize parallelization to fasten the computation. -->
 
-::: {.content-visible when-profile="solution"}
-<details> 
-<summary>**Solution**</summary>
+<!-- ::: {.content-visible when-profile="solution"} -->
+<!-- <details>  -->
+<!-- <summary>**Solution**</summary> -->
 
-{{< embed sol_tuning_py.ipynb#1-f-1 echo=true >}}
-{{< embed sol_tuning_py.ipynb#1-f-2 echo=true >}}
+<!-- We implement the HPO as follows: -->
 
-</details> 
-:::
+<!-- {{< embed sol_tuning_py.ipynb#1-c echo=true >}} -->
 
-***
-With the hyperparameter configuration found via HPO, fit the model on all training observations and compute the AUC on your test data. 
-Could you see any effect of the log-transformation for `n_neighbors`?
+<!-- </details>  -->
+<!-- ::: -->
 
-::: {.content-visible when-profile="solution"}
-<details> 
-<summary>**Solution**</summary>
+<!-- *** -->
+<!-- You realize that a high AUC is the performance measure you are actually interested in. Modify the HPO procedure such that performance is optimized w.r.t. AUC. -->
 
-Performance on test data:
+<!-- ::: {.content-visible when-profile="solution"} -->
+<!-- <details>  -->
+<!-- <summary>**Solution**</summary> -->
 
-{{< embed sol_tuning_py.ipynb#1-g-1 echo=true >}}
+<!-- {{< embed sol_tuning_py.ipynb#1-d echo=true >}} -->
 
-As can be observed, the log-transformation does not have a high effect on the tuning process.
+<!-- </details>  -->
+<!-- ::: -->
 
-{{< embed sol_tuning_py.ipynb#1-g-2 echo=true >}}
+<!-- *** -->
+<!-- You are interested in possible under- and overfitting of your hyperparameter setting. Use `validation_curve` from `sklearn.model_selection` to retrieve the training scores and cross-validation scores for a 5-fold-CV, depending on the AUC metric. -->
 
-</details> 
-:::
+<!-- Visualize the tuning result with a suitable command. You may use the function provided below or a self-defined function. -->
 
-:::
+<!-- Re-run the evaluation with unscaled features. -->
+
+<!-- What do you observe regarding the impact of different hyperparameters and scaling on  -->
+<!-- predictive performance? -->
+
+<!-- What are limits of such a form of analysis?  -->
+
+<!-- <details>  -->
+<!-- <summary>*Function for plotting a validation curve*</summary> -->
+
+<!-- {{< embed ex_tuning_py.ipynb#hint echo=true >}} -->
+
+<!-- </details> -->
+
+<!-- ::: {.content-visible when-profile="solution"} -->
+<!-- <details>  -->
+<!-- <summary>**Solution**</summary> -->
+
+<!-- Plot for scaled training data: -->
+
+<!-- {{< embed sol_tuning_py.ipynb#1-e-1 echo=true >}} -->
+
+<!-- Plot for unscaled training data: -->
+
+<!-- {{< embed sol_tuning_py.ipynb#1-e-2 echo=true >}} -->
+
+<!-- Increasing `n_neighbors` initially leads to an improvement that plateaus after around 50 neighbors. Scaling the variables also boosts performance. The choice of the metric, on the other hand, does not seem to have much impact. Note that the default metric compared with the uniform distribution is the euclidian one. -->
+
+<!-- Obviously, the interpretability of these plots is limited: we only see marginal effects of individual hyperparameters. The fact that they really interact with each other contributes substantially to the difficulty of the tuning problem. We can clearly see this in the plots for k, where we have two quite distinct patterns corresponding to different values of scale. -->
+
+<!-- </details>  -->
+<!-- ::: -->
+
+<!-- *** -->
+<!-- After analyzing the tuning results, you notice that changes in `n_neighbors` are more influential for smaller neighborhoods. Re-run the HPO procedure with a log-transformation for `n_neighbors` parameter list. -->
+
+<!-- ::: {.content-visible when-profile="solution"} -->
+<!-- <details>  -->
+<!-- <summary>**Solution**</summary> -->
+
+<!-- {{< embed sol_tuning_py.ipynb#1-f-1 echo=true >}} -->
+<!-- {{< embed sol_tuning_py.ipynb#1-f-2 echo=true >}} -->
+
+<!-- </details>  -->
+<!-- ::: -->
+
+<!-- *** -->
+<!-- With the hyperparameter configuration found via HPO, fit the model on all training observations and compute the AUC on your test data.  -->
+<!-- Could you see any effect of the log-transformation for `n_neighbors`? -->
+
+<!-- ::: {.content-visible when-profile="solution"} -->
+<!-- <details>  -->
+<!-- <summary>**Solution**</summary> -->
+
+<!-- Performance on test data: -->
+
+<!-- {{< embed sol_tuning_py.ipynb#1-g-1 echo=true >}} -->
+
+<!-- As can be observed, the log-transformation does not have a high effect on the tuning process. -->
+
+<!-- {{< embed sol_tuning_py.ipynb#1-g-2 echo=true >}} -->
+
+<!-- </details>  -->
+<!-- ::: -->
+
+<!-- ::: -->
