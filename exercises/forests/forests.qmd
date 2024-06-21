@@ -38,57 +38,67 @@ notebook-view:
 :::
 
 ::: {.callout-note title="Learning goals" icon=false}
-TBD
+1. Understand benefit of bagging from a mathematical perspective
+2. Solve "show that..."-type exercises
+3. Handle expectations over random variables
 :::
 
 In this exercise, we briefly revisit why bagging is a useful technique to stabilize predictions.
 
-For a fixed observation $(\xv, y)$, show that the expected quadratic loss over individual base learner predictions $\blx$ is larger than or equal to the expected quadratic loss of the prediction $\fM$ of a size-$M$ ensemble ($M \in \N$).
+For a fixed observation $(\xv, y)$, show that the expected quadratic loss over individual
+base learner predictions $\blx$ is larger than or equal to the quadratic loss of the prediction $\fM$ of a size-$M$ ensemble.
 
 You can consider all hyperparameters of the base learners and the ensemble fixed.
 
 <details> 
 <summary>*Hint*</summary>
 
-Use the law of total expectation ("Verschiebungssatz der Varianz": $\var(Z) = \E(Z^2) - (\E(Z))^2 ~ \Longleftrightarrow ~ \E(Z^2) = \var(Z) + (\E(Z))^2$, where $\var(Z) \geq 0$ by definition.) stating $\E(Z^2) \geq (\E(Z))^2$ for a random variable $Z$.
+Use the law of total expectation ("Verschiebungssatz der Varianz": $\var(Z) =
+\E(Z^2) - (\E(Z))^2 ~ \Longleftrightarrow ~ \E(Z^2) = \var(Z) + (\E(Z))^2$,
+where $\var(Z) \geq 0$ by definition.) stating $\E(Z^2) \geq (\E(Z))^2$ for a random variable $Z$.
 
 </details>
 
 ::: {.content-visible when-profile="solution"}
 <details> 
 <summary>**Solution**</summary>
-Let's first think about the expectation -- what is the stochastic part we integrate over? Since the base learner and ensemble structure is fixed for given data, the only thing random is the bootstrap sample we use as training data for the $m$-th tree, given that the total available training data originate from the data-generating process $\Pxy$, so we could write $\E_{\Dtrain^{[m]} ~|~ \Dtrain \sim \Pxy}$ (for ease of notation, we'll omit the subscripts of the expectation from now on).
 
-Next, consider the quantity we are supposed to compare to another quantity: $\E \left( \left(y - \blx \right)^2 \right)$. This looks already a lot like the $\E(Z^2)$ part of the LOTV.
+- Start with the LHS of the inequality: the *expected quadratic loss over individual
+  base learner predictions* $\rightsquigarrow$ $\E \left( \left(y - \blx \right)^2 \right)$
+- Get clear about RHS: the *quadratic loss of the prediction of a size-$M$
+  ensemble* $\rightsquigarrow$ $\left( y - \left(\fM \right) \right)^2$
+- Before we get busy moving from LHS to RHS, let's think about the
+  expectation for a minute.
 
-Since the expectation is linear, it is often worthwhile to decompose expressions of expectation and isolate the stochastic parts. Here, the only thing that changes w.r.t. $\Dtrain^{[m]}$ is the base learner models $\blx$:
+::: {.callout-note title="Distribution of the loss"}
+**Expected value** of a RV: (possibly infinite) sum over all values the RV could take,
+weighted
+by the probability of observing that value.
 
+What even is the RV here? Since the base learner and ensemble
+structure is fixed for given data, the only stochastic part is the bootstrap sample
+in the $m$-th tree given training data from the data-generating process.
+We could write this as $\E_{\Dtrain^{[m]} ~|~ \Dtrain
+\sim \Pxy}$.
+In this exercise we'll omit the subscript for ease of notation.
+:::
+
+- Back to our proof, which will make use of the LOTV.
+- By the LOTV, we know that $\E(Z^2) \geq (\E(Z))^2$ for some RV $Z$.
+- Applying that to our LHS, we obtain
+ $$
+\E \left( \left(y - \blx \right)^2\right) \geq \left(\E \left( y - \blx \right) \right)^2 .
 $$
-\E \left( \left(y - \blx \right)^2\right) 
-= \E \left(y^2 - 2y \blx + \left(\blx\right)^2 \right)
-= y^2 - 2y \E \left(\blx \right) + \E \left( \left( 
-\blx \right)^2 \right),
-$$
-
-Now it's time to realize two things. First: we want to arrive at $\left( y - \E \left(\blx \right) \right)^2 $ in order to be able to use the $(\E(Z))^2$ part of the LOTV. Second: the RHS of the above expression looks almost like a binomial formula -- we just need to move the square in the last term:
-
-$$
-y^2 - 2y \E \left(\blx \right) + \left( \E 
-\left(\blx \right) \right)^2  = \left( y - \E \left(\blx \right) \right)^2 
-$$
-
-Combine the two parts using the LOTV:
-
+- Expected values of larger terms can often be simplified so the expectation is only
+  over the actually stochastic parts (using *linearity* of expectation), yielding:
 $$
 \E \left( \left(y - \blx \right)^2\right) \geq \left( y - \E \left(\blx \right) \right)^2 .
 $$
-
-The last missing step is to show that $ \E \left(\blx \right) = \fM$. To compute the expectation for this discrete random variable (we have a finite ensemble), we sum over all possible realizations, weighted by their probability of occurence.
+- The last missing step is to show that $\E \left(\blx \right) = \fM$. To compute the expectation for this discrete random variable (we have a finite ensemble), we sum over all possible realizations, weighted by their probability of occurence.
 This can be further simplified given that all of the $M$ bootstrap samples were drawn with equal probability:
 
 $$
 \E \left(\blx \right) = \sum_{m = 1}^M \blx p \left(\Dtrain^{[m]} \right)
-= \sum_{m = 1}^M \blx \cdot \frac{1}{M}
 = \frac{1}{M} \sum_{m = 1}^M \blx,
 $$
 
@@ -100,7 +110,7 @@ $$
 \E \left( \left(y - \blx \right)^2\right) \geq \left( y - \left(\fM \right) \right)^2,
 $$
 
-showing that the expected quadratic loss over individual base learner predictions is at least as large as the expected loss of the ensemble prediction.
+showing that the expected quadratic loss over individual base learner predictions is at least as large as the loss of the ensemble prediction.
 
 </details> 
 :::
@@ -139,7 +149,7 @@ The `spam` data is a binary classification task where the aim is to classify an 
 ### R
 {{< embed sol_forests_R.ipynb#2-a echo=true >}}
 ### Python
-{{< embed sol_forests_py.ipynb#2-a-1 echo=true >}}
+{{< embed sol_forests_py.ipynb#2-a-1 echo=true >}} foo
 {{< embed sol_forests_py.ipynb#2-a-2 echo=true >}}
 :::
 </details> 
@@ -170,8 +180,8 @@ Use `from sklearn.tree import plot_tree` to visualize the trees.
 ### R
 {{< embed sol_forests_R.ipynb#2-b echo=true >}}
 ### Python
-{{< embed sol_forests_py.ipynb#2-b-1 echo=true >}}
-{{< embed sol_forests_py.ipynb#2-b-2 echo=true >}}
+{{< embed sol_forests_py.ipynb#2-b-1 echo=true >}} foo
+{{< embed sol_forests_py.ipynb#2-b-2 echo=true >}} foo
 {{< embed sol_forests_py.ipynb#2-b-3 echo=true >}}
 :::
 
@@ -235,7 +245,7 @@ In order to determine the with the biggest influence on prediction quality, we c
 ### R
 {{< embed sol_forests_R.ipynb#2-d echo=true >}}
 ### Python
-{{< embed sol_forests_py.ipynb#2-d-1 echo=true >}}
+{{< embed sol_forests_py.ipynb#2-d-1 echo=true >}} foo
 {{< embed sol_forests_py.ipynb#2-d-2 echo=true >}}
 :::
 
