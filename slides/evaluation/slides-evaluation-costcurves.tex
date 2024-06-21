@@ -1,0 +1,564 @@
+\documentclass[11pt,compress,t,notes=noshow, xcolor=table]{beamer}
+\input{../../style/preamble}
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+\input{../../latex-math/ml-eval.tex}
+
+\newcommand{\titlefigure}{figure_man/cost-curves-2}
+\newcommand{\learninggoals}{
+\item Understand cost curves
+\item As alternative to ROC curves
+}
+
+
+\title{Introduction to Machine Learning}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+\begin{document}
+
+\lecturechapter{Evaluation: Cost Curves }
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+\begin{vbframe}{Cost curves}
+
+\begin{itemize}
+  \item Directly plot the misclassif costs / error
+  % to determine the best classifier.
+  %(ROC isometrics allow this only indirectly).
+  %\item Determining the superiority of a classifier can be difficult using the ROC isometrics.
+  \item Might be easier to interpret than ROC, especially in case of
+      different misclassif costs or priors
+  % distributions. %, or more generally the skew are known.
+\end{itemize}
+
+\lz
+
+%\tiny{Source for material: Evaluating Learning Algorithms Chapter 4.4.3}
+%\vspace{-0.1cm}
+
+\begin{columns}%[T]
+\begin{column}{0.6\textwidth}
+  \small
+  \raggedright
+  \textbf{Example:} %Interpretation of two ROC curves
+  \begin{itemize}
+  \item $f_1$ and $f_2$ with intersecting ROC curves
+      % at point (FPR, TPR) = (0.25, 0.69)
+  \item $f_2$ dominates first, then $f_1$
+  % \item After intersection, $f_1$ dominates $f_2$
+  \end{itemize}
+
+\lz
+
+  \textbf{BUT:} Unclear for which thresholds, costs or class distribs $f_2$ better than $f_1$
+
+  % $\Rightarrow$ Cost curves
+\end{column}
+\begin{column}{0.39\textwidth}
+  %\begin{figure}
+    \centering
+    \tiny ROC curves for $f_1$ and $f_2$
+    \includegraphics[width=\textwidth]{figure_man/cost-curves-1.png}
+    {\tiny Nathalie Japkowicz (2004): Evaluating Learning Algorithms : A
+    Classification Perspective. (p. 125)}
+  %\end{figure}
+\end{column}
+\end{columns}
+
+%\includegraphics[width=\textwidth]{figure_man/cost-curves-1.png}
+% \end{minipage}
+% \vspace{1.5 cm}
+% {\tiny{Nathalie Japkowicz (2004): Evaluating Learning Algorithms : A Classification Perspective. (p. 125)}}
+
+\end{vbframe}
+
+
+
+% ------------------------------------------------------------------------------
+
+
+
+\begin{vbframe}{Cost curves}
+\small
+
+%Let $\rp = \P(y = 1)$ be the proportion of positive instances.
+Simplifying assumption: equal misclassif costs, i.e., $cost_{FN} = cost_{FP}$
+
+$\Rightarrow$ Expected misclassif cost reduces to misclassif error rate
+
+With law of total prob, we write error rate as function of $\rp$:
+\begin{align*}
+\rho_{MCE}(\rp)
+&= (1 - \rp) \cdot \P(\hat y = 1 | y = 0) + \rp \cdot \P(\hat y = 0 | y = 1) \\
+&= (1 - \rp) \cdot FPR + \rp \cdot FNR \\
+&= (FNR - FPR) \cdot \rp + FPR
+\end{align*}
+% Can do the same for costs:
+% Similarly, expected misclassification costs can be written as a function of $\rp$:
+% $$Costs(\rp) = (1 - \rp) \cdot FPR \cdot cost_{FP} + \rp \cdot FNR \cdot cost_{FN}$$
+% $$Costs_{norm}(\rp) = \tfrac{(1 - \rp) \cdot FPR \cdot cost_{FP} \; + \; \rp \cdot FNR \cdot cost_{FN}}{(1 - \rp) \cdot cost_{FP} \; + \; \rp \cdot cost_{FN}} \in [0,1]$$
+
+\begin{columns}[T]
+% \begin{column}{0.64\textwidth}
+% \small
+% \begin{itemize}
+% \itemsep0em
+% % \item $Costs_{norm}$ (normalized costs) is a natural extension of MCE
+% \item Denominator = $\max(Costs)$ =  all obs misclassified (i.e., $FPR = FNR = 1$).
+% % \item If $cost_{FN} = cost_{FP}$, then $Costs_{norm} = \rho_{MCE}$
+% \end{itemize}
+% \end{column}
+\begin{column}{0.5\textwidth}
+% \tiny
+
+%\begin{center}
+\centerline{Confusion matrix}
+\begin{tabular}{cc|cc}
+    & &\multicolumn{2}{c}{True class} \\
+    & & $y=1$ & $y=0$  \\
+ \hline
+    \multirow{2}{*}{\parbox{0.3cm}{Pred.  class}}& $\hat y$ = 1     & TP                 & FP\\
+    & $\hat y$ = 0 & FN              & TN\\
+    %& & P(y = 1) & P(y = 0)
+\end{tabular}
+\end{column}
+
+% \lz
+\begin{column}{0.5\textwidth}
+\centerline{Cost matrix}
+\begin{tabular}{cc|cc}
+    & &\multicolumn{2}{c}{True class} \\
+    & & $y=1$ & $y=0$  \\
+ \hline
+    \multirow{2}{*}{\parbox{0.3cm}{Pred.  class}}& $\hat y$ = 1     & 0                 & $cost_{FP}$\\
+    & $\hat y$ = 0 & $cost_{FN}$              & 0\\
+    %& & P(y = 1) & P(y = 0)
+\end{tabular}
+%\end{center}
+
+\end{column}
+\end{columns}
+
+% \begin{columns}
+% \begin{column}{0.5\textwidth}
+% {\centering Confusion matrix
+% \begin{center}
+% \begin{tabular}{cc|cc}
+%     & &\multicolumn{2}{c}{True class} \\
+%     & & $y=1$ & $y=0$  \\
+%  \hline
+%     \multirow{2}{*}{\parbox{0.6cm}{Pred.  class}}& $\hat y$ = 1     & TP                 & FP\\
+%     & $\hat y$ = 0 & FN              & TN\\
+%     %& & P(y = 1) & P(y = 0)
+% \end{tabular}
+% \end{center}
+% }
+% \end{column}
+% \begin{column}{0.5\textwidth}
+% {\centering Cost matrix
+% \begin{center}
+% \begin{tabular}{cc|cc}
+%     & &\multicolumn{2}{c}{True class} \\
+%     & & $y=1$ & $y=0$  \\
+%  \hline
+%     \multirow{2}{*}{\parbox{0.6cm}{Pred.  class}}& $\hat y$ = 1     & 0                 & $cost_{FP}$\\
+%     & $\hat y$ = 0 & $cost_{FN}$              & 0\\
+%     %& & P(y = 1) & P(y = 0)
+% \end{tabular}
+% \end{center}
+% }
+% \end{column}
+% \end{columns}
+
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Cost curves}
+
+\begin{footnotesize}
+
+\begin{itemize}
+  % \item Simplifying assumption: equal misclassification costs, i.e.,
+  % $cost_{FN} = cost_{FP}$.
+  \item Expected misclassif costs (or error rate if $cost_{FN} = cost_{FP}$) is plotted as function of proportion of positive instances, $\rp = \P(y = 1)$
+  \item Cost curves are point–line duals of ROC curves, i.e., a single classifier is represented by a point in the ROC space and by a line in cost space
+\end{itemize}
+
+\end{footnotesize}
+
+\begin{figure}
+  \centering
+  \scalebox{0.8}{\includegraphics[width=\textwidth]
+  {figure_man/cost-curves-0.png}}
+  \tiny
+  \\Chris Drummond and Robert C. Holte (2006): Cost curves: An improved
+  method for visualizing classifier performance. \\Machine Learning, 65, 95-130
+  (\href{https://www.semanticscholar.org/paper/Cost-curves\%3A-An-improved-method-for  -visualizing-Drummond-Holte/71708ce984e0896e7383435913547e770572410e}
+  {\underline{URL}}).
+  % \tiny{\\ Credit: Chris Drummond and Robert C. Holte  \\}
+\end{figure}
+
+% {\tiny{Chris Drummond and Robert C. Holte (2006): Cost curves: An improved
+% method for visualizing classifier performance. Machine Learning, 65, 95-130.
+% \emph{\url{https://www.semanticscholar.org/paper/Cost-curves\%3A-An-improved-method-for-visualizing-Drummond-Holte/71708ce984e0896e7383435913547e770572410e}}}\par}
+
+\end{vbframe}
+
+
+% ------------------------------------------------------------------------------
+
+
+
+\begin{vbframe}{Cost lines}
+
+% \begin{itemize}
+  %\item The convex hull of the ROC space is the lower envelope created of all classifier lines in the cost space.
+  %\item The misclassification error is plotted as a function of the probability of an observation being from the positive class.
+%   \item Functional form of the cost curve of a classifier:
+%   $error = (FNR - FPR) \cdot \rp + FPR$ %, \;\;\;$ (Note: $P(+) = \rp$)
+% \end{itemize}
+
+Cost line of a classifier with slope $(FNR - FPR)$ and intercept $FPR$:
+$$\rho_{MCE}(\rp) = (FNR - FPR) \cdot \rp + FPR$$
+
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+
+%$error = (\rho_{FNR} - \rho_{FPR}) \cdot \rp + \rho_{FPR}$.
+\begin{itemize}
+\item Hard classifiers are points (TPR, FPR) in ROC space
+\item The cost line of a classifier connects $(\rp, \rho_{MCE})$-points at
+$(0, FPR)$ and $(1, 1-TPR)$
+\item Classifier 3 always dominates classifier 1
+\item Classifier 3 is better than classifier 2 when $\rp < 0.7$
+\end{itemize}
+
+\end{column}
+
+\begin{column}{0.49\textwidth}
+\centering
+Cost lines plot different values of $\rp$ vs. $\rho_{MCE}(\rp)$
+
+\includegraphics[width=\textwidth]{figure_man/cost-curves-3.png}
+\end{column}
+\end{columns}
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{frame}{Cost lines - Example}
+
+\begin{footnotesize}
+
+\begin{itemize}
+  \item<1-> Horizontal dashed line: worst classifier (100\% error rate for all $\rp$)\\
+  $\Rightarrow FNR = FPR = 1$
+  \item<1-> x-axis: perfect classifier (0\% error rate for all
+  $\rp$) $\Rightarrow FNR = FPR = 0$
+  \item<2-> Dashed diagonal lines: trivial classifiers, i.e., ascending diagonal always predicts negative instances ($\Rightarrow FNR = 1$ and $FPR = 0$) and vice versa
+  \item<3-> Descending/ascending bold lines:
+  two families of classifiers $A$ and $B$ (represented by points in their respective ROC curves)
+\end{itemize}
+
+\end{footnotesize}
+
+% Animation: https://docs.google.com/presentation/d/1YWmJeb9etd8-dtwU8jfmJZPbJKoWTuz7CQtNnSEtu54/edit?usp=sharing
+\begin{columns}[T]
+\begin{column}{0.58\textwidth}
+%\begin{center}
+\includegraphics<1>[page=1, trim = 45 20 50 45, clip, width=\textwidth]{figure_man/cost-curves.pdf}
+\includegraphics<2>[page=2, trim = 45 20 50 45, clip, width=\textwidth]{figure_man/cost-curves.pdf}
+\includegraphics<3>[page=3, trim = 45 20 50 45, clip, width=\textwidth]{figure_man/cost-curves.pdf}
+%\end{center}
+\end{column}
+\begin{column}{0.41\textwidth}
+\footnotesize
+$\rho_{MCE} = (FNR - FPR) \cdot \rp + FPR$
+{\centering
+\begin{center}
+Confusion matrix
+\begin{tabular}{cc|cc}
+    & &\multicolumn{2}{c}{True class} \\
+    & & $y=1$ & $y=0$  \\
+ \hline
+    \multirow{2}{*}{\parbox{0.6cm}{Pred.  class}}& $\hat y$ = 1     & TP                 & FP\\
+    & $\hat y$ = 0 & FN              & TN\\
+    %& & P(y = 1) & P(y = 0)
+\end{tabular}
+\end{center}
+}
+\end{column}
+\end{columns}
+
+
+%\begin{center}
+% \only<1>{\centering\includegraphics[page=1, width=0.7\textwidth]{figure_man/cost-curves.pdf}}
+% \only<2>{\centering\includegraphics[page=2, width=0.7\textwidth]{figure_man/cost-curves.pdf}}
+% \only<3>{\centering\includegraphics[page=3, width=0.7\textwidth]{figure_man/cost-curves.pdf}}
+  %\tiny{\\ Credit: Nathalie Japkowicz  \\}
+%\end{center}
+
+\end{frame}
+
+% ------------------------------------------------------------------------------
+
+% \begin{vbframe}{Cost curves}
+%
+% \textbf{Example:} In position (0.4, 0.25) B classifier loses its
+% performance to one of the A classifiers (point where ROC curves cross). But
+% there is no practical information about when classifier A should be used
+% over B. In contrast the cost graph tells us that for $0.26 \leq \rp < 0.4$
+% classifier B is preferred and for $0.4 \leq \rp < 0.48$ classifier A1 is
+% preferred.
+%
+% \begin{center}
+% \includegraphics[width=0.5\textwidth]{figure_man/cost-curves-2.png}
+% \end{center}
+%
+% \end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{frame}{visualize cost curve - lower envelope}
+
+	\begin{itemize}
+	  \item<1-> Left: TPR $\&$ FPR of a classifier for different prob thresholds
+	  \item<1-> Right: Corresponding cost lines
+		\item<4-> \textbf{Cost curve} (right: black line) is lower envelope of \textbf{cost lines} \\
+		$\hat{=}$ pointwise minimum of error rate (as function of $\rp$)
+		%\item The bold curve in the right figure below is the lower envelope of the cost lines
+		%\item The lower envelope is a way to visualize the cost curve
+	\end{itemize}
+  \only<1> {
+    \begin{center}
+      \includegraphics[width=0.8\textwidth]{figure/lower_envelope_1.png}
+    \end{center}
+  }
+  \only<2> {
+    \begin{center}
+      \includegraphics[width=0.8\textwidth]{figure/lower_envelope_2.png}
+    \end{center}
+  }
+  \only<3> {
+    \begin{center}
+      \includegraphics[width=0.8\textwidth]{figure/lower_envelope_3.png}
+    \end{center}
+  }
+  % \only<4> {
+  %   \begin{center}
+  %     \includegraphics[width=0.8\textwidth]{figure/lower_envelope_4.png}
+  %   \end{center}
+  % }
+  % \only<5> {
+  %   \begin{center}
+  %     \includegraphics[width=0.8\textwidth]{figure/lower_envelope_5.png}
+  %   \end{center}
+  % }
+  % \only<6> {
+  %   \begin{center}
+  %     \includegraphics[width=0.8\textwidth]{figure/lower_envelope_6.png}
+  %   \end{center}
+  % }
+  % \only<7> {
+  %   \begin{center}
+  %     \includegraphics[width=0.8\textwidth]{figure/lower_envelope_7.png}
+  %   \end{center}
+  % }
+  % \only<8> {
+  %   \begin{center}
+  %     \includegraphics[width=0.8\textwidth]{figure/lower_envelope_8.png}
+  %   \end{center}
+  % }
+  % \only<9> {
+  %   \begin{center}
+  %     \includegraphics[width=0.8\textwidth]{figure/lower_envelope_9.png}
+  %   \end{center}
+  % }
+  % \only<10> {
+  %   \begin{center}
+  %     \includegraphics[width=0.8\textwidth]{figure/lower_envelope_10.png}
+  %   \end{center}
+  % }
+  \only<4> {
+    \begin{center}
+      \includegraphics[width=0.8\textwidth]{figure/lower_envelope_11.png}
+    \end{center}
+  }
+
+\end{frame}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{consider costs}
+
+\textbf{Now:} Assume unequal misclassif costs, i.e., $cost_{FN} \neq cost_{FP}$ and generalize error rate to \textbf{expected costs} (as function of $\rp$): %consider expected costs as fucntion of $\rp$ as general form of error rate:
+$$Costs(\rp) = (1 - \rp) \cdot FPR \cdot cost_{FP} + \rp \cdot FNR \cdot cost_{FN}$$
+Maximum of expected costs happens when
+$$FPR=FNR=1 \; \Rightarrow \; Costs_{max} = (1 - \rp) \cdot cost_{FP} + \rp \cdot cost_{FN}$$
+Consider \textbf{normalized costs} (as function of $\rp$):
+%$$\Rightarrow Costs_{norm}(\rp) = \tfrac{(1 - \rp) \cdot FPR \cdot cost_{FP} \; + \; \rp \cdot FNR \cdot cost_{FN}}{(1 - \rp) \cdot cost_{FP} \; + \; \rp \cdot cost_{FN}} \in [0,1]$$
+%$$\Rightarrow Costs_{norm}(\rp) = \tfrac{(1 - \rp) \cdot cost_{FP} \cdot FPR \; + \; \rp \cdot cost_{FN} \cdot FNR}{(1 - \rp) \cdot cost_{FP} \; + \; \rp \cdot cost_{FN}} \in [0,1]$$
+\begin{align*}
+Costs_{norm}(\rp)
+&= \tfrac{(1 - \rp) \cdot FPR \cdot cost_{FP}  \; + \; \rp \cdot FNR \cdot cost_{FN} }{(1 - \rp) \cdot cost_{FP} \; + \; \rp \cdot cost_{FN}}\\
+&= {\color{red}\tfrac{(1 - \rp)\cdot cost_{FP} \cdot {\color{black}FPR}}{(1 - \rp) \cdot cost_{FP} \; + \; \rp \cdot cost_{FN}}} + {\color{blue}\tfrac{\rp \cdot cost_{FN} \cdot {\color{black}FNR}}{(1 - \rp) \cdot cost_{FP} \; + \; \rp \cdot cost_{FN}}}
+\end{align*}
+
+%Let $PC(+)$ be the normalized version of $\rp\cdot cost_{FN}$, where $PC$ stands for "probability times cost", we have
+Let "probability times cost" $PC(+)$ be normalized version of $\rp\cdot cost_{FN}$:
+\begin{align*}
+   {\color{blue}PC(+)=\tfrac{\rp\cdot cost_{FN}}{(1-\rp)\cdot cost_{FP} + \rp\cdot cost_{FN}}} \text{ and }
+   {\color{red}1-PC(+)=\tfrac{(1-\rp)\cdot cost_{FP}}{(1-\rp)\cdot cost_{FP} + \rp\cdot cost_{FN}}}
+\end{align*}
+To obtain cost lines, we need a function with slope $(FNR - FPR)$ and intercept $FPR$ $\Rightarrow$ Rewrite $Costs_{norm}(\rp)$ as function of $PC(+)$:
+\begin{align*}
+Costs_{norm}(PC(+)) &= (1-PC(+))\cdot FPR + PC(+)\cdot FNR \\
+&= (FNR - FPR)\cdot PC(+) + FPR \\
+&= \begin{cases}
+  FPR, if\; PC(+) = 0 \\
+  FNR, if\; PC(+) = 1
+\end{cases}
+\end{align*}
+%\vspace{-0.8cm}
+\begin{columns}[c]
+\begin{column}{0.49\textwidth}
+\begin{itemize}
+  \item Plot is similar to simplified case with $cost_{FN} = cost_{FP}$ %in comparison with the simpler setting's.
+  \item Axes' labels and their interpretation have changed
+  \item Normalized cost vs. "probability times cost"
+  %range of class distributions and misclassifcation costs.
+\end{itemize}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{figure}
+  \centering\includegraphics[width=0.75\textwidth]{figure/cost_curve.png}
+\end{figure}
+\end{column}
+\end{columns}
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{compare with trivial classifiers}
+  \begin{itemize}
+    \item Operating range of a classifier is a set of $PC(+)$ values (operating points) where classifier performs better than both trivial classifiers
+    \item Intersection of cost curves and trivial classifiers' diagonals determine operating range
+    %this range is defined by two $PC(+)$ values, which are the intersections between the classifier's lower envelope (cost curve) and the trivial classifiers' diagonals.
+    \item At any $PC(+)$ value, the vertical distance of trivial diagonal to a classifer's cost curve within operating range shows advantage in performance (normalized costs) of classifier %provides a quantitative performance advantage of that classifier over trivial classifier at that operating point.
+    %The vertical distance between a trivial diagonal and the classifer's cost curve at any $PC(+)$ value within the operating range provides a quantitative performance advantage of that classifier over trivial classifier at that operating point.
+  \end{itemize}
+  %\pagebreak
+  %In the plot below,
+\begin{columns}[T]
+\begin{column}{0.6\textwidth}
+\textbf{Example:} Dotted lines are operating range of a classifier (here: $[0.14, 0.85]$)
+\end{column}
+\begin{column}{0.39\textwidth}
+    \includegraphics[width=\textwidth]
+      {figure/cost_curve_compare_trivial.png}
+    % \tiny{\\ Credit: Chris Drummond and Robert C. Holte  \\}
+\end{column}
+\end{columns}
+
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{Comparing classifiers}
+  \begin{itemize}
+    \item If classifier C1's expected cost is lower than classifier C2's at a $PC(+)$ value, C1 outperforms C2 at that operating point
+    \item The two cost curves of C1 and C2 may cross, which indicates C1 outperforms C2 for a certain operating range and vice versa
+    \item The vertical distance between the two cost curves of C1 and C2 at any $PC(+)$ value directly indicates the performance difference between them at that operating point
+  \end{itemize}
+
+
+\begin{columns}[T]
+\begin{column}{0.6\textwidth}
+\textbf{Example:} Dotted cost curve has lower expected cost as dashed cost curve for $PC(+) < 0.5$ and hence outperforms dashed one in this operating range and vice versa
+\end{column}
+\begin{column}{0.39\textwidth}
+\includegraphics[width=0.9\textwidth]{figure_man/cost-curves-classifiers-comparison.png}
+    \tiny
+    \\Chris Drummond and Robert C. Holte (2006): \\
+    Cost curves: An improved method for visualizing classifier performance.
+    Machine Learning, 65, 95-130
+    (\href{https://www.semanticscholar.org/paper/Cost-curves\%3A-An-improved-method-for  -visualizing-Drummond-Holte/71708ce984e0896e7383435913547e770572410e}
+    {\underline{URL}})
+\end{column}
+\end{columns}
+
+  %
+  % \begin{figure}
+  %   \centering
+  %   \includegraphics[width=0.5\textwidth]
+  %     {figure_man/cost-curves-classifiers-comparison.png}
+  %   \tiny
+  %   \\Chris Drummond and Robert C. Holte (2006): \\
+  %   Cost curves: An improved method for visualizing classifier performance.
+  %   \\Machine Learning, 65, 95-130
+  %   (\href{https://www.semanticscholar.org/paper/Cost-curves\%3A-An-improved-method-for  -visualizing-Drummond-Holte/71708ce984e0896e7383435913547e770572410e}
+  %   {\underline{URL}}).
+  %   % \tiny{\\ Credit: Chris Drummond and Robert C. Holte  \\}
+  % \end{figure}
+
+\end{vbframe}
+
+
+% ------------------------------------------------------------------------------
+
+\begin{vbframe}{ROC curves vs. cost curves}
+
+\begin{itemize}
+  \item A point/line in ROC space is represented by a line/point in cost space, and vice versa
+  \item Area under an ROC curve is a ranking measure while area under a cost curve is the expected cost of the classifier (assuming that all possible $PC(+)$ values are equally likely)
+  \item ROC curves do not indicate for which prob threshold classifier A is superior to another classifier B, cost curves can do exactly that!\\
+  $\Rightarrow$ Cost curves practically more useful than ROC curves
+  %therefore provide practically more relevant information than ROC curves.
+  \item Cost curves allows users to measure quantitative performance difference between multiple classifiers at any given operating point \\
+  $\Rightarrow$ Not so easy to do that with ROC curve
+  %($\rightarrow$ only the axes will change to account for the costs).
+  % ($\rightarrow$ simple modification where the identity of the axes is changed).
+  %\item Then, the y-axis represents the normalized expected cost (NEC) or relative expected misclassification cost.
+  \end{itemize}
+
+\end{vbframe}
+
+% ------------------------------------------------------------------------------
+
+% \begin{vbframe}{ROC curves vs. cost curves}
+% The general form is as follows:
+%
+% \vspace{-0.5cm}
+% \begin{center}
+% \begin{equation*}
+% NEC = \text{FNR} \cdot P_C[+] + \text{FPR} \cdot (1 - P_C[+]),
+% \end{equation*}
+% \end{center}
+%
+% \begin{itemize}
+% \item FNR/FPR are false-negative rate and false-positive rate respectively and
+% $P_C[+]$, the probability cost function (modified version of $P[+]$ that takes costs into
+% consideration).
+%
+% \vspace{-0.5cm}
+% \begin{center}
+% \begin{equation*}
+% P_C[+] = \frac{P[+] \cdot C[+|-]}{P[+] \cdot C[+|-] + P[-] \cdot C[-|+]},
+% \end{equation*}
+% \end{center}
+%
+% \item $C[+|-]$ and $C[-|+]$ represent the cost of predicting a positive when the
+% instance is actually negative and vice versa and $P[-]$ as the probability of
+% being in the negative class.
+% \end{itemize}
+% \end{vbframe}
+
+% ------------------------------------------------------------------------------
+\endlecture
+\end{document}
+

@@ -1,1 +1,1 @@
-include ../quarto.mk
+include ../chapter.mk
