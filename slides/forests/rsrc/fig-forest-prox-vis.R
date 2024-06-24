@@ -1,5 +1,8 @@
-set.seed(7)
+# proximities can be derived from a RF, these can be used to visualize the forest via MDS.
+# We visualize proximities for the penguins data set, but first manually add two outliers and
+# flip the labels of two observations, to demonstrate two usecases of proximities.
 
+set.seed(7)
 
 library(palmerpenguins)
 library(mlr3)
