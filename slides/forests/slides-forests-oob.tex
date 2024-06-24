@@ -3,6 +3,7 @@
 \input{../../latex-math/basic-math.tex}
 \input{../../latex-math/basic-ml.tex}
 \input{../../latex-math/ml-ensembles.tex}
+\input{../../latex-math/ml-eval.tex}
 
 \title{Introduction to Machine Learning}
 
@@ -28,16 +29,15 @@ Out-of-Bag Error Estimate
 
 %We denote:
 \begin{itemize}
-\item IB observations for $m$-th bootstrap: $\text{IB}^{[m]} = \{i \in \nset | \xyi \in \D^{[m]}  \} $
-\item OOB observations for $m$-th bootstrap: $\text{OOB}^{[m]} = \{i \in \nset | \xyi \notin \D^{[m]}  \} $
-  \item Nr. of trees where $i$-th observation is OOB: $S_{\text{OOB}}^{(i)} = \sum_{m = 1}^M \I(i \in \text{OOB}^{[m]})$.
+\item IB observations for $m$-th bootstrap: $\ibm = \{i \in \nset | \xyi \in \D^{[m]}  \} $
+\item OOB observations for $m$-th bootstrap: $\oobm = \{i \in \nset | \xyi \notin \D^{[m]}  \} $
+  \item Nr. of trees where $i$-th observation is OOB: $S_{\mathrm{OOB}}^{(i)} = \summM \I(i \in \oobm)$.
 \end{itemize}
 
 \end{vbframe}
 
 \begin{vbframe}{Out-of-Bag Error Estimate}
 
-%We can estimate the generalization error $\widehat{\mathrm{GE}}$ by using the
 Predict $i$-th observation with all trees $\blh$ for which it is OOB:
 
 \begin{center}
@@ -45,10 +45,9 @@ Predict $i$-th observation with all trees $\blh$ for which it is OOB:
 \includegraphics[width=0.69\textwidth]{figure_man/forest-oob-error.png}
 \end{center}
 
-%\footnotesize{%The proportion of OOB samples that were incorrectly classified by our RF is our $\widehat{\mathrm{GE}}$!
-OOB prediction $\hat{\pi}^{(2)}_{\text{OOB}} = 2/3$. %, true label $y^{(2)}=1$.
-Evaluating all OOB predictions with some loss function $L$ or set-based metric $\rho$ estimates the $\mathrm{GE}$.\\
-As we do not violate the \textbf{untouched test set principle}, $\widehat{\mathrm{GE}}$ is not \textit{optimistically} biased.%}
+OOB prediction $\hat{\pi}^{(2)}_{\oob} = 2/3$.
+Evaluating all OOB predictions with some loss function $L$ or set-based metric $\rho$ estimates the $\GE$.\\
+As we do not violate the \textbf{untouched test set principle}, $\GEh$ is not \textit{optimistically} biased.%}
 \end{vbframe}
 
 \begin{vbframe}{Out-Of-Bag error Pseudo Code}
@@ -56,16 +55,14 @@ As we do not violate the \textbf{untouched test set principle}, $\widehat{\mathr
   \footnotesize
   \caption*{Out-Of-Bag error estimation}
   \begin{algorithmic}[1]
-    \State {\bf Input: } $\text{OOB}^{[m]}, \blh \ \forall m \in \{1, \dots, M\}$
+    \State {\bf Input: } $\oobm, \blh \forall m \in \{1, \dots, M\}$
     \For {$i = 1 \to n$}
       \State Compute the ensemble OOB prediction for observation $i$, e.g., for regression:
-      $$\fh^{(i)}_{\text{OOB}} =
-      \frac{1}{S_{\text{OOB}}^{(i)}} \sum_{m = 1}^{M}
-      \I(i \in \text{OOB}^{[m]}) \cdot \fh^{[m]}(\xi) $$
-      % \State Compute the loss for observation $i$, e.g., using L2-loss:
-      % $$ L(\yi, \fh^{(i)}_{\text{OOB}}) = (\yi - \yih_{\text{OOB}})^2$$
+      $$\fh^{(i)}_{\oob} =
+      \frac{1}{S_{\oob^{(i)}}} \summM
+      \I(i \in \oobm) \cdot \blhs(\xi) $$
     \EndFor
-    \State Average losses over all observations: $$\widehat{\mathrm{GE}}_{\text{OOB}} = \meanin L(\yi, \fh^{(i)}_{\text{OOB}})$$
+    \State Average losses over all observations: $$\GEh_{\oob} = \meanin L(\yi, \fh^{(i)}_{\oob})$$
 
   \end{algorithmic}
 \end{algorithm}
@@ -74,12 +71,10 @@ As we do not violate the \textbf{untouched test set principle}, $\widehat{\mathr
 \begin{vbframe}{Using the Out-of-Bag Error Estimate}
 
 \begin{itemize}
-  \item Gives us a (proper) estimator of GE, computable during training
+  \item Gives us a (proper) estimator of $\GE$, computable during training
   \item Can even compute this for all smaller ensemble sizes \\
     (after we fitted $M$ models)
 \end{itemize}
-
-% $\widehat{\mathrm{GE}}_{\text{OOB}}$ can be accessed directly during training, making it possible to optimize hyperparameters such as $\texttt{ntrees}$:
 
 \vspace{1em}
 
@@ -96,7 +91,7 @@ As we do not violate the \textbf{untouched test set principle}, $\widehat{\mathr
 \begin{vbframe}{OOB Error: Comparability, Best Practice}
 
 \textbf{OOB Size:} The probability that an observation is out-of-bag (OOB) is:
-$$\P(i \in \text{OOB}^{[m]}) = \left(1 - \frac{1}{n}\right)^n \stackrel{n \to \infty}{\longrightarrow} \frac{1}{e} \approx 0.37$$
+$$\P \left(i \in \oobm\right) = \left(1 - \frac{1}{n}\right)^n \stackrel{n \to \infty}{\longrightarrow} \frac{1}{e} \approx 0.37$$
 $\Rightarrow$ similar to holdout or 3-fold CV (1/3 validation, 2/3 training)
 
 \textbf{Comparability Issues:}
