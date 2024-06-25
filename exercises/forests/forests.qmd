@@ -149,7 +149,10 @@ The `spam` data is a binary classification task where the aim is to classify an 
 ### R
 {{< embed sol_forests_R.ipynb#2-a echo=true >}}
 ### Python
-{{< embed sol_forests_py.ipynb#2-a-1 echo=true >}} foo
+Load data
+{{< embed sol_forests_py.ipynb#2-a-1 echo=true >}}
+
+Inspect
 {{< embed sol_forests_py.ipynb#2-a-2 echo=true >}}
 :::
 </details> 
@@ -180,9 +183,11 @@ Use `from sklearn.tree import plot_tree` to visualize the trees.
 ### R
 {{< embed sol_forests_R.ipynb#2-b echo=true >}}
 ### Python
-{{< embed sol_forests_py.ipynb#2-b-1 echo=true >}} foo
-{{< embed sol_forests_py.ipynb#2-b-2 echo=true >}} foo
-{{< embed sol_forests_py.ipynb#2-b-3 echo=true >}}
+Full dataset
+{{< embed sol_forests_py.ipynb#2-b-1 echo=true >}}
+
+Data subsets
+{{< embed sol_forests_py.ipynb#2-b-2 echo=true >}} 
 :::
 
 Observation: trees trained on different samples differ considerably in their structure, regarding split variables as well as thresholds (recall, though, that the split candidates are a further source of randomness).
@@ -200,14 +205,21 @@ Forests come with a built-in estimate of their generalization ability via the ou
 <details> 
 <summary>**Solution**</summary>
 
-i. This is actually quite easy when we recall that the exponential function at an arbitrary input $x$ can be characterized via $e^x = \lim_{n \to \infty} \left( 1 + \tfrac{x}{n} \right)^n$, which already resembles the limit expression we are looking for. Setting $x$ to -1 yields:
-
+i. This requires a little trick.
+- First, think about the probability of an observation to be OOB in a tree. Imagine the tree's bootstrap sample has $n$ free spots, to be filled from the training observations.
+- In each place, the probability of being drawn for the observation is $\tfrac{1}{n}$ (all observations are equally likely to be selected). Conversely, the probability of *not* being drawn is $1 - \tfrac{1}{n}$.
+- We draw with replacement, meaning the events of filling a place in the bootstrap sample are all independent. The probability of not being drawn at all for any of the free spots -- i.e., not ending up in the tree's bootstrap sample and thus being OOB -- is thus $\left(1- \tfrac{1}{n}\right)^n$.
+- You can imagine that this probability is lower if we only have a few observations. It will converge to a fixed value for larger datasets.
+- Since we're interested in a general statement, we look for this stable value, taking $n$ to the limit: $\lim_{n \to \infty} \left( 1 - \tfrac{1}{n} \right)^n$.
+- Now comes the trick: If you're well-versed in analysis you might recognize this expression as a way to characterize the exponential function.
+- For an arbitrary input $x$, we have $e^x = \lim_{n \to \infty} \left( 1 + \tfrac{x}{n} \right)^n$.
+- We see that our above probability is equivalent to the exponential function at input value -1, resulting in
 $$
 \lim_{n \to \infty} \left( 1 - \tfrac{1}{n} \right)^n = e^{-1} = 
-\tfrac{1}{e}.
+\tfrac{1}{e} \approx 0.37.
 $$
 
-ii. OOB-error can be computed by:
+ii. The OOB error can be computed by:
 
 ::: {.panel-tabset}
 ### R
@@ -245,7 +257,10 @@ In order to determine the with the biggest influence on prediction quality, we c
 ### R
 {{< embed sol_forests_R.ipynb#2-d echo=true >}}
 ### Python
-{{< embed sol_forests_py.ipynb#2-d-1 echo=true >}} foo
+Numerical scores
+{{< embed sol_forests_py.ipynb#2-d-1 echo=true >}} 
+
+Visual representation
 {{< embed sol_forests_py.ipynb#2-d-2 echo=true >}}
 :::
 
@@ -260,14 +275,13 @@ In order to determine the with the biggest influence on prediction quality, we c
 2) Compute proximities
 :::
 
-You solve the \texttt{wine} task, predicting the \texttt{type} of a wine -- with 3 classes -- from a number of covariates. After training, you wish to determine how similar your observations are in terms of proximities.
+You solve the `wine` task, predicting the \texttt{type} of a wine -- with 3 classes -- from a number of covariates. After training, you wish to determine how similar your observations are in terms of proximities.
 
-\textit{R Hint:} The model information was created with 
-\texttt{ranger::treeInfo()}, which assigns observations with values 
-larger than \texttt{splitval} to the right child node in each split.
+The model information was created with 
+`ranger::treeInfo()`, which assigns observations with values 
+larger than `splitval` to the right child node in each split.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=5, fig.width=5}
-# this is just the source code for the tables, the correct format is shown below (this will not be shown!)
 
 library(data.table)
 library(mlr3verse)
@@ -284,19 +298,25 @@ learner$train(task)
 x_sample <- task$data()[sample(seq_len(task$nrow), 3L)]
 x_sample[, type := NULL][, id := .I]
 setcolorder(x_sample, "id")
-library(knitr)
-  kable(
+
+  knitr::kable(
     x_sample, 
-    format = "latex", 
     escape = FALSE,
     col.names = c(
-      "observation", "alcalinity", "alcohol", "flavanoids", "hue", "malic",
+      "observation", 
+      "alcalinity", 
+      "alcohol", 
+      "flavanoids", 
+      "hue", 
+      "malic",
       "phenols"
     ),
-    align = c("|r", "r", "r", "r", "r", "r", "r|"),
+    # align = c("|r", "r", "r", "r", "r", "r", "r|"),
     digits = 2
     )
-
+```
+    
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=5, fig.width=5}
 library(rpart.plot)
 
 rf <- invisible(
@@ -306,56 +326,32 @@ rf <- invisible(
   )
 )
 
-for (i in seq_len(n_trees)) {
-  knitr::kable(
-    rf[[i]], 
-    "latex", 
-    digits = 2L, 
-    align = c("|r", rep("r", 6L), "r|"))
-}
+print("Tree 1:")
+knitr::kable(
+	rf[[1]], 
+	escape = FALSE,
+	digits = 2L 
+	# align = c("|r", rep("r", 6L), "r|")
+)
+
+print("Tree 2:")
+knitr::kable(
+	rf[[2]], 
+	escape = FALSE,
+	digits = 2L 
+	# align = c("|r", rep("r", 6L), "r|")
+)
+
+print("Tree 3:")
+knitr::kable(
+	rf[[3]], 
+	escape = FALSE,
+	digits = 2L 
+	# align = c("|r", rep("r", 6L), "r|")
+)
+
+
 ```
-
-| observation | alcalinity | alcohol | flavanoids | hue  | malic | phenols |
-|-------------|------------|---------|------------|------|-------|---------|
-| 1           | 11.4       | 14.75   | 3.69       | 1.25 | 1.73  | 3.10    |
-| 2           | 25.0       | 13.40   | 0.96       | 0.67 | 4.60  | 1.98    |
-| 3           | 17.4       | 13.94   | 3.54       | 1.12 | 1.73  | 2.88    |
-
-Tree 1:
-
-| nodeID | leftChild | rightChild | splitvarID | splitvarName | splitval | terminal | prediction |
-|--------|-----------|------------|------------|--------------|----------|----------|------------|
-| 0      | 1         | 2          | 5          | phenols      | 1.97     | FALSE    | NA         |
-| 1      | 3         | 4          | 1          | alcohol      | 12.43    | FALSE    | NA         |
-| 2      | 5         | 6          | 1          | alcohol      | 13.03    | FALSE    | NA         |
-| 3      | NA        | NA         | NA         | NA           | NA       | TRUE     | 2          |
-| 4      | NA        | NA         | NA         | NA           | NA       | TRUE     | 3          |
-| 5      | NA        | NA         | NA         | NA           | NA       | TRUE     | 2          |
-| 6      | NA        | NA         | NA         | NA           | NA       | TRUE     | 1          |
-
-Tree 2:
-
-| nodeID | leftChild | rightChild | splitvarID | splitvarName | splitval | terminal | prediction |
-|--------|-----------|------------|------------|--------------|----------|----------|------------|
-| 0      | 1         | 2          | 1          | alcohol      | 12.78    | FALSE    | NA         |
-| 1      | 3         | 4          | 3          | hue          | 0.68     | FALSE    | NA         |
-| 2      | 5         | 6          | 2          | flavanoids   | 2.18     | FALSE    | NA         |
-| 3      | NA        | NA         | NA         | NA           | NA       | TRUE     | 3          |
-| 4      | NA        | NA         | NA         | NA           | NA       | TRUE     | 2          |
-| 5      | NA        | NA         | NA         | NA           | NA       | TRUE     | 3          |
-| 6      | NA        | NA         | NA         | NA           | NA       | TRUE     | 1          |
-
-Tree 3:
-
-| nodeID | leftChild | rightChild | splitvarID | splitvarName | splitval | terminal | prediction |
-|--------|-----------|------------|------------|--------------|----------|----------|------------|
-| 0      | 1         | 2          | 1          | alcohol      | 12.79    | FALSE    | NA         |
-| 1      | 3         | 4          | 5          | phenols      | 2.01     | FALSE    | NA         |
-| 2      | 5         | 6          | 5          | phenols      | 2.28     | FALSE    | NA         |
-| 3      | NA        | NA         | NA         | NA           | NA       | TRUE     | 2          |
-| 4      | NA        | NA         | NA         | NA           | NA       | TRUE     | 2          |
-| 5      | NA        | NA         | NA         | NA           | NA       | TRUE     | 3          |
-| 6      | NA        | NA         | NA         | NA           | NA       | TRUE     | 1          |
 
 For the following subset of the training data and the random forest model given above,
 
