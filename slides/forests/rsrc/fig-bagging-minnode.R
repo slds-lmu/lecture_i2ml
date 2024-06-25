@@ -1,4 +1,6 @@
-# goal here is to visualize minnode and justify defaults in the slide
+# goal here is to visualize the effects of `min.node.size` and justify defaults in the slide:
+# as always for the RF chapter, we use spam and mtcars as tasks;
+# we use grid_search to systematically test our values and plot them.
 
 library(mlr3)
 library(mlr3learners)

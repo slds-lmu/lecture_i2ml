@@ -1,5 +1,7 @@
 # goal here is to visualize how more trees are generally better, but
 # big performance jumps happen only in the beginning
+# as always in our RF chapter, we use the spam and mtcars tasks;
+# grid_search to systematically test our different sized ensembles
 
 library(mlr3)
 library(mlr3learners)
@@ -13,6 +15,7 @@ library(grid)
 
 set.seed(123)
 
+# we use ranger over mlr3
 learner_rf_classif = lrn("classif.ranger")
 learner_rf_regr = lrn("regr.ranger")
 
@@ -57,10 +60,12 @@ results_classif$task_id = task_classif$id
 results_regr = as.data.table(at_regr$archive)
 results_regr$task_id = task_regr$id
 
+# defines size and line size for plotting
 base_size <- 45
 line_size <- 8
 point_size <- 9
 
+# plots ntrees versus MCE/MSE and combines the plots
 p1 <- ggplot(results_classif, aes(x = num.trees, y = classif.ce, color = task_id)) +
   geom_line(size = line_size) +
   geom_point(size = point_size) +
@@ -73,7 +78,6 @@ p1 <- ggplot(results_classif, aes(x = num.trees, y = classif.ce, color = task_id
   theme(
     plot.title = element_text(size = base_size + 4, face = "bold")
   )
-
 p2 <- ggplot(results_regr, aes(x = num.trees, y = regr.mse, color = task_id)) +
   geom_line(size = line_size) +
   geom_point(size = point_size) +
@@ -86,7 +90,6 @@ p2 <- ggplot(results_regr, aes(x = num.trees, y = regr.mse, color = task_id)) +
   theme(
     plot.title = element_text(size = base_size + 4, face = "bold")
   )
-
 combined_plot <- grid.arrange(
   p1, p2,
   ncol = 2,

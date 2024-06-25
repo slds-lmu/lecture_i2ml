@@ -1,4 +1,7 @@
-# old, should be redone in vistool
+# plots the decision surfaces of different sized ensembles (1, 10, 500 trees)
+# to visualize how bigger ensembles create 'smoother' response surfaces
+# (should be redone on penguins with our vistool!)
+
 # PREREQ -----------------------------------------------------------------------
 
 library(knitr)
