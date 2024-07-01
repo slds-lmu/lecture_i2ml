@@ -43,20 +43,22 @@ subtitle: "[Introduction to Machine Learning](https://slds-lmu.github.io/i2ml/)"
 :::
 
 Random search (RS) is a simple yet effective tuning procedure.
-We will implement RS from scratch to find the optimal degree $d \in \N$ of complexity a polynomial regression problem.
+We will implement RS from scratch to find the optimal degree $d \in \N$ in a polynomial regression problem.
 
 Consider the following skeleton of pseudo-code:
 
-```{r}
-# Algorithm: Random Search
-# ------------------------------------------------------------------------------
+:::{.callout-tip title="Algorithm: Random Search" icon=false}
 
-# Requires: ...
+***
 
-# < main body >
+***Requires*** ...
 
-# Returns: ...
-```
+< main body >
+
+***Returns*** ...
+:::
+
+***
 
 What should this algorithm return as a result?
 
@@ -66,16 +68,135 @@ What should this algorithm return as a result?
 
 The minimum required output will be the optimal degree $d^\ast$.
 (Additional info might enhance user experience in a real-world implementation.)
+</details>
 :::
 
 *** 
-Now for what might arguably be the most important thing: what is the required user input?
+What should be the required user input? Add the inputs to the pseudo-code.
+
+*Hint:* Use a single hold-out split in evaluation.
 
 ::: {.content-visible when-profile="solution"}
 <details>
 <summary>**Solution**</summary>
 
-- 
+We need (at least) the following input:
+
+- A search space for $d$
+- The number of RS trials (budget)
+- Data to train and evaluate the learner on + the proportion to use as training 
+data (aternatively, we might require separate training and test datasets)
+- An evaluation criterion
+
+Let's add that to the pseudo-code:
+
+:::{.callout-tip title="Algorithm: Random Search" icon=false}
+
+***
+
+***Requires*** search space $\tilde \Lambda \subset \N$, budget $B \in \N$, dataset $\D \in \defAllDatasetsn$, train set proportion $s \in (0, 1)$, evaluation criterion $\rho$
+
+< main body >
+
+***Returns*** $d^\ast \in \N$
+:::
+
+</details> 
+:::
+
+*** 
+Start to implement the main body by 
+
+- defining elements that allow you to store 
+the currently optimal candidate,
+- performing a holdout split on the data, and
+- setting up a loop for evaluation of each 
+candidate.
+
+::: {.content-visible when-profile="solution"}
+<details>
+<summary>**Solution**</summary>
+
+**Tracking optimal candidates**
+
+- We'll need a variable that is set to the optimal degree in any given iteration, to be updated when a candidate performs better than previous ones.
+- Likewise, we'll need to store the estimated generalization error associated with the optimal candidate so we can compare it to new candidates (we'll assume that smaller $\rho$ means lower GE)
+
+**Holdout split**
+
+Simple one-liner.
+
+**Loop**
+
+- The first thing to do is defining the set of candidate values, which we'll obtain by drawing as many random samples from the search space as our budget allows.
+- Afterwards, we can run a `for` loop over this candidate set.
+
+There's no official pseudo-code language--you should phrase your code such that a human with knowledge in any suitable programming language can unambiguously translate the pseudo-code into that programming language.
+
+:::{.callout-tip title="Algorithm: Random Search" icon=false}
+
+***
+
+***Requires*** search space $\tilde \Lambda \subset \N$, budget $B \in \N$, dataset $\D \in \defAllDatasetsn$, train set proportion $s \in (0, 1)$, evaluation criterion $\rho$
+
+| `set_seed` [// crucial to make the procedure reproducible]{style="color:gray;"}
+| $d^\ast \leftarrow 0$ [// any starting value okay]{style="color:gray;"}
+| $\text{GE}^\ast \leftarrow \infty$ [// ensures that first candidate is optimal until a better one comes along]{style="color:gray;"}
+| `candidates` $\leftarrow$ `sample_uniform`(`from` = $\tilde \Lambda$, `number` = $B$)
+| $\Dtrain$, $\Dtest$ $\leftarrow$ `split_holdout`(`data` = $\D$, `train_proportion` = $s$)
+| **for** $d$ in `candidates` **do**
+|   ...
+| end **for**
+
+***Returns*** $d^\ast \in \N$
+:::
+
+</details> 
+:::
+
+*** 
+Finalize the pseudo-code by adding steps for training & evaluation and a rule to update the optimal candidate.
+
+::: {.content-visible when-profile="solution"}
+<details>
+<summary>**Solution**</summary>
+
+:::{.callout-tip title="Algorithm: Random Search" icon=false}
+
+***
+
+***Requires*** search space $\tilde \Lambda \subset \N$, budget $B \in \N$, dataset $\D \in \defAllDatasetsn$, train set proportion $s \in (0, 1)$, evaluation criterion $\rho$
+
+| `set_seed` [// crucial to make the procedure reproducible]{style="color:gray;"}
+| $d^\ast \leftarrow 0$ [// any starting value okay]{style="color:gray;"}
+| $\text{GE}^\ast \leftarrow \infty$ [// ensures that first candidate is optimal until a better one comes along]{style="color:gray;"}
+| `candidates` $\leftarrow$ `sample_uniform`(`from` = $\tilde \Lambda$, `number` = $B$)
+| $\Dtrain$, $\Dtest$ $\leftarrow$ `split_holdout`(`data` = $\D$, `train_proportion` = $s$)
+| **for** $d$ in `candidates` **do**
+|     `learner` $\leftarrow$ `polynomial_regression`(`degree` = $d$)
+|     `train`(`learner` = `learner`, `data` = $\Dtrain$)
+|     $\text{GE}$ $\leftarrow$ `evaluate`(`learner` = `learner`, `data` = $\Dtest$, `criterion` = $\rho$)
+|     **if** $\text{GE}$ < $\text{GE}^\ast$ **do**
+|       $d^\ast \leftarrow d$
+|       $\text{GE}^\ast \leftarrow \text{GE}$
+|     end **if**
+| end **for**
+
+***Returns*** $d^\ast \in \N$
+:::
+
+</details> 
+:::
+
+*** 
+Describe how you could implement a more flexible resampling strategy.
+
+::: {.content-visible when-profile="solution"}
+<details>
+<summary>**Solution**</summary>
+A more general way to define the user input might be to accept sets of training and test datasets, respectively.
+We could then add a `for` loop over those to compute the GE associated with each candidate $d$. 
+</details> 
 :::
 
 <!-- ## Exercise 1: Tuning $k$-NN -->
