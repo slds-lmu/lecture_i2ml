@@ -1,16 +1,16 @@
 ---
 title: "Exercise 11 -- Tuning"
 subtitle: "[Introduction to Machine Learning](https://slds-lmu.github.io/i2ml/)"
-# notebook-view:
-#   - notebook: ex_tuning_R.ipynb
-#     title: "Exercise sheet for R"
-#     url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/tuning/ex_tuning_R.ipynb"
-#   - notebook: ex_tuning_py.ipynb
-#     title: "Exercise sheet for Python"
-#     url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/tuning/ex_tuning_py.ipynb"
-#   - notebook: sol_tuning_R.ipynb
-#     title: "Solutions for R"
-#     url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/tuning/sol_tuning_R.ipynb"
+notebook-view:
+  - notebook: ex_tuning_R.ipynb
+    title: "Exercise sheet for R"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/tuning/ex_tuning_R.ipynb"
+  - notebook: ex_tuning_py.ipynb
+    title: "Exercise sheet for Python"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/tuning/ex_tuning_py.ipynb"
+  - notebook: sol_tuning_R.ipynb
+    title: "Solutions for R"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/tuning/sol_tuning_R.ipynb"
 #   - notebook: sol_tuning_py.ipynb
 #     title: "Solutions for Python"
 #     url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/tuning/sol_tuning_py.ipynb"
@@ -141,7 +141,7 @@ There's no official pseudo-code language--you should phrase your code such that 
 | `set_seed` [// crucial to make the procedure reproducible]{style="color:gray;"}
 | $d^\ast \leftarrow 0$ [// any starting value okay]{style="color:gray;"}
 | $\text{GE}^\ast \leftarrow \infty$ [// ensures that first candidate is optimal until a better one comes along]{style="color:gray;"}
-| `candidates` $\leftarrow$ `sample_uniform`(`from` = $\tilde \Lambda$, `number` = $B$)
+| `candidates` $\leftarrow$ `sample_uniform`(`from` = $\tilde \Lambda$, `number` = $B$, `replacement` = False)
 | $\Dtrain$, $\Dtest$ $\leftarrow$ `split_holdout`(`data` = $\D$, `train_proportion` = $s$)
 | **for** $d$ in `candidates` **do**
 |   ...
@@ -170,7 +170,7 @@ Finalize the pseudo-code by adding steps for training & evaluation and a rule to
 | $d^\ast \leftarrow 0$ [// any starting value okay]{style="color:gray;"}
 | $\text{GE}^\ast \leftarrow \infty$ [// ensures that first candidate is optimal until a better one comes along]{style="color:gray;"}
 | `candidates` $\leftarrow$ `sample_uniform`(`from` = $\tilde \Lambda$, `number` = $B$)
-| $\Dtrain$, $\Dtest$ $\leftarrow$ `split_holdout`(`data` = $\D$, `train_proportion` = $s$)
+| $\Dtrain$, $\Dtest$ $\leftarrow$ `split_holdout`(`data` = $\D$, `train_proportion` = $s$, `replacement` = False)
 | **for** $d$ in `candidates` **do**
 |     `learner` $\leftarrow$ `polynomial_regression`(`degree` = $d$)
 |     `train`(`learner` = `learner`, `data` = $\Dtrain$)
@@ -231,9 +231,9 @@ Explain whether RS or GS will be more suited to find the optimal value $\lambda^
 library(ggplot2)
 set.seed(123)
 x = runif(1000, 0, 50)
-y = sin(1 / pi * x + pi) + rnorm(length(x), sd = 0.1)
+y = sin(1 / pi * x + pi)
 p = ggplot(data.frame(x = x, y = y), aes(x, y)) +
-  geom_point() +
+  geom_line() +
   labs(x = expression(lambda), y = expression(c(lambda))) +
   theme_minimal()
 print(p)
@@ -242,7 +242,7 @@ print(p)
 ::: {.content-visible when-profile="solution"}
 <details>
 <summary>**Solution**</summary>
-- In this (stylized) example, the discretization of GS will prevent us from ever exploring promising values for $\lambda$:
+- In this (stylized) example, the discretization of GS is quite harmful: Choosing the grid as the lower and upper bounds of the search space plus 4 equidistant values within, as is common, will prevent us from ever exploring promising values for $\lambda$.
 ```{r}
 #| echo: false
 #| fig.height: 4
@@ -281,7 +281,7 @@ algorithm = c(rep("GS", length(x)), rep("RS", length(x)))
 p = ggplot(data.frame(x, evals, algorithm), aes(x = x, y = evals, col = algorithm)) +
   geom_line() +
   geom_point() +
-  labs(x = "budget", y = expression(paste("evaluations of", lambda[1]))) +
+  labs(x = "budget", y = expression(paste("distinct values of ", lambda[2]))) +
   theme_minimal()
 print(p)
 ```
