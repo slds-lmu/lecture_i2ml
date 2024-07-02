@@ -4,16 +4,16 @@ subtitle: "[Introduction to Machine Learning](https://slds-lmu.github.io/i2ml/)"
 # notebook-view:
 #   - notebook: ex_tuning_R.ipynb
 #     title: "Exercise sheet for R"
-#     url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/tuning/ex_forests_R.ipynb"
+#     url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/tuning/ex_tuning_R.ipynb"
 #   - notebook: ex_tuning_py.ipynb
 #     title: "Exercise sheet for Python"
-#     url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/tuning/ex_forests_py.ipynb"
+#     url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/tuning/ex_tuning_py.ipynb"
 #   - notebook: sol_tuning_R.ipynb
 #     title: "Solutions for R"
-#     url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/tuning/sol_forests_R.ipynb"
+#     url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/tuning/sol_tuning_R.ipynb"
 #   - notebook: sol_tuning_py.ipynb
 #     title: "Solutions for Python"
-#     url: "https://github.com/slds-lmu/lecture_i2ml/blob/exercises/tuning/sol_forests_py.ipynb"
+#     url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/tuning/sol_tuning_py.ipynb"
 ---
 
 ::: {.content-hidden when-format="pdf"}
@@ -299,7 +299,8 @@ print(p)
 1. Interpret effect of hyperparameters
 :::
 
-In this exercise we will perform hyperparameter optimization (HPO) for the task of classifying the \texttt{credit risk} data with a $k$-NN classifier.
+In this exercise we will perform hyperparameter optimization (HPO) for the task of classifying the `credit risk` data with a $k$-NN classifier.
+We use `mlr3` ([tuning chapter in the book](https://mlr3book.mlr-org.com/chapters/chapter4/hyperparameter_optimization.html)); see [Jupyter notebook](https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/tuning/sol_tuning_py.ipynb) for a similar case study in Python.
 
 The `kknn` implementation used by `mlr3` contains several hyperparameters, three of which are to be tuned for our prediction:
 
@@ -336,10 +337,20 @@ The `kknn` implementation used by `mlr3` contains several hyperparameters, three
     either dimension will change which observations end up in the neighborhood).
 </details>
 
+***
+
+You receive the following `mlr3` output from tuning $k$-NN.
+Interpret the impact of each hyperparemeter on the objective.
+
 ```{r}
+#| echo: false
+#| results: hide
+
 library(mlr3)
 library(mlr3learners)
 library(mlr3tuning)
+library(mlr3viz)
+library(ggplot2)
 
 # define task and learner
 task <- tsk("german_credit")
@@ -348,25 +359,83 @@ train_rows <- sample(seq_len(task$nrow), 800, replace = FALSE)
 test_rows <- setdiff(seq_len(task$nrow), train_rows)
 task_train <- task$clone()$filter(train_rows)
 task_test <- task$clone()$filter(test_rows) 
-lrn_knn <- lrn("classif.kknn")
-```
+lrn_knn <- lrn("classif.kknn", predict_type = "prob")
 
-We perform HPO as follows.
-Explain the steps taken in the code.
+# define resampling strategy
+resampling <- rsmp("cv", folds = 5)
+
+# create combined terminator object (either criterion, whichever is met first, 
+# can invoke the termination)
+terminator_evals <- trm("evals", n_evals = 20)
+terminator_runtime <- trm("run_time", secs = 10)
+terminator <- trm(
+	"combo", 
+	list(terminator_evals, terminator_runtime), any = TRUE
+)
+
+search_space <- ps(
+    k = p_int(1, 100),
+    scale = p_lgl(),
+    kernel = p_fct(c("rectangular", "epanechnikov", "gaussian", "optimal"))
+)
+
+# create tuning instance from the above components
+instance <- TuningInstanceSingleCrit$new(
+	task = task_train,
+	learner = lrn_knn,
+	resampling = resampling,
+	terminator = terminator,
+	search_space = search_space,
+	measure = msr("classif.auc")
+)
+
+# create random-search optimizer (with parallel computing of batches, useful 
+# if we have multiple resources available)
+optimizer <- tnr("random_search", batch_size = 20)
+
+set.seed(123)
+optimizer$optimize(instance)
+```
 
 ```{r}
-search_space <- ps(
-	k = p_int(1, 100),
-	scale = p_lgl(),
-	kernel = p_fct(c("rectangular", "epanechnikov", "gaussian", "optimal"))
-)
+#| echo: false
+#| fig.height: 4
+#| fig.width: 8
+p <- autoplot(instance)
+p[[3]] <- p[[3]] +
+	theme(axis.text.x = element_text(angle = 90))
+p
 ```
 
+::: {.content-visible when-profile="solution"}
 <details>
 <summary>**Solution**</summary>
-</details>
 
-Perform HPO 
+We plot the classification performance in terms of
+AUC across different choices of each hyperparameter.
+Let's look at each one in turn:
+
+- Increasing $k$ initially leads to an improvement that plateaus after around 
+  50 neighbors. However, there seem to be two quite distinct groups of candidate
+  values.
+- Scaling the variables boosts performance quite substantially.
+- The choice of the kernel does not seem to have much 
+  impact. Again, we see two clusters of candidate values.
+  
+Obviously, the interpretability of these plots is limited: we only see 
+*marginal* effects of individual hyperparameters.
+The fact that they really interact with each other contributes substantially 
+to the difficulty of the tuning problem.
+We can clearly see this in the plot for $k$ and `kernel`, where we have two quite distinct 
+patterns corresponding to different values of `scale`.
+
+</details>
+:::
+
+***
+
+Now let's look at the code that generated the above results.
+
 
 <!-- ## Exercise 1: Tuning $k$-NN -->
 
