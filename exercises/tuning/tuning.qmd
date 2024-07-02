@@ -339,73 +339,10 @@ The `kknn` implementation used by `mlr3` contains several hyperparameters, three
 
 ***
 
-You receive the following `mlr3` output from tuning $k$-NN.
+You receive the following `mlr3` output from tuning $k$-NN with random search.
 Interpret the impact of each hyperparemeter on the objective.
 
-```{r}
-#| echo: false
-#| results: hide
-
-library(mlr3)
-library(mlr3learners)
-library(mlr3tuning)
-library(mlr3viz)
-library(ggplot2)
-
-# define task and learner
-task <- tsk("german_credit")
-set.seed(123)
-train_rows <- sample(seq_len(task$nrow), 800, replace = FALSE)
-test_rows <- setdiff(seq_len(task$nrow), train_rows)
-task_train <- task$clone()$filter(train_rows)
-task_test <- task$clone()$filter(test_rows) 
-lrn_knn <- lrn("classif.kknn", predict_type = "prob")
-
-# define resampling strategy
-resampling <- rsmp("cv", folds = 5)
-
-# create combined terminator object (either criterion, whichever is met first, 
-# can invoke the termination)
-terminator_evals <- trm("evals", n_evals = 20)
-terminator_runtime <- trm("run_time", secs = 10)
-terminator <- trm(
-	"combo", 
-	list(terminator_evals, terminator_runtime), any = TRUE
-)
-
-search_space <- ps(
-    k = p_int(1, 100),
-    scale = p_lgl(),
-    kernel = p_fct(c("rectangular", "epanechnikov", "gaussian", "optimal"))
-)
-
-# create tuning instance from the above components
-instance <- TuningInstanceSingleCrit$new(
-	task = task_train,
-	learner = lrn_knn,
-	resampling = resampling,
-	terminator = terminator,
-	search_space = search_space,
-	measure = msr("classif.auc")
-)
-
-# create random-search optimizer (with parallel computing of batches, useful 
-# if we have multiple resources available)
-optimizer <- tnr("random_search", batch_size = 20)
-
-set.seed(123)
-optimizer$optimize(instance)
-```
-
-```{r}
-#| echo: false
-#| fig.height: 4
-#| fig.width: 8
-p <- autoplot(instance)
-p[[3]] <- p[[3]] +
-	theme(axis.text.x = element_text(angle = 90))
-p
-```
+{{< embed sol_tuning_R.ipynb#knn-viz echo=false >}}
 
 ::: {.content-visible when-profile="solution"}
 <details>
@@ -435,6 +372,68 @@ patterns corresponding to different values of `scale`.
 ***
 
 Now let's look at the code that generated the above results.
+Start by defining the `german_credit` task, where you reserve 800 observations for training, and the `kknn` learner (the learner should output probabilities).
+
+::: {.content-visible when-profile="solution"}
+<details>
+<summary>**Solution**</summary>
+{{< embed sol_tuning_R.ipynb#knn-task echo=true >}}
+</details>
+:::
+
+***
+
+Set up the search space to tune over using the `ps` function.
+Include choices for $k \in \{1, 2, \dots, 100\}$, `scale` $\in \{\text{yes}, \text{no}\}$, and `kernel` $\in \{\text{rectangular}, \text{epanechnikov}, \text{gaussian}, \text{optimal}\}$.
+
+::: {.content-visible when-profile="solution"}
+<details>
+<summary>**Solution**</summary>
+{{< embed sol_tuning_R.ipynb#knn-sspace echo=true >}}
+</details>
+:::
+
+***
+
+Define the stopping criterion for random search with a so-called *terminator* (`trm`). We want the tuning procedure to finish after 200 evaluations or a maximum runtime of 30 seconds.
+
+*Hint:* You can define this combinded terminator via a list of individual terminators.
+
+
+::: {.content-visible when-profile="solution"}
+<details>
+<summary>**Solution**</summary>
+{{< embed sol_tuning_R.ipynb#knn-terminator echo=true >}}
+</details>
+:::
+
+***
+
+Set up a tuning instance using the function `ti`. This object combines all of the above components. Set the evaluation criterion to AUC.
+
+
+::: {.content-visible when-profile="solution"}
+<details>
+<summary>**Solution**</summary>
+{{< embed sol_tuning_R.ipynb#knn-instance echo=true >}}
+</details>
+:::
+
+***
+
+Finally, define the tuner (`tnr`) of type "random_search" and run the optimization. Don't forget to make your code reproducible.
+
+
+::: {.content-visible when-profile="solution"}
+<details>
+<summary>**Solution**</summary>
+Optimization
+{{< embed sol_tuning_R.ipynb#knn-run echo=true >}}
+
+Visualization
+{{< embed sol_tuning_R.ipynb#knn-viz echo=true >}}
+</details>
+:::
 
 
 <!-- ## Exercise 1: Tuning $k$-NN -->
