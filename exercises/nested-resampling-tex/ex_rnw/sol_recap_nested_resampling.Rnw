@@ -1,0 +1,66 @@
+
+
+\begin{itemize}
+  \item[A)] no resampling.
+  \item[B)] resampling.
+  \item[C)] Nested resampling.
+\end{itemize}
+
+Always everything, but with different roles (train, val, test)
+
+Tune before training, rest does not matter, i.e. possible: BAC, BCA, CBA
+
+First GE, then Tune, then Train (CBA):
+
+\textbf{GE:}
+\begin{algorithm}
+\caption{GE: Outer loop (3-fold CV)}
+\begin{algorithmic}
+  \For{$k \in \{1,2,3\}$}
+    \State \textbf{Inner loop (4-fold CV):}
+    \For{$j \in \{1,2,3,4\}$}
+      \For{each hyperparameter $l$}
+        \State $f_{l,k,j} = \text{train model on } D_{\text{train}_{k,j}} \text{ with hyperparameter } l$
+        \State $\text{ge}_{l,k,j} = \text{test error of } f_{l,k,j} \text{ on } D_{\text{test}_{k,j}}$
+      \EndFor
+    \EndFor
+    \State $\text{ge}_{l,k} = \text{mean}_{j} \text{ge}_{l,k,j}$
+    \State $l^{*}_{k} = \arg\min_{l} \text{ge}_{l,k}$ \Comment{best hyperparameter combination in this fold of the outer loop}
+    \State $f_{l^{*},k} = \text{train model on } D_{\text{train}_{k}}$
+    \State $\text{ge}_{k} = \text{test error of } f_{l^{*},k} \text{ on } D_{\text{test}_{k}}$
+  \EndFor
+  \State $\hat{\text{ge}} = \text{mean}(\text{ge}_{k})$ \Comment{final estimate of generalization error}
+\end{algorithmic}
+\end{algorithm}
+
+\textbf{Tuning:}
+\begin{algorithm}
+\caption{Tuning}
+\begin{algorithmic}
+  \For{$j \in \{1,2,3,4\}$}
+    \For{each hyperparameter $l$}
+      \State $f_{l,j} = \text{train model on } D_{\text{train}_{j}} \text{ with hyperparameter } l$
+      \State $\text{ge}_{l,j} = \text{test error of } f_{l,j} \text{ on } D_{\text{test}_{j}}$
+    \EndFor
+  \EndFor
+  \State $\text{ge}_{l} = \text{mean}_{j} \text{ge}_{l,j}$
+  \State $l^{*} = \arg\min_{l} \text{ge}_{l}$ \Comment{best hyperparameter combination}
+\end{algorithmic}
+\end{algorithm}
+
+\textbf{Training:}
+\begin{algorithm}
+\caption{Training}
+\begin{algorithmic}
+  \State $f^{*} = \text{train model on } D \text{ with hyperparameter } l^{*}$
+\end{algorithmic}
+\end{algorithm}
+
+Total number of hyperparameter combinations: $5 + 4 \times 4 = 21$ (either NN or RF, and then grid of all hyperparameters). With this:
+\begin{itemize}
+  \item[A)] Final training: 1 model
+  \item[B)] Tuning of graph learner: $4 \times 21 = 84$ models (each hyperparameter in each fold)
+  \item[C)] Estimation GE: $3 \times 4 \times 21$ (Tuning whole graph per fold) + 3 (computing test error per fold) or $3 \times (4 \times 21 + 1) = 255$ models
+\end{itemize}
+
+Total = 340 models
