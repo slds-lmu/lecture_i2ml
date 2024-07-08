@@ -1,4 +1,4 @@
-# plots OOB errors for different classes of spam; visualizes a potential use case of OOB errors
+# visualizes a potential use case of OOB errors: plots OOB errors for different classes of spam.
 # PREREQ -----------------------------------------------------------------------
 
 library(knitr)
