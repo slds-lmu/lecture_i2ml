@@ -1,5 +1,5 @@
 # goal here is to visualize the need for unstable learners in bagging
-# by using a benchmark_grid from mlr3
+# by using a benchmark_grid from mlr3 on the spam task (as always in our RF chapter)
 # and later show how RFs further improve accuracy!
 
 library(mlr3)
@@ -11,52 +11,61 @@ library(data.table)
 
 set.seed(123)
 
-# bagging via a pipeline (taken from mlr3 book)
-create_bagging_pipeline <- function(base_learner) {
-  gr_single_pred = po("subsample", frac = 1, replace=TRUE) %>>% lrn(base_learner) # equals bootstrapping (with replacement, frac = 1)
-  gr_pred_set = ppl("greplicate", graph = gr_single_pred, n = 100)
-  gr_bagging = gr_pred_set %>>% po("classifavg", innum = 100)
-  as_learner(gr_bagging)
+task = tsk("spam")
+ntree = 100
+p = length(task$feature_names)
+
+create_bagging_pipeline <- function(lrn) {
+  pl = po("subsample", frac = 1, replace = TRUE) %>>% lrn # bootstrap
+  pl = ppl("greplicate", graph = pl, n = ntree)
+  pl = pl %>>% po("classifavg", innum = ntree)
+  as_learner(pl)
 }
 
 # setup learners
-glrn_bagging_log = create_bagging_pipeline("classif.log_reg")
-glrn_bagging_log$id = "bagging_logistic"
+lrn_log = lrn("classif.log_reg")
+lrn_log_bagged = create_bagging_pipeline(lrn_log); lrn_log_bagged$id = "bagging_logistic"
 
-glrn_bagging_rpart = create_bagging_pipeline("classif.rpart")
-glrn_bagging_rpart$id = "bagging_tree"
+lrn_kknn = lrn("classif.kknn", k = 7)
+lrn_kknn_bagged = create_bagging_pipeline(lrn_kknn); lrn_kknn_bagged$id = "bagging_kknn"
 
-glrn_bagging_kknn = create_bagging_pipeline("classif.kknn")
-glrn_bagging_kknn$id = "bagging_kknn"
-
-lrn_log_reg = lrn("classif.log_reg")
+# using package defaults
 lrn_rpart = lrn("classif.rpart")
-
 lrn_ranger = lrn("classif.ranger", num.trees = 100)
 
-lrn_kknn = lrn("classif.kknn")
-lrn_kknn$param_set$values$k = 7
+# exploring effects of expansion and mtry
+lrn_ranger_st_nomtry_noexp = lrn("classif.ranger", id = "ranger_st_nomtry_noexp",
+  oob.error = FALSE, num.trees = 1, replace = FALSE, sample.fraction = 1, mtry = p, min.node.size = 20, min.bucket = 7) 
+lrn_ranger_st_nomtry_fullexp = lrn("classif.ranger", id = "ranger_st_nomtry_fullexp", 
+  oob.error = FALSE, num.trees = 1, replace = FALSE, sample.fraction = 1, mtry = p, min.node.size = 1, min.bucket = 1) 
+lrn_ranger_st_mtry_noexp = lrn("classif.ranger", id = "ranger_st_mtry_noexp", 
+  oob.error = FALSE, num.trees = 1, replace = FALSE, sample.fraction = 1, min.node.size = 20, min.bucket = 7) 
+
+lrn_ranger_stbag_nomtry_noexp = create_bagging_pipeline(lrn_ranger_st_nomtry_noexp); lrn_ranger_stbag_nomtry_noexp$id =
+  "ranger_stbag_nomtry_noexp"
+lrn_ranger_stbag_nomtry_fullexp = create_bagging_pipeline(lrn_ranger_st_nomtry_fullexp); lrn_ranger_stbag_nomtry_fullexp$id =
+  "ranger_stbag_nomtry_fullexp"
+lrn_ranger_stbag_mtry_noexp = create_bagging_pipeline(lrn_ranger_st_mtry_noexp); lrn_ranger_stbag_mtry_noexp$id =
+  "ranger_stbag_mtry_noexp"
 
 # benchmark_grid expects a list:
-learners = list(glrn_bagging_log, lrn_log_reg, glrn_bagging_rpart, lrn_rpart, glrn_bagging_kknn, lrn_kknn, lrn_ranger)
-
-# tasks to be included in the benchmark
-tasks = lapply(c("spam"), tsk)
+learners = list(lrn_kknn, lrn_kknn_bagged, lrn_log, lrn_log_bagged, lrn_rpart, lrn_ranger_stbag_nomtry_noexp,
+                lrn_ranger_stbag_nomtry_fullexp, lrn_ranger_stbag_mtry_noexp, lrn_ranger)
 
 # run the benchmark!
-bmr = benchmark(benchmark_grid(tasks, learners, rsmp("cv", folds = 10)))
+bmr = benchmark(benchmark_grid(task, learners, rsmp("cv", folds = 10)))
 
 # visualization
 a <- autoplot(bmr, type = "boxplot") +
   ylab("CE for 10-fold CV") +
   xlab("Learners") +
-  scale_x_discrete(labels = c("LR bagged", "LR", "CART bagged", "CART", "7-nn bagged", "7-nn", "RF")) +
+  scale_x_discrete(labels = c("7-nn", "7-nn bagged", "LR", "LR bagged", "CART", "CART bagged", "CART bagged: full exp", "CART bagged: mtry", "RF")) +
   theme_minimal() +
   theme(
     axis.title = element_text(size = 22, face = "bold"),
     axis.text = element_text(size = 20, face = "bold"),
     legend.title = element_text(size = 22, face = "bold"),
     legend.text = element_text(size = 20, face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1)
   )
-ggsave("../figure/bagging-bench_RF.png", plot = a, width = 20, height = 8, dpi = 300)
-# the bagging-bench figure is just a cropped version of this (sorry, had problems with autoplot)
+ggsave("../figure/bagging-bench.png", plot = a, width = 12, height = 8, dpi = 300)
