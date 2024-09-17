@@ -66,13 +66,16 @@ what material needs to be understood before what else. Please do add appropriate
   
 ### Exercises
 
-- Exercises are organized chapter-wise. Each folder will contain
+- **Structure**. Exercises are organized chapter-wise and implemented in [quarto](https://quarto.org/). Each folder may contain
   - a subdirectory `figure` for plots,
-  - a subdirectory `ex_rnw` that contains .Rnw files with single exercises (prefixed with `ex_`) and associated solutions (prefixed with sol `sol_`),
-  - one or multiple exercise sheets (prefixed with `ex_`) and associated solutions (prefixed with `sol_`), sourcing the single snippets from `ex_rnw`,
-  - a collection file (prefixed with `collection_`) that assembles all exercises for the given topic (those currently used in the exercise sheets, further existing material, ideas, URLs, ...)
+  - `exercise.qmd` containing the entire exercise, including solutions (we don't want exercises sourced from subfiles anymore). Edit in text editor or RStudio.
+  - `exercise.html`, the main HTML file used in the exercise session.
+  - `ex_exercise_py.ipynb` / `ex_exercise_R.ipynb`, notebooks with empty code cells. Mainly for KI campus.
+  - `sol_exercise_py.ipynb` / `sol_exercise_R.ipynb`, end-to-end executable notebooks. `exercise.qmd` sources notebook cells.
   
-- Compiling the exercises should be done via the **Makefile**.
+- **Editing**.
+  
+- **Compilation**. Compiling the exercises should be done via the **Makefile**.
   - Before compiling anything, remove auxiliary files by running `make texclean` from within the corresponding folder.
   - There are basically 3 use cases.
   - Use case 1a: you want to **compile a single** exercise `EXERCISE.Rnw` in a folder. Run `make <EXERCISE>.pdf`. 
