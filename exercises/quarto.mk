@@ -16,7 +16,7 @@ solpdf:
 
 exhtml:
 	for file in *.qmd; do \
-		quarto render $$file \
+		quarto render $$file; \
 	done
 
 expdf:
