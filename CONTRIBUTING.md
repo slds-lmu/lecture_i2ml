@@ -66,26 +66,36 @@ what material needs to be understood before what else. Please do add appropriate
   
 ### Exercises
 
-- **Structure**. Exercises are organized chapter-wise and implemented in [quarto](https://quarto.org/). Each folder may contain
+- **Structure**. Exercises are organized chapter-wise and implemented in [quarto](https://quarto.org/). Folders typically contain
   - a subdirectory `figure` for plots,
-  - `exercise.qmd` containing the entire exercise, including solutions (we don't want exercises sourced from subfiles anymore). Edit in text editor or RStudio.
-  - `exercise.html`, the main HTML file used in the exercise session.
+  - `exercise.qmd`, the location of the entire exercise including solutions (we don't want exercises sourced from subfiles anymore).
+  - `exercise.html`, the main HTML file used in the exercise session. Compiled from `exercise.qmd`
   - `ex_exercise_py.ipynb` / `ex_exercise_R.ipynb`, notebooks with empty code cells. Mainly for KI campus.
   - `sol_exercise_py.ipynb` / `sol_exercise_R.ipynb`, end-to-end executable notebooks. `exercise.qmd` sources notebook cells.
   
 - **Editing**.
+  - `exercises/_quarto/i2ml_theme.scss`: theme file, edit for global settings like colors.
+  - `exercises/_quarto/latex-math.qmd`: copy of `latex-math` commands wrapping macros in dollar signs so file can be sourced by `exercise.qmd`. Feel free to come up with better option and/or automatic update rule for `latex-math` updates. 
+  - `exercises/_quarto.yml`: theme file, edit for global header options.
+  - `exercises/chapter/exercise.qmd`: edit in text editor or RStudio. Key block types: code chunks, callouts, conditional blocks (controlled by options added to `quarto render`, see below).
+  - `exercises/chapter/sol_exercise_py.ipynb`: edit and run on Jupyter server via `jupyter notebook sol_exercise_py.ipynb`. :warning: Make sure to operate from within virtual environment (use/update `exercises/python-i2ml.yml` / `exercises/python-i2ml-requirements.txt`); better solution with, e.g., `poetry` might be worth considering). NB: `exercises/chapter/exercise.qmd` sources cell output w/o executing the notebook again, so you need to run corresponding cells in Jupyter for them to appear correctly.
+  - `exercises/chapter/sol_exercise_R.ipynb`: same as Python notebook but with specific kernel. From within virtual environment, run `R -e "install.packages('IRkernel')"`, then `R -e "IRkernel::installspec()"`, then `jupyter notebook sol_exercise_py.ipynb --kernel=ir`. :construction: You might need to install additional packages via `R -e "install.packages('package')"`; ideally, the kernel should be created using `exercises/R-i2ml.yml`.
+  - Remember to update `exercises/chapter/ex_exercise_py.ipynb` after editing `exercises/chapter/sol_exercise_py.ipynb` (KI campus demands these empty exercise notebooks; feel free to come up with an automated process to create them from the full ones).
   
 - **Compilation**. Compiling the exercises should be done via the **Makefile**.
-  - Before compiling anything, remove auxiliary files by running `make texclean` from within the corresponding folder.
+  - Remove auxiliary files by running `make clean` from within the corresponding folder.
   - There are basically 3 use cases.
-  - Use case 1a: you want to **compile a single** exercise `EXERCISE.Rnw` in a folder. Run `make <EXERCISE>.pdf`. 
-  - Use case 1b: you want to **copy a single** exercise to `exercises-pdf`. Run `make copy F=<EXERCISE>.pdf`.
-  - Use case 2a: you want to **compile all** exercises in a folder. Run `make most`. 
-  - Use case 2b: you want to **copy all** PDFs to `exercises-pdf`. Run `make copy-all`.
-  - Use case 3: you want to **compile and copy all** exercises in a folder and update the corresponding files in `exercises-pdf`. Run `make all`. This will automatically move a copy of the compiled PDFs to the `exercises-pdf` directory. The [course website repository](https://github.com/teaching-data-science/intro2ml) links to `exercises-pdf`, so make sure you only update the files in there if you want to release them on the website.
-  - Note that compiling without margin is handled by creating a temporary file signaling to remove the margin, so make sure to run `make texclean` after compiling for a clean slate. 
-  - You can remove all PDFs in a folder with `make clean`.
-- When creating new exercise sheets or collection files, please use the setup provided in `style/preamble_ueb.Rnw` and `style/preamble_ueb_coll.Rnw`.
+  - Use case 1: you want to **compile a single** exercise. Run `quarto render exercise.qmd`, possibly adding `--profile=solution` if you want solutions to be included. 
+    - 1a: the above command renders to **HTML**.
+    - 1b: adding `--to=pdf` renders to **PDF**.
+  - Use case 2: you want to **compile all** exercises in a folder.
+    - 2a: use `make exhtml` (w/o solutions) or `make solhtml` (incl. solutions).
+    - 2b: use `make expdf` (w/o solutions) or `make solpdf` (incl. solutions).
+  - Use case 3: you want to **copy all** exercises in a folder to update the corresponding files in `exercises-pdf`. :construction: target will be added; currently needs to be handled manually. :warning: The [course website](https://slds-lmu.github.io/i2ml/) links to `exercises-pdf`, so make sure you only update the files in there if you want to release them on the website.
+
+- **Current issues with quarto** :bug:
+  - Compiling exercises w/o solution (single or all) might fail: solution notebooks are included in the YAML header but won't be used in conditional compilation, causing an error :arrow-right: wait for quarto option to handle conditionals in header / manually remove notebook from header before compilation
+  - 
 
 ### Install Necessary R packages
 - Please refer to the file `scripts/libraries_installer.R` to install the R packages necessary for running successfully some folders.
