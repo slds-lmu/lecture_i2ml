@@ -95,9 +95,9 @@ what material needs to be understood before what else. Please do add appropriate
   - Use case 3: you want to **copy all** exercises in a folder to update the corresponding files in `exercises-pdf`. :construction: target will be added; currently needs to be handled manually. :warning: The [course website](https://slds-lmu.github.io/i2ml/) links to `exercises-pdf`, so make sure you only update the files in there if you want to release them on the website.
 
 - **Current issues with quarto** :bug:
-  - Compiling exercises w/o solution (single or all) might fail: solution notebooks are included in the YAML header but won't be used in conditional compilation, causing an error :arrow-right: wait for quarto option to handle conditionals in header / manually remove notebook from header before compilation
-  - Sourcing two notebook cells in direct succession doesn't work :arrow: place some text in between
-  - Some comments in `latex-math` files contain explanations like "theta^[t]" which quarto interprets as footnote :arrow: remove those in `exercises/_quarto/latex-math.qmd`
+  - Compiling exercises w/o solution (single or all) might fail: solution notebooks are included in the YAML header but won't be used in conditional compilation, causing an error :arrow_right: wait for quarto option to handle conditionals in header / manually remove notebook from header before compilation
+  - Sourcing two notebook cells in direct succession doesn't work :arrow_right: place some text in between
+  - Some comments in `latex-math` files contain explanations like "theta^[t]" which quarto interprets as footnote :arrow_right: remove those in `exercises/_quarto/latex-math.qmd`
 
 ### Install Necessary R packages
 - Please refer to the file `scripts/libraries_installer.R` to install the R packages necessary for running successfully some folders.
