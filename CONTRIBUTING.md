@@ -66,25 +66,26 @@ what material needs to be understood before what else. Please do add appropriate
   
 ### Exercises
 
-- **Structure**. Exercises are organized chapter-wise and implemented in [quarto](https://quarto.org/). Folders typically contain
+- **Structure**. Exercises are organized chapter-wise and implemented in [quarto](https://quarto.org/) (which you need to install on your local machine). Folders typically contain
   - a subdirectory `figure` for plots,
   - `exercise.qmd`, the location of the entire exercise including solutions (we don't want exercises sourced from subfiles anymore).
   - `exercise.html`, the main HTML file used in the exercise session. Compiled from `exercise.qmd`
   - `ex_exercise_py.ipynb` / `ex_exercise_R.ipynb`, notebooks with empty code cells. Mainly for KI campus.
   - `sol_exercise_py.ipynb` / `sol_exercise_R.ipynb`, end-to-end executable notebooks. `exercise.qmd` sources notebook cells.
   
-- **Editing**.
-  - `exercises/_quarto/i2ml_theme.scss`: theme file, edit for global settings like colors.
-  - `exercises/_quarto/latex-math.qmd`: copy of `latex-math` commands wrapping macros in dollar signs so file can be sourced by `exercise.qmd`. Feel free to come up with better option and/or automatic update rule for `latex-math` updates. 
-  - `exercises/_quarto.yml`: theme file, edit for global header options.
-  - `exercises/chapter/exercise.qmd`: edit in text editor or RStudio. Key block types: code chunks, callouts, conditional blocks (controlled by options added to `quarto render`, see below).
-  - `exercises/chapter/sol_exercise_py.ipynb`: edit and run on Jupyter server via `jupyter notebook sol_exercise_py.ipynb`. :warning: Make sure to operate from within virtual environment (use/update `exercises/python-i2ml.yml` / `exercises/python-i2ml-requirements.txt`); better solution with, e.g., `poetry` might be worth considering). NB: `exercises/chapter/exercise.qmd` sources cell output w/o executing the notebook again, so you need to run corresponding cells in Jupyter for them to appear correctly.
-  - `exercises/chapter/sol_exercise_R.ipynb`: same as Python notebook but with specific kernel. From within virtual environment, run `R -e "install.packages('IRkernel')"`, then `R -e "IRkernel::installspec()"`, then `jupyter notebook sol_exercise_py.ipynb --kernel=ir`. :construction: You might need to install additional packages via `R -e "install.packages('package')"`; ideally, the kernel should be created using `exercises/R-i2ml.yml`.
-  - Remember to update `exercises/chapter/ex_exercise_py.ipynb` after editing `exercises/chapter/sol_exercise_py.ipynb` (KI campus demands these empty exercise notebooks; feel free to come up with an automated process to create them from the full ones).
+- **Editing**
+  - Global
+    - `exercises/_quarto/i2ml_theme.scss`: theme file, edit for global settings like colors.
+    - `exercises/_quarto/latex-math.qmd`: copy of `latex-math` commands wrapping macros in dollar signs so file can be sourced by `exercise.qmd`. Feel free to come up with better option and/or automatic update rule for `latex-math` updates. 
+    - `exercises/_quarto.yml`: theme file, edit for global header options.
+  - Chapter-specific
+    - `exercises/chapter/exercise.qmd`: edit in text editor or RStudio. Key block types: code chunks, callouts, conditional blocks (controlled by options added to `quarto render`, see below).
+    - `exercises/chapter/sol_exercise_py.ipynb`: edit and run on Jupyter server via `jupyter notebook sol_exercise_py.ipynb`. :warning: Make sure to operate from within virtual environment (use/update `exercises/python-i2ml.yml` / `exercises/python-i2ml-requirements.txt`); better solution with, e.g., `poetry` might be worth considering). NB: `exercises/chapter/exercise.qmd` sources cell output w/o executing the notebook again, so you need to run corresponding cells in Jupyter for them to appear correctly.
+    - `exercises/chapter/sol_exercise_R.ipynb`: same as Python notebook but with specific kernel. From within virtual environment, run `R -e "install.packages('IRkernel')"`, then `R -e "IRkernel::installspec()"`, then `jupyter notebook sol_exercise_py.ipynb --kernel=ir`. :construction: You might need to install additional packages via `R -e "install.packages('package')"`; ideally, the kernel should be created using `exercises/R-i2ml.yml`.
+    - Remember to update `exercises/chapter/ex_exercise_py.ipynb` after editing `exercises/chapter/sol_exercise_py.ipynb` (KI campus demands these empty exercise notebooks; feel free to come up with an automated process to create them from the full ones).
   
 - **Compilation**. Compiling the exercises should be done via the **Makefile**.
   - Remove auxiliary files by running `make clean` from within the corresponding folder.
-  - There are basically 3 use cases.
   - Use case 1: you want to **compile a single** exercise. Run `quarto render exercise.qmd`, possibly adding `--profile=solution` if you want solutions to be included. 
     - 1a: the above command renders to **HTML**.
     - 1b: adding `--to=pdf` renders to **PDF**.
@@ -95,7 +96,8 @@ what material needs to be understood before what else. Please do add appropriate
 
 - **Current issues with quarto** :bug:
   - Compiling exercises w/o solution (single or all) might fail: solution notebooks are included in the YAML header but won't be used in conditional compilation, causing an error :arrow-right: wait for quarto option to handle conditionals in header / manually remove notebook from header before compilation
-  - 
+  - Sourcing two notebook cells in direct succession doesn't work :arrow: place some text in between
+  - Some comments in `latex-math` files contain explanations like "theta^[t]" which quarto interprets as footnote :arrow: remove those in `exercises/_quarto/latex-math.qmd`
 
 ### Install Necessary R packages
 - Please refer to the file `scripts/libraries_installer.R` to install the R packages necessary for running successfully some folders.
