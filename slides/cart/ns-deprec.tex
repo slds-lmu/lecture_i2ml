@@ -1,0 +1,219 @@
+\documentclass[11pt,compress,t,notes=noshow, xcolor=table]{beamer}
+
+\input{../../style/preamble}
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+
+
+\newcommand{\titlefigure}{figure/cart_intro_annotated-tree.pdf}
+\newcommand{\learninggoals}{
+\item Understand basic structure of CART models
+\item Understand basic concepts used to fit CART models
+%\item You can use this slide deck either as a first overview or a final recap
+}
+
+
+\title{Introduction to Machine Learning}
+% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
+\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
+\date{}
+
+\begin{document}
+
+\lecturechapter{CART: In a nutshell}
+\lecture{Introduction to Machine Learning}
+\sloppy
+
+\begin{vbframe}{What is a tree?}
+
+Basic idea: 
+\begin{itemize}
+\item Divide predictor space into sub-regions.%, and 
+\item For each region, learn best constant prediction from  training data. % set by taking the average (mean), most frequent (mode), or middle value (median) of the response variable among the training examples belonging to that specific segment.
+\end{itemize}
+
+\vspace{0.5cm}
+
+    \textbf{C}lassification \textbf{A}nd \textbf{R}egression \textbf{T}rees are a class of models that can:
+  \begin{itemize}
+    \item model non-linear feature effect
+    \item facilitate interactions of features
+    \item be inherently interpreted
+  \end{itemize}
+\end{vbframe}
+
+\begin{vbframe}{What is a tree?}
+A decision tree is a set of hierarchical binary partitions.
+
+An example from your daily life where your evening planning decision (target) could be based on a decision tree may look like this:
+
+  \begin{figure}
+    \centering
+\includegraphics[width=0.7\textwidth, keepaspectratio]{figure/nutshell-example.pdf}
+    \end{figure}
+
+
+\end{vbframe}
+
+\begin{vbframe}{What is a tree?}
+
+\begin{itemize}
+\item Instead of life choices you can partition a target $y$ through feature space $\Xspace$.
+\item For example, we can predict the \texttt{Species} of the flowers described in the \texttt{iris} data set using the features \texttt{Sepal.Width} and \texttt{Sepal.Length}.
+\end{itemize}
+A CART can be fully (visually) decribed by this (annotated) plot:
+  
+     \begin{figure}
+    \centering
+      % FIGURE SOURCE: No source
+      \includegraphics[height = 4.5cm, keepaspectratio]{figure/cart_intro_annotated-tree.pdf}
+    \end{figure}
+\end{vbframe}
+
+\begin{vbframe}{CART as a predictor}
+Instead of the visual description, we can also describe trees through their division of the feature space $\Xspace$ into \textbf{rectangular regions}, $Q_m$: 
+  \begin{align*}
+    \fx = \sum_{m=1}^M c_m \I(\xv \in Q_m),
+  \end{align*}
+  \begin{figure}
+    \centering
+\includegraphics[width=0.7\textwidth, keepaspectratio]{figure/tree-classif-depth-3-blacklines.pdf}
+    \end{figure}
+\end{vbframe}
+
+
+\begin{vbframe}{Tasks for CART}
+  \begin{itemize}
+
+    \item \textbf{C}lassification \textbf{A}nd \textbf{R}egression \textbf{T}rees can have categorical and numerical targets
+    \item In both cases, the leafs (the ultimate nodes) define the predictions
+  \end{itemize}
+  
+  \begin{columns}
+\begin{column}{0.5\textwidth}
+  Categorical target:
+    \begin{figure}
+    \centering
+\includegraphics[width=0.99\textwidth, keepaspectratio]{figure/tree-classif-depth3.pdf}
+    \end{figure}
+\end{column}
+\begin{column}{0.5\textwidth}
+
+  Numerical target:
+
+    \begin{figure}
+    \centering
+\includegraphics[width=0.99\textwidth, keepaspectratio]{figure/tree-regr-depth3.pdf}
+    \end{figure}
+\end{column}
+\end{columns}
+  
+\end{vbframe}
+
+\begin{vbframe}{How to fit a CART}
+
+\begin{itemize} 
+\item A \emph{recursive} greedy search in the feature space optimizes CARTs
+\item In each iteration the (currently) best binary split out of all possible splits is selected
+\item The best split is determined via empirical risk minimization
+\item This recursive fitting looks like this, starting with iteration 1:
+
+\end{itemize}
+
+{\centering \includegraphics[width=0.6\textwidth]{figure/tree-classif-depth1.pdf} 
+
+}
+
+\end{vbframe}
+
+\begin{vbframe}{How to fit a CART}
+
+Iteration 2:
+
+{\centering \includegraphics[width=0.58\textwidth]{figure/tree-classif-depth2.pdf} 
+
+}
+
+Iteration 3:
+
+{\centering \includegraphics[width=0.58\textwidth]{figure/tree-classif-depth3.pdf} 
+
+}
+
+\end{vbframe} 
+
+\begin{vbframe}{How to fit a CART}
+\begin{itemize}
+\item This procedure can run until each observation has its own leaf.
+\item Then, the tree will not generalize well and overfit:
+\end{itemize}
+
+{\centering \includegraphics[width=0.58\textwidth]{figure/tree-overfitting-prediction.pdf} 
+
+}
+
+\begin{itemize}
+\item Thus, we need techniques to keep the tree small and informative
+\item In fact, we already used some of these techniques for fitting the trees in this chapter.
+\end{itemize}
+
+\end{vbframe}
+\begin{vbframe}{How to fit a CART}
+\begin{itemize}
+\item There are two options for this:
+\begin{itemize}
+\item Stop the fitting at some point
+\item Fit a deep tree and shorten ("prune") it afterwards
+\end{itemize}
+\item The fitting is typically stopped either by specifying a maximum depth of the tree or minimum number of observations per leaf.
+\item Another option is to specify a minimum decrease of the empirical risk that a split has to exceed.
+%\item A common library for fitting trees includes the following options:
+\end{itemize}
+
+% Insert code with listings does not work
+%{\centering \includegraphics[width=0.9\textwidth]{figure_man/rpart.control-options.png} 
+
+%}
+
+\end{vbframe} 
+
+\begin{vbframe}{Trees in Practice}
+
+\begin{itemize}
+\item Trees are an attractive learner:
+\begin{itemize}
+\item (Usually) cheap to compute
+\item Interpretable
+\item Can capture complex feature effects
+\end{itemize}
+\item However, CART has high variance, hence not the best predictor
+\end{itemize}
+$\Rightarrow$ In practice, trees are mostly used as base learners for ensemble learners like Random Forests.
+\end{vbframe}
+
+
+
+
+
+% % BB: as we are not really talking too much about impurity anymore, I took this out
+% % <<splitcriteria-plot, results='hide', fig.height=5>>=
+% % Colors = pal_3
+% % par(mar = c(5.1, 4.1, 0.1, 0.1))
+% % p = seq(1e-6, 1-1e-6, length.out = 200)
+% % entropy = function(p) (p * log(p) + (1 - p) * log(1 - p))/(2 * log(0.5))
+% % gini = function(p) 2 * p * (1 - p)
+% % missclassification = function(p) (1 - max(p, 1 - p))
+% % plot(p, entropy(p), type = "l", col = Colors[1], lwd = 1.5, ylab = "",
+% %   ylim = c(0, 0.6), xlab = expression(hat(pi)[Nk]))
+% % lines(p, gini(p), col = Colors[2], lwd = 1.5)
+% % lines(p, sapply(p, missclassification), col = Colors[3], lwd = 1.5)
+% % legend("topright", c("Gini Index", "Entropy", "Misclassification Error"),
+% %        col = Colors[1:3], lty = 1)
+% % @
+
+
+
+
+
+\endlecture
+\end{document}
