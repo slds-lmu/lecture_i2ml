@@ -1,4 +1,6 @@
-.PHONY: sol ex solhtml solpdf exhtml expdf clean
+.PHONY: all sol ex solhtml solpdf exhtml expdf clean copy copy-all
+
+all: solhtml solpdf exhtml expdf clean copy-all
 
 sol: solhtml solpdf clean
 
@@ -11,17 +13,17 @@ solhtml:
 
 solpdf:
 	for file in *.qmd; do \
-		quarto render $$file --profile=solution --to pdf; \
+		quarto render $$file --profile=solution --to pdf --output "$${file%.qmd}_all.pdf"; \
 	done
 
 exhtml:
 	for file in *.qmd; do \
-		quarto render $$file \
+		quarto render $$file; \
 	done
 
 expdf:
 	for file in *.qmd; do \
-		quarto render $$file --to pdf; \
+		quarto render $$file --to pdf --output "$${file%.qmd}_ex.pdf"; \
 	done
 
 clean:
@@ -30,6 +32,12 @@ clean:
 	rm -rf *out.ipynb
 	rm -rf ../.quarto
 	rm -rf *.rmarkdown
+
+copy: $(F)
+	cp $(F) ../../exercises-pdf/
+
+copy-all:
+	cp  *.pdf ../../exercises-pdf/
 
 # rule for creating html (profile=solution) for a single file for testing; e.g. make classification_1
 %:
