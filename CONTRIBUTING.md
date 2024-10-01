@@ -91,8 +91,9 @@ what material needs to be understood before what else. Please do add appropriate
     - 1b: adding `--to=pdf` renders to **PDF**.
   - Use case 2: you want to **compile all** exercises in a folder.
     - 2a: use `make exhtml` (w/o solutions) or `make solhtml` (incl. solutions).
-    - 2b: use `make expdf` (w/o solutions) or `make solpdf` (incl. solutions).
-  - Use case 3: you want to **copy all** exercises in a folder to update the corresponding files in `exercises-pdf`. :construction: target will be added; currently needs to be handled manually. :warning: The [course website](https://slds-lmu.github.io/i2ml/) links to `exercises-pdf`, so make sure you only update the files in there if you want to release them on the website.
+    - 2b: use `make expdf` (w/o solutions) or `make solpdf` (incl. solutions). The resulting PDFs will be suffixed with `_ex.pdf` or `_all.pdf`.
+  - Use case 3: you want to **copy all** PDFs in a folder to update the corresponding files in `exercises-pdf`. Use `make copy-all`. :warning: The [course website](https://slds-lmu.github.io/i2ml/) links to `exercises-pdf`, so make sure you only update the files in there if you want to release them on the website.
+  - Use case 4: you want to **compile and copy all** exercises in a folder to update the corresponding files in `exercises-pdf`. Use `make all`. :warning: The [course website](https://slds-lmu.github.io/i2ml/) links to `exercises-pdf`, so make sure you only update the files in there if you want to release them on the website.
 
 - **Current issues with quarto** :bug:
   - Compiling exercises w/o solution (single or all) might fail: solution notebooks are included in the YAML header but won't be used in conditional compilation, causing an error :arrow_right: wait for quarto option to handle conditionals in header / manually remove notebook from header before compilation
