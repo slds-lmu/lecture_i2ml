@@ -6,6 +6,10 @@
 \DeclareMathSymbol{\myRightarrow}{\mathrel}{symbols}{"29}
 \let\Rightarrow\myRightarrow
 
+%-------------------------------------------------------------------%
+%   Making the speaker margin 16:9 and 4:3 switch work              %
+%-------------------------------------------------------------------%
+
 % Define a toggle to compile slides with or without margin
 % - if nospeakermargin.tex exists in directory where slides are compiled,
 %   the "old" 4:3 slide layout is used. Makefiles can and do
@@ -24,7 +28,7 @@
 \newlength{\slidewidth}
 
 \if@speakermargin
-  % If the file exists -> no margin
+  % If the file exists -> add margin (16:9)
     \geometry{paperwidth=170.6666666667mm,paperheight=96mm}
 
     \setlength{\logooffset}{2mm}
@@ -57,125 +61,171 @@
   \setbeamersize{text margin left=0.8cm,text margin right=0.8cm}
 \fi
 
-% ------------------------------------------------------------------------
-% R (sweave) related stuff, should be removed (FIXME: lukas)
-
-\RequirePackage{ifthen}
-\newboolean{Sweave@gin}
-\setboolean{Sweave@gin}{true}
-
-\DeclareOption{nogin}{\setboolean{Sweave@gin}{false}}
-\ProcessOptions
-
-\ifthenelse{\boolean{Sweave@gin}}{\setkeys{Gin}{width=0.8\textwidth}}{}%
-
-\RequirePackage{fancyvrb}
-\renewcommand{\ttdefault}{laett}
-\DefineVerbatimEnvironment{Sinput}{Verbatim}{}
-\DefineVerbatimEnvironment{Scode}{Verbatim}{}
-\DefineVerbatimEnvironment{Soutput}{Verbatim}{}
-\newenvironment{Schunk}{}{}
-
-% ------------------------------------------------------------------------
-% special numbering for lectures
-
 \newenvironment{rightbox}[1]
- {\itemize[
+{\itemize[
     nosep,
     leftmargin=\dimexpr\textwidth-#1\relax,
     rightmargin=0pt,
     itemindent=\parindent,
     listparindent=\parindent,
   ]\item[]\relax}
- {\enditemize}
+{\enditemize}
 
-\AtBeginLecture{%
-  %\usebackgroundtemplate{\includegraphics[width=\paperwidth,height=\paperheight]{../../style/LMU-hintergrund1.png}}
-  \global\advance\c@lecture by -1
-  \begin{frame}[plain]
-    \vspace*{1 cm}
-    \LARGE\bfseries\inserttitle
-    \vspace*{0.5 cm}
+%-------------------------------------------------------------------%
+%   BeginLecture // Title slide                           %
+%-------------------------------------------------------------------%
 
-    \ifx\lecturesection\@empty\relax\else%
-    {\lecturesection}%
+% Wrapper to insert title figure within a column env
+% Only needed because column is placed in an if/else arm
+% which is not allowed otherwise (I might be wrong)
+\newcommand{\includeGraphicsColumn}[1]{%
+  \begin{column}{.45\textwidth}
+    \begin{figure}[!b]
+    \includegraphics[width=0.9\textwidth, keepaspectratio]{#1}
+    \ifcsname titlecaption\endcsname
+      \caption*{\titlecaption}
+    \fi
+    \end{figure}
+  \end{column}%
+}
+
+% Similar wrapper to insert learning goals
+\newcommand{\includeLearningGoalsColumn}[1]{%
+  \begin{column}{.55\textwidth}
+    % Uncomment for visual debugging of columns with red line
+    % \color{blue}\rule{\linewidth}{4pt}
+    % \vfill % No vfill needed if columns are vertically centered
+    {\normalsize\bfseries Learning goals}
+    \normalfont
+    \begin{itemize}
+      \small
+      #1
+    \end{itemize}
+  \end{column}%
+}
+
+% Needed for trimming whitespace around \titlemeta arguments
+% Seemingly least bad option. See also 
+% https://tex.stackexchange.com/questions/484288/command-for-nulifying-spaces-string-trim-in-latex
+\RequirePackage{trimspaces}
+\newcommand{\trim}[1] {\trim@spaces@noexp{#1}}
+
+% Main title slide wrapper, includes
+% Automatically uses \title{} element to insert lecture title
+% Example title on slide: 
+%   CART
+%   Advantages \& Disadvantages
+% -------------------------------
+% - Argument 1: Chunk title, e.g. CART
+% - Argument 2: Chapter title, e.g. Advantages \& Disadvantages
+% - Argument 3: Relative path to title figure, can be empty, e.g.: figure/cart_dis_1
+% - Argument 4: \item elements for learning goals.
+\newcommand{\titlemeta}[4]{%
+
+  % If chunk title (arg 1) is empty, we just use the lecture title
+  \if\relax\detokenize{#1}\relax
+    % Use lecture title only
+    \lecturechapter{#2}
+  \else%
+    % Otherwise append chunk title and lecture title separated by newline
+    % Trim whitespaces from chunk name to avoid superflusous spaces
+    \lecturechapter{\trim{#1}\\#2}
+  \fi
+
+  % Setting title requires use of \title{} command before \begin{document},
+  % sets the title of the lecture as in "Introduction to Machine Learning"  
+  \lecture{\inserttitle}
+
+  \begin{frame}[noframenumbering,plain]
+    \vspace*{1cm}
+    {\LARGE\bfseries\inserttitle}
+    \vspace*{0.5cm}
+
+    % Insert section title defined via \lecturechapter (??)
+    % \par ensures that spacing is ok when linebreak happens
+    \if\lecturesection\@empty\relax\else%
+      {\LARGE\bfseries\lecturesection\par}%
     \fi%
 
-\ifcsname learninggoals\endcsname
-  {\vspace*{0.75 cm}
-  \begin{minipage}{0.45\textwidth}
-  \ifcsname titlefigure\endcsname
-    {\begin{center}
-    \begin{figure}[!b]
-    \includegraphics[width=0.9\textwidth, keepaspectratio]{\titlefigure}
-     \ifcsname titlecaption\endcsname
-     \caption*{\titlecaption}
-     \fi
-    \end{figure}
-    \end{center}}
-  \else
-    $\;$
-  \fi
-  \end{minipage}
-  \begin{minipage}{0.45\textwidth}
-  \normalsize
-  Learning goals
-   \normalfont
-   \footnotesize
-  \begin{itemize}
-  \learninggoals
-  \end{itemize}
-  \end{minipage}}
-\fi
+    \vfill
+
+    % Using columns env to put things side-by-side rather than minipage
+    % see https://latex-beamer.com/tutorials/columns/
+    \begin{columns}[c] % align columns (c)enter or (T)op
+      % if checks if argument (detokenized?) is empty, i.e. equal to \relax
+      \if\relax\detokenize{#3}\relax\else%
+        % column env is wrapped in separate command because
+        % envs aren't allowed directly within if-else arms apparently
+        % Idea is to have learning goals horizontally centered if no figure is used
+        \includeGraphicsColumn{#3}
+      \fi
+
+      \if\relax\detokenize{#4}\relax\else%
+        % Same idea with learning goals column
+        \includeLearningGoalsColumn{#4}
+      \fi
+    \end{columns}%
   \end{frame}
+}
+
+% Workarounds for slide numbering
+% \AtBeginLecture is provided by the beamer class
+% Contents placed at beginning of document
+\AtBeginLecture{%
+  % Decrement counter, so slide 1 is after the title slide 
+  \global\advance\c@lecture by -1
+  % Writing counter to aux file and console
+  % Presumably useful when combining multiple slides to one large tex file to ensure numbering is correct
   \immediate\write\@auxout {\string \newlabel{lect:@@\thelecture}{{\insertframenumber}}}%
   \typeout{[LECTURE]=[\thelecture][\insertlecture][\thepage][\theframenumber]}%
   \usebackgroundtemplate{}
 }
 
+% Define \endlecture command to be placed just before \end{document}
+% Sets counter to current frame number
+% Can't find out what \addjustlectureframenumber is (aside the obvious?)
+% But it's called with the lecture number retrieved from the .aux file?
+% Also writes lecture label console again
 \def\endlecture{%
   \setcounter{lectureframenumber}{\insertframenumber}%
   \expandafter\addjustlectureframenumber\csname r@lect:@@\thelecture\endcsname%
   \immediate\write\@auxout {\string \newlabel{endlect:@@\thelecture}{{\thelectureframenumber}}}%
 }
 
-% ------------------------------------------------------------------------
-
+% Not sure why this is needed?
 \newcommand{\lecturechapter}[1]{%
   \gdef\lecturesection{#1}
 }
-
 \lecturechapter{0}{}
-% ------------------------------------------------------------------------
-% Make section titles
+
+%-------------------------------------------------------------------%
+%   Section title                                                   %
+%-------------------------------------------------------------------%
 
 % we start with section 0 (instead of default 1)
 \setcounter{section}{0}
 
+% Not sure if sections are used?
 \AtBeginSection[]{%
   \begin{frame}
     \begin{center}
       \usebeamercolor[fg]{structure}
-
       \vspace*{\stretch{1}}
-
       {\fontsize{16}{20}\bfseries\selectfont\insertsection}\\[0.1cm]
-
       \vspace*{\stretch{2}}
-
     \end{center}
   \end{frame}
 }
 
 % hyperref settings
 \hypersetup{%
-  colorlinks = {false},
-  pdfauthor = {\insertshortauthor},
-  pdfsubject = {\insertshorttitle},
+  colorlinks = {false}
+  % FIXME: hyperref complains in logs about these macro not being allowed here?
+  % Likely because \author{} is usually commented out
+  % pdfauthor = {\insertshortauthor},
+  % pdfsubject = {\insertshorttitle},
 }
 
-
-%\usefonttheme{lmu-lecture}
 % ------------------------------------------------------------------------
 % Use bold font for Titles etc.
 \usefonttheme{structurebold}
@@ -184,13 +234,13 @@
 % footline
 \setbeamerfont{footline}{size=\tiny,parent=normal text}
 
-% ------------------------------------------------------------------------
-% Fonts
+%-------------------------------------------------------------------%
+%   Fonts and colors                                                %
+%-------------------------------------------------------------------%
+
 \RequirePackage[T1]{fontenc}
 \RequirePackage[scaled=0.92]{helvet}   %% Helvetica for sans serif
 
-
-%\usecolortheme{lmu-lecture}
 \setbeamercolor*{structure}{fg=black,bg=white}
 \setbeamercolor*{alerted text}{parent=structure}
 \setbeamercolor*{titlelike}{parent=structure}
@@ -200,7 +250,6 @@
 \setbeamercolor*{section in head/foot}{parent=normal text}
 \setbeamercolor*{framenumber in head/foot}{parent=normal text}
 
-%\useinnertheme{lmu-lecture}
 % ------------------------------------------------------------------------
 % \mode<presentation>
 % ------------------------------------------------------------------------
@@ -209,8 +258,9 @@
 \setbeamerfont{itemize/enumerate subbody}{size=\normalsize}
 \setbeamerfont{itemize/enumerate subsubbody}{size=\normalsize}
 
-% ------------------------------------------------------------------------
-% Frame title: lecture
+%-------------------------------------------------------------------%
+%   Frame title: lecture                                            %
+%-------------------------------------------------------------------%
 
 \defbeamertemplate*{frametitle}{lecture}[1][left]
 {
@@ -229,16 +279,17 @@
 
 \setbeamertemplate{frametitle continuation}[from second][{\small/~\insertcontinuationcount}]
 
+\setbeamertemplate{frametitle}{\expandafter\uppercase\expandafter\insertframetitle}
 
-%\useoutertheme{lmu-lecture}
 % ------------------------------------------------------------------------
 % Geometry
 %\setbeamersize{text margin left=0.8cm,text margin right=0.8cm}
 %\setbeamersize{text margin left=0.8cm,text margin right=\dimexpr0.8cm+\speakerwidth\relax}
 \setbeamersize{text margin left=0.8cm,text margin right=0.8cm,sidebar width right=\speakerwidth}
 
-% ------------------------------------------------------------------------
-% foot line
+%-------------------------------------------------------------------%
+%   Slide footer                                                    %
+%-------------------------------------------------------------------%
 
 \pgfdeclarehorizontalshading{footlineshade}{4mm}{%
   color(0pt)=(black);%
@@ -258,7 +309,6 @@
 % adjust framenumbers for lecture (check whether reference is already defined)
 \def\addjustlectureframenumber#1{\ifx#1\relax\else%
   \addtocounter{lectureframenumber}{-\lectureref{lect:@@\thelecture}}\fi}
-
 \defbeamertemplate*{footline}{lecture theme}
 {
   \usebeamerfont{footline} %author in head/foot}
@@ -269,7 +319,9 @@
     \setbox\beamer@linebox=\hbox to\slidewidth{%
       \hskip 1em%
       {\usebeamercolor[fg]{author in head/foot}%
-      \insertshortauthor~~\copyright~~\insertshortdate}\hfill%
+      % FIXME: If date and author are kept empty anyway, why not remove this?
+      % \insertshortauthor~~\copyright~~\insertshortdate}\hfill%
+      ~~\copyright~~}\hfill%
       {\usebeamercolor[fg]{title in head/foot}%
       \inserttitle~~--~~}%
       \ifnum\c@lecture>0%
@@ -298,7 +350,49 @@
 % No head lines
 \defbeamertemplate*{headline}{lecture theme}{}
 
+%-------------------------------------------------------------------%
+%   Citebutton (superseded by \citelink defined in preamble.tex)    %
+%-------------------------------------------------------------------%
 
+% This version is superseded and \citelink will likely be defined here once widely adopted
+% Example usage (from slides-cart-discussion.tex)
+% \citebutton{Breiman, 1984}{https://www.taylorfrancis.com/books/mono/10.1201/9781315139470/classification-regression-trees-leo-breiman}
+\newcommand{\citebutton}[2]{%
+  \NoCaseChange{\resizebox{!}{9pt}{\protect\beamergotobutton{\href{#2}{#1}}}}%
+}
+
+
+%-------------------------------------------------------------------%
+%   Environments                                                    %
+%-------------------------------------------------------------------%
+
+% Frame with breaks and verbatim // this is used very often
+\newenvironment{vbframe}
+{
+  \begin{frame}[containsverbatim,allowframebreaks]
+    }
+    {
+  \end{frame}
+}
+
+% Frame with verbatim without breaks (to avoid numbering one slided frames)
+% This is not used anywhere but I can see it being useful
+\newenvironment{vframe}
+{
+  \begin{frame}[containsverbatim]
+    }
+    {
+  \end{frame}
+}
+
+% Itemize block
+\newenvironment{blocki}[1]
+{
+  \begin{block}{#1}\begin{itemize}
+      }
+      {
+    \end{itemize}\end{block}
+}
 
 % ------------------------------------------------------------------------
 \endinput
