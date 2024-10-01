@@ -1,0 +1,226 @@
+\documentclass[11pt,compress,t,notes=noshow, xcolor=table]{beamer}
+\input{../../style/preamble}
+\input{../../latex-math/basic-math.tex}
+\input{../../latex-math/basic-ml.tex}
+
+\title{Introduction to Machine Learning}
+
+\begin{document}
+
+\titlemeta{% Chunk title (example: CART, Forests, Boosting, ...), can be empty
+  Supervised Regression
+  }{% Lecture title  
+  In a Nutshell
+}{% Relative path to title page image: Can be empty but must not start with slides/
+  figure/nutshell-regression-derivative-L2.pdf
+}{% Learning goals, wrapped inside itemize environment
+  \item Understand basic concept of regressors
+  \item Understand difference between L1 and L2 Loss
+  \item Know basic idea of OLS estimator
+
+}
+
+\sloppy
+
+\begin{vbframe}{Linear Regression Tasks}
+\begin{itemize}
+\item \small Learn linear combination of features for predicting the target variable
+\item \small Find best parameters of the model by training w.r.t. a loss function $Credit Balance = \textcolor{blue}{\theta_0} + \textcolor{blue}{\theta_1}Rating + \textcolor{blue}{\theta_2}Income + \textcolor{blue}{\theta_3}Credit Limit$
+
+\end{itemize}
+
+\begin{columns}  
+\begin{column}{0.1\textwidth} 
+\begin{center}
+Training
+\end{center}
+\end{column}
+\begin{column}{0.9\textwidth} 
+\begin{center}
+%https://docs.google.com/presentation/d/172tBPXPO2B0whGwUaVZyrI4YHbh8QvS7/edit#slide=id.p1
+  \includegraphics[width = 0.8\textwidth]{figure_man/nutshell-regression-learning-task.png}
+\end{center}
+\end{column}
+\end{columns}
+%\end{center}
+%\begin{center}
+\begin{columns}
+\begin{column}{0.1\textwidth} 
+\begin{center}
+Prediction
+\end{center}
+\end{column}
+\begin{column}{0.9\textwidth} 
+\begin{center}
+%https://docs.google.com/presentation/d/1cCEtDDxFkLOBv0psld-6-bMtPyjC4yVI/edit#slide=id.p1
+  \includegraphics[width = 0.8\textwidth]{figure_man/nutshell-regression-prediction-task.png} 
+\end{center}
+\end{column}
+\end{columns}
+
+\end{vbframe}
+
+
+
+\begin{vbframe}{Linear Models: L1 vs L2 Loss}
+
+\small Loss can be characterized as a function of residuals \textbf{$r = y - f(\xv)$}
+
+\begin{columns}  
+\begin{column}{0.4\textwidth} 
+\begin{center}
+  \includegraphics[width = \textwidth]{figure/nutshell-regression-L1.pdf}
+\end{center}
+\end{column}
+\begin{column}{0.4\textwidth} 
+\begin{center}
+  \includegraphics[width = \textwidth]{figure/nutshell-regression-L2.pdf}
+\end{center}
+\end{column}
+\end{columns}
+
+\begin{minipage}[t]{0.45\textwidth}
+    \footnotesize
+    \begin{itemize}
+        \item \small \textbf{L1} penalizes the \textbf{absolute} value of residuals 
+        \item \textbf{$L(r) = |r|$}
+        \item \small Robust to outliers
+
+    \end{itemize}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.45\textwidth}
+    \footnotesize
+    \begin{itemize}
+        \item \small \textbf{L2} penalizes the \textbf{quadratic} value of residuals
+        \item \textbf{$L(r) = r^2$}
+        \item \small Easier to optimize
+    \end{itemize}
+\end{minipage}
+
+
+\end{vbframe}
+
+\begin{vbframe}{Linear Models: L1 vs L2 Loss}
+
+\begin{minipage}[t]{0.45\textwidth}
+    \footnotesize
+    \begin{itemize}
+        \item \small \textbf{L1} Loss is not differentiable in \textbf{$r = 0$}
+        \item \small Optimal parameters are computed numerically 
+
+    \end{itemize}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.45\textwidth}
+    \footnotesize
+    \begin{itemize}
+        \item \small \textbf{L2} is a smooth function hence it is differentiable everywhere 
+        \item \small Optimal parameters can be computed analytically or numerically 
+    \end{itemize}
+\end{minipage}
+
+\end{vbframe}
+
+\begin{vbframe}{Linear Models: L1 vs L2 Loss}
+
+\begin{itemize}
+\item \small The parameter values of the best model depend on the loss type
+\end{itemize}
+\begin{columns}  
+\begin{column}{0.5\textwidth} 
+\begin{center}
+  \includegraphics[width = \textwidth]{figure/nutshell-regression-L1-regr-line.pdf}
+\end{center}
+\end{column}
+\begin{column}{0.5\textwidth} 
+\begin{center}
+  \includegraphics[width = \textwidth]{figure/nutshell-regression-L2-regr-line.pdf}
+\end{center}
+\end{column}
+\end{columns}
+\begin{minipage}[t]{0.5\textwidth}
+    \footnotesize
+    \begin{itemize}
+        \item \small $\thetah_{L_1} = 0.14$ $\rightarrow$ if the Credit Limit increases by 1\$ the Credit Balance increases by 14 Cents 
+    \end{itemize}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\textwidth}
+    \footnotesize
+    \begin{itemize}
+        \item \small $\thetah_{L_2} = 0.19$ $\rightarrow$ if the Credit Limit increases by 1\$ the Credit Balance increases by 19 Cents
+    \end{itemize}
+\end{minipage}
+
+
+\end{vbframe}
+
+\begin{vbframe}{OLS estimator}
+\small \textbf{Ordinary-Least-Squares (OLS)} estimator: 
+\begin{itemize}
+    \item \small Analytical solution for linear models with L2 loss
+    \item \small Best parameters can be computed via derivation of the empirical risk
+    \item \small Solution:  $\thetavh = \olsest$
+\end{itemize}
+%\small $$\pd{\risket}{\thetav} = \pd{\sumin (\yi - \theta^T \xi)^2}{\thetav} = 0$$ % 
+
+% \begin{columns}  
+% \begin{column}{0.48\textwidth} 
+% \vspace{1.5cm}
+% \end{column}
+% \begin{column}{0.5\textwidth} 
+\begin{center}
+ \includegraphics[width =0.4\textwidth]{figure/nutshell-regression-derivative-L2.pdf}
+\end{center}
+% \end{column}
+% \end{columns}
+\end{vbframe}
+   
+
+
+
+
+\begin{vbframe}{OLS estimator}
+Components of \textbf{OLS} estimator:
+\begin{itemize}
+    \item $\Xmat$: Features + extra column for intercept
+    \item $\yv$: Label vector
+\end{itemize}
+\vspace{0.7 cm}
+%https://docs.google.com/presentation/d/1hYu69Z5dmnHEq05qgMkT1-zQE3rE4D2q/edit#slide=id.p1
+  \includegraphics[width = 0.6\textwidth]{figure_man/nutshell-regression-design-matrix.png}
+
+
+\end{vbframe}
+
+\begin{vbframe}{Polynomial Regression}
+
+\begin{itemize}
+\small \item Adding polynomial terms to the linear combination leads to more flexible regression functions 
+\small \item Too high degrees can lead to overfitting
+\end{itemize}
+
+\vspace{1cm}
+
+\begin{columns}  
+\begin{column}{0.3\textwidth} 
+\tiny \text{$Balance = \textcolor{blue}{\theta_0} + \textcolor{blue}{\theta_1}Limit$}
+ \includegraphics[width = \textwidth]{figure/nutshell-regression-poly-plot-1.pdf}
+\end{column}
+\begin{column}{0.3\textwidth} 
+\tiny \text{$Balance = \textcolor{blue}{\theta_0} + \textcolor{blue}{\theta_1}Limit + \textcolor{blue}{\theta_2}Limit^2$}
+  \includegraphics[width = \textwidth]{figure/nutshell-regression-poly-plot-2.pdf}
+\end{column}
+\begin{column}{0.4\textwidth} 
+\tiny \text{$Balance = \textcolor{blue}{\theta_0} + \textcolor{blue}{\theta_1}Limit + \textcolor{blue}{\theta_2}Limit^2 
++ \textcolor{blue}{\theta_3}Limit^3$}
+   \includegraphics[width = 0.75\textwidth]{figure/nutshell-regression-poly-plot-3.pdf}
+\end{column}
+\end{columns}
+
+
+\end{vbframe}
+
+\endlecture
+\end{document}
