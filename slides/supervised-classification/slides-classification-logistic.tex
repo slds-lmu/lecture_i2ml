@@ -44,7 +44,7 @@ Obviously this could result in predicted probabilities $\pixt \not\in [0,1]$.
 
 \end{vbframe}
 
-\begin{vbframe}{Logistic Function}
+\begin{vbframe}{Restricting the hypothesis space}
 
 To avoid this, logistic regression \enquote{squashes} the estimated linear scores $\thx$ to $[0,1]$ through the \textbf{logistic function} $s$:
 \[
@@ -54,15 +54,21 @@ To avoid this, logistic regression \enquote{squashes} the estimated linear score
 \begin{knitrout}\scriptsize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
 
-{\centering \includegraphics[width=0.95\textwidth]{figure/reg_class_log_1} 
+{\centering \includegraphics[width=0.70\textwidth]{figure/reg_class_log_1} 
 
 }
 
-
-
 \end{knitrout}
 
-\framebreak
+Thus, the \textbf{Hypothesis Space} of logistic regression is defined as:
+\begin{eqnarray*}
+  \Hspace = \left\{\pi: \Xspace \to [0,1] ~|~\pix = s(\thx) \right\}
+\end{eqnarray*}
+
+\end{vbframe}
+
+\begin{vbframe}{Logistic Function}
+  
 The intercept shifts $s(f)$ horizontally $s(\theta_0 + f) = \frac{\exp(\theta_0 + f)}{1+\exp(\theta_0 + f)}$
 \begin{knitrout}\scriptsize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
@@ -90,18 +96,26 @@ Scaling $f$ like $s(\alpha f) = \frac{\exp(\alpha f)}{1+\exp(\alpha f)}$ control
 
 \end{vbframe}
 
-\begin{vbframe}{Bernoulli / Log loss}
+\begin{vbframe}{Deriving a loss function}
 
-We need to define a loss function for the ERM approach:
+We need to find a suitable loss function to use \textbf{ERM}. Starting from the likelihood function $\LL$ for the binary case:
+$$
+\LLt = \prod_{i \text{ with } \yi = 1} \pixit * \prod_{i \text{ with } \yi = 0} (1-\pixit)
+$$
+Taking the log to convert products into sums:
+$$
+\loglt = \log \LLt = \sum_{i \text{ with } \yi = 1} \log(\pixit) + \sum_{i \text{ with } \yi = 0} \log(1-\pixit)
+$$
+Since we want to minimize our risk, we work with the negative $\loglt$:
+$$
+- \loglt = - \sum_{i \text{ with } \yi = 1} \log(\pixit) - \sum_{i \text{ with } \yi = 0} \log(1-\pixit)
+$$
+The resulting loss $\Lpixy = -y\log(\pix)-(1-y)\log(1-\pix)$ is called the \textbf{Bernoulli, log} or \textbf{cross-entropy} loss.
+\end{vbframe}
 
-\begin{itemize}
-  \item $\Lpixy = -y\log(\pix)-(1-y)\log(1-\pix)$
-  \item Penalizes confidently wrong predictions heavily
-  \item Called Bernoulli, log or cross-entropy loss 
-  \item We can derive it from the negative log-likelihood of Bernoulli / logistic regression model in statistics
-  \item Used for many other classifiers, e.g., in NNs or boosting 
-\end{itemize}
+\begin{vbframe}{Bernoulli / Log Loss}
 
+Graphically:
 
 \begin{knitrout}\scriptsize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
@@ -110,9 +124,14 @@ We need to define a loss function for the ERM approach:
 
 }
 
-
-
 \end{knitrout}
+The \textbf{log loss}
+\begin{itemize}
+  \item penalizes confidently wrong predictions heavily
+  \item is used for many other classifiers, e.g., in NNs or boosting 
+  \item has no analytical solution for \textbf{optimization}! Thus, we use \textbf{numerical optimization}, typically gradient-based methods to fit a logistic regression model.
+\end{itemize}
+
 
 \end{vbframe}
 
@@ -125,8 +144,6 @@ With one feature $\xv \in \R$. The figure shows data and $\xv \mapsto \pix$.
 {\centering \includegraphics[width=0.95\textwidth]{figure/reg_class_log_5} 
 
 }
-
-
 
 \end{knitrout}
 \end{vbframe}
@@ -142,8 +159,6 @@ and $s$ is isotonic.
 {\centering \includegraphics[width=0.95\textwidth]{figure/reg_class_log_6}  
 
 }
-
-
 
 \end{knitrout}
 
@@ -161,172 +176,11 @@ and $s$ is isotonic.
 
 }
 
-
-
 \end{knitrout}
 \end{column}
 \end{columns}
 
-% <<fig.width=2, fig.height=2>>=
-% x1 = seq(-1, 8, by = 0.1)
-% dfn = expand.grid(x1, x1)
-% names(dfn) = c("x1", "x2")
-% dfn$prob = predict(m, newdata = dfn)
-% dfn$score = predict(mm, newdata = dfn)
-% z = matrix(dfn$prob, nrow = length(x1))
-% res = persp(x1, x1, z, phi = 30, theta = 30,
-%   xlab = "x1", ylab = "x2",
-%   main = expression(pi(x)), border = "grey"
-% )
-% cols = viridisLite::viridis(2, end = .9)
-% mypoints = trans3d(df$x1, df$x2, df$prob, pmat = res)
-% points(mypoints, pch = 19, col = cols[as.numeric(df$y) + 1])
-% @ 
-
-
-% \framebreak 
-
-% \begin{center}
-  % \includegraphics[width=0.4\textwidth]{figure_man/logreg-2vars-surface.png}
-% \end{center}
-
-
 \end{vbframe}
-
-
-% \begin{vbframe}{Logistic Regression}
-
-% \textbf{Multivariate logistic regression} combines the hypothesis space of linear functions 
-
-% \vspace*{-0.3cm}
-
-% \begin{eqnarray*}
-%   \Hspace = \left\{f: \Xspace \to \R ~|~\fx = \thx \right\}
-% \end{eqnarray*}
-
-% with the \textbf{logistic loss}
-
-% \vspace*{-0.2cm}
-
-% \begin{eqnarray*}
-%   \Lxy = \log \left[1 + \exp \left(-y\fx\right)\right].
-% \end{eqnarray*}
-
-% We transform scores into probabilities by 
-
-% $$
-% \pix = \P(y = 1 ~|~\xv) = s(\fx) = \frac{1}{1 + \exp(- \fx)},
-% $$
-
-% with $s(.)$ being the logistic sigmoid function as introduced in chapter 2.
-
-% \framebreak 
-
-% As already shown before, an equivalent approach that directly outputs probabilities $\pix$ is minimizing the \textbf{Bernoulli loss} 
-
-% \begin{eqnarray*}
-% \Lpixy = -y \log \left(\pix\right) - (1 - y) \log \left(1 - \pix\right)
-% \end{eqnarray*}
-
-% for $\pix$ in the hypothesis space
-
-% \begin{eqnarray*}
-%   \Hspace = \left\{\pi: \Xspace \to [0, 1] ~|~\pix = s(\thx)\right\}
-% \end{eqnarray*}
-
-% with $s(.)$ again being the logistic function. 
-
-% \end{vbframe}
-
-% \begin{vbframe}{Logistic Regression: Discriminant functions and decision boundary}
-
-% Logistic regression gives us a \textbf{linear classifier}. 
-
-% In order to minimize the loss (misclassification), we should predict $y=1$ if
-
-% $$
-% \pixt = \frac{\exp(\thx)}{1+\exp(\thx)} \ge 0.5,
-% $$
-
-% which is equivalent to
-% $$
-% \thx \ge 0 \implies y = 1.
-% $$
-
-
-% \lz 
-
-% If we apply $g(y) = \log \left(\frac{y}{1 - y}\right)$ (which is a monotone, rank preserving function) on $\pix = \frac{1}{1 + \exp(-\thetav^\top \xv)}$, we get
-
-% \begin{footnotesize}
-% \begin{eqnarray*}
-%   g(\pix) &=& g\left(\pix\right)\\
-%   &=& \log\left(\pix)\right) - \log \left(1 - \pix\right) \\ &=& - \log (1 + \exp(- \fx)) - \log \left(1 - \frac{1}{1 + \exp(-\fx)}\right)\\
-%   &=& - \log (1 + \exp(- \fx)) - \log \left(\frac{\exp(-\fx)}{1 + \exp(-\fx)}\right) \\
-%   &=& - \log (1 + \exp(- \fx)) - \log \left(\exp(-\fx)\right) + \log\left(1 + \exp(-\fx)\right)\\
-%    &=& \fx = \thx.
-% \end{eqnarray*}
-% \end{footnotesize}
-
-% $\fx = \thx$ is the discriminant function of logistic regression and $\fx = \thx = 0$ represents the decision boundary, which is a \textbf{hyperplane} in the $p$ dimensional space. 
-
-% \lz  
-
-% The discriminant function can be interpreted as \textbf{log-odds ratio}: 
-
-  % $$ \log \dfrac{\pix}{1-\pix} = \log \dfrac{\P(y = 1 ~|~ \xv)} {\P(y = 0 ~|~ \xv)} = \thx
-  % = \fx.
-  % $$
- 
-
-% \framebreak 
-
-% <<logreg-plot, echo=FALSE, eval = FALSE, include = FALSE>>=
-% n = 30
-% set.seed(1234L)
-% tar = factor(c(rep(1L, times = n), rep(2L, times = n)))
-% feat1 = c(rnorm(n, sd = 1.5), rnorm(n, mean = 2, sd = 1.5))
-% feat2 = c(rnorm(n, sd = 1.5), rnorm(n, mean = 2, sd = 1.5))
-% bin.data = data.frame(feat1, feat2, tar)
-% bin.tsk = makeClassifTask(data = bin.data, target = "tar")
-% plotLearnerPrediction("classif.logreg", bin.tsk) + 
-%   scale_f_d()
-% @
-
-% \end{vbframe}
-
-
-\begin{frame}{Summary}
-% \lz
-
-\textbf{Hypothesis Space:} 
-\begin{eqnarray*}
-  \Hspace = \left\{\pi: \Xspace \to [0,1] ~|~\pix = s(\thx) \right\}
-\end{eqnarray*}
-
-\lz
-
-\textbf{Risk:} Logistic/Bernoulli loss function.
-
-\begin{eqnarray*}
-  \Lpixy = -y\log(\pix)-(1-y)\log(1-\pix)
-  % \Lxy = \log \left[1 + \exp \left(-y\fx\right)\right].
-\end{eqnarray*}
-
-\lz
-
-
-\textbf{Optimization:} Numerical optimization, typically gradient-based methods.
-
-% We transform scores into probabilities by 
-
-% $$
-% \pix = \P(y = 1 ~|~\xv) = s(\fx) = \frac{1}{1 + \exp(- \fx)},
-% $$
-
-% with $s(.)$ being the logistic sigmoid function as introduced in chapter 2.
-
-\end{frame}
 
 \endlecture
 
