@@ -8,7 +8,7 @@ plot_dpi <- 300
 line_size <- 5
 base_size <- 28
 
-color_palette <- c(" 0" = "black", " 2" = "orange", "-2" = "deepskyblue3", 
+color_palette <- c(" 0" = "black", " 2" = "orange", "-2" = "#0072B2", 
                    " 0.4" = "darkgreen", "-5  " = "firebrick", "-1  " = "purple", " 1  " = "black")
 
 
