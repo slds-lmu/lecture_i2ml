@@ -1,3 +1,4 @@
+# here we want to plot how some datapoints are predicted (x -> pi(x))
 # PREREQ -----------------------------------------------------------------------
 
 library(knitr)
@@ -6,6 +7,14 @@ library(ggplot2)
 options(digits = 3, 
         width = 65, 
         str = strOptions(strict.width = "cut", vec.len = 3))
+
+plot_width <- 20
+plot_height <- 10
+plot_dpi <- 300
+line_size <- 5
+base_size <- 40
+point_size <- 10
+
 
 # DATA -------------------------------------------------------------------------
 
@@ -29,14 +38,13 @@ dfn$score = predict(model, newdata = dfn)
 
 # PLOT -------------------------------------------------------------------------
 
-#pdf("../figure/reg_class_log_5.pdf", width = 8, height = 5)
-
 p = ggplot() + 
-  geom_line(data = dfn, aes(x = x, y = prob))
-p = p + geom_point(data = df, aes(x = x, y = prob, colour = y), size = 2)
-p = p + xlab("x") + ylab(expression(pi(x)))
-p = p + scale_color_viridis_d(end = .9)
+  geom_line(data = dfn, aes(x = x, y = prob), size = line_size) +
+  geom_point(data = df, aes(x = x, y = prob, colour = y), size = point_size) +
+  xlab("x") + ylab(expression(pi(x))) +
+  scale_color_manual(values = c("#0072B2", "#E69F00")) +
+  theme_minimal(base_size = base_size)
+
 p
 
-ggsave("../figure/reg_class_log_5.pdf", width = 8, height = 5)
-dev.off()
+ggsave("../figure/preds_with_probs.png", plot = p, width = plot_width, height = plot_height, dpi = plot_dpi)
