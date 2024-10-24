@@ -7,7 +7,10 @@ plot_height <- 7
 plot_dpi <- 300
 line_size <- 5
 base_size <- 28
-color_palette <- c("Standard Logistic" = "black", "Shift Right (2)" = "orange", "Shift Left (-2)" = "deepskyblue3", "Slope = 0.4" = "darkgreen", "Slope = -5" = "firebrick", "Slope = -1" = "purple")
+
+color_palette <- c(" 0" = "black", " 2" = "orange", "-2" = "deepskyblue3", 
+                   " 0.4" = "darkgreen", "-5  " = "firebrick", "-1  " = "purple", " 1  " = "black")
+
 
 # DEFINITIONS
 logistic <- function(x) { 1 / (1 + exp(-x)) }
@@ -23,7 +26,7 @@ y <- seq(0.01, 0.99, length.out = 100)  # To avoid logit issues at 0 and 1
 data_logistic <- data.frame(x = x, y = logistic(x))
 p1 <- ggplot(data_logistic, aes(x, y)) +
   geom_line(size = line_size, color = "black") +
-  labs(x = "x", y = "f(x)") +
+  labs(x = "f", y = "s(f)") +
   theme_minimal(base_size = base_size)
 p1
 
@@ -31,27 +34,31 @@ p1
 data_shifted <- data.frame(
   x = rep(x, 3),
   y = c(logistic_shifted(x, 2), logistic_shifted(x, -2), logistic(x)),
-  Shift = rep(c("Shift Right (2)", "Shift Left (-2)", "Standard Logistic"), each = length(x))
+  theta = rep(c(" 2", "-2", " 0"), each = length(x))
 )
-p2 <- ggplot(data_shifted, aes(x, y, color = Shift)) +
+
+p2 <- ggplot(data_shifted, aes(x, y, color = theta)) +
   geom_line(size = line_size) +
   scale_color_manual(values = color_palette) +
-  labs(x = "x", y = "f(x)") +
+  labs(x = "f", y = "s(f)", color = expression(theta[0])) +
   theme_minimal(base_size = base_size)
+
 p2
 
-# plot 3: scaled logistic function
 data_scaled <- data.frame(
   x = rep(x, 4),
   y = c(logistic_scaled(x, 0.4), logistic_scaled(x, 5), logistic(x), logistic_scaled(x, -1)),
-  Slope = rep(c("Slope = 0.4", "Slope = -5", "Standard Logistic", "Slope = -1"), each = length(x))
+  Slope = rep(c(" 0.4", "-5  ", " 1  ", "-1  "), each = length(x))
 )
+
 p3 <- ggplot(data_scaled, aes(x, y, color = Slope)) +
   geom_line(size = line_size) +
   scale_color_manual(values = color_palette) +
-  labs(x = "x", y = "f(x)") +
+  labs(x = "f", y = "s(f)", color = expression(alpha)) +
   theme_minimal(base_size = base_size)
+
 p3
+
 
 # plot 4: logit
 data_logit <- data.frame(y = y, logit_y = logit(y))
