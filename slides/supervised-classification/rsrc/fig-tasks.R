@@ -25,11 +25,20 @@ grid_bin$Class <- as.factor(pred_grid_bin)
 
 data_bin <- binary_task$data()
 gg_bin <- ggplot() +
-  geom_point(data = grid_bin, aes(x = PC1, y = PC2, color = Class), alpha = 0.3) + scale_color_manual(values = c("#E69F00", "#56B4E9")) + xlab(expression(x[1])) + ylab(expression(x[2])) +
-  geom_point(data = data_bin, aes(x = PC1, y = PC2, color = Class)) + scale_color_manual(values = c("#E69F00", "#56B4E9")) +
+  geom_point(data = grid_bin, aes(x = PC1, y = PC2, color = Class), alpha = 0.3) +
+  scale_color_manual(values = c("#E69F00", "#56B4E9")) +
+  xlab(expression(x[1])) + ylab(expression(x[2])) +
+  geom_point(data = data_bin, aes(x = PC1, y = PC2, color = Class)) +
+  scale_color_manual(values = c("#E69F00", "#56B4E9")) +
   ggtitle("Sonar: binary classification") +
   theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 20, face = "bold"),
+    axis.title = element_text(size = 16, face = "bold"),
+    axis.text = element_text(size = 14, face = "bold"),
+    legend.title = element_text(size = 16, face = "bold"),
+    legend.text = element_text(size = 14, face = "bold")
+  )
 
 # multiclass: we use the Iris task, again using PCA for dimensionality reduction
 multiclass_task <- as_task_classif(mlr3::tsk("iris"), target = "Species")
@@ -45,12 +54,21 @@ pred_grid_multi <- learner_multi$predict_newdata(as.data.table(grid_multi))$resp
 grid_multi$Species <- as.factor(pred_grid_multi)
 
 data_multi <- multiclass_task$data()
+
+
 gg_multi <- ggplot() +
-  geom_point(data = grid_multi, aes(x = PC1, y = PC2, color = Species), alpha = 0.3) + xlab(expression(x[1])) + ylab(expression(x[2])) +
+  geom_point(data = grid_multi, aes(x = PC1, y = PC2, color = Species), alpha = 0.3) +
+  xlab(expression(x[1])) + ylab(expression(x[2])) +
   geom_point(data = data_multi, aes(x = PC1, y = PC2, color = Species)) +
   ggtitle("Iris: multiclass classification") +
   theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 20, face = "bold"),
+    axis.title = element_text(size = 16, face = "bold"),
+    axis.text = element_text(size = 14, face = "bold"),
+    legend.title = element_text(size = 16, face = "bold"),
+    legend.text = element_text(size = 14, face = "bold")
+  )
 
 # combining the plots
 combined_plot <- grid.arrange(gg_bin, gg_multi, ncol = 2)
