@@ -8,7 +8,7 @@ library(dplyr)
 
 
 # OPTIONS
-plot_width <- 15
+plot_width <- 25
 plot_height <- 7
 plot_dpi <- 300
 line_size <- 5
@@ -68,7 +68,7 @@ p <- ggplot() +
   geom_point(data = data, aes(x = x, y = y, color = class), size = point_size) +
   geom_point(data = centroids, aes(x = x, y = y, color = class), shape = 17, size = (point_size+4), show.legend = FALSE) +
   geom_point(data = new_point, aes(x = x, y = y), shape = 16, size = new_point_size, color = 'black') +
-  annotate("text", x = new_point$x, y = new_point$y + 0.8, label = "x", fontface = "bold", size = base_size / 4, color = "black") +
+  annotate("text", x = new_point$x, y = new_point$y + 1, label = "x", fontface = "bold", size = base_size / 4, color = "black") +
   geom_segment(aes(x = new_point$x, y = new_point$y, xend = centroid_1['x'], yend = centroid_1['y']), 
                size = line_size, linetype = 'dashed', color = '#E68A00') +
   geom_segment(aes(x = new_point$x, y = new_point$y, xend = centroid_2['x'], yend = centroid_2['y']), 
