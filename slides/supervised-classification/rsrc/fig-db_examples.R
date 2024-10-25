@@ -3,9 +3,19 @@ library(mlr3)
 library(mlr3learners)
 library(mlr3pipelines)
 
-task = tsk("pima")
-task = po("imputemean")$train(list(task))[[1]]
-task$select(c("insulin", "mass"))
+set.seed(1)
+
+n = 40
+x = runif(2 * n, min = 0, max = 7)
+x1 = x[1:n]
+x2 = x[(n + 1):(2 * n)]
+y = factor(as.numeric((x1 + x2 + rnorm(n) > 7)))
+df = data.frame(x1 = x1, x2 = x2, y = y)
+
+task = TaskClassif$new("example task", 
+                       backend = df, 
+                       target = "y", 
+                       positive = "0")
 
 
 ff = function(type, file_name, ...) {
