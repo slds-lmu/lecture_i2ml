@@ -25,10 +25,10 @@ grid_bin$Class <- as.factor(pred_grid_bin)
 
 data_bin <- binary_task$data()
 gg_bin <- ggplot() +
-  geom_point(data = grid_bin, aes(x = PC1, y = PC2, color = Class), alpha = 0.3) +
+  geom_point(data = grid_bin, aes(x = PC1, y = PC2, color = Class), alpha = 0.3, size = 3) +
   scale_color_manual(values = c("#E69F00", "#56B4E9")) +
   xlab(expression(x[1])) + ylab(expression(x[2])) +
-  geom_point(data = data_bin, aes(x = PC1, y = PC2, color = Class)) +
+  geom_point(data = data_bin, aes(x = PC1, y = PC2, color = Class), size = 4) +
   scale_color_manual(values = c("#E69F00", "#56B4E9")) +
   ggtitle("Sonar: binary classification") +
   theme_minimal() +
@@ -57,9 +57,9 @@ data_multi <- multiclass_task$data()
 
 
 gg_multi <- ggplot() +
-  geom_point(data = grid_multi, aes(x = PC1, y = PC2, color = Species), alpha = 0.3) +
+  geom_point(data = grid_multi, aes(x = PC1, y = PC2, color = Species), alpha = 0.3, size = 3) +
   xlab(expression(x[1])) + ylab(expression(x[2])) +
-  geom_point(data = data_multi, aes(x = PC1, y = PC2, color = Species)) +
+  geom_point(data = data_multi, aes(x = PC1, y = PC2, color = Species), size = 4) +
   ggtitle("Iris: multiclass classification") +
   theme_minimal() +
   theme(
