@@ -32,11 +32,16 @@ dens_class2 <- kde2d(data$X1[data$class == 2], data$X2[data$class == 2], n = 100
 dens_df1 <- data.frame(expand.grid(X1 = dens_class1$x, X2 = dens_class1$y), z = as.vector(dens_class1$z))
 dens_df2 <- data.frame(expand.grid(X1 = dens_class2$x, X2 = dens_class2$y), z = as.vector(dens_class2$z))
 
-# plot the data with Gaussian PDFs
+# compute the decision boundary based on log likelihood ratio (densities)
+dens_diff <- dens_class1$z - dens_class2$z
+boundary_df <- data.frame(expand.grid(X1 = dens_class1$x, X2 = dens_class1$y), z = as.vector(dens_diff))
+
+# plot the data with Gaussian PDFs and decision boundary
 p_generative <- ggplot(data, aes(x = X1, y = X2, color = class)) +
   geom_point(size = 5) +
-  geom_contour(data = dens_df1, aes(x = X1, y = X2, z = z), color = "blue", size = 2, alpha = 0.5) +
-  geom_contour(data = dens_df2, aes(x = X1, y = X2, z = z), color = "orange", size = 2, alpha = 0.5) +
+  geom_contour(data = dens_df1, aes(x = X1, y = X2, z = z), color = "blue", linewidth = 2, alpha = 0.5) +
+  geom_contour(data = dens_df2, aes(x = X1, y = X2, z = z), color = "orange", linewidth = 2, alpha = 0.5) +
+  geom_contour(data = boundary_df, aes(x = X1, y = X2, z = z), breaks = 0, color = "black", linewidth = 2, linetype = "dashed") +
   labs(x = 'feature 1', y = 'feature 2') +
   theme_minimal() +
   scale_color_manual(values = c("blue", "orange")) +
@@ -48,7 +53,6 @@ p_generative <- ggplot(data, aes(x = X1, y = X2, color = class)) +
   )
 
 print(p_generative)
-
 
 # ----DISCRIMINANT APPROACH----
 
