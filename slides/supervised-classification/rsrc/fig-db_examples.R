@@ -25,6 +25,7 @@ ff = function(type, file_name, ...) {
     vis = as_visualizer(task, learner)
     vis$init_layer_contour()
     vis$add_training_data()
+    vis$add_decision_boundary()
     vis$plot()
     
     vis$save(file_name, width = 600, height = 500)
