@@ -1,4 +1,5 @@
 library(vistool)
+library(plotly)
 library(mlr3)
 library(mlr3learners)
 library(mlr3pipelines)
@@ -26,9 +27,9 @@ ff = function(type, file_name, ...) {
     vis$init_layer_contour()
     vis$add_training_data()
     vis$add_decision_boundary()
-    vis$plot()
-    
-    vis$save(file_name, width = 600, height = 500)
+    plot <- vis$plot()
+    plot <- layout(plot, showlegend = FALSE)
+    plotly::save_image(plot, file_name, width = 600, height = 500, format = "png")
 }
 
 ff("classif.log_reg", "../figure/log_reg.png")
