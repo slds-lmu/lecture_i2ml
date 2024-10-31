@@ -2,8 +2,8 @@
 library(ggplot2)
 
 # OPTIONS
-plot_width <- 21
-plot_height <- 7
+plot_width <- 15
+plot_height <- 5
 plot_dpi <- 300
 line_size <- 5
 base_size <- 28
@@ -64,7 +64,7 @@ p3
 data_logit <- data.frame(y = y, logit_y = logit(y))
 p4 <- ggplot(data_logit, aes(y, logit_y)) +
   geom_line(size = line_size) +
-  labs(x = "p", y = "logit(p)") +
+  labs(x = "π", y = "logit(π)") +
   theme_minimal(base_size = base_size)
 p4
 

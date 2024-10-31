@@ -60,7 +60,7 @@ p_logistic <- ggplot() +
   geom_line(data = dfn, aes(x = x, y = prob_logistic), size = line_size, color = "black") +
   geom_point(data = df, aes(x = x, y = prob_logistic, colour = y), size = point_size) +
   xlab("x") + ylab(expression(pi(x))) +
-  scale_color_manual(values = c("#0072B2", "#E69F00")) +
+  scale_color_manual(values = c("0" = "#E69F00", "1" = "#0072B2"), name = "y") +
   theme_minimal(base_size = base_size)
 p_logistic
 
