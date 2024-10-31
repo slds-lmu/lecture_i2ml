@@ -12,7 +12,7 @@
   }{% Lecture title  
   Logistic Regression
 }{% Relative path to title page image: Can be empty but must not start with slides/
-  figure/reg_class_log_7
+  figure/log_reg-scores
 }{% Learning goals, wrapped inside itemize environment
   \item Understand the definition of the logit model
   \item Understand how a reasonable loss function for binary classification can be derived
@@ -26,21 +26,27 @@
 
 A \textbf{discriminant} approach for directly modeling the posterior probabilities $\pixt$ of the labels is \textbf{logistic regression}. 
 
+\lz
+
 For now, let's focus on the binary case $y \in \setzo$ and use empirical risk minimization.
   
 $$ \argmin_{\thetav \in \Theta} \risket = \argmin_{\thetav \in \Theta} \sumin \Lpixyit.$$
 
 \lz
-A naive approach would be to model
-\[
-\pixt = \thx .
-\]
+A naive approach would be to model $\pixt$ as a simple linear model $\thx$ 
+(NB: We will often suppress the intercept in notation).
 
-NB: We will often suppress the intercept in notation.
+\end{vbframe}
 
-\lz
+\begin{vbframe}{linear models of probabilities}
+E.g., fitting a simple linear model $\pixt = \thx$ on some example data with one feature $\xv \in \R$ and L2 loss:
 
-Obviously this could result in predicted probabilities $\pixt \not\in [0,1]$.
+\lz 
+
+{\centering \includegraphics[width=0.95\textwidth]{figure/preds_with_probs-linear.png}
+}
+
+However, this could result in predicted probabilities $\pixt \not\in [0,1]$!
 
 \end{vbframe}
 
@@ -52,10 +58,10 @@ To avoid this, logistic regression \enquote{squashes} the estimated linear score
 \]
 
 \begin{center}
-  \includegraphics[width=0.70\textwidth]{figure/logistic_function.png} 
+  \includegraphics[width=0.74\textwidth]{figure/logistic_function.png} 
 \end{center}
 
-$\Rightarrow$ The \textbf{Hypothesis Space} of logistic regression is defined as:
+$\Rightarrow$ The \textbf{hypothesis space} of logistic regression is defined as:
 \begin{eqnarray*}
   \Hspace = \left\{\pi: \Xspace \to [0,1] ~|~\pixt = s(\thx) ~|~ \thetav \in \R^{p+1} \right\}
 \end{eqnarray*}
@@ -63,8 +69,8 @@ $\Rightarrow$ The \textbf{Hypothesis Space} of logistic regression is defined as
 \end{vbframe}
 
 \begin{vbframe}{Logistic Function}
-  
-The intercept shifts $s(f)$ horizontally $s(\theta_0 + f) = \frac{\exp(\theta_0 + f)}{1+\exp(\theta_0 + f)}$
+
+The intercept $\theta_0$ shifts $\pi = s(\theta_0 + f) = \frac{\exp(\theta_0 + f)}{1+\exp(\theta_0 + f)}$ horizontally.
 
 {
 \centering \includegraphics[width=0.8\textwidth]{figure/logistic_shifted.png}
@@ -80,7 +86,7 @@ Scaling $f$ like $s(\alpha f) = \frac{\exp(\alpha f)}{1+\exp(\alpha f)}$ control
 
 \begin{vbframe}{The Logit}
 
-The inverse $s^{-1}(p) = \log\left(\frac{p}{1 - p}\right)$ where $p$ is a probability is called \textbf{logit} (also called \textbf{log odds} since it is equal to the logarithm of the odds $\frac{p}{1-p}$).
+The inverse $s^{-1}(\pi) = \log\left(\frac{\pi}{1 - \pi}\right)$ where $\pi$ is a probability is called \textbf{logit} (also called \textbf{log odds} since it is equal to the logarithm of the odds $\frac{\pi}{1-\pi}$).
 
 \begin{center}
 \includegraphics[width=0.9\textwidth]{figure/logit_function.png}
@@ -100,18 +106,29 @@ $\Rightarrow$ Positive logits indicate probabilities greater than 0.5 and vice v
 \begin{vbframe}{Deriving a loss function}
 
 We need to find a suitable loss function to use \textbf{ERM}. Starting from the likelihood function $\LL$ for the binary case:
-$$
-\LLt = \prod_{i \text{ with } \yi = 1} \pixit \prod_{i \text{ with } \yi = 0} (1-\pixit)
-$$
+\begin{small}
+\begin{align*}
+\LLt &= \prod_{i \text{ with } \yi = 1} \pixit \prod_{i \text{ with } \yi = 0} (1-\pixit) \\
+     &= \pixit^{\yi} (1-\pixit)^{1-\yi}
+\end{align*}
+\end{small}
 Taking the log to convert products into sums:
-$$
-\loglt = \log \LLt = \sum_{i \text{ with } \yi = 1} \log(\pixit) + \sum_{i \text{ with } \yi = 0} \log(1-\pixit)
-$$
+\begin{small}
+\begin{align*}
+\loglt &= \log \LLt = \log(\pixit^{\yi} (1-\pixit)^{1-\yi}) \\
+       &= \yi \log(\pixit) + (1-\yi)\log(1-\pixit)
+\end{align*}
+\end{small}
+
 Since we want to minimize our risk, we work with the negative $\loglt$:
-$$
-- \loglt = - \sum_{i \text{ with } \yi = 1} \log(\pixit) - \sum_{i \text{ with } \yi = 0} \log(1-\pixit)
-$$
+\begin{small}
+\begin{align*}
+- \loglt = - \yi \log(\pixit) - (1-\yi)\log(1-\pixit)
+\end{align*}
+\end{small}
+
 The resulting loss $\Lpixy = -y\log(\pix)-(1-y)\log(1-\pix)$ is called the \textbf{Bernoulli, log} or \textbf{cross-entropy} loss.
+
 \end{vbframe}
 
 \begin{vbframe}{Bernoulli / Log Loss}
@@ -126,51 +143,35 @@ The \textbf{log loss}
 \begin{itemize}
   \item penalizes confidently wrong predictions heavily
   \item is used for many other classifiers, e.g., in NNs or boosting 
-  \item has no analytical solution for \textbf{optimization} (non-linear, non-convex)! Thus, we use \textbf{numerical optimization}, typically gradient-based methods to fit a logistic regression model.
+  \item has no analytical solution for \textbf{optimization} (non-linear, non-convex)! Thus, we use \textbf{numerical optimization}, typically gradient-based methods, to fit a logistic regression model.
 \end{itemize}
 
 
 \end{vbframe}
 
 \begin{vbframe}{Logistic Regression in 1D}
-With one feature $\xv \in \R$. The figure shows data and $\xv \mapsto \pix$.
+Using logistic regression on our example data with one feature $\xv \in \R$, we again see $\xv \mapsto \pix$, with $\pix \in [0,1]$.
 
 \lz
 
-{\centering \includegraphics[width=0.95\textwidth]{figure/preds_with_probs.png}
+{\centering \includegraphics[width=0.95\textwidth]{figure/preds_with_probs-logistic.png}
 }
 
 \end{vbframe}
+
 \begin{vbframe}{Logistic Regression in 2D}
 
 Obviously, logistic regression is a linear classifier, as $\pixt = s\left( \thx \right)$ 
 and $s$ is isotonic.
 
 \lz
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-
-{\centering \includegraphics[width=0.95\textwidth]{figure/reg_class_log_6}  
-
-}
-
-\end{knitrout}
-
-\framebreak
 
 \begin{columns}[T]
 \begin{column}{0.5\textwidth}
-  \includegraphics[width=\textwidth]{figure_man/logreg-2vars-surface.png}
+  \includegraphics[width=\textwidth]{figure/log_reg-db.png}
 \end{column}
 \begin{column}{0.5\textwidth}
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-
-{\centering \includegraphics[width=0.95\textwidth]{figure/reg_class_log_7} 
-
-}
-
-\end{knitrout}
+  \includegraphics[width=\textwidth]{figure/log_reg-scores.png}
 \end{column}
 \end{columns}
 
