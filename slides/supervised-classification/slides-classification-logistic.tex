@@ -14,9 +14,10 @@
 }{% Relative path to title page image: Can be empty but must not start with slides/
   figure/log_reg-scores
 }{% Learning goals, wrapped inside itemize environment
-  \item Understand definition of logit model
-  \item Understand how a reasonable loss function for binary classification can be derived
-  \item Know the hypothesis space that belongs to the logit model
+  \item Hypothesis space of LR
+  \item Log-Loss derivation 
+  \item Intuition for loss
+  \item LR as linear classifier
 }
 
 \framebreak
@@ -24,43 +25,49 @@
 
 \begin{vbframe}{Motivation}
 
-We are looking for a \textbf{discriminant} approach for modeling the posterior probabilities $\pixt$. % of the labels is \textbf{logistic regression}. 
-%\lz
-We focus on binary $y \in \setzo$ and use ERM:
-  
-$$ \argmin_{\thetav \in \Theta} \risket = \argmin_{\thetav \in \Theta} \sumin \Lpixyit.$$
+\begin{itemize}
 
-\lz
-For this, we have to define a loss function $L$ and a model $\pixt$.
-A naive approach would be to model $\pixt$ as a simple linear model $\thx$ 
-(NB: We will often suppress the intercept in notation).
+\item Let's build a \textbf{discriminant} approach, for binary classification, as a probabilistic classifier $\pixt$
+
+\item We encode $y \in \setzo$ and use ERM:
+  
+$$ \argmin_{\thetav \in \Theta} \risket = \argmin_{\thetav \in \Theta} \sumin \Lpixyit$$
+
+\item We want to \enquote{copy} over ideas from linear regression
+
+\item In the above, our model structure should be \enquote{mainly} linear and we need a loss function
+
+\end{itemize}
+
 
 \end{vbframe}
 
-\begin{vbframe}{linear models of probabilities}
-Fitting a simple linear model $\pixt = \thx$ on data with one feature $x \in \R$ and L2 loss:
+\begin{vbframe}{Direct linear model for probabilities}
+
+We could directly use an LM to model $\pixt = \thx$.\\
+And use L2 loss in ERM.
 
 \lz 
 
 {\centering \includegraphics[width=0.95\textwidth]{figure/preds_with_probs-linear.png}
 }
 
-However, this could result in predicted probabilities $\pixt \not\in [0,1]$!
+But: This obviously will result in predicted probabilities $\pixt \not\in [0,1]$!
 
 \end{vbframe}
 
-\begin{vbframe}{Restricting the hypothesis space}
+\begin{vbframe}{Hypothesis space of LR}
 
 To avoid this, logistic regression \enquote{squashes} the estimated linear scores $\thx$ to $[0,1]$ through the \textbf{logistic function} $s$:
 \[
-\pixt = \frac{\exp\left( \thx \right)}{1+\exp\left(\thx \right)} = \frac{1}{1+\exp\left( -\thx \right)} = s\left( \thx \right)
+\pixt = \frac{\exp\left( \thx \right)}{1+\exp\left(\thx \right)} = \frac{1}{1+\exp\left( -\thx \right)} = s\left( \thx \right) = s(\fx)
 \]
 
 \begin{center}
   \includegraphics[width=0.74\textwidth]{figure/logistic_function.png} 
 \end{center}
 
-$\Rightarrow$ The \textbf{hypothesis space} of logistic regression is defined as:
+$\Rightarrow$ \textbf{Hypothesis space} of LR:
 \begin{eqnarray*}
   \Hspace = \left\{\pi: \Xspace \to [0,1] ~|~\pixt = s(\thx) ~|~ \thetav \in \R^{p+1} \right\}
 \end{eqnarray*}
@@ -69,13 +76,13 @@ $\Rightarrow$ The \textbf{hypothesis space} of logistic regression is defined as
 
 \begin{vbframe}{Logistic Function}
 
-The intercept $\theta_0$ shifts $\pi = s(\theta_0 + f) = \frac{\exp(\theta_0 + f)}{1+\exp(\theta_0 + f)}$ horizontally.
+Intercept $\theta_0$ shifts $\pi = s(\theta_0 + f) = \frac{\exp(\theta_0 + f)}{1+\exp(\theta_0 + f)}$ horizontally
 
 {
 \centering \includegraphics[width=0.8\textwidth]{figure/logistic_shifted.png}
 }
 
-Scaling $f$ like $s(\alpha f) = \frac{\exp(\alpha f)}{1+\exp(\alpha f)}$ controls the slope and direction.
+Scaling $f$ like $s(\alpha f) = \frac{\exp(\alpha f)}{1+\exp(\alpha f)}$ controls slope and direction
 
 {
 \centering \includegraphics[width=0.8\textwidth]{figure/logistic_scaled.png}
@@ -85,86 +92,93 @@ Scaling $f$ like $s(\alpha f) = \frac{\exp(\alpha f)}{1+\exp(\alpha f)}$ control
 
 \begin{vbframe}{The Logit}
 
-The inverse $s^{-1}(\pi) = \log\left(\frac{\pi}{1 - \pi}\right)$ where $\pi$ is a probability is called \textbf{logit} (also called \textbf{log odds} since it is equal to the logarithm of the odds $\frac{\pi}{1-\pi}$).
+The inverse $s^{-1}(\pi) = \log\left(\frac{\pi}{1 - \pi}\right)$ where $\pi$ is a probability is called \textbf{logit} (also called \textbf{log odds} since it is equal to the logarithm of the odds $\frac{\pi}{1-\pi}$)
 
 \begin{center}
-\includegraphics[width=0.9\textwidth]{figure/logit_function.png}
+\includegraphics[width=0.6\textwidth]{figure/logit_function.png}
 \end{center}
 
-The regression coefficients $\thetav$ represent the effect of $\xv$ on the logits.
-
-\lz
-
-\small{E.g., if $p = 0.75$, the \textit{odds} of success are $3:1$, and the \textit{logit} is $log(3) \approx 1.1$.}
-
-\vspace{1em}
-
-$\Rightarrow$ Positive logits indicate probabilities greater than 0.5 and vice versa.
-\end{vbframe}
-
-\begin{vbframe}{Deriving a loss function}
-
-We need to find a suitable loss function to use \textbf{ERM}. Starting from the likelihood function $\LL$ (for one observation):
-\begin{small}
-\begin{align*}
-\LLt %&= \prod_{i \text{ with } \yi = 1} \pixit \prod_{i \text{ with } \yi = 0} (1-\pixit) \\
-     &= \pixit^{\yi} \left(1-\pixit\right)^{1-\yi}
-\end{align*}
-\end{small}
-Taking the log to convert products into sums:
-\begin{small}
-\begin{align*}
-\loglt &= \log \LLt = \log\left(\pixit^{\yi} \left(1-\pixit\right)^{1-\yi}\right) \\
-       &= \yi \log\left(\pixit\right) + \left(1-\yi\right)\log\left(1-\pixit\right)
-\end{align*}
-\end{small}
-
-Since we want to minimize the risk, we work with the negative $\loglt$:
-\begin{small}
-\begin{align*}
-- \loglt = - \yi \log\left(\pixit\right) - \left(1-\yi\right)\log\left(1-\pixit\right)
-\end{align*}
-\end{small}
-
-The resulting loss $\Lpixy = -y\log(\pix)-(1-y)\log(1-\pix)$ is called the \textbf{Bernoulli, log} or \textbf{cross-entropy} loss.
-
-\end{vbframe}
-
-\begin{vbframe}{Bernoulli / Log Loss}
-
-Graphically:
-
-{\centering \includegraphics[width=0.95\textwidth]{figure/log_loss.png}
-
-}
-
-The \textbf{log loss}
 \begin{itemize}
-  \item penalizes confidently wrong predictions heavily
-  \item is used for many other classifiers, e.g., in NNs or boosting 
-  \item has no analytical solution for \textbf{optimization} (non-linear%, non-convex
-  )! Thus, we use \textbf{numerical optimization}, typically gradient-based methods, to fit a logistic regression model.
+
+\item Positive logits indicate probabilities > 0.5 and vice versa
+
+\item E.g.: if $p = 0.75$, odds are $3:1$ and logit is $log(3) \approx 1.1$
+
+\item Features $\xv$ act linearly on logits, controlled by coefficients $\thetav$:
+
+$$
+s^{-1}(\pix) = \log\left(\frac{\pix}{1 - \pix}\right) = \thetav^T x
+$$
+
 \end{itemize}
 
 
 \end{vbframe}
 
-\begin{vbframe}{Logistic Regression in 1D}
-Using logistic regression on our example data with one feature $x \in \R$, we again see $\xv \mapsto \pix$, with $\pix \in [0,1]$.
+\begin{vbframe}{Deriving Log-Loss}
 
-\lz
+We need to find a suitable loss function for \textbf{ERM}. We look at likelihood which multiplies up $\pixit$ for positive examples, and $1-\pixit$ for negative. 
 
-{\centering \includegraphics[width=0.95\textwidth]{figure/preds_with_probs-logistic.png}
-}
+
+$$
+\LLt = \prod_{i \text{ with } \yi = 1} \pixit \prod_{i \text{ with } \yi = 0} (1-\pixit) 
+$$
+
+We can now cleverly combine the 2 cases by using exponents \\
+(note that only one of the 2 factors is not 1 and \enquote{active}):
+
+$$
+\LLt = \prodin \pixit^{\yi} \left(1-\pixit\right)^{1-\yi}
+$$
+
+\framebreak
+
+Taking the log to convert products into sums:
+\begin{align*}
+\loglt &= \log \LLt = 
+\sumin \log\left(\pixit^{\yi} \left(1-\pixit\right)^{1-\yi}\right) \\
+       &= \sumin \yi \log\left(\pixit\right) + \left(1-\yi\right)\log\left(1-\pixit\right)
+\end{align*}
+
+Since we want to minimize the risk, we work with the negative $\loglt$:
+$$
+- \loglt = \sumin - \yi \log\left(\pixit\right) - \left(1-\yi\right)\log\left(1-\pixit\right)
+$$
+
 
 \end{vbframe}
 
-\begin{vbframe}{Logistic Regression in 2D}
+\begin{vbframe}{Bernoulli / Log Loss}
 
-Logistic regression is a linear classifier, as $\pixt = s\left( \thx \right)$ 
-and $s$ is isotonic.
+The resulting loss 
+$$\Lypi = -y\log(\pi)-(1-y)\log(1-\pi)$$ 
+is called \textbf{Bernoulli, binomial, log} or \textbf{cross-entropy} loss
 
 \lz
+
+{\centering \includegraphics[width=0.95\textwidth]{figure/log_loss.png}
+}
+
+\lz
+
+\begin{itemize}
+  \item Penalizes confidently wrong predictions heavily
+  \item Is used for many other classifiers, e.g., in NNs or boosting 
+
+
+  
+\end{itemize}
+
+
+\end{vbframe}
+
+
+\begin{vbframe}{Logistic Regression in 2D}
+
+LR is a linear classifier, as $\pixt = s\left( \thx \right)$ 
+and $s$ is isotonic.
+
+\lz\lz
 
 \begin{columns}[T]
 \begin{column}{0.5\textwidth}
@@ -176,6 +190,33 @@ and $s$ is isotonic.
 \end{columns}
 
 \end{vbframe}
+
+
+\begin{vbframe}{Optimization}
+
+\begin{itemize}
+
+\item Log-Loss is convex, under regularity conditions LR has a unique solution (because of its linear structure), but not an analytical one
+
+\item To fit LR we use numerical optimization, e.g., Newton-Raphson
+
+\item If data is linearly separable, the optimization problem is unbounded and we would not find a solution; way out is regularization 
+
+\item Why not use least squares on $\pix = s(\fx)$? \\
+Answer: ERM problem is not convex anymore :(
+
+\item We can also write the ERM as  
+$$
+\argmin_{\thetav \in \Theta} \risket = \argmin_{\thetav \in \Theta} \sumin \Lxyit
+$$
+With $\fxt = \thetav^T \xv$ and 
+$\Lyf = -yf + \log(1 + \exp(f)) $\\
+\lz
+This combines the sigmoid with the loss and shows a convex loss directly on a linear function
+\end{itemize}
+\end{vbframe}
+
+
 
 \endlecture
 
