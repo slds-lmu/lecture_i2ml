@@ -126,7 +126,23 @@ plot_lda_2 <- ggplot(data = df_lda, aes(x = x1, y = x2, color = y)) +
   theme_minimal(base_size = base_size) +
   scale_color_manual(values = c("a" = "#E69F00", "b" = "#0072B2"))
 
-plot_qda <- ggplot(data = df_qda, aes(x = x1, y = x2, color = y)) +
+plot_qda_1 <- ggplot(data = df_qda, aes(x = x1, y = x2, color = y)) +
+  geom_point(size = point_size, show.legend = TRUE) +
+  geom_path(data = a_ell_qda_1, aes(x = x1, y = x2), color = "#E69F00", alpha = 0.6, linewidth = line_size) +
+  geom_path(data = a_ell_qda_1_5, aes(x = x1, y = x2), color = "#E69F00", alpha = 0.6, linewidth = line_size) +
+  geom_path(data = a_ell_qda_2, aes(x = x1, y = x2), color = "#E69F00", alpha = 0.6, linewidth = line_size) +
+  geom_path(data = b_ell_qda_1, aes(x = x1, y = x2), color = "#0072B2", alpha = 0.6, linewidth = line_size) +
+  geom_path(data = b_ell_qda_1_5, aes(x = x1, y = x2), color = "#0072B2", alpha = 0.6, linewidth = line_size) +
+  geom_path(data = b_ell_qda_2, aes(x = x1, y = x2), color = "#0072B2", alpha = 0.6, linewidth = line_size) +
+  geom_path(data = c_ell_qda_1, aes(x = x1, y = x2), color = "#009E73", alpha = 0.6, linewidth = line_size) +
+  geom_path(data = c_ell_qda_1_5, aes(x = x1, y = x2), color = "#009E73", alpha = 0.6, linewidth = line_size) +
+  geom_path(data = c_ell_qda_2, aes(x = x1, y = x2), color = "#009E73", alpha = 0.6, linewidth = line_size) +
+  labs(x = expression(x[1]), y = expression(x[2])) +
+  coord_fixed(ratio = 0.5) +
+  theme_minimal(base_size = base_size) +
+  scale_color_manual(values = c("a" = "#E69F00", "b" = "#0072B2", "c" = "#009E73"))
+
+plot_qda_2 <- ggplot(data = df_qda, aes(x = x1, y = x2, color = y)) +
   geom_point(size = point_size, show.legend = TRUE) +
   geom_path(data = a_ell_qda_1, aes(x = x1, y = x2), color = "#E69F00", alpha = 0.6, linewidth = line_size) +
   geom_path(data = a_ell_qda_1_5, aes(x = x1, y = x2), color = "#E69F00", alpha = 0.6, linewidth = line_size) +
@@ -140,7 +156,6 @@ plot_qda <- ggplot(data = df_qda, aes(x = x1, y = x2, color = y)) +
   annotate("text", x = mu_a_qda[1], y = mu_a_qda[2], label = "μ", color = "black", size = point_size * 4, fontface = "bold", hjust = 0.5, vjust = 0.5) +
   annotate("text", x = mu_b_qda[1], y = mu_b_qda[2], label = "μ", color = "black", size = point_size * 4, fontface = "bold", hjust = 0.5, vjust = 0.5) +
   annotate("text", x = mu_c_qda[1], y = mu_c_qda[2], label = "μ", color = "black", size = point_size * 4, fontface = "bold", hjust = 0.5, vjust = 0.5) +
-  # Adding eigenvectors for each class covariance matrix
   annotate("segment", x = mu_a_qda[1], y = mu_a_qda[2], xend = mu_a_qda[1] + eigen(var_qda_a)$vectors[1, 1] * sqrt(eigen(var_qda_a)$values[1]) * 2, yend = mu_a_qda[2] + eigen(var_qda_a)$vectors[2, 1] * sqrt(eigen(var_qda_a)$values[1]) * 2, color = "black", linetype = "dashed", linewidth = line_size * 0.8) +
   annotate("segment", x = mu_a_qda[1], y = mu_a_qda[2], xend = mu_a_qda[1] + eigen(var_qda_a)$vectors[1, 2] * sqrt(eigen(var_qda_a)$values[2]) * 2, yend = mu_a_qda[2] + eigen(var_qda_a)$vectors[2, 2] * sqrt(eigen(var_qda_a)$values[2]) * 2, color = "black", linetype = "dashed", linewidth = line_size * 0.8) +
   annotate("segment", x = mu_b_qda[1], y = mu_b_qda[2], xend = mu_b_qda[1] + eigen(var_qda_b)$vectors[1, 1] * sqrt(eigen(var_qda_b)$values[1]) * 2, yend = mu_b_qda[2] + eigen(var_qda_b)$vectors[2, 1] * sqrt(eigen(var_qda_b)$values[1]) * 2, color = "black", linetype = "dashed", linewidth = line_size * 0.8) +
@@ -154,5 +169,5 @@ plot_qda <- ggplot(data = df_qda, aes(x = x1, y = x2, color = y)) +
 
 ggsave("../figure/disc_analysis-lda_1.png", plot = plot_lda_1, width = plot_width, height = plot_height, dpi = plot_dpi)
 ggsave("../figure/disc_analysis-lda_2.png", plot = plot_lda_2, width = plot_width, height = plot_height, dpi = plot_dpi)
-ggsave("../figure/disc_analysis-qda.png", plot = plot_qda, width = plot_width, height = plot_height, dpi = plot_dpi)
-
+ggsave("../figure/disc_analysis-qda_1.png", plot = plot_qda_1, width = plot_width, height = plot_height, dpi = plot_dpi)
+ggsave("../figure/disc_analysis-qda_2.png", plot = plot_qda_2, width = plot_width, height = plot_height, dpi = plot_dpi)
