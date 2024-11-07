@@ -37,13 +37,13 @@ grid <- expand.grid(Petal.Width = x_range, Petal.Length = y_range)
 # LDA PREDICTIONS
 grid_lda_preds <- as.data.frame(learner_lda$predict_newdata(grid)$prob)
 grid_lda_preds$Species <- factor(apply(grid_lda_preds, 1, function(row) colnames(grid_lda_preds)[which.max(row)]))
-grid_lda_preds$max_prob <- apply(grid_lda_preds[, 1:3], 1, max)  # Extract the maximum probability for shading
+grid_lda_preds$max_prob <- apply(grid_lda_preds[, 1:3], 1, max)
 lda_data <- cbind(grid, Species = grid_lda_preds$Species, max_prob = grid_lda_preds$max_prob)
 
 # QDA PREDICTIONS
 grid_qda_preds <- as.data.frame(learner_qda$predict_newdata(grid)$prob)
 grid_qda_preds$Species <- factor(apply(grid_qda_preds, 1, function(row) colnames(grid_qda_preds)[which.max(row)]))
-grid_qda_preds$max_prob <- apply(grid_qda_preds[, 1:3], 1, max)  # Extract the maximum probability for shading
+grid_qda_preds$max_prob <- apply(grid_qda_preds[, 1:3], 1, max)
 qda_data <- cbind(grid, Species = grid_qda_preds$Species, max_prob = grid_qda_preds$max_prob)
 
 # ORIGINAL DATASET FOR OVERLAY -------------------------------------------------
@@ -55,7 +55,7 @@ lda_plot <- ggplot() +
   geom_point(data = orig_data, aes(x = Petal.Width, y = Petal.Length, color = Species), size = point_size) +
   xlab("Petal.Width") + ylab("Petal.Length") +
   theme_minimal() +
-  scale_alpha(range = c(0.2, 0.8), guide = 'none') +  # Control the range of alpha values
+  scale_alpha(range = c(0.2, 0.8), guide = 'none') +
   theme(
     plot.title = element_text(hjust = 0.5, size = base_size, face = "bold"),
     axis.title = element_text(size = base_size, face = "bold"),
@@ -72,7 +72,7 @@ qda_plot <- ggplot() +
   geom_point(data = orig_data, aes(x = Petal.Width, y = Petal.Length, color = Species), size = point_size) +
   xlab("Petal.Width") + ylab("Petal.Length") +
   theme_minimal() +
-  scale_alpha(range = c(0.2, 0.8), guide = 'none') +  # Control the range of alpha values
+  scale_alpha(range = c(0.2, 0.8), guide = 'none') +
   theme(
     plot.title = element_text(hjust = 0.5, size = base_size, face = "bold"),
     axis.title = element_text(size = base_size, face = "bold"),

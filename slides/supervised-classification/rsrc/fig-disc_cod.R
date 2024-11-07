@@ -17,15 +17,27 @@ plot_dpi <- 300
 dimensions <- c(2, 5, 10, 20, 50, 100, 200, 300)
 observations <- sapply(dimensions, function(dim) dim * 10)
 
+library(MASS)
+
 datasets <- lapply(seq_along(dimensions), function(i) {
-  data <- as.data.frame(matrix(rnorm(observations[i] * dimensions[i]), ncol = dimensions[i]))
+  # define a mean vector and covariance matrix for the multivariate normal distribution
+  mean_vector <- rep(0, dimensions[i])
+  
+   # starting with an identity matrix
+  covariance_matrix <- diag(dimensions[i])
+  # here, we create some slight variability in covariances by modifying diagonal elements
+  diag(covariance_matrix) <- seq(1, 1 + dimensions[i] * 0.1, length.out = dimensions[i])
+  
+  # generating the data using mvrnorm with specified mean and covariance
+  data <- as.data.frame(mvrnorm(n = observations[i], mu = mean_vector, Sigma = covariance_matrix))
   data$target <- as.factor(sample(c("A", "B"), observations[i], replace = TRUE))
   
-  # we add some class-specific shifts to create some structure across up to 5 features
+  # adding class-specific shifts for up to 5 features
   idx_A <- which(data$target == "A")
   idx_B <- which(data$target == "B")
   num_shift_features <- min(5, dimensions[i])
   data[idx_A, 1:num_shift_features] <- data[idx_A, 1:num_shift_features] + 1
+  
   return(data)
 })
 

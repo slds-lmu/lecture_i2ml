@@ -94,78 +94,66 @@ c_ell_qda_1_5 <- as.data.frame(ellipse(center = mu_c_qda, shape = var_qda_c, rad
 c_ell_qda_2 <- as.data.frame(ellipse(center = mu_c_qda, shape = var_qda_c, radius = 2, draw = FALSE))
 colnames(a_ell_qda_1) <- colnames(a_ell_qda_1_5) <- colnames(a_ell_qda_2) <- colnames(b_ell_qda_1) <- colnames(b_ell_qda_1_5) <- colnames(b_ell_qda_2) <- colnames(c_ell_qda_1) <- colnames(c_ell_qda_1_5) <- colnames(c_ell_qda_2) <- c("x1", "x2")
 
-plot_lda_1 <- ggplot(data = df_lda, aes(x = x1, y = x2, color = y)) +
-  geom_point(size = point_size, show.legend = TRUE) +
-  geom_path(data = a_ell_lda_1, aes(x = x1, y = x2), color = "#E69F00", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = a_ell_lda_1_5, aes(x = x1, y = x2), color = "#E69F00", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = a_ell_lda_2, aes(x = x1, y = x2), color = "#E69F00", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = b_ell_lda_1, aes(x = x1, y = x2), color = "#0072B2", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = b_ell_lda_1_5, aes(x = x1, y = x2), color = "#0072B2", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = b_ell_lda_2, aes(x = x1, y = x2), color = "#0072B2", alpha = 0.6, linewidth = line_size) +
-  labs(x = expression(x[1]), y = expression(x[2])) +
-  coord_fixed(ratio = 0.5) +
-  theme_minimal(base_size = base_size) +
-  scale_color_manual(values = c("a" = "#E69F00", "b" = "#0072B2"))
+create_plot <- function(data, ellipses, colors, annotate_means = FALSE, means = NULL) {
+  # base plot
+  plot <- ggplot(data, aes(x = x1, y = x2, color = y)) +
+    geom_point(size = point_size, show.legend = TRUE) +
+    labs(x = expression(x[1]), y = expression(x[2]), color = "class") +
+    coord_fixed(ratio = 0.5) +
+    theme_minimal(base_size = base_size) +
+    scale_color_manual(values = colors)
+  
+  # adding ellipses to the plot
+  for (ellipse in ellipses) {
+    plot <- plot + geom_path(data = ellipse$data, aes(x = x1, y = x2), 
+                             color = ellipse$color, alpha = 0.6, linewidth = line_size)
+  }
+  
+  # adding mean points if annotate_means is TRUE
+  if (annotate_means && !is.null(means)) {
+    darker_colors <- c("#8B0000", "#003366", "#006400")
+    mean_data <- data.frame(x1 = sapply(means, `[[`, "x"), x2 = sapply(means, `[[`, "y"), label = paste0("mean ", names(colors)))
+    plot <- plot +
+      geom_point(data = mean_data, aes(x = x1, y = x2, color = label), size = point_size * 3, shape = 8, show.legend = TRUE) +
+      scale_color_manual(values = c(colors, setNames(darker_colors, mean_data$label))) +
+      guides(color = guide_legend(override.aes = list(shape = c(rep(16, length(colors)), rep(8, length(means))))))
+  }
+  
+  return(plot)
+}
 
-plot_lda_2 <- ggplot(data = df_lda, aes(x = x1, y = x2, color = y)) +
-  geom_point(size = point_size, show.legend = TRUE) +
-  geom_path(data = a_ell_lda_1, aes(x = x1, y = x2), color = "#E69F00", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = a_ell_lda_1_5, aes(x = x1, y = x2), color = "#E69F00", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = a_ell_lda_2, aes(x = x1, y = x2), color = "#E69F00", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = b_ell_lda_1, aes(x = x1, y = x2), color = "#0072B2", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = b_ell_lda_1_5, aes(x = x1, y = x2), color = "#0072B2", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = b_ell_lda_2, aes(x = x1, y = x2), color = "#0072B2", alpha = 0.6, linewidth = line_size) +
-  annotate("text", x = mu_a_lda[1], y = mu_a_lda[2], label = "μ", color = "black", size = point_size * 4, fontface = "bold", hjust = 0.5, vjust = 0.5) +
-  annotate("text", x = mu_b_lda[1], y = mu_b_lda[2], label = "μ", color = "black", size = point_size * 4, fontface = "bold", hjust = 0.5, vjust = 0.5) +
-  annotate("segment", x = mu_a_lda[1], y = mu_a_lda[2], xend = mu_a_lda[1] + eigen(var_lda)$vectors[1, 1] * sqrt(eigen(var_lda)$values[1]) * 2, yend = mu_a_lda[2] + eigen(var_lda)$vectors[2, 1] * sqrt(eigen(var_lda)$values[1]) * 2, color = "black", linetype = "dashed", linewidth = line_size * 0.8) +
-  annotate("segment", x = mu_a_lda[1], y = mu_a_lda[2], xend = mu_a_lda[1] + eigen(var_lda)$vectors[1, 2] * sqrt(eigen(var_lda)$values[2]) * 2, yend = mu_a_lda[2] + eigen(var_lda)$vectors[2, 2] * sqrt(eigen(var_lda)$values[2]) * 2, color = "black", linetype = "dashed", linewidth = line_size * 0.8) +
-  annotate("segment", x = mu_b_lda[1], y = mu_b_lda[2], xend = mu_b_lda[1] + eigen(var_lda)$vectors[1, 1] * sqrt(eigen(var_lda)$values[1]) * 2, yend = mu_b_lda[2] + eigen(var_lda)$vectors[2, 1] * sqrt(eigen(var_lda)$values[1]) * 2, color = "black", linetype = "dashed", linewidth = line_size * 0.8) +
-  annotate("segment", x = mu_b_lda[1], y = mu_b_lda[2], xend = mu_b_lda[1] + eigen(var_lda)$vectors[1, 2] * sqrt(eigen(var_lda)$values[2]) * 2, yend = mu_b_lda[2] + eigen(var_lda)$vectors[2, 2] * sqrt(eigen(var_lda)$values[2]) * 2, color = "black", linetype = "dashed", linewidth = line_size * 0.8) +
-  labs(x = expression(x[1]), y = expression(x[2])) +
-  coord_fixed(ratio = 0.5) +
-  theme_minimal(base_size = base_size) +
-  scale_color_manual(values = c("a" = "#E69F00", "b" = "#0072B2"))
+lda_colors <- c("a" = "#E69F00", "b" = "#56B4E9")
+qda_colors <- c("a" = "#E69F00", "b" = "#56B4E9", "c" = "#009E73")
 
-plot_qda_1 <- ggplot(data = df_qda, aes(x = x1, y = x2, color = y)) +
-  geom_point(size = point_size, show.legend = TRUE) +
-  geom_path(data = a_ell_qda_1, aes(x = x1, y = x2), color = "#E69F00", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = a_ell_qda_1_5, aes(x = x1, y = x2), color = "#E69F00", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = a_ell_qda_2, aes(x = x1, y = x2), color = "#E69F00", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = b_ell_qda_1, aes(x = x1, y = x2), color = "#0072B2", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = b_ell_qda_1_5, aes(x = x1, y = x2), color = "#0072B2", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = b_ell_qda_2, aes(x = x1, y = x2), color = "#0072B2", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = c_ell_qda_1, aes(x = x1, y = x2), color = "#009E73", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = c_ell_qda_1_5, aes(x = x1, y = x2), color = "#009E73", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = c_ell_qda_2, aes(x = x1, y = x2), color = "#009E73", alpha = 0.6, linewidth = line_size) +
-  labs(x = expression(x[1]), y = expression(x[2])) +
-  coord_fixed(ratio = 0.5) +
-  theme_minimal(base_size = base_size) +
-  scale_color_manual(values = c("a" = "#E69F00", "b" = "#0072B2", "c" = "#009E73"))
+lda_ellipses <- list(
+  list(data = a_ell_lda_1, color = "#E69F00"),
+  list(data = a_ell_lda_1_5, color = "#E69F00"),
+  list(data = a_ell_lda_2, color = "#E69F00"),
+  list(data = b_ell_lda_1, color = "#56B4E9"),
+  list(data = b_ell_lda_1_5, color = "#56B4E9"),
+  list(data = b_ell_lda_2, color = "#56B4E9")
+)
 
-plot_qda_2 <- ggplot(data = df_qda, aes(x = x1, y = x2, color = y)) +
-  geom_point(size = point_size, show.legend = TRUE) +
-  geom_path(data = a_ell_qda_1, aes(x = x1, y = x2), color = "#E69F00", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = a_ell_qda_1_5, aes(x = x1, y = x2), color = "#E69F00", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = a_ell_qda_2, aes(x = x1, y = x2), color = "#E69F00", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = b_ell_qda_1, aes(x = x1, y = x2), color = "#0072B2", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = b_ell_qda_1_5, aes(x = x1, y = x2), color = "#0072B2", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = b_ell_qda_2, aes(x = x1, y = x2), color = "#0072B2", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = c_ell_qda_1, aes(x = x1, y = x2), color = "#009E73", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = c_ell_qda_1_5, aes(x = x1, y = x2), color = "#009E73", alpha = 0.6, linewidth = line_size) +
-  geom_path(data = c_ell_qda_2, aes(x = x1, y = x2), color = "#009E73", alpha = 0.6, linewidth = line_size) +
-  annotate("text", x = mu_a_qda[1], y = mu_a_qda[2], label = "μ", color = "black", size = point_size * 4, fontface = "bold", hjust = 0.5, vjust = 0.5) +
-  annotate("text", x = mu_b_qda[1], y = mu_b_qda[2], label = "μ", color = "black", size = point_size * 4, fontface = "bold", hjust = 0.5, vjust = 0.5) +
-  annotate("text", x = mu_c_qda[1], y = mu_c_qda[2], label = "μ", color = "black", size = point_size * 4, fontface = "bold", hjust = 0.5, vjust = 0.5) +
-  annotate("segment", x = mu_a_qda[1], y = mu_a_qda[2], xend = mu_a_qda[1] + eigen(var_qda_a)$vectors[1, 1] * sqrt(eigen(var_qda_a)$values[1]) * 2, yend = mu_a_qda[2] + eigen(var_qda_a)$vectors[2, 1] * sqrt(eigen(var_qda_a)$values[1]) * 2, color = "black", linetype = "dashed", linewidth = line_size * 0.8) +
-  annotate("segment", x = mu_a_qda[1], y = mu_a_qda[2], xend = mu_a_qda[1] + eigen(var_qda_a)$vectors[1, 2] * sqrt(eigen(var_qda_a)$values[2]) * 2, yend = mu_a_qda[2] + eigen(var_qda_a)$vectors[2, 2] * sqrt(eigen(var_qda_a)$values[2]) * 2, color = "black", linetype = "dashed", linewidth = line_size * 0.8) +
-  annotate("segment", x = mu_b_qda[1], y = mu_b_qda[2], xend = mu_b_qda[1] + eigen(var_qda_b)$vectors[1, 1] * sqrt(eigen(var_qda_b)$values[1]) * 2, yend = mu_b_qda[2] + eigen(var_qda_b)$vectors[2, 1] * sqrt(eigen(var_qda_b)$values[1]) * 2, color = "black", linetype = "dashed", linewidth = line_size * 0.8) +
-  annotate("segment", x = mu_b_qda[1], y = mu_b_qda[2], xend = mu_b_qda[1] + eigen(var_qda_b)$vectors[1, 2] * sqrt(eigen(var_qda_b)$values[2]) * 2, yend = mu_b_qda[2] + eigen(var_qda_b)$vectors[2, 2] * sqrt(eigen(var_qda_b)$values[2]) * 2, color = "black", linetype = "dashed", linewidth = line_size * 0.8) +
-  annotate("segment", x = mu_c_qda[1], y = mu_c_qda[2], xend = mu_c_qda[1] + eigen(var_qda_c)$vectors[1, 1] * sqrt(eigen(var_qda_c)$values[1]) * 2, yend = mu_c_qda[2] + eigen(var_qda_c)$vectors[2, 1] * sqrt(eigen(var_qda_c)$values[1]) * 2, color = "black", linetype = "dashed", linewidth = line_size * 0.8) +
-  annotate("segment", x = mu_c_qda[1], y = mu_c_qda[2], xend = mu_c_qda[1] + eigen(var_qda_c)$vectors[1, 2] * sqrt(eigen(var_qda_c)$values[2]) * 2, yend = mu_c_qda[2] + eigen(var_qda_c)$vectors[2, 2] * sqrt(eigen(var_qda_c)$values[2]) * 2, color = "black", linetype = "dashed", linewidth = line_size * 0.8) +
-  labs(x = expression(x[1]), y = expression(x[2])) +
-  coord_fixed(ratio = 0.5) +
-  theme_minimal(base_size = base_size) +
-  scale_color_manual(values = c("a" = "#E69F00", "b" = "#0072B2", "c" = "#009E73"))
+qda_ellipses <- list(
+  list(data = a_ell_qda_1, color = "#E69F00"),
+  list(data = a_ell_qda_1_5, color = "#E69F00"),
+  list(data = a_ell_qda_2, color = "#E69F00"),
+  list(data = b_ell_qda_1, color = "#56B4E9"),
+  list(data = b_ell_qda_1_5, color = "#56B4E9"),
+  list(data = b_ell_qda_2, color = "#56B4E9"),
+  list(data = c_ell_qda_1, color = "#009E73"),
+  list(data = c_ell_qda_1_5, color = "#009E73"),
+  list(data = c_ell_qda_2, color = "#009E73")
+)
+
+lda_means <- list(list(x = mu_a_lda[1], y = mu_a_lda[2]), list(x = mu_b_lda[1], y = mu_b_lda[2]))
+qda_means <- list(list(x = mu_a_qda[1], y = mu_a_qda[2]), list(x = mu_b_qda[1], y = mu_b_qda[2]), list(x = mu_c_qda[1], y = mu_c_qda[2]))
+
+plot_lda_1 <- create_plot(data = df_lda, ellipses = lda_ellipses, colors = lda_colors)
+plot_lda_2 <- create_plot(data = df_lda, ellipses = lda_ellipses, colors = lda_colors, annotate_means = TRUE, means = lda_means)
+
+plot_qda_1 <- create_plot(data = df_qda, ellipses = qda_ellipses, colors = qda_colors)
+plot_qda_2 <- create_plot(data = df_qda, ellipses = qda_ellipses, colors = qda_colors, annotate_means = TRUE, means = qda_means)
 
 ggsave("../figure/disc_analysis-lda_1.png", plot = plot_lda_1, width = plot_width, height = plot_height, dpi = plot_dpi)
 ggsave("../figure/disc_analysis-lda_2.png", plot = plot_lda_2, width = plot_width, height = plot_height, dpi = plot_dpi)
