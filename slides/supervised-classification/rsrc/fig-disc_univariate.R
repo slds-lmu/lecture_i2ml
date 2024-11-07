@@ -95,7 +95,7 @@ par(mar = c(4,4,1,1))
 x = seq(150, 200, length.out = 100)
 plot(x, dnorm(x, mean = 170, sd = 4), type = "l", col = "red", lty = 2, 
      xlim = c(150, 200), ylim = c(0, 0.1),
-     ylab = "p(x|y=k)", xlab = "x (body height in cm)")
+     ylab = expression("p(x|y=k)"~pi[k]), xlab = "x (body height in cm)")
 axis(1, at = seq(155, 195, by = 10))
 lines(x, dnorm(x, mean = 180, sd = 9)) 
 legend("topright", legend = c("k = woman ~ N(170, 4)", "k = man ~ N(180, 9)"), 
