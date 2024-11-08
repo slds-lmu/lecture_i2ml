@@ -1,6 +1,7 @@
 # goal here is to visualize the advantage of LDA over QDA in high dimensions,
-# thus we set up some toy datasets, and increase the dimension while ensuring 
-# that there are enough observations for QDA
+# thus we set up some toy datasets, and increase the dimension
+# the covmats as unequial so QDA should be much better
+# but we wanna show that in higher dims LDA takes over
 
 library(mlr3)
 library(mlr3learners)
@@ -13,30 +14,24 @@ plot_height <- 5
 plot_dpi <- 300
 
 # create toy datasets with increasing dimensions
-# with 10 observations per feature each
-dimensions <- c(2, 5, 10, 20, 50, 100, 200, 300)
-observations <- sapply(dimensions, function(dim) dim * 10)
+dimensions <- c(5, 10, 20, 50, 100, 200, 400)
+n <- 800
 
 library(MASS)
 
 datasets <- lapply(seq_along(dimensions), function(i) {
   # define a mean vector and covariance matrix for the multivariate normal distribution
-  mean_vector <- rep(0, dimensions[i])
+  mu1 <- rep(0, dimensions[i])
+  mu2 <- rep(1, dimensions[i])
   
-   # starting with an identity matrix
-  covariance_matrix <- diag(dimensions[i])
-  # here, we create some slight variability in covariances by modifying diagonal elements
-  diag(covariance_matrix) <- seq(1, 1 + dimensions[i] * 0.1, length.out = dimensions[i])
-  
-  # generating the data using mvrnorm with specified mean and covariance
-  data <- as.data.frame(mvrnorm(n = observations[i], mu = mean_vector, Sigma = covariance_matrix))
-  data$target <- as.factor(sample(c("A", "B"), observations[i], replace = TRUE))
-  
-  # adding class-specific shifts for up to 5 features
-  idx_A <- which(data$target == "A")
-  idx_B <- which(data$target == "B")
-  num_shift_features <- min(5, dimensions[i])
-  data[idx_A, 1:num_shift_features] <- data[idx_A, 1:num_shift_features] + 1
+   # 2 different diag covmats 
+  covmat1 <- 1*diag(dimensions[i])
+  covmat2 <- 5*diag(dimensions[i])
+  # sample obs
+  data1 <- as.data.frame(mvrnorm(n = n, mu = mu1, Sigma = covmat1))
+  data2 <- as.data.frame(mvrnorm(n = n, mu = mu2, Sigma = covmat2))
+  data <- rbind(data1, data2)
+  data$target <- as.factor(rep(c("A", "B"), each = n))
   
   return(data)
 })
@@ -85,4 +80,5 @@ plot <- ggplot(plot_data, aes(x = dimension, y = classif.ce, color = learner_id,
     legend.title = element_text(face = "bold", size = 20),
     legend.text = element_text(face = "bold", size = 16)
   )
+print(plot)
 ggsave("../figure/disc_cod.png", plot = plot, width = plot_width, height = plot_height, dpi = plot_dpi)
