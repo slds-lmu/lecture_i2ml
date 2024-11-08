@@ -40,7 +40,7 @@ So we only need to specify and estimate the distributions $p(x_j|y = k)$, which 
 
 \begin{vbframe}{Numerical Features}
 
-We use a univariate Gaussian for $p(x_j | y=k)$, and estimate $(\mu_{kj}, \sigma^2_{kj})$ in the standard manner. Because of $\pdfxyk = \prodjp p(x_j|y = k)$, the joint conditional density is Gaussian with diagonal but non-isotropic covariance structure, and potentially different across classes.
+Use univariate Gaussians for $p(x_j | y=k)$, and estimate $(\mu_{kj}, \sigma^2_{kj})$. Because of $\pdfxyk = \prodjp p(x_j|y = k)$, joint conditional density is Gaussian with diagonal, non-isotropic covariances, and different across classes, so \textbf{QDA with diagonal covariances}. 
 
 \lz
 
@@ -48,12 +48,12 @@ We use a univariate Gaussian for $p(x_j | y=k)$, and estimate $(\mu_{kj}, \sigma
 \includegraphics[width=0.6\textwidth, clip = true, trim = {0 100 0 120}]{figure/nb-db.png} 
 \end{center}
 
-$\Rightarrow$  \textbf{NB is a} (specific) \textbf{QDA model}, with a quadratic decision boundary.
+Note: In the above plot the data violates the NB assumption. 
 
 \end{vbframe}
 \begin{frame}{NB: Categorical Features}
 
-We use a categorical distribution for $p(x_j | y = k)$ and estimate the probabilities $p_{kjm}$ that, in class $k$, our $j$-th feature has value $m$, $x_j = m$, simply by counting the frequencies.
+We use a categorical distribution for $p(x_j | y = k)$ and estimate the probabilities $p_{kjm}$ that, in class $k$, our $j$-th feature has value $m$, $x_j = m$, simply by counting  frequencies.
 
 $$
 p(x_j | y = k) = \prod_m p_{kjm}^{[x_j = m]}
@@ -63,28 +63,26 @@ Because of the simple conditional independence structure, it is also very easy t
 
 \begin{flushright}
 % SOURCE: https://docs.google.com/presentation/d/1X2FxetT6fewXhoGLZmgJyEHY_pWbKjQ6AHZiZQHvwzA/edit?usp=sharing
-\only<1>{\includegraphics[width=\textwidth, clip = true, trim = {50 400 120 350}]{figure_man/nb-categorial_1.png}}
-% \only<2>{\includegraphics[width=\textwidth, clip = true, trim = {50 410 120 350}]{figure_man/nb-categorial_2.png}}
-% \only<3>{\includegraphics[width=\textwidth, clip = true, trim = {50 410 120 350}]{figure_man/nb-categorial_3.png}}
-\only<2>{\includegraphics[width=\textwidth, clip = true, trim = {50 410 120 350}]{figure_man/nb-categorial_final.png}}
+\includegraphics[width=\textwidth, clip = true, trim = {50 410 120 350}]{figure_man/nb-categorial_final.png}
 \end{flushright}
 
 \end{frame}
 
-\begin{vbframe}{Laplace Smoothing: The Problem}
+\begin{vbframe}{Laplace Smoothing}
 \begin{small}
 If a given class and feature value never occur together in the training data, then the frequency-based probability estimate will be zero, e.g.:\\
 $p_{\text{no, class, 1st}}^{[x_{class} = \text{1st}]} = 0$ (everyone from 1st class survived in the previous table)
 
 \lz
 
-When computing $\postk$, any zero probability will cause the entire product $p(x_{class} | y = no) = \prod_m p_{\text{no, class, m}}^{[x_{class} = m]}$ to be zero, negating information from other features:
-
-$$
-\P(\text{no} | \text{class = 1st, sex = male}) = \frac{p(x_{class} | y = no) \cdot p(x_{sex} | y = no)\cdot \pikh[no]}{\sumjg p(\text{class = 1st, sex = male} | y = j)\pih_j} = 0
-$$
 
 This is problematic because it will wipe out all information in the other probabilities when they are multiplied!
+
+$$
+\pi_{no} (\text{class = 1st, sex = male}) = \frac{\hat{p}(x_{class} | y = no) \cdot \hat{p}(x_{sex} | y = no)\cdot \pikh[no]}{\sumjg \hat{p}(\text{class = 1st, sex = male} | y = j)\pih_j} = 0
+$$
+
+
 
 \lz
 
@@ -95,12 +93,14 @@ This is problematic because it will wipe out all information in the other probab
 \end{vbframe}
 
 
-\begin{vbframe}{Laplace Smoothing: The Solution}
+\begin{vbframe}{Laplace Smoothing}
 
 A simple numerical correction is to set these zero probabilities to a small value to regularize against this case.
+
+\lz
  
 \begin{itemize}
-\item To prevent zero probabilities, add a constant $\alpha > 0$ (e.g., $\alpha = 1$).
+\item Add constant $\alpha > 0$ (e.g., $\alpha = 1$).
 \item For a categorical feature $x_j$ with $M_j$ possible values:
   $$
   p_{kjm}^{[x_j = m]} = \frac{n_{kjm} + \alpha}{n_{k} + \alpha M_j} \quad \left(\text{instead of }  p_{kjm}^{[x_j = m]} = \frac{n_{kjm}}{n_{k}} \right)
@@ -111,53 +111,57 @@ A simple numerical correction is to set these zero probabilities to a small valu
     \item $n_{k}$: total counts in class $k$,
     \item $M_j$: number of possible distinct values of $x_j$.
   \end{itemize}
-\item Ensures all probs are non-zero, avoiding the product to be zero.
+%\item Ensures all probs are non-zero, avoiding the product to be zero.
 \end{itemize}
 
-\end{vbframe}
-
-\begin{vbframe}{Laplace Smoothing: Example}
-
-With Laplace smoothing ($\alpha = 1$), we adjust:
-$$
-p_{\text{no, class, 1st}}^{[x_{class} = \text{1st}]} = \frac{n_{\text{no, class, 1st}} + 1}{n_{\text{class, 1st}} + 1 \cdot M_{class}},
-$$
-where $M_{class} = 3$ (= number of distinct values for $x_{class}$: 1st, 2nd, 3rd).
-
 \lz
 
-
-Even if $n_{\text{no, class, 1st}} = 0$ (everyone from 1st class survived), we get $p_{\text{no, class, 1st}} > 0$.
-% $$
-% \P(\text{no} | \text{class = 1st, sex = male}) = \frac{p_{\text{no, class, 1st}} \cdot p_{\text{no, sex, male}} \cdot \pikh[no]}{\sumjg p(\text{class = 1st, sex = male} | y = j)\pih_j} > 0.
-% $$
-
-\lz
-
-This ensures that the posterior probability is non-zero, preserving the influence of all features in the model.
-
+This ensures that our posterior probabilities are non-zero due to such effects, preserving the influence of all features in the model.
 
 \end{vbframe}
+
+% \begin{vbframe}{Laplace Smoothing: Example}
+
+% With Laplace smoothing ($\alpha = 1$), we adjust:
+% $$
+% p_{\text{no, class, 1st}}^{[x_{class} = \text{1st}]} = \frac{n_{\text{no, class, 1st}} + 1}{n_{\text{class, 1st}} + 1 \cdot M_{class}},
+% $$
+% where $M_{class} = 3$ (= number of distinct values for $x_{class}$: 1st, 2nd, 3rd).
+
+% \lz
+
+
+% Even if $n_{\text{no, class, 1st}} = 0$ (everyone from 1st class survived), we get $p_{\text{no, class, 1st}} > 0$.
+% % $$
+% % \P(\text{no} | \text{class = 1st, sex = male}) = \frac{p_{\text{no, class, 1st}} \cdot p_{\text{no, sex, male}} \cdot \pikh[no]}{\sumjg p(\text{class = 1st, sex = male} | y = j)\pih_j} > 0.
+% % $$
+
+% \lz
+
+% This ensures that the posterior probability is non-zero, preserving the influence of all features in the model.
+
+
+% \end{vbframe}
 
 
 
 \begin{vbframe}{Naive Bayes: application as spam filter}
 \begin{itemize}
-  \item In the late 90s, Naive Bayes became popular for e-mail spam filter programs
-  \item Word counts were used as features to detect spam mails (e.g., "Viagra" often occurs in spam mail)
-  \item Independence assumption implies: occurrence of two words in mail is not correlated
-  \item Seems naive ("Viagra" more likely to occur in context with "Buy now" than "flower"), but leads to less required parameters and therefore better generalization.
+  \item In the late 90s, NB became popular for e-mail spam detection 
+  \item Word counts were used as features to detect spam mails
+  \item Independence assumption implies: occurrence of two words in mail is not correlated, this is often wrong; \\
+  "viagra" more likely to occur in context with "buy"...
+  \item In practice: often still good performance
 \end{itemize}
-\end{vbframe}
+\lz
 
-\begin{vbframe}{Benchmarking SPAM}
-Benchmarking QDA, Naive Bayes and LDA on $\texttt{spam}$:
+Benchmarking QDA, NB and LDA on $\texttt{spam}$:
+\lz
 
 \begin{center}
-\includegraphics[clip=true, trim={0 0 0 17}, width=0.80\linewidth]{figure/nb-bench.png}
+\includegraphics[clip=true, trim={0 0 0 17}, width=0.4\linewidth]{figure/nb-bench.png}
 \end{center}
 
-$\Rightarrow$ In practice, NB often performs well even when the independence assumption is violated!
 \end{vbframe}
 
 \endlecture
