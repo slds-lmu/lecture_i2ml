@@ -9,18 +9,26 @@ class = as.factor(rep(c("man", "woman"), each = 10))
 df = data.frame(x, class)
 str(df)
 
-# plot 1
 png("../figure/disc_univariate-1.png", width = 3000, height = 1300, res = 300)
-par(mar = c(4,4,1,1))
+
+layout(matrix(c(1, 2), nrow = 1, ncol = 2), widths = c(1, 2))
+par(mar = c(4, 4, 1, 0.5))
+hist(bh.man, breaks = seq(150, 200, by = 2), col = rgb(0, 0, 0, 0.5), 
+     xlim = c(150, 200), ylim = c(0, 3), xlab = "body height (cm)", ylab = "frequency",
+     main = "")
+hist(bh.woman, breaks = seq(150, 200, by = 2), col = rgb(1, 0, 0, 0.5), add = TRUE)
+legend("topright", legend = c("men", "women"), fill = c(rgb(0, 0, 0, 0.5), rgb(1, 0, 0, 0.5)))
+
+par(mar = c(4, 4, 1, 1))
 x = seq(150, 200, length.out = 100)
 plot(x, dnorm(x, mean = 170, sd = 4), type = "l", col = "red", lty = 2, 
-     xlim = c(150, 200), ylim = c(0, 0.1),
-     ylab = "p(x|y=k)", xlab = "x (body height in cm)")
+     xlim = c(150, 200), ylim = c(0, 0.1), ylab = "p(x|y=k)", xlab = "x (body height in cm)")
 abline(v = 175, col = "grey", lty = 2)
 axis(1, at = seq(155, 195, by = 10))
 lines(x, dnorm(x, mean = 180, sd = 4)) 
 legend("topright", legend = c("k = woman ~ N(170, 4)", "k = man ~ N(180, 4)"), 
        col = c("red", "black"), lty = c(2, 1))
+
 dev.off()
 
 # plot 2
