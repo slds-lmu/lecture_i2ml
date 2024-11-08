@@ -10,8 +10,6 @@ library(mvtnorm)
 
 # common settings
 set.seed(1234)
-plot_width <- 20
-plot_height <- 10
 plot_dpi <- 300
 line_size <- 5
 base_size <- 40
@@ -29,15 +27,16 @@ n = 300
 
 classa = data.frame(mvrnorm(n = n, 
                             mu = c(2, 2), 
-                            Sigma = matrix(c(2, 0, 0, 2), 
+                            Sigma = matrix(c(1, 0.1, 0.1, 1), 
                                            ncol = 2, 
                                            byrow = TRUE)))
 
 classb = data.frame(mvrnorm(n = n, 
                             mu = c(10, 7), 
-                            Sigma = matrix(c(8, -6, -6, 8), 
+                            Sigma = matrix(c(5, -2, -2, 1), 
                                            ncol = 2, 
                                            byrow = TRUE)))
+
 
 df = cbind(classa, factor(rep("a", ncol(classa))))
 colnames(df) = c("x1", "x2", "y")
@@ -92,6 +91,7 @@ pl = ggplot() +
   scale_fill_manual(values = c("a" = "#E69F00", "b" = "#56B4E9")) +
   scale_color_manual(values = c("a" = "#E69F00", "b" = "#56B4E9")) +
   labs(x = expression(x[1]), y = expression(x[2]), color = "class", fill = "class") +
+  coord_fixed(ratio = 1) + 
   theme_minimal() +
   scale_alpha(range = c(0.1, 0.5), guide = 'none') +
   theme(
@@ -103,4 +103,4 @@ pl = ggplot() +
   )
 
 # Save directly to PNG
-ggsave(filename = "../figure/nb-db.png", plot = pl, width = plot_width, height = plot_height, dpi = plot_dpi)
+ggsave(filename = "../figure/nb-db.png", plot = pl, dpi = plot_dpi)

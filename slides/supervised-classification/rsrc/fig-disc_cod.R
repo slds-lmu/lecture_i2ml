@@ -80,5 +80,4 @@ plot <- ggplot(plot_data, aes(x = dimension, y = classif.ce, color = learner_id,
     legend.title = element_text(face = "bold", size = 20),
     legend.text = element_text(face = "bold", size = 16)
   )
-print(plot)
 ggsave("../figure/disc_cod.png", plot = plot, width = plot_width, height = plot_height, dpi = plot_dpi)
