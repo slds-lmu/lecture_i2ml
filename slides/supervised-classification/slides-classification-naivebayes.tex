@@ -22,7 +22,7 @@
 \begin{vbframe}{Naive Bayes classifier}
 
 NB is a generative multiclass technique. Remember: We use Bayes' theorem and only need $\pdfxyk$ to compute the posterior as:
-$$\pikx = \postk = \frac{\P(\xv | y = k) \P(y = k)}{\P(\xv)} = \frac{\pdfxyk \pik}{\sumjg \pdfxyk[j] \pi_j} $$
+$$\pikx \approx \postk = \frac{\P(\xv | y = k) \P(y = k)}{\P(\xv)} = \frac{\pdfxyk \pik}{\sumjg \pdfxyk[j] \pi_j} $$
 
 
 NB is based on a simple \textbf{conditional independence assumption}: the features are conditionally independent given class $y$.
@@ -53,38 +53,87 @@ $$
 p(x_j | y = k) = \prod_m p_{kjm}^{[x_j = m]}
 $$
 
-Because of the simple conditional independence structure it is also very easy to deal with mixed numerical / categorical feature spaces.
+Because of the simple conditional independence structure, it is also very easy to deal with mixed numerical / categorical feature spaces.
 
 \begin{flushright}
 % SOURCE: https://docs.google.com/presentation/d/1X2FxetT6fewXhoGLZmgJyEHY_pWbKjQ6AHZiZQHvwzA/edit?usp=sharing
 \only<1>{\includegraphics[width=\textwidth, clip = true, trim = {50 400 120 350}]{figure_man/nb-categorial_1.png}}
-\only<2>{\includegraphics[width=\textwidth, clip = true, trim = {50 410 120 350}]{figure_man/nb-categorial_2.png}}
-\only<3>{\includegraphics[width=\textwidth, clip = true, trim = {50 410 120 350}]{figure_man/nb-categorial_3.png}}
+% \only<2>{\includegraphics[width=\textwidth, clip = true, trim = {50 410 120 350}]{figure_man/nb-categorial_2.png}}
+% \only<3>{\includegraphics[width=\textwidth, clip = true, trim = {50 410 120 350}]{figure_man/nb-categorial_3.png}}
+\only<2>{\includegraphics[width=\textwidth, clip = true, trim = {50 410 120 350}]{figure_man/nb-categorial_final.png}}
 \end{flushright}
 
 \end{frame}
 
-\begin{vbframe}{Laplace Smoothing}
+\begin{vbframe}{Laplace Smoothing: The Problem}
 \begin{small}
-If a given class and feature value never occur together in the training data, then the frequency-based probability estimate will be zero, e.g., $p_{\text{no, class, 1st}} = 0$.
+If a given class and feature value never occur together in the training data, then the frequency-based probability estimate will be zero, e.g.:\\
+$p_{\text{no, class, 1st}}^{[x_{class} = \text{1st}]} = 0$ (everyone from 1st class survived in the previous table)
 
 \lz
 
-When computing $\postk$, any zero probability will cause the entire product to be zero, negating information from other features:
+When computing $\postk$, any zero probability will cause the entire product $p(x_{class} | y = no) = \prod_m p_{\text{no, class, m}}^{[x_{class} = m]}$ to be zero, negating information from other features:
 
 $$
-\P(\text{no} | \text{class = 1st, sex = male}) = \frac{p_{\text{no, class, 1st}} \cdot p_{\text{no, sex, male}} \cdot \pikh[no]}{\sumjg p(\text{class = 1st, sex = male} | y = j)\pih_j} = 0
+\P(\text{no} | \text{class = 1st, sex = male}) = \frac{p(x_{class} | y = no) \cdot p(x_{sex} | y = no)\cdot \pikh[no]}{\sumjg p(\text{class = 1st, sex = male} | y = j)\pih_j} = 0
 $$
 
 This is problematic because it will wipe out all information in the other probabilities when they are multiplied!
 
 \lz
 
-$\Rightarrow$ A simple numerical correction is to set these zero probabilities to a small value to regularize against this case.
+%$\Rightarrow$ A simple numerical correction is to set these zero probabilities to a small value to regularize against this case.
 
 \end{small}
 
 \end{vbframe}
+
+
+\begin{vbframe}{Laplace Smoothing: The Solution}
+
+A simple numerical correction is to set these zero probabilities to a small value to regularize against this case.
+ 
+\begin{itemize}
+\item To prevent zero probabilities, add a constant $\alpha > 0$ (e.g., $\alpha = 1$).
+\item For a categorical feature $x_j$ with $M_j$ possible values:
+  $$
+  p_{kjm}^{[x_j = m]} = \frac{n_{kjm} + \alpha}{n_{k} + \alpha M_j} \quad \left(\text{instead of }  p_{kjm}^{[x_j = m]} = \frac{n_{kjm}}{n_{k}} \right)
+  $$
+  where:
+  \begin{itemize}
+    \item $n_{kjm}$: count of $x_j = m$ in class $k$,
+    \item $n_{k}$: total counts in class $k$,
+    \item $M_j$: number of possible distinct values of $x_j$.
+  \end{itemize}
+\item Ensures all probs are non-zero, avoiding the product to be zero.
+\end{itemize}
+
+\end{vbframe}
+
+\begin{vbframe}{Laplace Smoothing: Example}
+
+With Laplace smoothing ($\alpha = 1$), we adjust:
+$$
+p_{\text{no, class, 1st}}^{[x_{class} = \text{1st}]} = \frac{n_{\text{no, class, 1st}} + 1}{n_{\text{class, 1st}} + 1 \cdot M_{class}},
+$$
+where $M_{class} = 3$ (= number of distinct values for $x_{class}$: 1st, 2nd, 3rd).
+
+\lz
+
+
+Even if $n_{\text{no, class, 1st}} = 0$ (everyone from 1st class survived), we get $p_{\text{no, class, 1st}} > 0$.
+% $$
+% \P(\text{no} | \text{class = 1st, sex = male}) = \frac{p_{\text{no, class, 1st}} \cdot p_{\text{no, sex, male}} \cdot \pikh[no]}{\sumjg p(\text{class = 1st, sex = male} | y = j)\pih_j} > 0.
+% $$
+
+\lz
+
+This ensures that the posterior probability is non-zero, preserving the influence of all features in the model.
+
+
+\end{vbframe}
+
+
 
 \begin{vbframe}{Naive Bayes: application as spam filter}
 \begin{itemize}

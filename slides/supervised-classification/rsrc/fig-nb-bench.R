@@ -10,12 +10,9 @@ set.seed(123)
 
 task = tsk("spam")
 
-# because otherwise QDA throws a rank deficiency (because of factors in features I believe?)
-pca = po("pca", rank. = 56) # we only reduce the dimension by 1
-
-lrn_qda = GraphLearner$new(pca %>>% lrn("classif.qda"))
-lrn_nb = GraphLearner$new(pca %>>% lrn("classif.naive_bayes"))
-lrn_lda = GraphLearner$new(pca %>>% lrn("classif.lda"))
+lrn_qda = lrn("classif.qda")
+lrn_nb = lrn("classif.naive_bayes")
+lrn_lda = lrn("classif.lda")
 
 learners = list(lrn_nb, lrn_lda, lrn_qda)
 bmr = benchmark(benchmark_grid(task, learners, rsmp("cv", folds = 5)))
