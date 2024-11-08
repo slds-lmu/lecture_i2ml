@@ -11,9 +11,8 @@ library(mvtnorm)
 # common settings
 set.seed(1234)
 plot_dpi <- 300
-line_size <- 5
-base_size <- 40
-point_size <- 5
+base_size <- 10
+point_size <- 2
 
 options(digits = 3, 
         width = 65, 
@@ -23,7 +22,7 @@ options(digits = 3,
 
 set.seed(123)
 
-n = 300
+n = 100
 
 classa = data.frame(mvrnorm(n = n, 
                             mu = c(2, 2), 
@@ -84,8 +83,8 @@ grid_dens2$dens = dmvnorm(grid_dens2[, c("x1", "x2")], mean = mu2, sigma = S2)
 orig_data = as.data.frame(task$data())
 pl = ggplot() +
   geom_tile(data = grid, aes(x = x1, y = x2, fill = pred_class, alpha = max_prob)) +
-  geom_contour(data = grid_dens1, aes(x = x1, y = x2, z = dens), color = "#E69F00", alpha = 0.9, lwd = 1.5, bins = 10) +
-  geom_contour(data = grid_dens2, aes(x = x1, y = x2, z = dens), color = "#56B4E9", alpha = 0.9, lwd = 1.5, bins = 10) +
+  geom_contour(data = grid_dens1, aes(x = x1, y = x2, z = dens), color = "#E69F00", alpha = 0.9, lwd = 0.5, bins = 10) +
+  geom_contour(data = grid_dens2, aes(x = x1, y = x2, z = dens), color = "#56B4E9", alpha = 0.9, lwd = 0.5, bins = 10) +
   geom_point(data = orig_data, aes(x = x1, y = x2, color = y), size = point_size) +
   guides(shape = FALSE, alpha = FALSE) +
   scale_fill_manual(values = c("a" = "#E69F00", "b" = "#56B4E9")) +
