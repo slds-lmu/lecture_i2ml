@@ -10,7 +10,7 @@
 slides/<topic>/<slide-name>.tex
 ```
 
-where `<slide-name>` starts with `slide-` or `slide01`
+where `<slide-name>` starts with `slide-` or `slide01-`
 
 **Figures** are created either manually and live in
 
@@ -18,14 +18,20 @@ where `<slide-name>` starts with `slide-` or `slide01`
 slides/<topic>/figure_man/
 ```
 
-or created with an R script, with the outputs located in
+or created with an R script in
 
 ```
 slides/<topic>/rsrc/
+```
+
+with the outputs located in
+
+```
 slides/<topic>/figure/
 ```
 
-respectively.
+The script filename should make it obvious which figure it creates, and similarly the filename of the figure should match the script.
+The figures should be saved by the script (using e.g. `ggsave()`).
 
 ### Important files:
 
