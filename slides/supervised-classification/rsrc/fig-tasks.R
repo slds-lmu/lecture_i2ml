@@ -75,4 +75,3 @@ combined_plot <- grid.arrange(gg_bin, gg_multi, ncol = 2)
 
 # saving
 ggsave("../figure/tasks-combined.png", plot = combined_plot, width = 16, height = 6, units = "in")
-ggsave("../figure/tasks-bc.png", plot = gg_bin, width = 8, height = 6, units = "in")
