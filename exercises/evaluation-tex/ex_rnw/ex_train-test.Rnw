@@ -1,6 +1,6 @@
-Imagine you work in industry and have a data set $\D = \Dset$. You train a model $\fxh$ on this data set and now you want to bring it into production. Your customer wants to know which performance they can expect from your model, when using it from now on. As an answer, you want to provide an estimate for the generalization error of this model, i.e., $\GEf$.
+Imagine you work in industry and have a data set $\D = \Dset$. You train a model $\fxh$ on this data set and now you want to bring it into production. Your customer wants to know which performance they can expect from your model, when using it from now on. As an answer, you want to provide an estimate for the generalization error of this model, i.e., $\GEfL$.
 
-Since you have no data left to test your model on, you try to estimate, as a proxy for $\GEf$, how good a model could be that would have been learned on $n$ data points, i.e., $\GE(\ind, n, \rho)$. But, since also in this case you would have no data points left to test your model on, you try the next best thing:
+Since you have no data left to test your model on, you try to estimate, as a proxy for $\GEfL$, how good a model could be that would have been learned on $n$ data points, i.e., $\GEfull$ with $\ntrain = n$. But, since also in this case you would have no data points left to test your model on, you try the next best thing:
 
 %In supervised learning, we typically assume that the data set $\D = \Dset$ originates from a data generating process $\Pxy$ in an i.i.d manner, i.e., $\D \sim \left(\Pxy\right)^n$.
 %One could split data set $\D$ with $n$ observations into subsets $\Dtrain$ and $\Dtest$ of sizes $\ntrain$ and $\ntest$ with $\ntrain + \ntest = n$.
@@ -10,26 +10,28 @@ Since you have no data left to test your model on, you try to estimate, as a pro
 
 For a learner $\ind$, $\ntrain$ training observations and a performance measure $\rho$, the \textbf{generalization error} can be formally expressed as:
 \begin{align}
-\GE(\ind, \ntrain, \rho) = \lim_{\ntest\rightarrow\infty} \E_{\Dtrain,\Dtest \sim \Pxy} \left[ \rho\left(\yv_{\Jtest}, {\F_{\Jtest,\ind(\Dtrain)}}\right)\right],
+\GEfull = \lim_{\ntest \rightarrow \infty} \E_{\Dtrain,\Dtest \sim \Pxy} \left[ \rho \left(
+  \yv, \F_{\Dtest, \ind(\D_{\mathrm{train}}, \lamv)} 
+  \right)\right],
 \end{align}
-where $\Dtrain$ and $\Dtest$ are independently sampled from $\Pxy$.
+where for now we assume that $\Dtrain$ and $\Dtest$ can be independently sampled from $\Pxy$.
 \begin{enumerate}\bfseries
   \item[1)] What is the generalization error? Describe the formula above in your own words.
 \end{enumerate}
-In practice, the data generating process $\Pxy$ is usually unknown. However, assume we can sample as many times as we like from $\Pxy$.
+In practice, the data generating process $\Pxy$ is usually unknown and we cannot directly sample observations from it (instead, we typically use the available data $\D$ as a proxy). However, let's for now assume we can sample as many times as we like from $\Pxy$.
 \begin{enumerate}\bfseries
-  \item[2)] Explain how you could empirically estimate the generalization error $\GE(\ind, \ntrain = 100, \rho)$ of a learner $\ind$ trained on $\ntrain = 100$ observations and evaluated on performance measure $\rho$, given that you can sample from $\Pxy$ as often as you like.
+  \item[2)] Explain how you could empirically estimate the generalization error $\GEfull$ with $\ntrain = 100$ of a learner $\ind$ with configuration $\lamv$ trained on $\ntrain = 100$ observations and evaluated on performance measure $\rho$, given that you can sample from $\Pxy$ as often as you like.
 \end{enumerate}
 In addition to an unknown data-generating process $\Pxy$, supervised learning is often restricted to a data set $\D$ of fixed size $n$.
-Therefore, the true generalization error $\GE(\ind, n, \rho)$ remains unknown.
+Therefore, the true generalization error $\GEfull$ remains unknown.
 In this case, hold-out splitting is a simple  procedure that can be used to estimate the generalization error:
 \begin{align}
-{\GEh_{\Jtrain, \Jtest}(\ind, |\Jtrain|, \rho)} = \rho\left(\yv_{\Jtest}, {\F_{\Jtest,\ind(\Dtrain)}}\right),
+{\GEh_{\Jtrain, \Jtest}(\ind, \lamv, |\Jtrain|, \rho)} = \rho\left(\yv_{\Jtest}, {\F_{\Jtest,\ind(\Dtrain)}}\right),
 \end{align}
-where $\Jtrain \in \JtrainSpace$ specifies the subset of $\D$ the learner $\ind$ is trained on, with $|\Jtrain| = \ntrain < n$.
+where $\Jtrain \in \JtrainSpace$ and $\Jtest \in \JtestSpace$ are index vectors that specify the subset of $\D$ the learner $\ind$ is trained on, with $|\Jtrain| = \ntrain < n$ and $|\Jtrain| + |\Jtest| = n$.
 \begin{enumerate}\bfseries
-  \item[3)] Explain how the choice of $|\Jtrain|$ may influence the bias of ${\GEh_{\Jtrain, \Jtest}(\ind, |\Jtrain|, \rho)}$ wrt $\GE(\ind, n, \rho)$.
-  \item[4)] Explain how the choice of $|\Jtrain|$ may influence the variance of ${\GEh_{\Jtrain, \Jtest}(\ind, |\Jtrain|, \rho)}$.
+  \item[3)] Explain how the choice of $\ntrain$ may influence the bias of ${\GEh_{\Jtrain, \Jtest}(\ind, \lamv, |\Jtrain|, \rho)}$ wrt $\GEfull$.
+  \item[4)] Explain how the choice of $\ntrain$ may influence the variance of ${\GEh_{\Jtrain, \Jtest}(\ind, \lamv, |\Jtrain|, \rho)}$.
 \end{enumerate}
 %Assume we know the true generalization error $\GE(\ind, \ntrain = 100, \rho)$ of a learner $\ind$ that is evaluated on performance measure $\rho$ and can sample as many times as we like from $\Pxy$.
 %\begin{enumerate}\bfseries
