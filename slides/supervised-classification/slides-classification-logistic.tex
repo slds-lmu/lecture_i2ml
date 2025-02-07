@@ -3,331 +3,220 @@
 \input{../../latex-math/basic-math.tex}
 \input{../../latex-math/basic-ml.tex}
 
-
-\newcommand{\titlefigure}{figure/reg_class_log_7}
-\newcommand{\learninggoals}{
-\item Understand the definition of the logit model
-\item Understand how a reasonable loss function for binary classification can be derived
-\item Know the hypothesis space that belongs to the logit model}
-
 \title{Introduction to Machine Learning}
-% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
-\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
-\date{}
 
 \begin{document}
 
+\titlemeta{% Chunk title (example: CART, Forests, Boosting, ...), can be empty
+  Classification
+  }{% Lecture title  
+  Logistic Regression
+}{% Relative path to title page image: Can be empty but must not start with slides/
+  figure/log_reg-scores
+}{% Learning goals, wrapped inside itemize environment
+  \item Hypothesis space of LR
+  \item Log-Loss derivation 
+  \item Intuition for loss
+  \item LR as linear classifier
+}
 
-\lecturechapter{Classification: Logistic Regression}
-\lecture{Introduction to Machine Learning}
 \framebreak
 
 
 \begin{vbframe}{Motivation}
 
-A \textbf{discriminant} approach for directly modeling the posterior probabilities $\pixt$ of the labels is \textbf{logistic regression}. 
+\begin{itemize}
 
-For now, let's focus on the binary case $y \in \setzo$ and use empirical risk minimization.
+\item Let's build a \textbf{discriminant} approach, for binary classification, as a probabilistic classifier $\pixt$
+
+\item We encode $y \in \setzo$ and use ERM:
   
-$$ \argmin_{\thetab \in \Theta} \risket = \argmin_{\thetab \in \Theta} \sumin \Lpixyit.$$
+$$ \argmin_{\thetav \in \Theta} \risket = \argmin_{\thetav \in \Theta} \sumin \Lpixyit$$
 
-\lz
-A naive approach would be to model
+\item We want to \enquote{copy} over ideas from linear regression
+
+\item In the above, our model structure should be \enquote{mainly} linear and we need a loss function
+
+\end{itemize}
+
+
+\end{vbframe}
+
+\begin{vbframe}{Direct linear model for probabilities}
+
+We could directly use an LM to model $\pixt = \thx$.\\
+And use L2 loss in ERM.
+
+\lz 
+
+{\centering \includegraphics[width=0.95\textwidth]{figure/preds_with_probs-linear.png}
+}
+
+But: This obviously will result in predicted probabilities $\pixt \not\in [0,1]$!
+
+\end{vbframe}
+
+\begin{vbframe}{Hypothesis space of LR}
+
+To avoid this, logistic regression \enquote{squashes} the estimated linear scores $\thx$ to $[0,1]$ through the \textbf{logistic function} $s$:
 \[
-\pixt = \thx .
+\pixt = \frac{\exp\left( \thx \right)}{1+\exp\left(\thx \right)} = \frac{1}{1+\exp\left( -\thx \right)} = s\left( \thx \right) = s(\fx)
 \]
 
-NB: We will often suppress the intercept in notation.
+\begin{center}
+  \includegraphics[width=0.74\textwidth]{figure/logistic_function.png} 
+\end{center}
 
-\lz
-
-Obviously this could result in predicted probabilities $\pixt \not\in [0,1]$.
+$\Rightarrow$ \textbf{Hypothesis space} of LR:
+\begin{eqnarray*}
+  \Hspace = \left\{\pi: \Xspace \to [0,1] ~|~\pixt = s(\thx) ~|~ \thetav \in \R^{p+1} \right\}
+\end{eqnarray*}
 
 \end{vbframe}
 
 \begin{vbframe}{Logistic Function}
 
-To avoid this, logistic regression \enquote{squashes} the estimated linear scores $\thx$ to $[0,1]$ through the \textbf{logistic function} $s$:
-\[
-\pixt = \frac{\exp\left( \thx \right)}{1+\exp\left(\thx \right)} = \frac{1}{1+\exp\left( -\thx \right)} = s\left( \thx \right)
-\]
+Intercept $\theta_0$ shifts $\pi = s(\theta_0 + f) = \frac{\exp(\theta_0 + f)}{1+\exp(\theta_0 + f)}$ horizontally
 
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-
-{\centering \includegraphics[width=0.95\textwidth]{figure/reg_class_log_1} 
-
+{
+\centering \includegraphics[width=0.8\textwidth]{figure/logistic_shifted.png}
 }
 
+Scaling $f$ like $s(\alpha f) = \frac{\exp(\alpha f)}{1+\exp(\alpha f)}$ controls slope and direction
 
-
-\end{knitrout}
-
-\framebreak
-The intercept shifts $s(f)$ horizontally $s(\theta_0 + f) = \frac{\exp(\theta_0 + f)}{1+\exp(\theta_0 + f)}$
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-
-{\centering \includegraphics[width=0.95\textwidth]{figure/reg_class_log_2}  
-
+{
+\centering \includegraphics[width=0.8\textwidth]{figure/logistic_scaled.png}
 }
-
-
-
-\end{knitrout}
-
-Scaling $f$ like $s(\alpha f) = \frac{\exp(\alpha f)}{1+\exp(\alpha f)}$ controls the slope and direction.
-\lz
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-
-{\centering \includegraphics[width=0.95\textwidth]{figure/reg_class_log_3} 
-
-}
-
-
-
-\end{knitrout}
 
 \end{vbframe}
 
-\begin{vbframe}{Bernoulli / Log loss}
+\begin{vbframe}{The Logit}
 
-We need to define a loss function for the ERM approach:
+The inverse $s^{-1}(\pi) = \log\left(\frac{\pi}{1 - \pi}\right)$ where $\pi$ is a probability is called \textbf{logit} (also called \textbf{log odds} since it is equal to the logarithm of the odds $\frac{\pi}{1-\pi}$)
+
+\begin{center}
+\includegraphics[width=0.6\textwidth]{figure/logit_function.png}
+\end{center}
 
 \begin{itemize}
-  \item $\Lpixy = -y\log(\pix)-(1-y)\log(1-\pix)$
-  \item Penalizes confidently wrong predictions heavily
-  \item Called Bernoulli, log or cross-entropy loss 
-  \item We can derive it from the negative log-likelihood of Bernoulli / logistic regression model in statistics
-  \item Used for many other classifiers, e.g., in NNs or boosting 
+
+\item Positive logits indicate probabilities > 0.5 and vice versa
+
+\item E.g.: if $p = 0.75$, odds are $3:1$ and logit is $log(3) \approx 1.1$
+
+\item Features $\xv$ act linearly on logits, controlled by coefficients $\thetav$:
+
+$$
+s^{-1}(\pix) = \log\left(\frac{\pix}{1 - \pix}\right) = \thetav^T x
+$$
+
 \end{itemize}
 
 
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-
-{\centering \includegraphics[width=0.95\textwidth]{figure/reg_class_log_4}  
-
-}
-
-
-
-\end{knitrout}
-
 \end{vbframe}
 
-\begin{vbframe}{Logistic Regression in 1D}
-With one feature $\xv \in \R$. The figure shows data and $\xv \mapsto \pix$.
+\begin{vbframe}{Deriving Log-Loss}
 
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-
-{\centering \includegraphics[width=0.95\textwidth]{figure/reg_class_log_5} 
-
-}
+We need to find a suitable loss function for \textbf{ERM}. We look at likelihood which multiplies up $\pixit$ for positive examples, and $1-\pixit$ for negative. 
 
 
+$$
+\LLt = \prod_{i \text{ with } \yi = 1} \pixit \prod_{i \text{ with } \yi = 0} (1-\pixit) 
+$$
 
-\end{knitrout}
-\end{vbframe}
-\begin{vbframe}{Logistic Regression in 2D}
+We can now cleverly combine the 2 cases by using exponents \\
+(note that only one of the 2 factors is not 1 and \enquote{active}):
 
-Obviously, logistic regression is a linear classifier, as $\pixt = s\left( \thx \right)$ 
-and $s$ is isotonic.
-
-\lz
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-
-{\centering \includegraphics[width=0.95\textwidth]{figure/reg_class_log_6}  
-
-}
-
-
-
-\end{knitrout}
+$$
+\LLt = \prodin \pixit^{\yi} \left(1-\pixit\right)^{1-\yi}
+$$
 
 \framebreak
 
-\begin{columns}[T]
-\begin{column}{0.5\textwidth}
-  \includegraphics[width=\textwidth]{figure_man/logreg-2vars-surface.png}
-\end{column}
-\begin{column}{0.5\textwidth}
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+Taking the log to convert products into sums:
+\begin{align*}
+\loglt &= \log \LLt = 
+\sumin \log\left(\pixit^{\yi} \left(1-\pixit\right)^{1-\yi}\right) \\
+       &= \sumin \yi \log\left(\pixit\right) + \left(1-\yi\right)\log\left(1-\pixit\right)
+\end{align*}
 
-{\centering \includegraphics[width=0.95\textwidth]{figure/reg_class_log_7} 
+Since we want to minimize the risk, we work with the negative $\loglt$:
+$$
+- \loglt = \sumin - \yi \log\left(\pixit\right) - \left(1-\yi\right)\log\left(1-\pixit\right)
+$$
 
+
+\end{vbframe}
+
+\begin{vbframe}{Bernoulli / Log Loss}
+
+The resulting loss 
+$$\Lypi = -y\log(\pi)-(1-y)\log(1-\pi)$$ 
+is called \textbf{Bernoulli, binomial, log} or \textbf{cross-entropy} loss
+
+\lz
+
+{\centering \includegraphics[width=0.95\textwidth]{figure/log_loss.png}
 }
 
+\lz
+
+\begin{itemize}
+  \item Penalizes confidently wrong predictions heavily
+  \item Is used for many other classifiers, e.g., in NNs or boosting 
 
 
-\end{knitrout}
-\end{column}
-\end{columns}
-
-% <<fig.width=2, fig.height=2>>=
-% x1 = seq(-1, 8, by = 0.1)
-% dfn = expand.grid(x1, x1)
-% names(dfn) = c("x1", "x2")
-% dfn$prob = predict(m, newdata = dfn)
-% dfn$score = predict(mm, newdata = dfn)
-% z = matrix(dfn$prob, nrow = length(x1))
-% res = persp(x1, x1, z, phi = 30, theta = 30,
-%   xlab = "x1", ylab = "x2",
-%   main = expression(pi(x)), border = "grey"
-% )
-% cols = viridisLite::viridis(2, end = .9)
-% mypoints = trans3d(df$x1, df$x2, df$prob, pmat = res)
-% points(mypoints, pch = 19, col = cols[as.numeric(df$y) + 1])
-% @ 
-
-
-% \framebreak 
-
-% \begin{center}
-  % \includegraphics[width=0.4\textwidth]{figure_man/logreg-2vars-surface.png}
-% \end{center}
+  
+\end{itemize}
 
 
 \end{vbframe}
 
 
-% \begin{vbframe}{Logistic Regression}
+\begin{vbframe}{Logistic Regression in 2D}
 
-% \textbf{Multivariate logistic regression} combines the hypothesis space of linear functions 
+LR is a linear classifier, as $\pixt = s\left( \thx \right)$ 
+and $s$ is isotonic.
 
-% \vspace*{-0.3cm}
+\lz\lz
 
-% \begin{eqnarray*}
-%   \Hspace = \left\{f: \Xspace \to \R ~|~\fx = \thx \right\}
-% \end{eqnarray*}
+\begin{columns}[T]
+\begin{column}{0.5\textwidth}
+  \includegraphics[width=\textwidth]{figure/log_reg-db.png}
+\end{column}
+\begin{column}{0.5\textwidth}
+  \includegraphics[width=\textwidth]{figure/log_reg-scores.png}
+\end{column}
+\end{columns}
 
-% with the \textbf{logistic loss}
-
-% \vspace*{-0.2cm}
-
-% \begin{eqnarray*}
-%   \Lxy = \log \left[1 + \exp \left(-y\fx\right)\right].
-% \end{eqnarray*}
-
-% We transform scores into probabilities by 
-
-% $$
-% \pix = \P(y = 1 ~|~\xv) = s(\fx) = \frac{1}{1 + \exp(- \fx)},
-% $$
-
-% with $s(.)$ being the logistic sigmoid function as introduced in chapter 2.
-
-% \framebreak 
-
-% As already shown before, an equivalent approach that directly outputs probabilities $\pix$ is minimizing the \textbf{Bernoulli loss} 
-
-% \begin{eqnarray*}
-% \Lpixy = -y \log \left(\pix\right) - (1 - y) \log \left(1 - \pix\right)
-% \end{eqnarray*}
-
-% for $\pix$ in the hypothesis space
-
-% \begin{eqnarray*}
-%   \Hspace = \left\{\pi: \Xspace \to [0, 1] ~|~\pix = s(\thx)\right\}
-% \end{eqnarray*}
-
-% with $s(.)$ again being the logistic function. 
-
-% \end{vbframe}
-
-% \begin{vbframe}{Logistic Regression: Discriminant functions and decision boundary}
-
-% Logistic regression gives us a \textbf{linear classifier}. 
-
-% In order to minimize the loss (misclassification), we should predict $y=1$ if
-
-% $$
-% \pixt = \frac{\exp(\thx)}{1+\exp(\thx)} \ge 0.5,
-% $$
-
-% which is equivalent to
-% $$
-% \thx \ge 0 \implies y = 1.
-% $$
+\end{vbframe}
 
 
-% \lz 
+\begin{vbframe}{Optimization}
 
-% If we apply $g(y) = \log \left(\frac{y}{1 - y}\right)$ (which is a monotone, rank preserving function) on $\pix = \frac{1}{1 + \exp(-\thetab^\top \xv)}$, we get
+\begin{itemize}
 
-% \begin{footnotesize}
-% \begin{eqnarray*}
-%   g(\pix) &=& g\left(\pix\right)\\
-%   &=& \log\left(\pix)\right) - \log \left(1 - \pix\right) \\ &=& - \log (1 + \exp(- \fx)) - \log \left(1 - \frac{1}{1 + \exp(-\fx)}\right)\\
-%   &=& - \log (1 + \exp(- \fx)) - \log \left(\frac{\exp(-\fx)}{1 + \exp(-\fx)}\right) \\
-%   &=& - \log (1 + \exp(- \fx)) - \log \left(\exp(-\fx)\right) + \log\left(1 + \exp(-\fx)\right)\\
-%    &=& \fx = \thx.
-% \end{eqnarray*}
-% \end{footnotesize}
+\item Log-Loss is convex, under regularity conditions LR has a unique solution (because of its linear structure), but not an analytical one
 
-% $\fx = \thx$ is the discriminant function of logistic regression and $\fx = \thx = 0$ represents the decision boundary, which is a \textbf{hyperplane} in the $p$ dimensional space. 
+\item To fit LR we use numerical optimization, e.g., Newton-Raphson
 
-% \lz  
+\item If data is linearly separable, the optimization problem is unbounded and we would not find a solution; way out is regularization 
 
-% The discriminant function can be interpreted as \textbf{log-odds ratio}: 
+\item Why not use least squares on $\pix = s(\fx)$? \\
+Answer: ERM problem is not convex anymore :(
 
-  % $$ \log \dfrac{\pix}{1-\pix} = \log \dfrac{\P(y = 1 ~|~ \xv)} {\P(y = 0 ~|~ \xv)} = \thx
-  % = \fx.
-  % $$
- 
-
-% \framebreak 
-
-% <<logreg-plot, echo=FALSE, eval = FALSE, include = FALSE>>=
-% n = 30
-% set.seed(1234L)
-% tar = factor(c(rep(1L, times = n), rep(2L, times = n)))
-% feat1 = c(rnorm(n, sd = 1.5), rnorm(n, mean = 2, sd = 1.5))
-% feat2 = c(rnorm(n, sd = 1.5), rnorm(n, mean = 2, sd = 1.5))
-% bin.data = data.frame(feat1, feat2, tar)
-% bin.tsk = makeClassifTask(data = bin.data, target = "tar")
-% plotLearnerPrediction("classif.logreg", bin.tsk) + 
-%   scale_f_d()
-% @
-
-% \end{vbframe}
-
-
-\begin{frame}{Summary}
-% \lz
-
-\textbf{Hypothesis Space:} 
-\begin{eqnarray*}
-  \Hspace = \left\{\pi: \Xspace \to [0,1] ~|~\pix = s(\thx) \right\}
-\end{eqnarray*}
-
+\item We can also write the ERM as  
+$$
+\argmin_{\thetav \in \Theta} \risket = \argmin_{\thetav \in \Theta} \sumin \Lxyit
+$$
+With $\fxt = \thetav^T \xv$ and 
+$\Lyf = -yf + \log(1 + \exp(f)) $\\
 \lz
-
-\textbf{Risk:} Logistic/Bernoulli loss function.
-
-\begin{eqnarray*}
-  \Lpixy = -y\log(\pix)-(1-y)\log(1-\pix)
-  % \Lxy = \log \left[1 + \exp \left(-y\fx\right)\right].
-\end{eqnarray*}
-
-\lz
+This combines the sigmoid with the loss and shows a convex loss directly on a linear function
+\end{itemize}
+\end{vbframe}
 
 
-\textbf{Optimization:} Numerical optimization, typically gradient-based methods.
-
-% We transform scores into probabilities by 
-
-% $$
-% \pix = \P(y = 1 ~|~\xv) = s(\fx) = \frac{1}{1 + \exp(- \fx)},
-% $$
-
-% with $s(.)$ being the logistic sigmoid function as introduced in chapter 2.
-
-\end{frame}
 
 \endlecture
 

@@ -1,7 +1,12 @@
 # PREREQ -----------------------------------------------------------------------
 
 options(warn = -1) # too many "missing value" with ylim & high-d polynomials
-library(gridExtra)
+
+# Install vistool
+if (FALSE) {
+  install.packages("pak")
+  pak::pak("slds-lmu/vistool")
+}
 
 # To save plotly-based figures to static images, plotly uses the kaleido python
 # library, which is accessed via reticulate. You might need to run:
@@ -15,6 +20,8 @@ if (FALSE) {
 # R might throw an error about not finding the `sys` library -- circumvent with
 if (FALSE) reticulate::py_run_string("import sys")
 
+library(gridExtra)
+library(vistool)
 source("libfuns_lm.R")
 
 # BASIC POLYNOMIAL RELATION ----------------------------------------------------
@@ -182,34 +189,23 @@ n_points = 50L
 set.seed(pi)
 dt_biv = data.table(x_1 = rnorm(n_points), x_2 = rnorm(n_points))
 dt_biv[, y := 1 + 2 * x_1 + x_2^3 + rnorm(n_points, sd = 0.5)]
-plotter_3d <- RegressionPlotter$new(dt_biv)
-plotter_3d$initLayer3D(y ~ x_1 + x_2)
-plotter_3d$addScatter(col = "black", shape = "circle")
 
-axis_x1 <- seq(-2, 2, by = 0.05)
-axis_x2 <- seq(-2, 2, by = 0.05)
-lm_surface <- expand.grid(
-    x_0 = 1, x_1 = axis_x1, x_2 = axis_x2, KEEP.OUT.ATTRS = F
+# from vistool
+learner = LearnerRegrLMFormula$new()
+learner$param_set$set_values(
+  formula = as.formula("y ~ x_1 + poly(x_2, degree = 7)")
 )
-lm_surface$y <- predict(
-    lm(y ~ x_1 + poly(x_2, 7, raw = TRUE), dt_biv),
-    data.frame(x_1 = axis_x1, x_2 = axis_x2)
+task = mlr3::as_task_regr(dt_biv, target = "y")
+plot_biv = as_visualizer(task, learner)
+plot_biv$add_training_data()
+plot_biv$set_layout(
+  title = "",
+  scene = list(
+    xaxis = list(title = "x1", showticklabels = FALSE), 
+    yaxis = list(title = "x2", showticklabels = FALSE),
+    zaxis = list(title = "f(x)", showticklabels = FALSE)
+  )
 )
-lm_surface <- acast(lm_surface, x_2 ~ x_1, value.var = "y")
-plot_biv = plotter_3d$plot(x = -0.8, y = 1.6, z = 0) %>%
-    add_trace(
-        z = lm_surface,
-        x = axis_x1,
-        y = axis_x2,
-        type = "surface",
-        colorbar = list(
-            title = "", 
-            ticks = "", 
-            nticks = 1
-        ),
-        colorscale = list(c(0, 1), rep("blue", 2)),
-        opacity = 0.7
-    ) %>% 
-    hide_colorbar() %>% 
-    hide_legend()
-save_image(plot_biv, "../figure/reg_poly_biv.pdf")
+plot_biv$set_scene(1.5 * 1.2, -1.25 * 1.2, 0.75 * 1.2)
+plot_biv$plot()
+plot_biv$save( "../figure/reg_poly_biv.pdf")

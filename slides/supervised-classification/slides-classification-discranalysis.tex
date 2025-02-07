@@ -4,108 +4,99 @@
 \input{../../latex-math/basic-ml.tex}
 
 
-\newcommand{\titlefigure}{figure/reg_class_dis_3}
-\newcommand{\learninggoals}{
-\item Understand the ideas of linear and quadratic discriminant analysis
-\item Understand how parameteres are estimated for LDA and QDA
-\item Understand how decision boundaries are computed for LDA and QDA}
-
 \title{Introduction to Machine Learning}
-% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
-\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
-\date{}
-
 
 \begin{document}
 
-\lecturechapter{Classification: Discriminant Analysis}
-\lecture{Introduction to Machine Learning}
-\framebreak
+\titlemeta{% Chunk title (example: CART, Forests, Boosting, ...), can be empty
+  Classification
+  }{% Lecture title  
+  Discriminant Analysis
+}{% Relative path to title page image: Can be empty but must not start with slides/
+  figure/disc_analysis-qda_1
+}{% Learning goals, wrapped inside itemize environment
+  \item LDA and QDA construction principle based on
+    generative approach
+  \item How are their parameters estimated
+  \item Linear and quadratic decision boundaries
+}
 
+\begin{vbframe}{Linear discriminant analysis}
 
+\begin{small}
+Generative approach, following Bayes' theorem:
 
-\begin{vbframe}{Linear discriminant analysis (LDA)}
+$$\pikx \approx \postk = \frac{\P(\xv | y = k) \P(y = k)}{\P(\xv)} = \frac{\pdfxyk \pik}{\sumjg \pdfxyk[j] \pi_j}$$
 
-% Linear discriminant follows a similar idea. As before, we want to classify a categorical target $y \in \Yspace = \gset$ on basis of $x$.
-
-% \lz
-LDA follows a generative approach
-
-$$\pikx = \postk = \frac{\P(\xv | y = k) \P(y = k)}{\P(\xv)} = \frac{\pdfxyk \pik}{\sumjg \pdfxyk[j] \pi_j},$$
-  
-where we now have to pick a distributional form for $\pdfxyk$.
-
-\framebreak
-
-LDA assumes that each class density is modeled as a \emph{multivariate Gaussian}:
+Assume that distribution $\pdfxyk$ per class is \textbf{multivariate Gaussian}:
 
 $$
 \pdfxyk = \frac{1}{(2\pi)^{\frac{p}{2}}|\Sigma|^{\frac{1}{2}}} \exp\left(-\frac{1}{2}(\xv - \muk)^T \Sigma^{-1} (\xv - \muk)\right)
 $$
 
-with equal covariance, i. e. $\Sigma_k = \Sigma \quad \forall k$. \\
-  % \item Each class fit as a Gaussian distribution over the feature space
-  % \item Different means but same covariance for all classes
-  % \item Rather restrictive model assumption
-% \end{itemize}
+with \textbf{equal covariance structure}, so $\Sigma_k = \Sigma \quad \forall k$
+\end{small}
 
-% \framebreak
+\vspace{-0.8em}
+\begin{center}
+\includegraphics[width=0.7\textwidth, clip=true, trim={0 75 0 45}]{figure/disc_analysis-lda_2.png}
+\end{center}
+\end{vbframe}
 
-% Generative approach, each class as \emph{multivariate Gaussian}
-% with equal covariance, i. e. $\Sigma_k = \Sigma \quad \forall k$. \\
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\begin{vbframe}{Univariate example}
+\begin{small}
+\begin{itemize}
+\item Classify a new person as male or female based on their height\\
+  (naive toy example, unrealistic in many ways)
+\item We will compute in the true DGP, so we assume we know all distributions and their params; we use the LDA setup
+\end{itemize}
+\begin{center}
+\includegraphics[width=0.95\textwidth, clip=true, trim={0 0 0 0}]{figure/disc_univariate-1.png}
+\end{center}
+\centerline{Optimal separation is located at the intersection (= decision boundary)!}
+\end{small}
+\end{vbframe}
 
-{\centering \includegraphics[width=0.95\textwidth]{figure/reg_class_dis_1} 
+\begin{vbframe}{Univariate example: equal class sizes}
+\begin{small}
+Let's compute posterior probability that a 172 cm tall person is male 
+\begin{center}
+\includegraphics[width=0.85\textwidth, clip=true, trim={0 0 0 0}]{figure/disc_univariate-2.png}
+\end{center}
+Assuming equal class sizes, prior probs $\pik$ cancel out (since $\pi_{man} = \pi_{woman}$):
+$$
+\P(y = \text{man} \mid \xv) = \frac{p(\xv \mid y = \text{man})}{p(\xv \mid y = \text{man}) + p(\xv \mid y = \text{woman})} = \frac{0.0135}{0.0135 + 0.088} = 0.133
+$$
+\end{small}
+\end{vbframe}
 
-}
+\begin{vbframe}{Univariate example: unequal class sizes}
+\begin{small}
+For unequal class sizes (e.g., $\pi_{woman} = 2\pi_{man}$), the prior probs matter and cause a shift of the decision boundary towards the smaller class
+\begin{center}
+\includegraphics[width=0.86\textwidth, clip=true, trim={0 0 0 0}]{figure/disc_univariate-3.png}
+\end{center}
+\begin{align*}
+\P(y = \text{man} \mid \xv) &= \frac{p(\xv \mid y = \text{man}) \pi_{man}}{p(\xv \mid y = \text{man}) \pi_{man} + p(\xv \mid y = \text{woman}) \pi_{woman}}\\
+&=\frac{0.0135 \cdot \tfrac{1}{3}}{0.0135 \cdot \tfrac{1}{3} + 0.088 \cdot \tfrac{2}{3}} = 0.0712
+\end{align*}
 
+\end{small}
 
+\end{vbframe}
 
-\end{knitrout}
+\begin{vbframe}{LDA as linear classifier}
+Because of the equal covariance structure of all class-specific Gaussians, the decision boundaries of LDA are always linear
 
+\begin{center}
+\includegraphics[width=\textwidth, clip=true, trim={0 0 0 0}]{figure/disc_db-lda.png}
+\end{center}
 
-\framebreak
-Parameters $\thetab$ are estimated in a straightforward manner by estimating
-\begin{eqnarray*}
-\hat{\pik} &=& \frac{n_k}{n},\text{ where $n_k$ is the number of class-$k$ observations} \\
-\hat{\muk} &=& \frac{1}{n_k}\sum_{i: \yi = k} \xi \\
-\hat{\Sigma} &=& \frac{1}{n - g} \sumkg \sum_{i: \yi = k} (\xi - \hat{\muk}) (\xi - \hat{\muk}) ^T
-\end{eqnarray*}
-
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-
-{\centering \includegraphics[width=0.95\textwidth]{figure/reg_class_dis_1_2} 
-
-}
-
-
-
-\end{knitrout}
 \end{vbframe}
 
 \begin{vbframe}{LDA as linear classifier}
 
-  Because of the equal covariance structure of all class-specific Gaussian, the decision boundaries
-  of LDA are linear.
-
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-
-{\centering \includegraphics[width=0.95\textwidth]{figure/reg_class_dis_2} 
-
-}
-
-
-
-\end{knitrout}
-
-\framebreak
-
-
-We can formally show that LDA is a linear classifier, by showing that the posterior probabilities
-can be written as linear scoring functions - up to any isotonic / rank-preserving transformation.
+Can easily prove this by showing that posteriors can be written as affine-linear functions - up to rank-preserving transformation:
 
 $$
   \pikx = \frac{\pik \cdot \pdfxyk }{\pdfx} = \frac{\pik \cdot \pdfxyk}{\sumjg \pi_j \cdot \pdfxyk[j]}
@@ -115,118 +106,151 @@ As the denominator is the same for all classes we only need to consider
 $$\pik \cdot \pdfxyk$$ 
 and show that this can be written as a linear function of $\xv$.
 
-\framebreak
+\end{vbframe}
 
-
-% For the posterior probability of class $k$ it follows:
+\begin{vbframe}{LDA as linear classifier}
+\begin{footnotesize}
 \begin{eqnarray*}
 & \pik \cdot \pdfxyk \\
-  \propto& \pik \exp\left(- \frac{1}{2} \xv^T\Sigma^{-1}\xv - \frac{1}{2} \muk^T \Sigma^{-1} \muk + \xv^T \Sigma^{-1} \muk \right) \\
-=& \exp\left(\log \pik  - \frac{1}{2} \muk^T \Sigma^{-1} \muk + \xv^T \Sigma^{-1} \muk \right) \exp\left(- \frac{1}{2} \xv^T\Sigma^{-1}\xv\right) \\
-=& \exp\left(\thetab_{0k} + \xv^T \thetab_k\right) \exp\left(- \frac{1}{2} \xv^T\Sigma^{-1}\xv\right)\\
-\propto& \exp\left(\thetab_{0k} + \xv^T \thetab_k\right) 
+\propto& \textcolor{orange}{\pik} \exp\left(\textcolor{blue}{- \frac{1}{2} \xv^T\Sigma^{-1}\xv} \textcolor{orange}{- \frac{1}{2} \muk^T \Sigma^{-1} \muk} + \xv^T \textcolor{purple}{\Sigma^{-1} \muk} \right) \\
+=& \exp\left(\textcolor{orange}{\log \pik - \frac{1}{2} \muk^T \Sigma^{-1} \muk} + \xv^T \textcolor{purple}{\Sigma^{-1} \muk} \right) \exp\left(\textcolor{blue}{- \frac{1}{2} \xv^T\Sigma^{-1}\xv}\right) \\
+=& \exp\left(\textcolor{orange}{w_{0k}} + \xv^T \textcolor{purple}{\bm{w}_k}\right) \exp\left(\textcolor{blue}{- \frac{1}{2} \xv^T\Sigma^{-1}\xv}\right)\\
+\propto& \exp\left(w_{0k} + \xv^T \bm{w}_k\right) 
 \end{eqnarray*}
 
 by defining
-$\thetab_{0k} := \log \pik  - \frac{1}{2} \muk^T \Sigma^{-1} \muk$ $\quad$ and $\thetab_k := \Sigma^{-1} \muk$.
-
-\lz
-
-We have again left out all constants which are the same for all classes $k$, 
-  so the normalizing constant of our Gaussians and 
-  $\exp\left(- \frac{1}{2} \xv^T\Sigma^{-1}\xv\right)$.
+$w_{0k} := \log \pik  - \frac{1}{2} \muk^T \Sigma^{-1} \muk$ $\quad$ and $\bm{w}_k := \Sigma^{-1} \muk$.
 
 \lz
 
 By finally taking the log, we can write our transformed scores as linear:  
+$$ \fkx =  w_{0k} + \xv^T \bm{w}_k $$
 
-$$ \fkx =  \thetab_{0k} + \xv^T \thetab_k $$
+
+\begin{itemize}
+\item The above is a little bit \enquote{lax} so lets carefully check
+\item We left out several (pos) multiplicative constants
+\item $\exp\left(- \frac{1}{2} \xv^T\Sigma^{-1}\xv\right)$ contains $\xv$ but is the same for all classes
+\item $\log(a t + b) $ is still isotonic for $a > 0$
+\end{itemize}
+\end{footnotesize}
+
+
 
 \end{vbframe}
 
 
-\begin{vbframe}{Quadratic discriminant analysis (QDA)}
+\begin{vbframe}{Quadratic discriminant analysis}
 
-QDA is a direct generalization of LDA, where the class densities are now Gaussians with unequal covariances $\Sigma_k$.
+Doesn't assume equal covariances $\Sigma_k$ per class, so generalizes LDA:
+
 $$
 \pdfxyk = \frac{1}{(2\pi)^{\frac{p}{2}}|\Sigma_k|^{\frac{1}{2}}} \exp\left(-\frac{1}{2}(\xv - \muk)^T \Sigma_k^{-1} (\xv - \muk)\right)
 $$
 
-\lz
+$\Rightarrow$ Better data fit but \textbf{requires estimation of more parameters} ($\Sigma_k$)!
 
-Parameters are estimated in a straightforward manner by:\\
-\begin{eqnarray*}
-\hat{\pik} &=& \frac{n_k}{n},\text{ where $n_k$ is the number of class-$k$ observations} \\
-\hat{\muk} &=& \frac{1}{n_k}\sum_{i: \yi = k} \xi \\
-\hat{\Sigma_k} &=& \frac{1}{n_k - 1} \sum_{i: \yi = k} (\xi - \hat{\muk}) (\xi - \hat{\muk})^T \\
-\end{eqnarray*}
+\begin{center}
+\includegraphics[width=0.9\textwidth, clip=true, trim={0 75 0 30}]{figure/disc_analysis-qda_2.png}
+\end{center}
 
-\framebreak
+\end{vbframe}
 
+\begin{vbframe}{Univariate Example with QDA}
+\begin{small}
+Different covariance matrices lead to multiple classification rules:
 \begin{itemize}
-  \item Covariance matrices can differ over classes.
-  \item Yields better data fit but also requires estimation of more parameters.
+  \item $x < 159.6$ is being assigned to class \textit{man}.
+  \item $159.6 < x < 175.5$ is being assigned to class \textit{woman}.
+  \item $x > 175.5$ is being assigned to class \textit{man}.
 \end{itemize}
+\begin{center}
+\includegraphics[width=0.8\textwidth, clip=true, trim={0 0 0 0}]{figure/disc_univariate-4.png}
+\end{center}
+$\Rightarrow$ The separation function is quadratic, we learn a curved decision boundary\\
+(in 1D a little bit weird, as we learn an interval)
+\end{small}
+\end{vbframe}
 
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\begin{vbframe}{QDA decision boundaries}
 
-{\centering \includegraphics[width=0.95\textwidth]{figure/reg_class_dis_3} 
-
-}
-
-
-
-\end{knitrout}
-
-\framebreak
-
-
-
+\vspace{-2em}
+\begin{small}
 \begin{eqnarray*}
 \pikx &\propto& \pik \cdot \pdfxyk \\
 &\propto& \pik |\Sigma_k|^{-\frac{1}{2}}\exp(- \frac{1}{2} \xv^T\Sigma_k^{-1}\xv - \frac{1}{2} \muk^T \Sigma_k^{-1} \muk + \xv^T \Sigma_k^{-1} \muk )
 \end{eqnarray*}
 
-Taking the log of the above, we can define a discriminant function that is quadratic in $x$.
+Taking log, we get a quadratic discriminant function in $x$:
 
-$$
-\log \pik - \frac{1}{2} \log |\Sigma_k| - \frac{1}{2} \muk^T \Sigma_k^{-1} \muk + \xv^T \Sigma_k^{-1} \muk - \frac{1}{2} \xv^T\Sigma_k^{-1}\xv $$
-
-
-% Let's look at the log-odds now. \\
-
-% \begin{eqnarray*}
-% \log \frac{\pikx}{\pi_g(x)}&=& \log \frac{\pi_k}{\pi_g}
-% - \frac{1}{2} \log \frac{|\Sigma_k|}{|\Sigma_g|}
-% + x^T(\Sigma_k^{-1}\muk - \Sigma_g^{-1}\mu_g) \\
-% &-& \frac{1}{2} x^T (\Sigma_k^{-1} - \Sigma_g^{-1})x
-% - \frac{1}{2} x^T (\muk^T\Sigma_k^{-1}\muk - \mu_g^T\Sigma_g^{-1}\mu_g)
-% \end{eqnarray*}
-
-% We see that this function is quadratic in $x$, hence we obtain a quadratic decision boundary.
-
-% \framebreak
+$$ \log \pik - \frac{1}{2} \log |\Sigma_k| - \frac{1}{2} \muk^T \Sigma_k^{-1} \muk + \xv^T \Sigma_k^{-1} \muk - \frac{1}{2} \xv^T\Sigma_k^{-1}\xv $$
 
 
-% Finally we will predict again the most probable category given $x$
+Allowing for curved decision boundaries:
 
-% $$
-% \yh = h(x) = \argmax_{k \in \gset} \pikx.
-% $$
+\vspace{-0.5em}
+\begin{center}
+\includegraphics[width=0.68\textwidth, clip=true, trim={0 0 0 20}]{figure/disc_db-qda.png}
+\end{center}
+\end{small}
 
-\framebreak
+\end{vbframe}
 
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\begin{vbframe}{Parameter estimation}
 
-{\centering \includegraphics[width=0.95\textwidth]{figure/reg_class_dis_4} 
+Parameters $\thetav$ are estimated in a straightforward manner by:\\
+\begin{equation*}
+\begin{aligned}
+\pikh &= \frac{n_k}{n},\text{ where $n_k$ is the number of class-$k$ observations} \\
+\mukh &= \frac{1}{n_k}\sum_{i:\yi = k} \xi \\
+\Sigmah_k &= \frac{1}{n_k - 1} \sum_{i: \yi = k} (\xi - \mukh) (\xi - \mukh)^T \quad \quad \text{   (QDA)} \\
+\Sigmah &= \frac{1}{n - g} \sumkg \sum_{i: \yi = k} (\xi - \mukh) (\xi - \mukh)^T \quad \text{(LDA)} \\
+\end{aligned}
+\end{equation*}
 
-}
+\lz
+
+As $\Sigmah_k, \Sigmah$ are $p \times p$ matrices (for $p$ features), estimating all $\Sigmah_k$ involves $\frac{p(p+1)}{2} \cdot g$ parameters across $g$ classes (vs. just $\frac{p(p+1)}{2}$ for LDA's $\Sigmah$)\\
+(in addition to estimating priors and class means)
+\end{vbframe}
+
+\begin{vbframe}{QDA parameter estimation example}
+\begin{small}
+E.g., for a simple two-class, 2-dimensional dataset:\\
+
+Class 1: $\xv_1 = \begin{pmatrix} 1 \\ 2 \end{pmatrix}, \xv_2 = \begin{pmatrix} 2 \\ 3 \end{pmatrix} $, 
+Class 2: $\xv_3 = \begin{pmatrix} 6 \\ 8 \end{pmatrix}, \xv_4 = \begin{pmatrix} 7 \\ 9 \end{pmatrix}, \xv_5 = \begin{pmatrix} 8 \\ 10 \end{pmatrix}$
+
+\lz
+
+Class priors: $\pikh[1] = \frac{n_1}{n} = \frac{2}{5} = 0.4, \quad \pikh[2] = \frac{n_2}{n} = \frac{3}{5} = 0.6$
+
+Class means: $\mukh[1] = \frac{1}{2} \left( \xv_1 + \xv_2 \right) = \begin{pmatrix} 1.5 \\ 2.5 \end{pmatrix}, \quad \mukh[2] = \frac{1}{3} \left( \xv_3 + \xv_4 + \xv_5 \right) = \begin{pmatrix} 7 \\ 9 \end{pmatrix}$
+
+Class covariances: $(\xv_1 - \mukh[1])(\xv_1 - \mukh[1])^\top = \begin{pmatrix} 0.25 & 0.25 \\ 0.25 & 0.25 \end{pmatrix} = (\xv_2 - \mukh[1])(\xv_2 - \mukh[1])^\top$\\ 
+$\Rightarrow \Sigmah_1 = \frac{1}{1} \left(\begin{pmatrix} 0.25 & 0.25 \\ 0.25 & 0.25 \end{pmatrix} + \begin{pmatrix} 0.25 & 0.25 \\ 0.25 & 0.25 \end{pmatrix} \right) = \begin{pmatrix} 0.5 & 0.5 \\ 0.5 & 0.5 \end{pmatrix}$
+
+$(\xv_3 - \mukh[2])(\xv_3 - \mukh[2])^\top = \begin{pmatrix} 1 & 1 \\ 1 & 1 \end{pmatrix} = (\xv_5 - \mukh[2])(\xv_5 - \mukh[2])^\top$, $(\xv_4 - \mukh[2])(\xv_4 - \mukh[2])^\top = \begin{pmatrix} 0 & 0 \\ 0 & 0 \end{pmatrix}$\\
+$\Rightarrow \Sigmah_2 = \frac{1}{2} \left( \begin{pmatrix} 1 & 1 \\ 1 & 1 \end{pmatrix} + \begin{pmatrix} 0 & 0 \\ 0 & 0 \end{pmatrix} + \begin{pmatrix} 1 & 1 \\ 1 & 1 \end{pmatrix} \right) = \begin{pmatrix} 1 & 1 \\ 1 & 1 \end{pmatrix}$
+\end{small}
+\end{vbframe}
 
 
+\begin{vbframe}{Discriminant analysis comparison}
+\begin{small}
+\begin{itemize}
+\item We benchmark on simple toy data set(s)
+\item Normally distributed data per class, but unequal cov matrices
+\item And then increase dimensionality
+\item We might assume that QDA always wins here ...
+\end{itemize}
+\end{small}
 
-\end{knitrout}
+\begin{center}
+\includegraphics[width=0.8\textwidth, clip=true, trim={0 0 0 0}]{figure/disc_cod.png}
+\end{center}
+
+$\Rightarrow$ LDA might be preferable over QDA in higher dimensions!
 
 \end{vbframe}
 \endlecture

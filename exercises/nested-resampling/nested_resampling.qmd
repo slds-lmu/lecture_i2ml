@@ -1,0 +1,513 @@
+---
+title: "Exercise 12 -- Nested Resampling"
+subtitle: "[Introduction to Machine Learning](https://slds-lmu.github.io/i2ml/)"
+notebook-view:
+  - notebook: ex_nested_resampling_R.ipynb
+    title: "Exercise sheet for R"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/nested-resampling/ex_nested_resampling_R.ipynb"
+  - notebook: ex_nested_resampling_py.ipynb
+    title: "Exercise sheet for Python"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/nested-resampling/ex_nested_resampling_py.ipynb"
+  - notebook: sol_nested_resampling_R.ipynb
+    title: "Solutions for R"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/nested-resampling/sol_nested_resampling_R.ipynb"
+  - notebook: sol_nested_resampling_py.ipynb
+    title: "Solutions for Python"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/nested-resampling/sol_nested_resampling_py.ipynb"
+---
+
+::: {.content-hidden when-format="pdf"}
+::: {.hidden}
+{{< include ../_quarto/latex-math.qmd >}}
+:::
+:::
+
+<details> 
+<summary>*Hint: Useful libraries*</summary>
+
+::: {.panel-tabset}
+
+### R
+{{< embed ex_nested_resampling_R.ipynb#import echo=true >}}
+### Python
+{{< embed ex_nested_resampling_py.ipynb#import echo=true >}}
+:::
+</details>
+
+## Exercise 1: Tuning Principles
+
+::: {.callout-note title="Learning goals" icon=false}
+1. Understand model fitting procedure in nested resampling
+2. Discuss bias and variance in nested resampling
+:::
+
+
+Suppose that we want to compare four different learners:
+
+| Learner                   | Tuning required |
+|---------------------------|-----------------|
+| Logistic regression (lm)  | no              |
+| CART (rpart)              | yes             |
+| $k$-NN (kknn)             | yes             |
+| LDA (lda)                 | no              |
+
+For performance evaluation and subsequent comparison, we use 10-CV as outer resampling strategy. Within the inner tuning loop, applicable to CART and $k$-NN, we use 5-CV in combination with random search, drawing 200 hyperparameter configurations for each model. Our measure of interest is the AUC.
+
+
+***
+How many models need to be fitted in total to conduct the final benchmark?
+
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+Total number of models trained:
+
+- Let's first consider the 2 learners for which we conduct no further tuning. We train each of them 10 times within the outer resampling (10-CV) loop (on 90% of the data, respectively). This gives us the desired performance estimate.
+
+- For the 2 learners with additional hyperparameter tuning, the 
+picture is a little more involved: We also train each of them 10 times for the outer loop (on 90% of the data), where we endow them with the optimal hyperparameter configuration, to get the performance estimate. In order to get this optimal configuration, though, we first need to run the inner tuning loop, where we determine the (estimated) performance of each of the 200 candidate configurations via 5-CV, meaning we train with each configuration 5 times on 80\% $\cdot$ 90\% = 72\% of the data.
+
+- So, in total:
+$$
+\underbrace{2 \cdot 10}_{\text{log reg \& LDA}} + ~~ \underbrace{2 \cdot 10}_{\text{$k$-NN \& CART}} \cdot \overbrace{(5 \cdot 200}^{\text{find optimal $\lamv$}} ~~ \overbrace{+ 1)}^{\text{train with optimal $\lamv$}} = 20,040.
+$$
+
+- We see: Without the inner loop for 2 learners, it would just be $2 \cdot 10 + 2 \cdot 10 \cdot 1 = 40$. The inner tuning adds $5 \cdot 200$ model fits for each learner (2) and outer fold (10).
+
+- Alternatively, we can thus look at this from an inner-to-outer 
+perspective:
+
+$$
+\underbrace{2 \cdot 10 \cdot 5 \cdot 200}_{\text{tuning for $k$-NN \& CART in each fold (1)}} + \underbrace{4 \cdot 10}_{\text{outer loop (2) with fold-specific $\lamv$ from (1)}}
+$$ 
+
+</details> 
+:::
+
+
+***
+Giving the following benchmark result, which learner performs best? Explain your decision.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=3, fig.width=5}
+library(ggplot2)
+n_scores = 10
+set.seed(31415)
+df_bm = data.frame(
+  model = c(
+    rep("lm", n_scores*2),
+    rep("rpart", n_scores*2),
+    rep("kknn", n_scores*2),
+    rep("lda", n_scores*2)),
+  score = c(
+    rnorm(n_scores, 0.85, 0.05), rnorm(n_scores, 0.2, 0.05),    # lm
+    rnorm(n_scores, 0.9, 0.02), rnorm(n_scores, 0.25, 0.03),    # rpart
+    rnorm(n_scores, 0.96, 0.04), rnorm(n_scores, 0.2, 0.05),    # kknn
+    rnorm(n_scores, 0.93, 0.03), rnorm(n_scores, 0.14, 0.04)),  # lda
+ measure = rep(
+   c(rep("AUC", n_scores), rep("MMCE", n_scores)), 
+   times = 4))
+ggplot(data = df_bm, aes(x = model, y = score, fill = measure)) + 
+  geom_boxplot() +
+  labs(x = "learner")
+```
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+Since we evaluate on AUC, we select $k$-NN with the best average result in that respect.
+
+</details> 
+:::
+
+***
+Recap briefly what is meant by the **bias-variance trade-off** in resampling.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+Less data for training leads to higher bias, less data for evaluation leads to higher variance.
+
+</details> 
+:::
+
+***
+Are the following statements true or not? Explain your answer in one sentence.
+
+i. The bias of the generalization error estimate for 3-CV is higher than for 10-CV.
+
+ii. Every outer loss can also be used as inner loss, assuming standard gradient-based optimization.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+Statements:
+
+i. True -- 3-CV leads to smaller train sets, therefore we are not able to learn as well as in, e.g., 10-CV.
+
+ii. False -- we are relatively flexible in choosing the outer loss, but the inner loss needs to be suitable for empirical risk minimization, which encompasses differentiability in most cases (i.e., whenever optimization employs derivatives).
+
+</details> 
+:::
+
+
+## Exercise 2: AutoML
+
+::: {.callout-note title="Learning goals" icon=false}
+Build autoML pipeline with R/Python
+:::
+
+In this exercise, we build a simple automated machine learning (AutoML) system that will make data-driven choices on which learner/estimator to use and also conduct the necessary tuning.
+
+
+::: {.panel-tabset}
+
+### R Exercise
+
+`mlr3pipelines` make this endeavor easy, modular and guarded against many common modeling errors.
+
+We work on the `pima` data to classify patients as diabetic and design a system that is able to choose between $k$-NN and a random forest, both with tuned hyperparameters.
+
+To this end, we will use a graph learner, a "single unit of data operation" that can be trained, resampled, evaluated, ... as a whole -- in other words, treated as any other learner.
+
+<details> 
+<summary>*Note*</summary>
+This exercise is a compact version of a tutorial on [mlr3gallery](https://mlr3gallery.mlr-org.com/posts/2021-03-11-practical-tuning-series-build-an-automated-machine-learning-system/). Feel free to explore the additional steps and explanations featured in the original (there is also a bunch of other useful code demos).
+</details>
+
+***
+Create a task object in `mlr3` (the problem is pre-specified under the ID "pima").
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+{{< embed sol_nested_resampling_R.ipynb#2-a echo=true >}}
+
+</details> 
+:::
+
+***
+Specify the above learners, where you need to give each learner a name as input to the `id` argument. Convert each learner to a pipe operator by wrapping them in the sugar function `po()`, and store them in a `list`.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+{{< embed sol_nested_resampling_R.ipynb#2-b echo=true >}}
+
+</details> 
+:::
+
+***
+Before starting the actual learning pipeline, take care of pre-processing. While this step is highly customizable, you can use an existing sequence to impute missing values, encode categorical features, and remove variables with constant value across all observations. For this, specify a pipeline `ppl()` of type `"robustify"` (setting `factors_to_numeric` to `TRUE`).
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+{{< embed sol_nested_resampling_R.ipynb#2-c echo=true >}}
+
+</details> 
+:::
+
+***
+Create another `ppl`, of type `branch` this time, to enable selection between your learners.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+{{< embed sol_nested_resampling_R.ipynb#2-d echo=true >}}
+
+</details> 
+:::
+
+***
+Chain both pipelines using the double pipe and plot the resulting graph. Next, convert it into a graph learner with `as_learner()`.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+{{< embed sol_nested_resampling_R.ipynb#2-e echo=true >}}
+
+</details> 
+:::
+
+***
+Now you have a learner object just like any other. Take a look at its tunable hyperparameters. You will optimize the learner selection, the number of neighbors in $k$-NN (between 3 and 10), and the number of split candidates to try in the random forest (between 1 and 5).
+
+Define the search range for each like so: 
+```{r, echo=TRUE, eval=FALSE}
+<learner>$param_set$values$<hyperparameter> <- to_tune(p_int(lower, upper))
+```
+
+`p_int` marks an integer hyperparameter with lower and upper bounds as defined; similar objects exist for other data types. With `to_tune()`, you signal that the hyperparameter shall be optimized in the given range.
+
+<details> 
+<summary>*Hint*</summary>
+You need to define dependencies, since the tuning process is defined by which learner is selected in the first place (no need to tune $k$ in a random forest).
+</details>
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+{{< embed sol_nested_resampling_R.ipynb#2-f echo=true >}}
+
+</details> 
+:::
+
+***
+Conveniently, there is a sugar function, `tune_nested()`, that takes care of nested resampling in one step. Use it to evaluate your tuned graph learner with
+
+- mean classification error as inner loss,
+
+- random search as tuning algorithm (allowing for 3 evaluations), and
+
+- 3-CV in both inner and outer loop.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+{{< embed sol_nested_resampling_R.ipynb#2-g echo=true >}}
+
+</details> 
+:::
+
+***
+Lastly, extract performance estimates per outer fold (`score()`) and overall (`aggregate()`). If you want to risk a look under the hood, try `extract_inner_tuning_archives()`.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+{{< embed sol_nested_resampling_R.ipynb#2-h echo=true >}}
+The performance estimate for our tuned learner then amounts to an MCE of around 0.24.
+
+</details> 
+:::
+
+### Python Exercise
+
+
+`sklearn.pipeline.Pipeline` makes this endeavor easy, modular and guarded against many common modeling errors.
+
+We work on the [pima](https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/data/pima.csv) data to classify patients as diabetic and design a system that is able to choose between $k$-NN and a random forest, both with tuned hyperparameters.
+
+The purpose of the pipeline is to assemble several steps of transformation and a final estimator that can be cross-validated together while setting different parameters. So to speak, the pipeline estimator can be treated as any other estimator.
+
+***
+Load the data set [pima](https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/data/pima.csv), encode the target `diabetes` as 0-1-vector and perform a stratified `train_test_split`.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+{{< embed sol_nested_resampling_py.ipynb#2-a echo=true >}}
+
+</details> 
+:::
+
+***
+As part of our modeling process, we want to perform certain preprocessing steps. While this step is highly customizable, we want to include at least One-Hot-Encoding of categorical features, and imputing of missing values.
+
+Instance a `ColumnTransformer` object and include these two steps for a dynamic choice of columns.
+
+<details> 
+<summary>*Hint*</summary>
+Strings are considered as `dtype = object`.
+</details>
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+{{< embed sol_nested_resampling_py.ipynb#2-b echo=true >}}
+
+</details> 
+:::
+
+***
+Next, both pipelines for the $k$-NN and random forest are created. Like this you can create estimators with highly individual preprocessing steps. Include the previously created `ColumnTransformer`, a `VarianceThreshold` to remove constant columns and the corresponding estimator as a final step. Additionally, scale the columns for the $k$-NN estimator.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+{{< embed sol_nested_resampling_py.ipynb#2-c echo=true >}}
+
+</details> 
+:::
+
+***
+A very common ensembling technique is to predict according to the decisions of numerous estimators. This is refered to as `VotingClassifier` and enables you to predict the class label based on the argmax of the sums of the predicted probabilities. Instanciate a `VotingClassifier` with the two classifier pipelines for $k$-NN and random forest.
+
+<details> 
+<summary>*Hint*</summary>
+Set the parameters `voting = "soft"` and `n_jobs = -1` for parallel computation.
+</details>
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+{{< embed sol_nested_resampling_py.ipynb#2-d echo=true >}}
+
+</details> 
+:::
+
+***
+Now you have an estimator object just like any other. Take a look at its tunable hyperparameters. You will optimize the number of neighbors in $k$-NN (between 3 and 10), and the number of split candidates to try in the random forest (between 1 and 5).
+
+Define the search range for each like so: 
+
+```{echo=TRUE, eval=FALSE}
+param_grid_voting = [{"<voting_estimator1>__<pipelie1_estimator>__<hyperparameter>": 
+                          list(<parameter_range>)},
+                     {"<voting_estimator2>__<pipelie2_estimator>__<hyperparameter>": 
+                          list(<parameter_range>)}]
+```
+
+Please note, that the estimator names should be on par with the labels given in the `VotingClassifier`, the `Pipeline` and, of course, the hyperparameter of the used estimator in the pipeline. Each level of hyperparameters of our created ensemble estimator is accessable through the seperation `__` (double underscore). 
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+{{< embed sol_nested_resampling_py.ipynb#2-e echo=true >}}
+
+</details> 
+:::
+
+***
+Nested Resampling is a method to avoid the so called `optimization bias` by tuning parameters and evaluation performance on different subsets of your training data.
+
+Use
+
+- Stratified 3-CV in both inner and outer loop.
+
+- accuracy as inner performance measure,
+
+- grid search as tuning algorithm.
+
+You may use the following, incomplete code to compute the nested resampling:
+
+```{echo=TRUE, eval=FALSE}
+NUM_OUTER_FOLDS = <...>
+nested_scores_voting = np.zeros(NUM_OUTER_FOLDS) # initalize scores with 0
+# Choose cross-validation techniques for the inner and outer loops, 
+# independently of the dataset.
+# E.g "GroupKFold", "LeaveOneOut", "LeaveOneGroupOut", etc.
+inner_cv = <...>(n_splits=<...>, shuffle=True, random_state=42)
+outer_cv = <...>(n_splits=<...>, shuffle=True, random_state=42)
+
+for i, (train_index, val_index) in enumerate(outer_cv.split(X_train, y_train)):
+  # Nested CV with parameter optimization for ensemble pipeline
+  clf_gs_voting = <...>(
+      estimator=<...>, 
+      param_grid=<...>, 
+      cv=<...>, 
+      n_jobs=-1
+  )
+  clf_gs_voting.fit(X_train.iloc[<...>], y_train[<...>])
+  nested_scores_voting[i] = clf_gs_voting.score(X_train.iloc[<...>], y_train[<...>])
+```
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+Define resampling strategies
+{{< embed sol_nested_resampling_py.ipynb#2-f-1 echo=true >}}
+Run loop
+{{< embed sol_nested_resampling_py.ipynb#2-f-2 echo=true >}}
+
+</details> 
+:::
+
+***
+Extract performance estimates per outer fold and overall (as mean). According to your results, determine the best classifier object.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+per fold
+{{< embed sol_nested_resampling_py.ipynb#2-g-1 echo=true >}}
+aggregated
+{{< embed sol_nested_resampling_py.ipynb#2-g-2 echo=true >}}
+detailed
+{{< embed sol_nested_resampling_py.ipynb#2-g-3 echo=true >}}
+
+</details> 
+:::
+
+***
+Lastly, evaluate the performance on the test set. Think about the imbalance of your data set and how this is affecting the performance measurement accuracy. Try to find a better metric and compare these two.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+{{< embed sol_nested_resampling_py.ipynb#2-h-1 echo=true >}}
+
+Accuracy does not account for imbalanced data! Let's check how the test data is distributed:
+
+{{< embed sol_nested_resampling_py.ipynb#2-h-2 echo=true >}}
+Confusion matrix
+{{< embed sol_nested_resampling_py.ipynb#2-h-3 echo=true >}}
+
+The distribution shows a shift towards 'false' with $2/3$ of all test observations.
+
+{{< embed sol_nested_resampling_py.ipynb#2-h-4 echo=true >}}
+
+The balanced accuracy is lower than a normal accuracy score, as it accounts seperatly for the lower Sensitivity.
+
+</details> 
+:::
+
+Congrats, you just designed a turn-key AutoML system that does (nearly) all the work with a few lines of code!
+
+:::
+
+
+## Exercise 3: Kaggle Challenge
+
+::: {.callout-note title="Learning goals" icon=false}
+Apply course contents to real-world problem
+:::
+
+Make yourself familiar with the [Titanic Kaggle challenge](https://www.kaggle.com/c/titanic).
+
+Based on everything you have learned in this course, do your best to achieve a good performance in the survival challenge.
+
+- Try out different classifiers you have encountered during the 
+  course (or maybe even something new?)
+
+- Improve the prediction by creating new features (feature engineering).
+
+- Tune your parameters (see [mlr3](https://mlr3book.mlr-org.com/tuning.html) or [scikit-learn](https://scikit-learn.org/stable/modules/grid_search.html)).
+
+- How do you fare compared to the public leaderboard?
+
+<details> 
+<summary>*mlr3 Hint*</summary>
+
+Use the `titanic` package to directly access the data. Use `titanic::titanic_train` for training and `titanic::titanic_test` for your final prediction.
+
+</details>
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+We do not provide an explicit solution here, but have a look at the [tuning code demo](https://github.com/slds-lmu/lecture_i2ml/blob/master/code-demos-pdf/code_demo_kaggle.pdf), which covers some parts, and take inspiration from the public contributions on Kaggle.
+
+</details> 
+:::
+

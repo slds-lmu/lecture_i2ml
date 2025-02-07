@@ -1,0 +1,406 @@
+---
+title: "Exercise 9 -- Random Forests"
+subtitle: "[Introduction to Machine Learning](https://slds-lmu.github.io/i2ml/)"
+notebook-view:
+  - notebook: ex_forests_R.ipynb
+    title: "Exercise sheet for R"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/forests/ex_forests_R.ipynb"
+  - notebook: ex_forests_py.ipynb
+    title: "Exercise sheet for Python"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/forests/ex_forests_py.ipynb"
+  - notebook: sol_forests_R.ipynb
+    title: "Solutions for R"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/forests/sol_forests_R.ipynb"
+  - notebook: sol_forests_py.ipynb
+    title: "Solutions for Python"
+    url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/forests/sol_forests_py.ipynb"
+---
+
+::: {.content-hidden when-format="pdf"}
+::: {.hidden}
+{{< include ../_quarto/latex-math.qmd >}}
+:::
+:::
+
+<details> 
+<summary>*Hint: Useful libraries*</summary>
+
+::: {.panel-tabset}
+### R
+{{< embed ex_forests_R.ipynb#import echo=true >}}
+### Python
+{{< embed ex_forests_py.ipynb#import echo=true >}}
+:::
+</details>
+
+## Exercise 1: Bagging
+::: {.callout-tip icon=false title="Only for lecture group A"}
+:::
+
+::: {.callout-note title="Learning goals" icon=false}
+1. Understand benefit of bagging from a mathematical perspective
+2. Solve "show that..."-type exercises
+3. Handle expectations over random variables
+:::
+
+In this exercise, we briefly revisit why bagging is a useful technique to stabilize predictions.
+
+For a fixed observation $(\xv, y)$, show that the expected quadratic loss over individual
+base learner predictions $\blx$ is larger than or equal to the quadratic loss of the prediction $\fM$ of a size-$M$ ensemble.
+
+You can consider all hyperparameters of the base learners and the ensemble fixed.
+
+<details> 
+<summary>*Hint*</summary>
+
+Use the law of total expectation ("Verschiebungssatz der Varianz": $\var(Z) =
+\E(Z^2) - (\E(Z))^2 ~ \Longleftrightarrow ~ \E(Z^2) = \var(Z) + (\E(Z))^2$,
+where $\var(Z) \geq 0$ by definition.) stating $\E(Z^2) \geq (\E(Z))^2$ for a random variable $Z$.
+
+</details>
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+- Start with the LHS of the inequality: the *expected quadratic loss over individual
+  base learner predictions* $\rightsquigarrow$ $\E \left( \left(y - \blx \right)^2 \right)$
+- Get clear about RHS: the *quadratic loss of the prediction of a size-$M$
+  ensemble* $\rightsquigarrow$ $\left( y - \left(\fM \right) \right)^2$
+- Before we get busy moving from LHS to RHS, let's think about the
+  expectation for a minute.
+
+::: {.callout-note title="Distribution of the loss"}
+**Expected value** of a RV: (possibly infinite) sum over all values the RV could take,
+weighted
+by the probability of observing that value.
+
+What even is the RV here? Since the base learner and ensemble
+structure is fixed for given data, the only stochastic part is the bootstrap sample
+in the $m$-th tree given training data from the data-generating process.
+We could write this as $\E_{\Dtrain^{[m]} ~|~ \Dtrain
+\sim \Pxy}$.
+In this exercise we'll omit the subscript for ease of notation.
+:::
+
+- Back to our proof, which will make use of the LOTV.
+- By the LOTV, we know that $\E(Z^2) \geq (\E(Z))^2$ for some RV $Z$.
+- Applying that to our LHS, we obtain
+ $$
+\E \left( \left(y - \blx \right)^2\right) \geq \left(\E \left( y - \blx \right) \right)^2 .
+$$
+- Expected values of larger terms can often be simplified so the expectation is only
+  over the actually stochastic parts (using *linearity* of expectation), yielding:
+$$
+\E \left( \left(y - \blx \right)^2\right) \geq \left( y - \E \left(\blx \right) \right)^2 .
+$$
+- The last missing step is to show that $\E \left(\blx \right) = \fM$. To compute the expectation for this discrete random variable (we have a finite ensemble), we sum over all possible realizations, weighted by their probability of occurence.
+This can be further simplified given that all of the $M$ bootstrap samples were drawn with equal probability:
+
+$$
+\E \left(\blx \right) = \sum_{m = 1}^M \blx p \left(\Dtrain^{[m]} \right)
+= \frac{1}{M} \sum_{m = 1}^M \blx,
+$$
+
+which is precisely the ensemble prediction $\fM$.
+
+Putting everything together, we get 
+
+$$
+\E \left( \left(y - \blx \right)^2\right) \geq \left( y - \left(\fM \right) \right)^2,
+$$
+
+showing that the expected quadratic loss over individual base learner predictions is at least as large as the loss of the ensemble prediction.
+
+</details> 
+:::
+
+
+## Exercise 2: Classifying spam
+
+::: {.callout-note title="Learning goals" icon=false}
+1) Apply RF to data for prediction, OOB error estimation & feature importance computation
+2) Understand how 63% probability for observations to end up in a tree comes about
+:::
+
+::: {.callout-tip icon=false title="Only for lecture group B"}
+:::
+Take a look at the `spam` dataset and shortly describe what kind of classification problem this is. \textcolor{teal}{[only for lecture group B]}
+
+<details> 
+<summary>*Hint*</summary>
+::: {.panel-tabset}
+
+### R
+Access the corresponding task `?mlr3::mlr_tasks_spam`.
+
+### Python
+Read [spam.csv](https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/data/spam.csv).
+
+:::
+</details>
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+The `spam` data is a binary classification task where the aim is to classify an e-mail as spam or non-spam:
+
+::: {.panel-tabset}
+### R
+{{< embed sol_forests_R.ipynb#2-a echo=true >}}
+### Python
+Load data
+{{< embed sol_forests_py.ipynb#2-a-1 echo=true >}}
+
+Inspect
+{{< embed sol_forests_py.ipynb#2-a-2 echo=true >}}
+:::
+</details> 
+:::
+
+***
+::: {.callout-tip icon=false title="Only for lecture group B"}
+:::
+Use a decision tree to predict `spam`. Re-fit the tree using two random subsets of the data (each comprising 60% of observations). How stable are the trees?
+
+<details> 
+<summary>*Hint*</summary>
+::: {.panel-tabset}
+
+### R
+Use `rpart.plot()` from the package `rpart.plot` to visualize the trees.
+
+### Python
+Use `from sklearn.tree import plot_tree` to visualize the trees.
+:::
+</details>
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+::: {.panel-tabset}
+### R
+{{< embed sol_forests_R.ipynb#2-b echo=true >}}
+### Python
+Full dataset
+{{< embed sol_forests_py.ipynb#2-b-1 echo=true >}}
+
+Data subsets
+{{< embed sol_forests_py.ipynb#2-b-2 echo=true >}} 
+:::
+
+Observation: trees trained on different samples differ considerably in their structure, regarding split variables as well as thresholds (recall, though, that the split candidates are a further source of randomness).
+
+</details> 
+:::
+
+***
+Forests come with a built-in estimate of their generalization ability via the out-of-bag (OOB) error.
+
+> i. Show that the probability for an observation to be OOB in an arbitrary bootstrap sample converges to $\tfrac{1}{e}$.
+> ii. Use the random forest learner (R: `classif.ranger`, Python: `RandomForestClassifier()` to fit the model and state the out-of-bag (OOB) error.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+
+i. This requires a little trick.
+- First, think about the probability of an observation to be OOB in a tree. Imagine the tree's bootstrap sample has $n$ free spots, to be filled from the training observations.
+- In each place, the probability of being drawn for the observation is $\tfrac{1}{n}$ (all observations are equally likely to be selected). Conversely, the probability of *not* being drawn is $1 - \tfrac{1}{n}$.
+- We draw with replacement, meaning the events of filling a place in the bootstrap sample are all independent. The probability of not being drawn at all for any of the free spots -- i.e., not ending up in the tree's bootstrap sample and thus being OOB -- is thus $\left(1- \tfrac{1}{n}\right)^n$.
+- You can imagine that this probability is lower if we only have a few observations. It will converge to a fixed value for larger datasets.
+- Since we're interested in a general statement, we look for this stable value, taking $n$ to the limit: $\lim_{n \to \infty} \left( 1 - \tfrac{1}{n} \right)^n$.
+- Now comes the trick: If you're well-versed in analysis you might recognize this expression as a way to characterize the exponential function.
+- For an arbitrary input $x$, we have $e^x = \lim_{n \to \infty} \left( 1 + \tfrac{x}{n} \right)^n$.
+- We see that our above probability is equivalent to the exponential function at input value -1, resulting in
+$$
+\lim_{n \to \infty} \left( 1 - \tfrac{1}{n} \right)^n = e^{-1} = 
+\tfrac{1}{e} \approx 0.37.
+$$
+
+ii. The OOB error can be computed by:
+
+::: {.panel-tabset}
+### R
+{{< embed sol_forests_R.ipynb#2-c echo=true >}}
+### Python
+{{< embed sol_forests_py.ipynb#2-c echo=true >}}
+:::
+
+</details> 
+:::
+
+***
+You are interested in which variables have the greatest influence on the prediction quality. Explain how to determine this in a permutation-based approach and compute the importance scorses for the \texttt{spam} data.
+
+<details> 
+<summary>*Hint*</summary>
+::: {.panel-tabset}
+
+### R
+Use an adequate variable importance filter as described [here](https://mlr3filters.mlr-org.com/#variable-importance-filters).
+
+### Python
+Choose an adequate importance measure as described [here](https://scikit-learn.org/stable/auto_examples/ensemble/plot_forest_importances.html).
+:::
+</details>
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+Variable importance in general measures the contributions of features to a model. One way of computing the variable importance of the $j$-th variable is based on permuting it for the OOB observations and calculating the mean increase in OOB error this permutation entails.
+
+In order to determine the with the biggest influence on prediction quality, we can choose the $k$ variables with the highest importance score, e.g., for $k = 5$:
+
+::: {.panel-tabset}
+### R
+{{< embed sol_forests_R.ipynb#2-d echo=true >}}
+### Python
+Numerical scores
+{{< embed sol_forests_py.ipynb#2-d-1 echo=true >}} 
+
+Visual representation
+{{< embed sol_forests_py.ipynb#2-d-2 echo=true >}}
+:::
+
+</details> 
+:::
+
+
+## Exercise 3: Proximities
+
+::: {.callout-note title="Learning goals" icon=false}
+1) Be able to make predictions from code output for RF
+2) Compute proximities
+:::
+
+You solve the `wine` task, predicting the \texttt{type} of a wine -- with 3 classes -- from a number of covariates. After training, you wish to determine how similar your observations are in terms of proximities.
+
+The model information was created with 
+`ranger::treeInfo()`, which assigns observations with values 
+larger than `splitval` to the right child node in each split.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=5, fig.width=5}
+
+library(data.table)
+library(mlr3verse)
+
+set.seed(123L)
+task <- tsk("wine")
+task$select(
+  c("alcalinity", "alcohol", "flavanoids", "hue", "malic", "phenols")
+)
+n_trees <- 3L
+learner <- lrn("classif.ranger", num.trees = n_trees, max.depth = 2L)
+learner$train(task)
+
+x_sample <- task$data()[sample(seq_len(task$nrow), 3L)]
+x_sample[, type := NULL][, id := .I]
+setcolorder(x_sample, "id")
+
+  knitr::kable(
+    x_sample, 
+    escape = FALSE,
+    col.names = c(
+      "observation", 
+      "alcalinity", 
+      "alcohol", 
+      "flavanoids", 
+      "hue", 
+      "malic",
+      "phenols"
+    ),
+    # align = c("|r", "r", "r", "r", "r", "r", "r|"),
+    digits = 2
+    )
+```
+    
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=5, fig.width=5}
+library(rpart.plot)
+
+rf <- invisible(
+  lapply(
+    seq_len(n_trees),
+    function(i) ranger::treeInfo(learner$model, tree = i)
+  )
+)
+
+print("Tree 1:")
+knitr::kable(
+	rf[[1]], 
+	escape = FALSE,
+	digits = 2L 
+	# align = c("|r", rep("r", 6L), "r|")
+)
+
+print("Tree 2:")
+knitr::kable(
+	rf[[2]], 
+	escape = FALSE,
+	digits = 2L 
+	# align = c("|r", rep("r", 6L), "r|")
+)
+
+print("Tree 3:")
+knitr::kable(
+	rf[[3]], 
+	escape = FALSE,
+	digits = 2L 
+	# align = c("|r", rep("r", 6L), "r|")
+)
+
+
+```
+
+For the following subset of the training data and the random forest model given above,
+
+***
+find the terminal node of each tree the observations are placed in,
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+Using the `treeInfo()` output, we can follow the path of each sample through each tree.
+The following table prints for each observation (rows) their terminal nodes as assigned by trees 1-3. For example, consider observation 1 in tree 1 (first cell): the observation has `phenols` $> 1.94$, putting it in node 2 (`rightChild` of node 0), from there in node 6 (because it has `alcohol` $> 13.04$).
+
+{{< embed sol_forests_py.ipynb#3-a echo=false >}}
+
+</details> 
+:::
+
+***
+compute the observations' pairwise proximities, and
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+For the proximities, we consider each pair of observations and compute the relative frequency of trees assigning them to the same terminal node. 
+
+- Observations 1 and 2: only tree 1 assigns them to the same node, so the proximity is $\tfrac{1}{3}$.
+
+- Observations 1 and 3: all trees assign them to the same node, so the proximity is 1.
+
+- Observations 2 and 3: only tree 1 assigns them to the same node, so 
+the proximity is $\tfrac{1}{3}$.
+
+</details> 
+:::
+
+***
+construct a similarity matrix from these proximities in `R` resp. `Python`.
+
+::: {.content-visible when-profile="solution"}
+<details> 
+<summary>**Solution**</summary>
+We can put this information into a similarity matrix (as such matrices become large quite quickly for more data, it is common to store only the lower diagonal -- the rest is non-informative/redundant):
+
+::: {.panel-tabset}
+### R
+{{< embed sol_forests_R.ipynb#3-c-1 echo=true >}}
+### Python
+{{< embed sol_forests_py.ipynb#3-c-1 echo=true >}}
+:::
+
+</details> 
+:::

@@ -3,60 +3,63 @@
 \input{../../latex-math/basic-math.tex}
 \input{../../latex-math/basic-ml.tex}
 
-
-\newcommand{\titlefigure}{figure/reg_class_bdefs}
-\newcommand{\learninggoals}{
-\item Understand why classification models have a score / probability as output and not a class
-\item Understand the difference between scoring and probabilistic classifiers
-\item Know the concept of decision regions and boundaries
-\item Know the difference between generative and discriminant approach}
-
-
 \title{Introduction to Machine Learning}
-% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
-\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
-\date{}
 
 \begin{document}
-\lecturechapter{Classification: Basic Definitions}
-\lecture{Introduction to Machine Learning}
 
-\begin{vbframe}{Classification Tasks}
+\titlemeta{% Chunk title (example: CART, Forests, Boosting, ...), can be empty
+  Classification
+  }{% Lecture title  
+  Basic Definitions
+}{% Relative path to title page image: Can be empty but must not start with slides/
+  figure/db_examples
+}{% Learning goals, wrapped inside itemize environment
+  \item Basic notation
+  \item Hard labels vs. probabilities vs. scores
+  \item Decision regions and boundaries
+  \item Generative vs. discriminant approaches
+}
 
-In classification, we aim at predicting a discrete output 
 
+\begin{vbframe}{Notation and Target Encoding}
+
+\begin{itemize}
+\item In classification, we aim at predicting a discrete output 
 $$
 y \in \Yspace = \{C_1, ..., C_g\}
 $$
+with $2 \le g < \infty$, given data $\D$ 
 
-with $2 \le g < \infty$, given data $\D$.  
+\item For convenience, we often encode these classes differently
 
-\lz 
+\item \textbf{Binary case, $g = 2$}: Usually use $\Yspace = \setzo$ or $\Yspace = \setmp$
 
-In this course, we assume the classes to be encoded as
+\item \textbf{Multiclass case, $g \ge 3$}: Could use $\Yspace = \gset$, but often use \textbf{one-hot encoding} $o(y)$, i.e., $g$-length vector with $o_k(y) = \I(y = k) \in \{0,1\}$:
 
-\begin{itemize}
-  \item $\Yspace = \setzo$ or $\Yspace = \setmp$ (in the binary case $g = 2$)
-  \item $\Yspace = \gset$  (in the multiclass case $g \ge 3$)
 \end{itemize}
 
-\vfill
-
-% $^1$\textbf{Remark}: We will see later, that for probability / likelihood-based model derivations a 0/1-Coding and for geometric / loss-based models the -1/+1-coding is preffered. 
+\begin{center}
+  % SOURCE: https://docs.google.com/presentation/d/1X2FxetT6fewXhoGLZmgJyEHY_pWbKjQ6AHZiZQHvwzA/edit#slide=id.p
+  \includegraphics[width=0.65\linewidth]{figure_man/one-hot_encoding.png} 
+\end{center}
 
 \end{vbframe}
 
 
 \begin{vbframe}{Classification Models} 
-We defined models $f: \Xspace \to \R^g$ as functions that output (continuous) \textbf{scores} / \textbf{probabilities} and \textbf{not} (discrete) classes. Why? 
 
 \begin{itemize}
-  \item From an optimization perspective, it is \textbf{much} (!) easier to optimize costs for continuous-valued functions 
-  \item Scores / probabilities (for classes) contain more information than the class labels alone
-  \item As we will see later, scores can easily be transformed into class labels; but class labels cannot be transformed into scores
+
+\item While for regression the model $f: \Xspace \to \R$ simply maps to the label space $\Yspace=\R$, classification is slightly more complicated.
+\item We sometimes like our models to output (hard) classes, 
+sometimes probabilities, sometimes class scores. The latter 2 are vectors. 
+\item The most basic / common form is the score-based classifier, this is why we defined models already as $f: \Xspace \to \R^g$.
+\item To minimize confusion, we distinguish between all 3 in notation: $\hx$ for hard labels, $\pix$ for probabilities and $\fx$ for scores
+
+\item Why all of that and not only hard labels? a) Scores / probabilities are more informative than hard class predictions; b) from an optimization perspective, it is much (!) easier to work with continuous values.
+
 \end{itemize}
 
-We distinguish \textbf{scoring} and \textbf{probabilistic} classifiers.
 \end{vbframe}
 
 
@@ -64,148 +67,170 @@ We distinguish \textbf{scoring} and \textbf{probabilistic} classifiers.
 \begin{itemize}
 % \item Scoring classifiers assume the output variable to be -1/+1-encoded, i. e. $\Yspace = \{-1, 1\}$
 \item Construct $g$ \textbf{discriminant} / \textbf{scoring functions} $f_1, ..., f_g: \Xspace \to \R$
-\item Scores $f_1(\xv), \ldots, \fkx[g]$ are transformed into classes by choosing the class with the maximum score 
+\item Predicted class is usually the one with max score 
 $$
-h(\xv) = \argmax_{k \in \gset} \fkx[k]. 
+h(\xv) = \argmax_{k \in \gset} \fkx[k]
 $$ 
 
-\item For $g = 2$, a single discriminant function $\fx = f_{1}(\xv) - f_{-1}(\xv)$ is sufficient (note that it would be natural here to label the classes with $\setmp$)  
-
-% \begin{eqnarray*}
- % \qquad h(\bm{x}) &=& 1 \\
- % f_1(\xv) &>&  f_{-1}(\xb) \\
- % f_1(\xb) - f_{-1}(\xb) &>& 0 \\
-% f(\xb) &>& 0 
-% \end{eqnarray*}
-
-\item Class labels are constructed by $\hx = \text{sgn}(\fx)$
-\item $|\fx|$ is called \enquote{confidence}
+\item For $g = 2$, a single discriminant function $\fx = f_{1}(\xv) - f_{-1}(\xv)$ is sufficient (here, it's natural to label classes with $\setmp$ and we used slight abuse of notation for the subscripts), \\
+class labels are constructed by $\hx = \text{sgn}(\fx)$
+\item $|\fx|$ or $|\fkx|$ is loosely called \enquote{confidence}
 \end{itemize}
+
+\vspace{-0.3cm}
+
+\begin{center}
+  % SOURCE: https://docs.google.com/presentation/d/1X2FxetT6fewXhoGLZmgJyEHY_pWbKjQ6AHZiZQHvwzA/edit#slide=id.p
+  \includegraphics{figure_man/scores.png} 
+\end{center}
+ 
 \end{vbframe}
 
 \begin{vbframe}{Probabilistic Classifiers}
 \begin{itemize}
 % \item Probabilistic classifiers assume the output variable to be 0/1-encoded, i. e. $\Yspace = \{0, 1\}$
-\item Construct $g$ \textbf{probability functions} $\pi_1, ..., \pi_g: \Xspace \to [0, 1],~\sum_i \pi_i = 1$ 
-\item Probabilities $\pi_1(\xv), \ldots, \pikx[g]$ are transformed into labels by predicting the class with the maximum probability
+\item Construct $g$ \textbf{probability functions} $\pi_1, ..., \pi_g: \Xspace \to [0, 1],~\sumkg \pikx = 1$ 
+\item Predicted class is usually the one with max probability
 $$
 \hx = \argmax_{k \in \gset} \pikx
 $$ 
-\item For $g = 2$ one $\pix$ is constructed (note that it would be natural here to label the classes with $\setzo$)
-
-\item Probabilistic classifiers can also be seen as scoring classifiers
-
-\item If we want to emphasize that our model outputs probabilities, we denote the model as $\pix: \Xspace \to [0, 1]^g$; if we are talking about models in a general sense, we write $f$, comprising both probabilistic and scoring classifiers (context will make this clear!) 
-\end{itemize}
-
-\framebreak 
-
-
-\begin{itemize}
-\item Both scoring and probabilistic classifiers can output classes by thresholding (binary case) / selecting the class with the maximum score (multiclass)
-\item Thresholding: $\hx:= [\pix \ge c]$ or $\hx = [\fx \ge c]$ for some threshold $c$.
-\item Usually $c = 0.5$ for probabilistic, $c = 0$ for scoring classifiers.
-\item There are also versions of thresholding for the multiclass case
-
+\item For $g = 2$, single $\pix$ is constructed, which models the predicted probability for the positive class (natural to encode $\Yspace = \setzo$)
 \end{itemize}
 
 \begin{center}
-  \includegraphics{figure_man/classifiers.png}
+  % SOURCE: https://docs.google.com/presentation/d/1X2FxetT6fewXhoGLZmgJyEHY_pWbKjQ6AHZiZQHvwzA/edit#slide=id.p
+  \includegraphics{figure_man/probabilities.png} 
 \end{center}
+\end{vbframe}
 
-\end{vbframe} 
 
-\begin{vbframe}{Decision regions and boundaries}
+\begin{frame}{Thresholding}
+  
 \begin{itemize}
-  \item A \textbf{decision region} for class $k$ is the set of input points $\xv$ where class $k$ is assigned as prediction of our model:
+\item For imbalanced cases or class with costs, we might want to deviate from the standard conversion of scores to classes 
+\item Introduce basic concept (for binary case) and add details later
+\item Convert scores or probabilities to class outputs by thresholding: \\[0.5ex]
+$\hx:= [\pix \ge c]$ or $\hx := [\fx \ge c]$ for some threshold $c$
+\item Standard thresholds: $c = 0.5$ for probabilities, $c = 0$ for scores
+%\item There are also versions of thresholding for the multiclass case
+
+\end{itemize}
+
+\only<1>{
+  \begin{center}
+  % SOURCE: https://docs.google.com/presentation/d/1X2FxetT6fewXhoGLZmgJyEHY_pWbKjQ6AHZiZQHvwzA/edit#slide=id.p
+  \includegraphics[clip=true, trim={0 390 310 350}]{figure_man/threshold_1.png}
+\end{center}
+}
+
+\only<2>{
+  \begin{center}
+  % SOURCE: https://docs.google.com/presentation/d/1X2FxetT6fewXhoGLZmgJyEHY_pWbKjQ6AHZiZQHvwzA/edit#slide=id.p
+  \includegraphics[clip=true, trim={0 390 310 350}]{figure_man/threshold_2.png}
+  \end{center}
+  }
+
+\end{frame} 
+
+\begin{vbframe}{Decision regions}
+
+Set of points $\xv$ where class $k$ is predicted:
 $$
 \Xspace_k = \{\xv \in \Xspace : \hx = k\}
 $$
 
-\item Points in space where the classes with maximal score are tied and the corresponding hypersurfaces are called \textbf{decision boundaries}
-\begin{eqnarray*}  
-\{ \xv \in \Xspace: && \exists~i \ne j \text{ s.t. } \fkx[i] = \fkx[j] \\ && \text{and } \fkx[i], \fkx[j] \ge \fkx[k] ~ \forall k \ne i, j\}
+\begin{center}
+  % SOURCE: https://docs.google.com/presentation/d/1X2FxetT6fewXhoGLZmgJyEHY_pWbKjQ6AHZiZQHvwzA/edit#slide=id.p
+  \includegraphics{figure_man/decision_regions.png} 
+\end{center}
+\end{vbframe} 
+
+\begin{vbframe}{Decision Boundaries}
+Points in space where classes with maximal score are tied and the corresponding hypersurfaces are called \textbf{decision boundaries}
+
+%Formally:
+\begin{eqnarray*}
+\{ \xv \in \Xspace: \exists~i \ne j \text{ s.t. } \fkx[i] = \fkx[j] \land \fkx[i], \fkx[j] \ge \fkx[k] ~ \forall k \ne i, j\}
 \end{eqnarray*}  
-
-In the binary case we can simplify and generalize to the decision boundary for general threshold $c$:
-
+  
+In binary case we can simply use the threshold:
 $$
     \{ \xv \in \Xspace : \fx = c \}
 $$
 
-If we set $c=0$ for scores and $c=0.5$ for probabilities, this is consistent with the definition above.
+$c=0$ for scores and $c=0.5$ for probs is consistent with the above.
 
-\end{itemize}
-\end{vbframe} 
+\begin{center}
+  % SOURCE: https://docs.google.com/presentation/d/1X2FxetT6fewXhoGLZmgJyEHY_pWbKjQ6AHZiZQHvwzA/edit#slide=id.p
+  \includegraphics[width=0.7\textwidth]{figure_man/decision_boundaries.png} 
+\end{center}
+
+\end{vbframe}
 
 
 \begin{vbframe}{Decision boundary examples}
 
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-
-{\centering \includegraphics[width=0.95\textwidth]{figure/reg_class_bdefs.pdf} 
-
+{\centering 
+\includegraphics[width=0.80\textwidth]{figure/db_examples.png} 
 }
 
-
-
-\end{knitrout}
-
 \end{vbframe}
 
-\begin{vbframe}{Classification Approaches}
+%\begin{vbframe}{Classification Approaches}
 
-  Two fundamental approaches exist to construct classifiers:\\
-  The \textbf{generative approach} and the \textbf{discriminant approach}.
+  %Two fundamental approaches exist to construct classifiers:\\
+  %The \textbf{generative approach} and the \textbf{discriminant approach}.
 
-\lz
-They tackle the classification problem from different angles:
+%\lz
+%They tackle the classification problem from different angles:
 
-\begin{itemize}
-\item \textbf{Generative} classification approaches assume a data-generating process in which the distribution of the features $\xv$ is different for the various classes of the output $y$, and try to learn these conditional distributions:\\ \enquote{Which $y$ tends to have $\xv$ like these?}
-\lz
-\item \textbf{Discriminant} approaches use \textbf{empirical risk minimization} based on a suitable loss function:\\ \enquote{What is the best prediction for $y$ given these $\xv$?}
-\end{itemize}
-\end{vbframe}
+%\begin{itemize}
+%\item \textbf{Generative} classification approaches assume a data-generating process in which the distribution of the features $\xv$ is different for the various classes of the output $y$, and try to learn these conditional distributions:\\ \enquote{Which $y$ tends to have $\xv$ like these?}
+%\lz
+%\item \textbf{Discriminant} approaches use \textbf{empirical risk minimization} based on a suitable loss function:\\ \enquote{What is the best prediction for $y$ given these $\xv$?}
+%\end{itemize}
+%\end{vbframe}
 
 \begin{vbframe}{Generative approach}
 
-  The \textbf{generative approach}
-  models $\pdfxyk$, usually by making some assumptions about the structure of these distributions, and employs the Bayes theorem:
-  $$\pikx = \postk = \frac{\P(\xv | y = k) \P(y = k)}{\P(\xv)} = \frac{\pdfxyk \pik}{\sumjg \pdfxyk[j] \pi_j}$$
+Models class-conditional $\pdfxyk$, and employs Bayes' theorem:
+$$\pikx \approx \postk = \frac{\P(\xv | y = k) \P(y = k)}{\P(\xv)} = \frac{\pdfxyk \pik}{\sumjg \pdfxyk[j] \pi_j}$$
 
-  % The discriminant functions are then $\pikx$ or $\lpdfxyk + \lpik$.\\
+Prior probs $\pi_k = \P(y = k)$ can easily be estimated from training data as relative frequencies of each class:
 
-  Prior class probabilities $\pik$ are easy to estimate from the training data.
+%\vspace{-1.2cm}
 
-  \lz
+\begin{center}
+% SOURCE: https://docs.google.com/presentation/d/1X2FxetT6fewXhoGLZmgJyEHY_pWbKjQ6AHZiZQHvwzA/edit#slide=id.p
+\includegraphics[width=0.8\textwidth]{figure_man/prior_probabilities.png} 
+\end{center}
 
-  Examples:
-  \begin{itemize}
-  \item Naive Bayes classifier
-  \item Linear discriminant analysis (generative, linear)
-  \item Quadratic discriminant analysis (generative, not linear)
-  \end{itemize}
+\end{vbframe}
 
-{\small Note: LDA and QDA have 'discriminant' in their name, but are generative models! (\dots sorry.)}
+\begin{vbframe}{Generative approach}
+Decision boundary implicitly defined via the conditional distributions
+
+\begin{center}
+\includegraphics[width=0.5\textwidth]{figure/approach_generative.png} 
+\end{center}
+
+
+Examples are Naive Bayes, LDA and QDA. \\
+NB: LDA and QDA have 'discriminant' in their name, but are generative!
 \end{vbframe}
 
 \begin{vbframe}{Discriminant approach}
-  The \textbf{discriminant approach} tries to optimize the discriminant functions directly, usually via empirical
-  risk minimization.
-  $$ \fh = \argmin_{f \in \Hspace} \riskef = \argmin_{f \in \Hspace} \sumin \Lxyi.$$
-  \lz
-  Examples:
-  \begin{itemize}
-  \item Logistic regression (discriminant, linear)
-  \item Neural networks 
-  \item Support vector machines
-  \end{itemize}
 
-% \lz
-% Representation and optimization depend on the specific learner.\\
-% Evaluation via classification loss functions.
+Here we optimize the discriminant functions (or better: their parameters) directly, usually via ERM:
+$$ \fh = \argmin_{f \in \Hspace} \riskef = \argmin_{f \in \Hspace} \sumin \Lxyi$$
+
+\begin{center}
+% SEE ALSO rsrc/fig-approaches.R FOR INDIVIDUAL PLOTS
+% SOURCE: https://docs.google.com/presentation/d/1X2FxetT6fewXhoGLZmgJyEHY_pWbKjQ6AHZiZQHvwzA/edit#slide=id.p
+\includegraphics[width=1.1\textwidth]{figure_man/disc_approach.png} 
+\end{center}
+
+Examples are neural networks, logistic regression and SVMs
 
 \end{vbframe}
 

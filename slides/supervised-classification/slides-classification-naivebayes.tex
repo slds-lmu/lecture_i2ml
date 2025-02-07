@@ -3,121 +3,159 @@
 \input{../../latex-math/basic-math.tex}
 \input{../../latex-math/basic-ml.tex}
 
-\newcommand{\titlefigure}{figure/reg_class_nb_1}
-\newcommand{\learninggoals}{
-\item Understand the idea of Naive Bayes
-\item Understand in which sense Naive Bayes is a special QDA model}
-
 \title{Introduction to Machine Learning}
-% \author{Bernd Bischl, Christoph Molnar, Daniel Schalk, Fabian Scheipl}
-\institute{\href{https://compstat-lmu.github.io/lecture_i2ml/}{compstat-lmu.github.io/lecture\_i2ml}}
-\date{}
 
 \begin{document}
-\lecturechapter{Classification: Naive Bayes}
-\lecture{Introduction to Machine Learning}
+\titlemeta{% Chunk title (example: CART, Forests, Boosting, ...), can be empty
+  Classification
+  }{% Lecture title  
+  Naive Bayes
+}{% Relative path to title page image: Can be empty but must not start with slides/
+  figure/nb-db
+}{% Learning goals, wrapped inside itemize environment
+  \item Construction principle of NB
+  \item Conditional independence assumption
+  \item Numerical and categorical features
+  \item Similarity to QDA, quadratic decision boundaries
+  \item Laplace smoothing
+}
+
 \framebreak
 
 \begin{vbframe}{Naive Bayes classifier}
 
-NB is a generative multiclass technique. Remember: We use Bayes' theorem and only need $\pdfxyk$ to compute the posterior as:
-$$\pikx = \postk = \frac{\P(\xv | y = k) \P(y = k)}{\P(\xv)} = \frac{\pdfxyk \pik}{\sumjg \pdfxyk[j] \pi_j} $$
+Generative multiclass technique. Remember: We use Bayes' theorem and only need $\pdfxyk$ to compute the posterior as:
+$$\pikx \approx \postk = \frac{\P(\xv | y = k) \P(y = k)}{\P(\xv)} = \frac{\pdfxyk \pik}{\sumjg \pdfxyk[j] \pi_j} $$
 
 
-NB is based on a simple \textbf{conditional independence assumption}: the features are conditionally independent given class $y$.
+NB is based on a simple \textbf{conditional independence assumption}: \\
+the features are conditionally independent given class $y$.
 $$
 \pdfxyk = p((x_1, x_2, ..., x_p)|y = k)=\prodjp p(x_j|y = k).
 $$
-So we only need to specify and estimate the distribution $p(x_j|y = k)$, which is considerably simpler as this is univariate.
+So we only need to specify and estimate the distributions $p(x_j|y = k)$, which is considerably simpler as these are univariate.
 
 \end{vbframe}
 
 
-\begin{vbframe}{NB: Numerical Features}
+\begin{vbframe}{Numerical Features}
 
-We use a univariate Gaussian for $p(x_j | y=k)$, and estimate $(\mu_j, \sigma^2_j)$ in the standard manner. Because of $\pdfxyk = \prodjp p(x_j|y = k)$, the joint conditional density is Gaussian with diagonal but non-isotropic covariance structure, and potentially different across classes. Hence, NB is a (specific) QDA model, with quadratic decision boundary.
+Use univariate Gaussians for $p(x_j | y=k)$, and estimate $(\mu_{kj}, \sigma^2_{kj})$. Because of $\pdfxyk = \prodjp p(x_j|y = k)$, joint conditional density is Gaussian with diagonal, non-isotropic covariances, and different across classes, so \textbf{QDA with diagonal covariances}. 
 
-\begin{knitrout}\scriptsize
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\lz
 
-{\centering \includegraphics[width=0.95\textwidth]{figure/reg_class_nb_1} 
+\begin{center}
+\includegraphics[width=0.6\textwidth, clip = true, trim = {0 100 0 120}]{figure/nb-db.png} 
+\end{center}
 
-}
+Note: In the above plot the data violates the NB assumption. 
 
-
-
-\end{knitrout}
 \end{vbframe}
+\begin{frame}{NB: Categorical Features}
 
-\begin{vbframe}{NB: Categorical Features}
-
-  We use a categorical distribution for $p(x_j | y = k)$ and estimate the probabilities $p_{kjm}$ that, in class $k$, our $j$-th feature has value $m$, $x_j = m$, simply by counting the frequencies.
+We use a categorical distribution for $p(x_j | y = k)$ and estimate the probabilities $p_{kjm}$ that, in class $k$, our $j$-th feature has value $m$, $x_j = m$, simply by counting  frequencies.
 
 $$
-% p(x_j | y = k) = \frac{(\sum x_i)!}{\prod_i x_i!} \prod_m p_{kjm}^{[x_j = m]}
 p(x_j | y = k) = \prod_m p_{kjm}^{[x_j = m]}
 $$
-%
-% and for the completely observed data this becomes a multinomial distribution
-%
-% $$
-% \frac{(\sum_i x_i)!}{\prod_i x_i!} \prod_j p_{kj}^{v_{kj}},
-% $$
 
-% with ${v_{kj}} = \sum_{i = 1}^n [x_j^{(i)} = 1]$ the number of times $(j, k)$ occurs.
+Because of the simple conditional independence structure, it is also very easy to deal with mixed numerical / categorical feature spaces.
 
-Because of the simple conditional independence structure it is also very easy to deal with mixed numerical / categorical feature spaces.
+\begin{flushright}
+% SOURCE: https://docs.google.com/presentation/d/1X2FxetT6fewXhoGLZmgJyEHY_pWbKjQ6AHZiZQHvwzA/edit?usp=sharing
+\includegraphics[width=\textwidth, clip = true, trim = {50 410 120 350}]{figure_man/nb-categorial_final.png}
+\end{flushright}
 
-\end{vbframe}
-
-
-% \begin{vbframe}{Categorical NB is linear in frequencies}
-% We can now prove that the decision boundaries between klasses k and l are linear:
-
-% $$
-% \log \frac{\pi_k(x)}{\pi_l(x)} \propto \log\frac{\pi_k}{\pi_l} + \sum_j v_{kj} \ln p_{kj} - \sum_j v_{lj} \ln p_{lj}
-% $$
-
-% This is a linear function in the parameter vector $v = (v_{11}, \ldots, v_{1p}, \ldots, v_{g1} \ldots v_{gp})$.
-
-% \end{vbframe}
+\end{frame}
 
 \begin{vbframe}{Laplace Smoothing}
-If a given class and feature value never occur together in the training data, then the frequency-based probability estimate will be zero.
+\begin{small}
+If a given class and feature value never occur together in the training data, then the frequency-based probability estimate will be zero, e.g.:\\
+$p_{\text{no, class, 1st}}^{[x_{class} = \text{1st}]} = 0$ (everyone from 1st class survived in the previous table)
 
 \lz
 
-This is problematic because it will wipe out all information in the other probabilities when they are multiplied.
 
-\lz
-%
-A simple numerical correction is to set these zero probabilities to a small value to regularize against this case.
+This is problematic because it will wipe out all information in the other probabilities when they are multiplied!
 
+$$
+\pi_{no} (\text{class = 1st, sex = male}) = \frac{\hat{p}(x_{class} | y = no) \cdot \hat{p}(x_{sex} | y = no)\cdot \pikh[no]}{\sumjg \hat{p}(\text{class = 1st, sex = male} | y = j)\pih_j} = 0
+$$
+
+\end{small}
 
 \end{vbframe}
 
-% \begin{vbframe}{Naive Bayes as a linear classifier}
 
-% In general, the \emph{Naive Bayes classifier} is \textbf{not} a \emph{linear} classifier.
+\begin{vbframe}{Laplace Smoothing}
 
-% Furthermore, one can show that the Naive Bayes is a linear classifier in a particular feature space if the features are from exponential families (e. g. binomial, multinomial, normal distribution).
+A simple numerical correction is to set these zero probabilities to a small value to regularize against this case.
+
+\lz
+ 
+\begin{itemize}
+\item Add constant $\alpha > 0$ (e.g., $\alpha = 1$).
+\item For a categorical feature $x_j$ with $M_j$ possible values:
+  $$
+  p_{kjm}^{[x_j = m]} = \frac{n_{kjm} + \alpha}{n_{k} + \alpha M_j} \quad \left(\text{instead of }  p_{kjm}^{[x_j = m]} = \frac{n_{kjm}}{n_{k}} \right)
+  $$
+  where:
+  \begin{itemize}
+    \item $n_{kjm}$: count of $x_j = m$ in class $k$,
+    \item $n_{k}$: total counts in class $k$,
+    \item $M_j$: number of possible distinct values of $x_j$.
+  \end{itemize}
+%\item Ensures all probs are non-zero, avoiding the product to be zero.
+\end{itemize}
+
+\lz
+
+This ensures that our posterior probabilities are non-zero due to such effects, preserving the influence of all features in the model.
+
+\end{vbframe}
+
+% \begin{vbframe}{Laplace Smoothing: Example}
+
+% With Laplace smoothing ($\alpha = 1$), we adjust:
+% $$
+% p_{\text{no, class, 1st}}^{[x_{class} = \text{1st}]} = \frac{n_{\text{no, class, 1st}} + 1}{n_{\text{class, 1st}} + 1 \cdot M_{class}},
+% $$
+% where $M_{class} = 3$ (= number of distinct values for $x_{class}$: 1st, 2nd, 3rd).
 
 % \lz
 
-% However, it can be shown that the \emph{Naive Bayes classifier} is a linear classifier in a particular feature space if the features are from exponential families (e. g. binomial, multinomial, normal distribution) .
+
+% Even if $n_{\text{no, class, 1st}} = 0$ (everyone from 1st class survived), we get $p_{\text{no, class, 1st}} > 0$.
+% % $$
+% % \P(\text{no} | \text{class = 1st, sex = male}) = \frac{p_{\text{no, class, 1st}} \cdot p_{\text{no, sex, male}} \cdot \pikh[no]}{\sumjg p(\text{class = 1st, sex = male} | y = j)\pih_j} > 0.
+% % $$
+
+% \lz
+
+% This ensures that the posterior probability is non-zero, preserving the influence of all features in the model.
+
 
 % \end{vbframe}
+
 
 
 \begin{vbframe}{Naive Bayes: application as spam filter}
 \begin{itemize}
-  \item In the late 90s, Naive Bayes became popular for e-mail spam filter programs
-  \item Word counts were used as features to detect spam mails (e.g., "Viagra" often occurs in spam mail)
-  \item Independence assumption implies: occurrence of two words in mail is not correlated
-  \item Seems naive ("Viagra" more likely to occur in context with "Buy now" than "flower"), but leads to less required parameters and therefore better generalization, and often works well in practice.
+  \item In the late 90s, NB became popular for e-mail spam detection 
+  \item Word counts were used as features to detect spam mails
+  \item Independence assumption implies: occurrence of two words in mail is not correlated, this is often wrong; \\
+  "viagra" more likely to occur in context with "buy"...
+  \item In practice: often still good performance
 \end{itemize}
-\end{vbframe}
+\lz
 
+Benchmarking QDA, NB and LDA on $\texttt{spam}$:
+
+\begin{center}
+\includegraphics[clip=true, trim={0 0 0 18}, width=0.45\linewidth]{figure/nb-bench.png}
+\end{center}
+
+\end{vbframe}
 
 \endlecture
 

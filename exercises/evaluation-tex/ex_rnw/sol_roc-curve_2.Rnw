@@ -1,0 +1,132 @@
+\section{Solution Classifer 1}
+<<fig.height=2.25, echo = FALSE, warning=FALSE, message=FALSE>>=
+source("../../../slides/evaluation/rsrc/plot_roc.R")
+# Classifier 1
+df1 <- data.frame(
+  "#" = 1:7,
+  Truth = c("Pos", "Pos", "Pos", "Pos", "Neg", "Neg", "Neg"),
+  Score = c(0.99, 0.6, 0.95, 0.7, 0.8, 0.1, 0.3)
+)
+names(df1) <- c("#", "Truth", "Score")
+
+# Classifier 2
+df2 <- data.frame(
+  "#" = 1:7,
+  Truth = c("Pos", "Pos", "Pos", "Pos", "Neg", "Neg", "Neg"),
+  Score = c(0.1, 0.05, 0.07, 0.15, 0.01, 0.08, 0.02)
+)
+names(df2) <- c("#", "Truth", "Score")
+
+# Classifier 3
+df3 <- data.frame(
+  "#" = 1:7,
+  Truth = c("Pos", "Pos", "Pos", "Pos", "Neg", "Neg", "Neg"),
+  Score = c(0.01, 0.4, 0.05, 0.3, 0.2, 0.9, 0.7)
+)
+names(df3) <- c("#", "Truth", "Score")
+
+# Classifier 4
+df4 <- data.frame(
+  "#" = 1:7,
+  Truth = c("Pos", "Pos", "Pos", "Pos", "Neg", "Neg", "Neg"),
+  Score = c(0.7, 0.9, 0.2, 0.8, 0.5, 0.1, 0.3)
+)
+names(df4) <- c("#", "Truth", "Score")
+
+# Print the data frames
+# df1
+# df2
+# df3
+# df4
+
+
+stepROC = function(df, last = FALSE) {
+  sorted = sort(df$Score, decreasing = T)
+  sorted = c(1, sorted, 0)
+  if (!last) {
+   
+  for(i in 1:(nrow(df) + 1))
+    plotROC(df[order(df$Score, decreasing = T),], threshold = (sorted[i]+sorted[i+1])/2 ) 
+  } else {
+    plotROC(df[order(df$Score, decreasing = T),], threshold = 0 )
+  }
+}
+
+stepROC(df1)
+library(mlr3verse)
+auc = msr("classif.auc")
+cat(sprintf("auc: %s; average predicted probability: %s", auc$fun(as.factor(df1$Truth), df1$Score, positive = "Pos"), mean(df1$Score)))
+@
+
+\newpage
+\section{Solution Classifer 2}
+<<fig.height=2.1, echo = FALSE, warning=FALSE, message=FALSE>>=
+stepROC(df2, last = TRUE)
+cat(sprintf("auc: %s; average predicted probability: %s", auc$fun(as.factor(df2$Truth), df2$Score, positive = "Pos"), mean(df2$Score)))
+@
+
+\section{Solution Classifer 3}
+<<fig.height=2.1, echo = FALSE, warning=FALSE, message=FALSE>>=
+stepROC(df3, last = TRUE)
+cat(sprintf("auc: %s; average predicted probability: %s", auc$fun(as.factor(df3$Truth), df3$Score, positive = "Pos"), mean(df3$Score)))
+@
+
+\section{Solution Classifer 4}
+<<fig.height=2.1, echo = FALSE, warning=FALSE, message=FALSE>>=
+stepROC(df4, last = TRUE)
+cat(sprintf("auc: %s; average predicted probability: %s", auc$fun(as.factor(df4$Truth), df4$Score, positive = "Pos"), mean(df4$Score)))
+@
+
+
+\section*{Step 3: Group Discussion}
+
+\begin{itemize}
+  \item \textbf{How the differences in predictions affect the ROC curves and AUC values:}
+    \begin{itemize}
+      \item The AUC depends on the ranking of true positives ($y=1$) versus false positives ($y=0$):
+        \begin{itemize}
+          \item \textbf{$\pi_1$:} Well-ranked probabilities result in a high full AUC (0.8333) and a steep initial ROC curve.
+          \item \textbf{$\pi_2$:} Effective rankings lead to the same full AUC as $\pi_1$, despite lower probability values.
+          \item \textbf{$\pi_3$:} Misranked probabilities (e.g., assigning higher probabilities to negatives than positives) lead to a low full AUC (0.1667) and a poor ROC curve (worse than random guessing). 
+          Using $1 - \pi_3$ would improve the classifier.
+          \item \textbf{$\pi_4$:} Reasonable rankings with some overlap between positive and negative probabilities yield a high full AUC (0.8333).
+        \end{itemize}
+      \item ROC curve shapes reveal separation quality:
+        \begin{itemize}
+          \item Steep initial curves indicate strong separation (e.g., $\pi_1$, $\pi_2$, $\pi_4$).
+          \item Flat or below-diagonal curves indicate poor separation (e.g., $\pi_3$).
+        \end{itemize}
+    \end{itemize}
+
+  \item \textbf{Average Predicted Probability and Prevalence:}
+    \begin{itemize}
+      \item \textbf{Prevalence:} The proportion of positive cases ($y=1$) is $\frac{4}{7} \approx 0.5714$.
+      \item Average predicted probability for each classifier (should ideally match prevalence for good "calibration"):
+        \begin{itemize}
+          \item \textbf{$\pi_1$:} Average probability = $0.63$. Closer to prevalence, with reasonable alignment.
+          \item \textbf{$\pi_2$:} Average probability = $0.0571$. Much lower than prevalence, showing poor probability calibration despite correct rankings.
+          \item \textbf{$\pi_3$:} Average probability = $0.3686$. Probabilities are not well aligned with the true prevalence.
+          \item \textbf{$\pi_4$:} Average probability = $0.5$. Closer to prevalence, with reasonable alignment.
+        \end{itemize}
+      \item Takeaway: Average predicted probability reflects the alignment of the classifier's outputs with prevalence. $\pi_1$ and $\pi_4$ show better alignment, while $\pi_2$ and $\pi_3$ deviate significantly.
+    \end{itemize}
+
+  \item \textbf{For Group A students: Partial AUC for FPR $< 0.2$:}
+    \begin{itemize}
+      \item $\pi_1$, $\pi_2$: Moderate pAUC (0.50). Strong initial separation, but some misranked probabilities in low-FPR regions reduce performance.
+      \item $\pi_3$: Low pAUC (0.00). Misranked probabilities, poor performance for low FPR.
+      \item $\pi_4$: High pAUC (0.75). Best performance in low-FPR regions due to effective rankings.
+    \end{itemize}
+    \textbf{Example Use Case:} In applications like cancer screening or fraud detection:
+    \begin{itemize}
+      \item Limiting false positives is critical to avoid too many unnecessary tests or investigations.
+      \item $\pi_4$ would be the preferred classifier due to its superior partial AUC in low-FPR regions.
+    \end{itemize}
+  
+  \item \textbf{Key Takeaways from Comparing the Four Classifiers:}
+    \begin{itemize}
+      \item Rankings drive AUC and pAUC, not the magnitude of predicted probabilities.
+      \item Calibration matters for aligning predictions with prevalence. $\pi_1$ and $\pi_4$ are better calibrated than $\pi_2$ and $\pi_3$.
+      \item $\pi_4$ excels in low-FPR regions, making it ideal for applications requiring strict control of false positives.
+    \end{itemize}
+\end{itemize}

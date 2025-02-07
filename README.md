@@ -35,11 +35,43 @@ See also our [contributing guidelines](CONTRIBUTING.md)
   [issues](https://github.com/compstat-lmu/lecture_i2ml/issues) / create pull
   requests! We are happy about any help.
 
+## Citation
+
+If you use our material, please consider citing us as follows:
+
+```
+@misc{bischl22i2ml,
+  author = {Bischl, Bernd and Bothmann, Ludwig and Scheipl, Fabian and Pielok, Tobias and Wimmer, Lisa and Li, Yawei and Kolb, Chris and Schalk, Daniel and Seibold, Heidi and Molnar, Christoph and Richter, Jakob},
+  title = {{Introduction to Machine Learning (I2ML)}},
+  howpublished = "\url{https://slds-lmu.github.io/i2ml/}",
+  year = {2022},
+  note = "[Online; accessed yyyy-mm-dd]"
+}
+```
+
+This course is based on our concept of open-source educational resources (OSER) as described in our paper:
+
+```
+@InProceedings{bothmann23oser,
+  title = 	 {Developing Open Source Educational Resources for Machine Learning and Data Science},
+  author =       {Bothmann, Ludwig and Strickroth, Sven and Casalicchio, Giuseppe and R\"ugamer, David and Lindauer, Marius and Scheipl, Fabian and Bischl, Bernd},
+  booktitle = 	 {Proceedings of the Third Teaching Machine Learning and Artificial Intelligence Workshop},
+  pages = 	 {1--6},
+  year = 	 {2023},
+  editor = 	 {Kinnaird, Katherine M. and Steinbach, Peter and Guhr, Oliver},
+  volume = 	 {207},
+  series = 	 {Proceedings of Machine Learning Research},
+  month = 	 {19--23 Sep},
+  publisher =    {PMLR},
+  url = 	 {https://proceedings.mlr.press/v207/bothmann23a.html},
+}
+```
+
 ## License
 
 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.
 
-We would appreciate if you contact us in case you are re-using our course.
+We would appreciate it if you contact us in case you are re-using our course.
 Knowing this helps us to keep the project alive. Thank you!
 
 ## Further topics
