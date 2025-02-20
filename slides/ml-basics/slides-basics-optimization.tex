@@ -22,7 +22,7 @@
 
 \begin{vbframe}{Learning as Parameter Optimization}
 \begin{itemize}
-\item We have seen, we can operationalize the search for a model $f$ that matches
+\item We can operationalize the search for a model $f$ that matches
     training data best, by looking for its parametrization $\thetav \in \Theta$
     with lowest empirical risk $\risket$.
 \item Therefore, we usually traverse the error surface downwards; often by local search from a starting point to its minimum.
@@ -42,7 +42,7 @@ The ERM optimization problem is:
 \thetavh  = \argmin_{\thetav \in \Theta} \risket .
 \]
 
-For a \textbf{(global) minimum} $\thetavh$ it obviously holds that 
+For a \textbf{(global) minimum} $\thetavh$ it  holds that 
 \[
 \forall \thetav \in \Theta :\quad \riske(\thetavh) \leq \risket .
 \]
@@ -51,7 +51,7 @@ This does not imply that $\thetavh$ is unique. \\
 \lz
 Which kind of numerical technique is reasonable for this problem strongly depends 
 on model and parameter structure (continuous params? uni-modal $\risket$?). 
-Here, we will only discuss very simple scenarios.
+Here, we discuss simple scenarios.
 
 \end{vbframe}
 \begin{vbframe}{Local Minima}
@@ -94,19 +94,23 @@ and the Hessian $\frac{\partial^2}{\partial\thetav^2}\riske(\thetavh)$ is positi
 \end{figure}
 
 \end{vbframe}
-\begin{vbframe}{Least Squares Estimator}
-Now, for given features $\Xmat \in \mathbb{R}^{n\times p}$ and target $\yv \in \mathbb{R}^n$, we want to find the best linear model regarding the squared error loss, i.e.,
-\[\risket = \left\Vert \Xmat\thetav - \yv\right\Vert_2^2 = \sumin (\thetav^\top\xv^{(i)} - \yi)^2\;.\]
 
-With the sufficient condition for continously differentiable functions it can be shown that the \textbf{least squares estimator}
-\[\thetavh = (\Xmat^\top\Xmat)^{-1}\Xmat^\top\yv.\]
-is a local minimum of $\riske$. If $\Xmat$ is full-rank, $\riske$ is strictly convex and there is only one local minimum - which is also global. \\
+%% BB: we cover that in the lin-reg part later and dont need this level of detail here
+% \begin{vbframe}{Least Squares Estimator}
+% Now, for given features $\Xmat \in \mathbb{R}^{n\times p}$ and target $\yv \in \mathbb{R}^n$, we want to find the best linear model regarding the squared error loss, i.e.,
+% \[\risket = \left\Vert \Xmat\thetav - \yv\right\Vert_2^2 = \sumin (\thetav^\top\xv^{(i)} - \yi)^2\;.\]
 
-\lz \textbf{Note:} Often such analytical solutions in ML are not possible, and we rather have to use iterative numerical optimization.
+% With the sufficient condition for continously differentiable functions it can be shown that the \textbf{least squares estimator}
+% \[\thetavh = (\Xmat^\top\Xmat)^{-1}\Xmat^\top\yv.\]
+% is a local minimum of $\riske$. If $\Xmat$ is full-rank, $\riske$ is strictly convex and there is only one local minimum - which is also global. \\
 
-\end{vbframe}
+% \lz \textbf{Note:} Often such analytical solutions in ML are not possible, and we rather have to use iterative numerical optimization.
+
+% \end{vbframe}
+
+
 \begin{vbframe}{Gradient Descent}
-    The simple idea of GD is to iteratively go from the current candidate $\thetav^{[t]}$ in the direction of the negative gradient, i.e., the direction of the steepest descent, with learning rate $\alpha$ to the next $\thetav^{[t+1]}$:
+    The idea of GD is to iteratively go from the current candidate $\thetav^{[t]}$ in the direction of the negative gradient, i.e., the direction of the steepest descent, with learning rate $\alpha$ to the next $\thetav^{[t+1]}$:
 \[
     \thetav^{[t+1]} = \thetav^{[t]} - \alpha \frac{\partial}{\partial\thetav}{\riske(\thetav^{[t]})}.
 \]
@@ -213,8 +217,8 @@ a local minimum.
 \item Hence it weights components higher
     % \footnote[frame]{in an absolute sense} 
     in which $\riske$ decreases more. \\
-\item However, the length of $-\frac{\partial}{\partial\thetav}{\riske}$ measures only the local decrease rate, i.e., there are no guarantees that we will not go "too far". \\
-\item We use a learning rate $\alpha$ to scale the step length in each iteration. Too much can lead to overstepping and no converge, too low leads to slow convergence.
+\item However, the length of $-\frac{\partial}{\partial\thetav}{\riske}$ measures only the local decrease rate, i.e., there are no guarantees that we will not go ``too far''. \\
+\item We use a learning rate $\alpha$ to scale the step length in each iteration. Too much can lead to overstepping and no convergence, too low leads to slow convergence.
 \item Usually, a simple constant rate or rate-decrease mechanisms to enforce local convergence are used
     % control the rate. 
 \end{itemize}
@@ -237,13 +241,16 @@ a local minimum.
 
 \begin{vbframe}{Further topics}
 \begin{itemize}
-\item GD is a so-called first-order method. Second-order methods use the Hessian to refine the search direction for faster convergence.
-\item There exist many improvements of GD, e.g., to smartly control the learn rate, to escape saddle points, to mimic second order behavior without computing the expensive Hessian.
+
+\item Few models, e.g. linear regression, can be optimized analytically. 
+
+\item GD is a so-called first-order method. Second-order methods (like Newton-Raphson) use the Hessian to refine the search direction for faster convergence.
+\item There exist many improvements of GD (momentum, ADAM), e.g., to smartly control the learn rate, to escape saddle points, to mimic second order behavior without computing the Hessian.
     % ould also optimize the learning rate $\alpha$.
 % \item If some parameters are dependent of each other, we can model such dependicies either by \textbf{equality} or \textbf{inequality constraints}, i.e., 
 % \[g(\thetav) = 0 \quad \text{or} \quad h(\thetav) \geq 0.\]
 % There exist numerical methods to solve constrained optimization problems, such as sequential quadratic programming.
-\item If the gradient of GD is not derived from the empirical risk of the whole data set, but instead from a randomly selected subset, we call this \textbf{stochastic gradient descent} (SGD). For large-scale problems this can lead to higher computational efficiency.
+\item If the gradient of is not computed on the complete data, but instead on small, random batches, this is \textbf{stochastic gradient descent} (SGD). For large-scale problems, this is usually more efficient.
 % \item Often it is desirable to not allow arbitrarily large $\Vert \thetavh \Vert$, since this could result, among other things, in numerical instability of the method. This procedure is called \textbf{regularization}.
 \end{itemize}
 \end{vbframe}
