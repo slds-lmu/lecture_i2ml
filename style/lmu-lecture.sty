@@ -72,7 +72,7 @@
 {\enditemize}
 
 %-------------------------------------------------------------------%
-%   BeginLecture // Title slide                           %
+%   BeginLecture // Title slide                                     %
 %-------------------------------------------------------------------%
 
 % Wrapper to insert title figure within a column env
@@ -395,6 +395,194 @@
       }
       {
     \end{itemize}\end{block}
+}
+
+
+% ------------------------------------------------------------------------
+%    Layout macros                                                       %
+% ------------------------------------------------------------------------
+
+% Two columns side-by-side (horizontal layout))
+
+% Right column takes remaining space
+% \splitV[0.4]{0}{Left content}{Right content}
+% Explicit widths for both columns
+% \splitV[0.4]{0.4}{Left content}{Right content}
+% !! Note that \twocolumn as a name can not be used due to conflicts!
+\newcommand{\splitV}[3][0.5]{%
+ \begin{columns}[T,totalwidth=\textwidth]%
+  \begin{column}{#1\textwidth}% Left column with specified width
+   #2
+  \end{column}%
+  \begin{column}{\dimexpr\textwidth-#1\textwidth\relax}% Right column taking remaining space
+   #3
+  \end{column}%
+ \end{columns}
+ \vspace{-1em}
+}
+
+% \splitV[0.4]{0.4}{Left content}{Right content}
+\newcommand{\splitVComplex}[4][0.5]{%
+ \begin{columns}[T,totalwidth=\textwidth]%
+  \begin{column}{#1\textwidth}% Left column
+   #3
+  \end{column}%
+  \begin{column}{%
+   \ifdim#2pt=0pt% If second optional arg is 0 (default)
+    \dimexpr\textwidth-#1\textwidth\relax% Take remaining space
+   \else
+    #2\textwidth% Use specified width
+   \fi
+  }%
+   #4
+  \end{column}%
+ \end{columns}
+ \vspace{-1em}
+}
+
+
+
+\newcommand{\splitVCentered}[4][0.5]{%
+ \begin{columns}[c,totalwidth=\textwidth]% Align columns with each other
+  \begin{column}{#1\textwidth}% Left column
+   \vbox to 0.8\textheight{\vfill% Create vertically centered box
+     \centering% Horizontally center content too
+     #3
+   \vfill}% 
+  \end{column}%
+  \begin{column}{%
+   \ifdim#2pt=0pt% If second optional arg is 0 (default)
+    \dimexpr\textwidth-#1\textwidth\relax% Take remaining space
+   \else
+    #2\textwidth% Use specified width
+   \fi
+  }%
+   \vbox to 0.8\textheight{\vfill% Create vertically centered box
+     \centering% Horizontally center content too
+     #4
+   \vfill}%
+  \end{column}%
+ \end{columns}
+ \vspace{-1em}
+}
+
+% Version with no margins that only takes up the width specified
+% \splitV{0.4}{0.4}{Left content}{Right content}
+\newcommand{\splitVCompact}[4]{%
+ % Both column widths are now required parameters
+ % #1 = width of first column
+ % #2 = width of second column
+ % #3 = content for first column
+ % #4 = content for second column
+ 
+ % Create two minipages side by side with the exact width specified
+ \noindent% Start at left margin
+ \begin{minipage}{#1\textwidth}
+   #3
+ \end{minipage}%
+ \begin{minipage}{#2\textwidth}
+   #4
+ \end{minipage}
+ \vspace{-1em}
+}
+
+% Full-size quadrant layout
+% Uses compact version of splitVCentered to align content correctly
+% Quadrant order is 
+% 1 2
+% 3 4
+% \quadrant{Top left}{Top right}{Bottom left}{Bottom right}
+\newcommand{\twobytwo}[4]{%
+    \vspace{-0.5em}% Remove top margin
+    \begin{columns}[c,totalwidth=\textwidth]% Top row
+      \begin{column}{0.5\textwidth}% Top-left cell
+        \vbox to 0.4\textheight{\vfill% Create vertically centered box (half height)
+          \centering% Horizontally center content
+          #1
+        \vfill}% 
+      \end{column}%
+      \begin{column}{0.5\textwidth}% Top-right cell
+        \vbox to 0.4\textheight{\vfill% Create vertically centered box (half height)
+          \centering% Horizontally center content
+          #2
+        \vfill}%
+      \end{column}%
+    \end{columns}
+    \vspace{-1em}% Reduce space between rows
+    \begin{columns}[c,totalwidth=\textwidth]% Bottom row
+      \begin{column}{0.5\textwidth}% Bottom-left cell
+        \vbox to 0.4\textheight{\vfill% Create vertically centered box (half height)
+          \centering% Horizontally center content
+          #3
+        \vfill}% 
+      \end{column}%
+      \begin{column}{0.5\textwidth}% Bottom-right cell
+        \vbox to 0.4\textheight{\vfill% Create vertically centered box (half height)
+          \centering% Horizontally center content
+          #4
+        \vfill}%
+      \end{column}%
+    \end{columns}
+    \vspace{-0.5em}% Remove bottom margin
+}
+
+% splitVthree for 3-column layout
+% Simple version with equal width columns
+% Usage: \splitVThree{content1}{content2}{content3}
+\newcommand{\splitVThree}[3]{%
+  % Simplified version that only takes 3 content arguments
+  % All columns are equal width (1/3 of textwidth)
+  \begin{columns}[T,totalwidth=\textwidth]%
+    \begin{column}{0.33\textwidth}% First column
+      #1
+    \end{column}%
+    \begin{column}{0.33\textwidth}% Second column
+      #2
+    \end{column}%
+    \begin{column}{0.34\textwidth}% Third column (slightly larger to account for rounding)
+      #3
+    \end{column}%
+  \end{columns}%
+  \vspace{-1em}%
+}
+
+
+% Full version with customizable widths
+% Width of thrid columns is inferred from first two if omitted
+% Usage: \splitVThreeCustom[col1width]{col2width}{col3width}{content1}{content2}{content3}
+\newcommand{\splitVThreeCustom}[6][0.33]{%
+  % Full version with customizable widths
+  % Usage: \splitVThreeCustom[col1width]{col2width}{col3width}{content1}{content2}{content3}
+  
+  % Handle the second width parameter
+  \ifdim#2pt=0pt
+    \def\secondcolwidth{0.33}% Default if set to 0
+  \else
+    \def\secondcolwidth{#2}% Use provided width
+  \fi
+  
+  % Handle the third width parameter
+  \ifdim#3pt=0pt
+    % Calculate remaining space
+    \def\thirdcolwidth{\dimexpr 1\textwidth-#1\textwidth-\secondcolwidth\textwidth\relax}%
+  \else
+    % Use provided width
+    \def\thirdcolwidth{#3\textwidth}%
+  \fi
+  
+  % Set up the columns
+  \begin{columns}[T,totalwidth=\textwidth]%
+    \begin{column}{#1\textwidth}% First column
+      #4
+    \end{column}%
+    \begin{column}{\secondcolwidth\textwidth}% Second column
+      #5
+    \end{column}%
+    \begin{column}{\thirdcolwidth}% Third column (already includes \textwidth)
+      #6
+    \end{column}%
+  \end{columns}%
+  \vspace{-1em}%
 }
 
 % ------------------------------------------------------------------------
