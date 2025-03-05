@@ -104,10 +104,15 @@ jobs:
         uses: mxschmitt/action-tmate@v3
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
 
-      # Run the main thing: compiles slides, checks against slides-pdf/*, renderes Rmd -> html site with results
+      # Run the main thing: compiles slides, checks against slides-pdf/*, renders Rmd -> html site with results
       # Resulting output is in ./_site
+      # Before we add the lecture dir (e.g. "lecture_sl") to the include_lectures file to
+      # ensure that we do not accidentally skip this lecture, as this file is usually used
+      # to specify lecture for which `make site` should do something
       - name: Check slides and build HTML overview
-        run: make
+        run: |
+          echo $(basename $PWD) > include_lectures
+          make site
 
       # Deploy using this rather than JamesIves/github-pages-deploy-action, as this supports pushing
       # orphan branches. Since we're adding a bunch of PDFs, we really want to avoid a bloated branch history
