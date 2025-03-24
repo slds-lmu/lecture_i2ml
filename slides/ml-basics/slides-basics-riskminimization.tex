@@ -16,7 +16,7 @@
   figure/ml-basic-riskmin-error-surface.png
 }{
 \item Know concept of loss function
-\item Understand relationship between loss and risk 
+\item Understand concept of theoretical and empirical risk 
 \item Understand relationship between risk minimization and finding best model
 }
 
@@ -24,11 +24,10 @@
 \begin{vbframe}{How to Evaluate Models}
 
 \begin{itemize}
-\item When training a learner, we optimize over the hypothesis space,
-    to find the function that fits the training data best.
-\item We are looking for a function, with which the 
-    predicted output per training point is as close as possible to
-    the observed label.
+\item Training a learner = optimize over hypothesis space
+\item Find function that matches training data best
+\item We compare point-wise predicted outputs to 
+observed labels
 \end{itemize}
 
 \lz
@@ -41,23 +40,17 @@
 
 \begin{center}\includegraphics[width=0.8\textwidth]{figure_man/ml-basics-riskmin-eval.png} \end{center}
 
-\lz
-
-
-\begin{itemize}
-    \item We need to measure this pointwise difference precisely.
-  \end{itemize}
   
 \end{vbframe}
 
 
 \begin{vbframe}{Loss}
 
-The \textbf{loss function} $\Lxy$ quantifies the ``quality'' of the prediction $\fx$ of a single observation $\xv$:
+\textbf{Loss function} $\Lxy$ quantifies point-wise how we measure errors in predictions for a single $\xv$:
     $$
     L: \Yspace \times \R^g \to \R.
     $$
-In regression, we can use the absolute loss $\Lxy = |y-\fx|$; 
+Regression: Could use absolute L1 loss  $\Lxy = |y-\fx|$
 
 
 % \vfill
@@ -70,7 +63,7 @@ In regression, we can use the absolute loss $\Lxy = |y-\fx|$;
 \begin{center}
 \includegraphics[width=0.5\textwidth]{figure/ml-basic_riskmin-1-loss_abs.png}
 \end{center}
-or the L2-loss $\Lxy = (y - \fx)^2$:
+or L2-loss $\Lxy = (y - \fx)^2$
 \begin{center}
 \includegraphics[width=0.5\textwidth]{figure/ml-basic_riskmin-1-loss_sqrd.png}
 \end{center}
@@ -93,27 +86,25 @@ or the L2-loss $\Lxy = (y - \fx)^2$:
 \begin{vbframe}{Risk of a Model}
 
 \begin{itemize}
-  \item The (theoretical) \textbf{risk} associated with a certain hypothesis $f$ measured by a loss function $\Lxy$ is the \textbf{expected loss}
-  $$ \riskf := \E_{xy} [\Lxy] = \int \Lxy \text{d}\Pxy. $$
-  \item This is the average error we incur when we use $f$ on data from $\Pxy$.
-  \item Goal in ML: Find a hypothesis $f \in \Hspace$ that \textbf{minimizes} the risk.
+  \item Theoretical \textbf{risk} of a candidate model $f$ is the \textbf{expected loss}
+  $$ \riskf := \E_{xy} [\Lxy] = \int \Lxy \text{d}\Pxy $$
+  \item Average error we incur when we use $f$ on data from $\Pxy$
+  \item Goal in ML: Find a hypothesis $f \in \Hspace$ that \textbf{minimizes} this
 \end{itemize}
 
-\framebreak
+\vfill
 
-
-\textbf{Problem}: Minimizing the theoretical risk $\riskf$ directly is not feasible:
+Problems: 
+%Minimizing the theoretical risk $\riskf$ directly is not feasible:
 
 \begin{itemize}
-\item $\Pxy$ is unknown. 
-\item We could estimate $\Pxy$ non-parametrically, e.g., by kernel density estimation, but this does not scale to higher dimensions. 
-\item We can efficiently estimate $\Pxy$, if we place rigorous assumptions on its distributional form, see, e.g., discriminant analysis. 
+\item $\Pxy$ is unknown
+\item Could estimate $\Pxy$ non-parametrically, e.g., by kernel density estimation,  doesn't scale to higher dimensions
+\item Could efficiently estimate $\Pxy$, if we place assumptions on its form, e.g. cf. discriminant analysis
 \end{itemize}
 
 \lz
 
-But as we have $n$ i.i.d. data points from $\Pxy$, we can
-approximate the expected risk empirically. % by computing it on $\D$.
 
 \end{vbframe}
 
@@ -122,29 +113,39 @@ approximate the expected risk empirically. % by computing it on $\D$.
 
 \begin{vbframe}{Empirical Risk}
 
-To evaluate, how well a given function $f$ matches our training data,
-we now simply sum up all pointwise losses.
-  
+\begin{itemize}
+\item Have $n$ i.i.d. data from $\Pxy$, approximate expected risk empirically % by computing it on $\D$.
+
+\item Just sum up all losses over training data
+
+\end{itemize}
+
 $$ \riskef = \sumin \Lxyi $$
 
-This \textbf{empirical risk function} allows us
-to associate one quality score with each $f \in \Hspace$,
-which encodes how well it fits the training data.
+\begin{itemize}
+
+\item Associates one quality score with each $f \in \Hspace$
+\item Encodes: How well does $f$ fits training data
+\item Now we get very close to solve this by optimization 
+
+\end{itemize}
+
 $$ \riske:  \Hspace \to \R $$  
 \begin{center}
 \begin{figure}[!b]
-\includegraphics[width=0.9\textwidth]{figure/ml-basic_riskmin-2-risk.png}
+\includegraphics[width=0.8\textwidth]{figure/ml-basic_riskmin-2-risk.png}
 \end{figure}
 \end{center}
 
 \framebreak 
    
 \begin{itemize}
-\item The risk can also be defined as an average loss
+\item Can also define as average loss
   $$
     \riskeb(f) = \frac{1}{n}\sumin \Lxyi
   $$
-  The factor $\frac{1}{n}$ does not make a difference in optimization, we will use $\riske(f)$ most of the time.  
+  \item Constant factor $\frac{1}{n}$ doesn't make a difference in optimization
+  \item We usually use $\riske(f)$ 
 \item Since $f$ is usually defined by \textbf{parameters} $\thetav$, this becomes:
 $$\riske : \R^d \to \R$$
 \begin{eqnarray*}
@@ -164,9 +165,8 @@ $$\riske : \R^d \to \R$$
 \begin{vbframe}{Empirical risk minimization}
 
 \begin{itemize}
-    \item The best model is the model with the smallest risk.
-    \item For finite $\Hspace$, we could tabulate all models
-and select the best.
+    \item Best model = smallest risk
+    \item For finite $\Hspace$: we could tabulate exhaustively
 \end{itemize}
 
 \lz
@@ -190,9 +190,9 @@ and select the best.
 \begin{vbframe}{Empirical Risk Minimization}
 
 \begin{itemize}
-
-    \item But usually $\Hspace$ is infinitely large. 
-    \item Instead we can consider the risk surface w.r.t. the parameters $\thetav$ (i.e., the visualization of $\risket$).
+    \item But usually $\Hspace$ is infinitely large
+    \item Instead: Simply consider risk surface w.r.t. the parameters $\thetav$ 
+    %\item So: just look at $\risket$ as a function of $\thetav$ 
 \end{itemize}
 
 \splitV[0.45]{
@@ -218,11 +218,11 @@ $$\riske : \R^d \to \R$$
 
 \framebreak
 
-Minimizing this surface is called \textbf{empirical risk minimization} (ERM).
+Minimizing this surface is called \textbf{empirical risk minimization} (ERM)
 $$
 \thetavh = \argmin_{\thetav \in \Theta} \risket
 $$
-Usually we do this by numerical optimization.
+Usually we do this by numerical optimization
 
 \splitV[0.5]{
 \begin{table}
@@ -246,8 +246,12 @@ $$\riske : \R^d \to \R$$
 \includegraphics[trim=0 100 0 100,clip,width=\textwidth]{figure/ml-basic-riskmin-error-surface-best.png}
 }
 
-In a certain sense, we have now reduced the problem of learning to 
-\textbf{numerical parameter optimization}.
+\vfill
+
+Kind of: 
+Reduced ``learning'' to 
+\textbf{numerical parameter optimization}\\
+(Later we will learn that this is only part of the complete picture!)
 
 \end{vbframe}
 
