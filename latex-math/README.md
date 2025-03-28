@@ -66,6 +66,10 @@ Note that the file `preamble.tex` contains packages required for `latex-math.Rmd
 - **ALWAYS recompile `latex-math.Rmd` if you add new commands so it is kept up-to-date and to check that you have committed all the changes your notation requires to work.**
 - If you **add a new file**, make sure it is added as an `include` in the header of `latex-math.Rmd` such that it is included in the rendered preview
 
+## Updating `latex-math` in lectures
+
+Refer to the [Teaching DevOps wiki entry](https://github.com/slds-lmu/lecture_service/wiki/latex-math) for detailed instructions.
+
 ## Building
 
 Use the included `Makefile` to render `latex-math.pdf` and to create the combined .tex file `latex-math-combined.tex`:
@@ -79,4 +83,3 @@ Usage: make <target>:
   all:      render latex-math.Rmd to latex-math.pdf and create the combined tex file latex-math-combined.tex
   help:     show this message
 ```
-
