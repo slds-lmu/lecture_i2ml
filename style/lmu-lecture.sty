@@ -402,56 +402,88 @@
 %    Layout macros                                                       %
 % ------------------------------------------------------------------------
 
-% Two columns side-by-side (horizontal layout))
-
-% Right column takes remaining space
-% \splitV[0.4]{0}{Left content}{Right content}
-% Explicit widths for both columns
-% \splitV[0.4]{0.4}{Left content}{Right content}
-% !! Note that \twocolumn as a name can not be used due to conflicts!
-\newcommand{\splitV}[3][0.5]{%
-  \vspace{-1ex}
-  \begin{columns}[T,totalwidth=\textwidth]%
-    \begin{column}{#1\textwidth}% Left column with specified width
-      #2
-    \end{column}%
-    \begin{column}{\dimexpr\textwidth-#1\textwidth\relax}% Right column taking remaining space
-      #3
-    \end{column}%
-  \end{columns}
-  \vspace{-1ex}
+% Create an alias so splitV calls splitVTT
+\NewDocumentCommand{\splitV}{O{0.5} m m}{%
+  \splitVTT[#1]{#2}{#3}%
 }
 
-\newcommand{\splitVCentered}[3][0.5]{%
-  \vspace{-7ex}
-  \begin{columns}[c,totalwidth=\textwidth]% Align columns with each other
-    \begin{column}{#1\textwidth}% Left column
-      \vbox to 0.8\textheight{\vfill% Create vertically centered box
-        \centering% Horizontally center content too
-        #2
-        \vfill}% 
+% Define the adjustment length for vertical spacing
+\newlength{\splitVadjust}
+\setlength{\splitVadjust}{-0.7\baselineskip} % Adjustable value
+
+% Base macro that others will call with different alignment parameters
+\NewDocumentCommand{\splitVBase}{O{0.5} m m m m m}{%
+  \par\vspace{\splitVadjust}%
+  \begin{columns}[#3,totalwidth=\textwidth]%
+    \begin{column}[#2]{#1\textwidth}% Left column
+      #4
     \end{column}%
-    \begin{column}{%
-        \dimexpr\textwidth-#1\textwidth\relax% Take remaining space
-      }%
-      \vbox to 0.8\textheight{\vfill% Create vertically centered box
-        \centering% Horizontally center content too
-        #3
-        \vfill}%
+    \hspace{1em}%
+    \begin{column}[#5]{\dimexpr\textwidth-#1\textwidth-1em\relax}% Right column
+      #6
     \end{column}%
   \end{columns}
-  \vspace{-7ex}
+  \par\vspace{\splitVadjust}%
 }
+
+% Define specific alignment variants calling the base macro
+% CC: Both columns centered
+\NewDocumentCommand{\splitVCC}{O{0.5} m m}{%
+  \splitVBase[#1]{c}{c}{#2}{c}{#3}%
+}
+
+% TT: Both columns top-aligned
+\NewDocumentCommand{\splitVTT}{O{0.5} m m}{%
+  \splitVBase[#1]{T}{T}{#2}{T}{#3}%
+}
+
+% BB: Both columns bottom-aligned
+\NewDocumentCommand{\splitVBB}{O{0.5} m m}{%
+  \splitVBase[#1]{b}{b}{#2}{b}{#3}%
+}
+
+% TC: Left column top-aligned, Right column centered
+\NewDocumentCommand{\splitVTC}{O{0.5} m m}{%
+  \splitVBase[#1]{T}{t}{#2}{c}{#3}%
+}
+
+% CT: Left column centered, Right column top-aligned
+\NewDocumentCommand{\splitVCT}{O{0.5} m m}{%
+  \splitVBase[#1]{c}{t}{#2}{T}{#3}%
+}
+
+% TB: Left column top-aligned, Right column bottom-aligned
+\NewDocumentCommand{\splitVTB}{O{0.5} m m}{%
+  \splitVBase[#1]{T}{t}{#2}{b}{#3}%
+}
+
+% BT: Left column bottom-aligned, Right column top-aligned
+\NewDocumentCommand{\splitVBT}{O{0.5} m m}{%
+  \splitVBase[#1]{b}{t}{#2}{T}{#3}%
+}
+
+% CB: Left column centered, Right column bottom-aligned
+\NewDocumentCommand{\splitVCB}{O{0.5} m m}{%
+  \splitVBase[#1]{c}{t}{#2}{b}{#3}%
+}
+
+% BC: Left column bottom-aligned, Right column centered
+\NewDocumentCommand{\splitVBC}{O{0.5} m m}{%
+  \splitVBase[#1]{b}{t}{#2}{c}{#3}%
+}
+
+
+
 
 % Version with no margins that only takes up the width specified
-% \splitV{0.4}{0.4}{Left content}{Right content}
+% \splitVCompact{0.4}{0.4}{Left content}{Right content}
 \newcommand{\splitVCompact}[4]{%
   % Create two minipages side by side with the exact width specified
   \noindent% Start at left margin
   \begin{minipage}{#1\textwidth}
     #3
   \end{minipage}%
-  \hspace{1em}
+  \hspace{1em}%
   \begin{minipage}{#2\textwidth}
     #4
   \end{minipage}
@@ -463,9 +495,8 @@
 % Quadrant order is 
 % 1 2
 % 3 4
-% \quadrant{Top left}{Top right}{Bottom left}{Bottom right}
 \newcommand{\twobytwo}[4]{%
-  \vspace{-1ex}% Remove top margin
+\par\vspace{\splitVadjust}%
   \begin{columns}[c,totalwidth=\textwidth]% Top row
     \begin{column}{0.5\textwidth}% Top-left cell
       \vbox to 0.4\textheight{\vfill% Create vertically centered box (half height)
@@ -480,7 +511,7 @@
         \vfill}%
     \end{column}%
   \end{columns}
-  \vspace{-1em}% Reduce space between rows
+  \vspace{-1ex}% Reduce space between rows
   \begin{columns}[c,totalwidth=\textwidth]% Bottom row
     \begin{column}{0.5\textwidth}% Bottom-left cell
       \vbox to 0.4\textheight{\vfill% Create vertically centered box (half height)
@@ -495,7 +526,7 @@
         \vfill}%
     \end{column}%
   \end{columns}
-  \vspace{-1ex}% Remove bottom margin
+  \par\vspace{\splitVadjust}%
 }
 
 % splitVthree for 3-column layout
@@ -504,11 +535,12 @@
 \newcommand{\splitVThree}[3]{%
   % Simplified version that only takes 3 content arguments
   % All columns are equal width (1/3 of textwidth)
-  \vspace{-2ex}%
+  \par\vspace{\splitVadjust}%
   \begin{columns}[T,totalwidth=\textwidth]%
     \begin{column}{0.33\textwidth}% First column
       #1
     \end{column}%
+    \hspace{1em}%
     \begin{column}{0.33\textwidth}% Second column
       #2
     \end{column}%
@@ -516,7 +548,7 @@
       #3
     \end{column}%
   \end{columns}%
-  \vspace{-2ex}%
+  \par\vspace{\splitVadjust}%
 }
 
 
@@ -542,10 +574,12 @@
   \fi
 
   % Set up the columns
+  \par\vspace{\splitVadjust}%
   \begin{columns}[T,totalwidth=\textwidth]%
     \begin{column}{#1\textwidth}% First column
       #4
     \end{column}%
+    \hspace{1em}%
     \begin{column}{\secondcolwidth\textwidth}% Second column
       #5
     \end{column}%
@@ -553,9 +587,64 @@
       #6
     \end{column}%
   \end{columns}%
-  \vspace{-1em}%
+  \par\vspace{\splitVadjust}%
 }
 
+% ------------------------------------------------------------------------
+% Image helpers for various alginments, including attribution
+% ------------------------------------------------------------------------
+% NewDocumentCommand is more flexible and available in LaTeX without the xparse package since 2020 or so
+% Usage: 
+% - \image{file.png}
+% - \image[0.5]{file.png}
+% - \image[0.5][CITEKEY]{file.png}
+% - Variants for horizontal alignment with L, C, R suffixes used analogously
+
+\NewDocumentCommand{\image}{O{1} o m}{%
+    \includegraphics[width=#1\textwidth]{#3}%
+    \IfValueT{#2}{%
+    \\{\tiny \raisebox{0.5ex}{Source:} \citelink{#2}}%
+    }%
+}
+
+\NewDocumentCommand{\imageC}{O{1} o m}{%
+  \begin{center}
+    \begin{minipage}{#1\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{#3}%
+      \IfValueT{#2}{%
+        \par\vspace{2pt}\centering
+        {\tiny \raisebox{0.5ex}{Source:} \citelink{#2}}%
+      }%
+    \end{minipage}%
+  \end{center}%
+}
+
+\NewDocumentCommand{\imageL}{O{1} o m}{%
+  \begin{flushleft}
+    \begin{minipage}{#1\textwidth}
+      \raggedright
+      \includegraphics[width=\linewidth]{#3}%
+      \IfValueT{#2}{%
+        \par\vspace{2pt}\centering
+        {\tiny \raisebox{0.5ex}{Source:} \citelink{#2}}%
+      }%
+    \end{minipage}%
+  \end{flushleft}%
+}
+
+\NewDocumentCommand{\imageR}{O{1} o m}{%
+  \begin{flushright}
+    \begin{minipage}{#1\textwidth}
+      \raggedleft
+      \includegraphics[width=\linewidth]{#3}%
+      \IfValueT{#2}{%
+        \par\vspace{2pt}\centering
+        {\tiny \raisebox{0.5ex}{Source:} \citelink{#2}}%
+      }%
+    \end{minipage}%
+  \end{flushright}%
+}
 
 % ------------------------------------------------------------------------
 % List helpers for itemize
