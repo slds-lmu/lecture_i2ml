@@ -92,6 +92,7 @@ texclean:
 	-rm -rf *.log
 	-rm -rf *.aux
 	-rm -rf *.bbl
+	-rm -rf *.bbl-SAVE-ERROR
 	-rm -rf *.blg
 	-rm -rf *.ind
 	-rm -rf *.idx
@@ -105,6 +106,7 @@ texclean:
 	-rm -rf *.fls
 	-rm -rf *.pax
 	-rm -rf *.bbl
+	-rm -rf *.bcf-SAVE-ERROR
 	-rm -rf *.bcf
 	-rm -rf *.run.xml
 	-rm -rf *.fdb_latexmk
