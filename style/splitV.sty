@@ -1,195 +1,298 @@
 \NeedsTeXFormat{LaTeX2e}
 
+%--------------------------------------------------------%
+%       Configuration Options                             %
+%--------------------------------------------------------%
 
-% Define the adjustment length for vertical spacing
-\newlength{\splitVadjust}
-\setlength{\splitVadjust}{-0.5\baselineskip} % Adjustable value
+% Load required packages
+\RequirePackage{pgf}   % For calculations
 
 % Define column separation
 \newlength{\splitVsep}
-\setlength{\splitVsep}{1em} % Horizontal separation between columns
+\setlength{\splitVsep}{1em}
 
-% Base macro that others will call with different alignment parameters
-% See https://texdoc.org/serve/beamer/0
-% [left width]{left alignment}{global alignment}{left content}{right alignment}}{right content}
-\NewDocumentCommand{\splitVBase}{O{0.5} m m m m m}{%
-  \par\vspace{\splitVadjust}%
-  % Calculate actual column widths accounting for separation
-  \begin{columns}[#3,totalwidth=\textwidth]%
-    \begin{column}[#2]{#1\textwidth-0.5\splitVsep}% Left column
-      #4
-    \end{column}%
-    \hspace{\splitVsep}%
-    \begin{column}[#5]{\textwidth-#1\textwidth-0.5\splitVsep}% Right column
-      #6
-    \end{column}%
-  \end{columns}
-  \par\vspace{\splitVadjust}%
+% Configuration command for column separation
+\newcommand{\splitVSetSep}[1]{%
+  \setlength{\splitVsep}{#1}%
 }
 
-% Define specific alignment variants calling the base macro
+%--------------------------------------------------------%
+%       Column Width Calculation Helper                   %
+%--------------------------------------------------------%
 
-% Create an alias so splitV to splitVCC
-\NewDocumentCommand{\splitV}{O{0.5} m m}{%
-  \splitVCC[#1]{#2}{#3}%
+% Calculate column widths accounting for separation
+\newcommand{\splitVCalcWidths}[1]{%
+  % #1 = left column width ratio (0-1)
+  % Calculate left column width
+  \pgfmathsetmacro{\leftcolwidth}{#1-0.5*\splitVsep/\textwidth}%
+  % Calculate right column width
+  \pgfmathsetmacro{\rightcolwidth}{1-#1-0.5*\splitVsep/\textwidth}%
 }
+
+%--------------------------------------------------------%
+%       Core Two-Column Layout Implementation             %
+%--------------------------------------------------------%
+
+% Base macro for two-column layouts using lrbox for maximum compatibility
+% Parameters:
+% [1] = left column width ratio (optional, default 0.5)
+% [2] = left column vertical alignment (t, c, b)
+% [3] = overall column alignment (unused in minipage approach but kept for API consistency)
+% [4] = left column content
+% [5] = right column vertical alignment (t, c, b)
+% [6] = right column content
+\newcommand{\splitVBase}[6][0.5]{%
+  % Calculate column widths accounting for separation
+  \splitVCalcWidths{#1}%
+  
+  % Create a complete box that contains both columns
+  \begin{lrbox}{0}%
+    \begin{minipage}{\textwidth}%
+      \begin{minipage}[#2]{\leftcolwidth\textwidth}%
+        #4%
+      \end{minipage}%
+      \hfill%
+      \begin{minipage}[#5]{\rightcolwidth\textwidth}%
+        #6%
+      \end{minipage}%
+    \end{minipage}%
+  \end{lrbox}%
+  \usebox{0}%
+}
+
+%--------------------------------------------------------%
+%       Standard Two-Column Layout Commands               %
+%--------------------------------------------------------%
 
 % TT: Both columns top-aligned
-\NewDocumentCommand{\splitVTT}{O{0.5} m m}{%
+\newcommand{\splitVTT}[3][0.5]{%
   \splitVBase[#1]{t}{T}{#2}{t}{#3}%
 }
 
 % CC: Both columns centered
-\NewDocumentCommand{\splitVCC}{O{0.5} m m}{%
+\newcommand{\splitVCC}[3][0.5]{%
   \splitVBase[#1]{c}{c}{#2}{c}{#3}%
 }
 
 % BB: Both columns bottom-aligned
-\NewDocumentCommand{\splitVBB}{O{0.5} m m}{%
+\newcommand{\splitVBB}[3][0.5]{%
   \splitVBase[#1]{b}{b}{#2}{b}{#3}%
 }
 
-% TC: Left column top-aligned, Right column centered
-\NewDocumentCommand{\splitVTC}{O{0.5} m m}{%
-  \splitVBase[#1]{t}{T}{#2}{c}{#3}%
+% % TC: Left column top-aligned, Right column centered
+% \newcommand{\splitVTC}[3][0.5]{%
+%   \splitVBase[#1]{t}{T}{#2}{c}{#3}%
+% }
+
+% % CT: Left column centered, Right column top-aligned
+% \newcommand{\splitVCT}[3][0.5]{%
+%   \splitVBase[#1]{c}{c}{#2}{t}{#3}%
+% }
+
+% % TB: Left column top-aligned, Right column bottom-aligned
+% \newcommand{\splitVTB}[3][0.5]{%
+%   \splitVBase[#1]{t}{T}{#2}{b}{#3}%
+% }
+
+% % BT: Left column bottom-aligned, Right column top-aligned
+% \newcommand{\splitVBT}[3][0.5]{%
+%   \splitVBase[#1]{b}{b}{#2}{t}{#3}%
+% }
+
+% % CB: Left column centered, Right column bottom-aligned
+% \newcommand{\splitVCB}[3][0.5]{%
+%   \splitVBase[#1]{c}{c}{#2}{b}{#3}%
+% }
+
+% % BC: Left column bottom-aligned, Right column centered
+% \newcommand{\splitVBC}[3][0.5]{%
+%   \splitVBase[#1]{b}{b}{#2}{c}{#3}%
+% }
+
+% The original splitV command as an alias to splitVCC
+\let\splitV\splitVCC
+
+%--------------------------------------------------------%
+%       Three-Column Layout Implementation                %
+%--------------------------------------------------------%
+
+% Helper to calculate three column widths accounting for separations
+\newcommand{\splitVCalcThreeWidths}[3]{%
+  % #1, #2, #3 = column width ratios
+  % Calculate actual column widths
+  \pgfmathsetmacro{\colonewidth}{#1-0.67*\splitVsep/\textwidth}%
+  \pgfmathsetmacro{\coltwowidth}{#2-0.67*\splitVsep/\textwidth}%
+  \pgfmathsetmacro{\colthreewidth}{#3-0.67*\splitVsep/\textwidth}%
 }
 
-% CT: Left column centered, Right column top-aligned
-\NewDocumentCommand{\splitVCT}{O{0.5} m m}{%
-  \splitVBase[#1]{c}{c}{#2}{t}{#3}%
+% Base three-column layout (used by other three-column commands)
+% Parameters:
+% [1], [2], [3] = column width ratios
+% [4], [5], [6] = column alignments (t, c, b)
+% [7], [8], [9] = column contents
+\newcommand{\splitVThreeBase}[9]{%
+  % Calculate column widths accounting for separation
+  \splitVCalcThreeWidths{#1}{#2}{#3}%
+  
+  % Create a complete box that contains all three columns
+  \begin{lrbox}{0}%
+    \begin{minipage}{\textwidth}%
+      \begin{minipage}[#4]{\colonewidth\textwidth}%
+        #7%
+      \end{minipage}%
+      \hfill%
+      \begin{minipage}[#5]{\coltwowidth\textwidth}%
+        #8%
+      \end{minipage}%
+      \hfill%
+      \begin{minipage}[#6]{\colthreewidth\textwidth}%
+        #9%
+      \end{minipage}%
+    \end{minipage}%
+  \end{lrbox}%
+  \usebox{0}%
 }
 
-% TB: Left column top-aligned, Right column bottom-aligned
-\NewDocumentCommand{\splitVTB}{O{0.5} m m}{%
-  \splitVBase[#1]{t}{T}{#2}{b}{#3}%
+% Simple three-column layout with equal width columns
+\newcommand{\splitVThree}[3]{%
+  \splitVThreeBase{0.33}{0.33}{0.33}{c}{c}{c}{#1}{#2}{#3}%
 }
 
-% BT: Left column bottom-aligned, Right column top-aligned
-\NewDocumentCommand{\splitVBT}{O{0.5} m m}{%
-  \splitVBase[#1]{b}{b}{#2}{t}{#3}%
+% Three-column layout with custom width columns and center alignment
+\newcommand{\splitVThreeC}[6][0.31]{%
+  % Calculate safe column widths
+  \pgfmathsetmacro{\colonewidth}{#1}%
+  \pgfmathsetmacro{\coltwowidth}{#2}%
+  % If third width is auto, calculate it
+  \ifdim#3pt=0pt
+    \pgfmathsetmacro{\colthreewidth}{max(0.05, 0.97-\colonewidth-\coltwowidth)}%
+  \else
+    \pgfmathsetmacro{\colthreewidth}{#3}%
+  \fi
+  % Create the layout
+  \splitVThreeBase{\colonewidth}{\coltwowidth}{\colthreewidth}{c}{c}{c}{#4}{#5}{#6}%
 }
 
-% CB: Left column centered, Right column bottom-aligned
-\NewDocumentCommand{\splitVCB}{O{0.5} m m}{%
-  \splitVBase[#1]{c}{c}{#2}{b}{#3}%
+% Three-column layout with custom width columns and top alignment
+\newcommand{\splitVThreeT}[6][0.31]{%
+  % Calculate safe column widths
+  \pgfmathsetmacro{\colonewidth}{#1}%
+  \pgfmathsetmacro{\coltwowidth}{#2}%
+  % If third width is auto, calculate it
+  \ifdim#3pt=0pt
+    \pgfmathsetmacro{\colthreewidth}{max(0.05, 0.97-\colonewidth-\coltwowidth)}%
+  \else
+    \pgfmathsetmacro{\colthreewidth}{#3}%
+  \fi
+  % Create the layout
+  \splitVThreeBase{\colonewidth}{\coltwowidth}{\colthreewidth}{t}{t}{t}{#4}{#5}{#6}%
 }
 
-% BC: Left column bottom-aligned, Right column centered
-\NewDocumentCommand{\splitVBC}{O{0.5} m m}{%
-  \splitVBase[#1]{b}{b}{#2}{c}{#3}%
+% Backward compatibility
+\let\splitVThreeCustom\splitVThreeC
+
+%--------------------------------------------------------%
+%       Grid Layouts                                      %
+%--------------------------------------------------------%
+
+% Helper to calculate grid cell widths
+\newcommand{\splitVCalcGridWidths}[1]{%
+  % #1 = left column width ratio
+  % Calculate cell widths
+  \pgfmathsetmacro{\leftcellwidth}{#1-0.5*\splitVsep/\textwidth}%
+  \pgfmathsetmacro{\rightcellwidth}{1-#1-0.5*\splitVsep/\textwidth}%
 }
+
+% Simple 2×2 grid layout
+\newcommand{\twobytwo}[4]{%
+  % Calculate equal cell widths
+  \splitVCalcGridWidths{0.5}%
+  
+  % Create top row
+  \begin{lrbox}{0}%
+    \begin{minipage}{\textwidth}%
+      % Top row
+      \begin{minipage}[c]{\leftcellwidth\textwidth}%
+        \centering #1%
+      \end{minipage}%
+      \hfill%
+      \begin{minipage}[c]{\rightcellwidth\textwidth}%
+        \centering #2%
+      \end{minipage}%
+      
+      \vspace{1ex}% Space between rows
+      
+      % Bottom row
+      \begin{minipage}[c]{\leftcellwidth\textwidth}%
+        \centering #3%
+      \end{minipage}%
+      \hfill%
+      \begin{minipage}[c]{\rightcellwidth\textwidth}%
+        \centering #4%
+      \end{minipage}%
+    \end{minipage}%
+  \end{lrbox}%
+  \usebox{0}%
+}
+
+% More general grid layout with custom sizes
+\newcommand{\gridLayout}[5][0.5]{%
+  % #1 = column width (optional, default 0.5)
+  % #2-#5 = the four contents
+  
+  % Calculate cell widths
+  \splitVCalcGridWidths{#1}%
+  
+  % Create the entire grid
+  \begin{lrbox}{0}%
+    \begin{minipage}{\textwidth}%
+      % Top row
+      \begin{minipage}[c]{\leftcellwidth\textwidth}%
+        \centering #2%
+      \end{minipage}%
+      \hfill%
+      \begin{minipage}[c]{\rightcellwidth\textwidth}%
+        \centering #3%
+      \end{minipage}%
+      
+      \vspace{1ex}% Space between rows
+      
+      % Bottom row
+      \begin{minipage}[c]{\leftcellwidth\textwidth}%
+        \centering #4%
+      \end{minipage}%
+      \hfill%
+      \begin{minipage}[c]{\rightcellwidth\textwidth}%
+        \centering #5%
+      \end{minipage}%
+    \end{minipage}%
+  \end{lrbox}%
+  \usebox{0}%
+}
+
+%--------------------------------------------------------%
+%       Compact Layout (for backward compatibility)        %
+%--------------------------------------------------------%
 
 % Version with no margins that only takes up the width specified
 % \splitVCompact{0.4}{0.4}{Left content}{Right content}
 \newcommand{\splitVCompact}[4]{%
-  % Create two minipages side by side with the exact width specified
-  \noindent% Start at left margin
-  \begin{minipage}{#1\textwidth}
-    #3
-  \end{minipage}%
-  \hspace{1em}%
-  \begin{minipage}{#2\textwidth}
-    #4
-  \end{minipage}
-  \vspace{-1em}
-}
-
-% Full-size quadrant layout
-% Uses compact version of splitVCentered to align content correctly
-% Quadrant order is 
-% 1 2
-% 3 4
-\newcommand{\twobytwo}[4]{%
-\par\vspace{\splitVadjust}%
-  \begin{columns}[c,totalwidth=\textwidth]% Top row
-    \begin{column}{0.5\textwidth}% Top-left cell
-      \vbox to 0.4\textheight{\vfill% Create vertically centered box (half height)
-        \centering% Horizontally center content
-        #1
-        \vfill}% 
-    \end{column}%
-    \begin{column}{0.5\textwidth}% Top-right cell
-      \vbox to 0.4\textheight{\vfill% Create vertically centered box (half height)
-        \centering% Horizontally center content
-        #2
-        \vfill}%
-    \end{column}%
-  \end{columns}
-  \vspace{-1ex}% Reduce space between rows
-  \begin{columns}[c,totalwidth=\textwidth]% Bottom row
-    \begin{column}{0.5\textwidth}% Bottom-left cell
-      \vbox to 0.4\textheight{\vfill% Create vertically centered box (half height)
-        \centering% Horizontally center content
-        #3
-        \vfill}% 
-    \end{column}%
-    \begin{column}{0.5\textwidth}% Bottom-right cell
-      \vbox to 0.4\textheight{\vfill% Create vertically centered box (half height)
-        \centering% Horizontally center content
-        #4
-        \vfill}%
-    \end{column}%
-  \end{columns}
-  \par\vspace{\splitVadjust}%
-}
-
-% splitVthree for 3-column layout
-% Simple version with equal width columns
-% Usage: \splitVThree{content1}{content2}{content3}
-\newcommand{\splitVThree}[3]{%
-  % Simplified version that only takes 3 content arguments
-  % All columns are equal width (1/3 of textwidth)
-  \par\vspace{\splitVadjust}%
-  \begin{columns}[T,totalwidth=\textwidth]%
-    \begin{column}{0.33\textwidth}% First column
-      #1
-    \end{column}%
-    \hspace{1em}%
-    \begin{column}{0.33\textwidth}% Second column
-      #2
-    \end{column}%
-    \begin{column}{0.33\textwidth}% Third column
-      #3
-    \end{column}%
-  \end{columns}%
-  \par\vspace{\splitVadjust}%
-}
-
-% Full version with customizable widths
-% Width of third columns is inferred from first two if omitted
-% Usage: \splitVThreeCustom[col1width]{col2width}{col3width}{content1}{content2}{content3}
-\newcommand{\splitVThreeCustom}[6][0.33]{%
-  % Handle the second width parameter
-  \ifdim#2pt=0pt
-    \def\secondcolwidth{0.33}% Default if set to 0
-  \else
-    \def\secondcolwidth{#2}% Use provided width
-  \fi
-
-  % Handle the third width parameter
-  \ifdim#3pt=0pt
-    % Calculate remaining space
-    \def\thirdcolwidth{\dimexpr 1\textwidth-#1\textwidth-\secondcolwidth\textwidth\relax}%
-  \else
-    % Use provided width
-    \def\thirdcolwidth{#3\textwidth}%
-  \fi
-
-  % Set up the columns
-  \par\vspace{\splitVadjust}%
-  \begin{columns}[T,totalwidth=\textwidth]%
-    \begin{column}{#1\textwidth}% First column
-      #4
-    \end{column}%
-    \hspace{1em}%
-    \begin{column}{\secondcolwidth\textwidth}% Second column
-      #5
-    \end{column}%
-    \begin{column}{\thirdcolwidth}% Third column (already includes \textwidth)
-      #6
-    \end{column}%
-  \end{columns}%
-  \par\vspace{\splitVadjust}%
+  % #1, #2: column widths as ratios of textwidth
+  % #3, #4: column contents
+  
+  % Create a complete box to ensure compatibility in all contexts
+  \begin{lrbox}{0}%
+    \begin{minipage}{\textwidth}%
+      \begin{minipage}[c]{#1\textwidth}%
+        #3%
+      \end{minipage}%
+      \hspace{\splitVsep}%
+      \begin{minipage}[c]{#2\textwidth}%
+        #4%
+      \end{minipage}%
+    \end{minipage}%
+  \end{lrbox}%
+  \usebox{0}%
 }
 
 \endinput
