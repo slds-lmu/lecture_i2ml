@@ -1,0 +1,171 @@
+\NeedsTeXFormat{LaTeX2e}
+% \ProvidesPackage{customitemize}[2025/04/18 Custom Itemize Environments]
+
+% Define item spacing variables
+\newlength{\custitemizeitems}
+\newlength{\custitemizeparss}
+\newlength{\custitemizetopp}
+\newlength{\custitemizepartp}
+
+% Small spacing values
+\newcommand{\@setSpacingSmall}{%
+  \setlength{\custitemizeitems}{-2pt}%
+  \setlength{\custitemizeparss}{0pt}%
+  \setlength{\custitemizetopp}{0pt}%
+  \setlength{\custitemizepartp}{0pt}%
+}
+
+% Medium spacing values
+\newcommand{\@setSpacingMedium}{%
+  \setlength{\custitemizeitems}{3pt}%
+  \setlength{\custitemizeparss}{0pt}%
+  \setlength{\custitemizetopp}{3pt}%
+  \setlength{\custitemizepartp}{0pt}%
+}
+
+% Large spacing values
+\newcommand{\@setSpacingLarge}{%
+  \setlength{\custitemizeitems}{15pt}%
+  \setlength{\custitemizeparss}{5pt}%
+  \setlength{\custitemizetopp}{5pt}%
+  \setlength{\custitemizepartp}{2pt}%
+}
+
+% Compact spacing
+\newenvironment{itemizeS}[1][normalsize]{%
+  \@setSpacingSmall%
+  \begingroup%
+  \csname#1\endcsname%
+  \begin{itemize}%
+  \setlength{\itemsep}{\custitemizeitems}%
+  \setlength{\parsep}{\custitemizeparss}%
+  \setlength{\topsep}{\custitemizetopp}%
+  \setlength{\partopsep}{\custitemizepartp}%
+}{%
+  \end{itemize}%
+  \endgroup%
+}
+
+% Medium spacing
+\newenvironment{itemizeM}[1][normalsize]{%
+  \@setSpacingMedium%
+  \begingroup%
+  \csname#1\endcsname%
+  \begin{itemize}%
+  \setlength{\itemsep}{\custitemizeitems}%
+  \setlength{\parsep}{\custitemizeparss}%
+  \setlength{\topsep}{\custitemizetopp}%
+  \setlength{\partopsep}{\custitemizepartp}%
+}{%
+  \end{itemize}%
+  \endgroup%
+}
+
+% Large spacing
+\newenvironment{itemizeL}[1][normalsize]{%
+  \@setSpacingLarge%
+  \begingroup%
+  \csname#1\endcsname%
+  \begin{itemize}%
+  \setlength{\itemsep}{\custitemizeitems}%
+  \setlength{\parsep}{\custitemizeparss}%
+  \setlength{\topsep}{\custitemizetopp}%
+  \setlength{\partopsep}{\custitemizepartp}%
+}{%
+  \end{itemize}%
+  \endgroup%
+}
+
+% Fill spacing
+\newenvironment{itemizeF}[1][normalsize]{%
+  \begingroup%
+  \csname#1\endcsname%
+  \begin{itemize}%
+  \setlength{\itemsep}{1em plus 1fill}%
+}{%
+  \end{itemize}%
+  \endgroup%
+}
+
+% Key-value interface with separate environments for each type
+\RequirePackage{keyval}
+
+% Define keys
+\define@key{customitemize}{fs}{\def\custom@itemize@fs{#1}}
+\define@key{customitemize}{sep}{\def\custom@itemize@sep{#1}}
+
+% Create separate command for each spacing type
+\newcommand{\kitemize@typeS}[1][normalsize]{%
+  \@setSpacingSmall%
+  \begingroup%
+  \csname#1\endcsname%
+  \begin{itemize}%
+  \setlength{\itemsep}{\custitemizeitems}%
+  \setlength{\parsep}{\custitemizeparss}%
+  \setlength{\topsep}{\custitemizetopp}%
+  \setlength{\partopsep}{\custitemizepartp}%
+}
+
+\newcommand{\kitemize@typeM}[1][normalsize]{%
+  \@setSpacingMedium%
+  \begingroup%
+  \csname#1\endcsname%
+  \begin{itemize}%
+  \setlength{\itemsep}{\custitemizeitems}%
+  \setlength{\parsep}{\custitemizeparss}%
+  \setlength{\topsep}{\custitemizetopp}%
+  \setlength{\partopsep}{\custitemizepartp}%
+}
+
+\newcommand{\kitemize@typeL}[1][normalsize]{%
+  \@setSpacingLarge%
+  \begingroup%
+  \csname#1\endcsname%
+  \begin{itemize}%
+  \setlength{\itemsep}{\custitemizeitems}%
+  \setlength{\parsep}{\custitemizeparss}%
+  \setlength{\topsep}{\custitemizetopp}%
+  \setlength{\partopsep}{\custitemizepartp}%
+}
+
+\newcommand{\kitemize@typeF}[1][normalsize]{%
+  \begingroup%
+  \csname#1\endcsname%
+  \begin{itemize}%
+  \setlength{\itemsep}{1em plus 1fill}%
+}
+
+% Common end command for all types
+\newcommand{\kitemize@end}{%
+  \end{itemize}%
+  \endgroup%
+}
+
+% Main kitemize environment - no conditionals, just direct command definitions
+\def\kitemize{\@ifnextchar[{\kitemize@i}{\kitemize@i[]}}
+\def\kitemize@i[#1]{\begingroup\def\@tempa{#1}\expandafter\endgroup\expandafter\kitemize@ii\expandafter{\@tempa}}
+\def\kitemize@ii#1{%
+  \setkeys{customitemize}{#1}%
+  \def\@tempsep{\custom@itemize@sep}%
+  \def\@sep@S{S}%
+  \def\@sep@L{L}%
+  \def\@sep@F{F}%
+  \def\@sep@M{M}%
+  
+  \ifx\@tempsep\@sep@S
+    \expandafter\kitemize@typeS\expandafter[\custom@itemize@fs]%
+  \else
+    \ifx\@tempsep\@sep@L
+      \expandafter\kitemize@typeL\expandafter[\custom@itemize@fs]%
+    \else
+      \ifx\@tempsep\@sep@F
+        \expandafter\kitemize@typeF\expandafter[\custom@itemize@fs]%
+      \else
+        \expandafter\kitemize@typeM\expandafter[\custom@itemize@fs]%
+      \fi
+    \fi
+  \fi
+}
+\def\endkitemize{\kitemize@end}
+
+\endinput
