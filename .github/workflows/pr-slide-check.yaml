@@ -14,6 +14,11 @@ on:
         description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
         required: false
         default: false
+      cache-version:
+        type: string
+        description: 'Cache version identifier, increment to invalidate cache'
+        required: false
+        default: '1'
   # Only on pull requests where files in these folders change
   pull_request:
     paths: ['style/**', 'slides/**', 'latex-math/**', 'slides-pdf/**', '.github/workflows/pr-slide-check.yaml']
@@ -73,9 +78,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ steps.r-cache.outputs.dir }}
-          key: ${{ runner.os }}-r-${{inputs.cache-version }}-${{ hashFiles('scripts/install_r_deps.R') }}
-          restore-keys: ${{ runner.os }}-r-${{inputs.cache-version }}-
-
+          key: ${{ runner.os }}-r-${{ inputs.cache-version || '1' }}-${{ hashFiles('DESCRIPTION') }}
+          restore-keys: |
+            ${{ runner.os }}-r-${{ inputs.cache-version || '1' }}-
+            ${{ runner.os }}-r-
       # Setting up the lecture checking requirements:
       # 1) R packages
       - name: Install R packages
