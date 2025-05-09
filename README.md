@@ -1,7 +1,8 @@
 # Introduction to Machine Learning (I2ML)
 
 [![Course Website](https://img.shields.io/badge/Main_Course_Site-517FF7)](https://slds-lmu.github.io/i2ml/)
-[![Slide Check](https://img.shields.io/badge/Slide_Check-E0911F)](https://slds-lmu.github.io/lecture_i2ml/)
+[![render-lecture-slide-status](https://github.com/slds-lmu/lecture_i2ml/actions/workflows/render-lecture-slide-status.yaml/badge.svg?branch=master)](https://github.com/slds-lmu/lecture_i2ml/actions/workflows/render-lecture-slide-status.yaml)
+[![View slide check results](https://img.shields.io/badge/View_slide_check_results-E0911F)](https://slds-lmu.github.io/lecture_i2ml/)
 
 This Project offers a free, open source introductory and applied overview of supervised machine learning.
 

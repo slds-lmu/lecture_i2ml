@@ -1,5 +1,5 @@
 \RequirePackage{graphicx}
-\RequirePackage{amsmath,amssymb}
+\RequirePackage{amsmath,amssymb,amsfonts}
 \RequirePackage{array}
 \DeclareSymbolFont{mysymbols}{OMS}{cmsy}{m}{n}
 \SetSymbolFont{mysymbols}{bold}{OMS}{cmsy}{b}{n}
@@ -277,7 +277,8 @@
 
 \def\beamer@fteright{\vskip0.35cm\advance\leftskip by 1.7cm\advance\rightskip by1.7cm}
 
-\setbeamertemplate{frametitle continuation}[from second][{\small/~\insertcontinuationcount}]
+% The "/ n" at the end of the title for cointinuations from framebreaks - disabled to discourage framebreaks in general.
+% \setbeamertemplate{frametitle continuation}[from second][{\small/~\insertcontinuationcount}]
 
 \setbeamertemplate{frametitle}{\expandafter\uppercase\expandafter\insertframetitle}
 
@@ -361,15 +362,16 @@
   \NoCaseChange{\resizebox{!}{9pt}{\protect\beamergotobutton{\href{#2}{#1}}}}%
 }
 
-
 %-------------------------------------------------------------------%
 %   Environments                                                    %
 %-------------------------------------------------------------------%
+% Newly developed suites of macros may be factor out into their own .sty files.
 
 % Frame with breaks and verbatim // this is used very often
 % Should not use 'containsverbatim', see https://tex.stackexchange.com/questions/69191/can-a-beamer-frame-have-both-containsverbatim-and-hidden-shown-block-options
 % Should use 'fragile' instead, but everything breaks if fragile is used all the time
 % See https://tug.ctan.org/macros/latex/contrib/beamer/doc/beameruserguide.pdf for details
+% DEPRECATED
 \newenvironment{vbframe}
 {
   \begin{frame}[containsverbatim,allowframebreaks]
@@ -378,216 +380,13 @@
   \end{frame}
 }
 
-% Frame with verbatim without breaks (to avoid numbering one slided frames)
-% This is not used anywhere but I can see it being useful
-\newenvironment{vframe}
-{
-  \begin{frame}[containsverbatim]
-    }
-    {
-  \end{frame}
-}
-
-% Itemize block
+% Itemize block, rarely used
 \newenvironment{blocki}[1]
 {
   \begin{block}{#1}\begin{itemize}
       }
       {
     \end{itemize}\end{block}
-}
-
-
-% ------------------------------------------------------------------------
-%    Layout macros                                                       %
-% ------------------------------------------------------------------------
-
-% Create an alias so splitV calls splitVTT
-\NewDocumentCommand{\splitV}{O{0.5} m m}{%
-  \splitVTT[#1]{#2}{#3}%
-}
-
-% Define the adjustment length for vertical spacing
-\newlength{\splitVadjust}
-\setlength{\splitVadjust}{-0.7\baselineskip} % Adjustable value
-
-% Base macro that others will call with different alignment parameters
-\NewDocumentCommand{\splitVBase}{O{0.5} m m m m m}{%
-  \par\vspace{\splitVadjust}%
-  \begin{columns}[#3,totalwidth=\textwidth]%
-    \begin{column}[#2]{#1\textwidth}% Left column
-      #4
-    \end{column}%
-    \hspace{1em}%
-    \begin{column}[#5]{\dimexpr\textwidth-#1\textwidth-1em\relax}% Right column
-      #6
-    \end{column}%
-  \end{columns}
-  \par\vspace{\splitVadjust}%
-}
-
-% Define specific alignment variants calling the base macro
-% CC: Both columns centered
-\NewDocumentCommand{\splitVCC}{O{0.5} m m}{%
-  \splitVBase[#1]{c}{c}{#2}{c}{#3}%
-}
-
-% TT: Both columns top-aligned
-\NewDocumentCommand{\splitVTT}{O{0.5} m m}{%
-  \splitVBase[#1]{T}{T}{#2}{T}{#3}%
-}
-
-% BB: Both columns bottom-aligned
-\NewDocumentCommand{\splitVBB}{O{0.5} m m}{%
-  \splitVBase[#1]{b}{b}{#2}{b}{#3}%
-}
-
-% TC: Left column top-aligned, Right column centered
-\NewDocumentCommand{\splitVTC}{O{0.5} m m}{%
-  \splitVBase[#1]{T}{t}{#2}{c}{#3}%
-}
-
-% CT: Left column centered, Right column top-aligned
-\NewDocumentCommand{\splitVCT}{O{0.5} m m}{%
-  \splitVBase[#1]{c}{t}{#2}{T}{#3}%
-}
-
-% TB: Left column top-aligned, Right column bottom-aligned
-\NewDocumentCommand{\splitVTB}{O{0.5} m m}{%
-  \splitVBase[#1]{T}{t}{#2}{b}{#3}%
-}
-
-% BT: Left column bottom-aligned, Right column top-aligned
-\NewDocumentCommand{\splitVBT}{O{0.5} m m}{%
-  \splitVBase[#1]{b}{t}{#2}{T}{#3}%
-}
-
-% CB: Left column centered, Right column bottom-aligned
-\NewDocumentCommand{\splitVCB}{O{0.5} m m}{%
-  \splitVBase[#1]{c}{t}{#2}{b}{#3}%
-}
-
-% BC: Left column bottom-aligned, Right column centered
-\NewDocumentCommand{\splitVBC}{O{0.5} m m}{%
-  \splitVBase[#1]{b}{t}{#2}{c}{#3}%
-}
-
-
-
-
-% Version with no margins that only takes up the width specified
-% \splitVCompact{0.4}{0.4}{Left content}{Right content}
-\newcommand{\splitVCompact}[4]{%
-  % Create two minipages side by side with the exact width specified
-  \noindent% Start at left margin
-  \begin{minipage}{#1\textwidth}
-    #3
-  \end{minipage}%
-  \hspace{1em}%
-  \begin{minipage}{#2\textwidth}
-    #4
-  \end{minipage}
-  \vspace{-1em}
-}
-
-% Full-size quadrant layout
-% Uses compact version of splitVCentered to align content correctly
-% Quadrant order is 
-% 1 2
-% 3 4
-\newcommand{\twobytwo}[4]{%
-\par\vspace{\splitVadjust}%
-  \begin{columns}[c,totalwidth=\textwidth]% Top row
-    \begin{column}{0.5\textwidth}% Top-left cell
-      \vbox to 0.4\textheight{\vfill% Create vertically centered box (half height)
-        \centering% Horizontally center content
-        #1
-        \vfill}% 
-    \end{column}%
-    \begin{column}{0.5\textwidth}% Top-right cell
-      \vbox to 0.4\textheight{\vfill% Create vertically centered box (half height)
-        \centering% Horizontally center content
-        #2
-        \vfill}%
-    \end{column}%
-  \end{columns}
-  \vspace{-1ex}% Reduce space between rows
-  \begin{columns}[c,totalwidth=\textwidth]% Bottom row
-    \begin{column}{0.5\textwidth}% Bottom-left cell
-      \vbox to 0.4\textheight{\vfill% Create vertically centered box (half height)
-        \centering% Horizontally center content
-        #3
-        \vfill}% 
-    \end{column}%
-    \begin{column}{0.5\textwidth}% Bottom-right cell
-      \vbox to 0.4\textheight{\vfill% Create vertically centered box (half height)
-        \centering% Horizontally center content
-        #4
-        \vfill}%
-    \end{column}%
-  \end{columns}
-  \par\vspace{\splitVadjust}%
-}
-
-% splitVthree for 3-column layout
-% Simple version with equal width columns
-% Usage: \splitVThree{content1}{content2}{content3}
-\newcommand{\splitVThree}[3]{%
-  % Simplified version that only takes 3 content arguments
-  % All columns are equal width (1/3 of textwidth)
-  \par\vspace{\splitVadjust}%
-  \begin{columns}[T,totalwidth=\textwidth]%
-    \begin{column}{0.33\textwidth}% First column
-      #1
-    \end{column}%
-    \hspace{1em}%
-    \begin{column}{0.33\textwidth}% Second column
-      #2
-    \end{column}%
-    \begin{column}{0.33\textwidth}% Third column
-      #3
-    \end{column}%
-  \end{columns}%
-  \par\vspace{\splitVadjust}%
-}
-
-
-% Full version with customizable widths
-% Width of thrid columns is inferred from first two if omitted
-% Usage: \splitVThreeCustom[col1width]{col2width}{col3width}{content1}{content2}{content3}
-\newcommand{\splitVThreeCustom}[6][0.33]{%
-
-  % Handle the second width parameter
-  \ifdim#2pt=0pt
-    \def\secondcolwidth{0.33}% Default if set to 0
-  \else
-    \def\secondcolwidth{#2}% Use provided width
-  \fi
-
-  % Handle the third width parameter
-  \ifdim#3pt=0pt
-    % Calculate remaining space
-    \def\thirdcolwidth{\dimexpr 1\textwidth-#1\textwidth-\secondcolwidth\textwidth\relax}%
-  \else
-    % Use provided width
-    \def\thirdcolwidth{#3\textwidth}%
-  \fi
-
-  % Set up the columns
-  \par\vspace{\splitVadjust}%
-  \begin{columns}[T,totalwidth=\textwidth]%
-    \begin{column}{#1\textwidth}% First column
-      #4
-    \end{column}%
-    \hspace{1em}%
-    \begin{column}{\secondcolwidth\textwidth}% Second column
-      #5
-    \end{column}%
-    \begin{column}{\thirdcolwidth}% Third column (already includes \textwidth)
-      #6
-    \end{column}%
-  \end{columns}%
-  \par\vspace{\splitVadjust}%
 }
 
 % ------------------------------------------------------------------------
@@ -647,43 +446,11 @@
 }
 
 % ------------------------------------------------------------------------
-% List helpers for itemize
+% Misc helper for formatting, convenience, etc
 % ------------------------------------------------------------------------
-
-% Stretching itemize wrapper that fills vertical space
-% Note that this might break if enumitem is used instead of enumerate
-% See also https://github.com/slds-lmu/teaching_devops_issues/issues/20
-\newenvironment{itemizefill}{%
-  \begin{itemize}%
-    \vspace{0pt}%
-    \setlength{\itemsep}{\fill}%
-    \setlength{\parsep}{0pt}%
-    }{%
-    \vspace{0pt}%
-  \end{itemize}%
-}
-
-\newenvironment{itemizeS}{%
-  \begin{itemize}%
-    \setlength{\itemsep}{1pt}%
-    }{%
-  \end{itemize}%
-}
-
-\newenvironment{itemizeM}{%
-  \begin{itemize}%
-    \setlength{\itemsep}{5pt}%
-    }{%
-  \end{itemize}%
-}
-
-\newenvironment{itemizeL}{%
-  \begin{itemize}%
-    \setlength{\itemsep}{15pt}%
-    }{%
-  \end{itemize}%
-}
-
+% \spacer inserts 1 empty line
+% \spacer[k] inserts k empty lines
+\newcommand{\spacer}[1][1]{\vspace{#1\baselineskip}}
 
 % ------------------------------------------------------------------------
 \endinput

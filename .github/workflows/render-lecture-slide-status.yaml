@@ -14,6 +14,11 @@ on:
         description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
         required: false
         default: false
+      cache-version:
+        type: string
+        description: 'Cache version identifier, increment to invalidate cache'
+        required: false
+        default: '1'
   push:
     # Activate on pushes to both the main or master branches (inconsistently used across lecture repos)
     branches: [main, master]
@@ -78,8 +83,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ steps.r-cache.outputs.dir }}
-          key: ${{ runner.os }}-r-${{inputs.cache-version }}-${{ hashFiles('scripts/install_r_deps.R') }}
-          restore-keys: ${{ runner.os }}-r-${{inputs.cache-version }}-
+          key: ${{ runner.os }}-r-${{ inputs.cache-version || '1' }}-${{ hashFiles('DESCRIPTION') }}
+          restore-keys: |
+            ${{ runner.os }}-r-${{ inputs.cache-version || '1' }}-
+            ${{ runner.os }}-r-
 
       # Setting up the lecture checking requirements:
       # 1) R packages
@@ -91,8 +98,8 @@ jobs:
           make install-tex
           tlmgr list --only-installed
       # 3) Installing diff-pdf and diff-pdf-visually (only automated for ubuntu so far)
-      - name: Install diff-pdf and diff-pdf-visually
-        run: make install-tools-ubuntu
+      # - name: Install diff-pdf and diff-pdf-visually
+      #   run: make install-tools-ubuntu
 
       - name: Install the service package
         run: make install-service
@@ -122,3 +129,9 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./_site
           force_orphan: true
+          
+
+      # Helper script generates exit status 1 if at least one slide failed to compile
+      - name: Generate exit code based on check status
+        run: |
+          ./inst/check_status.R

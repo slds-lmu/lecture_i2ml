@@ -1,0 +1,225 @@
+\documentclass{beamer}
+\newcommand \beameritemnestingprefix{}
+
+
+\usepackage[orientation=landscape,size=a0,scale=1.4,debug]{beamerposter}
+\mode<presentation>{\usetheme{mlr}}
+
+
+\usepackage[utf8]{inputenc} % UTF-8
+\usepackage[english]{babel} % Language
+\usepackage{hyperref} % Hyperlinks
+\usepackage{ragged2e} % Text position
+\usepackage[export]{adjustbox} % Image position
+\usepackage[most]{tcolorbox}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{dsfont}
+\usepackage{verbatim}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{csquotes}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage[absolute,overlay]{textpos}
+\usepackage{psfrag}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{eqnarray}
+\usepackage{arydshln}
+\usepackage{tabularx}
+\usepackage{placeins}
+\usepackage{tikz}
+\usepackage{setspace}
+\usepackage{colortbl}
+\usepackage{mathtools}
+\usepackage{wrapfig}
+\usepackage{bm}
+\usepackage{subfig}
+
+
+\input{../latex-math/basic-math.tex}
+\input{../latex-math/basic-ml.tex}
+\input{../latex-math/ml-eval.tex}
+\input{../latex-math/ml-hpo.tex}
+
+
+\title{I2ML :\,: CHEAT SHEET} % Package title in header, \, adds thin space between ::
+\newcommand{\packagedescription}{ % Package description in header
+	The \textbf{I2ML}: Introduction to Machine Learning course offers an introductory and applied overview of "supervised" Machine Learning. It is organized as a digital lecture.
+}
+
+\newlength{\columnheight} % Adjust depending on header height
+\setlength{\columnheight}{84cm} 
+
+\newtcolorbox{codebox}{%
+	sharp corners,
+	leftrule=0pt,
+	rightrule=0pt,
+	toprule=0pt,
+	bottomrule=0pt,
+	hbox}
+
+\newtcolorbox{codeboxmultiline}[1][]{%
+	sharp corners,
+	leftrule=0pt,
+	rightrule=0pt,
+	toprule=0pt,
+	bottomrule=0pt,
+	#1}
+
+\begin{document}
+\begin{frame}[fragile]{}
+\begin{columns}
+	\begin{column}{.31\textwidth}
+		\begin{beamercolorbox}[center]{postercolumn}
+			\begin{minipage}{.98\textwidth}
+				\parbox[t][\columnheight]{\textwidth}{
+
+        \begin{myblock}{Hyperparameter Tuning}
+          \begin{codebox}
+            \textbf{Hyperparameter Tuning:}
+            \end{codebox}
+
+              \textbf{Hyperparameters} $\lamv$: parameters that are \emph{inputs} to the training problem, in which a learner $\ind$ minimizes the empirical risk on a training data set to find optimal \textbf{model parameters} $\bm{\theta}$ that define fitted model $\fh$.
+
+\textbf{Hyperparameter optimization (HPO) / Tuning} is the process of finding a well-performing hyperparameter configuration (HPC) $\lamv \in \LamS$ for an learner $\Ilam$.
+
+The general HPO problem is defined as:
+$$ \lams \in \argmin_{\lamv \in \LamS} \clam = \argmin_{\lamv \in \LamS} \GEhresa,$$
+with $\lams$ as theoretical optimum, and $\clam$ is short for estim. gen. error
+when $\ind$, resampling splits $\JJ$, performance measure $\rho$ are fixed.
+
+  \begin{codebox}
+\textbf{Components of a tuning problem:}
+\end{codebox}
+The dataset, the learner (tuned), the learner’s hyperparameters and their respective regions-of-interest over which optimization is done, the performance measure, a (resampling) procedure for estimating the predictive performance.
+
+\begin{codebox}
+\textbf{Tuning is hard:}
+\end{codebox}
+
+Tuning is derivative-free which is a black-box problem. Every evaluation is \textbf{expensive} and the answer we get from that evaluation is \textbf{not exact, but stochastic} in most settings. The space of hyperparameters we optimize over has a non-metric, complicated structure.
+
+\end{myblock}
+
+\begin{myblock}{Basic Techniques}
+  
+  \begin{codebox}
+  \textbf{Grid Search:}
+  \end{codebox}
+  For each hyperparameter a finite set of candidates is predefined and searches all possible combinations in arbitrary order.
+
+    \begin{figure}
+      \subfloat[Grid]{\includegraphics[width=0.45\textwidth]{img/grid_1.PNG}}
+      \subfloat[Random]{\includegraphics[width=0.45\textwidth]{img/rand.PNG}}\\
+    \end{figure}
+
+  \end{myblock}
+			}
+			\end{minipage}
+		\end{beamercolorbox}
+	\end{column}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{column}{.31\textwidth}
+\begin{beamercolorbox}[center]{postercolumn}
+\begin{minipage}{.98\textwidth}
+\parbox[t][\columnheight]{\textwidth}{
+  
+  \begin{myblock}{ }
+  
+  \begin{codebox}
+  \textbf{Random Search:}
+  \end{codebox}   
+  Small variation of Grid Search. Uniformly sample from the region-of-interest.
+
+  \textbf{Note:} Both grid and random search are very easy to implement, all parameter types possible, have trivial parallelization. However, both are also inefficient and scale badly.
+  
+  \begin{codebox}
+    \textbf{Bayesian Optimization (BO):}
+    \end{codebox}   
+    BO sequentially iterates:
+    \begin{enumerate}
+      \setlength{\itemindent}{+.3in}
+\item \textbf{Approximate} $\bm{\lambda} \mapsto c(\bm{\lambda})$ by (nonlin) regression model $\hat c(\bm{\lambda})$, from evaluated configurations (archive)
+\item \textbf{Propose candidates} via optimizing an acquisition function that is based on the surrogate $\hat c(\bm{\lambda})$
+\item \textbf{Evaluate} candidate(s) proposed in 2, then go to 1 
+\end{enumerate}
+
+Important trade-off: \textbf{Exploration} (evaluate candidates in under-explored areas) vs. \textbf{exploitation} (search near promising areas)
+
+\hspace*{1ex}
+
+\begin{columns}
+  \column{0.45\textwidth}
+  \textbf{Surrogate Model}: 
+  \begin{itemize}[$\bullet$]
+    \setlength{\itemindent}{+.3in}
+      \item Probabilistic modeling of $C(\lamv) \sim (\hat c(\bm{\lambda}), \hat \sigma(\bm{\lambda}))$ with posterior mean $\hat c(\bm{\lambda})$ and uncertainty  $\hat \sigma(\bm{\lambda})$.  
+      \item Typical choices for numeric spaces are Gaussian Processes; random forests for mixed spaces
+  \end{itemize}
+  \column{0.5\textwidth}
+  \vspace*{0.5cm}
+  \includegraphics[width = 1\textwidth]{img/mbo.png}
+  \end{columns}
+  
+  \textbf{Acquisition Function}: 
+  \begin{itemize}[$\bullet$]
+    \setlength{\itemindent}{+.3in}
+      \item Balance exploration (high $\hat \sigma$) vs. exploitation (low $\hat c$). 
+      \item Lower confidence bound (LCB): $\quad a(\bm{\lamv}) = \hat c(\bm{\lambda}) - \kappa \cdot \hat \sigma(\lamv)$ 
+      \item Expected improvement (EI): $\quad a(\lamv) = \E\left[\max\left\{c_{\min} - C(\lamv), 0\right\}\right]$ where ($c_{\min}$ is best cost value from archive)
+      %($c_{\min}$ is best observed value)
+      \item Optimizing $a(\lamv)$ is still difficult, but cheap(er)
+  \end{itemize}
+
+  \end{myblock}
+  
+  \begin{myblock}{Nested Resampling}
+  \begin{codebox} \textbf{Problem of Tuning}	\end{codebox}
+  Need to \textbf{select an optimal learner} without compromising the \textbf{accuracy of the performance estimate} for that learner. For this \textbf{untouched test set} is needed.
+  
+  \end{myblock}
+  }
+\end{minipage}
+\end{beamercolorbox}
+\end{column}
+  
+  \begin{column}{.31\textwidth}
+\begin{beamercolorbox}[center]{postercolumn}
+\begin{minipage}{.98\textwidth}
+\parbox[t][\columnheight]{\textwidth}{
+  \begin{myblock}{}
+  
+    \begin{codebox} \textbf{Train-validation-test}	\end{codebox}
+  A 3-way split is the simplest method:
+    During tuning, a learner is trained on the \textbf{training set}, evaluated on the  \textbf{validation set} and after the best model configuration $\lambda^\star$ is selected, we re-train on the joint (training+validation) set and evaluate the model's performance on the \textbf{test set}.\\
+
+\begin{center}
+             \includegraphics[width=1\columnwidth]{img/tuning_1.PNG}
+               \end{center}
+
+\hspace*{1ex}
+
+If we want to tune over a set of candidate HP configurations $\lambda_i; i = 1, \dots$ with 4-fold CV in the inner resampling and 3-fold CV in the outer loop. The outer loop is visualized as the light green and dark green parts.
+
+ \begin{codebox} \textbf{Nested Resampling}	\end{codebox}
+ 
+ \begin{center}
+             \includegraphics[width=0.9\columnwidth]{img/tuning_2.PNG}
+               \end{center}
+The outer loop is visualized as the light green and dark green parts. This is with 4-fold CV in the inner resampling and 3-fold CV in the outer loop.
+
+                    \end{myblock}
+
+
+
+}
+\end{minipage}
+\end{beamercolorbox}
+\end{column}
+
+\end{columns}
+\end{frame}
+\end{document}
