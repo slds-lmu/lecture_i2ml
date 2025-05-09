@@ -39,7 +39,6 @@
 
 \input{../latex-math/basic-math.tex}
 \input{../latex-math/basic-ml.tex}
-%\input{../../latex-math/ml-lm.tex}
 
 
 \title{I2ML :\,: CHEAT SHEET} % Package title in header, \, adds thin space between ::
@@ -80,11 +79,11 @@
 						
 						\begin{itemize}[$\bullet$]     
 						\setlength{\itemindent}{+.3in}
-              \item $\Lxy = (y-\fx)^2$ or $\Lxy = 0.5 (y-\fx)^2$
-              \item Convex and differentiable
-              \item Tries to reduce large residuals (if residual is twice as large, loss is 4 times as large)   
-              \item Risk minimizer $\fxbayes = \E_{y|x} \left[y ~|~ \xv \right]$
-              \item Optimal constant model $\fxh = \frac{1}{n} \sumin \yi$
+              \item $\Lxy = (y-\fx)^2$ or $\Lxy = 0.5 (y-\fx)^2$.
+              \item Convex and differentiable.
+              \item Tries to reduce large residuals (if residual is twice as large, loss is 4 times as large).
+              \item Risk minimizer $\fxbayes = \E_{y|x} \left[y ~|~ \xv \right]$.
+              \item Optimal constant model $\fxh = \frac{1}{n} \sumin \yi$.
             \end{itemize}
 
             \vspace*{1ex}
@@ -95,11 +94,11 @@
 \end{codebox}
 
 \begin{itemize}[$\bullet$]     \setlength{\itemindent}{+.3in}
-\item $\Lxy = |y-\fx|$
-\item Convex and more robust
-\item No derivatives for $ = 0$, $y = \fx$, optimization becomes harder
-\item Risk minimizer $\fxbayes = \text{med}_{y|x} \left[y ~|~ \xv \right]$
-\item Optimal constant model $\fxh = \text{med}(\yi)$    
+\item $\Lxy = |y-\fx|$.
+\item Convex and more robust.
+\item No derivatives for $ = 0$, $y = \fx$, optimization becomes harder.
+\item Risk minimizer $\fxbayes = \text{med}_{y|x} \left[y ~|~ \xv \right]$.
+\item Optimal constant model $\fxh = \text{med}(\yi)$.
   \end{itemize}
 
 \includegraphics[width=0.8\columnwidth]{img/reg_loss_2.PNG} 
@@ -120,12 +119,44 @@
 
 \begin{myblock}
   {Linear Regression Models}
+
+  Predict $y \in \R$ as \textbf{linear} combination of features:
+  $$\yh = \fx = \thx = \theta_0 + \theta_1 x_1 + \dots + \theta_p x_p.$$
+    
+  \begin{align*}
+    \hat \yv = \Xmat \thetav = 
+        \left(
+        \begin{smallmatrix}
+            1 & x^{(1)}_1 & \ldots & x^{(1)}_p \\
+            1 & x^{(2)}_1 & \ldots & x^{(2)}_p \\
+            \vdots & \vdots & & \vdots \\
+            1 & x^{(n)}_1 & \ldots & x^{(n)}_p \\
+        \end{smallmatrix}
+        \right)
+        \left(
+        \begin{smallmatrix}
+            \theta_0 \\ \theta_1 \\ \vdots \\ \theta_p
+        \end{smallmatrix}
+        \right)
+        &=
+        \left(
+        \begin{smallmatrix}
+            \theta_0 + \theta_1 x_1^{(1)} + \dots + \theta_p x_p^{(1)} \\
+            \theta_0 + \theta_1 x_1^{(2)} + \dots + \theta_p x_p^{(2)} \\
+            \vdots \\
+            \theta_0 + \theta_1 x_1^{(n)} + \dots + \theta_p x_p^{(n)} \\
+        \end{smallmatrix}
+        \right)
+    \end{align*}
+ 
+    $\Xmat \in \R^{n \times (p + 1)}$ is the \textbf{design matrix}.
+
 \begin{codebox}
     \textbf{Risk (corresponding to \textbf{L2 Loss}):}
 \end{codebox} 
     \[\risket = \operatorname{SSE}(\thetav) = \sumin \Lxyit = \sumin \left(\yi - \thetav^T \xi\right)^2\]
     Via normal equations $\pd{\risket}{\thetav} = 0$ we get ordinary-least-squares (OLS) estimator
-    $\thetavh = \olsest$
+    $\thetavh = \olsest$.
 
   \begin{codebox}
   \textbf{Risk (corresponding to \textbf{L1 Loss}):}
@@ -133,7 +164,7 @@
   \[
     \risket = \sumin \Lxyit = \sumin \left|\yi - \theta^T \xi\right| \qquad
     \]
-  L1 loss is harder to optimize, but the model is less sensitive to outliers
+  L1 loss is harder to optimize, but the model is less sensitive to outliers.
   
   \begin{codebox}
   \textbf{Summary:}
@@ -161,12 +192,33 @@
 \parbox[t][\columnheight]{\textwidth}{
   \begin{myblock}{Polynomial Regression Models}
   
-    Linear regression models can be made more flexible by using \emph{polynomials} $x_j^d$ -- or any other \emph{derived features} like $\sin(x_j)$ or $(x_j \cdot x_k)$ -- as additional features. The optimization and risk of the learner remain the same.\vspace*{1ex}
-    Only the hypothesis space of the learner changes and includes linear functions of the derived features as well. e.g.:
-      \begin{align*}
-    f(\xi) &= \theta_0 + \sum^d_{k=1} \theta_{1k} \left(\xi_1\right)^k + \sum^d_{k=1} \theta_{2k} \left(\xi_2\right)^k + \dots
-    \end{align*}
-    
+   The linear model with \textbf{basis functions} $\phi_j$:
+    \begin{equation*} \label{true_lm}
+      \fx = \theta_0 + \sumjp \theta_j \phi_j (x_j)
+      = \theta_0 + \theta_1  \phi_1 \left( x_1 \right)
+      + \dots + \theta_p \phi_p \left(x_p \right)
+    \end{equation*}
+
+    Design matrix:
+\begin{align*}
+  \Xmat =
+  \left(
+    \begin{smallmatrix}
+        1 & \textcolor{black}{\phi_1} (x^{(1)}_1) & \ldots &
+        \textcolor{black}{\phi_p} (x^{(1)}_p) \\
+        % 1 & \textcolor{black}{\phi_2} (x^{(2)}_1) & \ldots &
+        % \textcolor{black}{\phi_2} (x^{(2)}_p) \\
+        \vdots & \vdots & & \vdots \\
+        1 & \textcolor{black}{\phi_1} (x^{(n)}_1) & \ldots &
+        \textcolor{black}{\phi_p} (x^{(n)}_p) \\
+    \end{smallmatrix}
+    \right)
+\end{align*}
+
+Simple \& flexible choice for basis functions: \textbf{$d$-polynomials} gives us \textbf{polynomial regression}:\\
+Map $x_j$ to (weighted) sum of its monomials up to order $d \in \N$
+$$ \phi^{(d)}: \R \rightarrow \R, x_j \mapsto \sum_{k = 1}^d \beta_k x_j^k$$
+
     Models of different \emph{complexity}, i.e. of different polynomial order $d$, are fitted to the data:
     
     %\vspace*{1ex}
@@ -174,7 +226,7 @@
   
 
   The higher $d$ is, the more \textbf{capacity} the learner has to learn complicated functions of $x$, but
-  this also increases the danger of \textbf{overfitting}
+  this also increases the danger of \textbf{overfitting}.
   
   \vspace*{1ex}
   
