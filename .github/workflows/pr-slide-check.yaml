@@ -1,9 +1,9 @@
 # Source version of this workflow lives in https://github.com/slds-lmu/lecture_service/service/.github/workflows
 # Please only update by copying from there to avoid divergences
 # - attempts slide compilation
-# - compares compiled slides against slides-pdf/
 # - compiles a markdown tables and appends it to the pull request that triggered it.
 # ... for only this particular lecture repo
+# !! Does not work for private repos or PRs from forks
 on:
   # Allow manually triggering the workflow via GitHub website, gh CLI tool etc.
   # Also adds parameter to enable tmate (inetractive tmux session for debugging)
@@ -21,7 +21,7 @@ on:
         default: '1'
   # Only on pull requests where files in these folders change
   pull_request:
-    paths: ['style/**', 'slides/**', 'latex-math/**', 'slides-pdf/**', '.github/workflows/pr-slide-check.yaml']
+    paths: ['style/**', 'slides/**', 'latex-math/**', '.github/workflows/pr-slide-check.yaml']
 
 name: pr-slide-check
 
@@ -121,3 +121,8 @@ jobs:
         with:
           filePath: slide_status_pr.md
           comment_tag: slide_check
+
+      # Helper script generates exit status 1 if at least one slide failed to compile
+      - name: Generate exit code based on check status
+        run: |
+          ./inst/check_status.R

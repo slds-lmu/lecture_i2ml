@@ -1,0 +1,77 @@
+\NeedsTeXFormat{LaTeX2e}
+
+\RequirePackage{graphicx}
+\RequirePackage{xstring}
+\RequirePackage{xparse}
+
+% Checks if input begins with http and creates either a direct link
+% or uses the citelink command to reference the provided citation key
+\DeclareRobustCommand{\makesourcelink}[1]{%
+  \par\vspace{1pt }\centering
+  \IfBeginWith{#1}{http}{%
+    {\tiny \beamergotobutton{\href{#1}{Click for Source}}}%
+  }{%
+    % {\tiny \raisebox{0.5ex}{Source:} \citelink{#1}}%
+    {\tiny \citelink{#1}}%
+  }%
+}
+
+% ------------------------------------------------------------------------
+% Image helpers for various alignments, including attribution
+% ------------------------------------------------------------------------
+% DeclareDocumentCommand is more flexible and available in LaTeX without the xparse package since 2020 or so
+% Usage: 
+% - \image{file.png}
+% - \image[0.5]{file.png}
+% - \image[0.5][CITEKEY]{file.png}
+% - Variants for horizontal alignment with L, C, R suffixes used analogously
+
+% Main image macro with optional width and attribution
+% #1 (optional) = width factor (default 1.0)
+% #2 (optional) = source attribution (CITEKEY or URL)
+% #3 (required) = image path
+\DeclareDocumentCommand{\image}{O{1} o m}{%
+  \includegraphics[width=#1\textwidth]{#3}%
+  \IfValueT{#2}{%
+    \makesourcelink{#2}%
+  }%
+}
+
+% Centered image variant
+\DeclareDocumentCommand{\imageC}{O{1} o m}{%
+  \begin{center}
+    \begin{minipage}{#1\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{#3}%
+      \IfValueT{#2}{%
+        \makesourcelink{#2}%
+      }%
+    \end{minipage}%
+  \end{center}%
+}
+
+% Left-aligned image variant
+\DeclareDocumentCommand{\imageL}{O{1} o m}{%
+  \begin{flushleft}
+    \begin{minipage}{#1\textwidth}
+      \raggedright
+      \includegraphics[width=\linewidth]{#3}%
+      \IfValueT{#2}{%
+        \makesourcelink{#2}%
+      }%
+    \end{minipage}%
+  \end{flushleft}%
+}
+
+% Right-aligned image variant
+\DeclareDocumentCommand{\imageR}{O{1} o m}{%
+  \begin{flushright}
+    \begin{minipage}{#1\textwidth}
+      \raggedleft
+      \includegraphics[width=\linewidth]{#3}%
+      \IfValueT{#2}{%
+        \makesourcelink{#2}%
+      }%
+    \end{minipage}%
+  \end{flushright}%
+}
