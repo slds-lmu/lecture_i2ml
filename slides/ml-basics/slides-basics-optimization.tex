@@ -7,280 +7,185 @@
 
 \begin{document}
 
-\titlemeta{% Chunk title (example: CART, Forests, Boosting, ...), can be empty
+\titlemeta{
   ML-Basics
-  }{% Lecture title  
+  }{
   Optimization
-}{% Relative path to title page image: Can be empty but must not start with slides/
+}{
   figure/err_surf
-}{% Learning goals, wrapped inside itemize environment
+}{
 \item Understand how the risk function is optimized to
   learn the optimal parameters of a model
 \item Understand the idea of gradient descent as a basic risk optimizer
 }
 
 
-\begin{vbframe}{Learning as Parameter Optimization}
+\begin{frame}{Learning as Parameter Optimization}
 \begin{itemize}
-\item Operationalize search for model $f$ that matches
-    training data best by looking for parametrization $\thetav \in \Theta$
-    with lowest risk $\risket$.
-\item Traverse error surface downwards; often local search from some start point to minimum (hopefully).
+  \item Operationalize search for model $f$ that matches training data best by looking for parametrization $\thetav \in \Theta$ with lowest risk $\risket$.
+  \item Traverse error surface downwards; often local search from some start point to minimum (hopefully).
 \end{itemize}
-
 \vfill
-
 \begin{center}
 \begin{figure}[!b]
 \includegraphics[trim=2.4cm 2.4cm 2.4cm 2.4cm, width=0.4\textwidth]{figure/err_surf}
 \end{figure}
 \end{center}
+\end{frame}
 
-\framebreak
 
+\begin{frame}{Learning as Parameter Optimization}
 ERM optimization problem:
-% this means that we find the best model $\hat f$ parametrized by parameters $\thetavh \in \Theta$ regarding an empirical risk $\riske$ by \textbf{minimizing} $\risket$ with respect to $\thetav$, i.e., 
-
-\[
-\thetavh  = \argmin_{\thetav \in \Theta} \risket 
-\]
-
+$$
+\thetavh = \argmin_{\thetav \in \Theta} \risket 
+$$
 For \textbf{(global) minimum} $\thetavh$:
-\[
+$$
 \forall \thetav \in \Theta :\quad \riske(\thetavh) \leq \risket 
-\]
-
+$$
 Does not imply that $\thetavh$ is unique. \\
-\lz
-
-\begin{itemizeM}
-\item Best numerical optimizer depends on problem structure
-\item Continuous params? Uni-modal $\risket$? 
-\item Numerical optimization not our focus here, now
-\end{itemizeM}
-
-\end{vbframe}
-\begin{vbframe}{Local Minima}
-
-Definition of \textbf{local minimum} $\thetavh$:
-\[
-\exists \epsilon > 0\; \forall \thetav \text{ with } \left\Vert\thetavh - \thetav\right\Vert < \epsilon: \quad \riske(\thetavh) \leq \risket 
-\]
-Clearly every global minimum is also a local minimum.\\
-
-Finding local minimum is easier than global one.
-
 \vfill
+\begin{itemizeM}
+  \item Best numerical optimizer depends on problem structure
+  \item Continuous params? Uni-modal $\risket$? 
+  \item Numerical optimization not our focus here, now
+\end{itemizeM}
+\end{frame}
 
-\begin{center}
-\begin{figure}[!b]
-\includegraphics[width=0.7\textwidth]{figure/g_l_min}
-\end{figure}
-\end{center}
 
-\end{vbframe}
-\begin{vbframe}{Local Minima and stationary points}
-\footnotesize
+\begin{frame}{Local Minima}
+Definition of \textbf{local minimum} $\thetavh$:
+$$
+\exists \epsilon > 0\; \forall \thetav \text{ with } \left\Vert\thetavh - \thetav\right\Vert < \epsilon: \quad \riske(\thetavh) \leq \risket 
+$$
+Clearly every global minimum is also a local minimum.\\
+Finding local minimum is easier than global one.
+\vfill
+\imageC[0.7]{figure/g_l_min}
+\end{frame}
+
+
+\begin{frame2}[footnotesize]{Local Minima and stationary points}
 If $\riske$ continuously differentiable, \textbf{sufficient condition} for local minimum: \\
 $\thetavh$ is \textbf{stationary}, so 0 gradient, so no local improvement possible:
-\[
+$$
 \frac{d \riske}{d\thetav}(\thetavh) = 0
-\]
+$$
 \textbf{and} Hessian at $\thetavh$ is positive definite. \\
-
 Neg. gradient points into direction of fastest local decrease;\\
 Hessian measures local curvature.
-
+\vfill
 \begin{figure}[!htb]
 \splitVThree{
-  \includegraphics[width=0.9\linewidth]{figure/grad}
-  \caption*{\footnotesize$\frac{d\riske}{d\thetav}(\thetav)$}
+\image[0.9]{figure/grad}
+\caption*{\footnotesize$\frac{d\riske}{d\thetav}(\thetav)$}
 }
 {
-  \includegraphics[trim=2.2cm 2.2cm 2.2cm 2.2cm, width=0.9\linewidth]{figure/hess1}
-  \caption*{\footnotesize const. pos. def. Hessian}
+\includegraphics[trim=2.2cm 2.2cm 2.2cm 2.2cm, width=0.9\linewidth]{figure/hess1}
+\caption*{\footnotesize const. pos. def. Hessian}
 }
 {
-  \includegraphics[trim=2.2cm 2.2cm 2.2cm 2.2cm, width=0.9\linewidth]{figure/hess2}
-  \caption*{\footnotesize const. neg. def. Hessian}
+\includegraphics[trim=2.2cm 2.2cm 2.2cm 2.2cm, width=0.9\linewidth]{figure/hess2}
+\caption*{\footnotesize const. neg. def. Hessian}
 }
 \end{figure}
-
-\end{vbframe}
-
-%% BB: we cover that in the lin-reg part later and dont need this level of detail here
-% \begin{vbframe}{Least Squares Estimator}
-% Now, for given features $\Xmat \in \mathbb{R}^{n\times p}$ and target $\yv \in \mathbb{R}^n$, we want to find the best linear model regarding the squared error loss, i.e.,
-% \[\risket = \left\Vert \Xmat\thetav - \yv\right\Vert_2^2 = \sumin (\thetav^\top\xv^{(i)} - \yi)^2\;.\]
-
-% With the sufficient condition for continously differentiable functions it can be shown that the \textbf{least squares estimator}
-% \[\thetavh = (\Xmat^\top\Xmat)^{-1}\Xmat^\top\yv.\]
-% is a local minimum of $\riske$. If $\Xmat$ is full-rank, $\riske$ is strictly convex and there is only one local minimum - which is also global. \\
-
-% \lz \textbf{Note:} Often such analytical solutions in ML are not possible, and we rather have to use iterative numerical optimization.
-
-% \end{vbframe}
+\end{frame2}
 
 
-\begin{vbframe}{Gradient Descent}
-\begin{itemize}
-
+\begin{framei}{Gradient Descent}
 \item Iteratively improve  current candidate $\thetav^{[t]}$ 
 \item Move in direction of  neg. gradient, so direction of steepest descent
 \item Use step size / learning rate $\alpha$ 
-
-\end{itemize}
-    
-\[
-    \thetav^{[t+1]} = \thetav^{[t]} - \alpha \frac{d \riske}{d\thetav}{(\thetav^{[t]})}
-\]
-
-\begin{tabular}{l}
-
-\minipage{0.32\textwidth}
-  \includegraphics[trim=2cm 2cm 2cm 2cm, width=\linewidth]{figure/grad_desc1}  
-\endminipage\hfill
-\minipage{0.1\textwidth}
-$\;$
-\endminipage\hfill
-\minipage{0.54\textwidth}
-\vspace{0pt}% 
+$$
+\thetav^{[t+1]} = \thetav^{[t]} - \alpha \frac{d \riske}{d\thetav}{(\thetav^{[t]})}
+$$
+\splitV[0.45]{
+\includegraphics[trim=2cm 2cm 2cm 2cm, width=0.9\linewidth]{figure/grad_desc1}
+}{
 Random start $\thetav^{[0]}$ with\\
 $\riske(\thetav^{[0]}) = 76.25.$
-\endminipage\hfill
-\end{tabular}
+}
+\end{framei}
 
-\end{vbframe}
 
-\begin{vbframe}{Gradient Descent - Example}
-\begin{tabular}{l}
-\minipage{0.32\textwidth}
-  \includegraphics[trim=2cm 2cm 2cm 2cm, width=\linewidth]{figure/grad_desc2}  
-\endminipage\hfill
-\minipage{0.1\textwidth}
-$\;$
-\endminipage\hfill
-\minipage{0.54\textwidth}
-\vspace{0pt}% 
+\begin{frame}{Gradient Descent - Example}
+\splitVCC[0.4]{
+\includegraphics[trim=2cm 2cm 2cm 2cm, width=0.9\linewidth]{figure/grad_desc2}  
+}{
 Direction of the neg. gradient at $\thetav^{[0]}$
-\endminipage\hfill
-\\
-\minipage{0.32\textwidth}
-  \includegraphics[trim=2cm 2cm 2cm 2cm, width=\linewidth]{figure/grad_desc3}  
-\endminipage\hfill
-\minipage{0.1\textwidth}
-$\;$
-\endminipage\hfill
-\minipage{0.54\textwidth}
-\vspace{0pt}% 
-Arrive at $\thetav^{[1]}$ with $\riske(\thetav^{[1]}) \approx 42.73.$ \\ We improved:\\$\riske(\thetav^{[1]}) < \riske(\thetav^{[0]})$
-\endminipage\hfill
-\end{tabular}
-\end{vbframe}
-\begin{vbframe}{Gradient Descent - Example}
-\begin{tabular}{l}
-\minipage{0.32\textwidth}
-  \includegraphics[trim=2cm 2cm 2cm 2cm, width=\linewidth]{figure/grad_desc4}  
-\endminipage\hfill
-\minipage{0.1\textwidth}
-$\;$
-\endminipage\hfill
-\minipage{0.54\textwidth}
-\vspace{0pt}% 
-Now iterate, do the same at $\thetav^{[1]}$
-\endminipage\hfill
-\\
-\minipage{0.32\textwidth}
-  \includegraphics[trim=2cm 2cm 2cm 2cm, width=\linewidth]{figure/grad_desc5}  
-\endminipage\hfill
-\minipage{0.1\textwidth}
-$\;$
-\endminipage\hfill
-\minipage{0.54\textwidth}
-\vspace{0pt}% 
-Now $\thetav^{[2]}$ has risk $\riske(\thetav^{[2]}) \approx 25.08$
-% Thus clearly, we have improved our estimation again.
-\endminipage\hfill
-\end{tabular}
-\end{vbframe}
-\begin{vbframe}{Gradient Descent - Example}
-\begin{tabular}{l}
-\minipage{0.32\textwidth}
-  \includegraphics[trim=2cm 2cm 2cm 2cm, width=\linewidth]{figure/grad_desc6}  
-\endminipage\hfill
-\minipage{0.1\textwidth}
-$\;$
-\endminipage\hfill
-\minipage{0.54\textwidth}
-\vspace{0pt}% 
-We iterate this until some form of convergence or termination
-% \footnote[frame]{This is not the only stopping criterium; e.g., we could limit the number of iterations.}. 
-\endminipage\hfill
-\\
-\minipage{0.32\textwidth}
-  \includegraphics[trim=2cm 2cm 2cm 2cm, width=\linewidth]{figure/grad_desc7}  
-\endminipage\hfill
-\minipage{0.1\textwidth}
-$\;$
-\endminipage\hfill
-\minipage{0.54\textwidth}
-\vspace{0pt}% 
-We arrive close to a stationary $\thetavh$ which is hopefully at least
-a local minimum
-\endminipage\hfill
-\end{tabular}
-\end{vbframe}
+}
+\vfill
+\splitVCC[0.4]{
+\includegraphics[trim=2cm 2cm 2cm 2cm, width=0.9\linewidth]{figure/grad_desc3}
+}{
+Arrive at $\thetav^{[1]}$ with $\riske(\thetav^{[1]}) \approx 42.73.$\\
+We improved:
+$\riske(\thetav^{[1]}) < \riske(\thetav^{[0]})$
+}
+\end{frame}
 
-\begin{vbframe}{Gradient Descent - Learning Rate}
+
+\begin{frame}{Gradient Descent - Example}
+\splitVCC[0.4]{
+\includegraphics[trim=2cm 2cm 2cm 2cm, width=0.9\linewidth]{figure/grad_desc4}
+}{
+$\quad$Now iterate, do the same at $\thetav^{[1]}$
+}
+\vfill
+\splitVCC[0.4]{
+\includegraphics[trim=2cm 2cm 2cm 2cm, width=0.9\linewidth]{figure/grad_desc5}
+}{
+$\quad$Now $\thetav^{[2]}$ has risk $\riske(\thetav^{[2]}) \approx 25.08$
+}
+\end{frame}
+
+
+\begin{frame}{Gradient Descent - Example}
+\splitVCC[0.4]{
+\includegraphics[trim=2cm 2cm 2cm 2cm, width=0.9\linewidth]{figure/grad_desc6}
+}{
+We iterate this until some form of convergence or termination
+}
+\vfill
+\splitVCC[0.4]{
+\includegraphics[trim=2cm 2cm 2cm 2cm, width=0.9\linewidth]{figure/grad_desc7}
+}{
+We arrive close to a stationary $\thetavh$ which is hopefully at least a local minimum
+}
+\end{frame}
+
+
+\begin{frame}{Gradient Descent - Learning Rate}
 \footnotesize
 \begin{itemize}
-\item Neg. gradient is direction that looks locally promising to reduce $\riske$. \\
-\item Hence weights components higher
-    % \footnote[frame]{in an absolute sense} 
-    in which $\riske$ decreases more. \\
-\item However, the length of $-\frac{d}{d\thetav}{\riske}$ measures only the local decrease rate, i.e., there are no guarantees that we will not go ``too far''. \\
-\item We use a learning rate $\alpha$ to scale the step length in each iteration. Too much can lead to overstepping and no convergence, too low leads to slow convergence.
-\item Usually, a simple constant rate or rate-decrease mechanisms to enforce local convergence are used.
-\vspace{-2em}
+  \item Neg. gradient is direction that looks locally promising to reduce $\riske$.
+  \item Hence weights components higher in which $\riske$ decreases more.
+  \item However, the length of $-\frac{d}{d\thetav}{\riske}$ measures only the local decrease rate, i.e., there are no guarantees that we will not go ``too far''.
+  \item We use a learning rate $\alpha$ to scale the step length in each iteration. Too much can lead to overstepping and no convergence, too low leads to slow convergence.
+  \item Usually, a simple constant rate or rate-decrease mechanisms to enforce local convergence are used.
 \end{itemize}
 \begin{figure}[!htb]
 \splitVThree{
-  \includegraphics[width=\linewidth]{figure/grad_desc_alpha1}
-  \caption*{\tiny good convergence for $\alpha_1$}
+\image[1]{figure/grad_desc_alpha1}
+\caption*{\tiny good convergence for $\alpha_1$}
 }
 {
-  \includegraphics[width=\linewidth]{figure/grad_desc_alpha2}
-  \caption*{\tiny slow convergence for $\alpha_2 (< \alpha_1$)}
+\image[1]{figure/grad_desc_alpha2}
+\caption*{\tiny slow convergence for $\alpha_2 (< \alpha_1$)}
 }
 {
-  \includegraphics[width=\linewidth]{figure/grad_desc_alpha3}
-  \caption*{\tiny no convergence for $\alpha_3 (> \alpha_1$)}
+\image[1]{figure/grad_desc_alpha3}
+\caption*{\tiny no convergence for $\alpha_3 (> \alpha_1$)}
 }
 \end{figure}
+\end{frame}
 
-\end{vbframe}
-
-\begin{vbframe}{Further topics}
-\begin{itemize}
-
+\begin{framei}{Further topics}
 \item Few models, e.g. linear regression, can be optimized analytically. 
-
 \item GD is a so-called first-order method. Second-order methods (like Newton-Raphson) use the Hessian to refine the search direction for faster convergence.
 \item There exist many improvements of GD (momentum, ADAM), e.g., to smartly control the learn rate, to escape saddle points, to mimic second order behavior without computing the Hessian.
-    % ould also optimize the learning rate $\alpha$.
-% \item If some parameters are dependent of each other, we can model such dependicies either by \textbf{equality} or \textbf{inequality constraints}, i.e., 
-% \[g(\thetav) = 0 \quad \text{or} \quad h(\thetav) \geq 0.\]
-% There exist numerical methods to solve constrained optimization problems, such as sequential quadratic programming.
 \item If the gradient is not computed on the complete data, but instead on small, random batches, this is \textbf{stochastic gradient descent} (SGD). For large-scale problems, this is usually more efficient.
-% \item Often it is desirable to not allow arbitrarily large $\Vert \thetavh \Vert$, since this could result, among other things, in numerical instability of the method. This procedure is called \textbf{regularization}.
-\end{itemize}
-\end{vbframe}
-
-
-% \begin{vbframe}{Further topics}
-    % learning vs optimuzation,.,.,.
-% \end{vbframe}
-
+\end{framei}
 
 \endlecture
 
