@@ -9,7 +9,7 @@ line_size <- 5
 base_size <- 28
 
 color_palette <- c(" 0" = "black", " 2" = "orange", "-2" = "#0072B2", 
-                   " 0.4" = "darkgreen", "-5  " = "firebrick", "-1  " = "purple", " 1  " = "black")
+                   " 0.4" = "darkgreen", " 5  " = "firebrick", "-1  " = "purple", " 1  " = "black")
 
 
 # DEFINITIONS
@@ -25,7 +25,7 @@ y <- seq(0.01, 0.99, length.out = 100)  # To avoid logit issues at 0 and 1
 # plot 1: standard logistic function
 data_logistic <- data.frame(x = x, y = logistic(x))
 p1 <- ggplot(data_logistic, aes(x, y)) +
-  geom_line(size = line_size, color = "black") +
+  geom_line(linewidth = line_size, color = "black") +
   labs(x = "f", y = "s(f)") +
   theme_minimal(base_size = base_size)
 p1
@@ -38,33 +38,31 @@ data_shifted <- data.frame(
 )
 
 p2 <- ggplot(data_shifted, aes(x, y, color = theta)) +
-  geom_line(size = line_size) +
+  geom_line(linewidth = line_size) +
   scale_color_manual(values = color_palette) +
   labs(x = "f", y = "s(f)", color = expression(theta[0])) +
   theme_minimal(base_size = base_size)
-
 p2
 
 data_scaled <- data.frame(
   x = rep(x, 4),
   y = c(logistic_scaled(x, 0.4), logistic_scaled(x, 5), logistic(x), logistic_scaled(x, -1)),
-  Slope = rep(c(" 0.4", "-5  ", " 1  ", "-1  "), each = length(x))
+  Slope = rep(c(" 0.4", " 5  ", " 1  ", "-1  "), each = length(x))
 )
 
 p3 <- ggplot(data_scaled, aes(x, y, color = Slope)) +
-  geom_line(size = line_size) +
+  geom_line(linewidth = line_size) +
   scale_color_manual(values = color_palette) +
   labs(x = "f", y = "s(f)", color = expression(alpha)) +
   theme_minimal(base_size = base_size)
-
 p3
 
 
 # plot 4: logit
 data_logit <- data.frame(y = y, logit_y = logit(y))
 p4 <- ggplot(data_logit, aes(y, logit_y)) +
-  geom_line(size = line_size) +
-  labs(x = "π", y = "logit(π)") +
+  geom_line(linewidth = line_size) +
+  labs(x = expression(pi), y = expression(logit(pi))) +
   theme_minimal(base_size = base_size)
 p4
 
