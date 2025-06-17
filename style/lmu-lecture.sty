@@ -1,6 +1,9 @@
 \RequirePackage{graphicx}
+\RequirePackage{color}
 \RequirePackage{amsmath,amssymb,amsfonts}
 \RequirePackage{array}
+
+% Some bespoke right arrow>
 \DeclareSymbolFont{mysymbols}{OMS}{cmsy}{m}{n}
 \SetSymbolFont{mysymbols}{bold}{OMS}{cmsy}{b}{n}
 \DeclareMathSymbol{\myRightarrow}{\mathrel}{symbols}{"29}
@@ -38,8 +41,6 @@
 
   % "i2ml" text color (taken from dark logo color)
   \definecolor{logoblue}{HTML}{4D88FF}
-  %\definecolor{marginbg}{HTML}{FFFAF8}  % slightly tinted margin
-  %\definecolor{marginbg}{HTML}{F8F8F8}  % grey margin
   \definecolor{marginbg}{HTML}{FFFFFF}  % white margin
 
   \setbeamertemplate{background}{%
@@ -61,23 +62,13 @@
   \setbeamersize{text margin left=0.8cm,text margin right=0.8cm}
 \fi
 
-\newenvironment{rightbox}[1]
-{\itemize[
-    nosep,
-    leftmargin=\dimexpr\textwidth-#1\relax,
-    rightmargin=0pt,
-    itemindent=\parindent,
-    listparindent=\parindent,
-  ]\item[]\relax}
-{\enditemize}
 
 %-------------------------------------------------------------------%
 %   BeginLecture // Title slide                                     %
 %-------------------------------------------------------------------%
 
-% Wrapper to insert title figure within a column env
-% Only needed because column is placed in an if/else arm
-% which is not allowed otherwise (I might be wrong)
+% Helper macros for \titlemeta - needed because environments
+% cannot be placed directly inside \if...\fi constructs
 \newcommand{\includeGraphicsColumn}[1]{%
   \begin{column}{.45\textwidth}
     \begin{figure}[!b]
@@ -89,12 +80,8 @@
   \end{column}%
 }
 
-% Similar wrapper to insert learning goals
 \newcommand{\includeLearningGoalsColumn}[1]{%
   \begin{column}{.55\textwidth}
-    % Uncomment for visual debugging of columns with red line
-    % \color{blue}\rule{\linewidth}{4pt}
-    % \vfill % No vfill needed if columns are vertically centered
     {\normalsize\bfseries Learning goals}
     \normalfont
     \begin{itemize}
@@ -154,14 +141,10 @@
     \begin{columns}[c] % align columns (c)enter or (T)op
       % if checks if argument (detokenized?) is empty, i.e. equal to \relax
       \if\relax\detokenize{#3}\relax\else%
-        % column env is wrapped in separate command because
-        % envs aren't allowed directly within if-else arms apparently
-        % Idea is to have learning goals horizontally centered if no figure is used
         \includeGraphicsColumn{#3}
       \fi
 
       \if\relax\detokenize{#4}\relax\else%
-        % Same idea with learning goals column
         \includeLearningGoalsColumn{#4}
       \fi
     \end{columns}%
@@ -352,17 +335,6 @@
 \defbeamertemplate*{headline}{lecture theme}{}
 
 %-------------------------------------------------------------------%
-%   Citebutton (superseded by \citelink defined in preamble.tex)    %
-%-------------------------------------------------------------------%
-
-% This version is superseded and \citelink will likely be defined here once widely adopted
-% Example usage (from slides-cart-discussion.tex)
-% \citebutton{Breiman, 1984}{https://www.taylorfrancis.com/books/mono/10.1201/9781315139470/classification-regression-trees-leo-breiman}
-\newcommand{\citebutton}[2]{%
-  \NoCaseChange{\resizebox{!}{9pt}{\protect\beamergotobutton{\href{#2}{#1}}}}%
-}
-
-%-------------------------------------------------------------------%
 %   Environments                                                    %
 %-------------------------------------------------------------------%
 % Newly developed suites of macros may be factor out into their own .sty files.
@@ -380,14 +352,15 @@
   \end{frame}
 }
 
-% Itemize block, rarely used
+% Itemize block, rarely used, should probably be phased out?
 \newenvironment{blocki}[1]
 {
   \begin{block}{#1}\begin{itemize}
       }
       {
-    \end{itemize}\end{block}
+  \end{itemize}\end{block}
 }
+
 
 % ------------------------------------------------------------------------
 % Misc helper for formatting, convenience, etc

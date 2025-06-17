@@ -1,0 +1,112 @@
+% ref-buttons.sty - Reference and citation buttons for beamer presentations
+% Provides \furtherreading and \sourceref macros for creating clickable reference buttons
+%
+% CRITICAL NOTE: The \furtherreading macro must maintain the exact structure of \citelink
+% to ensure clickable buttons. See the detailed comments in the macro definition.
+% Previous attempts to add conditional logic or reorganize the macro structure resulted
+% in buttons that appeared correct but were not clickable.
+
+\NeedsTeXFormat{LaTeX2e}
+
+% Fix for undefined \GenericError in usebib package
+% The usebib package uses \GenericError but it's not always available in all contexts
+% We provide a minimal implementation that shows informative error messages
+\providecommand{\@err@}{}
+\providecommand{\GenericError}[4]{%
+  \PackageError{usebib}{#3}{#4}%
+}
+
+% Required packages
+\RequirePackage{textcase}  % For \NoCaseChange
+\RequirePackage{hyperref}  % For hyperlinking
+\RequirePackage{xstring}   % For string manipulation
+\RequirePackage{ifthen}    % For conditional logic
+\RequirePackage{xcolor}    % For color definitions
+
+% Check if bibliography packages are needed and available
+\newif\ifusebibpackages
+\IfFileExists{references.bib}{
+  \usebibpackagestrue
+  \RequirePackage{usebib}
+  \RequirePackage[backend=biber, style=authoryear]{biblatex}
+  % Needed ro find the references file for display text
+  \addbibresource{./references.bib}
+  % Needed to extract content from references file for URL extraction
+  \bibinput{references}
+}{
+  \usebibpackagesfalse
+  \PackageWarning{ref-buttons}{No references.bib found. Bibliography features will be limited.}
+}
+
+% Define custom colors for the buttons
+\definecolor{furtherreadingcolor}{RGB}{173, 216, 230}    % Light blue background for further reading
+\definecolor{sourcerefcolor}{RGB}{255, 218, 185}         % Light orange/peach background for source references
+
+% Helper macros for cleaner, more maintainable code
+% These preserve the exact nesting structure required for clickability
+
+% Creates a colored, sized button with the exact nesting structure needed for clickability
+% Usage: \@refbuttons@coloredbutton{color}{hyperlink-content}
+\newcommand{\@refbuttons@coloredbutton}[2]{%
+  {%
+    \setbeamercolor{button}{bg=#1,fg=black}%
+    \resizebox{!}{9pt}{\protect\beamergotobutton{#2}}%
+  }%
+}
+
+
+% Creates a citation button with proper case handling and NoHyper environment
+% Usage: \@refbuttons@citationbutton{color}{citekey}{display-text}
+\newcommand{\@refbuttons@citationbutton}[3]{%
+  \@refbuttons@coloredbutton{#1}{%
+    \href{\usebibentry{\NoCaseChange{#2}}{url}}{\begin{NoHyper}#3\end{NoHyper}}%
+  }%
+}
+
+% Creates a URL button
+% Usage: \@refbuttons@urlbutton{color}{url}{display-text}
+\newcommand{\@refbuttons@urlbutton}[3]{%
+  \@refbuttons@coloredbutton{#1}{\href{#2}{#3}}%
+}
+
+% Further reading macro - creates a blue button with citation
+% Usage: \furtherreading{citekey}
+\newcommand{\furtherreading}[1]{%
+  \ifusebibpackages
+    % Use helper macro with proper case handling for citation keys
+    \NoCaseChange{\@refbuttons@citationbutton{furtherreadingcolor}{#1}{\cite{#1}}}%
+  \else
+    % No bibliography packages loaded - cannot use citation keys
+    \PackageError{ref-buttons}{Cannot use \string\furtherreading without bibliography}%
+      {You tried to use \string\furtherreading with '#1', but no bibliography^^J%
+       packages are loaded. Ensure references.bib exists.}%
+  \fi
+}
+
+% Source reference macro - creates an orange button
+% Usage: \sourceref{url} or \sourceref{citekey}
+\newcommand{\sourceref}[1]{%
+  % Check if the argument looks like a URL (contains :// or starts with www.)
+  \IfSubStr{#1}{://}{%
+    % It's a URL with protocol
+    \@refbuttons@urlbutton{sourcerefcolor}{#1}{Click for source}%
+  }{%
+    \IfSubStr{#1}{www.}{%
+      % It's a URL starting with www.
+      \@refbuttons@urlbutton{sourcerefcolor}{http://#1}{Click for source}%
+    }{%
+      % Assume it's a citation key
+      \ifusebibpackages
+        % Create button with URL from bibliography - let \usebibentry handle errors
+        \NoCaseChange{\@refbuttons@citationbutton{sourcerefcolor}{#1}{Click for source}}%
+      \else
+        % No bibliography packages loaded - cannot use citation keys
+        \PackageError{ref-buttons}{Cannot use citation keys without bibliography}%
+          {You tried to use '#1' as a citation key, but no bibliography^^J%
+           packages are loaded. Either provide a URL or ensure references.bib exists.}%
+      \fi
+    }%
+  }%
+}
+
+\endinput
