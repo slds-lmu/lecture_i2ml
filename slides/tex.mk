@@ -9,7 +9,7 @@ NOMARGINPDFS = $(TSLIDES:%.tex=%-nomargin.pdf)
 
 FLSFILES = $(TSLIDES:%.tex=%.fls)
 
-.PHONY: all most all-nomargin most-nomargin copy texclean clean help pax
+.PHONY: all most all-nomargin most-nomargin copy texclean clean help pax literature
 
 help:
 	@echo "\n --- Rendering slides"
@@ -25,6 +25,7 @@ help:
 	@echo "slides-pdf         : Runs texclean, renders slides, copies to /slides-pdf/, and texclean again"
 	@echo "\n --- Utilities"
 	@echo "pax                : Runs pdfannotextractor.pl (pax) to store hyperlinks etc. in .pax files for later use"
+	@echo "literature         : Generates chapter-literature-CHAPTERNAME.pdf from references.bib"
 
 # Default action compiles without margin and copies to slides-pdf!
 all: $(TPDFS)
@@ -115,4 +116,17 @@ texclean:
 	-rm -rf nospeakermargin.tex
 
 clean: texclean
-	-rm $(TPDFS) $(NOMARGINPDFS) $(TPAXS) 2>/dev/null
+	-rm $(TPDFS) $(NOMARGINPDFS) $(TPAXS) chapter-literature-*.pdf 2>/dev/null
+
+# Generate literature list from references.bib, appending the current chapter name to the file name
+CHAPTER_NAME := $(notdir $(CURDIR))
+LITERATURE_PDF := chapter-literature-$(CHAPTER_NAME).pdf
+
+literature: $(LITERATURE_PDF)
+
+$(LITERATURE_PDF): references.bib
+	@echo "Compiling literature list for chapter $(CHAPTER_NAME)..."
+	latexmk -pdf -halt-on-error -jobname=chapter-literature-$(CHAPTER_NAME) ../../style/chapter-literature-template.tex
+	@echo "Literature list generated: $(LITERATURE_PDF)"
+	@echo "Cleaning up detritus..."
+	latexmk -c -jobname=chapter-literature-$(CHAPTER_NAME) ../../style/chapter-literature-template.tex 2>/dev/null
