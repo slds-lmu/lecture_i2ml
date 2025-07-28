@@ -30,6 +30,7 @@ help:
 # Default action compiles without margin and copies to slides-pdf!
 all: $(TPDFS)
 	@if [ -d "../../latex-math" ]; then\
+		$(MAKE) pax;\
 		$(MAKE) texclean;\
 		$(MAKE) copy;\
 	else\
@@ -37,6 +38,7 @@ all: $(TPDFS)
 	fi
 # derivative action does the same for slides without margin (different filenames!)
 all-nomargin: $(NOMARGINPDFS)
+	$(MAKE) pax
 	$(MAKE) copy
 
 # Analogously the same but without copying (arguably should be the default actions)
@@ -45,10 +47,11 @@ most-nomargin: $(NOMARGINPDFS)
 
 slides-pdf:
 	@if [ -d "../../latex-math" ]; then\
-		make texclean;\
-		make $(TPDFS);\
-		make copy;\
-		make texclean;\
+		$(MAKE) texclean;\
+		$(MAKE) $(TPDFS);\
+		$(MAKE) pax;\
+		$(MAKE) copy;\
+		$(MAKE) texclean;\
 	else\
 		echo "Cannot find 'latex-math' in root directory";\
 	fi
@@ -69,8 +72,9 @@ $(FLSFILES): %.fls: %.tex
 	latexmk -halt-on-error -pdf -g $<
 
 copy:
-	cp -u *.pdf ../../slides-pdf
-	cp -u *.pax ../../slides-pdf
+	@echo "Copying PDFs and PAX files to slides-pdf/..."
+	@rsync -u *.pdf ../../slides-pdf/ 2>/dev/null || cp *.pdf ../../slides-pdf/
+	@rsync -u *.pax ../../slides-pdf/ 2>/dev/null || true
 
 # Extract pdf annotations, i.e. hyperlinks, for later reinsertion
 # When combining multiple PDFs into one (for slides/all/)
@@ -78,13 +82,15 @@ copy:
 # Depending on installation linked script in PATH does not have file extension
 pax:
 	@if command -v pdfannotextractor.pl &> /dev/null; then\
-		echo "Found pdfannotextractor.pl";\
-		pdfannotextractor.pl *.pdf;\
+		echo "Found pdfannotextractor.pl - extracting annotations...";\
+		pdfannotextractor.pl *.pdf 2>/dev/null || echo "Warning: Some PDFs may not have been processed";\
 	elif command -v pdfannotextractor &> /dev/null; then\
-		echo "Found pdfannotextractor";\
-		pdfannotextractor *.pdf;\
+		echo "Found pdfannotextractor - extracting annotations...";\
+		pdfannotextractor *.pdf 2>/dev/null || echo "Warning: Some PDFs may not have been processed";\
 	else\
-		echo "Did not find pdfannotextractor, install 'pax' with tlmgr";\
+		echo "Note: pdfannotextractor not found!";\
+		echo "Please install 'pax' package using: tlmgr install pax";\
+		echo "This is required to preserve clickable URLs and annotations in slides-pdf/"
 	fi
 
 texclean:
