@@ -4,12 +4,14 @@
 [![render-lecture-slide-status](https://github.com/slds-lmu/lecture_i2ml/actions/workflows/render-lecture-slide-status.yaml/badge.svg?branch=master)](https://github.com/slds-lmu/lecture_i2ml/actions/workflows/render-lecture-slide-status.yaml)
 [![View slide check results](https://img.shields.io/badge/View_slide_check_results-E0911F)](https://slds-lmu.github.io/lecture_i2ml/)
 
-This Project offers a free, open source introductory and applied overview of supervised machine learning.
+This project offers a free, open source introductory and applied overview of supervised machine learning.
 
 ## Contents, License, Team and Further Info
+
 Please see the main course site.
 
 ## Future Development
+
 We are collecting ideas for future development in [this list](https://docs.google.com/document/d/1-Qj-i-dgRMiLyniBV2-_bQKtlBUMoMpktc2oGVgll3k/edit?usp=sharing).
 For suggestions regarding the existing material, please open an issue.
 
