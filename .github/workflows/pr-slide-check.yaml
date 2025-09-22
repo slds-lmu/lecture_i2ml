@@ -19,6 +19,11 @@ on:
         description: 'Cache version identifier, increment to invalidate cache'
         required: false
         default: '1'
+      tinytex-version:
+        type: string
+        description: 'TinyTeX version to use'
+        required: false
+        default: '2024.12'
   # Only on pull requests where files in these folders change
   pull_request:
     paths: ['style/**', 'slides/**', 'latex-math/**', '.github/workflows/pr-slide-check.yaml']
@@ -62,35 +67,116 @@ jobs:
           # 0 indicates all history for all branches and tags, 1 is shallow (and default)
           fetch-depth: 1
 
-      # Standard R/pandoc/latex setup steps
+      # Caching Strategy:
+      # 1. R packages: Cached based on DESCRIPTION + scripts/install_r_deps.R hash for R dependency changes
+      # 2. TinyTeX: Cache entire installation (base + packages) to ensure version compatibility
+      # 3. Both include cache-version input for manual cache invalidation
+      # 4. Restore keys provide fallback to previous cache versions
+
+      # Standard R/pandoc setup steps
       - uses: r-lib/actions/setup-pandoc@v2
       - uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
-      - uses: r-lib/actions/setup-tinytex@v2
-      - run: tlmgr --version
-      # Caching the R library requires to save its path beforehand, could hard-code but meh
+
+      # Get R library path for caching
       - name: Get R library dir for caching
         id: r-cache
         run: |
           echo "dir=$(Rscript --quiet -e 'cat(.libPaths()[[1]])')" >> $GITHUB_OUTPUT
-      - name: Restore R package cache
+
+      # Cache R packages
+      - name: Cache R packages
+        id: r-pkg-cache
         uses: actions/cache@v4
         with:
           path: ${{ steps.r-cache.outputs.dir }}
-          key: ${{ runner.os }}-r-${{ inputs.cache-version || '1' }}-${{ hashFiles('DESCRIPTION') }}
+          key: ${{ runner.os }}-r-${{ inputs.cache-version || '1' }}-${{ hashFiles('DESCRIPTION', 'scripts/install_r_deps.R') }}
           restore-keys: |
             ${{ runner.os }}-r-${{ inputs.cache-version || '1' }}-
             ${{ runner.os }}-r-
+
+      # Check if we have a cached TinyTeX installation
+      - name: Check for cached TinyTeX
+        id: tinytex-cache-check
+        run: |
+          if [ -d "$HOME/.TinyTeX" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "📦 Found cached TinyTeX installation"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "📦 No cached TinyTeX found, will install fresh"
+          fi
+
+      # Setup TinyTeX only if not cached
+      # Use a fixed version instead of daily build for stability
+      - uses: r-lib/actions/setup-tinytex@v2
+        if: steps.tinytex-cache-check.outputs.exists == 'false'
+        env:
+          TINYTEX_VERSION: ${{ inputs.tinytex-version || '2024.12' }}
+
+      # Cache the entire TinyTeX installation (base + packages)
+      - name: Cache TinyTeX installation
+        id: tinytex-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.TinyTeX
+            ~/bin
+          key: ${{ runner.os }}-tinytex-${{ inputs.tinytex-version || '2024.12' }}-${{ inputs.cache-version || '1' }}-${{ hashFiles('scripts/install_tex_deps.R') }}
+          restore-keys: |
+            ${{ runner.os }}-tinytex-${{ inputs.tinytex-version || '2024.12' }}-${{ inputs.cache-version || '1' }}-
+
+      # Ensure TinyTeX is in PATH if restored from cache
+      - name: Setup TinyTeX PATH
+        if: steps.tinytex-cache.outputs.cache-hit == 'true'
+        run: |
+          echo "$HOME/bin" >> $GITHUB_PATH
+          echo "$HOME/.TinyTeX/bin/x86_64-linux" >> $GITHUB_PATH
+
+      - run: tlmgr --version
       # Setting up the lecture checking requirements:
       # 1) R packages
       - name: Install R packages
         run: make install-r
-      # 2) latex dependencies, incl output list of installed pkgs (optional)
+
+      # 2) LaTeX packages - install only if cache miss
       - name: Install additional LaTeX packages
+        if: steps.tinytex-cache.outputs.cache-hit != 'true'
         run: |
+          echo "📦 Installing LaTeX packages (no cache found)..."
           make install-tex
-          tlmgr list --only-installed
+
+          # Show summary of installed packages
+          installed_count=$(tlmgr list --only-installed | grep -E '^i ' | wc -l)
+          echo "📦 Total LaTeX packages installed: $installed_count"
+
+      # Verify installation when using cache
+      - name: Verify LaTeX installation
+        if: steps.tinytex-cache.outputs.cache-hit == 'true'
+        run: |
+          echo "✅ Using cached TinyTeX installation"
+          # Quick verification of critical packages
+          for pkg in beamer pgf xcolor tikzmark tcolorbox; do
+            if tlmgr list --only-installed "$pkg" >/dev/null 2>&1; then
+              echo "✓ Package $pkg is installed"
+            else
+              echo "❌ Package $pkg is missing - cache may be incomplete"
+            fi
+          done
+          installed_count=$(tlmgr list --only-installed | grep -E '^i ' | wc -l)
+          echo "📦 Total LaTeX packages in cache: $installed_count"
+
+      # Cache effectiveness summary
+      - name: Cache effectiveness summary
+        run: |
+          echo "## 📊 Cache Status Summary"
+          echo "- R packages cache: ${{ steps.r-pkg-cache.outputs.cache-hit == 'true' && '✅ HIT' || '❌ MISS' }}"
+          echo "- TinyTeX cache: ${{ steps.tinytex-cache.outputs.cache-hit == 'true' && '✅ HIT' || '❌ MISS' }}"
+          echo "- Cache version: ${{ inputs.cache-version || '1' }}"
+          if [ "${{ steps.tinytex-cache.outputs.cache-hit }}" = "true" ]; then
+            echo "- ⚡ TinyTeX cache saved ~3-4 minutes of installation time"
+          fi
       # # 3) Installing diff-pdf and diff-pdf-visually (only automated for ubuntu so far)
       # - name: Install diff-pdf and diff-pdf-visually
       #   run: make install-tools-ubuntu

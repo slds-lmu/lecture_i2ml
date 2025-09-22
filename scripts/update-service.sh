@@ -36,15 +36,30 @@ fi
 echo -e "- Updating service components from  \033[1m\"$SERVICEBRANCH\"\033[22m branch using"
 echo "    URL: $SERVICEURL"
 echo "    Temporary download directory: $TEMPDIR"
+echo ""
+echo -e "\033[33m⚠️  WARNING: The ./style/ directory will be completely synchronized with upstream.\033[0m"
+echo -e "\033[33m   Any local files in ./style/ not present in lecture_service will be REMOVED!\033[0m"
+echo ""
 echo "- Running: "
 echo -e "    $CMD"
 eval "$CMD"
 
 
 # Note that using e.g. cp -r .../service/* would not include .-files as they are not expanded by *
-# using cp -r .../service/ on linux copied the service dir itself, jence using rsync for correct behavior
-echo "- Moving contents of $TEMPDIR/service to ${PWD}"
-rsync -a "$TEMPDIR/service/" .
+# using cp -r .../service/ on linux copied the service dir itself, hence using rsync for correct behavior
+echo "- Syncing contents of $TEMPDIR/service to ${PWD}"
+# First, sync everything except style/ directory
+rsync -a --exclude='style/' "$TEMPDIR/service/" .
+
+# Then sync style/ directory with --delete to remove files not in upstream
+# This ensures style/ is 100% derived from lecture_service
+if [[ -d "$TEMPDIR/service/style" ]]; then
+  echo "- Syncing ./style/ directory (removing files not in upstream)"
+  rsync -a --delete "$TEMPDIR/service/style/" ./style/
+else
+  echo "⚠️  Warning: style/ directory not found in upstream"
+fi
+
 echo "- Deleting temporary download directory"
 rm -r "$TEMPDIR"
 
