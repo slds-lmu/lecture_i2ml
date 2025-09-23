@@ -24,6 +24,15 @@ help:
 	@echo "clean              : Runs texclean and *also* deletes all compiled PDFs"
 	@echo "pax                : Runs pdfannotextractor.pl (pax) to store hyperlinks etc. in .pax files for later use"
 	@echo "literature         : Generates chapter-literature-CHAPTERNAME.pdf from references.bib"
+	@echo ""
+	@echo "╔═════════════════════════════════════╗"
+	@echo "║       File Checking                 ║"
+	@echo "╚═════════════════════════════════════╝"
+	@echo "check-files-used   : List files (figures, .tex) that are included is slide .tex files"
+	@echo "check-files-unused : List files that are NOT included in .tex files"
+	@echo "check-files-missing: List files that the slides expect but cannot find"
+	@echo "                     Optional: folder=<path> (default: figure)"
+	@echo "                     Note: Requires 'make slides' to be run first so .fls files exist!"
 
 # ============================================================================
 # VARIABLES
@@ -83,7 +92,7 @@ SLIDE_FLS_FILES = $(SLIDE_TEX_FILES:%.tex=%.fls)
 CHAPTER_NAME := $(notdir $(CURDIR))
 LITERATURE_PDF := chapter-literature-$(CHAPTER_NAME).pdf
 
-.PHONY: slides slides-nomargin release copy texclean clean help pax literature
+.PHONY: slides slides-nomargin release copy texclean clean help pax literature check-files-used check-files-unused check-files-missing
 
 # ============================================================================
 # HELPER FUNCTIONS
@@ -238,3 +247,34 @@ $(LITERATURE_PDF): references.bib
 	echo "✓ Literature list generated: $(LITERATURE_PDF) (took $${duration}s)"
 	@echo "Cleaning up detritus..."
 	@$(LATEXMK) -c -jobname=chapter-literature-$(CHAPTER_NAME) ../../style/chapter-literature-template.tex > /dev/null 2>&1
+
+# ============================================================================
+# FILE CHECKING TARGETS
+# ============================================================================
+
+# Default folder to check (can be overridden with folder=<path>)
+folder ?= figure
+
+check-files-used:
+	@if [ ! -f "$(word 1,$(SLIDE_FLS_FILES))" ]; then \
+		echo "Error: No .fls files found. Please run 'make slides' first to generate them."; \
+		exit 1; \
+	fi
+	@echo "Checking used files in ./$(folder)..."
+	@../../scripts/check_files_used.sh $(folder) used $(SLIDE_TEX_FILES) || true
+
+check-files-unused:
+	@if [ ! -f "$(word 1,$(SLIDE_FLS_FILES))" ]; then \
+		echo "Error: No .fls files found. Please run 'make slides' first to generate them."; \
+		exit 1; \
+	fi
+	@echo "Checking unused files in ./$(folder)..."
+	@../../scripts/check_files_used.sh $(folder) unused $(SLIDE_TEX_FILES) || true
+
+check-files-missing:
+	@if [ ! -f "$(word 1,$(SLIDE_FLS_FILES))" ]; then \
+		echo "Error: No .fls files found. Please run 'make slides' first to generate them."; \
+		exit 1; \
+	fi
+	@echo "Checking missing files referenced in LaTeX..."
+	@../../scripts/check_files_used.sh $(folder) missing $(SLIDE_TEX_FILES) || true
