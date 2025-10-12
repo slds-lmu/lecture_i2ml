@@ -39,6 +39,7 @@
 
 \input{../latex-math/basic-math.tex}
 \input{../latex-math/basic-ml.tex}
+\input{../latex-math/ml-eval.tex}
 \input{../latex-math/ml-trees.tex}
 \input{../latex-math/ml-ensembles.tex}
 
@@ -80,20 +81,21 @@
 						\end{codebox}
 						\begin{itemize}[$\bullet$]     
             \setlength{\itemindent}{+.3in}
-                        \item Bagging is short for \textbf{B}ootstrap \textbf{Agg}regation.
-                        \item An \textbf{ensemble method} that combines many models into one 
-        big \enquote{meta-model}.
-                        \item The constituent models of an ensemble are called \textbf{base learners} (BLs).
-                        \item Homogeneous ensembles, i.e., all base learners are of the same type.
+                        \item \textbf{Bagging:} \textbf{B}ootstrap \textbf{Agg}regation
+                        \item \textbf{Ensemble method}: combines models into large \enquote{meta-model}
+                        \item \textbf{Base learners (BLs)}: individual models of an ensemble
+                        \item Homogeneous ensembles: all BLs are of the same model type\\ $\rightarrow$  Only training data varies due to bootstrap
+                         \item \textbf{Bagging reduces prediction variance} by averaging over BL predictions with a mild \textbf{increase in bias} due to data reuse\\
+                         $\rightarrow$ Performs best when BL predictions are only weakly correlated
                         \end{itemize}
-            Bagging improve performance by reducing the variance of predictions, but (slightly) increases the bias: training data is reused, so small mistakes can get amplified. Works best if BLs' predictions are only weakly correlated.
+            %Bagging improve performance by reducing the variance of predictions, but (slightly) increases the bias: training data is reused, so small mistakes can get amplified. Works best if BLs' predictions are only weakly correlated.
 						
 				
 
 						\begin{codebox}
 			      \textbf{Bagging Training: }
 						\end{codebox}
-						Base learners $\blm, m = 1, \dots, M$ are trained on $M$ \textbf{bootstrap} samples of training data $\D$. 
+						Train BL $\bl, m = 1, \dots, M$ on $M$ \textbf{bootstrap} samples of $\D$. 
 						\begin{algorithm}[H]
               \small
               \caption{Bagging algorithm: Training}
@@ -110,7 +112,7 @@
               \textbf{Bagging Aggregating: }
               \end{codebox}
 
-            Aggregate the predictions of $M$ fitted BLs to get the ensemble model:
+            Average predictions of $M$ fitted BLs to obtain the ensemble model:
             \begin{align*}
               \hat{f}(\xv) &= \meanmM \left(\blfhx\right) \text{(regression / decision score, use $\hat{f}_k$ in multi-class)} \\[-1ex]
               \hxh &= \argmax_{k \in \Yspace} \summM \I \left(\bllhx = k\right) \text{(majority voting)} \\[-1ex]
@@ -132,7 +134,7 @@
               \begin{itemize}[$\bullet$]     
                 \setlength{\itemindent}{+.3in}
                 \item Random Forests (RFs) use \textbf{bagging with CARTs} as BLs.
-                \item \textbf{Random feature sampling} decorrelates the BLs.
+                \item \textbf{Random feature sampling} (\texttt{mtry}) decorrelates the BLs.
                 \item \textbf{Fully expanded trees} further increase variability of trees.
                 \end{itemize}
 
@@ -150,16 +152,16 @@
 \begin{minipage}{.98\textwidth}
 \parbox[t][\columnheight]{\textwidth}{
   \begin{myblock}{ }      
-      Advantages: Less preprocessing; Can handle missing value; Easy to parallelize; Work well on high-dimensional / noisy data.\\
-      Disadvantages: Extrapolation problem; Hard to interpret; Memory-hungry implementation; Computationally demanding for prediction of large ensembles.
+      \textbf{Advantages:} Can handle missing values / categorical features; Easy to parallelize; Work well on high-dimensional / noisy data\\
+      \textbf{Disadvantages:} Extrapolation problem; Harder to interpret; Memory-hungry implementation; Expensive prediction for large ensembles
         
-      \begin{codebox} \textbf{Random feature sampling: }
+      \begin{codebox} \textbf{Random Feature Sampling: }
       \end{codebox}
       \begin{itemize}[$\bullet$]     
         \setlength{\itemindent}{+.3in}
-        \item For each node, randomly draw $\texttt{mtry} \le p$ features to find the best split.
-        \item Previous analysis was simplified. The more we decorrelate by this,
-           the more random the trees become.
+        \item For each node, randomly draw $\texttt{mtry} \le p$ features to find best split\\
+        $\rightarrow$ More randomness $\Rightarrow$ lower correlation between trees
+
         \item Classification: $\texttt{mtry}$ $ = \lfloor \sqrt{p} \rfloor$; Regression: $\texttt{mtry}$ $ = \lfloor p/3 \rfloor$
         \end{itemize}
 
@@ -167,25 +169,24 @@
         \end{codebox}
         \begin{itemize}[$\bullet$]     
           \setlength{\itemindent}{+.3in}
-          \item Other hyperparameters: $\texttt{Min. nr. of obs.}$ in each decision tree node, $\texttt{depth of each tree}$.
-          \item RF usually use fully expanded trees, without aggressive early stopping or pruning, to further \textbf{increase variability of each tree}.\\
-          \item RFs are usually better if ensemble is large.
-          \item RFs can overfit but generally less prone to than individual CARTs.
-          \item Since each tree is trained \textit{individually and without knowledge of previously trained trees}, 
-          increasing $\texttt{ntrees}$ generally reduces variance \textbf{without increasing the chance of overfitting}!
+          \item Other hyperparameters: minimum node size and tree depth
+          %\item RF usually use fully expanded trees, without aggressive early stopping or pruning, to further \textbf{increase variability of each tree}.\\
+              \item Performance improves with larger ensembles
+    \item May overfit, but less prone than individual CARTs due to averaging
+    \item Trees are trained independently $\Rightarrow$ increasing the number of trees reduces variance \textbf{without increasing overfitting}
         \end{itemize}
       \end{myblock}
 
       \begin{myblock}{Out-of-Bag (OOB)}
        \begin{algorithm}[H]
               \small
-              \caption{Out-Of-Bag error estimation to evaluate different RF hyperparameter configurations}
+              \caption{Out-Of-Bag error estimation}
               \begin{algorithmic}[1]
                 \State Input: $\oobm = \{i \in \nset | \xyi \notin \D^{[m]}\}$, $\blh \ \forall m \in \{1, \dots, M\}$
                 \For {$i = 1 \to n$}
                   \State Compute the ensemble OOB prediction for observation $i$, e.g., for regression:
                   $$\fh^{(i)}_{\oob} =
-                  \frac{1}{S_{\oob^{(i)}}} \summM
+                  \frac{1}{S_{\oob}^{(i)}} \summM
                   \I(i \in \oobm) \cdot \blfh(\xi) $$
 
                   $S_{\mathrm{OOB}}^{(i)} = \summM \I(i \in \oobm)$ is the nr. of trees where $i$-th observation is OOB.
@@ -198,7 +199,9 @@
             \textbf{OOB Size:} The probability that an observation is out-of-bag (OOB) is:
             $$\P \left(i \in \oobm\right) = \left(1 - \frac{1}{n}\right)^n \stackrel{n \to \infty}{\longrightarrow} \frac{1}{e} \approx 0.37$$
             $\Rightarrow$ similar to holdout or 3-fold CV (1/3 validation, 2/3 training)
-            
+
+            \textbf{OOB Error Usage:}
+Get first impression of RF performance; Select ensemble size; Evaluate different RF hyperparameter configurations.
 \end{myblock}
 }
 \end{minipage}
@@ -211,15 +214,15 @@
 \begin{beamercolorbox}[center]{postercolumn}
 \begin{minipage}{.98\textwidth}
 \parbox[t][\columnheight]{\textwidth}{
-  \begin{myblock}{ }
-\textbf{OOB Error Usage:}
-Get first impression of RF performance; Select ensemble size; Evaluate different RF hyperparameter configurations.
-\end{myblock}
-
   \begin{myblock}{Feature Importance}
 
-    RFs improve accuracy by aggregating multiple decision trees but \textbf{lose interpretability} compared to a single tree. 
-    \textbf{Feature importance} mitigates this problem by asking how much does performance decrease, if feature is removed / rendered useless.
+\begin{itemize}[$\bullet$]     
+          \setlength{\itemindent}{+.3in}
+    \item RF perform better but are less interpretable compared to a single tree
+\item \textbf{Feature importance} mitigates this by quantifying performance drop when a feature is permuted or excluded
+\end{itemize}
+    %RFs improve accuracy by aggregating multiple decision trees but \textbf{lose interpretability} compared to a single tree. 
+    %\textbf{Feature importance} mitigates this problem by asking how much does performance decrease, if feature is removed / rendered useless.
 
     \begin{algorithm}[H]
       \small
@@ -257,12 +260,25 @@ Get first impression of RF performance; Select ensemble size; Evaluate different
   \end{myblock}
 
 \begin{myblock}{Proximities}
-\textbf{Proximities} measure of similarity ("closeness" or "nearness") of observations derived from random forests.
-The proximity $\operatorname{prox}\left(\xi, \xi[j]\right)$ between two observations $\xi$ and $\xi[j]$ is calculated by measuring the number of times that these two observations are placed in the same terminal node of the same tree of random forest, 
-divided by the number of trees in the forest.
-It forms an intrinsic similarity measure between pairs of observations.
 
-\textbf{Proximities usage: }Imputing missing data, locating outliers, identifying mislabeled data, visualizing the forest.
+
+\begin{itemize}[$\bullet$]     
+          \setlength{\itemindent}{+.3in}
+ \item \textbf{Proximities:} Similarity measure derived from co-occurrence in terminal nodes across trees.
+  \item For observations $\xi$ and $\xi[j]$:
+  \[
+    \operatorname{prox}(\xi, \xi[j]) = \frac{\text{\# trees where } \xi \text{ and } \xi[j] \text{ share a leaf}}{\text{\# total trees}}
+  \]
+  \item Defines an intrinsic, forest-induced similarity between instances.
+  \item \textbf{Applications:} Missing data imputation, outlier detection, identifying mislabeled samples, forest visualization.
+  \end{itemize}
+
+% \textbf{Proximities} measure of similarity ("closeness" or "nearness") of observations derived from random forests.
+% The proximity $\operatorname{prox}\left(\xi, \xi[j]\right)$ between two observations $\xi$ and $\xi[j]$ is calculated by measuring the number of times that these two observations are placed in the same terminal node of the same tree of random forest, 
+% divided by the number of trees in the forest.
+% It forms an intrinsic similarity measure between pairs of observations.
+
+% \textbf{Proximities usage: }Imputing missing data, locating outliers, identifying mislabeled data, visualizing the forest.
 
 \end{myblock}
 }
