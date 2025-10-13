@@ -187,12 +187,12 @@ slides-nomargin: $(SLIDE_NOMARGIN_PDFS)
 
 release:
 	$(call check_latex_math)
-	$(MAKE) texclean
-	$(MAKE) $(SLIDE_PDF_FILES)
-	$(MAKE) pax
-	$(MAKE) literature
-	$(MAKE) copy
-	$(MAKE) texclean
+	@$(MAKE) texclean
+	@$(MAKE) $(SLIDE_PDF_FILES)
+	@$(MAKE) pax
+	@$(MAKE) literature
+	@$(MAKE) copy
+	@$(MAKE) texclean
 
 # Conditionally remove or create empty nospeakermargin.tex file to decide which layout to use
 # See /style/lmu-lecture.sty -- it's a whole thing but does the job.
@@ -235,7 +235,12 @@ texclean:
 clean: texclean
 	-rm -f $(SLIDE_PDF_FILES) $(SLIDE_NOMARGIN_PDFS) $(SLIDE_PAX_FILES) $(LITERATURE_PDF)
 
-literature: $(LITERATURE_PDF)
+literature:
+	@if [ ! -f "references.bib" ]; then \
+		echo "No references.bib found, skipping literature"; \
+	else \
+		$(MAKE) $(LITERATURE_PDF); \
+	fi
 
 $(LITERATURE_PDF): references.bib
 	$(call check_docker)
