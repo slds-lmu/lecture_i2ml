@@ -147,7 +147,7 @@ endef
 # Clean LaTeX build artifacts silently
 define clean_latex_artifacts
 	@echo "Cleaning LaTeX build artifacts (.log, .aux, .nav, .synctex, etc.)..."
-	@rm -f *.out *.dvi *.log *.aux *.bbl *.bbl-SAVE-ERROR *.blg *.ind *.idx *.ilg *.lof *.lot *.toc *.nav *.snm *.vrb *.fls *.pax *.bcf-SAVE-ERROR *.bcf *.run.xml *.fdb_latexmk *.synctex.gz *-concordance.tex nospeakermargin.tex
+	@rm -f *.out *.dvi *.log *.aux *.bbl *.bbl-SAVE-ERROR *.blg *.ind *.idx *.ilg *.lof *.lot *.toc *.nav *.snm *.vrb *.fls *.bcf-SAVE-ERROR *.bcf *.run.xml *.fdb_latexmk *.synctex.gz *-concordance.tex nospeakermargin.tex
 endef
 
 # Print compilation message with Docker/local info
@@ -159,7 +159,8 @@ define print_compile_message
 	fi
 endef
 
-# Find and run pdfannotextractor
+# Find and run pdfannotextractor on a single PDF file
+# Usage: $(call run_pdfannotextractor,file.pdf)
 define run_pdfannotextractor
 	@pax_cmd=""; \
 	if command -v pdfannotextractor &> /dev/null; then \
@@ -168,8 +169,12 @@ define run_pdfannotextractor
 		pax_cmd="pdfannotextractor.pl"; \
 	fi; \
 	if [ -n "$$pax_cmd" ]; then \
-		echo "Found $$pax_cmd - extracting annotations..."; \
-		$$pax_cmd *.pdf 2>/dev/null || echo "Warning: Some PDFs may not have been processed"; \
+		if $$pax_cmd $(1) > /dev/null 2>&1; then \
+			echo "✓ Extracted annotations from $(1)"; \
+		else \
+			echo "Warning: pdfannotextractor failed for $(1)"; \
+			echo "Note: This is optional - PDF is still valid, but hyperlinks may not be preserved when combining slides"; \
+		fi; \
 	else \
 		echo "Note: pdfannotextractor not found!"; \
 		echo "Please install 'pax' package using: tlmgr install pax"; \
@@ -226,8 +231,10 @@ copy:
 # Extract pdf annotations, i.e. hyperlinks, for later reinsertion
 # When combining multiple PDFs into one (for slides/all/)
 # https://ctan.org/tex-archive/macros/latex/contrib/pax?lang=en
-pax:
-	$(call run_pdfannotextractor)
+pax: $(SLIDE_PAX_FILES)
+
+$(SLIDE_PAX_FILES): %.pax: %.pdf
+	$(call run_pdfannotextractor,$<)
 
 texclean:
 	$(call clean_latex_artifacts)
