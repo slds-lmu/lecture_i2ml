@@ -72,6 +72,8 @@ echo "Removing unnecessary files from downloaded content..."
 rm -f "$TEMPDIR/latex-math.pdf"
 rm -f "$TEMPDIR/latex-math.Rmd"
 rm -rf "$TEMPDIR/.github"
+rm -f "$TARBALL"
+
 
 # Sync latex-math directory with --delete to ensure exact match with upstream
 echo "Syncing ./latex-math/ directory (removing files not in upstream)..."
