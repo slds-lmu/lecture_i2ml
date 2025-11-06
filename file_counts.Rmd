@@ -1,0 +1,218 @@
+---
+title: "Lecture File Enumerator"
+author: SLDS Lecture Service
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+library(data.table)
+library(dplyr)
+library(fs)
+library(reactable)
+library(ggplot2)
+
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+
+lecture_dir <- here::here()
+```
+
+## File Enumeration
+
+This document enumerates all files in this lecture repository with their sizes and extensions.  
+
+
+- Certain hidden directories like `.git` and `.Rproj.user` are ignored automatically, but false-positives for "irrelevant" files are possible.  
+- If you see too many LaTeX compilation leftovers, run `make clean` before rendering this document.
+- File extensions are normalized to lower case to avoid spurious duplicates
+- Dotfiles (files starting with `.` are given counted as `(dotfile)` extensions)
+- Files without extension (like `Makefile`) are counted as `(no extension)`
+
+```{r enumerate-files}
+enumerate_files <- function(lecture_path) {
+  files <- fs::dir_ls(lecture_path, all = TRUE, recurse = TRUE, type = "file")
+
+  # Make paths relative to lecture directory
+  files_rel <- fs::path_rel(files, start = lecture_path)
+
+  # Filter out .git
+  files_rel <- fs::path_filter(files_rel, glob = "**.git/*", invert = TRUE)
+  files_rel <- fs::path_filter(
+    files_rel,
+    glob = "**.Rproj.user*",
+    invert = TRUE
+  )
+  files_rel <- fs::path_filter(
+    files_rel,
+    glob = "file_counts_files**",
+    invert = TRUE,
+  )
+
+  extension <- tolower(fs::path_ext(files_rel))
+  is_dotfile <- stringr::str_detect(
+    fs::path_file(files_rel),
+    pattern = "^\\.[\\w\\d]*"
+  )
+  extension[is_dotfile] <- "(dotfile)"
+  extension[extension == ""] <- "(no extension)"
+
+  data.table(
+    file = fs::path_file(files_rel),
+    parent_dir = fs::path_dir(files_rel),
+    extension = extension,
+    size = fs::file_size(files),
+    size_kb = as.numeric(fs::file_size(files)) / 1024,
+    size_mb = as.numeric(fs::file_size(files)) / 1024 / 1024
+  )
+}
+
+file_dt <- enumerate_files(lecture_dir)
+file_dt[, depth := lengths(fs::path_split(parent_dir))]
+```
+
+### Summary Statistics
+
+```{r summary}
+total_files <- nrow(file_dt)
+total_size_mb <- sum(file_dt$size_mb)
+```
+
+- Total files: **`r total_files`**
+- Total size: **`r round(total_size_mb, 2)`MB**
+
+### File Count by Extension
+
+```{r extension-counts}
+ext_counts <- file_dt[,
+  .(
+    count = .N,
+    total_size_mb = sum(size_mb)
+  ),
+  by = extension
+][order(-count)]
+
+ext_counts[1:20] |>
+  reactable(
+    columns = list(
+      extension = colDef(name = "Extension"),
+      count = colDef(name = "Files", format = colFormat(separators = TRUE)),
+      total_size_mb = colDef(name = "Size (MB)", format = colFormat(digits = 2))
+    ),
+    sortable = TRUE,
+    filterable = TRUE,
+    defaultPageSize = 20
+  )
+```
+
+### File Count by Directory
+
+```{r dir-counts}
+dir_counts <- file_dt[,
+  .(
+    file_count = .N,
+    total_size_mb = sum(size_mb),
+    depth = first(depth)
+  ),
+  by = parent_dir
+][order(-file_count)]
+
+dir_counts |>
+  reactable(
+    columns = list(
+      parent_dir = colDef(name = "Directory", minWidth = 300),
+      file_count = colDef(
+        name = "Files",
+        format = colFormat(separators = TRUE)
+      ),
+      total_size_mb = colDef(
+        name = "Size (MB)",
+        format = colFormat(digits = 2)
+      ),
+      depth = colDef(name = "Depth")
+    ),
+    sortable = TRUE,
+    filterable = TRUE,
+    defaultPageSize = 20
+  )
+```
+
+### Largest Files
+
+```{r largest-files}
+file_dt[order(-size_mb)][1:30] |>
+  mutate(full_path = file.path(parent_dir, file)) |>
+  select(depth, full_path, size_mb, extension) |>
+  reactable(
+    columns = list(
+      depth = colDef(name = "Depth"),
+      full_path = colDef(name = "File Path", minWidth = 400),
+      size_mb = colDef(name = "Size (MB)", format = colFormat(digits = 3)),
+      extension = colDef(name = "Extension")
+    ),
+    sortable = TRUE,
+    filterable = TRUE,
+    defaultPageSize = 30
+  )
+```
+
+### Extensions by Directory Depth
+
+```{r depth-extension}
+depth_ext <- file_dt[,
+  .(
+    count = .N,
+    total_size_mb = sum(size_mb)
+  ),
+  by = .(depth, extension)
+][order(depth, -count)]
+
+depth_ext |>
+  filter(count > 5) |>
+  reactable(
+    columns = list(
+      depth = colDef(name = "Depth"),
+      extension = colDef(name = "Extension"),
+      count = colDef(name = "Files", format = colFormat(separators = TRUE)),
+      total_size_mb = colDef(name = "Size (MB)", format = colFormat(digits = 2))
+    ),
+    sortable = TRUE,
+    filterable = TRUE,
+    defaultPageSize = 20
+  )
+```
+
+## Distributions
+
+```{r size-distribution}
+ggplot(file_dt[size_kb > 0], aes(x = size_kb)) +
+  geom_histogram(bins = 50, fill = "steelblue", alpha = 0.7) +
+  scale_x_log10(labels = scales::comma) +
+  labs(
+    title = "File Size Distribution",
+    x = "File Size (KB, log scale)",
+    y = "Count"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(plot.title.position = "plot")
+```
+
+
+```{r extension-chart}
+#| fig-height: 7
+file_dt[, .N, by = extension] |>
+  ggplot(aes(y = reorder(extension, N), x = N)) +
+  geom_col() +
+  labs(
+    title = "File Extension Distribution",
+    x = "No. of files",
+    y = "Extension"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(plot.title.position = "plot")
+```

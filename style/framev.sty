@@ -1,0 +1,68 @@
+\NeedsTeXFormat{LaTeX2e}
+
+\RequirePackage{environ}
+\RequirePackage{keyval}
+
+% =============================================================================
+% framev environment - similar to framei but without automatic itemize wrapper
+% =============================================================================
+
+% Define keys for framev options
+\define@key{framev}{fs}{\def\framev@fs{#1}}
+\define@key{framev}{align}{\def\framev@align{#1}}
+
+% Set default values for framev
+\def\framev@fs{}
+\def\framev@align{center}
+
+% Main framev environment
+\NewEnviron{framev}[2][]{%
+  % Process options if provided
+  \setkeys{framev}{fs=,align=center,#1}%
+
+  % Determine vertical alignment option for frame
+  \def\framev@va{c}%
+  \def\@alignTop{top}\def\@alignCenter{center}\def\@alignBottom{bottom}%
+  \def\@alignc{c}\def\@alignt{t}\def\@alignb{b}%
+  \ifx\framev@align\@alignTop\def\framev@va{t}\fi%
+  \ifx\framev@align\@alignBottom\def\framev@va{b}\fi%
+  \ifx\framev@align\@alignt\def\framev@va{t}\fi%
+  \ifx\framev@align\@alignb\def\framev@va{b}\fi%
+
+  \begin{frame}[\framev@va]{#2}%
+    % Apply font size if provided
+    \csname \framev@fs\endcsname%
+
+    % Override beamer's itemize font settings to inherit current font size
+    \def\@tempnormal{normal}\def\@tempnormalsize{normalsize}%
+    \def\@tempsmall{small}\def\@temptiny{tiny}%
+    \def\@tempfootnotesize{footnotesize}\def\@templarge{large}%
+    \def\@tempempty{}%
+    \ifx\framev@fs\@tempempty\else%
+      \def\@currentfontsize{\framev@fs}%
+      \ifx\@currentfontsize\@tempnormal\else%
+        \ifx\@currentfontsize\@tempnormalsize\else%
+          \ifx\@currentfontsize\@tempsmall%
+            \setbeamerfont{itemize/enumerate subbody}{size=\small}%
+            \setbeamerfont{itemize/enumerate subsubbody}{size=\small}%
+          \fi%
+          \ifx\@currentfontsize\@temptiny%
+            \setbeamerfont{itemize/enumerate subbody}{size=\tiny}%
+            \setbeamerfont{itemize/enumerate subsubbody}{size=\tiny}%
+          \fi%
+          \ifx\@currentfontsize\@tempfootnotesize%
+            \setbeamerfont{itemize/enumerate subbody}{size=\footnotesize}%
+            \setbeamerfont{itemize/enumerate subsubbody}{size=\footnotesize}%
+          \fi%
+          \ifx\@currentfontsize\@templarge%
+            \setbeamerfont{itemize/enumerate subbody}{size=\large}%
+            \setbeamerfont{itemize/enumerate subsubbody}{size=\large}%
+          \fi%
+        \fi%
+      \fi%
+    \fi%
+
+    \BODY%
+  \end{frame}%
+}
+\endinput
