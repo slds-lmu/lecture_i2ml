@@ -34,7 +34,7 @@
 \item[1)] LDA can be seen as a special case of QDA if the covariance matrix is equal for all classes: $\Sigma_k = \Sigma \; \; \forall k$
 \item[2)] Gaussian NB can be seen as a special case of QDA if the features are conditionally independent given class $k$:
 \begin{align}
-\pdfxyk = p((x_1, x_2, ..., x_p)|y = k)=\prodjp p(x_j|y = k),
+p(\mathbf{x} | y = k) = p((x_1, x_2, \ldots, x_p) | y = k) = \prod_{j=1}^p p(x_j | y = k),
 \end{align}
 which results in diagonal covariance matrices.
 \item[3)] Gaussian NB and LDA have an intersection if the covariance matrix is equal for all classes: $\Sigma_k = \Sigma \; \; \forall k$ \textbf{and} features are conditionally independent given class $k$, leaving each class with the same diagonal covariance matrix $\Sigma$.
@@ -44,3 +44,300 @@ which results in diagonal covariance matrices.
 The Venn diagram is valid under the assumption that the class-conditional distributions are Gaussian. This allows LDA, QDA, and NB to be represented as overlapping regions. In cases without Gaussian assumptions, the relationships may change, and NB may exceed the region of QDA (ellipse of NB ends outside of that of QDA to account for different distributions).
 
 \end{enumerate}
+
+\newpage
+
+Extra task:
+
+Below are 5 different 2D data sets illustrating different covariance structures for two Gaussian-distributed classes.
+The task is to assign each data set to one of the three classifiers (LDA, QDA, Gaussian NB) that can best model the data according to their assumptions.
+For each data set, indicate which classifier(s) can (or can not) model the data and explain why based on the covariance structure.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Case} & \textbf{Class A: $\boldsymbol{\mu}_1$} & \textbf{Class B: $\boldsymbol{\mu}_2$} & \textbf{Covariance Matrices} \\
+\hline
+Case 1 & $(-4, 0)$ & $(4, 0)$ & $\Sigma_1 = \Sigma_2 = \begin{pmatrix} 2 & 1 \\ 1 & 2 \end{pmatrix}$ \\
+\hline
+Case 2 & $(-4, 1.4)$ & $(4, 0.4)$ & $\Sigma_1 = \begin{pmatrix} 3 & 2 \\ 2 & 3 \end{pmatrix}$, $\Sigma_2 = \begin{pmatrix} 3 & -2 \\ -2 & 2 \end{pmatrix}$ \\
+\hline
+Case 3 & $(-4, 0)$ & $(4, 1)$ & $\Sigma_1 = \Sigma_2 = \begin{pmatrix} 1 & 0 \\ 0 & 1 \end{pmatrix}$ \\
+\hline
+Case 4 & $(-4, 0)$ & $(4, 0)$ & $\Sigma_1 = \begin{pmatrix} 1 & 0 \\ 0 & 1 \end{pmatrix}$, $\Sigma_2 = \begin{pmatrix} 3 & 0 \\ 0 & 3 \end{pmatrix}$ \\
+\hline
+Case 5 & $(-4, 0)$ & $(4, 0)$ & $\Sigma_1 = \begin{pmatrix} 1 & 0 \\ 0 & 2 \end{pmatrix}$, $\Sigma_2 = \begin{pmatrix} 3 & 0 \\ 0 & 1 \end{pmatrix}$ \\
+\hline
+\end{tabular}
+\caption{Parameter values: means ($\boldsymbol{\mu}_k$) and covariance matrices ($\Sigma_k$) for each case.}
+\label{tab:parameters}
+\end{table}
+
+<<echo = FALSE, message = FALSE, warning = FALSE, results='asis'>>=
+# install.packages(c("MASS","ggplot2","cowplot"))  # if needed
+library(MASS)
+library(ggplot2)
+library(cowplot)
+
+# Helper: sample two Gaussians and draw point cloud + 90% and 50% ellipses
+gen_panel <- function(mu1, S1, mu2, S2, title, n = 1500, level = 0.90) {
+  n1 <- n2 <- n %/% 2
+  X1 <- MASS::mvrnorm(n1, mu = mu1, Sigma = S1)
+  X2 <- MASS::mvrnorm(n2, mu = mu2, Sigma = S2)
+  df <- rbind(
+    data.frame(x1 = X1[,1], x2 = X1[,2], class = "A"),
+    data.frame(x1 = X2[,1], x2 = X2[,2], class = "B")
+  )
+  ggplot(df, aes(x1, x2, colour = class, fill = class)) +
+    geom_point(alpha = 0.10, size = 0.8, stroke = 0) +
+    stat_ellipse(type = "norm", level = level, size = 1.1) +
+    stat_ellipse(type = "norm", level = 0.50, linetype = "dashed", size = 0.9) +
+    coord_equal() +
+    labs(x = expression(x[1]), y = expression(x[2]), title = title) +
+    theme_minimal(base_size = 12) +
+    theme(legend.position = "none",
+          plot.title = element_text(hjust = 0.5, face = "bold"))
+}
+
+set.seed(42)
+
+# --- Five quiz panels ---------------------------------------------------------
+
+# 1) Equal full Σ, correlated -> LDA & QDA (NB cannot model correlation)
+S_eq <- matrix(c(2, 1, 1, 2), 2, 2)
+p1 <- gen_panel(mu1 = c(-4, 0), S1 = S_eq,
+                mu2 = c( 4, 0), S2 = S_eq,
+                title = "Case 1: equal Σ (correlated)")
+
+# 2) Different full Σ, rotated -> QDA only
+S2a <- matrix(c(3, 2,
+                2, 3), 2, 2)    # +corr
+S2b <- matrix(c(3, -2,
+               -2, 2), 2, 2)    # -corr, different scale
+p2 <- gen_panel(mu1 = c(-4, 1.4), S1 = S2a,
+                mu2 = c( 4, 0.4), S2 = S2b,
+                title = "Case 2: different Σ with rotation")
+
+# 3) Spherical, equal Σ -> LDA, QDA, NB
+S_sph <- diag(c(1, 1))
+p3 <- gen_panel(mu1 = c(-4, 0), S1 = S_sph,
+                mu2 = c( 4, 1), S2 = S_sph,
+                title = "Case 3: spherical & equal Σ")
+
+# 4) Concentric (same mean, different scale) -> QDA & NB
+p4 <- gen_panel(mu1 = c(-4, 0), S1 = diag(c(1, 1)),
+                mu2 = c(4, 0), S2 = diag(c(3, 3)),
+                title = "Case 4: spherical & unequal variances (uncorrelated)")
+
+# 5) Axis-aligned but unequal variances (diagonal Σ) -> QDA & NB
+p5 <- gen_panel(mu1 = c(-4, 0), S1 = diag(c(1, 2)),
+                mu2 = c(4, 0), S2 = diag(c(3, 1)),
+                title = "Case 5: diagonal, unequal Σ")
+
+# # --- Export -------------------------------------------------------------------
+# png("quiz_case1.png", width = 1200, height = 900, res = 150); print(p1); dev.off()
+# png("quiz_case2.png", width = 1200, height = 900, res = 150); print(p2); dev.off()
+# png("quiz_case3.png", width = 1200, height = 900, res = 150); print(p3); dev.off()
+# png("quiz_case4.png", width = 1200, height = 900, res = 150); print(p4); dev.off()
+# png("quiz_case5.png", width = 1200, height = 900, res = 150); print(p5); dev.off()
+
+# cowplot::save_plot(
+#   filename = "quiz_all.png",
+#   plot = cowplot::plot_grid(p1, p2, p3, p4, p5, ncol = 2, labels = "AUTO"),
+#   base_width = 10, base_height = 10
+# )
+library(patchwork)
+
+# Update titles to be simpler for the task
+p1 <- p1 + ggtitle("Case 1")
+p2 <- p2 + ggtitle("Case 2")
+p3 <- p3 + ggtitle("Case 3")
+p4 <- p4 + ggtitle("Case 4")
+p5 <- p5 + ggtitle("Case 5")
+
+(p1 + p2) / (p3 + p4 + p5)
+@
+
+\newpage
+
+Solution of extra task:
+
+<<echo = FALSE, message = FALSE, warning = FALSE, results='asis'>>=
+
+# Ensure libraries are loaded (they should be from previous chunk, but being explicit)
+library(MASS)
+library(ggplot2)
+library(patchwork)
+
+# Redefine helper function to ensure it's available
+gen_panel <- function(mu1, S1, mu2, S2, title, n = 1500, level = 0.90) {
+  n1 <- n2 <- n %/% 2
+  X1 <- MASS::mvrnorm(n1, mu = mu1, Sigma = S1)
+  X2 <- MASS::mvrnorm(n2, mu = mu2, Sigma = S2)
+  df <- rbind(
+    data.frame(x1 = X1[,1], x2 = X1[,2], class = "A"),
+    data.frame(x1 = X2[,1], x2 = X2[,2], class = "B")
+  )
+  ggplot(df, aes(x1, x2, colour = class, fill = class)) +
+    geom_point(alpha = 0.10, size = 0.8, stroke = 0) +
+    stat_ellipse(type = "norm", level = level, size = 1.1) +
+    stat_ellipse(type = "norm", level = 0.50, linetype = "dashed", size = 0.9) +
+    coord_equal() +
+    labs(x = expression(x[1]), y = expression(x[2]), title = title) +
+    theme_minimal(base_size = 12) +
+    theme(legend.position = "none",
+          plot.title = element_text(hjust = 0.5, face = "bold"))
+}
+
+# Regenerate plots with solution titles (plots from previous chunk may have different titles)
+# Recreate the covariance matrices and plots
+set.seed(42)  # Ensure reproducibility
+S_eq <- matrix(c(2, 1, 1, 2), 2, 2)
+S2a <- matrix(c(3, 2, 2, 3), 2, 2)
+S2b <- matrix(c(3, -2, -2, 2), 2, 2)
+S_sph <- diag(c(1, 1))
+
+p1_sol <- gen_panel(mu1 = c(-4, 0), S1 = S_eq, mu2 = c(4, 0), S2 = S_eq, title = "Case 1: LDA & QDA")
+p2_sol <- gen_panel(mu1 = c(-4, 1.4), S1 = S2a, mu2 = c(4, 0.4), S2 = S2b, title = "Case 2: QDA")
+p3_sol <- gen_panel(mu1 = c(-4, 0), S1 = S_sph, mu2 = c(4, 1), S2 = S_sph, title = "Case 3: LDA, QDA, NB")
+p4_sol <- gen_panel(mu1 = c(-4, 0), S1 = diag(c(1, 1)), mu2 = c(4, 0), S2 = diag(c(3, 3)), title = "Case 4: QDA, NB")
+p5_sol <- gen_panel(mu1 = c(-4, 0), S1 = diag(c(1, 2)), mu2 = c(4, 0), S2 = diag(c(3, 1)), title = "Case 5: QDA, NB")
+
+(p1_sol + p2_sol) / (p3_sol + p4_sol + p5_sol)
+
+# --- Extended answer key with justifications -------------------------------
+# install.packages(c("kableExtra"))  # if needed
+library(kableExtra)
+
+answer_key_expl_ltx <- data.frame(
+  Case = paste0("Case ", 1:5),
+  Can_Model = c(
+    "LDA, QDA",
+    "QDA",
+    "LDA, QDA, NB",
+    "QDA, NB",
+    "QDA, NB"
+  ),
+  Cannot_Model = c(
+    "NB",
+    "LDA, NB",
+    "None",
+    "LDA",
+    "LDA"
+  ),
+  Covariance_Structure = c(
+    "Equal cov. matrix (equal correlation); means differ",
+    "Unequal cov. matrix (different correlation); means differ",
+    "Cov. matrix is diagonal and equal variances per feature (spherical); means differ",
+    "Cov. matrix is diagonal but per feature variances differ; means differ",
+    "Cov. matrix is diagonal but only one feature has different variance; means differ"
+  ),
+  Decision_Boundary = c(
+    "Linear",
+    "Quadratic with cross-terms",
+    "Linear",
+    "Quadratic, axis-aligned",
+    "Quadratic, axis-aligned"
+  ),
+  Why = c(
+    "Shared full covariance gives identical orientation, hence linear Bayes boundary. NB assumes diagonal covariance and cannot model correlation.",
+    "Different full covariances create rotated ellipses, requiring cross-terms; only QDA allows class-specific full covariance.",
+    "Spherical and equal covariances imply identical shape and scale, giving a linear boundary; NB fits since diagonal equals spherical when variances match.",
+    "Spherical but unequal class scales yield a quadratic, axis-aligned boundary; LDA requires equal covariances and fails.",
+    "Diagonal but unequal class covariances induce an axis-aligned quadratic boundary; NB matches the diagonal assumption; LDA requires shared covariance and fails."
+  ),
+  stringsAsFactors = FALSE
+)
+
+# Split into two tables for better readability
+# Table 1: Main classification information
+table1 <- answer_key_expl_ltx[, c("Case", "Can_Model", "Cannot_Model", "Covariance_Structure", "Decision_Boundary")]
+# Table 2: Explanations
+table2 <- answer_key_expl_ltx[, c("Case", "Why")]
+
+# Knit to LaTeX; create two separate tables
+if (knitr::is_latex_output()) {
+  # Table 1: Main information with line breaks
+  # Generate table first, then manually fix column alignment
+  table1_str <- knitr::kable(
+    table1,
+    format = "latex",
+    booktabs = FALSE,
+    escape = TRUE,  # Changed to TRUE since user removed LaTeX math from Covariance_Structure
+    longtable = FALSE,
+    caption = "Answer key: Classification methods and covariance structures (Gaussian class-conditionals).",
+    label = "answer-key-main"
+  )
+  
+  # Convert to character if needed
+  table1_str <- as.character(table1_str)
+  
+  # Manually replace column alignment to allow line breaks
+  table1_str <- gsub(
+    "\\\\begin\\{tabular\\}\\[t\\]\\{l\\|l\\|l\\|l\\|l\\}",
+    "\\\\begin{tabular}[t]{l|p{2.5cm}|p{2.5cm}|p{6.5cm}|p{2.5cm}}",
+    table1_str
+  )
+  
+  # Add font size and positioning - fix the gsub pattern
+  table1_str <- gsub(
+    "\\\\begin\\{table\\}\\[!htbp\\]",
+    "\\\\begin{table}[!h]",
+    table1_str
+  )
+  
+  # Add centering and font size after table begins
+  table1_str <- gsub(
+    "\\\\begin\\{table\\}\\[!h\\]",
+    "\\\\begin{table}[!h]\\\\centering\\\\fontsize{9}{11}\\\\selectfont",
+    table1_str
+  )
+  
+  # Output table directly - print it
+  cat(table1_str)
+  cat("\n\n")
+  
+  # Table 2: Explanations with line breaks
+  table2_str <- knitr::kable(
+    table2,
+    format = "latex",
+    booktabs = FALSE,
+    escape = FALSE,
+    longtable = FALSE,
+    caption = "Answer key: Explanations (Gaussian class-conditionals).",
+    label = "answer-key-explanations"
+  )
+  
+  # Manually replace column alignment to allow line breaks
+  table2_str <- gsub(
+    "\\\\begin\\{tabular\\}\\[t\\]\\{l\\|l\\}",
+    "\\\\begin{tabular}[t]{l|p{14cm}}",
+    table2_str
+  )
+  
+  # Add font size and positioning - fix the gsub pattern
+  table2_str <- gsub(
+    "\\\\begin\\{table\\}\\[!htbp\\]",
+    "\\\\begin{table}[!h]",
+    table2_str
+  )
+  
+  # Add centering and font size after table begins
+  table2_str <- gsub(
+    "\\\\begin\\{table\\}\\[!h\\]",
+    "\\\\begin{table}[!h]\\\\centering\\\\fontsize{9}{11}\\\\selectfont",
+    table2_str
+  )
+  
+  # Output table directly - print it
+  cat(table2_str)
+} else {
+  # Fallback (HTML or other): simple kable without LaTeX specifics
+  knitr::kable(table1, format = "simple")
+  knitr::kable(table2, format = "simple")
+}
+
+@
+
