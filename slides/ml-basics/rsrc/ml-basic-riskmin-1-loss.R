@@ -1,183 +1,221 @@
-##################################################################
-####################Loss in a function ###########################
-##################################################################
-# Aim: show loss of a single observation
+# Loss visualization of L2 and L1
 
-#------------------------------------------------------------------
-# Libraries 
-#------------------------------------------------------------------
-
-library(ggplot2)
+# Libraries
+library(vistool)
 library(gridExtra)
-library(grid)
 
-#------------------------------------------------------------------
-# Function: Plot model + show one loss
-#------------------------------------------------------------------
+# Global settings
+options(vistool.theme = vistool_theme(
+  palette = "plasma",
+  text_size = 18,
+  point_size = 3.5,
+  line_width = 1.4,
+  legend_position = "none",
+  show_grid = FALSE,
+  background = "white"
+))
 
-#plot points + model 
-plot_data <- function(data){
-  ggplot(data = data, mapping = aes(x = x, y=y)) +
-    geom_point(size= 4) +
-    geom_line (aes(x =x, y= model_1))+
-    theme_classic() +
-    ylim(c(-5,15)) +
-    theme(axis.text=element_text(size=25),
-          axis.title=element_text(size=25),
-          panel.border = element_rect(colour = "black", fill=NA, size=0.5))
-}
+dir.create("figure", showWarnings = FALSE, recursive = TRUE)
 
-# plot + loss 
-plot_loss <- function (data, example, type = c("abs", "sqrd")){
-  loss_example_sqrd  <- (model_1[example]-y[example])^2
-  loss_example_abs <- abs(model_1[example]-y[example])
-  if(type=="abs"){
-    
-    plot <- plot_data(data) + 
-      geom_segment(aes(x = x[example], 
-                       y = model_1[example], 
-                       xend = x[example], 
-                       yend = y[example]),
-                   colour = "blue", 
-                   size = 1) +
-      annotate("text", x = 5.5, y = -5, label = bquote(bolditalic(L)(y,f(bold(.(round(x[example],2)))))~"="~"|"~.(round(model_1[example],2))~"-"~(.(round(y[example],2)))~"|"~"="~.(round(loss_example_abs,2))), size = 7)
-  }
-  if(type=="sqrd"){
-    
-    plot <- plot_data(data) + 
-      geom_rect(aes(xmin=x[example], 
-                   xmax=x[example]+loss_example_abs, 
-                   ymin=model_1[example], 
-                   ymax=y[example]), 
-               fill="blue", 
-               alpha=0.01, 
-               inherit.aes = FALSE,
-               color = "blue") +
-      annotate("text", x = 5.5, y = -5, label = bquote(bolditalic(L)(y,f(bold(.(round(x[example],2)))))~"="~"("~.(round(model_1[example],2))~"-"~(.(round(y[example],2)))~")"^2~"="~.(round(loss_example_sqrd,2))), size = 7)
-  } 
-  
-  plot
-  
-}
-
-#------------------------------------------------------------------
-# Function: Loss function plot
-#------------------------------------------------------------------
-
-#different loss functions
-
-loss_type <- function(x, type = c("abs", "sqrd")){
-  if(type=="abs") return_loss <- abs(x)
-  if(type=="sqrd")return_loss <- (x)^2
-  return_loss
-}
-
-
-plot_loss_function <- function (data, example, type = c("abs", "sqrd")){
-  
-  #create data for loss function
-  x_seq <- seq(-5,5,0.01)
-  loss_function <- loss_type(x_seq, type)
-  data_loss_function <- data.frame(x = x_seq, y = loss_function)
-  
-  #show loss data of example
-  loss <- loss_type(data$model_1-data$y, type)
-  residuals <- model_1 - y
-  data_examples <- data.frame(residuals = residuals, loss = loss)
-  
-  #create plot
-  
-  loss_function_plot <- ggplot(data = data_loss_function, mapping = aes(x = x, y = y))+
-    geom_line() +
-    geom_point(mapping = aes(x=residuals, y=loss), data = data_examples, shape =1, size = 4, color = "black")+
-    xlim(-5,5) +
-    theme_classic()+
-    geom_segment(mapping = aes(x = residuals, 
-                               y = loss, 
-                               xend = residuals, 
-                               yend = rep(0, length(residuals))),
-                 colour = "black", 
-                 data = data_examples, 
-                 size= 1)  +
-    geom_segment(mapping = aes(x = residuals[example], 
-                               y = loss[example], 
-                               xend = residuals[example], 
-                               yend = 0),
-                 colour = "blue", 
-                 data = data_examples, 
-                 size = 1)  +
-    xlab ( "y - f(x)")+
-    ylab ("L(y, f(x))") +
-    theme(axis.text=element_text(size=25),
-          axis.title=element_text(size=25),
-          panel.border = element_rect(colour = "black", fill=NA, size=0.5)) 
-  
-  
-  loss_function_plot
-  
-}
-
-#------------------------------------------------------------------
-# Function: Plot both plot
-#------------------------------------------------------------------
-
-plot_two <- function (data, example, type = c("abs", "sqrd")){
-  loss_plot <-plot_loss (data, example, type = type)
-  loss_plot
-  
-  loss_function_plot <- plot_loss_function (data, example, type = type)
-  loss_function_plot
-  
-  gridExtra::grid.arrange(loss_plot, loss_function_plot , ncol = 2)
-}
-#------------------------------------------------------------------
-# Create data 
-#------------------------------------------------------------------
-
-#######
-# Create sample data
+# Create data
 set.seed(1234)
-
-#number of data points
 n <- 15
-
-# errors
 sd <- 2
-eps <- rnorm(n = n , mean = 0, sd = sd)
-
-# x values
-x <- seq (1,10,length.out = n)
-
-#linear model 
+eps <- rnorm(n = n, mean = 0, sd = sd)
+x <- seq(1, 10, length.out = n)
 b0 <- 1.25
 b1 <- 0.9
-y <- b0 + b1*x + eps
+y <- b0 + b1 * x + eps
+model_values <- b0 + b1 * x
 
+data <- data.frame(x = x, y = y, model = model_values)
+example_idx <- 4L
+residuals <- data$y - data$model
 
-#####
-#model 1 & 1.5
-model_1 <- 1.25 + 0.9*x
+model_fun <- function(x_val) b0 + b1 * x_val
+model_hypothesis <- hypothesis(fun = model_fun, type = "regr", predictors = "x")
 
+highlight_color <- "#2C7BB6"
+x_limits <- range(x) + c(-0.5, 0.5)
+y_limits <- range(c(data$y, data$model))
+y_padding <- diff(y_limits) * 0.15
+if (!is.finite(y_padding) || identical(y_padding, 0)) y_padding <- 1
+y_limits <- y_limits + c(-y_padding, y_padding)
 
-#####################################
-# input for the functions: 
-#####################################
-data <- data.frame(x = x, y = y, model_1 = model_1) 
+residual_limits <- range(residuals)
+residual_padding <- diff(residual_limits) * 0.25
+if (!is.finite(residual_padding) || identical(residual_padding, 0)) residual_padding <- 1
+residual_limits <- residual_limits + c(-residual_padding, residual_padding)
 
-#at which observation do we have a closer look (here: number 4)
-example <- 4
+abs_loss_value <- abs(residuals[example_idx])
+sq_loss_value <- residuals[example_idx]^2
 
+abs_model_label <- sprintf(
+  "L(y, f(x)) = |%.2f - %.2f| = %.2f",
+  data$model[example_idx], data$y[example_idx], abs_loss_value
+)
+sq_model_label <- sprintf(
+  "L(y, f(x)) = (%.2f - %.2f)^2 = %.2f",
+  data$model[example_idx], data$y[example_idx], sq_loss_value
+)
 
-#------------------------------------------------------------------
-# Plot both plot + save them 
-#------------------------------------------------------------------
-# plot absolute loss
-abs_plot <- plot_two (data, example, type = "abs")
-ggsave(filename = "figure/ml-basic_riskmin-1-loss_abs.png", plot = abs_plot , width = 14, height = 5, units = "in")
+abs_loss_label <- sprintf(
+  "Residual r = %.2f -> L(r) = %.2f",
+  residuals[example_idx], abs_loss_value
+)
+sq_loss_label <- sprintf(
+  "Residual r = %.2f -> L(r) = %.2f",
+  residuals[example_idx], sq_loss_value
+)
 
+# Helper functions
+build_model_plot <- function(loss_key, annotation_text, title_text) {
+  vis <- as_visualizer(
+    model_hypothesis,
+    domain = list(x = x_limits)
+  )
 
-# plot absolute loss
-sqrd_plot <- plot_two (data, example, "sqrd")
-ggsave(filename = "figure/ml-basic_riskmin-1-loss_sqrd.png", plot = sqrd_plot , width = 14, height = 5, units = "in")
+  vis$add_points(
+    points = data[, c("x", "y")],
+    color = "#333333",
+    size = 3.5,
+    alpha = 0.9
+  )
 
+  if (identical(loss_key, "l2_se")) {
+    vis$add_points(
+      points = data[example_idx, c("x", "y"), drop = FALSE],
+      color = highlight_color,
+      size = 4,
+      loss = loss_key,
+      loss_color = highlight_color,
+      loss_fill = highlight_color,
+      loss_alpha = 0.25,
+      loss_linetype = "solid"
+    )
+  } else {
+    vis$add_points(
+      points = data[example_idx, c("x", "y"), drop = FALSE],
+      color = highlight_color,
+      size = 4,
+      loss = loss_key,
+      loss_color = highlight_color,
+      loss_linetype = "solid"
+    )
+  }
 
+  x_span <- diff(x_limits)
+  if (!is.finite(x_span) || identical(x_span, 0)) x_span <- 1
+  y_span <- diff(y_limits)
+  if (!is.finite(y_span) || identical(y_span, 0)) y_span <- 1
+
+  annotation_x <- x_limits[1] + 0.05 * x_span
+  annotation_y <- y_limits[2] - 0.12 * y_span
+
+  vis$add_annotation(
+    text = annotation_text,
+    color = highlight_color,
+    size = 14,
+    x = annotation_x,
+    y = annotation_y,
+    hjust = 0
+  )
+
+  vis$plot(
+    show_legend = FALSE,
+    plot_title = title_text,
+    x_lab = "x",
+    y_lab = "y",
+    x_limits = x_limits,
+    y_limits = y_limits
+  )
+}
+
+build_loss_plot <- function(loss_key, annotation_text, title_text) {
+  loss_obj <- lss(loss_key)
+  vis <- as_visualizer(
+    loss_obj,
+    y_pred = data$model,
+    y_true = data$y,
+    n_points = 4000L
+  )
+
+  vis$add_points(
+    x = residuals,
+    loss_id = loss_obj$id,
+    color = "#444444",
+    size = 3,
+    alpha = 0.85,
+    show_line = TRUE,
+    line_color = "#B3B3B3",
+    line_alpha = 0.6
+  )
+
+  vis$add_points(
+    x = residuals[example_idx],
+    loss_id = loss_obj$id,
+    color = highlight_color,
+    size = 4,
+    show_line = TRUE,
+    line_color = highlight_color,
+    line_alpha = 0.85
+  )
+
+  loss_fun <- loss_obj$get_fun(vis$input_type)
+  loss_grid <- seq(residual_limits[1], residual_limits[2], length.out = 200L)
+  loss_values <- loss_fun(loss_grid)
+  loss_range <- range(loss_values, na.rm = TRUE)
+  if (!is.finite(loss_range[1])) loss_range[1] <- 0
+  if (!is.finite(loss_range[2])) loss_range[2] <- max(loss_values, na.rm = TRUE)
+  if (!is.finite(loss_range[2])) loss_range[2] <- 1
+  loss_height <- diff(loss_range)
+  if (!is.finite(loss_height) || identical(loss_height, 0)) loss_height <- 1
+
+  residual_span <- diff(residual_limits)
+  if (!is.finite(residual_span) || identical(residual_span, 0)) residual_span <- 1
+  annotation_x <- residual_limits[1] + 0.55 * residual_span
+  annotation_y <- loss_range[2] - 0.12 * loss_height
+
+  vis$add_annotation(
+    text = annotation_text,
+    color = highlight_color,
+    size = 14,
+    x = annotation_x,
+    y = annotation_y,
+    hjust = 0
+  )
+
+  vis$plot(
+    show_legend = FALSE,
+    plot_title = title_text,
+    x_limits = residual_limits
+  )
+}
+
+create_combined_plot <- function(loss_key, model_label, loss_label, titles) {
+  model_plot <- build_model_plot(loss_key, model_label, titles$model)
+  loss_plot <- build_loss_plot(loss_key, loss_label, titles$loss)
+  gridExtra::arrangeGrob(model_plot, loss_plot, ncol = 2)
+}
+
+# Build and save figures
+abs_titles <- list(model = "Absolute Loss", loss = "Absolute Loss Function")
+sq_titles <- list(model = "Squared Loss", loss = "Squared Loss Function")
+
+abs_combined <- create_combined_plot("l1_ae", abs_model_label, abs_loss_label, abs_titles)
+ggplot2::ggsave(
+  filename = "figure/ml-basic_riskmin-1-loss_abs.png",
+  plot = abs_combined,
+  width = 14,
+  height = 5,
+  units = "in"
+)
+
+sq_combined <- create_combined_plot("l2_se", sq_model_label, sq_loss_label, sq_titles)
+ggplot2::ggsave(
+  filename = "figure/ml-basic_riskmin-1-loss_sqrd.png",
+  plot = sq_combined,
+  width = 14,
+  height = 5,
+  units = "in"
+)
