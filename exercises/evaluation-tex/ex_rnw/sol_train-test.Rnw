@@ -1,12 +1,70 @@
 \begin{enumerate}
-\item[1)] The generalization error is the expected (future) performance of a learner $\ind$ trained on $\ntrain$ observations with performance measure $\rho$.
-As any such performance estimate depends on the concrete sampling of $\Dtest$ from $\Pxy$, we are interested in the limit of this expectation value, as $\ntest\rightarrow\infty$.
-\item[2)] One samples $\Dtrain$ of size $\ntrain = 100$ and $\Dtest$ of size $\ntest$ $K$ times from $\Pxy$ (independently).
-Each time, the learner $\ind$ is trained on $\Dtraini[k]$, and the respective performance $\rho$ is evaluated on $\Dtesti[k]$.
-For $K,\ntest\rightarrow\infty$, the average performance $\frac{1}{K}{\sum\limits_{k=1}^K} \rho \left(\yv_{\Jtesti[k]}, {\F_{\Jtesti[k],\ind(\Dtraini[k])}}\right)$ converges to $\GE(\ind, \lamv, \ntrain = 100, \rho)$.
-\item[3)] As $\ntrain$ must be smaller than $n$, the estimator is a pessimistically biased estimator of $\GE(\ind, \lamv, n, \rho)$, as we are not using all available data for training.
-In the context of regression tasks and performance measures MSE or MAE, pessimistic bias means:
-$\E\left[{\GEh_{\Jtrain, \Jtest}(\ind, |\Jtrain|, \lamv, \rho)}\right] > \GE(\ind, \lamv, n, \rho)$
-%\end{align}
-\item[4)] If one chooses a large $\ntrain$, $\ntest$ is small, and the estimator has a large variance. 
+\item[1)] \textbf{Interpretation of the generalization error $\GE(\ind, \lamv, \ntrain, \rho)$}
+\begin{itemize}
+  \item $\GEfull$ is the \emph{expected future performance} of learner $\ind$ with configuration $\lamv$ trained on $\ntrain$ observations and evaluated with performance measure $\rho$.
+  \item In $
+    \GEfull = \lim_{\ntest \rightarrow \infty} \E_{\Dtrain,\Dtest \sim \Pxy}
+      \left[ \rho \bigl(\yv, \F_{\Dtest, \ind(\D_{\mathrm{train}}, \lamv)}\bigr) \right]$,
+  the randomness comes from repeatedly sampling train and test sets $\Dtrain,\Dtest$ from $\Pxy$.
+  \item For each draw:
+  \begin{itemize}
+    \item We train a model $\ind(\Dtrain,\lamv)$ on $\Dtrain$.
+    \item We evaluate its performance $\rho(\yv, \F_{\Dtest, \ind(\Dtrain,\lamv)})$ on an independent test set $\Dtest$.
+  \end{itemize}
+  \item Taking the expectation over all such draws and the limit $\ntest \to \infty$ removes randomness from the particular test set and yields the true expected performance of the learner for training size $\ntrain$.
+\end{itemize}
+
+\item[2)] \textbf{Empirical estimation of $\GE(\ind, \lamv, \ntrain = 100, \rho)$ when we can sample from $\Pxy$}
+\begin{itemize}
+  \item Repeat the following for $k = 1, \dots, K$:
+  \begin{itemize}
+    \item Draw a training set $\Dtraini[k]$ of size $\ntrain = 100$ from $\Pxy$.
+    \item Draw an independent test set $\Dtesti[k]$ of size $\ntest$ (large) from $\Pxy$.
+    \item Train the learner: $\fh^{[k]} = \ind(\Dtraini[k], \lamv)$.
+    \item Compute the performance on the test set: $
+      \rho\!\left(\yv_{\Jtesti[k]},
+        \F_{\Jtesti[k], \ind(\Dtraini[k], \lamv)}\right).$
+  \end{itemize}
+  \item Average $K$ values: $
+    \widehat{\GE}_K(\ind, \lamv, \ntrain = 100, \rho)
+      = \frac{1}{K} \sum_{k=1}^K
+        \rho\!\left(\yv_{\Jtesti[k]},
+          \F_{\Jtesti[k], \ind(\Dtraini[k], \lamv)}\right).$
+  \item For $K, \ntest \rightarrow \infty$, the estimator converges to the theoretical quantity
+  $\GE(\ind, \lamv, \ntrain = 100, \rho)$.
+\end{itemize}
+
+\item[3)] \textbf{Effect of training size $|\Jtrain|$ on the bias of the hold-out estimator}
+\begin{itemize}
+  \item In practice we only have a fixed data set $\D$ of size $n$. The target we care about is the generalization error of a learner trained on \emph{all} available data, i.e.:
+  \[
+    \GEfull = \GE(\ind, \lamv, \ntrain = n, \rho),
+  \]
+  \item Hold-out splitting uses only a subset $\Dtrain$ of size $|\Jtrain| < n$ for training and a disjoint subset $\Dtest$ for testing. The empirical estimator is
+    ${\GEh(\ind, \lamv, (\Jtrain, \Jtest), \rho)}
+      = \rho\!\left(\yv_{\Jtest},
+        \F_{\Jtest, \ind(\Dtrain, \lamv)}\right).$
+  \item Because models trained on fewer points are typically worse on average than models trained on all $n$ points, the estimator is \emph{pessimistically biased}:
+  \[
+    \E_{(\Jtrain,\Jtest)} \Bigl[ \GEh(\ind, \lamv, (\Jtrain, \Jtest), \rho) \Bigr]
+      \;\geq\; \GEfull.
+  \]
+  \item For regression tasks with loss-based measures such as MSE or MAE, this inequality means we systematically \emph{overestimate} the true expected loss of a model trained on all $n$ observations.
+\end{itemize}
+
+\item[4)] \textbf{Effect of training size $|\Jtrain|$ on the variance of the hold-out estimator}
+\begin{itemize}
+  \item We have the constraint $|\Jtrain| + |\Jtest| = n$.
+  \item \textbf{Large} training size $|\Jtrain|$:
+  \begin{itemize}
+    \item $|\Jtest|$ is small $\Rightarrow$ $\rho(\cdot)$ is computed on few test observations.
+    \item The estimator ${\GEh(\ind, \lamv, (\Jtrain, \Jtest), \rho)}$ has \emph{high variance} across different splits.
+  \end{itemize}
+  \item \textbf{Small} training size $|\Jtrain|$:
+  \begin{itemize}
+    \item $|\Jtest|$ is large $\Rightarrow$ variance due to the test set is reduced.
+    \item But the model is trained on few data points, which increases pessimistic bias as in (3).
+  \end{itemize}
+  \item There is a \emph{trade-off} between bias and variance when choosing $|\Jtrain|$: larger $|\Jtrain|$ decreases bias but increases variance; smaller $|\Jtrain|$ decreases variance but increases bias.
+\end{itemize}
 \end{enumerate}
