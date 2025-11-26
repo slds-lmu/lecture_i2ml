@@ -1,190 +1,118 @@
-We are building models to detect a \textbf{rare disease}. Labels:
-\begin{itemize}
-  \item \textbf{1 = sick (positive)}
-  \item \textbf{0 = healthy (negative)}
-\end{itemize}
+\textbf{Part 1: Confusion Matrix and Accuracy}
 
-\subsection*{Step 1: Accuracy on Imbalanced Data (Two Models)}
+We are building models to detect a \textbf{rare disease} (\textbf{1 = sick (positive)} and \textbf{0 = healthy (negative)}).
+To analyze classification performance in detail, we use the confusion matrix. Below is an empty confusion matrix for a binary classification problem:
 
-We have 10 patients with true labels and predictions from two models:
+\[
+\begin{array}{c|c|c|}
+    \multicolumn{1}{c}{} & \textbf{Actual Positive} & \textbf{Actual Negative} \\
+    \hline
+    \textbf{Predicted Positive} & (A) & (B) \\
+    \hline
+    \textbf{Predicted Negative} & (C) & (D) \\
+    \hline
+\end{array}
+\]
+
+%\textbf{Tasks (Part 1):}
+\begin{enumerate}
+  \item Assign the correct terms ($TP$, $FP$, $FN$, $TN$) to fields (A), (B), (C), (D) in the confusion matrix above and briefly explain what each term represents.
+  \item Look at the row sums and column sums of the confusion matrix. What do these sums represent?
+  %Note: These sums are often used as denominators in metrics and can be understood as the different ``universes'' we condition on (see table below).
+  \item Express the accuracy metric using $TP$, $FP$, $FN$, and $TN$.
+  \item For each of the 8 metrics in the table below, categorize which question (Question 1 or Question 2) it answers, and write a one-line interpretation of what the metric measures.
+  Many metrics naturally group into two categories based on what question they answer:
+
+  \begin{itemize}
+    \item \textbf{Question 1:} ``Among all actual positives/negatives, how many did we correctly/incorrectly classify?'' (Metrics condition on real class: denominators positives ($P$) or negatives ($N$))
+    \item \textbf{Question 2:} ``Among all predicted positives/negatives, how many were actually correct/incorrect?'' (Metrics condition on predictions: denominators predicted positives ($PP$) or predicted negatives ($PN$))
+  \end{itemize}
+
+ % \textbf{Eight common metrics (excluding overall metrics like accuracy):}
+
+  \begin{center}
+  \begin{tabular}{|l|l|}
+  \hline
+  \textbf{Metric} & \textbf{Formula} \\
+  \hline
+  Precision (Positive Predictive Value, PPV) & $\frac{TP}{TP + FP}$ \\
+  \hline
+  False Positive Rate (FPR, Fallout) & $\frac{FP}{FP + TN}$ \\
+  \hline
+  True Negative Rate (TNR, Specificity) & $\frac{TN}{TN + FP}$ \\
+  \hline
+  False Omission Rate (FOR) & $\frac{FN}{TN + FN}$ \\
+  \hline
+  True Positive Rate (TPR, Recall, Sensitivity) & $\frac{TP}{TP + FN}$ \\
+  \hline
+  False Discovery Rate (FDR) & $\frac{FP}{TP + FP}$ \\
+  \hline
+  Negative Predictive Value (NPV) & $\frac{TN}{TN + FN}$ \\
+  \hline
+  False Negative Rate (FNR, Miss Rate) & $\frac{FN}{TP + FN}$ \\
+  \hline
+  \end{tabular}
+  \end{center}
+\end{enumerate}
+
+
+\bigskip
+
+\textbf{Part 2: Metrics Derived from the Confusion Matrix}
+
+Now we apply this to actual data. We have 10 patients with true labels and predictions from two models:
 
 \begin{center}
-\begin{tabular}{c|c|c|c}
-ID & True label $y$ & Model A & Model B \\ \hline
-1 & 0 & 1 & 0 \\ \hline
-2 & 0 & 0 & 1 \\ \hline
-3 & 0 & 0 & 0 \\ \hline
-4 & 1 & 0 & 1 \\ \hline
-5 & 0 & 0 & 0 \\ \hline
-6 & 0 & 0 & 0 \\ \hline
-7 & 0 & 0 & 1 \\ \hline
-8 & 0 & 0 & 0 \\ \hline
-9 & 0 & 0 & 1 \\ \hline
-10 & 0 & 0 & 0
+\begin{tabular}{c|c|c|c|c|c|c|c|c|c|c}
+Patient ID & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 \\ \hline \hline
+True label $y$ & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\ \hline
+Model A & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\ \hline
+Model B & 0 & 1 & 0 & 1 & 0 & 0 & 1 & 0 & 1 & 0
 \end{tabular}
 \end{center}
 
-Only 1 sick person (ID 4). The data is highly imbalanced.
-
+%\textbf{Tasks (Part 2):}
 \begin{enumerate}
-  \item Mark each prediction as correct or incorrect.
-  \item Compute the accuracy for Model A and Model B.
-  \item Which model seems better based on accuracy?
-  \item Is accuracy a good metric here? Explain briefly.
+  %\item For both models, fill in the confusion matrix with the actual counts for $TP$, $FP$, $FN$, $TN$.
+  \item For both models, compute the accuracy. Based only on accuracy, which model seems better?
+  \item For both models, compute: TPR, TNR, Precision, and NPV. For each of these four metrics, identify which model performs better and discuss what this means in practice (in particular for which aspects of the confusion matrix each model performs well or poorly, and which model you would choose in this medical setting).
 \end{enumerate}
 
-\subsection*{Step 2: Understanding the Confusion Matrix}
+\bigskip
 
-Now when we've seen that it's important to look beyond accuracy, and actually analyze the types of errors our models make, we introduce the confusion matrix.
+\bigskip
 
-For the positive class (``sick'' = 1) we define:
-
-\begin{itemize}
-  \item \textbf{TP} (True Positives): actual 1, predicted 1
-  \item \textbf{FP} (False Positives): actual 0, predicted 1
-  \item \textbf{FN} (False Negatives): actual 1, predicted 0
-  \item \textbf{TN} (True Negatives): actual 0, predicted 0
-\end{itemize}
-
-Confusion matrix form:
-
-\begin{center}
-\begin{tabular}{cc|c|c}
- & & \multicolumn{2}{c}{\textbf{Predicted}} \\
- & & 1 & 0 \\ \hline
-\multirow{2}{*}{\textbf{Actual}} & 1 & TP & FN \\ \cline{2-4}
- & 0 & FP & TN \\
-\end{tabular}
-\end{center}
-
-\textbf{Four "Universes" (sets from which we choose denominators):}
-\begin{itemize}
-  \item \textbf{Real Positives} (Condition Positive): $P = TP + FN$
-  \item \textbf{Real Negatives} (Condition Negative): $N = TN + FP$
-  \item \textbf{Predicted Positives}: $PP = TP + FP$
-  \item \textbf{Predicted Negatives}: $PN = TN + FN$
-\end{itemize}
-
-\textbf{Key Rule for Understanding Metrics:}
-\begin{itemize}
-  \item Everything called a ``\ldots Rate'' (TPR, FPR, TNR, FNR) divides by a \emph{true class total} $\rightarrow$ denominator is $P$ or $N$.
-  \item Everything with ``Precision / Predictive Value'' divides by a \emph{prediction total} $\rightarrow$ denominator is $PP$ or $PN$.
-\end{itemize}
-
-\textbf{Tasks:}
-\begin{enumerate}
-  \item Fill in the confusion matrix for Model A.
-  \item Fill in the confusion matrix for Model B.
-  \item For each model, compute $P$, $N$, $PP$, and $PN$.
-\end{enumerate}
-
-\subsection*{Step 3: Deriving Metrics from the Confusion Matrix}
-
-Now that we understand the four "universes" (P, N, PP, PN), we can systematically derive any metric by choosing which universe to condition on. This means we'll never need to memorize formulas -- we just need to understand what question each metric answers.
-
-\textbf{The Minimal Algorithm to Derive Any Confusion Matrix Metric:}
-\begin{enumerate}
-  \item \textbf{Determine the perspective:}
-  \begin{itemize}
-    \item Looking at \emph{real positives}? $\rightarrow$ Denominator: $TP + FN$
-    \item Looking at \emph{real negatives}? $\rightarrow$ Denominator: $TN + FP$
-    \item Looking at \emph{predicted positives}? $\rightarrow$ Denominator: $TP + FP$
-    \item Looking at \emph{predicted negatives}? $\rightarrow$ Denominator: $TN + FN$
-  \end{itemize}
-  \item \textbf{Determine what counts as "success":}
-  \begin{itemize}
-    \item Success = correctly identified $\rightarrow$ TP or TN
-    \item Failure = incorrectly classified $\rightarrow$ FP or FN
-  \end{itemize}
-  \item \textbf{Construct the fraction:}
-  \begin{itemize}
-    \item Example: ``Success on real positives'' $\rightarrow$ $\frac{TP}{TP + FN}$ = TPR
-    \item Example: ``Failure on real negatives'' $\rightarrow$ $\frac{FP}{FP + TN}$ = FPR
-  \end{itemize}
-\end{enumerate}
-
-\textbf{Common Metrics:}
-
-Notice how metrics naturally group into three categories based on what they condition on. This structure helps us understand relationships between metrics and remember formulas.
-
-\emph{Metrics conditioned on real class (denominators $P$ or $N$):}
-
-These answer: "Among all actual positives/negatives, how many did we correctly/incorrectly classify?"
-\begin{align*}
-  \text{True Positive Rate (TPR, Recall, Sensitivity)} &= \frac{TP}{TP + FN} = \frac{TP}{P} \\
-  \text{True Negative Rate (TNR, Specificity)} &= \frac{TN}{TN + FP} = \frac{TN}{N} \\
-  \text{False Positive Rate (FPR, Fallout)} &= \frac{FP}{FP + TN} = \frac{FP}{N} = 1 - TNR \\
-  \text{False Negative Rate (FNR, Miss Rate)} &= \frac{FN}{TP + FN} = \frac{FN}{P} = 1 - TPR
-\end{align*}
-
-\emph{Metrics conditioned on predictions (denominators $PP$ or $PN$):}
-
-These answer: "Among all predicted positives/negatives, how many were actually correct/incorrect?"
-\begin{align*}
-  \text{Precision (Positive Predictive Value, PPV)} &= \frac{TP}{TP + FP} = \frac{TP}{PP} \\
-  \text{Negative Predictive Value (NPV)} &= \frac{TN}{TN + FN} = \frac{TN}{PN} \\
-  \text{False Discovery Rate (FDR)} &= \frac{FP}{TP + FP} = \frac{FP}{PP} = 1 - \text{Precision} \\
-  \text{False Omission Rate (FOR)} &= \frac{FN}{TN + FN} = \frac{FN}{PN} = 1 - NPV
-\end{align*}
-
-\emph{Overall metrics (conditioned on total population $P + N$):}
-\begin{align*}
-  \text{Accuracy (ACC)} &= \frac{TP + TN}{TP + TN + FP + FN} = \frac{TP + TN}{P + N} \\
-  \text{Balanced Accuracy} &= \frac{TPR + TNR}{2} = \frac{\text{Sensitivity} + \text{Specificity}}{2}
-\end{align*}
-
-\textbf{Tasks:}
-\begin{enumerate}
-  \item Using the algorithm above, explain in your own words what \emph{TPR (Recall)} means. Which "universe" does it condition on?
-  \item Using the algorithm above, explain in your own words what \emph{Precision} means. Which "universe" does it condition on?
-  \item For Model A and Model B, compute: TPR (Recall), FPR, TNR (Specificity), Precision, and NPV.
-  \item Verify the complementary relationships: Check that FPR = 1 - TNR and FNR = 1 - TPR for both models.
-  \item If missing a sick patient is very costly, which model would you prefer based on the metrics? Why?
-\end{enumerate}
-
-\subsection*{Step 4: F1 Score (Harmonic Mean of Precision and Recall)}
+\textbf{Part 3: F1 Score (Harmonic Mean of Precision and Recall)}
 
 Sometimes we want a single metric that balances precision and recall. We define the F1 score as the harmonic mean of precision and recall:
 \[
   F1 = \frac{2}{\frac{1}{\text{Precision}} + \frac{1}{\text{Recall}}} = \frac{2 \cdot \text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}}.
 \]
 
-\textbf{Note:} If both precision and recall are 0, the F1 formula becomes undefined ($0/0$). By convention, we define F1 = 0 in this case, since the model has no predictive value for the positive class. In practice, implementations usually define F1 = 0 whenever precision = 0 or recall = 0, because the model is useless for the positive class in either case.
-
-\textbf{Tasks:}
+%\textbf{Note:} If both precision and recall are 0, the F1 formula becomes undefined ($0/0$). By convention, we define F1 = 0 in this case, since the model has no predictive value for the positive class. In practice, implementations usually define F1 = 0 whenever precision = 0 or recall = 0, because the model is useless for the positive class in either case.
+%\textbf{Tasks (Part 3):}
 \begin{enumerate}
-  \item Why would we want to combine precision and recall into a single metric? 
-  \item Using your values for Model B, compute F1 for Model B.
-  \item Compute F1 Score for Model A. What happens with the formula?
-  \item Conceptual: why might we prefer the \emph{harmonic} mean instead of the arithmetic mean or the geometric mean?
+  \item Using your values for Precision and Recall from Part 2, compute the F1 score for both models.
+  What result do you obtain for Model A, and how does the F1 formula behave in this case? Explain your answer.
+  %\item Compute F1 Score for Model A. What happens with the formula?
+  \item Why might we prefer the \emph{harmonic} mean instead of the arithmetic mean for combining precision and recall?
 \end{enumerate}
 
-\subsection*{Step 5: Thresholds and Misleading 0.5}
+\bigskip
 
-So far we've worked with hard predictions (0 or 1). But many models output probability scores. Let's see how the choice of threshold affects our confusion matrix and all the metrics we derived.
+\bigskip
 
-Now we use probabilistic model outputs for 6 patients:
+\textbf{Part 4: Thresholds and the Choice of 0.5}
+
+So far we have worked with hard predictions (0 or 1). But many models output probability scores instead. The choice of threshold (the cutoff above which we predict class 1) affects the confusion matrix.
+
+Consider Model C with probabilistic outputs for 6 patients (see below). Compute and compare TPR and FPR at thresholds 0.5 and 0.3.
+Describe how lowering the threshold from 0.5 to 0.3 changes the confusion matrix and the derived metrics, and explain why the choice of threshold is important.
 
 \begin{center}
-\begin{tabular}{c|c|c|c}
-ID & True $y$ & Model C score & Model D score \\ \hline
-1 & 0 & 0.20 & 0.80 \\ \hline
-2 & 1 & 0.40 & 0.60 \\ \hline
-3 & 0 & 0.10 & 0.55 \\ \hline
-4 & 0 & 0.30 & 0.20 \\ \hline
-5 & 1 & 0.35 & 0.52 \\ \hline
-6 & 0 & 0.05 & 0.10
+\begin{tabular}{c|c|c|c|c|c|c}
+ Patient ID & 1 & 2 & 3 & 4 & 5 & 6 \\ \hline \hline
+True $y$ & 0 & 1 & 0 & 0 & 1 & 0 \\ \hline
+Model C score & 0.20 & 0.40 & 0.10 & 0.30 & 0.35 & 0.05
 \end{tabular}
 \end{center}
-
-We predict class 1 if the score is at least 0.5, otherwise class 0.
-
-\textbf{Tasks:}
-\begin{enumerate}
-  \item For each model, convert the scores to hard predictions using threshold 0.5.
-  \item For each model, build the confusion matrix and identify the four universes: $P$, $N$, $PP$, $PN$.
-  \item Compute accuracy and recall for each model at threshold 0.5.
-  \item Looking at Model C's scores and the true labels, conclude whether Model C is really a bad model, or there is another issue in play.
-  \item For Model C, using the perspective-based algorithm from Step 3, compute TPR and FPR at threshold 0.5. What do these metrics tell you about the model's behavior?
-  \item How would the confusion matrix and metrics for Model C change if we used threshold 0.3 instead of 0.5?
-\end{enumerate}

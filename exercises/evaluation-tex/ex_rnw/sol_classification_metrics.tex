@@ -1,161 +1,282 @@
-\subsection*{Step 1: Solutions}
+\textbf{Part 1: Confusion Matrix and Accuracy}
 
-\textbf{Marking predictions:}
+\begin{enumerate}
+  \item Assigning terms to the confusion matrix:
+
+\[
+\begin{array}{c|c|c|}
+    \multicolumn{1}{c}{} & \textbf{Actual Positive} & \textbf{Actual Negative} \\
+    \hline
+    \textbf{Predicted Positive} & (A) TP & (B) FP \\
+    \hline
+    \textbf{Predicted Negative} & (C) FN & (D) TN \\
+    \hline
+\end{array}
+\]
+
+%\textbf{Explanation of terms:}
+\begin{itemize}
+  \item \textbf{TP (True Positives)}: Cases where model correctly predicted positive and actual label is positive.
+  \item \textbf{FP (False Positives)}: Cases where model incorrectly predicted positive but actual label is negative. Also called false alarms.
+  \item \textbf{FN (False Negatives)}: Cases where model incorrectly predicted negative but actual label is positive. Also called misses.
+  \item \textbf{TN (True Negatives)}: Cases where model correctly predicted negative and actual label is negative.
+\end{itemize}
+
+  \item Looking at the confusion matrix structure:
+\begin{itemize}
+  \item \textbf{Column sums:} The first column sum ($TP + FN$) represents all actual positives ($P$). The second column sum ($FP + TN$) represents all actual negatives ($N$).
+  \item \textbf{Row sums:} The first row sum ($TP + FP$) represents all predicted positives ($PP$). The second row sum ($FN + TN$) represents all predicted negatives ($PN$).
+\end{itemize}
+
+  \item Accuracy represents the proportion of all cases that were correctly classified:
+
+Accuracy = $\frac{TP + TN}{TP + TN + FP + FN} = \frac{TP + TN}{P + N}$
+
+  \item The row and column sums are often used as denominators in metrics and can be understood as the different ``universes'' we condition on when calculating these metrics.
+Simplified forms of each metric using the universes $P$, $N$, $PP$, and $PN$:
+
 \begin{center}
-\begin{tabular}{c|c|c|c|c|c}
-ID & True & Model A & A Correct? & Model B & B Correct? \\ \hline
-1 & 0 & 1 & No & 0 & Yes \\ 
-2 & 0 & 0 & Yes & 1 & No \\ 
-3 & 0 & 0 & Yes & 0 & Yes \\ 
-4 & 1 & 0 & No & 1 & Yes \\ 
-5 & 0 & 0 & Yes & 0 & Yes \\ 
-6 & 0 & 0 & Yes & 0 & Yes \\ 
-7 & 0 & 0 & Yes & 1 & No \\ 
-8 & 0 & 0 & Yes & 0 & Yes \\ 
-9 & 0 & 0 & Yes & 1 & No \\ 
-10 & 0 & 0 & Yes & 0 & Yes \\ 
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Metric} & \textbf{Formula} & \textbf{Simplified} \\
+\hline
+Precision (Positive Predictive Value, PPV) & $\frac{TP}{TP + FP}$ & $\frac{TP}{PP}$ \\
+\hline
+False Positive Rate (FPR, Fallout) & $\frac{FP}{FP + TN}$ & $\frac{FP}{N}$ \\
+\hline
+True Negative Rate (TNR, Specificity) & $\frac{TN}{TN + FP}$ & $\frac{TN}{N}$ \\
+\hline
+False Omission Rate (FOR) & $\frac{FN}{TN + FN}$ & $\frac{FN}{PN}$ \\
+\hline
+True Positive Rate (TPR, Recall, Sensitivity) & $\frac{TP}{TP + FN}$ & $\frac{TP}{P}$ \\
+\hline
+False Discovery Rate (FDR) & $\frac{FP}{TP + FP}$ & $\frac{FP}{PP}$ \\
+\hline
+Negative Predictive Value (NPV) & $\frac{TN}{TN + FN}$ & $\frac{TN}{PN}$ \\
+\hline
+False Negative Rate (FNR, Miss Rate) & $\frac{FN}{TP + FN}$ & $\frac{FN}{P}$ \\
+\hline
 \end{tabular}
 \end{center}
 
-\textbf{Accuracy:}
+\textbf{Categorization and interpretations:}
+
+\emph{Question 1 (conditioned on real class):} ``Among all actual positives/negatives, how many did we correctly/incorrectly classify?'' (Metrics condition on real class: denominators positives ($P$) or negatives ($N$))
 \begin{itemize}
-  \item Model A: 8 correct out of 10 $\rightarrow$ Accuracy = $\frac{8}{10} = 0.8$
-  \item Model B: 7 correct out of 10 $\rightarrow$ Accuracy = $\frac{7}{10} = 0.7$
+  \item \textbf{TPR (Recall, Sensitivity):} Proportion of actual positives correctly identified. Measures how well we catch all sick patients (how many sick people are detected).
+  \item \textbf{TNR (Specificity):} Proportion of actual negatives correctly identified. Measures how well we correctly identify healthy patients (how many healthy people are correctly found to be healthy).
+  \item \textbf{FPR (Fallout):} Proportion of actual negatives incorrectly classified as positive. Measures the false alarm rate among healthy patients (how many healthy people are wrongly called sick).
+  \item \textbf{FNR (Miss Rate):} Proportion of actual positives incorrectly classified as negative. Measures how many sick patients we miss (sick people wrongly told they are healthy).
 \end{itemize}
 
-\textbf{Which model seems better?} Based on accuracy alone, Model A appears better (0.8 vs 0.7).
+\emph{Question 2 (conditioned on predictions):} ``Among all predicted positives/negatives, how many were actually correct/incorrect?'' (Metrics condition on predictions: denominators predicted positives ($PP$) or predicted negatives ($PN$))
+\begin{itemize}
+  \item \textbf{Precision (PPV):} Proportion of positive predictions that are correct. Measures how trustworthy our positive predictions are (if we say a patient is sick, what is the chance they really are sick?).
+  \item \textbf{NPV:} Proportion of negative predictions that are correct. Measures how trustworthy our negative predictions are (if we say a patient is healthy, what is the chance they are really healthy?).
+  \item \textbf{FDR:} Proportion of positive predictions that are incorrect. Measures the false discovery rate among our positive predictions (if we say a patient is sick, how often are we wrong?).
+  \item \textbf{FOR:} Proportion of negative predictions that are incorrect. Measures the false omission rate among our negative predictions (if we say a patient is healthy, how often are we wrong and miss a sick patient?).
+\end{itemize}
+\end{enumerate}
 
-\textbf{Is accuracy a good metric?} No! The data is highly imbalanced (only 1 positive out of 10). Model A misses the only sick patient (ID 4), which could be catastrophic in a medical setting. Accuracy can be misleading when classes are imbalanced because a model can achieve high accuracy by simply predicting the majority class.
+\bigskip
 
-\subsection*{Step 2: Solutions}
+\textbf{Part 2: Metrics Derived from the Confusion Matrix}
 
-\textbf{Model A Confusion Matrix:}
+\begin{enumerate}
+%   \item Confusion matrices for the data:
+
+% \emph{Model A:}
+% \begin{center}
+% \begin{tabular}{cc|c|c}
+%  & & \multicolumn{2}{c}{\textbf{Predicted}} \\
+%  & & 1 & 0 \\ \hline
+% \multirow{2}{*}{\textbf{Actual}} & 1 & 0 & 1 \\ \cline{2-4}
+%  & 0 & 1 & 8 \\
+% \end{tabular}
+% \end{center}
+
+% Model A: $TP = 0$, $FP = 1$, $FN = 1$, $TN = 8$
+
+% \emph{Model B:}
+% \begin{center}
+% \begin{tabular}{cc|c|c}
+%  & & \multicolumn{2}{c}{\textbf{Predicted}} \\
+%  & & 1 & 0 \\ \hline
+% \multirow{2}{*}{\textbf{Actual}} & 1 & 1 & 0 \\ \cline{2-4}
+%  & 0 & 3 & 6 \\
+% \end{tabular}
+% \end{center}
+
+% Model B: $TP = 1$, $FP = 3$, $FN = 0$, $TN = 6$
+
+  \item Computing accuracy:
+
+\emph{Model A:} Accuracy = $\frac{TP + TN}{TP + TN + FP + FN} = \frac{0 + 8}{0 + 8 + 1 + 1} = \frac{8}{10} = 0.8$
+
+\emph{Model B:} Accuracy = $\frac{TP + TN}{TP + TN + FP + FN} = \frac{1 + 6}{1 + 6 + 3 + 0} = \frac{7}{10} = 0.7$
+
+Based on accuracy alone, Model A appears better (0.8 vs 0.7).
+
+  \item Computing metrics and comparing models:
+
+\emph{Model A:}
+
+\begin{minipage}{0.35\textwidth}
 \begin{center}
 \begin{tabular}{cc|c|c}
  & & \multicolumn{2}{c}{\textbf{Predicted}} \\
  & & 1 & 0 \\ \hline
-\multirow{2}{*}{\textbf{Actual}} & 1 & 0 & 1 \\ \cline{2-4}
- & 0 & 1 & 8 \\
+\multirow{2}{*}{\textbf{Actual}} & 1 & 0 (TP) & 1 (FN) \\ \cline{2-4}
+ & 0 & 1 (FP) & 8 (TN) \\
 \end{tabular}
 \end{center}
+\end{minipage}%
+\begin{minipage}{0.65\textwidth}
+\begin{align*}
+  \text{TPR} &= \frac{TP}{TP + FN} = \frac{0}{0 + 1} = \frac{0}{1} = 0 \\
+  \text{TNR} &= \frac{TN}{TN + FP} = \frac{8}{8 + 1} = \frac{8}{9} \approx 0.889 \\
+  \text{Precision} &= \frac{TP}{TP + FP} = \frac{0}{0 + 1} = \frac{0}{1} = 0 \\
+  \text{NPV} &= \frac{TN}{TN + FN} = \frac{8}{8 + 1} = \frac{8}{9} \approx 0.889
+\end{align*}
+\end{minipage}
 
-Model A: $TP = 0$, $FP = 1$, $FN = 1$, $TN = 8$
+\vspace{0.5cm}
 
-Four universes for Model A:
-\begin{itemize}
-  \item $P = TP + FN = 0 + 1 = 1$ (real positives)
-  \item $N = TN + FP = 8 + 1 = 9$ (real negatives)
-  \item $PP = TP + FP = 0 + 1 = 1$ (predicted positives)
-  \item $PN = TN + FN = 8 + 1 = 9$ (predicted negatives)
-\end{itemize}
+\emph{Model B:}
 
-\textbf{Model B Confusion Matrix:}
+\begin{minipage}{0.35\textwidth}
 \begin{center}
 \begin{tabular}{cc|c|c}
  & & \multicolumn{2}{c}{\textbf{Predicted}} \\
  & & 1 & 0 \\ \hline
-\multirow{2}{*}{\textbf{Actual}} & 1 & 1 & 0 \\ \cline{2-4}
- & 0 & 3 & 6 \\
+\multirow{2}{*}{\textbf{Actual}} & 1 & 1 (TP) & 0 (FN) \\ \cline{2-4}
+ & 0 & 3 (FP) & 6 (TN) \\
 \end{tabular}
 \end{center}
-
-Model B: $TP = 1$, $FP = 3$, $FN = 0$, $TN = 6$
-
-Four universes for Model B:
-\begin{itemize}
-  \item $P = TP + FN = 1 + 0 = 1$ (real positives)
-  \item $N = TN + FP = 6 + 3 = 9$ (real negatives)
-  \item $PP = TP + FP = 1 + 3 = 4$ (predicted positives)
-  \item $PN = TN + FN = 6 + 0 = 6$ (predicted negatives)
-\end{itemize}
-
-\subsection*{Step 3: Solutions}
-
-\textbf{1. TPR (Recall) explanation:}
-
-TPR asks: "Among all actual sick patients (real positives), what proportion did we correctly identify as sick?" It conditions on the real positive universe ($P$). TPR is crucial in medical diagnosis because it tells us how many sick patients we successfully catch.
-
-\textbf{2. Precision explanation:}
-
-Precision asks: "Among all patients we predicted as sick (predicted positives), what proportion were actually sick?" It conditions on the predicted positive universe ($PP$). Precision tells us how trustworthy our positive predictions are.
-
-\textbf{3. Computing metrics:}
-
-\emph{Model A:}
+\end{minipage}%
+\begin{minipage}{0.65\textwidth}
 \begin{align*}
-  \text{TPR (Recall)} &= \frac{TP}{P} = \frac{0}{1} = 0 \\
-  \text{FPR} &= \frac{FP}{N} = \frac{1}{9} \approx 0.111 \\
-  \text{TNR (Specificity)} &= \frac{TN}{N} = \frac{8}{9} \approx 0.889 \\
-  \text{Precision} &= \frac{TP}{PP} = \frac{0}{1} = 0 \\
-  \text{NPV} &= \frac{TN}{PN} = \frac{8}{9} \approx 0.889
+  \text{TPR} &= \frac{TP}{TP + FN} = \frac{1}{1 + 0} = \frac{1}{1} = 1.0 \\
+  \text{TNR} &= \frac{TN}{TN + FP} = \frac{6}{6 + 3} = \frac{6}{9} \approx 0.667 \\
+  \text{Precision} &= \frac{TP}{TP + FP} = \frac{1}{1 + 3} = \frac{1}{4} = 0.25 \\
+  \text{NPV} &= \frac{TN}{TN + FN} = \frac{6}{6 + 0} = \frac{6}{6} = 1.0
 \end{align*}
+\end{minipage}
 
-\emph{Model B:}
-\begin{align*}
-  \text{TPR (Recall)} &= \frac{TP}{P} = \frac{1}{1} = 1.0 \\
-  \text{FPR} &= \frac{FP}{N} = \frac{3}{9} \approx 0.333 \\
-  \text{TNR (Specificity)} &= \frac{TN}{N} = \frac{6}{9} \approx 0.667 \\
-  \text{Precision} &= \frac{TP}{PP} = \frac{1}{4} = 0.25 \\
-  \text{NPV} &= \frac{TN}{PN} = \frac{6}{6} = 1.0
-\end{align*}
+\textbf{Model comparison and practical implications:}
 
-\textbf{4. Verifying complementary relationships:}
-
-\emph{Model A:}
 \begin{itemize}
-  \item FPR = $\frac{1}{9} \approx 0.111$; $1 - \text{TNR} = 1 - \frac{8}{9} = \frac{1}{9} \approx 0.111$ \checkmark
-  \item FNR = $\frac{FN}{P} = \frac{1}{1} = 1.0$; $1 - \text{TPR} = 1 - 0 = 1.0$ \checkmark
+  \item \textbf{TPR:} Model B is better (1.0 vs 0) -- it catches all sick patients, while Model A misses all. For medical diagnosis, Model B is safer as it ensures no sick patients are overlooked.
+  \item \textbf{TNR:} Model A is better (0.889 vs 0.667), identifying more healthy patients correctly and thus causing fewer false alarms among healthy patients, which reduces unnecessary medical interventions and costs.
+  \item \textbf{Precision:} Model B is better (0.25 vs 0), though both are low. A positive prediction from Model B is correct 25\% of the time, but never for Model A. In practice, when Model B predicts someone is sick, there's a 1 in 4 chance they actually are, whereas Model A's positive predictions are always wrong.
+  \item \textbf{NPV:} Model B is better (1.0 vs 0.889). Its negative predictions are always correct, while Model A's have a small error rate. In practice, Model B's healthy predictions are completely reliable, whereas Model A's have a small error rate.
 \end{itemize}
 
-\emph{Model B:}
-\begin{itemize}
-  \item FPR = $\frac{3}{9} \approx 0.333$; $1 - \text{TNR} = 1 - \frac{6}{9} = \frac{3}{9} \approx 0.333$ \checkmark
-  \item FNR = $\frac{FN}{P} = \frac{0}{1} = 0$; $1 - \text{TPR} = 1 - 1.0 = 0$ \checkmark
-\end{itemize}
+\textbf{Overall:} Model B is much preferred in medicine, since it never misses a sick patient, even though it makes more false positive errors. Model A is less useful as it completely fails to identify any sick patient.
+\end{enumerate}
 
-\textbf{5. Model preference when missing a sick patient is costly:}
+\bigskip
 
-Model B is strongly preferred. Model B has TPR (Recall) = 1.0, meaning it catches 100\% of sick patients -- it doesn't miss anyone. Model A has TPR = 0, meaning it misses the only sick patient entirely. In a medical context where missing a sick patient could be life-threatening, Model B's perfect recall is critical, even though it has lower precision (more false alarms).
+\textbf{Part 3: F1 Score (Harmonic Mean of Precision and Recall)}
 
-\subsection*{Step 4: Solutions}
+\begin{enumerate}
+  \item Using your values for Model B, compute F1 for Model B:
 
-\textbf{1. Why combine precision and recall?}
-
-Precision and recall often trade off against each other. A model that predicts everyone as positive gets perfect recall but terrible precision. A model that is very conservative gets high precision but low recall. The F1 score balances both metrics, giving us a single number that is only high when both precision and recall are reasonably good.
-
-\textbf{2. F1 for Model B:}
 \[
   F1 = \frac{2 \cdot \text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}} = \frac{2 \cdot 0.25 \cdot 1.0}{0.25 + 1.0} = \frac{0.5}{1.25} = 0.4
 \]
 
-\textbf{3. F1 for Model A:}
+  \item Compute F1 Score for Model A. What happens with the formula?
 
 Since both Precision and Recall are 0 for Model A, the F1 formula would result in $\frac{0}{0}$ (undefined). By convention, we define F1 = 0 in this case, since the model has no predictive value for the positive class. (In practice, most implementations set F1 = 0 whenever either precision or recall is 0.)
 
-\textbf{4. Why prefer harmonic mean?}
+  \item Why might we prefer the \emph{harmonic} mean instead of the arithmetic mean for combining precision and recall?
 
-The harmonic mean is more sensitive to low values than the arithmetic or geometric mean. If either precision or recall is very low, the harmonic mean (F1) will also be low, which correctly reflects poor performance. 
+The \textbf{harmonic mean} is more sensitive to low values than the arithmetic mean. If either precision or recall is very low, the harmonic mean (F1) will also be low, which correctly reflects poor performance.
 
 \begin{itemize}
   \item Arithmetic mean of 0.25 and 1.0: $(0.25 + 1.0)/2 = 0.625$ (seems decent)
-  \item Geometric mean: $\sqrt{0.25 \times 1.0} = 0.5$ (still okay)
   \item Harmonic mean (F1): $0.4$ (correctly shows the imbalance)
 \end{itemize}
 
-The harmonic mean ensures we can't game the metric by making one component very high while the other is low.
+This behavior is analogous to averaging speeds on a two-leg journey with speeds $30$ km/h and $60$ km/h:
+\begin{itemize}
+  \item \textbf{Harmonic mean (equal distances):} With equal distances ($30$ km each):
+  \[
+    t_1 = \frac{30}{30} = 1 \text{ hour}, \quad t_2 = \frac{30}{60} = 0.5 \text{ hours},
+  \]
+  \[
+    d_{\text{total}} = 30 + 30 = 60 \text{ km}, \quad
+    t_{\text{total}} = 1 + 0.5 = 1.5 \text{ hours},
+  \]
+  \[
+    \text{Average speed} = \frac{d_{\text{total}}}{t_{\text{total}}}
+      = \frac{60}{1.5} = 40 \text{ km/h} = \frac{2ab}{a + b} = \frac{2 \cdot 30 \cdot 60}{30 + 60} = 40 \text{ km/h}.
+  \]
+  The slower speed dominates total time.
 
-\subsection*{Step 5: Solutions}
+  \item \textbf{Arithmetic mean (equal times):} With equal times ($1$ hour each):
+  \[
+    d_1 = 30 \cdot 1 = 30 \text{ km}, \quad d_2 = 60 \cdot 1 = 60 \text{ km},
+  \]
+  \[
+    d_{\text{total}} = 30 + 60 = 90 \text{ km}, \quad
+    t_{\text{total}} = 1 + 1 = 2 \text{ hours},
+  \]
+  \[
+    \text{Average speed} = \frac{d_{\text{total}}}{t_{\text{total}}}
+      = \frac{90}{2} = 45 \text{ km/h} = \frac{a + b}{2} = \frac{30 + 60}{2} = 45 \text{ km/h}.
+  \]
+  Each speed is weighted equally.
 
-\textbf{1. Converting scores to predictions at threshold 0.5:}
+  \item \textbf{Sensitivity to low values:} Reducing the slower leg to $15$ km/h (equal distances):
+  \[
+    H = \frac{2ab}{a + b} = \frac{2 \cdot 15 \cdot 60}{15 + 60}
+      = \frac{1800}{75} = 24 \text{ km/h},
+  \]
+  \[
+    A = \frac{a + b}{2} = \frac{15 + 60}{2} = 37.5 \text{ km/h}.
+  \]
+ \begin{itemize}
+  \item Harmonic mean drops from $40$ to $24$ km/h (closer to $15$).
+  \item Arithmetic mean drops from $45$ to $37.5$ km/h.
+  \item Harmonic mean reacts more strongly to low values.
+  \end{itemize}
+\end{itemize}
 
-\emph{Model C:} All scores (0.40, 0.35, 0.30, 0.20, 0.10, 0.05) are below 0.5 $\rightarrow$ Predict all as 0
+In F1, precision and recall play the role of two speeds (like in a two-leg journey). Each positive example can be ``seen'' from two perspectives:
 
-\emph{Model D:} Scores $\geq 0.5$: IDs 1 (0.80), 2 (0.60), 3 (0.55), 5 (0.52) $\rightarrow$ Predict these as 1; IDs 4 (0.20), 6 (0.10) $\rightarrow$ Predict as 0
+\begin{itemize}
+  \item \textbf{Recall:} How many actual positives are caught (coverage of the positive class)?
+  \item \textbf{Precision:} How many positive predictions are correct (purity of predicted positives)?
+\end{itemize}
 
-\textbf{2. Confusion matrices and universes:}
+F1 only rewards high values if \emph{both} precision and recall are high:
+    \[
+      F1 = \frac{2 \cdot \text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}}
+          = \frac{2 TP}{2 TP + FP + FN}
+    \]
+\begin{itemize}
+  \item Each false positive (FP) or false negative (FN) directly lowers F1.
+  \item Harmonic mean (F1) is sensitive to the lower value: if either precision or recall is low, F1 is also low.
+  %\item In contrast, the arithmetic mean could remain deceptively high even if one metric is poor; the harmonic mean (F1) highlights any serious imbalance by being dominated by the weakest value.
+\end{itemize}
+\end{enumerate}
 
-\emph{Model C at threshold 0.5:}
+\bigskip
 
+\textbf{Part 4: Thresholds and the Choice of 0.5}
+
+\begin{enumerate}
+  \item For Model C, compute TPR and FPR at threshold 0.5 and at threshold 0.3. Describe qualitatively how the confusion matrix and the metrics change when moving from threshold 0.5 to 0.3, and explain why this demonstrates the importance of choosing an appropriate threshold.
+
+\textbf{TPR and FPR for Model C at two thresholds:}
+
+\emph{At threshold 0.5:}
+
+All scores (0.40, 0.35, 0.30, 0.20, 0.10, 0.05) are below 0.5, so Model C predicts all cases as 0 (negative).
+
+Confusion matrix:
 \begin{center}
 \begin{tabular}{cc|c|c}
  & & \multicolumn{2}{c}{\textbf{Predicted}} \\
@@ -165,41 +286,7 @@ The harmonic mean ensures we can't game the metric by making one component very 
 \end{tabular}
 \end{center}
 
-$P = 2$, $N = 4$, $PP = 0$, $PN = 6$
-
-\emph{Model D at threshold 0.5:}
-
-\begin{center}
-\begin{tabular}{cc|c|c}
- & & \multicolumn{2}{c}{\textbf{Predicted}} \\
- & & 1 & 0 \\ \hline
-\multirow{2}{*}{\textbf{Actual}} & 1 & 2 & 0 \\ \cline{2-4}
- & 0 & 2 & 2 \\
-\end{tabular}
-\end{center}
-
-$P = 2$, $N = 4$, $PP = 4$, $PN = 2$
-
-\textbf{3. Accuracy and recall at threshold 0.5:}
-
-\emph{Model C:}
-\begin{itemize}
-  \item Accuracy = $\frac{TP + TN}{P + N} = \frac{0 + 4}{6} \approx 0.667$
-  \item Recall (TPR) = $\frac{TP}{P} = \frac{0}{2} = 0$
-\end{itemize}
-
-\emph{Model D:}
-\begin{itemize}
-  \item Accuracy = $\frac{TP + TN}{P + N} = \frac{2 + 2}{6} \approx 0.667$
-  \item Recall (TPR) = $\frac{TP}{P} = \frac{2}{2} = 1.0$
-\end{itemize}
-
-\textbf{4. Is Model C really bad?}
-
-No! Model C is not a bad model -- the threshold is poorly chosen. If we look at Model C's scores, it gives higher scores to both actual positives (IDs 2 and 5 get 0.40 and 0.35) compared to most negatives. The model correctly ranks the positives higher, but since all scores are below 0.5, they all get classified as negative. The issue is that threshold 0.5 is arbitrary and not appropriate for this model's score distribution.
-
-\textbf{5. TPR and FPR for Model C at threshold 0.5:}
-
+Metrics:
 \begin{itemize}
   \item TPR = $\frac{TP}{P} = \frac{0}{2} = 0$
   \item FPR = $\frac{FP}{N} = \frac{0}{4} = 0$
@@ -207,7 +294,7 @@ No! Model C is not a bad model -- the threshold is poorly chosen. If we look at 
 
 Model C is extremely conservative at this threshold -- it predicts no one as positive, so it has no false positives but also catches no true positives.
 
-\textbf{6. Model C at threshold 0.3:}
+\emph{At threshold 0.3:}
 
 At threshold 0.3, Model C would predict IDs 2 (0.40) and 5 (0.35) as positive (these are the actual positives!), and IDs 1, 3, 4, 6 as negative.
 
@@ -229,4 +316,5 @@ Metrics:
   \item Accuracy = $\frac{6}{6} = 1.0$ (perfect!)
 \end{itemize}
 
-Model C is actually a perfect classifier when the threshold is chosen appropriately! This demonstrates why choosing the right threshold is crucial and why we need tools like ROC curves to evaluate performance across all thresholds.
+When we lower the threshold from 0.5 to 0.3 for Model C, the confusion matrix and metrics change dramatically: the model now classifies the two truly sick patients correctly and does not create any false positives. Model C is actually a perfect classifier when the threshold is chosen appropriately. This demonstrates why choosing the right threshold is crucial and why we need tools like ROC curves to evaluate performance across all thresholds.
+\end{enumerate}
