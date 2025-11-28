@@ -20,9 +20,11 @@ notebook-view:
 ::: {.hidden}
 {{< include ../_quarto/latex-math.qmd >}}
 :::
+{{< include ../_quarto/solution-buttons.qmd >}}
 :::
 
-<details> 
+
+<details>
 <summary>*Hint: useful `Python` libraries*</summary>
 
 {{< embed ex_eval_1_py.ipynb#import echo=true >}}
@@ -35,7 +37,7 @@ notebook-view:
 2. Discuss choice of performance metric in given situation
 :::
 
-Imagine you work for a data science start-up and sell turn-key statistical models. Based on a set of training data, you develop a regression model to predict a customer's legal expenses from the average monthly number of indictments brought against their firm. 
+Imagine you work for a data science start-up and sell turn-key statistical models. Based on a set of training data, you develop a regression model to predict a customer's legal expenses from the average monthly number of indictments brought against their firm.
 
 ***
 Due to the financial sensitivity of the situation, you opt for a very flexible learner that fits the customer's data ($n_{train} = 50$ observations) well, and end up with a degree-21 polynomial (blue, solid). Your colleague is skeptical and argues for a much simpler linear learner (gray, dashed). Which of the models will have a lower empirical risk if standard $L2$ loss is used?
@@ -46,39 +48,41 @@ x_train <- seq(10, 15, length.out = 50)
 y_train <- 10 + 3 * sin(0.15 * pi * x_train) + rnorm(length(x_train), sd = 0.5)
 data_train <- data.frame(x = x_train, y = y_train)
 ggplot2::ggplot(data_train, ggplot2::aes(x = x, y = y)) +
-  ggplot2::geom_point() +
-  ggplot2::geom_smooth(method = lm, formula = y ~ poly(x, 21), se = FALSE) + 
-  ggplot2::geom_smooth(
-    method = lm, formula = y ~ x, se = FALSE, col = "darkgray", linetype = 2L) + 
-  ggplot2::labs(
-    x = "average number of indictments per month", 
-    y = "legal expenses in million EUR") +
-  ggplot2::theme_classic()
+    ggplot2::geom_point() +
+    ggplot2::geom_smooth(method = lm, formula = y ~ poly(x, 21), se = FALSE) +
+    ggplot2::geom_smooth(
+        method = lm, formula = y ~ x, se = FALSE, col = "darkgray", linetype = 2L
+    ) +
+    ggplot2::labs(
+        x = "average number of indictments per month",
+        y = "legal expenses in million EUR"
+    ) +
+    ggplot2::theme_classic()
 ```
 
 ::: {.content-visible when-profile="solution"}
-<details> 
+<details>
 <summary>**Solution**</summary>
 
 Since the polynomial learner clearly achieves a better fit for the training data and some observations lie rather far from the regression line, which is strongly penalized by $L2$ loss, it will have lower empirical risk than the linear learner.
 
-</details> 
+</details>
 :::
 
 ***
 Why might evaluation based on training error not be a good idea here?
 
 ::: {.content-visible when-profile="solution"}
-<details> 
+<details>
 <summary>**Solution**</summary>
 
 First and foremost, evaluation on the training data is almost never a good idea. Under certain conditions the training error does tell us something about generalization ability, but for flexible learners and/or small training data it is deceptive due to optimistic bias. In this particular situation, we have few training observations and quite some points that look a little extreme. A low training error might be achieved by a learner that fits every quirk in the training data but generalizes poorly to unseen points with only slightly different distribution. Evaluation on separate test data is therefore non-negotiable.
 
-</details> 
+</details>
 :::
 
 ***
-Evaluate both learners using 
+Evaluate both learners using
 
 i. mean squared error (MSE), and
 
@@ -95,7 +99,7 @@ Use the code below to create the training and test points.
 :::
 
 ::: {.content-visible when-profile="solution"}
-<details> 
+<details>
 <summary>**Solution**</summary>
 
 ::: {.panel-tabset}
@@ -117,7 +121,7 @@ However, we must keep in mind that our performance evaluation is based on a sing
 
 Take-home message: the choice of our performance metric matters, and making decisions based on a single train-test split is risky in many data settings.
 
-</details> 
+</details>
 :::
 
 
@@ -148,7 +152,7 @@ Inspect
 Use the first 100 observations as training data to compute a linear model and evaluate the performance of your learner on the remaining data using MSE.
 
 ::: {.content-visible when-profile="solution"}
-<details> 
+<details>
 <summary>**Solution**</summary>
 Get the data, define a task and corresponding train-test split, and predict with trained model:
 
@@ -169,23 +173,23 @@ Train and evaluate
 {{< embed sol_eval_1_py.ipynb#cali-lm echo=true >}}
 :::
 
-</details> 
+</details>
 :::
 
 ***
 What might be disadvantageous about the previous train-test split?
 
 ::: {.content-visible when-profile="solution"}
-<details> 
+<details>
 <summary>**Solution**</summary>
 We have chosen the first few observations from a data set that is ordered by feature value, which is not a good idea because this is not a random sample and covers only a particular area of the feature space. Consequently, we obtain a pretty high test MSE (relatively speaking -- we will see in the next exercise which error values we can usually expect for this task). Looking at the data, Looking at the data, this gives us a regression line that does not reflect the overall data situation. Also, the training set is pretty small and will likely lead to poor generalization.
-</details> 
+</details>
 :::
 
 ***
 Now, sample your training observations from the data set at random. Use a share of 0.1 through 0.9, in 0.1 steps, of observations for training and repeat this procedure ten times. Afterwards, plot the resulting test errors (in terms of MSE) in a suitable manner.
 
-<details> 
+<details>
 <summary>*Hint*</summary>
 
 ::: {.panel-tabset}
@@ -199,7 +203,7 @@ Now, sample your training observations from the data set at random. Use a share 
 </details>
 
 ::: {.content-visible when-profile="solution"}
-<details> 
+<details>
 <summary>**Solution**</summary>
 We repeat the above procedure for different train-test splits like so:
 
@@ -219,14 +223,14 @@ Visualize
 {{< embed sol_eval_1_py.ipynb#cali-boxplot echo=true >}}
 :::
 
-</details> 
+</details>
 :::
 
 ***
 Interpret the findings from the previous question.
 
 ::: {.content-visible when-profile="solution"}
-<details> 
+<details>
 <summary>**Solution**</summary>
 We can derive two conclusions:
 
@@ -234,5 +238,5 @@ i. A smaller training set tends to produce higher estimated generalization error
 
 ii. A larger training set, at the expense of test set size, will cause high variance in the individual generalization error estimates.
 
-</details> 
+</details>
 :::
