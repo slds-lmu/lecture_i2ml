@@ -1,0 +1,237 @@
+\section*{Data A (no missing, one feature)}
+
+\begin{enumerate}[leftmargin=0pt]
+\item \textbf{Scatter plot and perfect 2-split tree:}
+
+\begin{center}
+\begin{minipage}{0.48\textwidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=7.8cm, height=5.2cm,
+    xlabel={$x$}, ylabel={$y$},
+    xmin=0, xmax=5, ymin=0, ymax=12,
+    grid=major
+]
+\addplot[only marks, mark=*] coordinates {
+    (1,0) (2,5) (3,5) (4,10)
+};
+% Add vertical lines for splits
+\addplot[red, thick, dashed] coordinates {(1.5,0) (1.5,12)};
+\addplot[blue, thick, dashed] coordinates {(3.5,0) (3.5,12)};
+\end{axis}
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}{0.48\textwidth}
+\centering
+\begin{tikzpicture}[level distance=1cm, sibling distance=4cm, align=center]
+\node[red] {Root: $x < 1.5$}
+    child {node {Leaf: $(1,0)$ \\ Risk $=0$}}
+    child {node[blue] {Node: $x < 3.5$}
+        child {node {Leaf: $(2,5), (3,5)$ \\ Risk $=0$}}
+        child {node {Leaf: $(4,10)$ \\ Risk $=0$}}};
+\end{tikzpicture}
+\end{minipage}
+\end{center}
+
+This tree achieves perfect predictions because each leaf contains observations with identical $Y$ values: the left leaf has only observation 1 with $Y=0$, the middle leaf has observations 2 and 3 both with $Y=5$, and the right leaf has only observation 4 with $Y=10$. Since there's no within-leaf variance, the risk in each leaf is zero.
+
+\textbf{Note:} In practice, such a "perfect" tree would be terrible and cause severe overfitting, as it just memorizes the training data. This is why we typically limit tree growth using constraints like maximum depth, minimum samples per leaf, etc. to improve generalization.
+
+\item \textbf{CART's greedy search on Data A:}
+\begin{enumerate}[label=(\roman*), nosep]
+\item \textbf{Candidate split points for $X_1$:} mid-points of $\{1,2,3,4\}$ are $\{1.5,\,2.5,\,3.5\}$. With $Y=(0,5,5,10)$, the parent mean is $5$ and the parent risk is $50$.
+
+\item \textbf{Computing left/right means and risks:}
+
+\emph{Split at $1.5$:} 
+\begin{itemize}[nosep]
+    \item Left $\{1\}$ with $Y=\{0\}$: mean $= 0$, risk $= (0-0)^2 = 0$.
+    \item Right $\{2,3,4\}$ with $Y=\{5,5,10\}$: mean $= 20/3 \approx 6.67$, risk $= (5-6.67)^2 + (5-6.67)^2 + (10-6.67)^2 = 16.67$.
+    \item Total: $0 + 16.67 = 16.67$.
+\end{itemize}
+
+\emph{Split at $2.5$:} 
+\begin{itemize}[nosep]
+    \item Left $\{1,2\}$ with $Y=\{0,5\}$: mean $= 2.5$, risk $= (0-2.5)^2 + (5-2.5)^2 = 6.25 + 6.25 = 12.5$.
+    \item Right $\{3,4\}$ with $Y=\{5,10\}$: mean $= 7.5$, risk $= (5-7.5)^2 + (10-7.5)^2 = 6.25 + 6.25 = 12.5$.
+    \item Total: $12.5 + 12.5 = 25$.
+\end{itemize}
+
+\emph{Split at $3.5$:} 
+\begin{itemize}[nosep]
+    \item Left $\{1,2,3\}$ with $Y=\{0,5,5\}$: mean $= 10/3 \approx 3.33$, risk $= (0-3.33)^2 + (5-3.33)^2 + (5-3.33)^2 = 16.67$.
+    \item Right $\{4\}$ with $Y=\{10\}$: mean $= 10$, risk $= (10-10)^2 = 0$.
+    \item Total: $16.67 + 0 = 16.67$.
+\end{itemize}
+
+\item \textbf{Best first split and final 2-split tree:} 
+Tie between $1.5$ and $3.5$ (both have total risk $16.67$). Popular implementations would default to selecting the leftmost split point, so we choose $X_1 < 1.5$.
+
+In the right child $\{2,3,4\}$, candidate thresholds are $2.5$ and $3.5$. At $3.5$ we get children $\{2,3\}$ and $\{4\}$, both pure, so total risk $0$. The greedy 2-split tree is:
+\[
+\text{Root: } X_1<1.5 \;\Rightarrow\; \begin{cases}
+\text{Left leaf } \{1\}:\ \hat c=0,\ R=0,\\
+\text{Right node } X_1<3.5:\ \begin{cases}
+\{2,3\}:\ \hat c=5,\ R=0,\\
+\{4\}:\ \hat c=10,\ R=0~,
+\end{cases}
+\end{cases}
+\]
+which attains a global 2-split optimum on this dataset (total risk $0$).
+\end{enumerate}
+
+\item \textbf{Comparison:} The greedy strategy found the global optimum, just like the tree we sketched.
+\end{enumerate}
+
+\section*{Data B (no missing, two features)}
+
+\begin{enumerate}[leftmargin=0pt]
+\setcounter{enumi}{3}
+\item \textbf{Surrogate split for primary split $X_1<1.5$:}
+
+We want to mimic the $X_1 < 1.5$ rule using the rest of the features (in our case it's only $X_2$). This is equivalent to fitting a stump (depth 1 tree) where the features are the remaining columns ($X_2$) and the target is whether the rule $X_1 < 1.5$ holds.
+
+The surrogate dataset becomes:
+\[
+\begin{array}{c|cc}
+\text{Obs} & X_2 & {X_1<1.5} (Y_{\text{new}})\\\hline
+1 & 2.0 & 1\\
+2 & 2.1 & 0\\
+3 & 2.2 & 0\\
+4 & 3.0 & 0
+\end{array}
+\]
+
+Now we find the best split on $X_2$ to predict $Y_{\text{new}}$. Candidate split points for $X_2$: $\{2.05, 2.15, 2.6\}$.
+
+For each split on $X_2$, we evaluate how well it agrees with the primary split $X_1 < 1.5$:
+
+\textbf{Split $X_2 < 2.05$:}
+\begin{itemize}[nosep]
+    \item Left child: obs $\{1\}$ with $Y_{\text{new}} = \{1\}$ → all correctly predicted as "goes left"
+    \item Right child: obs $\{2,3,4\}$ with $Y_{\text{new}} = \{0,0,0\}$ → all correctly predicted as "goes right"
+    \item Agreement: $\frac{\text{correct predictions}}{\text{total}} = \frac{4}{4} = 1.0$ (perfect!)
+\end{itemize}
+
+$X_2 < 2.05$ already gives \(100\%\) agreement, but we still list the other thresholds for completeness:
+
+\textbf{Split $X_2 < 2.15$:}
+\begin{itemize}[nosep]
+    \item Left child: obs $\{1,2\}$ with $Y_{\text{new}} = \{1,0\}$ → obs 1 correct, obs 2 wrong
+    \item Right child: obs $\{3,4\}$ with $Y_{\text{new}} = \{0,0\}$ → both correct
+    \item Agreement: $\frac{1+0+1+1}{4} = \frac{3}{4} = 0.75$
+\end{itemize}
+
+\textbf{Split $X_2 < 2.6$:}
+\begin{itemize}[nosep]
+    \item Left child: obs $\{1,2,3\}$ with $Y_{\text{new}} = \{1,0,0\}$ → obs 1 correct, obs 2,3 wrong
+    \item Right child: obs $\{4\}$ with $Y_{\text{new}} = \{0\}$ → correct
+    \item Agreement: $\frac{1+0+0+1}{4} = \frac{2}{4} = 0.5$
+\end{itemize}
+
+\textbf{Best surrogate rule:} $\boxed{X_2 < 2.05}$ with perfect agreement = $1.0$.
+\end{enumerate}
+
+\section*{Data C (missing value in $X_1$)}
+
+\begin{enumerate}[leftmargin=0pt]
+\setcounter{enumi}{4}
+\item \textbf{Best first split discarding rows with NA:}
+
+Parent node contains all 4 observations with $Y = \{0, 5, 5, 10\}$.
+\begin{itemize}[nosep]
+    \item Parent node size: $m=4$
+    \item Parent mean: $\bar{y} = \frac{0+5+5+10}{4} = \frac{20}{4} = 5$
+    \item Parent risk: $(0-5)^2 + (5-5)^2 + (5-5)^2 + (10-5)^2 = 25 + 0 + 0 + 25 = 50$
+\end{itemize}
+
+\textbf{Feature $X_1$:} Only usable rows are $\{1,2,4\}$ (row 3 has NA), so $m_{X_1}=3$.
+
+Using only observations $\{1,2,4\}$ with $X_1 = \{1.0, 2.0, 4.0\}$ and $Y = \{0, 5, 10\}$:
+\begin{itemize}
+    \item Parent mean (on usable rows): $\frac{0+5+10}{3} = 5$
+    \item Parent risk (on usable rows): $(0-5)^2 + (5-5)^2 + (10-5)^2 = 25 + 0 + 25 = 50$
+    \item Candidate split points: $\{1.5, 3.0\}$ (mid-points of $\{1.0, 2.0, 4.0\}$)
+\end{itemize}
+
+\emph{Split at $X_1 < 1.5$:}
+\begin{itemize}[nosep]
+    \item Left: obs $\{1\}$ with $Y=\{0\}$, mean $= 0$, risk $= 0$
+    \item Right: obs $\{2,4\}$ with $Y=\{5,10\}$, mean $= 7.5$, risk $= (5-7.5)^2 + (10-7.5)^2 = 6.25 + 6.25 = 12.5$
+    \item Total post-split risk: $0 + 12.5 = 12.5$
+\end{itemize}
+
+\emph{Split at $X_1 < 3.0$:}
+\begin{itemize}[nosep]
+    \item Left: obs $\{1,2\}$ with $Y=\{0,5\}$, mean $= 2.5$, risk $= (0-2.5)^2 + (5-2.5)^2 = 6.25 + 6.25 = 12.5$
+    \item Right: obs $\{4\}$ with $Y=\{10\}$, mean $= 10$, risk $= 0$
+    \item Total post-split risk: $12.5 + 0 = 12.5$
+\end{itemize}
+
+Both splits yield the same post-split risk $= 12.5$, so improvement $= 50 - 12.5 = 37.5$.
+
+\textbf{Feature $X_2$:} All rows available, so $m_{X_2}=4$.
+
+Using all observations with $X_2 = \{2.0, 2.1, 2.2, 3.0\}$ and $Y = \{0, 5, 5, 10\}$:
+\begin{itemize}
+    \item Parent mean: $\frac{0+5+5+10}{4} = 5$
+    \item Parent risk: $(0-5)^2 + (5-5)^2 + (5-5)^2 + (10-5)^2 = 25 + 0 + 0 + 25 = 50$
+    \item Candidate split points: $\{2.05, 2.15, 2.6\}$ (mid-points of $\{2.0, 2.1, 2.2, 3.0\}$)
+\end{itemize}
+
+\emph{Split at $X_2 < 2.05$:}
+\begin{itemize}[nosep]
+    \item Left: obs $\{1\}$ with $Y=\{0\}$, mean $= 0$, risk $= 0$
+    \item Right: obs $\{2,3,4\}$ with $Y=\{5,5,10\}$, mean $= 20/3 \approx 6.67$, risk $= (5-6.67)^2 + (5-6.67)^2 + (10-6.67)^2 = 16.67$
+    \item Total post-split risk: $0 + 16.67 = 16.67$, improvement $= 50 - 16.67 = 33.33$
+\end{itemize}
+
+\emph{Split at $X_2 < 2.15$:}
+\begin{itemize}[nosep]
+    \item Left: obs $\{1,2\}$ with $Y=\{0,5\}$, mean $= 2.5$, risk $= (0-2.5)^2 + (5-2.5)^2 = 12.5$
+    \item Right: obs $\{3,4\}$ with $Y=\{5,10\}$, mean $= 7.5$, risk $= (5-7.5)^2 + (10-7.5)^2 = 12.5$
+    \item Total post-split risk: $12.5 + 12.5 = 25$, improvement $= 50 - 25 = 25.0$
+\end{itemize}
+
+\emph{Split at $X_2 < 2.6$:}
+\begin{itemize}[nosep]
+    \item Left: obs $\{1,2,3\}$ with $Y=\{0,5,5\}$, mean $= 10/3 \approx 3.33$, risk $= (0-3.33)^2 + (5-3.33)^2 + (5-3.33)^2 = 16.67$
+    \item Right: obs $\{4\}$ with $Y=\{10\}$, mean $= 10$, risk $= 0$
+    \item Total post-split risk: $16.67 + 0 = 16.67$, improvement $= 50 - 16.67 = 33.33$
+\end{itemize}
+
+\textbf{Best split without adjustment:} $X_1 < 1.5$ with improvement $37.5$ is chosen.
+
+\item \textbf{Using adjusted improvement:}
+
+The adjusted improvement formula is: $\Delta^{\mathrm{adj}}_j = \frac{m_j}{m}\,(R_{\text{parent on }j} - R_{\text{children on }j})$
+
+\textbf{Feature $X_1$:} Adjusted improvement = $\frac{3}{4} \times 37.5 = 28.125$
+
+\textbf{Feature $X_2$:} Adjusted improvement = $\frac{4}{4} \times 33.33 = 33.33$ (for splits at $2.05$ or $2.6$)
+
+\textbf{Best split with adjustment:} $\boxed{X_2 < 2.05}$ (or $X_2 < 2.6$) with adjusted improvement $33.33$.
+
+\item \textbf{Comparison and explanation:}
+
+Without adjustment, we would choose $X_1 < 1.5$ (improvement $37.5$). With adjustment, we choose $X_2 < 2.05$ (adjusted improvement $33.33$).
+
+\textbf{Why adjustment helps:} The adjustment down-weights improvements by the fraction of usable rows ($m_j/m$). This prevents the algorithm from being biased toward features that appear to perform well simply because they were evaluated on fewer (possibly more homogeneous) observations due to missing values.
+
+\item \textbf{How surrogate splits tackle the NA issue:}
+
+Surrogate splits provide a solution to the missing value problem in decision trees by creating backup rules that can route observations when the primary split feature has missing values. Here's how they work:
+
+\begin{enumerate}[label=(\roman*), nosep]
+    \item \textbf{Primary split selection:} Choose the best split using available (non-missing) data for each feature.
+
+    \item \textbf{Surrogate rule creation:} For the chosen primary split, find alternative splits using other features that best mimic the primary split's partitioning behavior.
+
+    \item \textbf{Agreement ranking:} Rank surrogate splits by their agreement with the primary split, where agreement measures how often both rules send observations to the same child node.
+
+    \item \textbf{Routing with missing values:} When an observation has a missing value in the primary split feature, use the best available surrogate split to determine which child node it should go to.
+
+    \item \textbf{Fallback hierarchy:} If multiple features have missing values, use the surrogate splits in order of decreasing agreement until a usable rule is found.
+\end{enumerate}
+\end{enumerate}
