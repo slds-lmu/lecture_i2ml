@@ -1,3 +1,13 @@
+-- indent_filter.lua
+--
+-- This Lua filter is used by Pandoc/Quarto to customize the rendering of specific Div blocks.
+-- It intercepts Divs with classes like 'indent-1', 'indent-1-sol', etc.
+--
+-- When rendering to LaTeX (PDF), it wraps these blocks in the corresponding LaTeX environments
+-- defined in 'pdf-preamble.tex' (e.g., \begin{indent-1} ... \end{indent-1}).
+-- This allows us to apply specific LaTeX styling (like vertical lines) that isn't possible
+-- with standard Markdown-to-LaTeX conversion.
+
 function Div(div)
   if div.classes:includes("indent-1") then
     if FORMAT:match 'latex' then
