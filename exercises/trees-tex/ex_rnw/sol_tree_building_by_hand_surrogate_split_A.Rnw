@@ -1,0 +1,174 @@
+%\section*{Data A (no missing, one feature)}
+
+\begin{enumerate}
+\item \textbf{Scatter plot and perfect 2-split tree:}
+
+\begin{center}
+\begin{minipage}{0.48\textwidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=7.8cm, height=5.2cm,
+    xlabel={$x$}, ylabel={$y$},
+    xmin=0, xmax=5, ymin=0, ymax=12,
+    grid=major
+]
+\addplot[only marks, mark=*] coordinates {
+    (1,0) (2,4) (3,6) (4,9)
+};
+% Add vertical lines for splits
+\addplot[red, thick, dashed] coordinates {(1.5,0) (1.5,12)};
+\addplot[blue, thick, dashed] coordinates {(3.5,0) (3.5,12)};
+\end{axis}
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}{0.48\textwidth}
+\centering
+\begin{tikzpicture}[level distance=1cm, sibling distance=4cm, align=center]
+\node[red] {Root: $x < 1.5$}
+    child {node {Leaf: $(1,0)$ \\ Risk $=0$}}
+    child {node[blue] {Node: $x < 3.5$}
+        child {node {Leaf: $(2,4), (3,6)$ \\ Risk $=2$}}
+        child {node {Leaf: $(4,9)$ \\ Risk $=0$}}};
+\end{tikzpicture}
+\end{minipage}
+\end{center}
+
+\begin{itemize}
+    \item Each leaf contains:
+    \begin{itemize}
+        \item Left: obs 1 ($Y=0$), pure, risk $=0$
+        \item Middle: obs 2, 3 ($Y=4, 6$), mean $=5$, risk $=(4-5)^2 + (6-5)^2 = 1 + 1 = 2$
+        \item Right: obs 4 ($Y=9$), pure, risk $=0$
+    \end{itemize}
+    \item \textbf{Total risk} $= 0 + 2 + 0 = 2$ (very low since leaves are nearly pure)
+    \item \textbf{Caution:} Such a perfect tree will \emph{overfit} (just memorizes training data). Real-world trees need stopping rules (max depth, min samples per leaf, etc.) to avoid this.
+    \item \textbf{Take-away:} Only \emph{two} splits are allowed, so not all leaves can be pure. The best achievable tree has three leaves: two pure ($\{1\},\{4\}$), one with two samples ($\{2,3\}$), with total risk $2$.
+\end{itemize}
+
+
+% \textbf{Best 2-split trees (only two splits allowed in total):}
+% \begin{itemize}
+%     \item \textbf{Step 1: Evaluate possible root (first) splits:}
+%     \begin{itemize}
+%         \item At $X_1<1.5$: splits into $\{1\}$ vs.\ $\{2,3,4\}$
+%         \item At $X_1<2.5$: splits into $\{1,2\}$ vs.\ $\{3,4\}$
+%         \item At $X_1<3.5$: splits into $\{1,2,3\}$ vs.\ $\{4\}$
+%     \end{itemize}
+%     \item \textbf{Step 2: For each root split, add only \emph{one} more split (on either left or right child)}
+%     \begin{enumerate}
+%         \item \textbf{Root: $X_1<1.5$} (left: $\{1\}$, right: $\{2,3,4\}$)
+%
+%         Only right child can be further split. Options:
+%         \[
+%         \begin{array}{|c|c|c|c|}
+%         \hline
+%         \text{Second split} & \text{Leaves} & \text{Risks} & \text{Total risk} \\\hline
+%         X_1<2.5 \text{ on }\{2,3,4\} & \{1\} (\bar{y}=0), \{2\} (\bar{y}=4), \{3,4\} (\bar{y}=7.5) & 0, 0, 4.5 & 4.5 \\\hline
+%         X_1<3.5 \text{ on }\{2,3,4\} & \{1\} (\bar{y}=0), \{2,3\} (\bar{y}=5), \{4\} (\bar{y}=9) & 0, 2, 0 & 2 \\\hline
+%         \end{array}
+%         \]
+%         \textbf{Best with root $1.5$}: split right child at $3.5$, leaves $\{1\}$, $\{2,3\}$, $\{4\}$, total risk $= 2$.
+%         \item \textbf{Root: $X_1<2.5$} (left: $\{1,2\}$, right: $\{3,4\}$)
+%
+%         With only 2 splits allowed, \emph{must choose to split only one child}:
+%         \[
+%         \begin{array}{|c|c|c|c|}
+%         \hline
+%         \text{Second split} & \text{Leaves} & \text{Risks} & \text{Total risk} \\\hline
+%         \text{Split left at }X_1<1.5 & \{1\} (\bar{y}=0), \{2\} (\bar{y}=4), \{3,4\} (\bar{y}=7.5) & 0, 0, 4.5 & 4.5 \\\hline
+%         \text{Split right at }X_1<3.5 & \{1,2\} (\bar{y}=2), \{3\} (\bar{y}=6), \{4\} (\bar{y}=9) & 8, 0, 0 & 8 \\\hline
+%         \end{array}
+%         \]
+%         \textbf{Best with root $2.5$}: split left child at $1.5$; leaves $\{1\}$, $\{2\}$, $\{3,4\}$; total risk $= 4.5$.
+%         \item \textbf{Root: $X_1<3.5$} (left: $\{1,2,3\}$, right: $\{4\}$)
+%
+%         Only left child can be further split. Options:
+%         \[
+%         \begin{array}{|c|c|c|c|}
+%         \hline
+%         \text{Second split} & \text{Leaves} & \text{Risks} & \text{Total risk} \\\hline
+%         X_1<1.5 \text{ on }\{1,2,3\} & \{1\} (\bar{y}=0), \{2,3\} (\bar{y}=5), \{4\} (\bar{y}=9) & 0, 2, 0 & 2 \\\hline
+%         X_1<2.5 \text{ on }\{1,2,3\} & \{1,2\} (\bar{y}=2), \{3\} (\bar{y}=6), \{4\} (\bar{y}=9) & 8, 0, 0 & 8 \\\hline
+%         \end{array}
+%         \]
+%         \textbf{Best with root $3.5$}: split left child at $1.5$, leaves $\{1\}$, $\{2,3\}$, $\{4\}$, total risk $= 2$.
+%     \end{enumerate}
+%     \item \textbf{Summary:}
+%     \begin{itemize}
+%         \item \textbf{Best possible 2-split tree}: split at $X_1<1.5$ (root), then split right child at $3.5$.
+%             \begin{compactitem}
+%                 \item Leaves: $\{1\}$ ($Y=0$), $\{2,3\}$ ($Y=4,6$), $\{4\}$ ($Y=9$)
+%                 \item Total risk: $2$
+%             \end{compactitem}
+%         \item Or, equivalently, root ($X_1<3.5$), split left child at $1.5$: same leaves and risk.
+%         \item Any strategy trying to get all pure leaves with 2 splits fails (requires 3 splits).
+%     \end{itemize}
+% \end{itemize}
+
+\item \textbf{CART's greedy search on Data A:}
+\begin{enumerate}
+\renewcommand{\labelenumii}{(\roman{enumii})}
+\item \textbf{Candidate split points for $X_1$:} mid-points of $\{1,2,3,4\}$ are $\{1.5,\,2.5,\,3.5\}$.
+
+\item \textbf{Computing SSE for each split:}
+
+\[
+\begin{array}{|c|c|c|c|c|c|}
+\hline
+\text{Split} & \text{Left: obs, }Y & \text{Right: obs, }Y & \bar y_L & \bar y_R & \text{SSE}_{\text{split}} \\\hline
+X_1 < 1.5 & \{1\}, Y=\{0\} & \{2,3,4\}, Y=\{4,6,9\} & 0 & 19/3 \approx 6.33 & 12.67 \\\hline
+X_1 < 2.5 & \{1,2\}, Y=\{0,4\} & \{3,4\}, Y=\{6,9\} & 2 & 7.5 & 12.5 \\\hline
+X_1 < 3.5 & \{1,2,3\}, Y=\{0,4,6\} & \{4\}, Y=\{9\} & 10/3 \approx 3.33 & 9 & 18.67 \\\hline
+\end{array}
+\]
+
+\textbf{Detailed calculations:}
+\begin{compactitem}
+    \item \textbf{Split at $1.5$}: \\
+    Left risk $= (0-0)^2 = 0$; \\
+    Right risk $= (4-6.33)^2+(6-6.33)^2+(9-6.33)^2 = 38/3$;\\
+    Total $= 38/3 \approx 12.67$.
+    \item \textbf{Split at $2.5$}:
+    Left risk $= (0-2)^2+(4-2)^2 = 8$; \\
+    Right risk $= (6-7.5)^2+(9-7.5)^2 = 4.5$; \\
+    Total $= 12.5$ $\Rightarrow$ \textbf{Best split:} $X_1 < 2.5$ (lowest SSE).
+    \item \textbf{Split at $3.5$}: \\
+    Left risk $= (0-3.33)^2+(4-3.33)^2+(6-3.33)^2 = 56/3$; \\
+    Right risk $= (9-9)^2 = 0$; \\
+    Total $= 56/3 \approx 18.67$.
+\end{compactitem}
+
+
+\vspace{1em}
+\noindent\textbf{2nd split after first split at $X_1 < 2.5$:}
+\[
+\begin{array}{|c|c|c|c|}
+\hline
+\text{Child} & \text{Observations} & \text{Mean} & \text{Risk (SSE)} \\\hline
+\text{Left} & \{1,2\}, Y=\{0,4\} & 2 & (0-2)^2+(4-2)^2 = 8 \\
+\text{Right} & \{3,4\}, Y=\{6,9\} & 7.5 & (6-7.5)^2+(9-7.5)^2 = 4.5 \\\hline
+\end{array}
+\]
+
+\textbf{Second split options:}
+
+\[
+\begin{array}{|c|c|c|c|}
+\hline
+\text{Option} & \text{Leaves} & \text{Leaf risks} & \text{Total risk} \\\hline
+\text{Split left at }X_1 < 1.5 & \{1\} (\bar{y}=0), \{2\} (\bar{y}=4), \{3,4\} (\bar{y}=7.5) & 0, 0, 4.5 & 4.5 \\\hline
+\text{Split right at }X_1 < 3.5 & \{1,2\} (\bar{y}=2), \{3\} (\bar{y}=6), \{4\} (\bar{y}=9) & 8, 0, 0 & 8 \\\hline
+\end{array}
+\]
+
+\textbf{Best second split:} Split the left child ($\{1,2\}$) at $X_1 < 1.5$, yielding leaves $\{1\}$, $\{2\}$, $\{3,4\}$, with total risk $= 4.5$.
+
+\textbf{Final greedy 2-split tree:} Root split at $X_1 < 2.5$; left child split at $X_1 < 1.5$. Leaves: $\{1\}$ (risk $0$), $\{2\}$ (risk $0$), $\{3,4\}$ (risk $4.5$). Total risk $= 4.5$.
+
+\end{enumerate}
+
+\item \textbf{Comparison:} The greedy 2-split tree (total risk $= 4.5$) is \emph{not} the same as the optimal 2-split tree (total risk $= 2$). The greedy approach picks $X_1 < 2.5$ as the first split, which leads to a suboptimal final tree. The optimal tree uses splits at $X_1 < 1.5$ and $X_1 < 3.5$, achieving lower risk by creating leaves $\{1\}$, $\{2,3\}$, $\{4\}$ instead of $\{1\}$, $\{2\}$, $\{3,4\}$.
+
+\end{enumerate}
+

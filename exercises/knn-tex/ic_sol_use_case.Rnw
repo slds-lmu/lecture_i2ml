@@ -1,0 +1,341 @@
+% !Rnw weave = knitr
+
+<<setup-child, include = FALSE>>=
+knitr::set_parent("../../style/preamble_ueb.Rnw")
+options(warn = -1)
+library(AppliedPredictiveModeling)
+library(data.table)
+library(dplyr)
+library(DiceKriging)
+library(ggplot2)
+library(iml)
+library(mlbench)
+library(mlr3verse)
+library(mvtnorm)
+library(rpart.plot)
+library(patchwork)
+library(precrec)
+library(scales)
+library(skimr)
+library(visdat)
+if (FALSE) pak::pak("slds-lmu/vistool")
+library(vistool)
+knitr::knit_theme$set("edit-vim")
+knitr::opts_chunk$set(
+  out.width = "50%",
+  fig.width = 6,
+  fig.height = 4,
+  fig.align = "center",
+  echo = FALSE,
+  warning = FALSE,
+  message = FALSE
+)
+@
+%\input{../../latex-math/basic-math.tex}
+%\input{../../latex-math/basic-ml.tex}
+
+
+\kopfic{8}{Use Case}
+
+<<echo=FALSE>>=
+incladditionalcode = TRUE # for additional demos (R stuff)
+@
+\incladditionalcodetrue % for additinoal demos (latex stuff)
+
+<<>>=
+# Simulate data as a mixture of Gaussians (pertaining to 2 classes, see later)
+set.seed(42)
+n_points = 1000
+share_c0 = 0.4
+class_0 = rmvnorm(
+    n_points * share_c0,
+    mean = c(3, 1.5),
+    sigma = matrix(c(1, 0.55, 0.55, 0.4), ncol = 2)
+)
+class_1 = rmvnorm(
+    n_points * (1 - share_c0),
+    mean = c(5, 4.8),
+    sigma = matrix(c(0.3, 0.6, 0.6, 1.5), ncol = 2)
+)
+dt = data.table(
+    cbind(
+        rbind(class_0, class_1),
+        c(rep(0, n_points * share_c0), rep(1, n_points * (1 - share_c0)))
+    )
+)
+colnames(dt) = c("x1", "x2", "class")
+dt[, class := as.factor(class)]
+# Trim a few more extreme points
+for (i in c(0, 1)) {
+    qx =  quantile(dt[class == i, x1], c(0.01, 0.99), na.rm = TRUE)
+    dt = dt[!(class == i & (x1 < qx[1] | x1 > qx[2]))]
+}
+@
+
+\section{Predicting tree biomass}
+
+Estimating the biomass of trees is essential for assessing forest carbon stocks, but direct measurement is destructive and labor-intensive. Since tree diameter at breast height (DBH) is easy to record and closely related to total wood mass, it serves as a key variable for predicting biomass. Consider the following data on above-ground tree \texttt{biomass} ($x_2$) in \textit{t} and trunk \texttt{DBH} ($x_1$) in \textit{m}.
+
+\begin{enumerate}[a)]
+
+\item Explain which variable plays the role of \textit{feature} and \textit{target}, respectively.
+Assume we obtain the following linear model. Estimate the coefficient associated with $x_1$ from the plot and interpret it.
+
+<<>>=
+p_empty = ggplot(data = dt, aes(x = x1, y = x2)) +
+    labs(x = expression(x[1]), y = expression(x[2])) +
+    theme_bw()
+p_point = p_empty +
+    geom_point(col = "darkgray", alpha = 0.3)
+p_lm = p_point +
+    geom_smooth(method = "lm", formula = y ~ x, se = FALSE, col = "black")
+p_lm
+@
+
+\hrulefill
+
+\myboxshow{
+\textbf{Solution.}
+\begin{itemize}
+  \item Feature: tree diameter ($x_1$); target: biomass ($x_2$); task: regression.
+  \item The fitted slope is roughly $1.5$: increasing diameter by $1\,\mathrm{m}$ raises expected biomass by about $1.5\,\mathrm{t}$. This works as a simple explanatory or coarse predictive baseline.
+\end{itemize}
+}
+
+\hrulefill
+
+% ------------------------------------------------------------------------------
+
+\item It seems that the model does not fit the data too well. What is the model's tendency for observations with large $x_1$ value?
+Come up with a suitable transformation to $x_1$ that might improve the model fit. Describe how the transformed point cloud and model will look. How do the computation of the $x_1$ coefficient and its interpretation change?
+
+\hrulefill
+
+\myboxshow{
+\textbf{Solution.}
+\begin{itemize}
+  \item The linear model underestimates the target for large $x_1$ (negative residuals on the right).
+  \item Transforming the predictor helps; e.g., use $x_1^2$. The scatter of $(x_1^2, x_2)$ is much closer to linear (see additional code), so the line fits high-diameter trees better.
+  \item Estimation stays ordinary least squares but on the transformed predictor; the slope now quantifies the expected change in biomass per unit increase in $x_1^2$.
+\end{itemize}
+}
+% ------------------------------------------------------------------------------
+
+
+<<eval=incladditionalcode, fig.height=3, out.width="100%">>=
+cat("ADDITIONAL CODE FOR IN-CLASS DEMO ---------------------------------------")
+dt_trafo = copy(dt)[, x1sq := x1**2]
+p_trafo = p_empty +
+    geom_point(data = dt_trafo, aes(x = x1sq, y = x2), alpha = 0.2) +
+  geom_smooth(
+    data = dt_trafo,
+    mapping = aes(x = x1sq, y = x2),
+    method = "lm",
+    formula = y ~ x,
+    se = FALSE
+  ) +
+  labs(x = expression(x[1]^2))
+
+
+p_lm = p_point +
+    geom_smooth(method = "lm", formula = y ~ poly(x, degree = 2), se = FALSE)
+
+p_lm + p_trafo
+@
+
+\hrulefill
+\end{enumerate}
+
+\section{Predicting tree species}
+
+\begin{enumerate}[a)]
+
+\item Assume now that we want to use both tree \texttt{DBH} ($x_1$) and \texttt{biomass} ($x_2$) to predict a third variable, tree \texttt{species} ($y$; 0 = ``beech'', 1 = ``oak'').
+A \textit{logistic regression} model yields the \textit{decision boundary} pictured below (dashed line). What can you say for the respective values of the training loss function at the two highlighted points?
+
+<<fig.width=8, out.width="75%">>=
+# Train log reg
+learner = lrn("classif.log_reg", predict_type = "prob")
+task = TaskClassif$new(
+  id = "trees", backend = dt, target = "class", positive = "1"
+)
+learner$train(task)
+coeffs_logreg = coef(learner$model)
+slope = -coeffs_logreg[2] / coeffs_logreg[3]
+intercept = -coeffs_logreg[1] / coeffs_logreg[3]
+# Visualize dec regions & boundary
+p_classif = as_visualizer(task, learner = learner, retrain = FALSE)
+p_theme = vistool_theme(
+  palette = "viridis", theme = "bw", alpha = 0.3, legend_position = "right"
+)
+p_classif$set_theme(p_theme)
+p_classif$add_boundary(alpha = 1)
+p_classif$add_training_data(alpha = 1)
+miscl_0 = dt[class == 0 & (x2 > intercept + slope * x1)]
+miscl_1 = dt[class == 1 & (x2 < intercept + slope * x1)]
+hlight_1 = miscl_0[which.min(miscl_0$x2)] # barely misclassified
+hlight_2 = miscl_1[which.min(miscl_1$x2)] # very misclassified
+p_classif$add_points(
+  rbind(hlight_1, hlight_2), col = "red", size = 5, shape = 1, alpha = 1
+)
+p_classif$plot() +
+  labs(title = "", fill = "probability for 1 ('oak')")
+@
+
+
+\hrulefill
+
+\myboxshow{
+\textbf{Solution.}
+\begin{itemize}
+  \item Both highlighted points are misclassified, so each has positive logistic loss. Recall that the \emph{logistic loss} for a point with true label $y \in \{0,1\}$ and predicted probability $p$ for class $1$ is given by:
+    \[
+      L(y, p) = -\left[ y \log(p) + (1 - y)\log(1 - p) \right]
+    \]
+    For a misclassified point, the predicted probability $p$ for the true class is less than 0.5, hence the loss is greater than $-\log(0.5) \approx 0.693$, and increases the more confidently incorrect the prediction is. The logistic loss penalizes not just errors but especially confident misclassifications.
+
+    \textbf{Mini calculation examples:}
+    \begin{itemize}
+      \item \emph{Misclassified true 0}: Suppose $y=0$ (true class ``beech'') and the model predicts $p=0.6$ for class 1. The loss is:
+      \[
+        L(0, 0.6) = -\left[0 \cdot \log(0.6) + 1 \cdot \log(1 - 0.6)\right] = -\log(0.4) \approx 0.916
+      \]
+      \item \emph{Misclassified true 1}: Suppose $y=1$ (true class ``oak'') and the model predicts $p=0.3$ for class 1. The loss is:
+      \[
+        L(1, 0.3) = -\left[1 \cdot \log(0.3) + 0 \cdot \log(0.7)\right] = -\log(0.3) \approx 1.204
+      \]
+      In both cases, the loss is large because the model was confidently wrong.
+    \end{itemize}
+    Thus, both highlighted points contribute positively to the total loss, with loss increasing the more confidently an observation is misclassified.
+  \item The class-1 point (oak) lies farther from the boundary, so its predicted probability for class 1 is even lower, making its contribution to the loss larger than that of the barely misclassified class-0 point (beech).
+\end{itemize}
+}
+% ------------------------------------------------------------------------------
+
+\hrulefill
+
+\item Use the parameters of the decision boundary (intercept $a =$ \Sexpr{round(intercept, 2)}, slope $b =$ \Sexpr{round(slope, 2)}) to derive a decision rule for classifying a tree. The rule should be of the following form, where the conditions depend on $x_1$ and $x_2$:
+$$y = \begin{cases} \text{``oak''} & \text{if \ldots } \\  \text{``beech''} & \text{if } \ldots  \end{cases}$$
+
+
+\hrulefill
+
+\myboxshow{
+\textbf{Solution.}
+\begin{itemize}
+  \item From the boundary line $x_2 = b\,x_1 + a$, predict ``oak'' if $x_2 > b\,x_1 + a$ and ``beech'' otherwise.
+  \item Equivalently, use the sign test $x_2 - b\,x_1 - a > 0$ for ``oak'' (this coincides with $\pixt > 0.5$ for class ``oak'').
+  \item In compact form, the rule can be written as
+  \[
+    y =
+    \begin{cases}
+      \text{``oak''} & \text{if } x_2 > b\,x_1 + a,\\
+      \text{``beech''} & \text{otherwise.}
+    \end{cases}
+  \]
+\end{itemize}
+}
+% ------------------------------------------------------------------------------
+
+\hrulefill
+%
+% \item Recall that logistic regression has the benefit of providing not only ``hard'' labels but also \textit{class probabilities}.
+% We compute the probability of a tree being an oak as follows (with $s$ the logistic function):
+%
+% $$\pixt = s(\thx) = s(\theta_0 + \theta_1 x_1 + \theta_2 x_2)$$
+%
+% The logistic regression model from above has coefficients
+% $$\thetav = (\theta_0, \theta_1, \theta_2)^T = (\Sexpr{round(coeffs_logreg[1], 2)}, \Sexpr{round(coeffs_logreg[2], 2)}, \Sexpr{round(coeffs_logreg[3], 2)})^T$$
+% How do these coefficients relate to the intercept $a$ and slope $b$ in the line equation of the decision boundary?
+%
+% \textit{Hint:} Think about how your decision rule for hard labels translates to probabilities (assuming a threshold probability of 0.5 for predicting ``oak'').
+%
+%
+% \hrulefill
+%
+% \myboxshow{
+% \textbf{Solution.}
+% \begin{itemize}
+%   \item The decision boundary corresponds to probability $0.5$: $\pixt = s(\thx) = \dfrac{1}{1 + \exp(-\thx)} = 0.5$, which is equivalent to $\theta_0 + \theta_1 x_1 + \theta_2 x_2 = 0$.
+%   \item Solving this equation for $x_2$ yields the line
+%   \[
+%     x_2 = -\frac{\theta_0}{\theta_2} - \frac{\theta_1}{\theta_2}\,x_1,
+%   \]
+%   so in the boundary equation $x_2 = b\,x_1 + a$ we have
+%   \[
+%     a = -\frac{\theta_0}{\theta_2}, \qquad b = -\frac{\theta_1}{\theta_2}.
+%   \]
+% \end{itemize}
+% }
+% % ------------------------------------------------------------------------------
+%
+%
+% \hrulefill
+%
+% \ifincladditionalcode \color{blue}
+% Decision boundary:
+% \begin{align*}
+% \pixt = \frac{1}{1 + \exp(-\thx)} & = 0.5 \\
+% 1 + \exp(-\thx) & = 2 \\
+% \exp(-\thx) & = 1 \\
+% -\thx & = 0 \\
+% \thx & = 0
+% \end{align*}
+% Rearranging for $x_2$:
+% \begin{align*}
+% \theta_0 + \theta_1 x_1 + \theta_2 x_2 & = 0 \\
+% \theta_2 x_2 & = -\theta_0 - \theta_1 x_1 \\
+% x_2 & = -\frac{\theta_0}{\theta_2} - \frac{\theta_1}{\theta_2} x_1
+% \end{align*}
+% \color{black} \fi
+
+\item Focusing on a small region near the decision boundary, how would you classify the highlighted point (red diamond) if you were to use $k$-\textit{nearest neighbors} with Euclidean distance and $k = 3$? What if $k = 5$?
+
+<<fig.width=8, out.width="50%">>=
+p_knn = p_classif$clone()
+p_knn$add_points(
+  data.table(x1 = 4.18, x2 = 2.35), col = "red", size = 5, shape = "diamond", alpha = 1
+)
+p_knn$plot() +
+  labs(title = "", fill = "probability for 1 ('oak')") +
+  xlim(c(4, 4.4)) +
+  ylim(c(2.2, 2.7)) +
+  theme(legend.position = "none")
+@
+
+
+\hrulefill
+
+\myboxshow{
+\textbf{Solution.}
+\begin{itemize}
+  \item For $k = 3$, the three nearest neighbors contain two oaks and one beech, so the majority vote classifies the point as oak.
+  \item For $k = 5$, the five nearest neighbors contain three beeches and two oaks, so the majority vote classifies the point as beech.
+\end{itemize}
+}
+% ------------------------------------------------------------------------------
+
+%\hrulefill
+% 
+% \item To build intuition about neighborhoods in higher-dimensional spaces, suppose each feature $x_1, x_2$ takes values in the unit interval $[0, 1]$. Imagine that, for a target point $\xv$, we only consider neighboring points whose values on each feature are within $0.05$ of the target value (i.e., within $5\%$ of the total possible range per feature). For example, for $\xv = (0.5, 0.3)^T$, this means considering observations with $x_1 \in [0.45, 0.55]$ and $x_2 \in [0.25, 0.35]$. 
+% 
+% On average, what proportion of all data points will fall into this neighborhood and thus be considered as neighbors? How does this fraction change if we increase the number of features to $10$ (using the same $0.1$ interval per feature, i.e., each feature in $[\text{target}-0.05, \text{target}+0.05]$)?
+% 
+% (Assume boundaries always fall within $[0, 1]$, i.e., ignore edge effects.)
+% 
+% \hrulefill
+% 
+% \myboxshow{
+% \textbf{Solution.}
+% \begin{itemize}
+%   \item In two dimensions, a box with width $0.1$ along each feature covers a fraction $(0.1)^2 = 0.01$ of the unit square, so on average about $1\%$ of points are within this neighborhood.
+%   \item In $10$ dimensions, the same criterion yields a box of volume $(0.1)^{10} = 10^{-10}$. Thus, essentially no points (on average) are included—showing how quickly neighborhoods become empty as dimensionality increases.
+% \end{itemize}
+% }
+% % ------------------------------------------------------------------------------
+
+%\hrulefill
+
+\end{enumerate}
+
+\end{document}
