@@ -1,0 +1,54 @@
+%\section*{Data B (no missing, two features)}
+
+\begin{enumerate}
+\item \textbf{Surrogate split for primary split $X_1<2.5$:}
+
+The actual CART picks the root split $X_1 < 2.5$. To mimic this primary split with a surrogate that only uses $X_2$, we fit a stump where the target is whether $X_1 < 2.5$ holds.
+
+The surrogate dataset becomes:
+\[
+\begin{array}{c|cc}
+\text{Obs} & X_2 & {X_1<2.5} (Y_{\text{new}})\\\hline
+1 & 2.4 & 1\\
+2 & 2.6 & 1\\
+3 & 3.0 & 0\\
+4 & 4.0 & 0
+\end{array}
+\]
+
+Now we find the best split on $X_2$ to predict $Y_{\text{new}}$. Candidate split points for $X_2$: $\{2.5, 2.8, 3.5\}$.
+
+For each split on $X_2$, we evaluate agreement with the primary split $X_1 < 2.5$:
+
+\[
+\begin{array}{|c|c|c|}
+\hline
+\text{Split on }X_2 & \text{Agreement} & \text{Notes} \\\hline
+X_2 < 2.5 & 3/4 = 0.75 & \text{obs 2 misrouted} \\
+X_2 < 2.8 & 4/4 = 1.0 & \text{perfect} \\
+X_2 < 3.5 & 3/4 = 0.75 & \text{obs 3 misrouted} \\\hline
+\end{array}
+\]
+
+\textbf{Best surrogate rule:} $\boxed{X_2 < 2.8}$ with perfect agreement = $1.0$.
+\item \textbf{Prediction with missing $X_1$ using surrogate + CART check:}
+
+New observation: $X_1=\text{NA}$, $X_2=2.30$.
+
+\begin{compactitem}
+    \item Primary split (actual CART): $X_1 < 2.5$. Missing $X_1$ triggers surrogate.
+    \item Best surrogate: $X_2 < 2.8$. Since $2.30 < 2.8$, route to the \emph{left} child of the root (same side as obs 1,2).
+    \item Prediction (left child mean) is $\hat y \approx 2$ (mean of obs 1,2).
+\end{compactitem}
+
+\textbf{Surrogate mechanism (brief):}
+
+\begin{compactitem}
+ \item (i) Pick primary split on available data. % (with adjusted improvement if training data has NAs).
+ \item (ii) Create surrogates on other features that mimic the primary partition.
+ \item (iii) Rank by agreement.
+ \item (iv) At prediction, if primary feature is missing, use best available surrogate to route.
+\end{compactitem}
+
+\end{enumerate}
+

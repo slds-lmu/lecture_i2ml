@@ -1,0 +1,44 @@
+% \medskip
+%\section*{Data B (no missing, two features)}
+\[
+\begin{array}{c|ccc}
+\text{Obs} & X_1 & X_2 & Y\\\hline
+1 & 1.0 & 2.4 & 0\\
+2 & 2.0 & 2.6 & 4\\
+3 & 3.0 & 3.0 & 6\\
+4 & 4.0 & 4.0 & 9
+\end{array}
+\]
+
+\begin{enumerate}
+    \item Assume you fitted a CART of depth 1 which picks the root split $X_1<2.5$. Build a \textbf{surrogate split} at the root that mimics this primary split using only $X_2$.
+    State (i) the surrogate rule and (ii) its \emph{agreement} with the primary partition, where
+    \[
+    \text{agreement} \;=\;
+    \frac{\#\{\text{rows sent to the same child by both splits}\}}
+                {\text{total rows in the node}}.
+    \]
+\item A new observation has $X_1=\text{NA}$ and $X_2=2.30$. Using the surrogate idea, where is this observation routed and what would you predict?
+%Verify by fitting and plotting a small CART in R (hint: use \texttt{rpart} with \texttt{cp=0}, then \texttt{rpart.plot}).
+%Note: rpart requires train data with NA values to learn a surrogate, also it requires enough data points in the leaf nodes which makes it difficult for this tiny toy example to verify the surrogate split.
+
+<<rpart-surrogate-new, echo=FALSE, eval = FALSE, results='markup'>>=
+library(rpart)
+library(rpart.plot)
+dat <- data.frame(
+  X1 = c(0, 1, 2, NA, 4, 5),
+  X2 = c(2, 2.4, 2.6, 3.0, 4.0, 5.0),
+  Y  = c(0, 0, 4, 6, 9, 12)
+)
+fit <- rpart(
+  Y ~ X1 + X2,
+  data = dat,
+  method = "anova",
+  control = rpart.control(cp = 0, minsplit = 1, minbucket = 1, maxdepth = 1, xval = 0)
+)
+summary(fit)
+rpart.plot(fit, roundint = FALSE)
+print(fit, digits = 3)
+@
+\end{enumerate}
+
