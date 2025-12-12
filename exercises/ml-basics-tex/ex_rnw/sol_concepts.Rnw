@@ -1,0 +1,99 @@
+\begin{enumerate}[1)]
+\item \textbf{AI vs ML vs DL}
+\begin{itemize}
+\item \textit{Main idea:} Artificial Intelligence is the broad field of building systems that perform tasks associated with intelligence; Machine Learning is a subfield that learns from data to improve task performance; Deep Learning is a subfield of ML based on multi-layer neural networks.
+\item ML and statistics overlap strongly in methods and goals; differences are often historical and terminological.
+\item \textit{Lecturer comment:} Keep the taxonomy clear to avoid using AI as a catch-all. Position ML as data-driven prediction and DL as a flexible function class inside ML. Translate terms across ML and statistics to reduce confusion.
+\end{itemize}
+
+\item \textbf{Learning paradigms: supervised, unsupervised, reinforcement learning}
+\begin{itemize}
+\item \textit{Main idea:} Supervised learning uses labeled pairs $(x,y)$ to learn $x \to y$. Unsupervised learning uses only $x$ to discover structure (clustering, dimensionality reduction, anomaly detection). Reinforcement learning learns via interaction and rewards, optimizing long-run return.
+\item \textit{Lecturer comment:} Specify underlying supervised task (regression, binary or multiclass classification) before picking a learner. Note that unsupervised learning is not a single objective (can be clustering, dimensionality reduction, anomaly detection optimize different criteria, ...); RL rewards can be sparse, delayed, and noisy.
+\end{itemize}
+
+\item \textbf{Data in supervised learning: features vs target; labeled vs unlabeled; Iris example}
+\begin{itemize}
+\item \textit{Main idea:} The target $y$ is the prediction goal; features $x$ describe objects. We assume a predictive relation between $x$ and $y$.
+\item Distinguish labeled from unlabeled data. The Iris dataset (150 samples, 4 measurements) is a clean toy example for classification.
+\item \textit{Lecturer comment:} Iris is pedagogically useful but unusually clean; do not generalize its simplicity to real data. When first seeing any dataset, label the data type: supervised with $(x,y)$ or unsupervised with only $x$.
+\end{itemize}
+
+\item \textbf{Data types and encodings: numeric vs categorical; one-hot vs dummy; ordinal encodings}
+\begin{itemize}
+\item \textit{Main idea:} Many learners expect numeric inputs, so categorical variables need encoding.
+\item One-hot uses $k$ indicator columns; dummy uses $k-1$ to avoid a redundant column. Ordinal encodings are appropriate only when a natural order exists.
+\item \textit{Lecturer comment:} Decision trees can handle categoricals more directly; linear models typically require encodings. Use dummy coding to avoid singular design matrices; avoid imposing false order with naive integer encoding (where categories are assigned numbers).
+\end{itemize}
+
+\item \textbf{Data-generating process and the i.i.d. assumption}
+\begin{itemize}
+\item \textit{Main idea:} We assume data arise from an unknown distribution $P_{X,Y}$. Standard analyses treat samples as independent and identically distributed.
+\item \textit{Lecturer comment:} I.i.d. is a modeling convenience. Time series, networks, and nonstationary streams often violate it. Keep the assumption now, but flag where it can fail.
+\end{itemize}
+
+\item \textbf{Tasks: regression vs classification}
+\begin{itemize}
+\item \textit{Main idea:} If the target is numeric, the task is regression; if the target is categorical with $g$ classes, the task is classification.
+\item \textit{Lecturer comment:} Tie the task directly to target type to avoid evaluation mismatches later. The same domain can be framed for prediction or explanation; be explicit which you pursue.
+\end{itemize}
+
+\item \textbf{Predict vs explain}
+\begin{itemize}
+\item \textit{Main idea:} Predict focuses on out-of-sample accuracy; explain focuses on understanding patterns and relations. Both require adequate fit.
+\item \textit{Lecturer comment:} Explanation here is descriptive, not necessarily causal. Stakeholders typically want both a strong predictor and an understandable story; decide which objective dominates before modeling.
+\end{itemize}
+
+\item \textbf{Models and hypothesis spaces}
+\begin{itemize}
+\item \textit{Main idea:} A model $f$ maps features to outputs; in classification $f$ often produces scores or probabilities. We restrict to a hypothesis space $H$ to encode structure and make learning feasible.
+\item \textit{Lecturer comment:} Demystify models as functions $f:\mathcal{X}\to\mathcal{Y}$. The choice of $H$ (linear functions, trees, neural networks, etc.) constrains what can be learned.
+\end{itemize}
+
+\item \textbf{Parameters, identifiability, and illustrative examples}
+\begin{itemize}
+\item \textit{Main idea:} Models in $H$ share a parametric form with parameter vector $\theta$; choosing $\theta$ fixes $f$. Some classes are non-identifiable (distinct $\theta$ yield the same $f$).
+\item Examples: univariate linear $f(x)=\theta_0+\theta_1 x$, bivariate quadratics, and RBF networks with centers, widths, and weights. Hyperparameters such as number of centers $k$ or bandwidth define families prior to training.
+\item \textit{Lecturer comment:} Parameterization operationalizes $H$. Non-identifiability matters for optimization and interpretation. Hyperparameters set the scope of the family before fitting.
+\end{itemize}
+
+\item \textbf{Learners (inducers)}
+\begin{itemize}
+\item \textit{Main idea:} A learner receives training data $D$ and controls $\Lambda$, and selects $f\in H$ (or $\theta$) that minimizes empirical risk on $D$.
+\item Formal mapping: $\mathcal{I}:\mathbb{D}\times\Lambda\to H$.
+\item \textit{Lecturer comment:} Separate the algorithm from the model. Any training code instantiates the mapping from data and controls to a fitted function $f$.
+\end{itemize}
+
+\item \textbf{Loss functions}
+\begin{itemize}
+\item \textit{Main idea:} The loss $L(y,f(x))$ measures pointwise error. For regression, $L1$ and $L2$ are common; classification uses appropriate losses or surrogates. Aggregating losses gives empirical risk.
+\item \textit{Lecturer comment:} $L2$ magnifies large residuals; $L1$ is more robust. Keep a tiny numeric example handy to make robustness concrete.
+\end{itemize}
+
+\item \textbf{Risk minimization: theoretical vs empirical risk}
+\begin{itemize}
+\item \textit{Main idea:} Theoretical risk $R(f)=E[L(Y,f(X))]$ is defined under the unknown data distribution. We approximate it by empirical risk $R_{\text{emp}}(f)=\frac{1}{n}\sum_{i=1}^n L(y_i,f(x_i))$ on i.i.d. samples.
+\item \textit{Lecturer comment:} Alternatives exist (estimate $P_{X,Y}$, or assume a parametric form), but ERM is the default in this chapter because $P_{X,Y}$ is unknown.
+\end{itemize}
+
+\item \textbf{Empirical Risk Minimization (ERM)}
+\begin{itemize}
+\item \textit{Main idea:} ERM chooses $f^{}=\arg\min_{f\in H} R_{\text{emp}}(f)$, equivalently $\theta^{}=\arg\min_{\theta} R_{\text{emp}}(\theta)$.
+\item For finite $H$ one could tabulate risks; for infinite $H$ we optimize a surface over parameters.
+\item \textit{Lecturer comment:} Reducing learning to numerical optimization is powerful but incomplete; generalization and model selection enter next.
+\end{itemize}
+
+\item \textbf{Optimization for learning}
+\begin{itemize}
+\item \textit{Main idea:} Many learners solve $\min_{\theta} R_{\text{emp}}(\theta)$ via numerical optimization. Gradient descent updates parameters along negative gradients. The learning rate controls step size.
+\item Local minima vs global minima: in practice, good local optima often suffice. Some models admit analytic solutions (for example, OLS in linear regression under standard conditions).
+\item \textit{Lecturer comment:} Trade off speed and stability with the step size. Name families briefly: first order (GD, SGD), second order (Newton type), and practical variants (momentum, Adam).
+\end{itemize}
+
+\item \textbf{Components of supervised learning}
+\begin{itemize}
+\item \textit{Main idea:} Many supervised learners decompose into hypothesis space $H$ plus loss/risk plus optimization. Regularization can be folded into the risk.
+\item Examples of choices: $H$ (linear, trees, nets), losses (MSE, NLL, misclassification surrogates), optimizers (analytical, gradient based, combinatorial).
+\item \textit{Lecturer comment:} Keep returning to the triad $H$ + risk + optimization as an organizing lens to compare algorithms. Regularization integrates naturally into the objective.
+\end{itemize}
+\end{enumerate}

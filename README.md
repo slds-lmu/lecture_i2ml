@@ -44,7 +44,7 @@ If you use our material, please consider citing us as follows:
 
 ```
 @misc{bischl22i2ml,
-  author = {Bischl, Bernd and Bothmann, Ludwig and Scheipl, Fabian and Pielok, Tobias and Wimmer, Lisa and Li, Yawei and Kolb, Chris and Schalk, Daniel and Seibold, Heidi and Molnar, Christoph and Richter, Jakob},
+  author = {Bischl, Bernd and Bothmann, Ludwig and Casalicchio, Giuseppe and Scheipl, Fabian and Pielok, Tobias and Wimmer, Lisa and Li, Yawei and Kolb, Chris and Schalk, Daniel and Seibold, Heidi and Molnar, Christoph and Richter, Jakob},
   title = {{Introduction to Machine Learning (I2ML)}},
   howpublished = "\url{https://slds-lmu.github.io/i2ml/}",
   year = {2022},

@@ -11,26 +11,32 @@ on:
     inputs:
       debug_enabled:
         type: boolean
-        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
+        description: "Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)"
         required: false
         default: false
       cache-version:
         type: string
-        description: 'Cache version identifier, increment to invalidate cache'
+        description: "Cache version identifier, increment to invalidate cache"
         required: false
-        default: '1'
+        default: "1"
       tinytex-version:
         type: string
-        description: 'TinyTeX version to use'
+        description: "TinyTeX version to use"
         required: false
-        default: '2025.05'
+        default: "2024.12"
   push:
     # Activate on pushes to both the main or master branches (inconsistently used across lecture repos)
     branches: [main, master]
     # Runs only when slides/, style/, or latex-math/ change
     # Also added the workflow itself to trigger a run if it changes
     # Comment out to run on every commit
-    paths: ['style/**', 'slides/**', 'latex-math/**', '.github/workflows/render-lecture-slide-status.yaml']
+    paths:
+      [
+        "style/**",
+        "slides/**",
+        "latex-math/**",
+        ".github/workflows/render-lecture-slide-status.yaml",
+      ]
 
 name: render-lecture-slide-status
 
@@ -45,7 +51,7 @@ jobs:
       # Clone lecture checker repo in the current directory
       # We need lecture repo to be a sub directory of this for reasons (can optimize this once stable + working)
       - name: Checkout lecture service repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: slds-lmu/lecture_service
           # Don't show progress bar, very verbose for large repos
@@ -61,7 +67,7 @@ jobs:
         shell: bash
 
       - name: Checkout this lecture repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Clone lecture repo in subdirectory of the same name
           path: ${{ steps.repo-basename.outputs.value }}
@@ -77,19 +83,19 @@ jobs:
       # 2. TinyTeX: Cache entire installation (base + packages) to ensure version compatibility
       # 3. Both include cache-version input for manual cache invalidation
       # 4. Restore keys provide fallback to previous cache versions
-      
+
       # Standard R/pandoc setup steps
       - uses: r-lib/actions/setup-pandoc@v2
       - uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
-      
+
       # Get R library path for caching
       - name: Get R library dir for caching
         id: r-cache
         run: |
           echo "dir=$(Rscript --quiet -e 'cat(.libPaths()[[1]])')" >> $GITHUB_OUTPUT
-      
+
       # Cache R packages
       - name: Cache R packages
         id: r-pkg-cache
@@ -100,7 +106,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-r-${{ inputs.cache-version || '1' }}-
             ${{ runner.os }}-r-
-      
+
       # Check if we have a cached TinyTeX installation
       - name: Check for cached TinyTeX
         id: tinytex-cache-check
@@ -112,14 +118,14 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
             echo "📦 No cached TinyTeX found, will install fresh"
           fi
-      
+
       # Setup TinyTeX only if not cached
       # Use a fixed version instead of daily build for stability
       - uses: r-lib/actions/setup-tinytex@v2
         if: steps.tinytex-cache-check.outputs.exists == 'false'
         env:
-          TINYTEX_VERSION: ${{ inputs.tinytex-version || '2025.05' }}
-      
+          TINYTEX_VERSION: ${{ inputs.tinytex-version || '2024.12' }}
+
       # Cache the entire TinyTeX installation (base + packages)
       - name: Cache TinyTeX installation
         id: tinytex-cache
@@ -128,35 +134,35 @@ jobs:
           path: |
             ~/.TinyTeX
             ~/bin
-          key: ${{ runner.os }}-tinytex-${{ inputs.tinytex-version || '2025.05' }}-${{ inputs.cache-version || '1' }}-${{ hashFiles('scripts/install_tex_deps.R') }}
+          key: ${{ runner.os }}-tinytex-${{ inputs.tinytex-version || '2024.12' }}-${{ inputs.cache-version || '1' }}-${{ hashFiles('scripts/install_tex_deps.R') }}
           restore-keys: |
-            ${{ runner.os }}-tinytex-${{ inputs.tinytex-version || '2025.05' }}-${{ inputs.cache-version || '1' }}-
-      
+            ${{ runner.os }}-tinytex-${{ inputs.tinytex-version || '2024.12' }}-${{ inputs.cache-version || '1' }}-
+
       # Ensure TinyTeX is in PATH if restored from cache
       - name: Setup TinyTeX PATH
         if: steps.tinytex-cache.outputs.cache-hit == 'true'
         run: |
           echo "$HOME/bin" >> $GITHUB_PATH
           echo "$HOME/.TinyTeX/bin/x86_64-linux" >> $GITHUB_PATH
-      
+
       - run: tlmgr --version
 
       # Setting up the lecture checking requirements:
       # 1) R packages
       - name: Install R packages
         run: make install-r
-      
+
       # 2) LaTeX packages - install only if cache miss
       - name: Install additional LaTeX packages
         if: steps.tinytex-cache.outputs.cache-hit != 'true'
         run: |
           echo "📦 Installing LaTeX packages (no cache found)..."
           make install-tex
-          
+
           # Show summary of installed packages
           installed_count=$(tlmgr list --only-installed | grep -E '^i ' | wc -l)
           echo "📦 Total LaTeX packages installed: $installed_count"
-      
+
       # Verify installation when using cache
       - name: Verify LaTeX installation
         if: steps.tinytex-cache.outputs.cache-hit == 'true'
@@ -172,7 +178,7 @@ jobs:
           done
           installed_count=$(tlmgr list --only-installed | grep -E '^i ' | wc -l)
           echo "📦 Total LaTeX packages in cache: $installed_count"
-      
+
       # Cache effectiveness summary
       - name: Cache effectiveness summary
         run: |
@@ -215,7 +221,6 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./_site
           force_orphan: true
-          
 
       # Helper script generates exit status 1 if at least one slide failed to compile
       - name: Generate exit code based on check status
