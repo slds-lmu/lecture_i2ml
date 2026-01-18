@@ -187,12 +187,10 @@ We work on the `pima` data to classify patients as diabetic and design a system 
 
 To this end, we will use a graph learner, a "single unit of data operation" that can be trained, resampled, evaluated, ... as a whole -- in other words, treated as any other learner.
 
-::: {.indent-1}
 <details> 
 <summary>*Note*</summary>
 This exercise is a compact version of a tutorial on [mlr3gallery](https://mlr3gallery.mlr-org.com/posts/2021-03-11-practical-tuning-series-build-an-automated-machine-learning-system/). Feel free to explore the additional steps and explanations featured in the original (there is also a bunch of other useful code demos).
 </details>
-:::
 
 a) Create a task object in `mlr3` (the problem is pre-specified under the ID "pima").
 
@@ -261,22 +259,18 @@ e) Chain both pipelines using the double pipe and plot the resulting graph. Next
 
 f) Now you have a learner object just like any other. Take a look at its tunable hyperparameters. You will optimize the learner selection, the number of neighbors in $k$-NN (between 3 and 10), and the number of split candidates to try in the random forest (between 1 and 5).
 
-Define the search range for each like so: 
+   Define the search range for each like so: 
 
-::: {.indent-1}
-```{r, echo=TRUE, eval=FALSE}
-<learner>$param_set$values$<hyperparameter> <- to_tune(p_int(lower, upper))
-```
-:::
+   ```{r, echo=TRUE, eval=FALSE}
+   <learner>$param_set$values$<hyperparameter> <- to_tune(p_int(lower, upper))
+   ```
 
-`p_int` marks an integer hyperparameter with lower and upper bounds as defined; similar objects exist for other data types. With `to_tune()`, you signal that the hyperparameter shall be optimized in the given range.
+   `p_int` marks an integer hyperparameter with lower and upper bounds as defined; similar objects exist for other data types. With `to_tune()`, you signal that the hyperparameter shall be optimized in the given range.
 
-::: {.indent-1}
-<details> 
-<summary>*Hint*</summary>
-You need to define dependencies, since the tuning process is defined by which learner is selected in the first place (no need to tune $k$ in a random forest).
-</details>
-:::
+   <details> 
+   <summary>*Hint*</summary>
+   You need to define dependencies, since the tuning process is defined by which learner is selected in the first place (no need to tune $k$ in a random forest).
+   </details>
 
 ::: {.content-visible when-profile="solution"}
 ::: {.indent-1-sol}
@@ -291,11 +285,11 @@ You need to define dependencies, since the tuning process is defined by which le
 
 g) Conveniently, there is a sugar function, `tune_nested()`, that takes care of nested resampling in one step. Use it to evaluate your tuned graph learner with
 
-- mean classification error as inner loss,
-
-- random search as tuning algorithm (allowing for 3 evaluations), and
-
-- 3-CV in both inner and outer loop.
+   - mean classification error as inner loss,
+   
+   - random search as tuning algorithm (allowing for 3 evaluations), and
+   
+   - 3-CV in both inner and outer loop.
 
 ::: {.content-visible when-profile="solution"}
 ::: {.indent-1-sol}
@@ -347,14 +341,12 @@ a) Load the data set [pima](https://github.com/slds-lmu/lecture_i2ml/blob/master
 
 b) As part of our modeling process, we want to perform certain preprocessing steps. While this step is highly customizable, we want to include at least One-Hot-Encoding of categorical features, and imputing of missing values.
 
-Instance a `ColumnTransformer` object and include these two steps for a dynamic choice of columns.
+   Instance a `ColumnTransformer` object and include these two steps for a dynamic choice of columns.
 
-::: {.indent-1}
-<details> 
-<summary>*Hint*</summary>
-Strings are considered as `dtype = object`.
-</details>
-:::
+   <details> 
+   <summary>*Hint*</summary>
+   Strings are considered as `dtype = object`.
+   </details>
 
 ::: {.content-visible when-profile="solution"}
 ::: {.indent-1-sol}
@@ -382,12 +374,10 @@ c) Next, both pipelines for the $k$-NN and random forest are created. Like this 
 
 d) A very common ensembling technique is to predict according to the decisions of numerous estimators. This is refered to as `VotingClassifier` and enables you to predict the class label based on the argmax of the sums of the predicted probabilities. Instanciate a `VotingClassifier` with the two classifier pipelines for $k$-NN and random forest.
 
-::: {.indent-1}
-<details> 
-<summary>*Hint*</summary>
-Set the parameters `voting = "soft"` and `n_jobs = -1` for parallel computation.
-</details>
-:::
+   <details> 
+   <summary>*Hint*</summary>
+   Set the parameters `voting = "soft"` and `n_jobs = -1` for parallel computation.
+   </details>
 
 ::: {.content-visible when-profile="solution"}
 ::: {.indent-1-sol}
@@ -402,18 +392,16 @@ Set the parameters `voting = "soft"` and `n_jobs = -1` for parallel computation.
 
 e) Now you have an estimator object just like any other. Take a look at its tunable hyperparameters. You will optimize the number of neighbors in $k$-NN (between 3 and 10), and the number of split candidates to try in the random forest (between 1 and 5).
 
-Define the search range for each like so: 
+   Define the search range for each like so: 
 
-::: {.indent-1}
-```{echo=TRUE, eval=FALSE}
-param_grid_voting = [{"<voting_estimator1>__<pipelie1_estimator>__<hyperparameter>": 
-                          list(<parameter_range>)},
-                     {"<voting_estimator2>__<pipelie2_estimator>__<hyperparameter>": 
-                          list(<parameter_range>)}]
-```
-:::
+   ```{echo=TRUE, eval=FALSE}
+   param_grid_voting = [{"<voting_estimator1>__<pipelie1_estimator>__<hyperparameter>": 
+                             list(<parameter_range>)},
+                        {"<voting_estimator2>__<pipelie2_estimator>__<hyperparameter>": 
+                             list(<parameter_range>)}]
+   ```
 
-Please note, that the estimator names should be on par with the labels given in the `VotingClassifier`, the `Pipeline` and, of course, the hyperparameter of the used estimator in the pipeline. Each level of hyperparameters of our created ensemble estimator is accessable through the seperation `__` (double underscore). 
+   Please note, that the estimator names should be on par with the labels given in the `VotingClassifier`, the `Pipeline` and, of course, the hyperparameter of the used estimator in the pipeline. Each level of hyperparameters of our created ensemble estimator is accessable through the seperation `__` (double underscore). 
 
 ::: {.content-visible when-profile="solution"}
 ::: {.indent-1-sol}
@@ -428,38 +416,36 @@ Please note, that the estimator names should be on par with the labels given in 
 
 f) Nested Resampling is a method to avoid the so called `optimization bias` by tuning parameters and evaluation performance on different subsets of your training data.
 
-Use
+   Use
+   
+   - Stratified 3-CV in both inner and outer loop.
+   
+   - accuracy as inner performance measure,
+   
+   - grid search as tuning algorithm.
+   
+   You may use the following, incomplete code to compute the nested resampling:
 
-- Stratified 3-CV in both inner and outer loop.
-
-- accuracy as inner performance measure,
-
-- grid search as tuning algorithm.
-
-You may use the following, incomplete code to compute the nested resampling:
-
-::: {.indent-1}
-```{echo=TRUE, eval=FALSE}
-NUM_OUTER_FOLDS = <...>
-nested_scores_voting = np.zeros(NUM_OUTER_FOLDS) # initalize scores with 0
-# Choose cross-validation techniques for the inner and outer loops, 
-# independently of the dataset.
-# E.g "GroupKFold", "LeaveOneOut", "LeaveOneGroupOut", etc.
-inner_cv = <...>(n_splits=<...>, shuffle=True, random_state=42)
-outer_cv = <...>(n_splits=<...>, shuffle=True, random_state=42)
-
-for i, (train_index, val_index) in enumerate(outer_cv.split(X_train, y_train)):
-  # Nested CV with parameter optimization for ensemble pipeline
-  clf_gs_voting = <...>(
-      estimator=<...>, 
-      param_grid=<...>, 
-      cv=<...>, 
-      n_jobs=-1
-  )
-  clf_gs_voting.fit(X_train.iloc[<...>], y_train[<...>])
-  nested_scores_voting[i] = clf_gs_voting.score(X_train.iloc[<...>], y_train[<...>])
-```
-:::
+   ```{echo=TRUE, eval=FALSE}
+   NUM_OUTER_FOLDS = <...>
+   nested_scores_voting = np.zeros(NUM_OUTER_FOLDS) # initalize scores with 0
+   # Choose cross-validation techniques for the inner and outer loops, 
+   # independently of the dataset.
+   # E.g "GroupKFold", "LeaveOneOut", "LeaveOneGroupOut", etc.
+   inner_cv = <...>(n_splits=<...>, shuffle=True, random_state=42)
+   outer_cv = <...>(n_splits=<...>, shuffle=True, random_state=42)
+   
+   for i, (train_index, val_index) in enumerate(outer_cv.split(X_train, y_train)):
+     # Nested CV with parameter optimization for ensemble pipeline
+     clf_gs_voting = <...>(
+         estimator=<...>, 
+         param_grid=<...>, 
+         cv=<...>, 
+         n_jobs=-1
+     )
+     clf_gs_voting.fit(X_train.iloc[<...>], y_train[<...>])
+     nested_scores_voting[i] = clf_gs_voting.score(X_train.iloc[<...>], y_train[<...>])
+   ```
 
 ::: {.content-visible when-profile="solution"}
 ::: {.indent-1-sol}
