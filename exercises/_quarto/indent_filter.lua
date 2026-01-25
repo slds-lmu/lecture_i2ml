@@ -17,6 +17,14 @@ function Div(div)
         pandoc.RawBlock("tex", "\\end{indent-1}")
       }
     end
+  elseif div.classes:includes("indent-1-subitem") then
+    if FORMAT:match 'latex' then
+      return {
+        pandoc.RawBlock("tex", "\\begin{indent-1-subitem}"),
+        div,
+        pandoc.RawBlock("tex", "\\end{indent-1-subitem}")
+      }
+    end
   elseif div.classes:includes("indent-2") then
     if FORMAT:match 'latex' then
       return {
