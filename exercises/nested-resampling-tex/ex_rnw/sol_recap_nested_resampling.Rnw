@@ -1,66 +1,259 @@
+%
+%
+% \begin{itemize}
+%   \item[A)] no resampling.
+%   \item[B)] resampling.
+%   \item[C)] Nested resampling.
+% \end{itemize}
+%
+% Always everything, but with different roles (train, val, test)
+%
+% Tune before training, rest does not matter, i.e. possible: BAC, BCA, CBA
+%
+% First GE, then Tune, then Train (CBA):
+%
+% \textbf{GE:}
+% \begin{algorithm}
+% \caption{GE: Outer loop (3-fold CV)}
+% \begin{algorithmic}
+%   \For{$k \in \{1,2,3\}$}
+%     \State \textbf{Inner loop (4-fold CV):}
+%     \For{$j \in \{1,2,3,4\}$}
+%       \For{each hyperparameter $l$}
+%         \State $f_{l,k,j} = \text{train model on } D_{\text{train}_{k,j}} \text{ with hyperparameter } l$
+%         \State $\text{ge}_{l,k,j} = \text{test error of } f_{l,k,j} \text{ on } D_{\text{test}_{k,j}}$
+%       \EndFor
+%     \EndFor
+%     \State $\text{ge}_{l,k} = \text{mean}_{j} \text{ge}_{l,k,j}$
+%     \State $l^{*}_{k} = \arg\min_{l} \text{ge}_{l,k}$ \Comment{best hyperparameter combination in this fold of the outer loop}
+%     \State $f_{l^{*},k} = \text{train model on } D_{\text{train}_{k}}$
+%     \State $\text{ge}_{k} = \text{test error of } f_{l^{*},k} \text{ on } D_{\text{test}_{k}}$
+%   \EndFor
+%   \State $\hat{\text{ge}} = \text{mean}(\text{ge}_{k})$ \Comment{final estimate of generalization error}
+% \end{algorithmic}
+% \end{algorithm}
+%
+% \textbf{Tuning:}
+% \begin{algorithm}
+% \caption{Tuning}
+% \begin{algorithmic}
+%   \For{$j \in \{1,2,3,4\}$}
+%     \For{each hyperparameter $l$}
+%       \State $f_{l,j} = \text{train model on } D_{\text{train}_{j}} \text{ with hyperparameter } l$
+%       \State $\text{ge}_{l,j} = \text{test error of } f_{l,j} \text{ on } D_{\text{test}_{j}}$
+%     \EndFor
+%   \EndFor
+%   \State $\text{ge}_{l} = \text{mean}_{j} \text{ge}_{l,j}$
+%   \State $l^{*} = \arg\min_{l} \text{ge}_{l}$ \Comment{best hyperparameter combination}
+% \end{algorithmic}
+% \end{algorithm}
+%
+% \textbf{Training:}
+% \begin{algorithm}
+% \caption{Training}
+% \begin{algorithmic}
+%   \State $f^{*} = \text{train model on } D \text{ with hyperparameter } l^{*}$
+% \end{algorithmic}
+% \end{algorithm}
+%
+% Total number of hyperparameter combinations: $5 + 4 \times 4 = 21$ (either NN or RF, and then grid of all hyperparameters). With this:
+% \begin{itemize}
+%   \item[A)] Final training: 1 model
+%   \item[B)] Tuning of graph learner: $4 \times 21 = 84$ models (each hyperparameter in each fold)
+%   \item[C)] Estimation GE: $3 \times 4 \times 21$ (Tuning whole graph per fold) + 3 (computing test error per fold) or $3 \times (4 \times 21 + 1) = 255$ models
+% \end{itemize}
+%
+% Total = 340 models
 
+
+% ------------------------------------------------------------
+% Solution (LaTeX; notation: dataset \D, inducer I, HP space \Lambda,
+% resampling strategy J, performance measure \rho, GE estimator \widehat{GE})
+% ------------------------------------------------------------
+
+\paragraph{Goal A/B/C.}
+
+\medskip
+
+(A) train a final deployable model $\hat f$,
+(B) tune the graph learner (select $\hat\lamv\in\tilde\Lambda$),
+(C) estimate generalization error for the tuned procedure.
+
+\begin{enumerate}[1)]
+\item \textbf{Resampling need + usable data fraction (per goal).}
+
+\textbf{A) Train deployable final model $\hat f$}
 
 \begin{itemize}
-  \item[A)] no resampling.
-  \item[B)] resampling.
-  \item[C)] Nested resampling.
+  \item[(a)] \emph{No resampling} (just fit once with the chosen $\hat\lamv$).
+  \item[(b)] Use $100\%$ of $\D$ for the final fit.
 \end{itemize}
 
-Always everything, but with different roles (train, val, test)
+\textbf{B) Tune the graph learner (HPO / find $\hat\lamv\in\tilde\Lambda$)}
 
-Tune before training, rest does not matter, i.e. possible: BAC, BCA, CBA
-
-First GE, then Tune, then Train (CBA):
-
-\textbf{GE:}
-\begin{algorithm}
-\caption{GE: Outer loop (3-fold CV)}
-\begin{algorithmic}
-  \For{$k \in \{1,2,3\}$}
-    \State \textbf{Inner loop (4-fold CV):}
-    \For{$j \in \{1,2,3,4\}$}
-      \For{each hyperparameter $l$}
-        \State $f_{l,k,j} = \text{train model on } D_{\text{train}_{k,j}} \text{ with hyperparameter } l$
-        \State $\text{ge}_{l,k,j} = \text{test error of } f_{l,k,j} \text{ on } D_{\text{test}_{k,j}}$
-      \EndFor
-    \EndFor
-    \State $\text{ge}_{l,k} = \text{mean}_{j} \text{ge}_{l,k,j}$
-    \State $l^{*}_{k} = \arg\min_{l} \text{ge}_{l,k}$ \Comment{best hyperparameter combination in this fold of the outer loop}
-    \State $f_{l^{*},k} = \text{train model on } D_{\text{train}_{k}}$
-    \State $\text{ge}_{k} = \text{test error of } f_{l^{*},k} \text{ on } D_{\text{test}_{k}}$
-  \EndFor
-  \State $\hat{\text{ge}} = \text{mean}(\text{ge}_{k})$ \Comment{final estimate of generalization error}
-\end{algorithmic}
-\end{algorithm}
-
-\textbf{Tuning:}
-\begin{algorithm}
-\caption{Tuning}
-\begin{algorithmic}
-  \For{$j \in \{1,2,3,4\}$}
-    \For{each hyperparameter $l$}
-      \State $f_{l,j} = \text{train model on } D_{\text{train}_{j}} \text{ with hyperparameter } l$
-      \State $\text{ge}_{l,j} = \text{test error of } f_{l,j} \text{ on } D_{\text{test}_{j}}$
-    \EndFor
-  \EndFor
-  \State $\text{ge}_{l} = \text{mean}_{j} \text{ge}_{l,j}$
-  \State $l^{*} = \arg\min_{l} \text{ge}_{l}$ \Comment{best hyperparameter combination}
-\end{algorithmic}
-\end{algorithm}
-
-\textbf{Training:}
-\begin{algorithm}
-\caption{Training}
-\begin{algorithmic}
-  \State $f^{*} = \text{train model on } D \text{ with hyperparameter } l^{*}$
-\end{algorithmic}
-\end{algorithm}
-
-Total number of hyperparameter combinations: $5 + 4 \times 4 = 21$ (either NN or RF, and then grid of all hyperparameters). With this:
 \begin{itemize}
-  \item[A)] Final training: 1 model
-  \item[B)] Tuning of graph learner: $4 \times 21 = 84$ models (each hyperparameter in each fold)
-  \item[C)] Estimation GE: $3 \times 4 \times 21$ (Tuning whole graph per fold) + 3 (computing test error per fold) or $3 \times (4 \times 21 + 1) = 255$ models
+  \item[(a)] \emph{Resampling} (e.g.\ CV) to estimate $c(\lamv) = \widehat{GE}(I,J,\rho,\lamv)$
+  for each hyperparameter configuration (HPC) $\lamv$.
+  \item[(b)] %In $K$-fold CV, each model fit uses $(K-1)/K$ of the data for training.
+  With $K=4$: train on $3/4$, validate on $1/4$ (across all folds, every observation is used).
 \end{itemize}
 
-Total = 340 models
+\textbf{C) Estimate the generalization error (unbiased for the tuned procedure)}
+
+\begin{itemize}
+  \item[(a)] \emph{Nested resampling} (outer loop for evaluation, inner loop for tuning) to satisfy the
+  ``untouched test set'' principle and avoid overtuning bias.
+  \item[(b)] With 3-fold outer CV, each outer iteration trains the tuned learner on $2/3$ and tests on $1/3$.
+  Inside that, the 4-fold inner CV uses $3/4$ of the outer-train part for training, hence $\frac{2}{3}\cdot\frac{3}{4} = \frac{1}{2}$ of $\D$ per inner-fold model fit.
+\end{itemize}
+
+\item \textbf{Order of goals.}
+\medskip
+
+A leakage-safe order is
+\[
+\boxed{\textbf{C (with B inside)} \;\rightarrow\; \textbf{B on full } \D \;\rightarrow\; \textbf{A}.}
+\]
+Rationale: performance estimation treats outer test data as ``untouched''; hence tuning must be nested inside the outer evaluation.
+After obtaining an (approximately) unbiased $\widehat{GE}$, tune once on all data to get a single $\hat\lamv$, then fit the final deployable $\hat f$.
+
+\item \textbf{Pseudo-algorithm (nested CV + final tuning + final fit).}
+\medskip
+% \textbf{Input:} data $\D$, inducer $I:\D\times\Lambda\to H$, performance measure $\rho$,
+% search space $\tilde\Lambda$.
+
+% \begin{center}
+% \begin{tikzpicture}[
+%   font=\small,
+%   box/.style={draw, rounded corners=2pt, very thick, align=center, inner sep=4pt},
+%   arrow/.style={->, thick},
+%   lab/.style={font=\footnotesize, align=center}
+% ]
+
+% % --- Outer split (one exemplary outer fold b) ---
+% \node[lab] (title) at (0,2.5) {\textbf{Nested resampling (illustration for one outer fold $b$)}};
+
+% \node[box, fill=green!20, minimum width=7.2cm, minimum height=1.0cm] (outertrain) at (-1.3,1.4)
+%   {$D_{\text{train}}^{(b)}$\\[2pt]\footnotesize (outer train)};
+% \node[box, fill=green!10, minimum width=3.4cm, minimum height=1.0cm] (outertest) at (4.2,1.4)
+%   {$D_{\text{test}}^{(b)}$\\[2pt]\footnotesize (outer test)};
+
+% \node[lab] at (1.45,0.65) {\footnotesize Outer CV split of $\D$ into $D_{\text{train}}^{(b)}$ and $D_{\text{test}}^{(b)}$, tune on outer-train only};
+
+% % --- Inner CV on outer train (train/valid) ---
+% \node[box, fill=gray!12, minimum width=7.2cm, minimum height=1.2cm] (innercv) at (-1.3,-0.2)
+% {Inner CV on $D_{\text{train}}^{(b)}$\\[2pt]
+% splits into $(D_{\text{train}}^{(b,k)}, D_{\text{valid}}^{(b,k)})$, $k=1,\dots,4$};
+
+% %\draw[arrow] (outertrain.south) -- node[right,lab, xshift=2pt] {\footnotesize tune on outer-train only} (innercv.north);
+
+% % --- Grid / selection / refit / evaluate ---
+% \node[box, fill=blue!10, minimum width=5.1cm, minimum height=1.2cm] (grid) at (-4.8,-2.2)
+% {Grid over $\lamv\in\tilde\Lambda$\\[2pt]
+% $\hat c_b(\lamv)=\frac{1}{4}\sum_{k=1}^{4}\rho\!\Big(y_{\text{valid}}^{(b,k)},\;\hat f_{\lamv}^{(b,k)}(X_{\text{valid}}^{(b,k)})\Big)$};
+
+% \node[box, fill=blue!10, minimum width=2.9cm, minimum height=1.2cm] (select) at (0.0,-2.2)
+% {Select\\[2pt] $\hat\lamv^{(b)}\in\arg\min_{\lamv}\hat c_b(\lamv)$};
+
+% \node[box, fill=green!20, minimum width=3.3cm, minimum height=1.2cm] (refit) at (3.9,-2.2)
+% {Refit on $D_{\text{train}}^{(b)}$\\[2pt] $\hat f_b=I(D_{\text{train}}^{(b)},\hat\lamv^{(b)})$};
+
+% \node[box, fill=green!10, minimum width=3.3cm, minimum height=1.2cm] (eval) at (3.9,-3.95)
+% {Evaluate on $D_{\text{test}}^{(b)}$\\[2pt] $e_b=\rho\!\Big(y_{\text{test}}^{(b)},\;\hat f_b(X_{\text{test}}^{(b)})\Big)$};
+
+% \draw[arrow] (innercv.south) -- (grid.north);
+% \draw[arrow] (grid.east) -- (select.west);
+% \draw[arrow] (select.east) -- (refit.west);
+% \draw[arrow] (refit.south) -- (eval.north);
+
+% % --- Final aggregation (concept) ---
+% \node[lab] (agg) at (0,-5.35)
+% {$\widehat{GE}=\frac{1}{3}\sum_{b=1}^{3}e_b$ (outer aggregation) \qquad
+% \(\Rightarrow\) then tune once on full $\D$ to obtain a single $\hat\lamv$ and fit $\hat f=I(\D,\hat\lamv)$.};
+
+% \end{tikzpicture}
+% \end{center}
+
+\noindent\textbf{Subroutine: Tuning (4-fold CV grid search).}
+%Given any dataset $\D'$, the same tuning process is used to select a hyperparameter configuration:
+
+\begin{algorithm}[H]
+\caption{Tuning$(\D'; I, \rho, \tilde\Lambda)$}
+\begin{algorithmic}[1]
+  \State \textbf{Input:} data $\D' = (X', y')$, inducer $I:\D\times\Lambda\to H$, performance measure $\rho$, search space $\tilde\Lambda$
+  \State Split $\D'$ into $(\D_{\text{train}}'^{(k)},\D_{\text{valid}}'^{(k)})$, $k=1,\dots,4$ (4-fold CV on $\D'$)
+  \For{each $\lamv\in\tilde\Lambda$}
+    \For{$k \in \{1,2,3,4\}$}
+      \State \textbf{Train:} $\hat{f}_{k} = I(\D_{\text{train}}'^{(k)}, \lamv)$
+      \State \textbf{Validate:} $e_k \gets \rho\!\Big(y_{\text{valid}}'^{(k)},\; \hat{f}_{k}(X_{\text{valid}}'^{(k)})\Big)$
+    \EndFor
+    \State $c(\lamv) \gets \frac{1}{4}\sum_{k=1}^{4} e_k$
+  \EndFor
+  \State \textbf{Output:} $\hat\lamv \in \arg\min_{\lamv\in\tilde\Lambda} c(\lamv)$
+\end{algorithmic}
+\end{algorithm}
+
+\noindent\textbf{Main procedure:} Nested CV for GE estimation, then one tuning on full data, then final fit.
+
+\begin{algorithm}[H]
+\caption{Nested CV for GE estimation + final tuning + final fit}
+\begin{algorithmic}[1]
+  \State \textbf{Input:} data $\D = (X, y)$, inducer $I$, performance measure $\rho$, search space $\tilde\Lambda$
+  \State \textbf{Outer resampling (3-fold CV):} split $\D$ into $(D_{\text{train}}^{(b)},D_{\text{test}}^{(b)})$, $b=1,\dots,3$
+  \For{$b \in \{1,2,3\}$}
+    \State \textbf{Tune:} $\hat\lamv^{(b)} \gets \text{Tuning}(D_{\text{train}}^{(b)}; I, \rho, \tilde\Lambda)$ \Comment{tuning subroutine for outer fold $b$}
+    \State \textbf{Refit} on all $D_{\text{train}}^{(b)}$: $\hat f_b = I(D_{\text{train}}^{(b)},\hat\lamv^{(b)})$
+    \State \textbf{Outer test evaluation:} $e_b=\rho\!\Big(y_{\text{test}}^{(b)},\hat f_b(X_{\text{test}}^{(b)})\Big)$
+  \EndFor
+  \State \textbf{Generalization error estimate (goal C with B inside):} $\widehat{GE}=\frac{1}{3}\sum_{b=1}^{3} e_b$
+  \State \textbf{Final tuning on full data (goal B):} $\hat\lamv \gets \text{Tuning}(\D; I, \rho, \tilde\Lambda)$ \Comment{same tuning subroutine, applied to $\D$}
+  \State \textbf{Final fit on full data (goal A):} $\hat f = I(\D,\hat\lamv)$
+\end{algorithmic}
+\end{algorithm}
+
+\item \textbf{Total number of model trainings (hierarchical ``model choice'').}
+\medskip
+
+The intended configuration space is hierarchical:
+\[
+\tilde\Lambda
+=
+\underbrace{\tilde\Lambda_{\text{NN}}}_{5\ \text{choices}}
+\;\cup\;
+\underbrace{\tilde\Lambda_{\text{RF}}}_{16\ \text{choices}},
+\qquad
+|\tilde\Lambda|=5+16=21,
+\]
+because an HPC corresponds to \emph{either}
+NN with chosen \#layers
+\emph{or}
+RF with chosen $(\text{ntree},\text{depth})$.
+
+\medskip
+\noindent\textbf{Nested part (outer 3-fold, inner 4-fold).}
+Per outer fold:
+\[
+|\tilde\Lambda|\cdot 4 \;+\; 1
+\;=\;
+21\cdot 4 + 1
+\;=\;
+85.
+\]
+Across all 3 outer folds:
+\[
+3\cdot 85 = 255.
+\]
+
+\medskip
+\noindent\textbf{Final tuning on full $\D$ (4-fold) + final fit.}
+\[
+21\cdot 4 \;+\; 1 = 84 + 1 = 85.
+\]
+
+\medskip
+\noindent\textbf{Total trainings:}
+\[
+\boxed{255 + 84 + 1 \;=\; 340\ \text{model trainings.}}
+\]
+(Each training fits exactly one arm, since the configuration selects either NN or RF.)
+\end{enumerate}
