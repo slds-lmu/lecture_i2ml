@@ -17,5 +17,4 @@ slides-pdf
 ...
 ```
 
-Here, `slides-pdf/<slide-name>.pdf` matches the source at `slides/<topic>/<slide-name>.pdf`.
-
+Here, `slides-pdf/<slide-name>.pdf` matches the source at `slides/<chapter>/<slide-name>.pdf`.
