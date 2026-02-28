@@ -1,0 +1,169 @@
+\begin{frame2}{Linear SVM -- method summary}
+  \maketag{CLASSIFICATION} \maketag[50]{REGRESSION} \maketag{PARAMETRIC} 
+\maketag{WHITE-BOX} 
+
+\splitVCC[0.6]{
+  \highlight{General idea (Soft-margin SVM)}
+\begin{itemize}
+\item Find linear decision boundary (\textbf{separating hyperplane}) that 
+\begin{itemize}
+  \item maximizes distance (\textbf{margin} $\gamma$) to closest points (\textbf{support vectors, SVs}) on each side of decision boundary
+  \item while minimizing margin violations (points either on \textbf{wrong side of hyperplane} or \textbf{between dashed margin line and hyperplane})
+\end{itemize}
+
+%\item \textbf{Interpretable} weighted sum of scalar product with positive coefficients for support vectors
+%\item Extension to \textbf{regression} is possible but requires modifications 
+%\\ $\Rightarrow$ here: only classification case
+\end{itemize}
+}{
+  \includegraphics[width=\linewidth]{figure/svm_wording.png} \\
+  \begin{center}
+  {\tiny Soft-margin SVM with margin violations}
+  \end{center}
+}
+
+\begin{itemize}
+  \item 3 types of training points
+\begin{itemize}
+  \item \textbf{non-SVs} with no impact on decision boundary
+  \item \textbf{SVs that are margin violators} and affect decision boundary
+  \item \textbf{SVs located exactly on dashed margin lines} and affect decision boundary
+\end{itemize}
+\end{itemize}
+
+
+\end{frame2}
+
+\begin{frame2}{Linear SVM -- method summary}
+
+\highlight{Hypothesis space (primal)} ~~ 
+$\Hspace = \left\{\fx ~:~\fx = \thetav^\top \xv + \theta_0 \right\}$\\
+
+\splitVCC[0.58]{
+
+\highlight{Empirical risk} 
+\\Soft-margin SVM as \textbf{L2-regularized ERM}: 
+   \centerline{$\frac{1}{2} \|\thetav\|_2^2 + C \sumin \Lxyi$}
+   \vspace{-\topsep}
+\begin{itemize}
+\setlength{\parskip}{0pt} 
+\setlength{\itemsep}{0pt plus 1pt}
+  \item $\|\thetav\| = 1 / \gamma$ ($\hat{=}$ maximizing margin) \\
+  \item $C > 0$: penalization for margin violations
+
+\end{itemize}
+\vspace{-\topsep}
+
+}{
+  \centering
+\includegraphics[height=1.1\textwidth, keepaspectratio=true]{
+figure/plot_loss_hinge.png}
+\includegraphics[height=1.1\textwidth, keepaspectratio=true]{
+figure/loss_eps_insensitive.png}
+}
+\begin{itemize}
+    \item Loss aims at minimizing margin violations\\
+  $\rightarrow$ Classif. (\textbf{hinge} loss): $L(y,f) = \max(1-yf, 0)$ \\
+  %\phantom{$\rightarrow$}$\Rightarrow$ other loss functions applicable (e.g., \textbf{Huber} loss)\\
+  $\rightarrow$ Regr. (\textbf{$\eps$-insensitive} loss):   $L(y,f) = \max(|y-f| - \eps, 0)$ 
+\end{itemize}
+
+\end{frame2}
+
+\begin{frame2}{Linear SVM -- method summary}
+
+\highlight{Dual problem} ~~ %lecture_cim2\2020\08-linear-svm\slides-3-soft-margin-svm.Rnw
+%\textcolor{blue}{Motivation: \dots}
+SVMs as a constraint optimization (primal) problem (maximize margin s.t. constraints on obs. to limit margin violations) can be formulated as a Lagrangian dual problem with Lagrange multipliers $\alpha_i \geq 0$: % by integrating the constraints to the objective using 
+$$\max\limits_{\alpha v \in \R^n} \Leftrightarrow \;\; \text{ s.t. } \;\; 0 \le \alpha_i \le C ~~ \forall i \in \nset \text{ and } \sum_{i=1}^n \alpha_i \yi = 0$$
+
+
+\highlight{Solution} ~~ 
+Non-SVs have $\alpha_i = 0$ as they do not affect the hyperplane
+
+$$\fx = \sumin \alpha_i \yi \langle \xi, \xv \rangle  + \theta_0$$
+%\text{ with } \alpha_i \geq 0,  \sumin \alpha_i \yi = 0 $$
+
+
+
+\end{frame2}
+
+\begin{frame2}{Linear SVM -- method summary}
+\highlight{Optimization}
+
+\begin{itemize}
+\item Typically, tackling \textbf{dual} problem (though feasible 
+in corresponding primal) via \textbf{quadratic programming}
+\item Popular: \textbf{sequential minimal optimization} $\Rightarrow$ 
+iterative algorithm based on breaking down objective into bivariate quadratic 
+problems with analytical solutions
+\end{itemize}
+
+
+\highlight{Hyperparameters} ~~ Cost parameter \textbf{$C$} to control maximization of the margin vs. minimizing margin violations
+
+\splitVCC[0.5]{
+  \centering
+      \includegraphics[width=0.95\textwidth]{
+figure/linear_classif_2.png}  \\
+\tiny{Hard-margin SVM: margin is maximized by boundary on the right}
+}{
+  \centering
+\includegraphics[width=\textwidth]{
+figure/margin_violations.png}  \\
+\tiny{Soft-margin SVM: large margin and few margin violations on the right (best trade-off)}
+}
+
+\normalsize
+
+\end{frame2}
+
+\begin{frame2}{Linear SVM -- Practical hints}
+\highlight{Preprocessing} 
+% \begin{itemize}
+\\Features should be scaled before applying SVMs (applies generally to regularized models)
+
+% \end{itemize}
+\medskip
+\splitVCC[0.6]{
+  \highlight{Tuning}
+
+\begin{itemize}
+  \item Tuning of cost parameter $C$ advisable\\
+  $\Rightarrow$ strong influence 
+  on resulting hyperplane
+  \item $C$ it is often tuned on a log-scale grid for optimal and space-filling search space
+\end{itemize}
+}{
+  \begin{tikzpicture}[scale=1]
+    \draw [->](-0.3,0)-- (5,0) coordinate;
+    \draw [->](-0.3,-1)-- (5,-1) coordinate;
+    \foreach \x/\xtext/\xxtext in {0/0/1,0.5/0.5/,1/1/,1.5/1.5/,2/2/,2.5/2.5/,3/3/20,3.5/3.5/,4/4/55,4.5/4.5/90,4.60517//100} {
+      \draw [very thick] (\x,-2pt) -- ++(0, 4pt) node[xshift = -6pt, yshift=-3pt,anchor=south west,baseline]{\strut$\xtext$};
+      \draw [very thick] ({exp(\x)*4.5/100},-1cm+2pt) -- ++(0,-4pt) node[anchor=north]{$\xxtext$};
+      \draw [->] (\x,-2pt) .. controls (\x,-1) and ({exp(\x)*4.5/100},-0.65) .. ({exp(\x)*4.5/100},-1cm);
+    }
+    \draw [very thick] (0,-2pt) -- ++(0, 4pt) node[xshift = -6pt, yshift=-3pt,anchor=south west,baseline]{\strut$0$};
+    \draw[very thick] (4.60517,2pt) -- ++(0,-4pt) node[xshift = -1pt, yshift=3pt,anchor=north west,baseline]{\strut$log(100)$};
+    \draw [very thick] (4.5/100,-1cm+2pt) -- ++(0,-4pt) node[anchor=north]{$1$};
+    \draw [very thick] (4.5,-1cm+2pt) -- ++(0,-4pt) node[anchor=north]{$100$};
+  \end{tikzpicture}
+}
+
+\end{frame2}
+
+\begin{frame2}{Linear SVM -- implementation}
+
+\highlight{Implementation} 
+\begin{itemize}
+  \item \textbf{R:} \texttt{mlr3} learners \texttt{LearnerClassifSVM} /
+  \texttt{LearnerRegrSVM}, calling \texttt{e1071::svm()} with linear kernel (\texttt{libSVM} interface).
+  Further implementations in \texttt{mlr3extralearners} based on
+  \begin{itemize}
+      \item \texttt{kernlab::ksvm()} allowing custom kernels
+      \item \texttt{LiblineaR::LiblineaR()} for a fast implementation with linear kernel
+  \end{itemize}
+  \item \textbf{Python:} \texttt{sklearn.svm.SVC} from package 
+  \texttt{scikit-learn} / package \texttt{libSVM}
+\end{itemize}
+\end{frame2}
