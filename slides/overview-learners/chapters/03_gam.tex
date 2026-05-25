@@ -1,0 +1,171 @@
+\begin{frame2}{GAM -- method summary}
+  % \maketag{SUPERVISED} 
+\maketag{regression} \maketag{classification} \maketag[50]{(NON)PARAMETRIC}
+\maketag[50]{WHITE-BOX} \maketag[50]{Feature selection}
+
+\highlight{General idea}
+\begin{itemize}
+  \item Same as GLM, but introduce \textbf{flexibility} through
+  \textbf{nonlinear (smooth)} effects $f_j(x_j)$
+  \item Typically, combination of linear \& smooth effects
+  \item Smooth effects also conceivable for feature interactions
+\end{itemize}
+
+\highlight{Hypothesis space} ~~
+$\Hspace = \left\{f: \Xspace \to \R ~|~\fx = \phi \left(\theta_0 + \textstyle \sumjp
+f_j(x_j) \right) \right\}$,
+suitable transformation $\phi(\cdot)$, intercept $\theta_0$, smooth
+functions $f_j(\cdot)$
+
+\includegraphics[width=0.31\textwidth]{figure/gam_bike_partial_effect}
+\includegraphics[width=0.39\textwidth, trim=0 0 0 80, clip]{figure/gam_bike_pred}
+
+\small
+Prediction of \texttt{bike rentals} from smooth term of \texttt{humidity}
+(left: partial effect) and linear term of \texttt{temperature} (right: bivariate
+prediction).
+\normalsize
+
+\end{frame2}
+
+
+\begin{frame2}{GAM -- method summary}
+
+\highlight{Smooth functions}
+
+\begin{itemize}
+  \item Non-/semi-/parametric approaches conceivable
+  \item Frequently: express $f_j$ as weighted sum of \textbf{basis functions}
+  $\rightsquigarrow$ model \textbf{linear} in weight coefficients again
+  \begin{itemize}
+      \item Use fixed basis of functions $b_1, \dots, b_K$ and estimate
+      associated coefficients $\gamma_1, \dots, \gamma_K$ \\ $\rightsquigarrow$
+      $f_j(x_j) = \textstyle \sum_{k=1}^{K_j} \gamma_{j, k} b_k(x_j)$
+      \item Popular types of basis functions
+      \begin{itemize}
+        % \footnotesize
+        \item Polynomial $\rightsquigarrow$ smoothing/TP-/B-\textbf{splines}
+        \item Radial $\rightsquigarrow$ \textbf{Kriging}
+        \item Trigonometric $\rightsquigarrow$ \textbf{Fourier/wavelet} forms
+      \end{itemize}
+    \end{itemize}
+    \item Alternatives: \textbf{local regression (LOESS)},
+    kernel-smoothing, \dots
+\end{itemize}
+
+\includegraphics[width=0.75\textwidth]{figure/gam_bike_spline_basis}
+
+\small
+Left: B-spline basis with 9 basis functions.
+Middle: BFs weighted with coefficients estimated for
+\texttt{humidity}.
+Right: sum of weighted BFs in black (= partial effect).
+
+\end{frame2}
+
+\begin{frame2}{GAM -- method summary}
+\highlight{Regularization}
+\begin{itemize}
+    \item Smooth functions possibly very flexible $\rightsquigarrow$
+    regularization vital to prevent overfitting
+    \item Control \textbf{smoothness}
+    \begin{itemize}
+      \item \textbf{Basis-function approaches}: control number; impose penalty
+      on coefficients
+      (e.g., magnitude or differences between coefficients of neighboring
+      components) \& control associated hyperparameter
+      \item \textbf{Local smoothers}: control width of smoothing window
+      (larger $\rightsquigarrow$ smoother)
+    \end{itemize}
+\end{itemize}
+
+\begin{minipage}{0.65\textwidth}
+\includegraphics[width=0.45\textwidth, trim=0 0 80 80, clip]{
+figure/gam_bike_pred}
+\includegraphics[width=0.45\textwidth, trim=80 0 0 80, clip]{
+figure/gam_bike_pred_wiggly}
+\hfill
+\end{minipage}
+\begin{minipage}{0.3\textwidth}
+\small \raggedright
+Prediction surfaces for \texttt{bike rentals} with 9 (left) and 500 (right)
+basis functions in smooth \texttt{humidity} term.
+Higher number of basis functions yields more local, less smooth model.
+\end{minipage}
+
+\end{frame2}
+
+\begin{frame2}{GAM -- method summary}
+
+\highlight{Loss functions} 
+\begin{itemize}
+    \item Same as in GLM \\$\leadsto$ essentially:
+use \textbf{negative log-likelihood}
+\end{itemize}
+
+\highlight{Optimization}
+\begin{itemize}
+  \item \textbf{Coefficients} (of smooth + linear terms):
+  penalized MLE, Bayesian inference
+  \item \textbf{Smoothing hyperparameters}: typically, generalized
+  cross-validation
+\end{itemize}
+
+\end{frame2}
+
+
+\begin{frame2}{GAM -- implementation}
+
+  \highlight{Implementation}
+
+\begin{itemize}
+  \item \textbf{R:} \texttt{mlr3} learner \texttt{LearnerRegrGam},
+    calling \texttt{mgcv::gam()}
+  \begin{itemize}
+      \item Smooth terms: \texttt{s(\dots, bs="<basis>")} or \texttt{te(\dots)}
+      for multivariate (tensorproduct) effects
+      \item Link functions: \texttt{family=$\{$Gamma, Binomial, \dots $\}$}
+  \end{itemize}
+    \item \textbf{Python}: \texttt{GLMGam} from package \texttt{statsmodels};
+    package \texttt{pygam}
+\end{itemize}
+
+\end{frame2}
+
+\begin{frame2}{GAM -- Pros \& Cons}
+
+\begin{columns}[onlytextwidth]
+  \begin{column}{0.5\textwidth}
+    \highlight{Advantages}
+
+%    Strengths of GLMs, plus \dots
+    \begin{itemize}
+      \positem \textbf{Simple and fast}
+%      \positem \textbf{Analytical} solution for L2 loss
+      %\positem \textbf{Cheap} computation
+      \positem Applicable for any \textbf{dataset size}, where number of
+      observations \\$\gg$ number of features
+      \positem High \textbf{flexibility} via smooth effects
+      \positem Easy to \textbf{combine} linear \& nonlinear effects
+      \positem Rather intuitive \textbf{interpretability} via feature effects
+      % \item fits \textbf{linearly} separable data sets very well
+      \positem Statistical hypothesis \textbf{tests} for effects available
+    \end{itemize}
+  \end{column}
+
+  \begin{column}{0.5\textwidth}
+    \highlight{Disadvantages}
+
+%    Shortcomings of GLMs, plus \dots
+    \begin{itemize}
+      \negitem \textbf{Sensitivity} w.r.t. outliers and noisy data
+      \negitem Feature \textbf{interactions} must be handcrafted\\
+      $\rightarrow$ practically infeasible for higher orders
+      \negitem Harder to \textbf{optimize} than GLM
+      \negitem Additional \textbf{hyperparameters} (type of smooth functions,
+      smoothness degree, \dots)
+    \end{itemize}
+  \end{column}
+\end{columns}
+  
+\end{frame2}
