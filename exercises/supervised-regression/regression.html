@@ -3281,7 +3281,8 @@ font-size: 1rem !important;
   <li><a href="#exercise-1-loss-functions-for-regression-tasks" id="toc-exercise-1-loss-functions-for-regression-tasks" class="nav-link active" data-scroll-target="#exercise-1-loss-functions-for-regression-tasks">Exercise 1: Loss functions for regression tasks</a></li>
   <li><a href="#exercise-2-hro-in-coding-frameworks" id="toc-exercise-2-hro-in-coding-frameworks" class="nav-link" data-scroll-target="#exercise-2-hro-in-coding-frameworks">Exercise 2: HRO in coding frameworks</a></li>
   <li><a href="#exercise-3-polynomial-regression" id="toc-exercise-3-polynomial-regression" class="nav-link" data-scroll-target="#exercise-3-polynomial-regression">Exercise 3: Polynomial regression</a></li>
-  <li><a href="#exercise-4-predicting-abalone" id="toc-exercise-4-predicting-abalone" class="nav-link" data-scroll-target="#exercise-4-predicting-abalone">Exercise 4: Predicting <code>abalone</code></a></li>
+  <li><a href="#exercise-4-fitting-a-linear-model-by-hand" id="toc-exercise-4-fitting-a-linear-model-by-hand" class="nav-link" data-scroll-target="#exercise-4-fitting-a-linear-model-by-hand">Exercise 4: Fitting a linear model by hand</a></li>
+  <li><a href="#exercise-5-predicting-abalone" id="toc-exercise-5-predicting-abalone" class="nav-link" data-scroll-target="#exercise-5-predicting-abalone">Exercise 5: Predicting <code>abalone</code></a></li>
   </ul>
 <div class="quarto-alternate-notebooks"><h2>Notebooks</h2><ul><li><a href="ex_regression_py-preview.html"><i class="bi bi-journal-code"></i>Exercise sheet for Python</a></li><li><a href="ex_regression_R-preview.html"><i class="bi bi-journal-code"></i>Exercise sheet for R</a></li><li><a href="sol_regression_py-preview.html"><i class="bi bi-journal-code"></i>Solutions for Python</a></li><li><a href="sol_regression_R-preview.html"><i class="bi bi-journal-code"></i>Solutions for R</a></li></ul></div></nav>
 </div>
@@ -3729,8 +3730,8 @@ Learning goals
 <li>You will not be able to fit the data perfectly with a cubic polynomial. Describe the advantages and disadvantages that a more flexible model class would have. Would you opt for a more flexible learner?</li>
 </ol>
 </section>
-<section id="exercise-4-predicting-abalone" class="level2">
-<h2 class="anchored" data-anchor-id="exercise-4-predicting-abalone">Exercise 4: Predicting <code>abalone</code></h2>
+<section id="exercise-4-fitting-a-linear-model-by-hand" class="level2">
+<h2 class="anchored" data-anchor-id="exercise-4-fitting-a-linear-model-by-hand">Exercise 4: Fitting a linear model by hand</h2>
 <div class="callout callout-style-default callout-tip no-icon callout-titled" title="The whole exercise is only for lecture group B!">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -3742,6 +3743,89 @@ The whole exercise is only for lecture group B!
 </div>
 <div class="callout-body-container callout-body">
 
+</div>
+</div>
+<div class="callout callout-style-default callout-note no-icon callout-titled" title="Learning goals">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Learning goals
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ol type="1">
+<li>Compute the least-squares estimator on a small example by hand</li>
+<li>Interpret linear model coefficients</li>
+<li>Predict with a fitted linear model</li>
+</ol>
+</div>
+</div>
+<p>In the lecture, you saw that a linear model with <span class="math inline">\(L2\)</span> loss has a closed-form solution – the <em>ordinary-least-squares (OLS)</em> estimator <span class="math display">\[
+\boldsymbol{\hat\theta}= (\mathbf{X}^\top \mathbf{X})^{-1} \mathbf{X}^\top \mathbf{y},
+\]</span> where <span class="math inline">\(\mathbf{X}\)</span> is the design matrix (the feature columns padded with a leading column of ones for the intercept) and <span class="math inline">\(\mathbf{y}\)</span> the vector of observed targets. Consider the following small dataset with a single feature <span class="math inline">\(x\)</span> and target <span class="math inline">\(y\)</span>:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: center;"><span class="math inline">\(i\)</span></th>
+<th style="text-align: center;"><span class="math inline">\(x^{(i)}\)</span></th>
+<th style="text-align: center;"><span class="math inline">\(y^{(i)}\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">1</td>
+<td style="text-align: center;"><span class="math inline">\(-3\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(1\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">2</td>
+<td style="text-align: center;"><span class="math inline">\(-1\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(1\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">3</td>
+<td style="text-align: center;"><span class="math inline">\(1\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(3\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">4</td>
+<td style="text-align: center;"><span class="math inline">\(3\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(7\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>We model it with a simple linear regression <span class="math inline">\(f(x) = \theta_0 + \theta_1 x\)</span>.</p>
+<ol type="a">
+<li><p>Set up the design matrix <span class="math inline">\(\mathbf{X}\)</span> and compute the OLS estimator <span class="math inline">\(\boldsymbol{\hat\theta}= (\hat{\theta}_0, \hat{\theta}_1)^\top\)</span> by hand.</p>
+<details>
+<summary>
+<p><em>Hint</em></p>
+</summary>
+<p>The feature is centered (<span class="math inline">\(\sum_i x^{(i)} = 0\)</span>), which makes <span class="math inline">\(\mathbf{X}^\top \mathbf{X}\)</span> diagonal and hence trivial to invert.</p>
+</details></li>
+</ol>
+<ol start="2" type="a">
+<li>Interpret the two fitted coefficients <span class="math inline">\(\hat{\theta}_0\)</span> and <span class="math inline">\(\hat{\theta}_1\)</span>.</li>
+</ol>
+<ol start="3" type="a">
+<li>Use the fitted model to predict the target for a new observation with <span class="math inline">\(x = 2\)</span>.</li>
+</ol>
+</section>
+<section id="exercise-5-predicting-abalone" class="level2">
+<h2 class="anchored" data-anchor-id="exercise-5-predicting-abalone">Exercise 5: Predicting <code>abalone</code></h2>
+<div class="callout callout-style-default callout-tip no-icon callout-titled" title="Bonus exercise -- will not be discussed in the tutorial session">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Bonus exercise – will not be discussed in the tutorial session
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>This optional exercise is meant for both lecture groups.</p>
 </div>
 </div>
 <div class="callout callout-style-default callout-note no-icon callout-titled" title="Learning goals">

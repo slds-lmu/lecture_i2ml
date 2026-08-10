@@ -413,8 +413,114 @@ In the end, we need to balance model fit and generalization. We will discuss the
 
 ::: {.content-hidden when-profile="a"}
 
-## Exercise 4: Predicting `abalone`
+## Exercise 4: Fitting a linear model by hand
 ::: {.callout-tip icon=false title="The whole exercise is only for lecture group B!"}
+:::
+
+::: {.callout-note title="Learning goals" icon=false}
+1. Compute the least-squares estimator on a small example by hand
+2. Interpret linear model coefficients
+3. Predict with a fitted linear model
+:::
+
+In the lecture, you saw that a linear model with $L2$ loss has a closed-form solution -- the *ordinary-least-squares (OLS)* estimator
+$$
+\thetavh = \olsest,
+$$
+where $\Xmat$ is the design matrix (the feature columns padded with a leading column of ones for the intercept) and $\yv$ the vector of observed targets. Consider the following small dataset with a single feature $x$ and target $y$:
+
+| $i$ | $x^{(i)}$ | $y^{(i)}$ |
+|:---:|:---:|:---:|
+| 1 | $-3$ | $1$ |
+| 2 | $-1$ | $1$ |
+| 3 | $1$  | $3$ |
+| 4 | $3$  | $7$ |
+
+We model it with a simple linear regression $f(x) = \theta_0 + \theta_1 x$.
+
+a) Set up the design matrix $\Xmat$ and compute the OLS estimator $\thetavh = (\hat{\theta}_0, \hat{\theta}_1)^\top$ by hand.
+
+   <details>
+   <summary>*Hint*</summary>
+
+   The feature is centered ($\sum_i x^{(i)} = 0$), which makes $\Xmat^\top \Xmat$ diagonal and hence trivial to invert.
+
+   </details>
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-1-sol}
+<details>
+<summary>**Solution**</summary>
+
+With the intercept column, the design matrix and target vector are
+$$
+\Xmat = \begin{pmatrix} 1 & -3 \\ 1 & -1 \\ 1 & 1 \\ 1 & 3 \end{pmatrix}, \qquad
+\yv = \begin{pmatrix} 1 \\ 1 \\ 3 \\ 7 \end{pmatrix}.
+$$
+
+We assemble the two ingredients of the OLS estimator:
+$$
+\Xmat^\top \Xmat =
+\begin{pmatrix} n & \sum_i x^{(i)} \\ \sum_i x^{(i)} & \sum_i \left(x^{(i)}\right)^2 \end{pmatrix}
+= \begin{pmatrix} 4 & 0 \\ 0 & 20 \end{pmatrix},
+\qquad
+\Xmat^\top \yv =
+\begin{pmatrix} \sum_i y^{(i)} \\ \sum_i x^{(i)} y^{(i)} \end{pmatrix}
+= \begin{pmatrix} 12 \\ 20 \end{pmatrix}.
+$$
+
+Because the feature is centered ($\sum_i x^{(i)} = 0$), $\Xmat^\top \Xmat$ is diagonal, so its inverse simply inverts the diagonal entries:
+$$
+\left(\Xmat^\top \Xmat\right)^{-1} = \begin{pmatrix} \tfrac{1}{4} & 0 \\ 0 & \tfrac{1}{20} \end{pmatrix}.
+$$
+
+Hence
+$$
+\thetavh = \left(\Xmat^\top \Xmat\right)^{-1} \Xmat^\top \yv
+= \begin{pmatrix} \tfrac{1}{4} & 0 \\ 0 & \tfrac{1}{20} \end{pmatrix}
+\begin{pmatrix} 12 \\ 20 \end{pmatrix}
+= \begin{pmatrix} 3 \\ 1 \end{pmatrix},
+$$
+so the fitted model is $f(x) = 3 + x$.
+
+</details>
+:::
+:::
+
+b) Interpret the two fitted coefficients $\hat{\theta}_0$ and $\hat{\theta}_1$.
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-1-sol}
+<details>
+<summary>**Solution**</summary>
+
+- Intercept $\hat{\theta}_0 = 3$: the predicted target when $x = 0$. As the feature is centered, $x = 0$ is the mean feature value, so the intercept here coincides with the mean target $\bar{y} = \tfrac{1}{4}(1 + 1 + 3 + 7) = 3$.
+- Slope $\hat{\theta}_1 = 1$: the *marginal effect* of the feature -- increasing $x$ by one unit increases the predicted target by one unit (ceteris paribus).
+
+</details>
+:::
+:::
+
+c) Use the fitted model to predict the target for a new observation with $x = 2$.
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-1-sol}
+<details>
+<summary>**Solution**</summary>
+
+$$
+\hat{y} = \hat{\theta}_0 + \hat{\theta}_1 \cdot 2 = 3 + 1 \cdot 2 = 5.
+$$
+
+</details>
+:::
+:::
+
+:::
+
+## Exercise 5: Predicting `abalone`
+::: {.callout-tip icon=false title="Bonus exercise -- will not be discussed in the tutorial session"}
+This optional exercise is meant for both lecture groups.
 :::
 
 ::: {.callout-note title="Learning goals" icon=false}
@@ -547,6 +653,4 @@ e) Assess the model's training loss in terms of MAE.
 :::
 </details>
 :::
-:::
-
 :::
