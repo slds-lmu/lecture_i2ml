@@ -37,13 +37,15 @@ notebook-view:
 ## Exercise 1: Overfitting & underfitting
 
 ::: {.callout-note title="Learning goals" icon=false}
-Discuss for given situations if they might lead to overfitting / underfitting
+1. Discuss for given situations if they might lead to overfitting / underfitting
+2. Judge whether over- and underfitting are properties of a learner or of a fixed model
+3. Discuss to what extent over- and underfitting can be avoided
 :::
 
 Assume a polynomial regression model with a continuous target variable $y$, a continuous, $p$-dimensional feature vector $\xv$ and polynomials of degree $d$, i.e., 
 
 $$
-\fxi = \sum_{j=1}^p \sum_{k=0}^d \theta_{j,k} (\xi_j)^k.
+\fxi = \theta_0 + \sum_{j=1}^p \sum_{k=1}^d \theta_{j,k} (\xi_j)^k.
 $$
 
 <!-- and $\yi = \fxi + \epsi$ where the $\epsi$ are iid with $\var(\epsi)=\sigma^2 \ \forall i\in \{1, \dots, n\}$.  -->
@@ -143,7 +145,7 @@ In practice we will always experience these phenomena to some degree and finding
 :::
 
 
-## Exercise 2: Resampling strategies
+## Exercise 2: Resampling in practice
 
 ::: {.callout-note title="Learning goals" icon=false}
 1. Implement resampling procedures in R/Python
@@ -217,16 +219,18 @@ c) In order to evaluate your learner, compare the test MCE using
 <summary>**Solution**</summary>
 ::: {.panel-tabset}
 ### R
+Define the resampling strategies and evaluate the learner:
 {{< embed sol_eval_2_R.ipynb#2-c-1 echo=true >}}
-foo
+Aggregate the test errors over the splits (MCE by default):
 {{< embed sol_eval_2_R.ipynb#2-c-2 echo=true >}}
 ### Python
+(i) 3x10-CV:
 {{< embed sol_eval_2_py.ipynb#2-c-1 echo=true >}}
-foo
+(ii) 10x3-CV:
 {{< embed sol_eval_2_py.ipynb#2-c-2 echo=true >}}
-foo
+(iii) 3x10-CV with stratification for `foreign_worker`:
 {{< embed sol_eval_2_py.ipynb#2-c-3 echo=true >}}
-foo
+(iv) Holdout with 90% training data:
 {{< embed sol_eval_2_py.ipynb#2-c-4 echo=true >}}
 :::
 </details> 
@@ -246,13 +250,160 @@ Comparing the results (except for the unreliable one produced by a single split)
 :::
 :::
 
-e) Would you consider LOO-CV to be a good alternative?
+::: {.content-hidden when-profile="a"}
+
+## Exercise 3: Computational cost of resampling
+::: {.callout-tip icon=false title="The whole exercise is only for lecture group B!"}
+:::
+
+::: {.callout-note title="Learning goals" icon=false}
+1. Determine how many models a resampling strategy fits
+2. Reason about the computational cost of different resampling strategies
+3. Relate computational cost to the quality of the GE estimate
+:::
+
+Recall that a resampling strategy is a collection of $B$ train/test splits,
+$$
+\JJ = \left((\Jtraini[1], \Jtesti[1]), \dots, (\Jtraini[B], \Jtesti[B])\right),
+$$
+and that the learner is refitted on each of the $B$ training sets.
+
+a) A data set has $n = 200$ observations. State how many models are fitted for each of the following strategies:
+
+::: {.indent-1-subitem}
+i. 10-fold cross-validation (10-CV)
+ii. 5-times repeated 10-fold cross-validation (5x10-CV)
+iii. leave-one-out CV (LOO-CV)
+iv. subsampling with 25 iterations
+:::
+
+   <details>
+   <summary>*Hint*</summary>
+
+   The number of model fits equals the number of splits $B$.
+
+   </details>
 
 ::: {.content-visible when-profile="solution"}
 ::: {.indent-1-sol}
-<details> 
+<details>
 <summary>**Solution**</summary>
-LOO is probably not a very good idea here -- with 1000 observations this would take a long time. Also, LOO has high variance by nature. Repeated CV with a sufficient number of folds should give us a pretty good idea about the expected GE of our learner.
-</details> 
+Each split requires exactly one model fit, so we simply count the splits:
+
+i. 10-CV: $10$ models.
+ii. 5x10-CV: $5 \cdot 10 = 50$ models.
+iii. LOO-CV: one model per observation, i.e. $n = 200$ models.
+iv. Subsampling with 25 iterations: $25$ models.
+</details>
 :::
+:::
+
+b) Now give the number of model fits **in general**, i.e. as a formula, for a data set of size $n$ with $k$ folds, $r$ repetitions and $B$ iterations:
+
+::: {.indent-1-subitem}
+i. a single holdout split
+ii. $k$-fold CV
+iii. $r$-times repeated $k$-fold CV
+iv. LOO-CV
+v. subsampling or bootstrap with $B$ iterations
+:::
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-1-sol}
+<details>
+<summary>**Solution**</summary>
+i. holdout: $1$
+ii. $k$-fold CV: $k$
+iii. $r$-times repeated $k$-fold CV: $r \cdot k$
+iv. LOO-CV: $n$ (the special case $k = n$)
+v. subsampling / bootstrap with $B$ iterations: $B$
+</details>
+:::
+:::
+
+c) Explain why LOO-CV becomes computationally prohibitive for large $n$, and name a resampling strategy that achieves a similarly low (pessimistic) bias at much lower cost.
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-1-sol}
+<details>
+<summary>**Solution**</summary>
+LOO-CV fits exactly $n$ models, so its cost grows linearly with the sample size. For large $n$ (say $10^5$ to $10^6$) this becomes infeasible -- and LOO additionally suffers from high variance. Repeated $k$-fold CV with a moderate $k$ (e.g. 5 or 10) trains on almost as much data (hence a similarly small pessimistic bias) but fits only $r \cdot k \ll n$ models, while averaging over the repetitions keeps the variance low. It is therefore usually the better choice.
+</details>
+:::
+:::
+
+d) Both 3-times repeated 10-fold CV (3x10-CV) and 10-times repeated 3-fold CV (10x3-CV) fit exactly $30$ models, so their computational cost is roughly the same. Does this mean that both strategies provide GE estimates of the same quality? Explain your answer.
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-1-sol}
+<details>
+<summary>**Solution**</summary>
+No. The number of model fits only measures the computational cost, not the quality of the resulting estimate. With $k = 10$ folds, each model is trained on $90\%$ of the data, while $k = 3$ uses only about $67\%$. Models trained on considerably less data tend to perform worse, so 10x3-CV overestimates the generalization error of the final model (which is trained on the full data set) more strongly, i.e., it has a larger pessimistic bias. This matches what we observed empirically in Exercise 2 d), where 10x3-CV produced a higher error estimate than 3x10-CV.
+
+(As a side note, the costs are not even exactly equal: training on $67\%$ of the data is usually somewhat faster than training on $90\%$.)
+</details>
+:::
+:::
+
+:::
+
+::: {.content-hidden when-profile="b"}
+
+## Exercise 4: Variance and independence of GE estimators
+::: {.callout-tip icon=false title="The whole exercise is only for lecture group A!"}
+:::
+
+::: {.callout-note title="Learning goals" icon=false}
+1. Derive mean and variance of the holdout GE estimator on a fresh i.i.d. test set
+2. Understand why the per-fold errors of cross-validation are not independent
+:::
+
+Consider a fixed model $\fh$ that has been fitted on some training data and is now held fixed. We estimate its generalization error on a test set $\Dtest$ of $\ntest$ observations drawn i.i.d. from $\Pxy$, independently of the training data:
+$$
+\GEfh = \frac{1}{\ntest} \sum_{(\xv, y) \in \Dtest} \Lyfhx .
+$$
+
+a) Show that $\GEfh$ is an unbiased estimator of the theoretical generalization error $\GEf = \E\left[\Lyfhx\right]$ of the fixed model $\fh$.
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-1-sol}
+<details>
+<summary>**Solution**</summary>
+Write $L^{(i)} := L\left(y^{(i)}, \fh\left(\xv^{(i)}\right)\right)$ for the $\ntest$ test observations. Because $\fh$ is fixed and the test points are i.i.d. $\sim \Pxy$, the $L^{(i)}$ are i.i.d. with common mean $\E\left[L^{(i)}\right] = \E\left[\Lyfhx\right] = \GEf$. By linearity of expectation,
+$$
+\E\left[\GEfh\right] = \frac{1}{\ntest} \sum_{i=1}^{\ntest} \E\left[L^{(i)}\right] = \frac{1}{\ntest} \cdot \ntest \cdot \GEf = \GEf .
+$$
+Hence the test-set estimator is unbiased for the GE of the fixed model.
+</details>
+:::
+:::
+
+b) Show that $\var\left[\GEfh\right] = \frac{1}{\ntest} \var\left[\Lyfhx\right]$ and interpret how the estimator's precision depends on the test set size.
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-1-sol}
+<details>
+<summary>**Solution**</summary>
+Since the $L^{(i)}$ are i.i.d., set $\sigma^2 := \var\left[\Lyfhx\right]$. Using $\var[aX] = a^2 \var[X]$ and independence (so variances add),
+$$
+\var\left[\GEfh\right] = \var\!\left(\frac{1}{\ntest} \sum_{i=1}^{\ntest} L^{(i)}\right) = \frac{1}{\ntest^2} \sum_{i=1}^{\ntest} \var\left[L^{(i)}\right] = \frac{1}{\ntest^2} \cdot \ntest \, \sigma^2 = \frac{\sigma^2}{\ntest}.
+$$
+The variance decreases in inverse proportion to the test set size: a larger test set yields a more precise (lower-variance) estimate. This is exactly why a single holdout split with a small test set produces a high-variance GE estimate.
+</details>
+:::
+:::
+
+c) In $k$-fold cross-validation we obtain $k$ per-fold estimates $\GEh^{(1)}, \dots, \GEh^{(k)}$ and report their mean. One might be tempted to treat these $k$ numbers as $k$ independent measurements -- e.g., to report their standard deviation or run a $t$-test to compare two learners. Explain why the $\GEh^{(j)}$ are **not** independent, and what this implies for such a variance estimate.
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-1-sol}
+<details>
+<summary>**Solution**</summary>
+The $k$ training sets overlap strongly -- any two of them share $k-2$ of the $k$ folds -- so the models fitted across folds are correlated. In addition, every observation serves as a training point in $k-1$ folds and as a test point in exactly one, which further couples the per-fold errors. The $\GEh^{(j)}$ are therefore (positively) dependent, not independent.
+
+Consequently, treating them as i.i.d. and using their empirical variance $\frac{1}{k} \sum_{j=1}^{k} \left(\GEh^{(j)} - \overline{\GEh}\right)^2$ **underestimates** the true variance of the CV estimator, and a $t$-test based on this assumption is anti-conservative (it flags too many differences as significant). In fact, there is no unbiased estimator of the variance of the $k$-fold CV estimator [Bengio & Grandvalet, 2004], so CV results should be used with care for formal significance testing.
+</details>
+:::
+:::
+
 :::
