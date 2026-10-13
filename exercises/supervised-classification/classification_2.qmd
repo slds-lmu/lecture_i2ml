@@ -282,7 +282,11 @@ The prediction for $\xv_{\ast 1}$ will probably be $\hat z_{\ast 1} = 3$ because
 :::
 :::
 
+::: {.content-hidden when-profile="a"}
+
 ## Exercise 3: Decision boundaries for classification learners
+::: {.callout-tip icon=false title="The whole exercise is only for lecture group B!"}
+:::
 
 ::: {.callout-note title="Learning goals" icon=false}
 Get a feeling for decision boundaries produced by LDA/QDA/NB
@@ -336,4 +340,168 @@ We see how LDA, with its confinement to linear decision boundaries, is not able 
 
 </details>
 :::
+:::
+
+:::
+
+::: {.content-hidden when-profile="b"}
+
+## Exercise 4: LDA and QDA as linear/quadratic classifiers
+::: {.callout-tip icon=false title="The whole exercise is only for lecture group A!"}
+:::
+
+::: {.callout-note title="Learning goals" icon=false}
+1. Derive why LDA has a linear decision boundary
+2. Derive why QDA has a quadratic decision boundary
+3. Connect the covariance assumption to the shape of the boundary
+:::
+
+In discriminant analysis we model the class-conditional densities as multivariate Gaussians,
+$$
+\pdfxyk = \frac{1}{(2\pi)^{p/2} |\Sigma_k|^{1/2}} \exp\left(-\tfrac{1}{2}(\xv - \muk)^\top \Sigma_k^{-1} (\xv - \muk)\right),
+$$
+and obtain the posterior via Bayes' theorem, $\pikx \propto \pik \, \pdfxyk$ (the denominator $p(\xv)$ is the same for all classes). Since we assign $\xv$ to the class with the largest posterior and $\log$ is strictly increasing, it suffices to compare the **discriminant functions**
+$$
+\delta_k(\xv) := \log\left(\pik \, \pdfxyk\right).
+$$
+The decision boundary between two classes $j$ and $k$ is the set of points where they are tied, $\{\xv : \delta_j(\xv) = \delta_k(\xv)\}$. Throughout, we may drop any term that does **not** depend on the class $k$: such terms are identical for all classes and cancel in the difference $\delta_j(\xv) - \delta_k(\xv)$.
+
+a) **LDA** assumes a shared covariance matrix $\Sigma_k = \Sigma$ for all classes. Show that $\delta_k(\xv)$ is affine-linear in $\xv$, i.e. $\delta_k(\xv) = w_{0k} + \xv^\top \boldsymbol{w}_k$ with a scalar intercept $w_{0k} \in \mathbb{R}$ and a coefficient vector $\boldsymbol{w}_k = (w_{1k}, \dots, w_{pk})^\top \in \mathbb{R}^p$, and give $w_{0k}$ and $\boldsymbol{w}_k$. Conclude that the decision boundary between any two classes is a hyperplane.
+
+   <details>
+   <summary>*Hint*</summary>
+
+   Expand the quadratic form $(\xv - \muk)^\top \Sigma^{-1} (\xv - \muk)$ and check which of the resulting terms depend on the class $k$.
+
+   </details>
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-1-sol}
+<details>
+<summary>**Solution**</summary>
+
+**Step 1: write out the discriminant function.** By definition and the product rule of the logarithm,
+$$
+\delta_k(\xv) = \log\left(\pik \, \pdfxyk\right) = \log\pik + \log\pdfxyk.
+$$
+Plugging in the log of the multivariate Gaussian density,
+$$
+\log\pdfxyk = -\frac{p}{2}\log(2\pi) - \frac{1}{2}\log|\Sigma_k| - \frac{1}{2}(\xv-\muk)^\top\Sigma_k^{-1}(\xv-\muk),
+$$
+and using the LDA assumption $\Sigma_k = \Sigma$, we obtain
+$$
+\delta_k(\xv) = \log\pik \; \underbrace{-\;\frac{p}{2}\log(2\pi)}_{\text{const in } k} \; \underbrace{-\;\frac{1}{2}\log|\Sigma|}_{\text{const in } k} \; -\; \frac{1}{2}(\xv-\muk)^\top\Sigma^{-1}(\xv-\muk).
+$$
+
+**Step 2: drop class-independent terms.** Why are we allowed to do this? Recall that we only use the $\delta_k$ to *compare* classes: we predict $\arg\max_k \delta_k(\xv)$, and the decision boundary is where $\delta_j(\xv) = \delta_k(\xv)$. Any term that is the **same for all classes** is therefore irrelevant -- it cancels in the difference $\delta_j - \delta_k$, and adding it to every $\delta_k$ shifts them all equally without changing which one is largest. (It would only matter if we wanted the actual posterior *probability* $\pikx$ as a number, as in the Naive Bayes exercise -- then we would need the normalization over all classes.) The two braced terms above do not depend on $k$ (the $(2\pi)$-term never does; $|\Sigma|$ is shared under LDA), so we absorb them into a constant $\text{const}$.
+
+**Step 3: expand the quadratic form.** Since $\Sigma^{-1}$ is symmetric,
+\begin{align*}
+(\xv-\muk)^\top\Sigma^{-1}(\xv-\muk)
+&= \xv^\top\Sigma^{-1}\xv \;-\; \muk^\top\Sigma^{-1}\xv \;-\; \xv^\top\Sigma^{-1}\muk \;+\; \muk^\top\Sigma^{-1}\muk \\
+&= \xv^\top\Sigma^{-1}\xv \;-\; 2\,\muk^\top\Sigma^{-1}\xv \;+\; \muk^\top\Sigma^{-1}\muk,
+\end{align*}
+where the two mixed terms are equal because each is a scalar and $\left(\muk^\top\Sigma^{-1}\xv\right)^\top = \xv^\top\Sigma^{-1}\muk$. Multiplying by $-\tfrac{1}{2}$,
+$$
+-\frac{1}{2}(\xv-\muk)^\top\Sigma^{-1}(\xv-\muk) = \underbrace{-\frac{1}{2}\xv^\top\Sigma^{-1}\xv}_{\text{const in } k} \;+\; \muk^\top\Sigma^{-1}\xv \;-\; \frac{1}{2}\muk^\top\Sigma^{-1}\muk.
+$$
+The term $-\tfrac{1}{2}\xv^\top\Sigma^{-1}\xv$ contains $\xv$ but **not** $k$ (again because $\Sigma$ is shared), so it too is class-independent and drops out. Note the subtlety here: this term *does* depend on $\xv$ -- it is even quadratic in $\xv$ -- but at any fixed $\xv$ it contributes the **same** amount to every $\delta_k(\xv)$, so it cancels just like a constant. It is precisely because the only quadratic-in-$\xv$ term is class-independent under LDA that the discriminant ends up linear (under QDA it is not -- see b)).
+
+**Step 4: collect the $k$-dependent terms.**
+$$
+\delta_k(\xv) = \underbrace{\log\pik - \frac{1}{2}\muk^\top\Sigma^{-1}\muk}_{=:\, w_{0k}} \;+\; \xv^\top\underbrace{\Sigma^{-1}\muk}_{=:\, \boldsymbol{w}_k} \;=\; w_{0k} + \xv^\top\boldsymbol{w}_k,
+$$
+using once more $\muk^\top\Sigma^{-1}\xv = \xv^\top\Sigma^{-1}\muk$. Here $w_{0k}$ is the scalar **intercept**, while
+$$
+\boldsymbol{w}_k = (w_{1k}, w_{2k}, \dots, w_{pk})^\top = \Sigma^{-1}\muk
+$$
+is the vector collecting the $p$ feature coefficients (so $w_{1k}$ is the coefficient of $x_1$, etc.). Each discriminant $\delta_k$ is thus **affine-linear** in $\xv$.
+
+**Step 5: the decision boundary.** Two classes $j, k$ are tied where their discriminants are equal:
+$$
+\delta_j(\xv) = \delta_k(\xv)
+\;\Longleftrightarrow\;
+(w_{0j} - w_{0k}) + \xv^\top(\boldsymbol{w}_j - \boldsymbol{w}_k) = 0.
+$$
+This has the form $b + \xv^\top\boldsymbol{v} = 0$ with $b = w_{0j}-w_{0k}$ and $\boldsymbol{v} = \boldsymbol{w}_j - \boldsymbol{w}_k$ -- a single **linear** equation, i.e. a hyperplane. LDA is therefore a linear classifier.
+
+</details>
+:::
+:::
+
+b) **QDA** drops this assumption: each class keeps its own covariance matrix $\Sigma_k$. Show that $\delta_k(\xv)$ now contains a term $-\tfrac{1}{2}\xv^\top \Sigma_k^{-1}\xv$ that depends on the class, so that $\delta_k$ is quadratic in $\xv$ and the decision boundary is a curved (quadratic) surface.
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-1-sol}
+<details>
+<summary>**Solution**</summary>
+
+**Step 1: keep each $\Sigma_k$.** The computation runs exactly as in a) up to the point where we invoked the shared covariance. The only term we may still drop is the class-independent $-\tfrac{p}{2}\log(2\pi)$:
+$$
+\delta_k(\xv) = \log\pik - \frac{1}{2}\log|\Sigma_k| - \frac{1}{2}(\xv-\muk)^\top\Sigma_k^{-1}(\xv-\muk) + \text{const}.
+$$
+Note that the normalizer $-\tfrac{1}{2}\log|\Sigma_k|$ now **does** depend on $k$ (different $\Sigma_k$), so -- unlike in a) -- we must keep it.
+
+**Step 2: expand the quadratic form** just as in a), but with $\Sigma_k$ in place of $\Sigma$:
+$$
+\delta_k(\xv) = \log\pik - \frac{1}{2}\log|\Sigma_k| \;\underbrace{-\;\frac{1}{2}\xv^\top\Sigma_k^{-1}\xv}_{\text{depends on } k\,!} \;+\; \muk^\top\Sigma_k^{-1}\xv \;-\; \frac{1}{2}\muk^\top\Sigma_k^{-1}\muk + \text{const}.
+$$
+
+**Step 3: the quadratic term survives.** The decisive difference to a) is the term $-\tfrac{1}{2}\xv^\top\Sigma_k^{-1}\xv$: it now carries the class index $k$ (because the $\Sigma_k$ differ), so it no longer cancels between classes. Hence $\delta_k$ is a genuine **quadratic** function of $\xv$.
+
+**Step 4: the decision boundary.** Forming the difference for two classes $j, k$ (the linear term of class $k$ is $\muk^\top\Sigma_k^{-1}\xv = (\Sigma_k^{-1}\muk)^\top\xv$),
+$$
+\delta_j(\xv) - \delta_k(\xv) = -\frac{1}{2}\,\xv^\top\left(\Sigma_j^{-1} - \Sigma_k^{-1}\right)\xv + \left(\Sigma_j^{-1}\muk[j] - \Sigma_k^{-1}\muk\right)^\top\xv + \text{const} = 0.
+$$
+Because of the leading term $\xv^\top(\Sigma_j^{-1}-\Sigma_k^{-1})\xv$, this is a **quadratic** equation in $\xv$, describing a curved surface (in 2D a conic section -- ellipse, parabola, or hyperbola). Only if $\Sigma_j = \Sigma_k$ for all classes does $\Sigma_j^{-1} - \Sigma_k^{-1} = \mathbf{0}$, the quadratic term vanishes, and we recover the linear boundary of a) -- i.e. LDA is exactly the special case of QDA with equal covariances.
+
+</details>
+:::
+:::
+
+c) Finally, we examine the cost of QDA's flexibility and how Naive Bayes relates to LDA and QDA.
+
+::: {.indent-1-subitem}
+i. Recall which modeling assumption distinguishes QDA from LDA. Based on this, what does QDA have to estimate from the data that LDA does not, and how many additional free parameters does this require? What practical disadvantage for QDA follows?
+:::
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-2-sol}
+<details>
+<summary>**Solution**</summary>
+
+The distinguishing assumption is the covariance structure: LDA assumes one **shared** $\Sigma$, QDA allows each class its **own** $\Sigma_k$. So QDA must estimate $g$ separate covariance matrices, whereas LDA estimates only a single shared one. A covariance matrix is a symmetric $p\times p$ matrix; it is fully determined by its $p$ diagonal entries plus the $\tfrac{p(p-1)}{2}$ entries above the diagonal, i.e. $p + \tfrac{p(p-1)}{2} = \tfrac{p(p+1)}{2}$ free parameters. Hence QDA spends $g \cdot \tfrac{p(p+1)}{2}$ such parameters against LDA's $\tfrac{p(p+1)}{2}$. The practical disadvantage: QDA needs considerably more data to estimate all these parameters reliably and overfits more easily when the classes are small.
+
+</details>
+:::
+:::
+
+::: {.indent-1-subitem}
+ii. In Exercise 1, Naive Bayes assumed the features to be conditionally independent given the class. For **numeric** features modeled by Gaussians, this makes Gaussian Naive Bayes a special case of QDA. What does the independence assumption imply for the covariance matrices $\Sigma_k$, and how does the shape of the class densities (and hence the decision boundary) then compare to a *general* QDA?
+
+<details>
+<summary>*Hint*</summary>
+
+Recall what the off-diagonal entries of a covariance matrix encode.
+
+</details>
+:::
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-2-sol}
+<details>
+<summary>**Solution**</summary>
+
+Conditional independence of the features given the class means the joint class-conditional density factorizes,
+$$
+\pdfxyk = \prod_{j=1}^p p(x_j \mid y = k).
+$$
+For Gaussian features this forces each $\Sigma_k$ to be **diagonal**: the off-diagonal entries encode the pairwise feature covariances, which independence sets to zero. The diagonal entries may still differ across features (non-isotropic) and across classes, so Gaussian Naive Bayes is exactly **QDA with diagonal covariance matrices**.
+
+*Geometric interpretation.* The contours of a Gaussian density are ellipses whose axes point along the eigenvectors of $\Sigma_k$. For a **diagonal** $\Sigma_k$ these eigenvectors are the coordinate axes, so NB's class densities are **axis-aligned** ellipses -- stretched differently along each feature axis, but never **tilted**. A general QDA, with full $\Sigma_k$, allows **rotated** ellipses that capture correlations between features. Both still produce quadratic decision boundaries (the class-dependent $-\tfrac{1}{2}\xv^\top\Sigma_k^{-1}\xv$ term survives), but a diagonal $\Sigma_k^{-1}$ leaves **no $x_i x_j$ cross-terms**, so NB's conic boundaries stay axis-aligned, whereas a general QDA's can be tilted. This is why NB and QDA "look alike" (both curved) and yet NB is the more constrained model.
+
+</details>
+:::
+:::
+
 :::
