@@ -80,14 +80,23 @@ First and foremost, evaluation on the training data is almost never a good idea.
 :::
 :::
 
-c) Evaluate both learners using 
+c) Evaluate both learners using
 
    (i) mean squared error (MSE), and
 
    (ii) mean absolute error (MAE).
 
-   State your performance assessment and explain potential differences.
-   Use the code below to create the training and test points.
+   First compute both measures **by hand** for the following small test set of five customers, where $y^{(i)}$ is the true legal expense and $\hat{y}^{(i)}_{\text{poly}}$, $\hat{y}^{(i)}_{\text{lin}}$ are the predictions of the polynomial and the linear learner:
+
+   | Customer $i$ | $y^{(i)}$ | $\hat{y}^{(i)}_{\text{poly}}$ | $\hat{y}^{(i)}_{\text{lin}}$ |
+   |:---:|:---:|:---:|:---:|
+   | 1 | 10 | 11 | 10 |
+   | 2 | 12 | 13 | 12 |
+   | 3 | 14 | 15 | 14 |
+   | 4 | 16 | 17 | 16 |
+   | 5 | 20 | 19 | 17 |
+
+   State your performance assessment and explain potential differences. You can then verify the behaviour on the full test set using the code below.
 
 ::: {.indent-1}
 ::: {.panel-tabset}
@@ -103,6 +112,24 @@ c) Evaluate both learners using
 <details> 
 <summary>**Solution**</summary>
 
+**By hand.** With residuals $r^{(i)} = \yi - \hat{y}^{(i)}$:
+
+| $i$ | $y^{(i)}$ | $\hat{y}_{\text{poly}}$ | $r_{\text{poly}}$ | $r_{\text{poly}}^2$ | $\hat{y}_{\text{lin}}$ | $r_{\text{lin}}$ | $r_{\text{lin}}^2$ |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| 1 | 10 | 11 | $-1$ | 1 | 10 | 0 | 0 |
+| 2 | 12 | 13 | $-1$ | 1 | 12 | 0 | 0 |
+| 3 | 14 | 15 | $-1$ | 1 | 14 | 0 | 0 |
+| 4 | 16 | 17 | $-1$ | 1 | 16 | 0 | 0 |
+| 5 | 20 | 19 | $+1$ | 1 | 17 | $+3$ | 9 |
+
+Polynomial learner: $\text{MSE} = \tfrac{1}{5}(1+1+1+1+1) = 1$ and $\text{MAE} = \tfrac{1}{5}(1+1+1+1+1) = 1$.
+
+Linear learner: $\text{MSE} = \tfrac{1}{5}(0+0+0+0+9) = 1.8$ and $\text{MAE} = \tfrac{1}{5}(0+0+0+0+3) = 0.6$.
+
+So **MSE prefers the polynomial** learner ($1 < 1.8$), while **MAE prefers the linear** learner ($0.6 < 1$): the assessment depends on the chosen measure. The reason is the single extreme customer $i = 5$: the linear learner misses it by $3$, which the MSE penalizes quadratically ($3^2 = 9$) so that this one point dominates its error, whereas the flexible polynomial fits it closely. The MAE weights the miss only linearly and therefore rewards the linear learner's otherwise perfect fit. The choice of performance metric thus encodes our requirements and can flip the decision.
+
+**On the full test set** the same qualitative picture arises:
+
 ::: {.panel-tabset}
 ### R
 Data
@@ -116,11 +143,7 @@ Train and evaluate
 {{< embed sol_eval_1_py.ipynb#legal-learn echo=true >}}
 :::
 
-The picture is inconclusive: based on MSE, we should prefer the complex polynomial model, while MAE tells us to pick the linear one. It is important to understand that the choices of inner and outer loss functions encode our requirements and may have substantial impact on the result. Our learners differ strongly in their complexity: we have an extremely flexible polynomial and a very robust (though perhaps underfitting) linear one. If, for example, our test data contains an extreme point far from the remaining observations, the polynomial model might be able to fit it fairly well, while the LM incurs a large MSE because the distance to this point enters quadratically. The MAE, on the other hand, is more concerned with small residuals, and there, our LM fares better. Here, following the MAE assessment would signify preference for a robust model.
-
-However, we must keep in mind that our performance evaluation is based on a single holdout split, which is not advisable in general and particularly deceptive with so little data. For different test data we quickly get in situations where the polynomial has both worse MSE and MAE -- after all, slapping a learner with 21 + 1 learnable parameters on a 50-points data set should strike you as a rather bad idea.
-
-Take-home message: the choice of our performance metric matters, and making decisions based on a single train-test split is risky in many data settings.
+Keep in mind, though, that this evaluation rests on a single holdout split, which is risky in general and particularly deceptive with so little data -- for different test data the polynomial can easily end up worse on *both* measures. Take-home message: the choice of performance metric matters, and decisions based on a single train-test split are unreliable (which motivates Exercise 2).
 
 </details> 
 :::
@@ -185,7 +208,7 @@ b) What might be disadvantageous about the previous train-test split?
 ::: {.indent-1-sol}
 <details> 
 <summary>**Solution**</summary>
-We have chosen the first few observations from a data set that is ordered by feature value, which is not a good idea because this is not a random sample and covers only a particular area of the feature space. Consequently, we obtain a pretty high test MSE (relatively speaking -- we will see in the next exercise which error values we can usually expect for this task). Looking at the data, Looking at the data, this gives us a regression line that does not reflect the overall data situation. Also, the training set is pretty small and will likely lead to poor generalization.
+We have chosen the first few observations from a data set that is ordered by feature value, which is not a good idea because this is not a random sample and covers only a particular area of the feature space. Consequently, we obtain a pretty high test MSE (relatively speaking -- we will see in the next exercise which error values we can usually expect for this task). Looking at the data, this gives us a regression line that does not reflect the overall data situation. Also, the training set is pretty small and will likely lead to poor generalization.
 </details> 
 :::
 :::
@@ -243,6 +266,147 @@ i. A smaller training set tends to produce higher estimated generalization error
 
 ii. A larger training set, at the expense of test set size, will cause high variance in the individual generalization error estimates.
 
-</details> 
+</details>
 :::
+:::
+
+::: {.content-hidden when-profile="a"}
+
+## Exercise 3: Choosing the right performance measure
+::: {.callout-tip icon=false title="The whole exercise is only for lecture group B!"}
+:::
+
+::: {.callout-note title="Learning goals" icon=false}
+Choose a suitable regression performance measure for a given situation
+:::
+
+You work at an online shop and have trained a regression model that predicts the **weekly demand** (number of units sold) of each product in the catalog. Depending on what the predictions are used for, a different performance measure is appropriate. For each of the following use cases of the *same* model, decide which measure from the lecture -- **MSE**, **RMSE**, **MAE**, **MAPE**, **Spearman's $\rho$**, or $R^2$ -- you would report, and justify your choice in one or two sentences.
+
+a) To decide which products to feature on the homepage, you only need the products **ranked** correctly by predicted demand -- the exact predicted numbers do not matter.
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-1-sol}
+<details>
+<summary>**Solution**</summary>
+
+**Spearman's $\rho$** (the Spearman rank correlation coefficient). It is the correlation of the *ranks* of predictions and true values, so it rewards a model that orders the products correctly regardless of the absolute size of the errors -- exactly what we need when only the ranking matters. (Being rank-based, it is also very robust to outliers.)
+
+</details>
+:::
+:::
+
+b) The catalog contains both niche products (a few units per week) and blockbusters (thousands per week). An absolute error of 10 units is negligible for a blockbuster but severe for a niche product, so you care about the **relative** error.
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-1-sol}
+<details>
+<summary>**Solution**</summary>
+
+**MAPE** (mean absolute percentage error). It measures each residual relative to the true value, $\left\lvert r^{(i)} / \yi \right\rvert$, so a fixed absolute error counts more when the true demand is small (niche products) -- exactly the relative view we want. (Caveat: it is undefined/unstable for $\yi$ near $0$.)
+
+</details>
+:::
+:::
+
+c) You want to explain to your (non-technical) manager how much better the model is than simply always predicting each product's **average past demand**.
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-1-sol}
+<details>
+<summary>**Solution**</summary>
+
+$R^2$ (the coefficient of determination). It relates the model's **sum of squared errors** (SSE) to that of the constant baseline that always predicts the mean demand: $R^2 = 0$ means "no better than predicting the mean", $R^2 = 1$ means "perfect fit", so it directly expresses the improvement over the trivial baseline.
+
+</details>
+:::
+:::
+
+:::
+
+::: {.content-hidden when-profile="b"}
+
+## Exercise 4: Properties of $R^2$
+::: {.callout-tip icon=false title="The whole exercise is only for lecture group A!"}
+:::
+
+::: {.callout-note title="Learning goals" icon=false}
+1. Interpret $R^2$ as a comparison to a featureless baseline model
+2. Derive the range of $R^2$ on training data
+3. Understand why $R^2$ can become negative on test data
+:::
+
+Recall the coefficient of determination
+$$
+R^2 = 1 - \frac{\text{SSE}_{\text{model}}}{\text{SSE}_{\text{const}}}, \qquad
+\text{SSE}_{\text{model}} = \sum_{i=1}^{n} \left(\yi - \hat{y}^{(i)}\right)^2, \qquad
+\text{SSE}_{\text{const}} = \sum_{i=1}^{n} \left(\yi - \bar{y}\right)^2,
+$$
+where $\hat{y}^{(i)}$ are the model's predictions and $\bar{y} = \tfrac{1}{n}\sum_{i=1}^{n} \yi$.
+
+a) The denominator $\text{SSE}_{\text{const}}$ is the SSE of a specific *featureless* baseline model. Which model is it, what does it predict, and in which sense does $R^2$ measure a model's performance *relative to* this baseline?
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-1-sol}
+<details>
+<summary>**Solution**</summary>
+
+The baseline is the **featureless (constant) model** $f(\xv) = \bar{y}$: it ignores all features and predicts the same value -- the mean target $\bar{y}$ -- for every observation. Its **sum of squared errors** (SSE) is exactly $\text{SSE}_{\text{const}}$.
+
+Reading $R^2 = 1 - \frac{\text{SSE}_{\text{model}}}{\text{SSE}_{\text{const}}}$, the ratio $\text{SSE}_{\text{model}} / \text{SSE}_{\text{const}}$ sets the model's squared error *in relation to* the baseline's. So $R^2$ is not an absolute error measure but a **relative** one: it says how much of the baseline's error the model removes. Hence $R^2 = 0$ means the model is no better than simply predicting the mean $\bar{y}$, $R^2 = 1$ means a perfect fit ($\text{SSE}_{\text{model}} = 0$), and a value in between is the fraction by which the model reduces the baseline error. It helps to keep the two shares apart: the ratio $\text{SSE}_{\text{model}} / \text{SSE}_{\text{const}}$ is the fraction of the baseline error that **remains**, while $R^2 = 1 - \text{SSE}_{\text{model}} / \text{SSE}_{\text{const}}$ is the fraction that is **removed**. For example, $R^2 = 0.7$ means $\text{SSE}_{\text{model}} / \text{SSE}_{\text{const}} = 0.3$: the model's error is only 30% of the baseline's -- it shrinks *to* 30% (equivalently, is 70% *smaller*), so the model eliminates 70% of the baseline error.
+
+</details>
+:::
+:::
+
+b) Show that for a linear model with intercept, fitted by least squares **on the same data** on which $R^2$ is computed, we always have $R^2 \in [0, 1]$.
+
+   <details>
+   <summary>*Hint*</summary>
+
+   The baseline model from a) is itself a member of the linear-model hypothesis space. What does least-squares fitting then imply for $\text{SSE}_{\text{model}}$ compared to $\text{SSE}_{\text{const}}$?
+
+   </details>
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-1-sol}
+<details>
+<summary>**Solution**</summary>
+
+From a), the featureless baseline is the constant model $f(\xv) = \bar{y}$ with SSE $= \text{SSE}_{\text{const}}$. This intercept-only model $f(\xv) = \theta_0$ is contained in the linear-model hypothesis space (set all slope coefficients to $0$), and its least-squares fit is indeed $\theta_0 = \bar{y}$, since $\bar{y}$ minimizes $\sum_{i=1}^n (\yi - c)^2$ over constants $c$.
+
+Least squares chooses the parameters minimizing the SSE over the **whole** hypothesis space, so the fitted model's SSE cannot exceed that of any particular member -- in particular the intercept-only one:
+$$
+0 \le \text{SSE}_{\text{model}} \le \text{SSE}_{\text{const}}.
+$$
+Dividing by $\text{SSE}_{\text{const}} > 0$ yields $0 \le \frac{\text{SSE}_{\text{model}}}{\text{SSE}_{\text{const}}} \le 1$, hence
+$$
+R^2 = 1 - \frac{\text{SSE}_{\text{model}}}{\text{SSE}_{\text{const}}} \in [0, 1].
+$$
+$R^2 = 1$ corresponds to a perfect fit ($\text{SSE}_{\text{model}} = 0$), and $R^2 = 0$ to a model no better than predicting the mean $\bar{y}$.
+
+</details>
+:::
+:::
+
+c) Now the model is fitted on training data, but $R^2$ is computed on separate **test** data. Show that $R^2$ can become negative, state the condition for this, and interpret what a negative $R^2$ means.
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-1-sol}
+<details>
+<summary>**Solution**</summary>
+
+On test data the argument from b) no longer applies: the model was fitted to minimize the SSE on the *training* data, not on the test data, so there is no guarantee that $\text{SSE}_{\text{model}} \le \text{SSE}_{\text{const}}$ (with $\bar{y}$ and both SSEs now evaluated on the test set). If the model generalizes poorly, it can predict *worse* than the constant mean baseline, i.e.
+$$
+\text{SSE}_{\text{model}} > \text{SSE}_{\text{const}}
+\quad\Longrightarrow\quad
+\frac{\text{SSE}_{\text{model}}}{\text{SSE}_{\text{const}}} > 1
+\quad\Longrightarrow\quad
+R^2 < 0.
+$$
+A negative $R^2$ therefore means the model performs **worse on the test data than simply always predicting the mean target** -- a clear symptom of poor generalization (e.g. overfitting). Unlike on training data, $R^2$ on test data is not bounded below by $0$.
+
+</details>
+:::
+:::
+
 :::
