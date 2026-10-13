@@ -1,6 +1,6 @@
 .PHONY: all sol ex solhtml solpdf exhtml expdf clean copy copy-all
 
-all: solhtml solpdf exhtml expdf clean copy-all
+all: exhtml expdf solhtml solpdf clean copy-all
 
 sol: solhtml solpdf clean
 
