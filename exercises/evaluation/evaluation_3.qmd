@@ -1,19 +1,6 @@
 ---
 title: "Exercise 7 -- Evaluation III"
 subtitle: "[Introduction to Machine Learning](https://slds-lmu.github.io/i2ml/)"
-notebook-view:
-  - notebook: ex_eval_3_R.ipynb
-    title: "Exercise sheet for R"
-    url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/evaluation/ex_eval_3_R.ipynb"
-  - notebook: ex_eval_3_py.ipynb
-    title: "Exercise sheet for Python"
-    url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/evaluation/ex_eval_3_py.ipynb"
-  # - notebook: sol_eval_3_R.ipynb
-  #   title: "Solutions for R"
-  #   url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/evaluation/sol_eval_3_R.ipynb"
-  # - notebook: sol_eval_3_py.ipynb
-  #   title: "Solutions for Python"
-  #   url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/evaluation/sol_eval_3_py.ipynb"
 ---
 
 ::: {.content-hidden when-format="pdf"}
@@ -23,23 +10,238 @@ notebook-view:
 {{< include ../_quarto/solution-buttons.qmd >}}
 :::
 
-<details> 
-<summary>*Hint: Useful libraries*</summary>
+## Exercise 1: $k$-NN
 
-::: {.panel-tabset}
-### R
-{{< embed ex_eval_3_R.ipynb#import echo=true >}}
-### Python
-{{< embed ex_eval_3_py.ipynb#import echo=true >}}
+::: {.callout-note title="Learning goals" icon=false}
+1. Perform k-NN by visual means
+2. Perform k-NN with pen and paper, possibly using weighted distances
 :::
-</details>
 
-## Exercise 1: ROC metrics
+Let the two-dimensional feature vectors in the following figure be instances of two different classes (triangles and circles). 
+
+a) Classify the point (7, 6) -- represented by a square in the picture -- with a $k$-NN classifier using $L1$ norm (Manhattan distance):
+
+   $$
+   d_\text{Manhattan}(\xv, \xtil) = \sumjp |x_j - \tilde{x}_j|.
+   $$
+
+   As a decision rule, use the unweighted number of the individual classes in the $k$-neighborhood, i.e., assign the point to the class that represents most neighbors.
+
+::: {.indent-1}
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=3, fig.width=3}
+x <- c(4, 7, 9, 4, 6, 7, 9, 7, 8)
+y <- c(6, 3, 8, 9, 5, 8, 7, 6, 5)
+z <- as.factor(c(1, 1, 1, 0, 0, 0, 0, 2, 1))
+
+d3 = c(5, 7, 9, 7)
+v3 = c(6 , 8, 6, 4)
+
+d5 = c(4, 7, 10, 7)
+v5 = c(6, 9, 6, 3)
+
+d7 = c(3, 7, 10, 10, 7)
+v7 = c(6, 10, 7, 5, 2)
+
+library(ggplot2)
+qplot(x, y, shape = z, col = z) + 
+theme_bw() +
+theme(legend.position="none") +
+scale_x_continuous(
+  minor_breaks = seq(0, 10, by = 1),
+  breaks = seq(0, 10, by = 1), 
+  limits = c(0, 10)) +
+scale_y_continuous(
+  minor_breaks = seq(0, 10, by = 1), 
+  breaks = seq(0, 10, by = 1),
+  limits = c(0, 10))
+```
+:::
+
+::: {.indent-1-subitem}
+i. $k = 3$
+:::
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-2-sol}
+<details> 
+<summary>**Solution**</summary>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=3, fig.width=3}
+x <- c(4, 7, 9, 4, 6, 7, 9, 7, 8)
+y <- c(6, 3, 8, 9, 5, 8, 7, 6, 5)
+z <- as.factor(c(1, 1, 1, 0, 0, 0, 0, 2, 1))
+
+d3 = c(5, 7, 9, 7)
+v3 = c(6 , 8, 6, 4)
+
+d5 = c(4, 7, 10, 7)
+v5 = c(6, 9, 6, 3)
+
+d7 = c(3, 7, 10, 10, 7)
+v7 = c(6, 10, 7, 5, 2)
+
+library(ggplot2)
+qplot(x, y, shape = z, col = z) + 
+  theme_bw() +
+  theme(legend.position="none") +
+  scale_x_continuous(
+    minor_breaks = seq(0, 10, by = 1),
+    breaks = seq(0, 10, by = 1), 
+    limits = c(0, 10)) +
+  scale_y_continuous(
+    minor_breaks = seq(0, 10, by = 1), 
+    breaks = seq(0, 10, by = 1),
+    limits = c(0, 10)) +
+  annotate("polygon", x = d3, y = v3, alpha = 0.2, fill = "black")
+```
+
+$\Longrightarrow$ 2 circles and 1 triangle, so we predict "circle".
+
+</details>
+:::
+:::
+
+::: {.indent-1-subitem}
+ii. $k = 5$
+:::
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-2-sol}
+<details> 
+<summary>**Solution**</summary>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=3, fig.width=3}
+qplot(x, y, shape = z, col = z) + 
+  theme_bw() +
+  theme(legend.position="none") +
+  scale_x_continuous(
+    minor_breaks = seq(0, 10, by = 1),
+    breaks = seq(0, 10, by = 1), 
+    limits = c(0, 10)) +
+  scale_y_continuous(
+    minor_breaks = seq(0, 10, by = 1), 
+    breaks = seq(0, 10, by = 1),
+    limits = c(0, 10)) +
+  annotate("polygon", x = d5, y = v5, alpha = 0.2, fill = "black")
+```
+
+$\Longrightarrow$ 3 circles and 3 triangles, we have to specify beforehand what to do in case of a tie.
+
+</details>
+:::
+:::
+
+::: {.indent-1-subitem}
+iii. $k = 7$
+:::
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-2-sol}
+<details> 
+<summary>**Solution**</summary>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=3, fig.width=3}
+qplot(x, y, shape = z, col = z) + 
+  theme_bw() +
+  theme(legend.position="none") +
+  scale_x_continuous(
+    minor_breaks = seq(0, 10, by = 1),
+    breaks = seq(0, 10, by = 1), 
+    limits = c(0, 10)) +
+  scale_y_continuous(
+    minor_breaks = seq(0, 10, by = 1), 
+    breaks = seq(0, 10, by = 1),
+    limits = c(0, 10)) +
+  annotate("polygon", x = d7, y = v7, alpha = 0.2, fill = "black")
+```
+
+$\Longrightarrow$ 3 circles and 4 triangles, so we predict "triangle".
+
+</details>
+:::
+:::
+
+b) Now consider the same constellation but assume a regression problem this time, where the circle-shaped points have a target value of 2 and the triangles have a value of 4.
+
+   Again, predict for the square point (7, 6), using both the *unweighted* and the *weighted* mean in the neighborhood (still with Manhattan distance).
+
+   <details> 
+   <summary>*Hint*</summary>
+   We now consider both *unweighted* and *weighted* predictions. Recall that weights are computed based on the distance between the point of interest and its respective neighbors. With the Manhattan, or "city block" metric, the distance can be read from the plot by walking along the grid lines (shortest way). For example, in the 3-neighborhood, all points have a distance of 2 from our square, so all get weights $\tfrac{1}{2}$.
+   </details>
+
+::: {.indent-1-subitem}
+i. $k = 3$
+:::
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-2-sol}
+<details> 
+<summary>**Solution**</summary>
+
+$$
+\hat{y} = \frac{2 + 2 + 4}{3} = \frac{8}{3} \approx 2.67
+$$
+
+$$
+\hat{y}_\mathrm{weighted} = \frac{\frac{1}{2}\cdot 2 + \frac{1}{2}\cdot 2 + \frac{1}{2}\cdot 4}{\frac{3}{2}} = \frac{8}{3} \approx 2.67
+$$
+
+</details>
+:::
+:::
+
+::: {.indent-1-subitem}
+ii. $k = 5$
+:::
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-2-sol}
+<details> 
+<summary>**Solution**</summary>
+
+$$
+\hat{y} = \frac{3 \cdot 2 + 3 \cdot 4}{6} = 3
+$$
+
+$$
+\hat{y}_\mathrm{weighted} = \frac{\frac{1}{2}\cdot 2 + \frac{1}{2}\cdot2 + \frac{1}{3} \cdot 2 +  \frac{1}{2}\cdot 4 + \frac{1}{3}\cdot 4 + \frac{1}{3}\cdot 4}{\frac{5}{2}} = \frac{44}{15} \approx 2.93
+$$
+
+</details>
+:::
+:::
+
+::: {.indent-1-subitem}
+iii. $k = 7$
+:::
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-2-sol}
+<details> 
+<summary>**Solution**</summary>
+
+$$
+\hat{y} = \frac{3 \cdot 2 + 4 \cdot 4}{7} = \frac{22}{7} \approx 
+3.14
+$$
+
+$$
+\hat{y}_\mathrm{weighted} = \frac{\frac{1}{2}\cdot 2 + \frac{1}{2} \cdot2 + \frac{1}{3} \cdot 2 +  \frac{1}{2}\cdot 4 + \frac{1}{3}\cdot 4 + \frac{1}{3} \cdot 4 + \frac{1}{4} \cdot 4}{\frac{11}{4}} = \frac{100}{33} \approx 3.03
+$$
+
+</details>
+:::
+:::
+
+
+## Exercise 2: Classification metrics
 
 ::: {.callout-note title="Learning goals" icon=false}
 1. Create confusion matrices and compute associated evaluation metrics
 2. Compute ROC coordinates and AUC
 3. Understand relationship between ROC curve & classification threshold
+4. Assess probabilistic predictions using the Brier score
 :::
 
 Consider a binary classification algorithm that yielded the following results:
@@ -170,7 +372,7 @@ Finding that $\frac{1}{\np} = \frac{1}{\nn} = 0.2$, we follow the algorithm desc
   $0.6 + \frac{1}{\nn} = 0.8$ (obs 9 misclassified)
   1. $c = 0.09$ $~ \Longrightarrow ~$ TPR 1 and FPR 1 (obs 3 misclassified).
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=5, fig.width=5}
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=3, fig.width=3}
 library(ggplot2)
 roc_data <- data.frame(
   TPR = c(0, 0.2, 0.4, 0.4, 0.6, 0.8, 0.8, 1, 1, 1),
@@ -214,227 +416,212 @@ Not at all, because the ROC curve is drawn by iterating through *all* thresholds
 :::
 :::
 
-
-## Exercise 2: $k$-NN
-
-::: {.callout-note title="Learning goals" icon=false}
-1. Perform k-NN by visual means
-2. Perform k-NN with pen and paper, possibly using weighted distances
-:::
-
-Let the two-dimensional feature vectors in the following figure be instances of two different classes (triangles and circles). 
-
-a) Classify the point (7, 6) -- represented by a square in the picture -- with a $k$-NN classifier using $L1$ norm (Manhattan distance):
+f) So far, we have evaluated the predicted *labels*. Now assess the predicted *probabilities* directly: compute the Brier score
 
    $$
-   d_\text{Manhattan}(\xv, \xtil) = \sumjp |x_j - \tilde{x}_j|.
+   \rho_{BS} = \frac{1}{n} \sumin \left( \hat \pi^{(i)} - \yi \right)^2.
    $$
 
-   As a decision rule, use the unweighted number of the individual classes in the $k$-neighborhood, i.e., assign the point to the class that represents most neighbors.
+   Does the result indicate a good probabilistic model? What advantage does this kind of evaluation have over label-based metrics?
 
-::: {.indent-1}
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=5, fig.width=5}
-x <- c(4, 7, 9, 4, 6, 7, 9, 7, 8)
-y <- c(6, 3, 8, 9, 5, 8, 7, 6, 5)
-z <- as.factor(c(1, 1, 1, 0, 0, 0, 0, 2, 1))
-
-d3 = c(5, 7, 9, 7)
-v3 = c(6 , 8, 6, 4)
-
-d5 = c(4, 7, 10, 7)
-v5 = c(6, 9, 6, 3)
-
-d7 = c(3, 7, 10, 10, 7)
-v7 = c(6, 10, 7, 5, 2)
-
-library(ggplot2)
-qplot(x, y, shape = z, col = z) + 
-theme_bw() +
-theme(legend.position="none") +
-scale_x_continuous(
-  minor_breaks = seq(0, 10, by = 1),
-  breaks = seq(0, 10, by = 1), 
-  limits = c(0, 10)) +
-scale_y_continuous(
-  minor_breaks = seq(0, 10, by = 1), 
-  breaks = seq(0, 10, by = 1),
-  limits = c(0, 10))
-```
-:::
-
-::: {.indent-1-subitem}
-i. $k = 3$
-:::
-
-::: {.content-visible when-profile="solution"}
-::: {.indent-2-sol}
-<details> 
-<summary>**Solution**</summary>
-
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=5, fig.width=5}
-x <- c(4, 7, 9, 4, 6, 7, 9, 7, 8)
-y <- c(6, 3, 8, 9, 5, 8, 7, 6, 5)
-z <- as.factor(c(1, 1, 1, 0, 0, 0, 0, 2, 1))
-
-d3 = c(5, 7, 9, 7)
-v3 = c(6 , 8, 6, 4)
-
-d5 = c(4, 7, 10, 7)
-v5 = c(6, 9, 6, 3)
-
-d7 = c(3, 7, 10, 10, 7)
-v7 = c(6, 10, 7, 5, 2)
-
-library(ggplot2)
-qplot(x, y, shape = z, col = z) + 
-  theme_bw() +
-  theme(legend.position="none") +
-  scale_x_continuous(
-    minor_breaks = seq(0, 10, by = 1),
-    breaks = seq(0, 10, by = 1), 
-    limits = c(0, 10)) +
-  scale_y_continuous(
-    minor_breaks = seq(0, 10, by = 1), 
-    breaks = seq(0, 10, by = 1),
-    limits = c(0, 10)) +
-  annotate("polygon", x = d3, y = v3, alpha = 0.2, fill = "black")
-```
-
-$\Longrightarrow$ 2 circles and 1 triangle, so we predict "circle":
-
-</details>
-:::
-:::
-
-::: {.indent-1-subitem}
-ii. $k = 5$
-:::
-
-::: {.content-visible when-profile="solution"}
-::: {.indent-2-sol}
-<details> 
-<summary>**Solution**</summary>
-
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=5, fig.width=5}
-qplot(x, y, shape = z, col = z) + 
-  theme_bw() +
-  theme(legend.position="none") +
-  scale_x_continuous(
-    minor_breaks = seq(0, 10, by = 1),
-    breaks = seq(0, 10, by = 1), 
-    limits = c(0, 10)) +
-  scale_y_continuous(
-    minor_breaks = seq(0, 10, by = 1), 
-    breaks = seq(0, 10, by = 1),
-    limits = c(0, 10)) +
-  annotate("polygon", x = d5, y = v5, alpha = 0.2, fill = "black")
-```
-
-$\Longrightarrow$ 3 circles and 3 triangles, we have to specify beforehand what to do in case of a tie.
-
-</details>
-:::
-:::
-
-::: {.indent-1-subitem}
-iii. $k = 7$
-:::
-
-::: {.content-visible when-profile="solution"}
-::: {.indent-2-sol}
-<details> 
-<summary>**Solution**</summary>
-
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=5, fig.width=5}
-qplot(x, y, shape = z, col = z) + 
-  theme_bw() +
-  theme(legend.position="none") +
-  scale_x_continuous(
-    minor_breaks = seq(0, 10, by = 1),
-    breaks = seq(0, 10, by = 1), 
-    limits = c(0, 10)) +
-  scale_y_continuous(
-    minor_breaks = seq(0, 10, by = 1), 
-    breaks = seq(0, 10, by = 1),
-    limits = c(0, 10)) +
-  annotate("polygon", x = d7, y = v7, alpha = 0.2, fill = "black")
-```
-
-$\Longrightarrow$ 3 circles and 4 triangles, so we predict "triangle".
-
-</details>
-:::
-:::
-
-b) Now consider the same constellation but assume a regression problem this time, where the circle-shaped points have a target value of 2 and the triangles have a value of 4.
-
-   Again, predict for the square point (7, 9), using both the *unweighted* and the *weighted* mean in the neighborhood (still with Manhattan distance).
-
-   <details> 
+   <details>
    <summary>*Hint*</summary>
-   We now consider both *unweighted* and *weighted* predictions. Recall that weights are computed based on the distance between the point of interest and its respective neighbors. With the Manhattan, or "city block" metric, the distance can be read from the plot by walking along the grid lines (shortest way). For example, in the 3-neighborhood, all points have a distance of 2 from our square, so all get weights $\tfrac{1}{2}$.
+   To judge the magnitude of the Brier score, compare it to that of a naive baseline model.
    </details>
 
-::: {.indent-1-subitem}
-i. $k = 3$
-:::
-
 ::: {.content-visible when-profile="solution"}
-::: {.indent-2-sol}
-<details> 
+::: {.indent-1-sol}
+<details>
 <summary>**Solution**</summary>
+With $\hat \pi^{(i)}$ the predicted score and $\yi \in \{0, 1\}$ the true class, we obtain:
 
 $$
-\hat{y} = \frac{2 + 2 + 4}{3} = \frac{8}{3} \approx 2.67
+\rho_{BS} = \frac{1}{10} \big( \underbrace{0.33^2 + 0.27^2 + 0.11^2 + 0.15^2 + 0.57^2}_{\text{negatives } (\yi = 0)} + \underbrace{0.62^2 + 0.83^2 + 0.37^2 + 0.38^2 + 0.67^2}_{\text{positives } (\yi = 1)} \big) \approx 0.234
 $$
 
+This is *not* a good value: a perfect model would achieve $\rho_{BS} = 0$, and even a naive baseline model that knows nothing about the features and constantly predicts $\hat \pi = 0.5$ for every observation would already achieve
 $$
-\hat{y}_\mathrm{weighted} = \frac{\frac{1}{2}\cdot 2 + \frac{1}{2}\cdot 2 + \frac{1}{2}\cdot 4}{\frac{3}{2}} = \frac{8}{3} \approx 2.67
+\rho_{BS, \text{naive}} = \frac{1}{10} \cdot 10 \cdot 0.5^2 = 0.25.
 $$
+Our model barely beats this uninformed baseline. The reason is visible in the table: most positives receive low scores (e.g., observations 5 and 8 with $0.17$ and $0.33$), so while the *ranking* of the observations is decent (AUC $= 0.78$), the predicted probabilities themselves are poorly calibrated.
 
+Unlike label-based metrics, the Brier score uses the full information contained in the predicted probabilities: it rewards confident correct predictions, penalizes confident mistakes, and does not depend on the choice of a particular threshold $c$. It thereby also reflects how well the predicted probabilities are *calibrated*.
+
+(The log-loss evaluates probabilities in a similar spirit but penalizes confidently wrong predictions much more heavily -- e.g., observation 5 with $\yi = 1$ and $\hat \pi^{(i)} = 0.17$ alone would contribute $-\log(0.17) \approx 1.77$.)
 </details>
 :::
 :::
 
-::: {.indent-1-subitem}
-ii. $k = 5$
+
+::: {.content-hidden when-profile="a"}
+
+## Exercise 3: Choosing classification metrics
+::: {.callout-tip icon=false title="The whole exercise is only for lecture group B!"}
 :::
 
+::: {.callout-note title="Learning goals" icon=false}
+1. Understand why accuracy can be misleading for imbalanced data
+2. Choose suitable evaluation metrics for different application scenarios
+3. Sketch and interpret characteristic ROC curves
+:::
+
+a) A hospital uses a classifier to detect a rare disease. Out of $1000$ patients in the test data, only $20$ actually have the disease. Consider a "lazy" classifier that simply predicts "healthy" for *every* patient. Compute the accuracy and the TPR of this classifier. Why is accuracy a misleading performance metric in this situation?
+
 ::: {.content-visible when-profile="solution"}
-::: {.indent-2-sol}
-<details> 
+::: {.indent-1-sol}
+<details>
 <summary>**Solution**</summary>
-
+The lazy classifier classifies $980$ of the $1000$ patients correctly, so
 $$
-\hat{y} = \frac{3 \cdot 2 + 3 \cdot 4}{6} = 3
+\rho_{\text{ACC}} = \frac{980}{1000} = 0.98,
 $$
-
+while it does not detect a single one of the $20$ diseased patients:
 $$
-\hat{y}_\mathrm{weighted} = \frac{\frac{1}{2}\cdot 2 + \frac{1}{2}\cdot2 + \frac{1}{3} \cdot 2 +  \frac{1}{2}\cdot 4 + \frac{1}{3}\cdot 4 + \frac{1}{3}\cdot 4}{\frac{5}{2}} = \frac{44}{15} \approx 2.93
+\rho_{\text{TPR}} = \frac{0}{20} = 0.
 $$
-
+Despite an impressive-looking accuracy of $98\%$, the classifier is completely useless for its actual purpose. With such *imbalanced* class labels, accuracy is dominated by the majority class, so even a degenerate classifier can score highly. Metrics that explicitly track the minority class, such as TPR (and FPR, or the $F1$ measure), reveal the problem immediately.
 </details>
 :::
 :::
 
+b) For each of the following scenarios, discuss which type of error -- false positives or false negatives -- is more critical, and which ROC metric you would therefore pay the most attention to:
+
 ::: {.indent-1-subitem}
-iii. $k = 7$
+i. cancer screening ("positive" = cancer detected),
+ii. spam filter that moves mails flagged as spam ("positive") to the junk folder.
 :::
 
 ::: {.content-visible when-profile="solution"}
-::: {.indent-2-sol}
-<details> 
+::: {.indent-1-sol}
+<details>
 <summary>**Solution**</summary>
+i. False negatives are far more critical: a missed cancer case can be fatal, whereas a false alarm "only" triggers further (unpleasant, but manageable) examinations. We should therefore aim for a high TPR (equivalently, a low FNR), accepting a moderate FPR.
 
-$$
-\hat{y} = \frac{3 \cdot 2 + 4 \cdot 4}{7} = \frac{22}{7} \approx 
-3.14
-$$
+ii. False positives are more critical: an important mail silently disappearing into the junk folder is usually worse than the occasional spam mail in the inbox. We should demand a very low FPR (equivalently, a high PPV), even at the cost of letting some spam through.
 
-$$
-\hat{y}_\mathrm{weighted} = \frac{\frac{1}{2}\cdot 2 + \frac{1}{2} \cdot2 + \frac{1}{3} \cdot 2 +  \frac{1}{2}\cdot 4 + \frac{1}{3}\cdot 4 + \frac{1}{3} \cdot 4 + \frac{1}{4} \cdot 4}{\frac{11}{4}} = \frac{100}{33} \approx 3.03
-$$
-
+Note that there is no single "best" metric: the choice always depends on the application-specific costs of the two error types.
 </details>
 :::
+:::
+
+c) A colleague trained a scoring classifier for a similar task and evaluates it with the ROC curve shown below, obtaining an AUC of $0.2$.
+
+::: {.indent-1}
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=3, fig.width=3}
+library(ggplot2)
+bad_roc <- data.frame(
+  FPR = c(0, 0.4, 0.4, 0.8, 0.8, 1, 1),
+  TPR = c(0, 0,   0.2, 0.2, 0.6, 0.6, 1))
+
+ggplot(bad_roc, aes(x = FPR, y = TPR)) +
+  geom_path() +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  theme_bw()
+```
+:::
+
+::: {.indent-1-subitem}
+i. Your colleague is devastated. How would you assess the quality of this classifier?
+ii. Suggest a way to improve the classifier -- without any retraining.
+iii. Sketch the ROC curve of the improved classifier. What is its AUC?
+:::
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-1-sol}
+<details>
+<summary>**Solution**</summary>
+i. At first glance the classifier looks catastrophic: with an AUC of $0.2$, it performs far *worse* than random guessing (AUC $= 0.5$). However, being systematically wrong is not the same as being uninformative: the classifier clearly carries signal about the true classes -- it just uses it the wrong way around. A genuinely useless classifier would sit on the diagonal, so, perhaps surprisingly, this classifier is *more* useful than a random guesser.
+
+ii. Since the classifier is *systematically* wrong, we can simply do the opposite of what it says: whenever it favors one class, we predict the other, i.e., we reverse the predicted ranking of the observations (for a scoring classifier, e.g., by using $1 - \hat \pi$ as the new score). This requires no retraining at all.
+
+iii. Inverting the scores mirrors the ROC curve through the center point $(0.5, 0.5)$:
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center", fig.height=3, fig.width=4.4}
+library(ggplot2)
+roc_both <- data.frame(
+  FPR = c(0, 0.4, 0.4, 0.8, 0.8, 1, 1,  0, 0,   0.2, 0.2, 0.6, 0.6, 1),
+  TPR = c(0, 0,   0.2, 0.2, 0.6, 0.6, 1,  0, 0.4, 0.4, 0.8, 0.8, 1,   1),
+  classifier = factor(
+    rep(c("original (AUC = 0.2)", "inverted (AUC = 0.8)"), each = 7),
+    levels = c("original (AUC = 0.2)", "inverted (AUC = 0.8)")))
+
+ggplot(roc_both, aes(x = FPR, y = TPR, color = classifier, linetype = classifier)) +
+  geom_path(linewidth = 0.8) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dotted", color = "grey40") +
+  theme_bw() +
+  theme(legend.title = element_blank())
+```
+
+The improved classifier achieves $\text{AUC} = 1 - 0.2 = 0.8$.
+</details>
+:::
+:::
+
+:::
+
+::: {.content-hidden when-profile="b"}
+
+## Exercise 4: Partial AUC
+::: {.callout-tip icon=false title="The whole exercise is only for lecture group A!"}
+:::
+
+::: {.callout-note title="Learning goals" icon=false}
+1. Understand why sometimes only a region of the ROC curve is practically relevant
+2. Compute and interpret the (corrected) partial AUC
+:::
+
+Reconsider the classifier from Exercise 2. Suppose it is used in a medical screening application where each positive prediction triggers an expensive follow-up examination. Since the clinic can only handle a limited number of these, operating the classifier at a false positive rate above $0.2$ is not acceptable.
+
+a) Explain why the full AUC from Exercise 2 d) may be a misleading criterion for choosing a classifier in this situation.
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-1-sol}
+<details>
+<summary>**Solution**</summary>
+The AUC integrates over *all* thresholds, including the entire region with $\text{FPR} > 0.2$ that will never be used in operation. Two classifiers with identical AUC can behave very differently in the relevant low-FPR region -- and a classifier with a lower overall AUC might even dominate the relevant region. If TPR and FPR are treated this asymmetrically, we should restrict the evaluation to the acceptable region, which leads to the *partial AUC* (pAUC).
+</details>
+:::
+:::
+
+b) Compute the partial AUC over the region $\text{FPR} \leq 0.2$ for the ROC curve from Exercise 2 c).
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-1-sol}
+<details>
+<summary>**Solution**</summary>
+From the ROC curve we see that the TPR rises to $0.4$ already at $\text{FPR} = 0$ and increases again only at $\text{FPR} = 0.2$. Over the whole region $[0, 0.2]$ the curve therefore sits at $\text{TPR} = 0.4$, and the area under it is
+$$
+\text{pAUC} = 0.2 \cdot 0.4 = 0.08.
+$$
+</details>
+:::
+:::
+
+c) The raw pAUC is difficult to interpret because its range depends on the chosen region. Therefore, compute the corrected pAUC
+$$
+\text{pAUC}_\text{corrected} = \frac{1}{2} \left( 1 + \frac{\text{pAUC} - \text{pAUC}_{\text{min}}}{\text{pAUC}_{\text{max}} - \text{pAUC}_{\text{min}}} \right),
+$$
+where $\text{pAUC}_{\text{min}}$ and $\text{pAUC}_{\text{max}}$ denote the pAUC of a random and a perfect classifier over the same region, respectively. Interpret the result, also in comparison to the full AUC from Exercise 2 d).
+
+::: {.content-visible when-profile="solution"}
+::: {.indent-1-sol}
+<details>
+<summary>**Solution**</summary>
+A random classifier follows the diagonal, so $\text{pAUC}_{\text{min}}$ is the triangle under the diagonal over $[0, 0.2]$:
+$$
+\text{pAUC}_{\text{min}} = \frac{1}{2} \cdot 0.2 \cdot 0.2 = 0.02.
+$$
+A perfect classifier sits at $\text{TPR} = 1$ over the whole region:
+$$
+\text{pAUC}_{\text{max}} = 0.2 \cdot 1 = 0.2.
+$$
+Plugging in yields
+$$
+\text{pAUC}_\text{corrected} = \frac{1}{2} \left( 1 + \frac{0.08 - 0.02}{0.2 - 0.02} \right) = \frac{1}{2} \left( 1 + \frac{1}{3} \right) = \frac{2}{3} \approx 0.67.
+$$
+The correction rescales the pAUC such that $0.5$ corresponds to a random and $1$ to a perfect classifier, making it comparable to the familiar AUC scale. With $\approx 0.67$, our classifier is clearly better than random in the operationally relevant region, but notably weaker than the full AUC of $0.78$ suggests: a substantial part of its overall discriminative performance stems from regions of the ROC curve that are irrelevant for this application.
+</details>
+:::
+:::
+
 :::
