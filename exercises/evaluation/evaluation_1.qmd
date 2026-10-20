@@ -1,20 +1,16 @@
 ---
 title: "Exercise 5 -- Evaluation I"
 subtitle: "[Introduction to Machine Learning](https://slds-lmu.github.io/i2ml/)"
-notebook-view:
-  - notebook: ex_eval_1_R.ipynb
-    title: "Exercise sheet for R"
-    url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/evaluation/ex_eval_1_R.ipynb"
-  - notebook: ex_eval_1_py.ipynb
-    title: "Exercise sheet for Python"
-    url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/evaluation/ex_eval_1_py.ipynb"
-  - notebook: sol_eval_1_R.ipynb
-    title: "Solutions for R"
-    url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/evaluation/sol_eval_1_R.ipynb"
-  - notebook: sol_eval_1_py.ipynb
-    title: "Solutions for Python"
-    url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/evaluation/sol_eval_1_py.ipynb"
+engine: knitr
 ---
+
+```{r}
+#| label: setup
+#| include: false
+library(reticulate)
+use_virtualenv("python-i2ml", required = TRUE)
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
 
 ::: {.content-hidden when-format="pdf"}
 ::: {.hidden}
@@ -23,10 +19,43 @@ notebook-view:
 {{< include ../_quarto/solution-buttons.qmd >}}
 :::
 
-<details> 
-<summary>*Hint: useful `Python` libraries*</summary>
+<details>
+<summary>*Hint: useful libraries*</summary>
 
-{{< embed ex_eval_1_py.ipynb#import echo=true >}}
+::: {.panel-tabset}
+### R
+
+```{r}
+#| label: import-r
+# Consider the following libraries for this exercise sheet:
+
+library(ggplot2)
+library(mlr3)
+library(mlr3learners)
+```
+
+### Python
+
+```{python}
+#| label: import-py
+# Consider the following libraries for this exercise sheet:
+
+# general
+import numpy as np
+import pandas as pd
+import math
+
+# plots
+import matplotlib.pyplot as plt
+
+# sklearn
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
+```
+
+:::
 </details>
 
 ## Exercise 1: Evaluating regression learners
@@ -101,9 +130,35 @@ c) Evaluate both learners using
 ::: {.indent-1}
 ::: {.panel-tabset}
 ### R
-{{< embed ex_eval_1_R.ipynb#legal-data echo=true >}}
+
+```{r}
+#| label: legal-data-r
+set.seed(123)
+x_train <- seq(10, 15, length.out = 50)
+y_train <- 10 + 3 * sin(0.15 * pi * x_train) + rnorm(length(x_train), sd = 0.5)
+data_train <- data.frame(x = x_train, y = y_train)
+set.seed(321)
+x_test <- seq(10, 15, length.out = 10)
+y_test <- 10 + 3 * sin(0.15 * pi * x_test) + rnorm(length(x_test), sd = 0.5)
+data_test <- data.frame(x = x_test, y = y_test)
+```
+
 ### Python
-{{< embed ex_eval_1_py.ipynb#legal-data echo=true >}}
+
+```{python}
+#| label: legal-data-py
+np.random.seed(43)
+x_train = np.linspace(10, 15, num=50)
+y_train = 10 + 3 * np.sin(0.15 * math.pi * x_train)
+y_train += np.random.normal(loc=0.0, scale=0.5, size=len(x_train))
+data_train = pd.DataFrame({"y": y_train, "x": x_train})
+np.random.seed(2238)
+x_test = np.linspace(10, 15, num=50)
+y_test = 10 + 3 * np.sin(0.15 * math.pi * x_test)
+y_test += np.random.normal(loc=0.0, scale=0.5, size=len(x_test))
+data_test = pd.DataFrame({"y": y_test, "x": x_test})
+```
+
 :::
 :::
 
@@ -133,14 +188,100 @@ So **MSE prefers the polynomial** learner ($1 < 1.8$), while **MAE prefers the l
 ::: {.panel-tabset}
 ### R
 Data
-{{< embed sol_eval_1_R.ipynb#legal-data echo=true >}}
+
+```{r}
+#| label: legal-data-r-sol
+set.seed(123)
+x_train <- seq(10, 15, length.out = 50)
+y_train <- 10 + 3 * sin(0.15 * pi * x_train) + rnorm(length(x_train), sd = 0.5)
+data_train <- data.frame(x = x_train, y = y_train)
+set.seed(321)
+x_test <- seq(10, 15, length.out = 10)
+y_test <- 10 + 3 * sin(0.15 * pi * x_test) + rnorm(length(x_test), sd = 0.5)
+data_test <- data.frame(x = x_test, y = y_test)
+head(data_train)
+```
+
 Train and evaluate
-{{< embed sol_eval_1_R.ipynb#legal-learn echo=true >}}
+
+```{r}
+#| label: legal-learn-r-sol
+# train learners
+polynomial_learner <- lm(y ~ poly(x, 21), data_train)
+linear_learner <- lm(y ~ x, data_train)
+
+# predict with both learners
+y_polynomial <- predict(polynomial_learner, data_test)
+y_lm <- predict(linear_learner, data_test)
+
+# compute errors
+abs_differences <- lapply(
+    list(y_polynomial, y_lm),
+    function(i) abs(data_test$y - i)
+)
+errors_mse <- sapply(abs_differences, function(i) mean(i^2))
+errors_mae <- sapply(abs_differences, mean)
+
+sprintf(
+    "MAE for Polynomial and Linear fit: %.4f, %.4f",
+    errors_mae[1],
+    errors_mae[2]
+)
+sprintf(
+    "MSE for Polynomial and Linear fit: %.4f, %.4f",
+    errors_mse[1],
+    errors_mse[2]
+)
+```
+
 ### Python
 Data
-{{< embed sol_eval_1_py.ipynb#legal-data echo=true >}}
+
+```{python}
+#| label: legal-data-py-sol
+np.random.seed(43)
+x_train = np.linspace(10, 15, num=50)
+y_train = 10 + 3 * np.sin(0.15 * math.pi * x_train)
+y_train += np.random.normal(loc=0.0, scale=0.5, size=len(x_train))
+data_train = pd.DataFrame({"y": y_train, "x": x_train})
+np.random.seed(2238)
+x_test = np.linspace(10, 15, num=50)
+y_test = 10 + 3 * np.sin(0.15 * math.pi * x_test)
+y_test += np.random.normal(loc=0.0, scale=0.5, size=len(x_test))
+data_test = pd.DataFrame({"y": y_test, "x": x_test})
+print(data_train.head())
+```
+
 Train and evaluate
-{{< embed sol_eval_1_py.ipynb#legal-learn echo=true >}}
+
+```{python}
+#| label: legal-learn-py-sol
+# train polynomial regression
+poly = PolynomialFeatures(degree=21)
+poly_model = LinearRegression()
+_ = poly_model.fit(poly.fit_transform(x_train.reshape(-1, 1)), y_train)
+
+# train linear regression
+lm_model = LinearRegression()
+_ = lm_model.fit(
+    x_train.reshape(-1, 1), y_train
+)  # reshaping necessary because single feature
+
+# make predictions
+y_poly = poly_model.predict(poly.fit_transform(x_test.reshape(-1, 1)))
+y_lm = lm_model.predict(x_test.reshape(-1, 1))
+
+# compute errors
+abs_differences = pd.DataFrame(np.column_stack([y_poly, y_lm])).apply(
+    lambda y: abs(data_test.loc[:, "y"] - y)
+)  # apply is componentwise
+errors_mse = abs_differences.apply(lambda x: x**2).mean()  # ** is power symbol
+errors_mae = abs_differences.mean()
+
+print("MAE for Polynomial and Linear fit:", errors_mae, sep="\n")
+print("MSE for Polynomial and Linear fit:", errors_mse, sep="\n")
+```
+
 :::
 
 Keep in mind, though, that this evaluation rests on a single holdout split, which is risky in general and particularly deceptive with so little data -- for different test data the polynomial can easily end up worse on *both* measures. Take-home message: the choice of performance metric matters, and decisions based on a single train-test split are unreliable (which motivates Exercise 2).
@@ -163,14 +304,73 @@ the median income in the neighborhood (`MedInc`).
 ::: {.panel-tabset}
 ### R
 Get data
-{{< embed ex_eval_1_R.ipynb#cali-data echo=true >}}
+
+```{r}
+#| label: cali-data-r
+# Adapt to version available on sklearn following description from
+# https://gist.github.com/bgreenwell/b1330460eec5acf1c81fae71902e331c
+# (figshare mirror of cal_housing.tgz -- same archive sklearn downloads)
+
+setwd(tempdir())
+url <- "https://ndownloader.figshare.com/files/5976036"
+download.file(url, destfile = "cal.tar.gz", quiet = TRUE)
+untar("cal.tar.gz")
+
+# Read the data into R and provide column names
+df_california <- read.csv("CaliforniaHousing//cal_housing.data", header = FALSE)
+columns_index <- c(9, 8, 3, 4, 5, 6, 7, 2, 1)
+df_california <- df_california[, columns_index]
+names(df_california) <- c(
+    "MedValue",
+    "MedInc",
+    "HouseAge",
+    "AveRooms",
+    "AveBedrms",
+    "Population",
+    "AveOccup",
+    "Latitude",
+    "Longitude"
+)
+df_california$MedValue <- df_california$MedValue / 100000
+df_california <- df_california[, c("MedInc", "MedValue")]
+head(df_california)
+```
+
 Inspect
-{{< embed ex_eval_1_R.ipynb#cali-scatterplot-r echo=true >}}
+
+```{r}
+#| label: cali-scatterplot-r
+ggplot(df_california, aes(x = MedInc, y = MedValue)) +
+    geom_point()
+```
+
 ### Python
 Get data
-{{< embed ex_eval_1_py.ipynb#cali-data echo=true >}}
+
+```{python}
+#| label: cali-data-py
+from sklearn.datasets import fetch_california_housing
+
+dataset_california = fetch_california_housing(as_frame=True)
+df_california = dataset_california.frame.loc[:, ["MedInc", "MedHouseVal"]]
+df_california.head()
+```
+
 Inspect
-{{< embed ex_eval_1_py.ipynb#cali-scatterplot echo=true >}}
+
+```{python}
+#| label: cali-scatterplot-py
+# instantiate plot
+fig = plt.figure(figsize=(4, 4))
+# Creating axes instance
+ax = fig.add_subplot()
+# Creating plot
+sp = ax.scatter(
+    x=df_california.loc[:, ["MedInc"]], y=df_california.loc[:, ["MedHouseVal"]]
+)
+plt.show()
+```
+
 :::
 
 a) Use the first 100 observations as training data to compute a linear model and evaluate the performance of your learner on the remaining data using MSE.
@@ -184,18 +384,74 @@ Get the data, define a task and corresponding train-test split, and predict with
 ::: {.panel-tabset}
 ### R
 Get data
-{{< embed sol_eval_1_R.ipynb#cali-data echo=true >}}
+
+```{r}
+#| label: cali-data-r-sol
+# (data is already loaded in `df_california` above)
+head(df_california)
+```
+
 Perform split
-{{< embed sol_eval_1_R.ipynb#cali-split echo=true >}}
+
+```{r}
+#| label: cali-split-r-sol
+df_california_sorted <- df_california[order(df_california$MedInc), ]
+task <- TaskRegr$new(
+    "housing",
+    backend = df_california_sorted,
+    target = "MedValue"
+)
+train_set = 1:100
+test_set = setdiff(seq_len(task$nrow), train_set)
+```
+
 Train and evaluate
-{{< embed sol_eval_1_R.ipynb#cali-lm echo=true >}}
+
+```{r}
+#| label: cali-lm-r-sol
+# train linear learner
+learner <- lrn("regr.lm")
+learner$train(task, row_ids = train_set)
+
+# predict on test data
+predictions <- learner$predict(task, row_ids = test_set)
+sprintf("MSE of test data %.4f:", predictions$score())
+```
+
 ### Python
 Get data
-{{< embed sol_eval_1_py.ipynb#cali-data echo=true >}}
+
+```{python}
+#| label: cali-data-py-sol
+# (data is already loaded in `df_california` above)
+df_california.head()
+```
+
 Perform split
-{{< embed sol_eval_1_py.ipynb#cali-split echo=true >}}
+
+```{python}
+#| label: cali-split-py-sol
+df_california_sorted = df_california.sort_values("MedInc")
+df_california_sorted.reset_index(drop=True, inplace=True)
+x_train = df_california_sorted.loc[:99, ["MedInc"]]
+y_train = df_california_sorted.loc[:99, ["MedHouseVal"]]
+x_test = df_california_sorted.loc[100:, ["MedInc"]]
+y_test = df_california_sorted.loc[100:, ["MedHouseVal"]]
+```
+
 Train and evaluate
-{{< embed sol_eval_1_py.ipynb#cali-lm echo=true >}}
+
+```{python}
+#| label: cali-lm-py-sol
+# train linear learner
+lm_california = LinearRegression()
+_ = lm_california.fit(X=x_train, y=y_train)
+
+pred = lm_california.predict(x_test)
+mse = mean_squared_error(y_test, pred)
+print(f"MSE of test data: {mse:.4f}")
+```
+
 :::
 
 </details> 
@@ -237,17 +493,102 @@ We repeat the above procedure for different train-test splits like so:
 ::: {.panel-tabset}
 ### R
 Train and predict for different splits
-{{< embed sol_eval_1_R.ipynb#cali-resample echo=true >}}
+
+```{r}
+#| label: cali-resample-r-sol
+# define train-test splits
+repetitions <- 1:10
+split_ratios <- seq(0.1, 0.9, by = 0.1)
+
+# create resampling objects with holdout strategy, using lapply for efficient computation
+split_strategies <- lapply(split_ratios, function(i) rsmp("holdout", ratio = i))
+
+# train linear learners and predict in one step (remember to set a seed)
+set.seed(123)
+results <- list()
+lgr::get_logger("mlr3")$set_threshold("warn")
+for (i in repetitions) {
+    results[[i]] <- lapply(
+        split_strategies,
+        function(i) mlr3::resample(task, learner, i)
+    )
+}
+```
+
 Compute errors
-{{< embed sol_eval_1_R.ipynb#cali-error echo=true >}}
+
+```{r}
+#| label: cali-error-r-sol
+errors <- lapply(
+  repetitions,
+  function(i) sapply(results[[i]], function(j) j$score()$regr.mse)
+)
+
+# assemble everything in data.frame and convert to long format for plotting
+errors_df <- as.data.frame(do.call(cbind, errors))
+errors_df$split_ratios <- split_ratios
+errors_df_long <- reshape2::melt(errors_df, id.vars = "split_ratios")
+names(errors_df_long)[2:3] <- c("repetition", "mse")
+```
+
 Visualize
-{{< embed sol_eval_1_R.ipynb#cali-boxplot-r echo=true >}}
+
+```{r}
+#| label: cali-boxplot-r-sol
+# plot errors vs split ratio
+ggplot(errors_df_long, aes(x = as.factor(split_ratios), y = mse)) +
+  geom_boxplot(fill = "lightgray") +
+  theme_classic() +
+  labs(x = "share of training samples", y = "average MSE")
+```
 
 ### Python
 Train, predict and compute errors for different splits
-{{< embed sol_eval_1_py.ipynb#cali-resample echo=true >}}
+
+```{python}
+#| label: cali-resample-py-sol
+#| results: hide
+x, y = df_california.loc[:, ["MedInc"]], df_california.loc[:, ["MedHouseVal"]]
+split_ratio = np.linspace(0.1, 0.9, num=9)
+
+result = pd.DataFrame()
+for i in range(10):
+    err = []
+    for split in split_ratio:
+        x_train, x_test, y_train, y_test = train_test_split(
+            x, y, train_size=split, random_state=i + 10
+        )
+        lm_california.fit(X=x_train, y=y_train)
+        pred = lm_california.predict(x_test)
+        err.append(mean_squared_error(y_test, pred))
+    result[i] = err
+
+errors = result.transpose()
+errors.columns = [f"0.{i}" for i in range(1, 10)]
+```
+
 Visualize
-{{< embed sol_eval_1_py.ipynb#cali-boxplot echo=true >}}
+
+```{python}
+#| label: cali-boxplot-py-sol
+#| results: hide
+# plot your errors
+# instantiate plot
+fig = plt.figure(figsize=(8, 5.5))
+# Creating axes instance
+ax = fig.add_subplot()
+# Creating plot
+bp = ax.boxplot(errors)
+# x-axis labels
+ax.set_xticklabels([f"0.{i}" for i in range(1, 10)])
+# Adding title
+plt.title("MSE of Linear Model for different test set sizes", size=20)
+plt.xlabel("train split size", size=16)
+plt.ylabel("MSE", size=16)
+# show plot
+plt.show()
+```
+
 :::
 
 </details> 
