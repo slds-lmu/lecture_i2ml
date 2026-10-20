@@ -49,3 +49,50 @@ end
 function Plain(p)
   return needspace_before_label(p)
 end
+
+-- Pandoc writes pipe tables as longtable, which breaks between any two
+-- rows; require enough space for the whole table so small tables (the
+-- typical hand-computation tables of the sheets) stay on one page.
+function Table(t)
+  if FORMAT:match 'latex' then
+    local nrows = 0
+    for _, body in ipairs(t.bodies) do
+      nrows = nrows + #body.body
+    end
+    if nrows <= 10 then
+      return {
+        pandoc.RawBlock("tex", "\\needspace{" .. (nrows + 5) .. "\\baselineskip}"),
+        t
+      }
+    end
+  end
+end
+
+-- A short caption-like line directly above a code chunk ("Inspect",
+-- "Get data", "Train and evaluate", ...) belongs to that chunk: request
+-- the space in front of the label, not just in front of the code block
+-- (the Shaded hook in pdf-preamble.tex alone would orphan the label).
+local function is_code_like(block)
+  return block.t == "CodeBlock"
+    or (block.t == "Div"
+        and (block.classes:includes("cell")
+             or block.classes:includes("quarto-embed-nb-cell")))
+end
+
+function Blocks(blocks)
+  if not FORMAT:match 'latex' then
+    return nil
+  end
+  local out = pandoc.List()
+  for i, b in ipairs(blocks) do
+    local nxt = blocks[i + 1]
+    if nxt and is_code_like(nxt) and (b.t == "Para" or b.t == "Plain") then
+      local text = pandoc.utils.stringify(b)
+      if #text > 0 and #text < 80 and not text:match("[%.%?!:]%s*$") then
+        out:insert(pandoc.RawBlock("tex", "\\needspace{8\\baselineskip}"))
+      end
+    end
+    out:insert(b)
+  end
+  return out
+end
