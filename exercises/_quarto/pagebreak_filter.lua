@@ -1,53 +1,24 @@
 -- pagebreak_filter.lua
 --
--- Avoids ugly page breaks in the PDF output of the exercise sheets:
--- a heading (e.g. "Exercise 2: ...") must not sit orphaned in the last
--- lines of a page. Before every heading of level >= 2 we require a
--- minimum amount of free vertical space via \needspace (loaded in
--- pdf-preamble.tex); otherwise the page breaks before the heading.
--- Exercise headings (level 2) are usually followed by a learning-goals
--- callout box, so they need enough room for the heading plus the start
--- of that box.
+-- Avoids ugly page breaks in the PDF output of the exercise sheets by
+-- requiring free vertical space (via \needspace, loaded in
+-- pdf-preamble.tex) in front of blocks that must not be separated from
+-- what follows them. Headings themselves are handled in
+-- pdf-preamble.tex via LaTeX cmd hooks, because Quarto generates the
+-- R/Python tab headings of flattened panel-tabsets only after the Lua
+-- filters have run.
 --
 -- HTML output is not affected.
 
-function Header(h)
-  if FORMAT:match 'latex' and h.level >= 2 then
-    local lines = h.level == 2 and 10 or 6
-    return {
-      pandoc.RawBlock("tex", "\\needspace{" .. lines .. "\\baselineskip}"),
-      h
-    }
+-- Is this Para/Plain the lone italic "Hint" / bold "Solution" label that
+-- a <details><summary> block of the HTML version renders to in PDF?
+local function is_hint_or_solution_label(block)
+  if #block.content ~= 1 then
+    return false
   end
-end
-
--- The <details><summary>*Hint*</summary> and <summary>**Solution**</summary>
--- blocks of the HTML version render as a lone italic "Hint" / bold "Solution"
--- paragraph in PDF (Para at top level, Plain inside list items); keep that
--- label together with the first lines of its content, which is often a
--- flattened R/Python tabset heading or a code block.
-local function needspace_before_label(block)
-  if FORMAT:match 'latex' and #block.content == 1 then
-    local inline = block.content[1]
-    local is_hint = inline.t == "Emph"
-      and pandoc.utils.stringify(inline):match("Hint")
-    local is_solution = inline.t == "Strong"
-      and pandoc.utils.stringify(inline) == "Solution"
-    if is_hint or is_solution then
-      return {
-        pandoc.RawBlock("tex", "\\needspace{8\\baselineskip}"),
-        block
-      }
-    end
-  end
-end
-
-function Para(p)
-  return needspace_before_label(p)
-end
-
-function Plain(p)
-  return needspace_before_label(p)
+  local inline = block.content[1]
+  return (inline.t == "Emph" and pandoc.utils.stringify(inline):match("Hint"))
+    or (inline.t == "Strong" and pandoc.utils.stringify(inline) == "Solution")
 end
 
 -- Pandoc writes pipe tables as longtable, which breaks between any two
@@ -85,12 +56,35 @@ function Blocks(blocks)
   end
   local out = pandoc.List()
   for i, b in ipairs(blocks) do
-    local nxt = blocks[i + 1]
-    if nxt and is_code_like(nxt) and (b.t == "Para" or b.t == "Plain") then
-      local text = pandoc.utils.stringify(b)
-      if #text > 0 and #text < 80 and not text:match("[%.%?!:]%s*$") then
-        out:insert(pandoc.RawBlock("tex", "\\needspace{8\\baselineskip}"))
+    local lines = nil
+    if b.t == "Para" or b.t == "Plain" then
+      -- next significant block, skipping raw HTML such as </summary>
+      local nxt = nil
+      for j = i + 1, #blocks do
+        local c = blocks[j]
+        if not (c.t == "RawBlock" and c.format:match("html")) then
+          nxt = c
+          break
+        end
       end
+      if is_hint_or_solution_label(b) then
+        -- a code chunk or (opaque) tabset follows: room for the label plus
+        -- the tab heading's own 14-line requirement; plain text follows:
+        -- the label plus a few lines suffice
+        if nxt and (nxt.t == "Div" or nxt.t == "CodeBlock") then
+          lines = 16
+        else
+          lines = 6
+        end
+      elseif nxt and is_code_like(nxt) then
+        local text = pandoc.utils.stringify(b)
+        if #text > 0 and #text < 80 and not text:match("[%.%?!:]%s*$") then
+          lines = 8
+        end
+      end
+    end
+    if lines then
+      out:insert(pandoc.RawBlock("tex", "\\needspace{" .. lines .. "\\baselineskip}"))
     end
     out:insert(b)
   end
