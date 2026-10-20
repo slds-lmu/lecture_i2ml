@@ -8,7 +8,7 @@ ex: exhtml expdf clean
 
 solhtml:
 	for file in *.qmd; do \
-		quarto render $$file --profile=solution; \
+		quarto render $$file --profile=solution --to html; \
 	done
 
 solpdf:
@@ -18,7 +18,7 @@ solpdf:
 
 exhtml:
 	for file in *.qmd; do \
-		quarto render $$file; \
+		quarto render $$file --to html; \
 	done
 
 expdf:
@@ -41,4 +41,4 @@ copy-all:
 
 # rule for creating html (profile=solution) for a single file for testing; e.g. make classification_1
 %:
-	quarto render $@.qmd --profile=solution
+	quarto render $@.qmd --profile=solution --to html
