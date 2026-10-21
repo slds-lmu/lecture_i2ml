@@ -16,9 +16,11 @@ solpdf:
 		quarto render $$file --profile=solution --to pdf --output "$${file%.qmd}_all.pdf"; \
 	done
 
+# exercise-only HTML gets the _ex suffix (analogous to the PDFs); the
+# solution HTML keeps the plain name because the course website links to it
 exhtml:
 	for file in *.qmd; do \
-		quarto render $$file --to html; \
+		quarto render $$file --to html --output "$${file%.qmd}_ex.html"; \
 	done
 
 expdf:
