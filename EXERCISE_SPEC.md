@@ -34,8 +34,8 @@ One `.qmd` produces an interactive HTML and two PDFs.
   - Solutions and hints are collapsed. Open them one by one, or all at once with "Show All Solutions".
   - Code appears in R and Python tabs. "Only R" / "Only Python" switches every tab on the page at once.
   - "Print" prints (or saves as PDF) exactly what is visible. Students pick their language and the solutions they want opened, then print their own version; toolbar, table of contents and sidebars are left out.
-  - Table of contents, light/dark mode toggle, and a "Notebooks" list linking to the `ex_`/`sol_` notebooks on GitHub (to work on the tasks or run the solutions).
-  - A single self-contained file (`embed-resources: true`): works offline and can be passed on as one file.
+  - Table of contents and a "Notebooks" list linking to the `ex_`/`sol_` notebooks on GitHub (to work on the tasks or run the solutions).
+  - A single self-contained file (`embed-resources: true`) that can be passed on as one file. Two things load when the page opens and need internet: formulas (MathJax, from jsDelivr) and interactive plotly figures (plotly.js, from plotly's CDN; so far only in `classification_1`). The text uses the reader's system font.
 - **PDFs** (handout, website):
   - `_ex.pdf`: tasks and hints, no solutions.
   - `_all.pdf`: tasks, hints and all solutions, both languages one after the other.
@@ -285,6 +285,7 @@ The `ex_` tabset under b) is only needed when the task hands out code (e.g. data
   ````
 
 - Static image: a PNG in `figure/`, included as `![<caption, may be empty>](figure/<name>.png){width=50%}`. Convert PDF figures to PNG; browsers do not display PDF images.
+- Interactive plotly figure (HTML only; give the PDF a static image, as `classification_1` does): in the hidden chunk, `source("../_quarto/plotly.R")` and print `small_plotly(p)` instead of `p`. It shrinks the embedded data and loads plotly.js from plotly's CDN, so the figure needs internet, like formulas. All plotly figures of a sheet share one plotly.js bundle; `small_plotly()` stops with a hint if they don't fit one.
 - Inside a subtask, wrap figures in `::: {.indent-1}` (plots break Markdown indentation). Inside a solution, the `.indent-1-sol` wrapper is enough.
 - Tables: Markdown pipe tables; math in cells is fine.
 
@@ -308,7 +309,7 @@ The `ex_` tabset under b) is only needed when the task hands out code (e.g. data
 - **`sol_` notebooks:**
   - an import cell at the top
   - per exercise a Markdown cell `## Solution <N>: <Title>`, followed by the solution cells in the order of the sheet
-  - run top to bottom and saved with outputs before the sheet is rendered, e.g. `jupyter nbconvert --to notebook --execute --inplace sol_<stem>_py.ipynb`
+  - run top to bottom and saved with outputs before the sheet is rendered, from the chapter folder with `jupyter nbconvert --to notebook --execute --inplace --config ../_quarto/compact_png.py sol_<stem>_py.ipynb`. The config stores the figures as 256-color PNGs: much smaller notebooks and HTML, no visible change. For a notebook saved from Jupyter or VS Code, run the same command without `--execute`.
 - **`ex_` notebooks:**
   - a header cell with the course name and link, then `# Exercise sheet <N>: <Topic>`
   - an import cell labeled `import` (embedded by the libraries hint)
@@ -379,6 +380,7 @@ The `ex_` tabset under b) is only needed when the task hands out code (e.g. data
   - `make <sheet>` renders one solution HTML for a quick check; `make clean` removes temporary files
 - Before rendering, re-run every notebook that changed (§7).
 - Render with Quarto 1.10 (committed HTMLs: 1.10.15 to 1.10.19).
+- `embed-resources` downloads the scripts a page links to and embeds them. If that fails (e.g. an antivirus scanning HTTPS connections), Pandoc keeps the link and the render log says "Could not fetch resource"; the HTML still works but is not fully self-contained.
 - HTML must keep all features listed in §2.
 - PDF must print as a handout without manual fixes (no cut-off code, no orphaned headings). Check both PDFs by eye before committing them.
 - Toolchain: Quarto, R with knitr, LaTeX; Python and Jupyter to re-run the notebooks. Sheets use the knitr or markdown engine, so rendering starts no Jupyter kernel.
@@ -388,7 +390,7 @@ The `ex_` tabset under b) is only needed when the task hands out code (e.g. data
 - [ ] The sheet follows the template (§5) and the rules in §6; YAML has no `format:` block.
 - [ ] Every subtask has exactly one solution block; `_ex.pdf` contains no solution text.
 - [ ] Every code task has an R and a Python tab, R first; all code comes from embeds.
-- [ ] All notebooks use the right kernel, were run top to bottom and saved; `sol_` notebooks with outputs, `ex_` notebooks without.
+- [ ] All notebooks use the right kernel, were run top to bottom with the command in §7 and saved; `sol_` notebooks with outputs, `ex_` notebooks without.
 - [ ] Task text in the `ex_` notebooks matches the sheet.
 - [ ] Every embedded cell has a `#| label:`; every embedded notebook has a `notebook-view` entry.
 - [ ] Every math macro is defined in `_quarto/latex-math.qmd`.
@@ -437,7 +439,7 @@ The `ex_` tabset under b) is only needed when the task hands out code (e.g. data
   3. `exhtml` and `solhtml` write the same `<sheet>.html`, so `make ex` leaves one without solutions that must not be committed → drop `exhtml` from `all` or name its output `<sheet>_ex.html`.
   4. PDF engine not pinned: `latex_engine: pdflatex` sits under `html:` and has no effect, so the engine depends on who renders (committed PDFs: pdfTeX; local test: XeLaTeX) → `pdf-engine: pdflatex` under `pdf:`.
   5. Small PDF layout glitches, e.g. an empty bar under the group callout → fix.
-  6. HTML toolbar is white in dark mode; "Show All Solutions" also opens hints → theme variable; decide on hints.
+  6. "Show All Solutions" also opens hints → decide on hints.
 - **Open: content:**
   7. tuning and nested_resampling have 3 exercises each, no group split → rework.
   8. 7 different hint labels → standardize on `*Hint*` and `*Hint: Useful libraries*`.

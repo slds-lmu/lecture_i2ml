@@ -70,9 +70,9 @@ Quarto wiring:
 ## Related layout tweaks
 
 - `exercises/_quarto/i2ml_theme.scss` adjusts the HTML theme and code font size.
-- The HTML uses only the light theme (flatly). Its Google Fonts import is disabled in
-  `i2ml_theme.scss`; the Lato font is loaded from `exercises/_quarto/fonts/` via
-  `styles.css`, so `embed-resources` embeds it once instead of inside the theme CSS.
+- The HTML uses only the light theme (flatly). Its Google Fonts import (Lato) is disabled in
+  `i2ml_theme.scss`, so no font is downloaded or embedded and the text uses the reader's
+  system font (San Francisco on Apple devices, Segoe UI on Windows, Roboto on Android).
 - `exercises/_quarto/pdf-preamble.tex` also reduces code font size in PDF output.
 
 ## Practical example
