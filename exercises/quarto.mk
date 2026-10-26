@@ -1,31 +1,37 @@
-.PHONY: all sol ex solhtml solpdf exhtml expdf clean copy copy-all
+.PHONY: all sol ex solhtml solpdf exhtml expdf clean copy-all
 
-all: exhtml expdf solhtml solpdf clean copy-all
+# The targets share ../.quarto (deleted by clean) and must run in the given order.
+.NOTPARALLEL:
+
+SHEETS := $(wildcard *.qmd)
+
+# the committed outputs: <sheet>.html, <sheet>_ex.pdf, <sheet>_all.pdf
+all: expdf solhtml solpdf clean copy-all
 
 sol: solhtml solpdf clean
 
 ex: exhtml expdf clean
 
+# every loop stops at the first failed render (|| exit 1), so make reports it
 solhtml:
-	for file in *.qmd; do \
-		quarto render $$file --profile=solution --to html; \
+	for file in $(SHEETS); do \
+		quarto render $$file --profile=solution --to html || exit 1; \
 	done
 
 solpdf:
-	for file in *.qmd; do \
-		quarto render $$file --profile=solution --to pdf --output "$${file%.qmd}_all.pdf"; \
+	for file in $(SHEETS); do \
+		quarto render $$file --profile=solution --to pdf --output "$${file%.qmd}_all.pdf" || exit 1; \
 	done
 
-# exercise-only HTML gets the _ex suffix (analogous to the PDFs); the
-# solution HTML keeps the plain name because the course website links to it
+# exercise-only HTML (not committed, not part of all): make exhtml
 exhtml:
-	for file in *.qmd; do \
-		quarto render $$file --to html --output "$${file%.qmd}_ex.html"; \
+	for file in $(SHEETS); do \
+		quarto render $$file --to html --output "$${file%.qmd}_ex.html" || exit 1; \
 	done
 
 expdf:
-	for file in *.qmd; do \
-		quarto render $$file --to pdf --output "$${file%.qmd}_ex.pdf"; \
+	for file in $(SHEETS); do \
+		quarto render $$file --to pdf --output "$${file%.qmd}_ex.pdf" || exit 1; \
 	done
 
 clean:
@@ -35,12 +41,11 @@ clean:
 	rm -rf ../.quarto
 	rm -rf *.rmarkdown
 
-copy: $(F)
-	cp $(F) ../../exercises-pdf/
-
+# only the PDFs of the sheets in this folder
 copy-all:
-	cp  *.pdf ../../exercises-pdf/
+	cp $(SHEETS:.qmd=_ex.pdf) $(SHEETS:.qmd=_all.pdf) ../../exercises-pdf/
 
-# rule for creating html (profile=solution) for a single file for testing; e.g. make classification_1
-%:
-	quarto render $@.qmd --profile=solution --to html
+# one solution HTML for a quick check, e.g. make classification_1
+# (terminal rule: only for names with a .qmd file, so a typo is an error)
+%:: %.qmd
+	quarto render $< --profile=solution --to html

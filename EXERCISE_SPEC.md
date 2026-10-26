@@ -31,8 +31,8 @@ This document defines the format of the exercise sheets: what a sheet contains, 
 One `.qmd` produces an interactive HTML and two PDFs.
 
 - **HTML** (on screen, for the exercise session and self-study):
-  - Solutions and hints are collapsed. Open them one by one, or all at once with "Show All Solutions".
-  - Code appears in R and Python tabs. "Only R" / "Only Python" switches every tab on the page at once.
+  - Solutions and hints are collapsed. Open them one by one; "Show All Solutions" opens (or closes) every solution at once, including everything nested in a solution, but no hints outside solutions.
+  - Code appears in R and Python tabs. Choosing a language in one tabset switches every tabset on the page, and the choice carries over to the next sheet (Quarto's tabset group `i2ml-language`, remembered by the browser). "Only R" / "Only Python" do the same; pen-and-paper sheets have no language tabs, and the two buttons are hidden there.
   - "Print" prints (or saves as PDF) exactly what is visible. Students pick their language and the solutions they want opened, then print their own version; toolbar, table of contents and sidebars are left out.
   - Table of contents and a "Notebooks" list linking to the `ex_`/`sol_` notebooks on GitHub (to work on the tasks or run the solutions).
   - A single self-contained file (`embed-resources: true`) that can be passed on as one file. Two things load when the page opens and need internet: formulas (MathJax, from jsDelivr) and interactive plotly figures (plotly.js, from plotly's CDN; so far only in `classification_1`). The text uses the reader's system font.
@@ -52,7 +52,7 @@ One `.qmd` produces an interactive HTML and two PDFs.
   - *Both languages run natively.* A `.qmd` runs one engine with one kernel. Under knitr (the engine the sheets use), Python runs through reticulate inside R. Under the Jupyter engine with a Python kernel, R chunks are not executed at all; they come out as plain text (tested with Quarto 1.7.27). Separate notebooks run R in the `ir` kernel and Python in `python-i2ml`, exactly as students run them.
   - *Students need the notebooks anyway.* They open them from the sheet's "Notebooks" list, and KI-Campus requires them. With code in the `.qmd`, a generator would have to split it back into four notebooks.
   - *Rendering does not run solution code.* Renders are fast, need neither the mlr3 nor the scikit-learn/torch environment, show the same results every time (no newly drawn random numbers), and don't repeat slow computations (tuning, nested resampling, neural networks). Quarto's `freeze` would not help, because it is skipped when single files are rendered, which is what the Makefile does.
-- **Accepted costs,** handled by the rules in §7 and the checklist in §10: embedded output can be out of date (re-run notebooks before rendering), the task text is repeated in the `ex_` notebooks (keep it identical), and embeds need cell labels and indentation wrappers.
+- **Accepted costs,** handled by the rules in §7 and the checklist in §10: embedded output can be out of date (re-run notebooks before rendering), the task text is repeated in the `ex_` notebooks (keep it identical), and embeds need cell labels and, inside a subtask, an `.indent` block (§6).
 
 ### 4. Files and naming
 
@@ -66,8 +66,8 @@ One `.qmd` produces an interactive HTML and two PDFs.
   - committed outputs: `<sheet>.html`, `<sheet>_ex.pdf`, `<sheet>_all.pdf` (§9)
 - Names: `<sheet>` in lowercase with underscores (e.g. `classification_2`). `<stem>` equals `<sheet>` for new sheets; the evaluation sheets are an existing exception (`evaluation_1` uses `eval_1`).
 - Shared per lecture, never changed for a single sheet:
-  - `exercises/_quarto.yml`: formats, theme, filters
-  - `exercises/_quarto/`: math macros, toolbar, CSS, LaTeX preamble, Lua filter
+  - `exercises/_quarto.yml`: course subtitle, formats, theme, filters
+  - `exercises/_quarto/`: sheet header (`header.qmd`), math macros, toolbar, CSS, LaTeX preamble, Lua filters
   - `exercises/quarto.mk`: build targets
   - `exercises/data/`: data sets, read by the notebooks as `../data/<file>`
 - Layout fixes go into `_quarto/` and apply to all sheets.
@@ -79,7 +79,6 @@ A complete sheet looks like this. Placeholders are in `<…>`. Leave out what a 
 ```md
 ---
 title: "Exercise <N> -- <Topic>"
-subtitle: "[Introduction to Machine Learning](https://slds-lmu.github.io/i2ml/)"
 notebook-view:
   - notebook: ex_<stem>_R.ipynb
     title: "Exercise sheet for R"
@@ -95,23 +94,16 @@ notebook-view:
     url: "https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/<chapter>/sol_<stem>_py.ipynb"
 ---
 
-::: {.content-hidden when-format="pdf"}
-::: {.hidden}
-{{< include ../_quarto/latex-math.qmd >}}
-:::
-{{< include ../_quarto/solution-buttons.qmd >}}
-:::
+{{< include /_quarto/header.qmd >}}
 
-<details>
-<summary>*Hint: Useful libraries*</summary>
-
-::: {.panel-tabset}
+::: {.hint label="Hint: Useful libraries"}
+::: {.panel-tabset group="i2ml-language"}
 ### R
 {{< embed ex_<stem>_R.ipynb#import echo=true >}}
 ### Python
 {{< embed ex_<stem>_py.ipynb#import echo=true >}}
 :::
-</details>
+:::
 
 ## Exercise 1: <Title>
 
@@ -124,28 +116,18 @@ notebook-view:
 
 a) <Task without code.>
 
-::: {.content-visible when-profile="solution"}
-::: {.indent-1-sol}
-<details>
-<summary>**Solution**</summary>
-
+::: {.sol}
 <Solution text and math.>
-
-</details>
-:::
 :::
 
 b) <Task that asks for code. Continuation paragraphs are indented 3 spaces.>
 
-   <details>
-   <summary>*Hint*</summary>
-
+   ::: {.hint}
    <Hint text.>
+   :::
 
-   </details>
-
-::: {.indent-1}
-::: {.panel-tabset}
+::: {.indent}
+::: {.panel-tabset group="i2ml-language"}
 ### R
 {{< embed ex_<stem>_R.ipynb#<label> echo=true >}}
 ### Python
@@ -153,14 +135,10 @@ b) <Task that asks for code. Continuation paragraphs are indented 3 spaces.>
 :::
 :::
 
-::: {.content-visible when-profile="solution"}
-::: {.indent-1-sol}
-<details>
-<summary>**Solution**</summary>
-
+::: {.sol}
 <Text that applies to both languages.>
 
-::: {.panel-tabset}
+::: {.panel-tabset group="i2ml-language"}
 ### R
 <What the first cell does.>
 {{< embed sol_<stem>_R.ipynb#<label> echo=true >}}
@@ -174,9 +152,17 @@ b) <Task that asks for code. Continuation paragraphs are indented 3 spaces.>
 :::
 
 <Interpretation of the results, valid for both languages.>
-
-</details>
 :::
+
+c) <Task with sub-items:>
+
+   (i) <First sub-item.>
+   (ii) <Second sub-item.>
+
+::: {.sol}
+(i) <One-paragraph answer.>
+
+(ii) <One-paragraph answer.>
 :::
 
 ## Exercise 2: <Title>
@@ -210,15 +196,15 @@ b) <Task that asks for code. Continuation paragraphs are indented 3 spaces.>
 :::
 ```
 
-The `ex_` tabset under b) is only needed when the task hands out code (e.g. data generation). Most code tasks only have the solution tabset.
+The `ex_` tabset under b) is only needed when the task hands out code (e.g. data generation). Most code tasks only have the solution tabset. Sub-items as in c) get one solution for the whole subtask (§6).
 
 ### 6. Markup rules
 
 **YAML header**
 
-- Only `title`, `subtitle` and, if the sheet embeds notebooks, `notebook-view`. No `format:` block and no other per-sheet options: a sheet-level `format:` changes what `quarto render` builds. The `format:` blocks in trees, forests and nn are known deviations.
+- Only `title` and, if the sheet embeds notebooks, `notebook-view`. No `format:` block and no other per-sheet options: a sheet-level `format:` changes what `quarto render` builds.
 - `title: "Exercise <N> -- <Topic>"`: `<N>` is the number of the sheet in the course; two hyphens.
-- `subtitle`: the course name linked to the course website, for I2ML exactly as in §5.
+- The subtitle (course name linked to the course website) is set once for all sheets in `_quarto.yml`.
 - `notebook-view`:
   - What it does: `notebook-links: global` in `_quarto.yml` makes Quarto list every embedded notebook in the HTML's "Notebooks" section. `notebook-view` gives each entry its title and points its link to the notebook on GitHub.
   - Why it is needed: without it, Quarto links each entry to a generated `<notebook>-preview.html`. That file is not part of the self-contained HTML (and `make clean` deletes it), so students would get a dead link. An embedded notebook without an entry is missing from the list (e.g. `sol_tuning_py.ipynb` in `tuning.html`).
@@ -227,11 +213,11 @@ The `ex_` tabset under b) is only needed when the task hands out code (e.g. data
 
 **Sheet header**
 
-- First block after the YAML header, verbatim as in §5. It loads the math macros for the HTML (for the PDF, Pandoc expands them) and the toolbar.
+- First line after the YAML header, verbatim as in §5: `{{< include /_quarto/header.qmd >}}`. It loads the math macros for the HTML (for the PDF, Pandoc expands them) and the toolbar. The leading `/` means the project root, so the line is the same at any folder depth. The in-class sheets (§12) have their own header without the toolbar.
 
 **Libraries hint** (sheets with code)
 
-- Directly after the sheet header, before Exercise 1, as in §5: summary `*Hint: Useful libraries*`, embedding the `import` cell of both `ex_` notebooks.
+- Directly after the sheet header, before Exercise 1, as in §5: `::: {.hint label="Hint: Useful libraries"}` with a tabset that embeds the `import` cell of both `ex_` notebooks.
 
 **Exercises**
 
@@ -244,31 +230,32 @@ The `ex_` tabset under b) is only needed when the task hands out code (e.g. data
 
 **Subtasks**
 
-- `a)`, `b)`, `c)` at the start of the line, one per task. Letters continue through the exercise, although solution blocks interrupt the list, and restart at `a)` in the next exercise.
-- Everything that belongs to a subtask (further paragraphs, sub-items, tables, hints) is indented 3 spaces, aligned with the text after `a) `.
-- Sub-items: `(i)`, `(ii)`, … or `-` bullets, indented 3 spaces.
+- `a)`, `b)`, `c)` at the start of the line, one per task. Letters continue through the exercise, although solution blocks interrupt the list, and restart at `a)` in the next exercise (and in each tab of an exercise written once for R and once for Python).
+- Everything that belongs to a subtask (further paragraphs, sub-items, tables, hints) is indented 3 spaces, aligned with the text after `a) `. Exception: embeds and figures go into an `.indent` block (Code, Figures), and whatever of the subtask follows such a block goes into the same block, not indented.
+- Sub-items: `(i)`, `(ii)`, … or `-` bullets, indented 3 spaces, i.e. a nested list of the subtask. They get no solution blocks of their own (Solutions).
 - Text that introduces the following subtasks (new data, a new assumption) stands at the start of the line, between two subtasks.
 
 **Hints**
 
-- Inside the subtask, indented 3 spaces: `<details>`, then `<summary>*Hint*</summary>`, a blank line, the hint, a blank line, `</details>`. Without the blank lines, Markdown inside is not rendered.
-- Labels: `*Hint*` for subtasks, `*Hint: Useful libraries*` for the sheet-level hint. No other labels (`*R Hint*`, `*Hint 1*`, …).
-- Language-specific hint: a tabset (`### R` / `### Python`) inside the hint.
+- Inside the subtask, indented 3 spaces (like the subtask's other content): `::: {.hint}`, the hint, `:::`, with a blank line before the opening fence. In the HTML the hint is collapsible with the label "Hint"; in the PDF it is expanded under that label.
+- Labels: "Hint" (the default) for subtasks, `::: {.hint label="Hint: Useful libraries"}` for the sheet-level hint. No other labels (`R Hint`, `Hint 1`, …; existing ones are open item 8).
+- Language-specific hint: a tabset with both tabs (`### R` / `### Python`, as under Code) inside the hint.
 - Hints are part of the task: they appear expanded in `_ex.pdf` and must not give away the solution.
 
 **Solutions**
 
-- Every subtask has exactly one solution block, directly after the subtask (after its hint), starting at the beginning of the line, nested exactly as in §5: `content-visible when-profile="solution"`, then `.indent-1-sol`, then `<details>` with `<summary>**Solution**</summary>`.
+- Every subtask has exactly one solution block, `::: {.sol}` … `:::`, directly after the subtask (after its hint), starting at the beginning of the line (§5). The class does the rest: the block appears only with the `solution` profile, as a collapsible "Solution" in the HTML and with that label and a line on the left in the PDF. Not `.solution`: Quarto reserves that class for proofs.
 - No solution content outside this block; anything outside also ends up in `_ex.pdf`.
-- Do not indent text inside the block (the wrapper does that); 4 leading spaces turn Markdown into a code block.
+- Do not indent text inside the block (the block does that); 4 leading spaces turn Markdown into a code block.
+- Sub-items are answered in the subtask's solution, in order and with their labels: as a list (`(i) …`, `(ii) …`) if every answer is one paragraph, otherwise with bold labels at the start of a paragraph (`**(i)** …`), because math, figures and embeds after an answer would have to be indented to the list item, and embeds cannot be.
 - Text that applies to both languages (derivations, interpretation) appears once, outside the tabs; tabs hold only code and language-specific remarks.
 - Optional extras inside a solution (an alternative derivation, an illustration): a nested `<details>` with a bold, descriptive summary, e.g. `<summary>**Alternative: componentwise derivation**</summary>`.
 
 **Code**
 
 - All code comes from notebooks (§3): `{{< embed <notebook>.ipynb#<label> echo=true >}}`. Always `echo=true`; without it only the output is shown.
-- Always in a tabset, `### R` first, then `### Python`. Every task that asks for code has both tabs.
-- Code handed out with a task: tabset from the `ex_` notebooks, wrapped in `::: {.indent-1}`, outside the solution block.
+- Always in a tabset `::: {.panel-tabset group="i2ml-language"}` with exactly two tabs, `### R` first, then `### Python`. Every task that asks for code has both tabs; language-specific remarks without the other language go outside a tabset. The group makes all such tabsets switch together (and remember the choice); the tab titles must be exactly `R` and `Python`, and other tabsets (e.g. "Quick solution" / "Detailed solution") get no group.
+- Code handed out with a task: tabset from the `ex_` notebooks, wrapped in `::: {.indent}`, outside the solution block (Layout explains why).
 - Two embeds directly after each other fail; put a line of text between them that says what the next cell does.
 - Nothing is executed at render; embeds show the code and output saved in the notebook.
 - No `{python}` chunks. `{r}` chunks only for figures (below), never for solution code.
@@ -286,7 +273,7 @@ The `ex_` tabset under b) is only needed when the task hands out code (e.g. data
 
 - Static image: a PNG in `figure/`, included as `![<caption, may be empty>](figure/<name>.png){width=50%}`. Convert PDF figures to PNG; browsers do not display PDF images.
 - Interactive plotly figure (HTML only; give the PDF a static image, as `classification_1` does): in the hidden chunk, `source("../_quarto/plotly.R")` and print `small_plotly(p)` instead of `p`. It shrinks the embedded data and loads plotly.js from plotly's CDN, so the figure needs internet, like formulas. All plotly figures of a sheet share one plotly.js bundle; `small_plotly()` stops with a hint if they don't fit one.
-- Inside a subtask, wrap figures in `::: {.indent-1}` (plots break Markdown indentation). Inside a solution, the `.indent-1-sol` wrapper is enough.
+- Inside a subtask, put a figure chunk into `::: {.indent}`, like an embed (Layout explains why). Inside a solution, nothing extra is needed.
 - Tables: Markdown pipe tables; math in cells is fine.
 
 **Math**
@@ -297,7 +284,10 @@ The `ex_` tabset under b) is only needed when the task hands out code (e.g. data
 
 **Layout**
 
-- Indent wrappers, only where Markdown indentation breaks (embeds and figures inside subtasks): `.indent-1`, `.indent-2` (plain), `.indent-1-sol`, `.indent-2-sol` (solutions, with a line on the left in the PDF), `.indent-1-subitem` (sub-items typed as text). No other classes; `.indent-0` does not exist. Details: [`exercises/EXERCISE_SHEETS_LAYOUT.md`](exercises/EXERCISE_SHEETS_LAYOUT.md).
+- Block types: `::: {.sol}` (Solutions) and `::: {.indent}` (Code, Figures), both written at the start of the line and indented by one list level in HTML and PDF, and `::: {.hint}` (Hints), written where it belongs. A subtask's other content is indented with Markdown (Subtasks). No other classes, and no hand-made `content-visible` / `<details>` wrappers around solutions or hints (only extras inside a solution use `<details>`, Solutions).
+- Why `.indent`: Quarto pastes the cells of `{{< embed >}}` into the Markdown before Pandoc reads it, without the indentation of the shortcode, so an indented embed ends the subtask's list item and breaks a tabset around it. Figure chunks would stay in the list item, but in the PDF a tall figure inside the list can push a whole exercise to the next page; in `.indent` the PDF breaks as before.
+- How the blocks are rendered: `_quarto/indent_filter.lua` drops `.sol` blocks without the `solution` profile and turns `.sol` and `.hint` into `<details>` with the label as summary in the HTML ("Solution", "Hint" or the hint's `label`); `_quarto/styles.css` indents `.sol` and `.indent`. In the PDF `.sol` and `.indent` become the mdframed environments `solution-block` (label, line on the left) and `indent-block` from `_quarto/pdf-preamble.tex`, and a hint is printed expanded under its label. `indent_filter.lua` also keeps every solution and hint label with the first lines of its content (`\Needspace` in front of a solution frame or hint label; the strict variant breaks only if the space is really missing); `_quarto/pagebreak_filter.lua` keeps small tables and short caption lines with what follows.
+- Theme: the HTML uses only flatly's light theme. `_quarto/i2ml_theme.scss` turns off its Google Fonts import (the text uses the reader's system font) and sets the code font size; `_quarto/pdf-preamble.tex` sets the code font size of the PDF.
 - No raw LaTeX for layout (`\vspace`, `\newpage`, `\hfill`, `\\`, `\noindent`); the HTML drops it. If the PDF needs a page break, use `{{< pagebreak >}}`.
 - Links: `[text](url)`. Data files link to `https://github.com/slds-lmu/lecture_i2ml/blob/master/exercises/data/<file>`.
 - Language: English.
@@ -346,8 +336,8 @@ The `ex_` tabset under b) is only needed when the task hands out code (e.g. data
 | Rmd "Goal" section | learning goals callout |
 | `\begin{enumerate}[a)] \item`, `\item[1)]`, Rmd `## 1.1 …` | subtasks `a)`, `b)`, … |
 | nested `enumerate` | `(i)`, `(ii)` or `-` bullets, indented 3 spaces |
-| separate solution file (`sol_*.Rnw`, `*_sol.tex`), `\begin{loesung}`, Rmd `show.solution` blocks | one solution block per subtask, directly after it |
-| `\textit{Hint:} …`, Rmd `<summary>**Hint 1**</summary>` | hint block with `*Hint*` |
+| separate solution file (`sol_*.Rnw`, `*_sol.tex`), `\begin{loesung}`, Rmd `show.solution` blocks | one `::: {.sol}` block per subtask, directly after it |
+| `\textit{Hint:} …`, Rmd `<summary>**Hint 1**</summary>` | `::: {.hint}` block |
 | `\textbf{x}`, `\emph{x}` / `\textit{x}` | `**x**`, `*x*` |
 | `\texttt{x}`, `\code{x}`, `\verb\|x\|` | `` `x` `` |
 | `\url{u}`, `\href{u}{t}` | `<u>`, `[t](u)` |
@@ -376,8 +366,9 @@ The `ex_` tabset under b) is only needed when the task hands out code (e.g. data
   - `<sheet>_ex.pdf` (`make expdf`): tasks and hints; handout, website before solution release
   - `<sheet>_all.pdf` (`make solpdf`): with solutions; website after release
 - Build in `exercises/<chapter>/` (targets in [`exercises/quarto.mk`](exercises/quarto.mk)):
-  - `make all` builds everything and copies the PDFs to `exercises-pdf/`, which the course website links to
-  - `make <sheet>` renders one solution HTML for a quick check; `make clean` removes temporary files
+  - `make all` builds the three committed outputs of every sheet in the folder and copies its `_ex`/`_all` PDFs to `exercises-pdf/`, which the course website links to; it stops at the first failed render
+  - `make exhtml` builds the exercise-only HTML `<sheet>_ex.html` for checking (ignored by git); `make <sheet>` renders one solution HTML for a quick check (a name without `.qmd` file is an error); `make clean` removes temporary files
+  - Run the chapter folders one after another: `clean` deletes the shared `exercises/.quarto`.
 - Before rendering, re-run every notebook that changed (§7).
 - Render with Quarto 1.10 (committed HTMLs: 1.10.15 to 1.10.19).
 - `embed-resources` downloads the scripts a page links to and embeds them. If that fails (e.g. an antivirus scanning HTTPS connections), Pandoc keeps the link and the render log says "Could not fetch resource"; the HTML still works but is not fully self-contained.
@@ -388,7 +379,7 @@ The `ex_` tabset under b) is only needed when the task hands out code (e.g. data
 ### 10. Checklist before committing
 
 - [ ] The sheet follows the template (§5) and the rules in §6; YAML has no `format:` block.
-- [ ] Every subtask has exactly one solution block; `_ex.pdf` contains no solution text.
+- [ ] Every subtask has exactly one `.sol` block (sub-items included); `_ex.pdf` contains no solution text.
 - [ ] Every code task has an R and a Python tab, R first; all code comes from embeds.
 - [ ] All notebooks use the right kernel, were run top to bottom with the command in §7 and saved; `sol_` notebooks with outputs, `ex_` notebooks without.
 - [ ] Task text in the `ex_` notebooks matches the sheet.
@@ -435,14 +426,14 @@ The `ex_` tabset under b) is only needed when the task hands out code (e.g. data
   - **D2** Rollout to SL, Optimization, AdvML/IML, AppML: scope and timing? Today the setup exists only in `lecture_i2ml/exercises/` (AppML and IML use Rmd exercises; SL and Optimization not checked). Proposal: move `_quarto.yml`, `_quarto/` and `quarto.mk` to `lecture_service/service/exercises/` and sync them via `scripts/update-service.sh` like `style/`, with course name and URL set per lecture.
 <!-- - **Open: outputs** (proposed fix after the arrow):
   1. Toolbar buttons read Python | R, tabs are R | Python (Ludwig) → swap the buttons in `_quarto/solution-buttons.qmd`.
-  2. `exhtml`/`solhtml` run `quarto render` without `--to html`, so Quarto renders every format: trees, forests and nn (sheet-level `format: pdf:`) never get an HTML (Ludwig); the other sheets also write an unsuffixed `<sheet>.pdf` that `copy-all` would publish → add `--to html` to `exhtml`, `solhtml` and the `%` rule; remove sheet-level `format:` blocks.
-  3. `exhtml` and `solhtml` write the same `<sheet>.html`, so `make ex` leaves one without solutions that must not be committed → drop `exhtml` from `all` or name its output `<sheet>_ex.html`.
-  4. PDF engine not pinned: `latex_engine: pdflatex` sits under `html:` and has no effect, so the engine depends on who renders (committed PDFs: pdfTeX; local test: XeLaTeX) → `pdf-engine: pdflatex` under `pdf:`.
+  2. Done: `--to html` in all HTML targets; sheet-level `format:` blocks removed; `copy-all` copies only the `_ex`/`_all` PDFs of the sheets.
+  3. Done: `exhtml` writes `<sheet>_ex.html` (ignored by git) and is no longer part of `all`.
+  4. Done: `pdf-engine: pdflatex` under `pdf:` (before, `latex_engine: pdflatex` sat under `html:` without effect, so the engine depended on who rendered; committed PDFs: pdfTeX).
   5. Small PDF layout glitches, e.g. an empty bar under the group callout → fix.
-  6. "Show All Solutions" also opens hints → decide on hints.
+  6. Done: "Show All Solutions" opens only solutions (and what is nested in them), no hints.
 - **Open: content:**
   7. tuning and nested_resampling have 3 exercises each, no group split → rework.
-  8. 7 different hint labels → standardize on `*Hint*` and `*Hint: Useful libraries*`.
+  8. 7 different hint labels (kept via `label="…"` when hints became `::: {.hint}`) → standardize on the default "Hint" and `label="Hint: Useful libraries"`.
 - **Open: infrastructure and maintenance:**
   9. latex-math copy → include `combined.qmd` (§11).
   10. 4 notebooks declare the wrong kernel; cell labels mix `# | label` and `#| label` → fix kernels (`update-kernel_py.py` for Python), standardize on `#| label`.
@@ -450,7 +441,7 @@ The `ex_` tabset under b) is only needed when the task hands out code (e.g. data
   12. `ex_` notebooks are maintained by hand → generate them by stripping code and outputs from the `sol_` notebooks.
   13. No CI renders the exercises → render all sheets, with and without `solution`, on PRs touching `exercises/`.
   14. Quarto version not pinned (committed HTMLs: 1.10.15 to 1.10.19) → pin one.
-  15. Unused `jupyter: python3` in `_quarto.yml` → remove.
+  15. Done: unused `jupyter: python3` (and `code-fold`, `mathspec`) removed from `_quarto.yml`.
   16. Wiki page "Exercises" says plain `quarto render` gives HTML; its known-issues list is unverified → update after items 1 and 2. -->
 <!-- 
 ## Appendix: details
@@ -458,7 +449,7 @@ The `ex_` tabset under b) is only needed when the task hands out code (e.g. data
 - **Changed latex-math definitions (§11):** `\argmin`/`\argmax` use `\mathop` instead of `\operatorname`; `\muk`, `\pixii`, `\pixit` gain an optional argument whose default is the old behavior.
 - **latex-math warnings:** Pandoc warns about `\N`, `\C` (`\ifdefined` pattern) and `\fh`, `\sl` (defined twice in latex-math itself). Harmless; fix the duplicates upstream.
 - **Native `.tex` for the PDF only:** possible via `include-in-header`, but works only with pdfLaTeX (`bm` clashes with `unicode-math` under XeLaTeX) and only if Pandoc's macro expansion is turned off (`from: markdown-latex_macros`, untested). Only gain: dsfont glyphs for `\R` etc., as in the slides.
-- **PDF glitches (item 5):** the group callout prints an empty body bar under its title (give it a body or use a title-less style); trees.qmd uses an undefined `.indent-0`; forests and nn include `pdf-preamble.tex` a second time.
-- **Hint labels (item 8):** `*Hint*`, `*Hint: Useful libraries*`, `*R Hint*`, `*Python Hint*`, `*mlr3 Hint*`, `*Hint: Useful libraries for this exercise sheet*`, ``*Hint: useful `Python` libraries*``.
+- **PDF glitches (item 5):** the group callout prints an empty body bar under its title (give it a body or use a title-less style).
+- **Hint labels (item 8):** "Hint", "Hint: Useful libraries", "R Hint", "Python Hint", "mlr3 Hint", "Hint: Useful libraries for this exercise sheet", "Hint: useful `Python` libraries", plus "Note" (nested_resampling) and "Details about the hyperparameters" (tuning).
 - **Kernels (item 10):** `ex_trees_R.ipynb`, `ex_tuning_R.ipynb` declare a Python kernel (should be `ir`); `sol_eval_2_py.ipynb`, `sol_classification_2_py.ipynb` use `python3` instead of `python-i2ml`.
 - **Environments (item 11):** `python-i2ml.yml` pins scikit-learn 1.1.3 / numpy 1.21.5, `python-i2ml-requirements.txt` pins scikit-learn 1.5.0 / numpy ≥ 1.22; `R-i2ml.yml` pins R 4.1. -->
