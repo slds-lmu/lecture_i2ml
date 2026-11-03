@@ -233,8 +233,8 @@ $(SLIDE_NOMARGIN_PDFS): %-nomargin.pdf: %.tex
 
 copy:
 	@echo "Copying PDFs and PAX files to slides-pdf/..."
-	@rsync -u *.pdf ../../slides-pdf/ 2>/dev/null || cp *.pdf ../../slides-pdf/
-	@rsync -u *.pax ../../slides-pdf/ 2>/dev/null || true
+	@rsync -u *.pdf ../slides-pdf/ 2>/dev/null || cp *.pdf ../slides-pdf/
+	@rsync -u *.pax ../slides-pdf/ 2>/dev/null || true
 
 # Extract pdf annotations, i.e. hyperlinks, for later reinsertion
 # When combining multiple PDFs into one (for slides/all/)
