@@ -1,1 +1,1 @@
-include ../slides/tex.mk
+include tex.mk
