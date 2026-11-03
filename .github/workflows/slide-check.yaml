@@ -1,0 +1,103 @@
+# slide-check — compile every deck and bundle of a lecture with slidemk.
+#
+# Consumer:  GitHub Actions.
+# Path:      <lecture>/.github/workflows/slide-check.yaml
+# Managed:   template in lecture_service_2 `ci/slide-check.yaml`; copied
+#            verbatim into each lecture. Edit the template, then re-copy.
+#            Do not edit lecture copies directly.
+# Applied:   on the next PR / manual run after the copy is committed.
+#
+# What it checks:
+#   1. `slidemk` from the lecture root: every canonical deck plus every
+#      chapter-literature PDF. Make runs with -k so one broken deck does not
+#      hide the others; the step fails if any deck failed.
+#   2. `slidemk --bundle` for the implicit `all` bundle and every
+#      `[bundle.<name>]` in slides.toml (catches pax/qpdf breakage).
+# Built PDFs (build/**/*.pdf) are uploaded as a run artifact either way.
+#
+# Access to lecture_service_2: the repo is private. The checkout uses the
+# LECTURE_SERVICE_TOKEN secret (read access to slds-lmu/lecture_service_2)
+# when set, else the default token, which suffices once the repo is public.
+# Fork PRs never receive secrets, so they fail at that checkout while the
+# repo is private.
+
+name: slide-check
+
+on:
+  pull_request:
+    # Only paths that can change slide output. style/ and latex-math/ are
+    # central, so lecture-local copies of them do not trigger.
+    paths:
+      - "slides/**"
+      - "local/**"
+      - "slides.toml"
+      - ".github/workflows/slide-check.yaml"
+  workflow_dispatch:
+
+# A newer push to the same PR supersedes the running check.
+concurrency:
+  group: slide-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  slide-check:
+    runs-on: ubuntu-latest
+    container:
+      # slds-yolobox: Ubuntu 24.04 + texlive-full, latexmk, biber, qpdf, make,
+      # Python 3. Pinned by digest so weekly image rebuilds cannot change
+      # slide output silently; bump tag and digest together.
+      image: ghcr.io/slds-lmu/slds-yolobox:2026-10-25@sha256:7d0cd69246d6e7524bd14487dfce491fd88e304d69ab582763eb7ea990183401
+      # The image defaults to uid 1000 (`yolo`); the runner-mounted workspace
+      # is owned by another uid. Root avoids permission errors on checkout
+      # and build/.
+      options: --user root
+    steps:
+      # slidemk finds the lecture root by walking up to the nearest .git, so
+      # the lecture must be its own checkout, not the workspace root.
+      - name: Checkout lecture
+        uses: actions/checkout@v4
+        with:
+          path: lecture
+          show-progress: false
+
+      - name: Checkout lecture_service_2
+        uses: actions/checkout@v4
+        with:
+          repository: slds-lmu/lecture_service_2
+          # Branch of lecture_service_2 to build against. Switch to main once
+          # low-complexity-toml is merged.
+          ref: low-complexity-toml
+          path: lecture_service
+          token: ${{ secrets.LECTURE_SERVICE_TOKEN || github.token }}
+          show-progress: false
+
+      - name: Build decks and literature
+        working-directory: lecture
+        # -k: report every failing deck, not just the first. Serial on purpose:
+        # the central Makefile is not verified under -j.
+        env:
+          MAKEFLAGS: -k
+        run: ../lecture_service/bin/slidemk
+
+      - name: Build bundles
+        working-directory: lecture
+        run: |
+          # Implicit `all` plus every [bundle.<name>] table in slides.toml.
+          bundles="all"
+          if [ -f slides.toml ]; then
+            bundles="$bundles $(python3 -c 'import sys, tomllib; print(" ".join(tomllib.load(open(sys.argv[1], "rb")).get("bundle", {})))' slides.toml)"
+          fi
+          for b in $bundles; do
+            echo "::group::bundle $b"
+            ../lecture_service/bin/slidemk --bundle "$b"
+            echo "::endgroup::"
+          done
+
+      - name: Upload PDFs
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: slides-pdf
+          path: lecture/build/**/*.pdf
+          if-no-files-found: ignore
+          retention-days: 14
