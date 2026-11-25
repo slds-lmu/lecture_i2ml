@@ -1,0 +1,228 @@
+\begin{frame}{nonlinear SVM -- method summary}
+\maketag{CLASSIFICATION} \maketag[50]{REGRESSION} \maketag{NONPARAMETRIC} 
+\maketag{BLACK-BOX}
+
+  
+\highlight{General idea}
+\begin{itemize}
+\item Move \textbf{beyond linearity} by mapping data to 
+transformed space where they are linearly separable
+\item \textbf{Kernel trick} %\textcolor{blue}{(based on Mercer's theorem,  existence of reproducing kernel Hilbert space)}: 
+\begin{itemize}
+  % \item Replace two-step operation feature map $\phi$ $\leadsto$ inner product 
+  % by \textbf{kernel} $k: \Xspace \times \Xspace \rightarrow \R$, s.t.
+  % $\scp{\phix}{\phixt} = \kxxt$
+  \item No need for explicit construction of feature maps
+  \item Replace inner product of feature map \\$\phi: \Xspace \to \Phi$ by \textbf{kernel}: $\scp{\phi x}{\phi xt} = kxxt$
+\end{itemize}
+%\item Loss of interpretability through nonlinear feature map
+\end{itemize}
+
+\medskip
+% \operatorname{sign}(\mathbf{w} \cdot \Phi(\mathbf{x})+b)
+
+% \langle \phi \left( \xi \right), \phi(\xv) \rangle
+
+\splitVCC[0.34]{
+\centering
+\includegraphics[width=0.55\textwidth]{
+figure/circles_ds.png} \\
+\tiny{Nonlinear problem in original space} 
+}{
+\centering
+\includegraphics[width=\textwidth, trim=0 30 0 50, clip]{
+figure/circles_feature_map.png} \\
+\tiny{Mapping to 3D space and subsequent linear separation -- implicitly handled by kernel in nonlinear SVM}
+}
+
+
+
+% \begin{minipage}[t]{0.33\textwidth}
+%   \centering
+%   \includegraphics[width=0.5\textwidth]{
+%   figure/circles_ds.png} \\
+%   \tiny{Nonlinear problem in original space} 
+% \end{minipage}
+% \begin{minipage}[t]{0.66\textwidth}
+%   \centering
+%   \includegraphics[width=0.9\textwidth, trim=0 30 0 0, clip]{
+%   figure/circles_feature_map.png} \\
+%   \tiny{Mapping to 3D space and subsequent linear separation -- implicitly 
+%   handled by kernel in nonlinear SVM}
+% \end{minipage}
+
+\end{frame}
+
+\begin{frame2}{nonlinear SVM -- method summary}
+
+\highlight{Hypothesis space} ~~
+% $\Hspace = \left \{ \fx = \sumin \alpha_i \yi k(\xi, \xv)  + \theta_0 ~|~
+% \theta_0, \alpha_i \in \R ~ \forall i \right \} $
+%\textcolor{blue}{$\Hspace = \{ \operatorname{sign}(\sumin \alpha_i \yi k(\xi, \xv)  + \theta_0) |\ (\theta_0, \thetav) \in \R^{p+1} \} $}
+%$\left \{ \fx = \sumin \alpha_i \yi  k(\xi, \xv)   +     \theta_0 ~|~ \alpha_i \geq 0 ~ \forall i \right \}$
+
+\textbf{Primal:}\\
+$\Hspace  = \left \{\fx ~:~ \fx = \sign \left( \thetav^\top \phi x + \theta_0 \right) \right \}$\\
+\textbf{Dual:}\\
+$\Hspace  = \left \{\fx ~:~ \fx = \sign \left( \sumin \alpha_i \yi k(\xi, \xv) + \theta_0 \right) ~|~ \alpha_i \geq 0,  \sumin \alpha_i \yi = 0 \right \}$ %\\
+%$\Rightarrow$ \textbf{Note:} Non-SVs have $\alpha_i = 0$ as they do not affect the hyperplane
+
+\highlight{Dual problem} ~~ \textbf{Kernelize} dual (soft-margin) SVM problem, 
+replacing all inner products by kernels:
+$$\max_{\alpha v} \sumin \alpha_i - \frac{1}{2}\sumin \sumjn
+\alpha_i\alpha_j\yi y^{(j)} \textcolor{blue}{k(\xi, \xi[j])}, ~~ \text{s.t. } ~~ 
+0 \le \alpha_i \le C, ~~ \sumin \alpha_i \yi = 0.
+$$
+
+
+
+\highlight{Hyperparameters} ~~ Cost $C$ of margin violations, kernel 
+hyperparameters (e.g., width of RBF kernel)
+
+\end{frame2}
+
+\begin{frame2}{nonlinear SVM -- method summary}
+\splitVCC[0.59]{
+  \highlight{Interpretation as basis function approach}
+  \begin{itemize}
+    \item \textbf{Representer theorem:} solution of dual soft-margin SVM problem is
+    $\thetav = \sum_{j=1}^n \beta_j \phi (\xi[j] )$ \\
+    \item Sparse, weighted sum of \textbf{basis functions}\\
+    $\rightarrow \beta_j = 0$ 
+    for non-SVs
+    \item Result: \textbf{local} model with smoothness depending on kernel
+  \end{itemize}
+}{
+  \centering
+  \includegraphics[width=\textwidth, trim=50 100 50 150, clip]{
+  figure/svm_rbf_as_basis.png} \\
+  \tiny{RBF kernel as mixture of Gaussian basis functions, forming
+  bumpy, nonlinear decision surface to discern red and green points}
+}
+
+\highlight{Common kernels}
+  
+\begin{itemize}
+\item \textbf{Linear} kernel: dot product of given observations ~~ 
+$\Rightarrow kxxt = \xv^\top \xtil$ ~~ $\Rightarrow$ linear SVM
+\item \textbf{Polynomial} kernel of degree $d \in \N$: monomials (i.e., 
+feature interactions) up to $d$-th 
+order ~~$\Rightarrow 
+kxxt = \left(\xv^\top \xtil + b \right)^d, ~ b \geq 0$
+\item \textbf{Radial basis function (RBF)} kernel: infinite-dimensional 
+feature space, allowing for perfect separation of all finite 
+datasets ~~ $\Rightarrow kxxt = \exp \left( -\gamma \| \xv - \xtil \|_2^2 
+\right )$ with 
+bandwidth parameter $\gamma > 0$
+\end{itemize}
+
+
+\end{frame2}
+
+
+\begin{frame2}{nonlinear SVM -- Implementation \& hints}
+
+% \footnotesize
+
+
+
+
+
+\highlight{Tuning}
+
+\begin{itemize}
+\item High sensitivity w.r.t. hyperparameters, especially those of kernel
+\\ $\Rightarrow$ \textbf{tuning} very important
+\item For RBF kernels, use \textbf{RBF sigma heuristic} to determine 
+bandwidth
+\end{itemize}
+
+\medskip
+\highlight{Implementation} 
+\begin{itemize}
+\item \textbf{R:} \texttt{mlr3} learners \texttt{LearnerClassifSVM} /
+\texttt{LearnerRegrSVM}, calling \texttt{e1071::svm()} with nonlinear kernel (\texttt{libSVM} interface),
+\texttt{kernlab::ksvm()} allowing custom kernels
+\item \textbf{Python:} \texttt{sklearn.svm.SVC} from package 
+\texttt{scikit-learn} / package \texttt{libSVM}
+\end{itemize}
+
+\end{frame2}
+
+\begin{frame2}{SVM -- Pro's \& Con's}
+
+\begin{columns}[T, totalwidth=\textwidth]
+  \begin{column}{0.5\textwidth}
+    \highlight{Advantages}
+    % \footnotesize
+    \begin{itemize}
+      % \positem High \textbf{accuracy}
+      \positem Often \textbf{sparse} solution (w.r.t. observations)
+      \positem Robust against overfitting (\textbf{regularized}); especially in 
+      high-dimensional space
+      \positem \textbf{Stable} solutions (w.r.t. changes in train data)\\
+      $\rightarrow$ Non-SV do not affect decision boundary
+      \positem Convex optimization problem \\
+      $\rightarrow$ local minimum $\hat{=}$ global minimum
+      %\positem \textbf{memory efficient} (only use non-SVs)
+    \end{itemize}
+    
+    % \highlight{Advantages (nonlinear SVM)}
+    % \begin{itemize}
+    %    \positem Can learn \textbf{nonlinear decision boundaries}
+    %    \positem \textbf{Very flexible} due to custom kernels \\
+    %    $\rightarrow$ RBF kernel yields local model \\
+    %    $\rightarrow$ kernel for time series, strings etc.
+    % \end{itemize}
+  \end{column}
+
+  \begin{column}{0.5\textwidth}
+    \highlight{Disadvantages}
+    % \footnotesize
+    \begin{itemize}
+      \negitem \textbf{Long} training times $\rightarrow O(n^2 p + n^3)$
+      %\negitem \textbf{Limited scalability} to larger data sets 
+      %\textcolor{blue}{\textbf{??}}
+      \negitem Confined to \textbf{linear model}
+      \negitem Restricted to \textbf{continuous features}
+      \negitem Optimization can also fail or get stuck
+      % \negitem Poor \textbf{interpretability}
+      %\negitem No handling of \textbf{missing} data
+    \end{itemize}
+
+    %     \highlight{Disadvantages (nonlinear SVM)}
+    % \begin{itemize}
+    %    \negitem Poor \textbf{interpretability} due to complex kernel
+    %    \negitem \textbf{Not easy tunable} as it is highly important to choose the right kernel (which also introduces further hyperparameters)
+    % \end{itemize}
+  \end{column}
+\end{columns}
+
+\end{frame2}
+
+\begin{frame2}{Nonlinear SVM -- Pro's \& Con's}
+
+\begin{columns}[T, totalwidth=\textwidth]
+  \begin{column}{0.53\textwidth}    
+    \highlight{Advantages (nonlinear SVM)}
+    \begin{itemize}
+       \positem Can learn \textbf{nonlinear decision boundaries}
+       \positem \textbf{Very flexible} due to custom kernels \\
+       $\rightarrow$ RBF kernel yields local model \\
+       $\rightarrow$ kernel for time series, strings etc.
+    \end{itemize}
+  \end{column}
+
+  \begin{column}{0.47\textwidth}
+    \highlight{Disadvantages (nonlinear SVM)}
+    \begin{itemize}
+       \negitem Poor \textbf{interpretability} due to complex kernel
+       \negitem \textbf{Not easy tunable} as it is highly important to choose the right kernel (which also introduces further hyperparameters)
+    \end{itemize}
+  \end{column}
+\end{columns}
+
+% \conclbox{Very accurate solution for high-dimensional data that is linearly 
+% separable}
+
+\end{frame2}
